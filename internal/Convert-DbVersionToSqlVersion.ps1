@@ -1,5 +1,20 @@
-Function Convert-DbVersionToSqlVersion
-{
+Function Convert-DbVersionToSqlVersion {
+<# 
+.SYNOPSIS 
+Internal function that makes db versions human readable
+
+.DESCRIPTION
+Internal function that makes db versions human readable
+
+.PARAMETER dbversion
+Analysis Server
+
+.EXAMPLE
+Convert-DbVersionToSqlVersion -dbversion 856
+	
+Returns "SQL Server vNext CTP1"
+
+#>
 	param (
 		[string]$dbversion
 	)

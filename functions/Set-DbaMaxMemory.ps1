@@ -13,7 +13,7 @@ Function Set-DbaMaxMemory
             Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may 
             be going on in your specific environment.
 
-        .PARAMETER SqlServer
+        .PARAMETER SqlInstance
             Allows you to specify a comma separated list of servers to query.
 
         .PARAMETER MaxMb
@@ -46,12 +46,12 @@ Function Set-DbaMaxMemory
             Set max memory to the recommended MB on just one server named "sqlserver1"
 
         .EXAMPLE 
-            Set-DbaMaxMemory -SqlServer sqlserver1 -MaxMb 2048
+            Set-DbaMaxMemory -SqlInstance sqlserver1 -MaxMb 2048
 
             Explicitly max memory to 2048 MB on just one server, "sqlserver1"
 
         .EXAMPLE 
-            Get-SqlRegisteredServerName -SqlServer sqlserver| Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory
+            Get-DbaRegisteredServerName -SqlInstance sqlserver| Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory
 
             Find all servers in SQL Server Central Management server that have Max SQL memory set to higher than the total memory 
             of the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use the default recommendation.
@@ -72,9 +72,9 @@ Function Set-DbaMaxMemory
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param (
         [Parameter(Position = 0)]
-        [Alias("ServerInstance", "SqlInstance", "SqlServers", 'ComputerName')]
+        [Alias("ServerInstance", "SqlServer", "SqlServers", 'ComputerName')]
         [object]
-        $SqlServer,
+        $SqlInstance,
         
         [Parameter(Position = 1)]
         [int]
@@ -93,9 +93,9 @@ Function Set-DbaMaxMemory
     )
     Process
     {
-        if ($SqlServer.length -eq 0 -and $collection -eq $null)
+        if ($SqlInstance.length -eq 0 -and $collection -eq $null)
         {
-            Stop-Function -Silent $Silent -Category InvalidArgument -Message "You must specify a server list source using -SqlServer or you can pipe results from Test-DbaMaxMemory"
+            Stop-Function -Silent $Silent -Category InvalidArgument -Message "You must specify a server list source using -SqlInstance or you can pipe results from Test-DbaMaxMemory"
             return
         }
         
@@ -106,7 +106,7 @@ Function Set-DbaMaxMemory
         
         if ($Collection -eq $null)
         {
-            $Collection = Test-DbaMaxMemory -SqlServer $SqlServer -SqlCredential $SqlCredential
+            $Collection = Test-DbaMaxMemory -SqlInstance $sqlinstance -SqlCredential $SqlCredential
         }
         
         # We ignore errors, because this will error if we pass the same collection items twice.
@@ -117,7 +117,7 @@ Function Set-DbaMaxMemory
         {
             if ($row.server -eq $null)
             {
-                $row = Test-DbaMaxMemory -sqlserver $row
+                $row = Test-DbaMaxMemory -SqlInstance $row
                 $row | Add-Member -NotePropertyName OldMaxValue -NotePropertyValue 0
             }
             
@@ -125,14 +125,14 @@ Function Set-DbaMaxMemory
             
             try
             {
-                $server = Connect-SqlServer -SqlServer $row.server -SqlCredential $SqlCredential -ErrorAction Stop
+                $server = Connect-SqlInstance -SqlInstance $row.server -SqlCredential $SqlCredential -ErrorAction Stop
             }
             catch
             {
                 Stop-Function -Message "Can't connect to $($row.server) or access denied. Skipping." -Silent $Silent -Category ConnectionError -InnerErrorRecord $_ -Target $row -Continue
             }
             
-            if (!(Test-SqlSa -SqlServer $server))
+            if (!(Test-SqlSa -SqlInstance $server))
             {
                 Stop-Function -Message "Not a sysadmin on $($row.server). Skipping." -Silent $Silent -Category PermissionDenied -InnerErrorRecord $_ -Target $row -Continue
             }
@@ -147,7 +147,7 @@ Function Set-DbaMaxMemory
                     
                     if ($row.RecommendedMB -eq 0 -or $row.RecommendedMB -eq $null)
                     {
-                        $maxmem = (Test-DbaMaxMemory -SqlServer $server).RecommendedMB
+                        $maxmem = (Test-DbaMaxMemory -SqlInstance $server).RecommendedMB
                         Write-Warning $maxmem
                         $server.Configuration.MaxServerMemory.ConfigValue = $maxmem
                     }

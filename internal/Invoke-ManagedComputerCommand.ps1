@@ -8,34 +8,20 @@ Internal command
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ComputerName")]
-		[object]$Server,
+		[Alias("Server")]
+		[dbainstanceparameter]$ComputerName,
 		[System.Management.Automation.PSCredential]$Credential,
 		[Parameter(Mandatory = $true)]
 		[scriptblock]$ScriptBlock,
 		[string[]]$ArgumentList,
-		[switch]$Silent
+		[switch]$Silent # Left in for legacy but this command needs to throw
 	)
 	
-	if ($Server.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
-	{
-		$server = $server.ComputerNamePhysicalNetBIOS
-	}
+	$ComputerName = $ComputerName.ComputerName
 	
-	# Remove instance name if it as passed
-	$server = ($Server.Split("\"))[0]
+	Test-RunAsAdmin -ComputerName $ComputerName
 	
-	if ($Server -eq $env:COMPUTERNAME -or $Server -eq 'localhost' -or $Server -eq '.')
-	{
-		$Server = 'localhost'
-		if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
-		{
-			Stop-Function -Message "This command must be run with elevated privileges for the local host."
-			return
-		}
-	}
-	
-	$ipaddr = (Test-Connection $server -Count 1 -ErrorAction Stop).Ipv4Address
+	$ipaddr = (Test-Connection $ComputerName -Count 1 -ErrorAction Stop).Ipv4Address
 	$ArgumentList += $ipaddr
 		
 	[scriptblock]$setupScriptBlock = {
@@ -57,20 +43,20 @@ Internal command
 	{
 		if ($credential.username -ne $null)
 		{
-			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential
+			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop
 		}
 		else
 		{
-			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList
+			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ErrorAction Stop
 		}
 		
-		Write-Message -Level Verbose -Message "Local connection for $server succeeded"
+		Write-Message -Level Verbose -Message "Local connection for $ComputerName succeeded"
 	}
 	catch
 	{
 		try
 		{
-			Write-Message -Level Verbose -Message "Local connection attempt to $Server failed. Connecting remotely."
+			Write-Message -Level Verbose -Message "Local connection attempt to $ComputerName failed. Connecting remotely."
 			
 			# For surely resolve stuff
 			$hostname = [System.Net.Dns]::gethostentry($ipaddr)
@@ -78,16 +64,15 @@ Internal command
 			
 			if ($credential.username -ne $null)
 			{
-				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ComputerName $hostname
+				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ComputerName $hostname -ErrorAction Stop
 			}
 			else
 			{
-				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname
+				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname -ErrorAction Stop
 			}
 		}
 		catch{
-			Stop-Function -Message "SqlWmi connection failed: $_" -Target $result
-			return
+			throw "SqlWmi connection failed: $_"
 		}
 	}
 	

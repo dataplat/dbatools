@@ -7,7 +7,7 @@ Returns all non idle agent jobs running on the server.
 .DESCRIPTION
 This function returns agent jobs that active on the SQL Server intance when calling the command. The information is gathered the SMO JobServer.jobs and be returned either in detailed or standard format
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a
 collection and recieve pipeline input
 
@@ -31,11 +31,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Get-DbaRunningJob
 
 .EXAMPLE
-Get-DbaRunningJob -SqlServer localhost
+Get-DbaRunningJob -SqlInstance localhost
 Returns any active jobs on the localhost
 
 .EXAMPLE
-Get-DbaRunningJob -SqlServer localhost -Detailed
+Get-DbaRunningJob -SqlInstance localhost -Detailed
 Returns a detailed output of any active jobs on the localhost
 
 .EXAMPLE
@@ -46,8 +46,8 @@ Returns all active jobs on multiple instances piped into the function
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer", "SqlServers")]
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$Detailed
 	)
@@ -57,11 +57,11 @@ Returns all active jobs on multiple instances piped into the function
 	}
 	PROCESS
 	{
-		FOREACH ($Server in $SqlServer)
+		FOREACH ($Server in $SqlInstance)
 		{
 			TRY
 			{
-				$server = Connect-SqlServer -SqlServer $server -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $server -SqlCredential $sqlcredential
 			}
 			CATCH
 			{

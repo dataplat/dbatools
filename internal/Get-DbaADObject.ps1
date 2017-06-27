@@ -71,9 +71,9 @@ Get-DbaADObject -ADObject "contoso\sqlcollaborative" -Type Group
 Searches in the contoso domain for a sqlcollaborative group
 
 .EXAMPLE
-Get-DbaADObject -ADObject "contoso\sqlserver2014$" -Type Group
+Get-DbaADObject -ADObject "contoso\SqlInstance2014$" -Type Group
 
-Searches in the contoso domain for a sqlserver2014 computer (remember the ending $ for computer objects)
+Searches in the contoso domain for a SqlInstance2014 computer (remember the ending $ for computer objects)
 
 .EXAMPLE
 Get-DbaADObject -ADObject "contoso\ctrlb" -Type User -Silent

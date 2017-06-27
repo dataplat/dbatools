@@ -55,7 +55,7 @@ Shows all user owned (non-sa, non-dbo) objects and verbose output
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlInstances")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[string]$Pattern
 	)
@@ -74,7 +74,7 @@ Shows all user owned (non-sa, non-dbo) objects and verbose output
 			try
 			{
 				Write-Verbose "Connecting to $Instance"
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
@@ -265,7 +265,7 @@ Shows all user owned (non-sa, non-dbo) objects and verbose output
 
 			
 			## Loop internal database
-			foreach ($db in $server.Databases | Where-Object { $_.Status -eq "Normal" })
+			foreach ($db in $server.Databases | Where-Object IsAccessible)
 			{
 				Write-Verbose "Gather user owned object in database: $db"
 				##schemas
