@@ -28,6 +28,9 @@ NB: you can pass either Databases or Snapshots
 .PARAMETER AllSnapshots
 Specifies that you want to remove all snapshots from the server
 
+.PARAMETER Force
+Will forcibly kill all running queries that prevent the drop process.
+
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
 
@@ -92,6 +95,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		[parameter(ValueFromPipeline = $true)]
 		[object]$PipelineSnapshot,
 		[switch]$AllSnapshots,
+		[switch]$Force,
 		[switch]$Silent
 	)
 
@@ -110,7 +114,9 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 					Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
 				}
 				try {
-					$server.KillAllProcesses($PipelineSnapshot.SnapshotDb.Name)
+					if ($Force) {
+						$server.KillAllProcesses($PipelineSnapshot.SnapshotDb.Name)
+					}
 					$null = $server.ConnectionContext.ExecuteNonQuery("drop database [$($PipelineSnapshot.SnapshotDb.Name)]")
 					$status = "Dropped"
 				} catch {
@@ -160,8 +166,10 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 				}
 				If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $db")) {
 					try {
-						# cannot drop the snapshot if someone is using it
-						$server.KillAllProcesses($db)
+						if ($Force) {
+							# cannot drop the snapshot if someone is using it
+							$server.KillAllProcesses($db)
+						}
 						$null = $server.ConnectionContext.ExecuteNonQuery("drop database $db")
 						$status = "Dropped"
 					} catch {
