@@ -323,15 +323,15 @@ function Copy-DbaLinkedServer {
 					}
 				}
 
-				Write-Output "Attempting to migrate: $linkedServerName"
+				Write-Message -Level Verbose -Message "Attempting to migrate: $linkedServerName"
 				If ($Pscmdlet.ShouldProcess($destination, "Migrating $linkedServerName")) {
 					try {
 						$sql = $currentLinkedServer.Script() | Out-String
-						Write-Verbose $sql
+						Write-Message -Level Debug -Message $sql
 
 						$destServer.Query($sql)
 						$destServer.LinkedServers.Refresh()
-						Write-Output "$linkedServerName successfully copied"
+						Write-Message -Level Verbose -Message "$linkedServerName successfully copied"
 
 						$copyLinkedServer.Status = "Successful"
 						$copyLinkedServer
@@ -340,8 +340,7 @@ function Copy-DbaLinkedServer {
 						$copyLinkedServer.Status = "Failed"
 						$copyLinkedServer
 
-						Write-Warning "$linkedServerName could not be added to $($destServer.Name)"
-						Write-Warning "Reason: $($_.Exception)"
+						Stop-Function -Message "Issue adding linked server $destServer" -Target $linkedServerName -InnerErrorRecord $_
 						$skiplogins = $true
 					}
 				}
@@ -368,20 +367,19 @@ function Copy-DbaLinkedServer {
 									$copyLinkedServer.Status = "Failed"
 									$copyLinkedServer
 
-									Write-Error "$($login.login) failed to copy"
+									Stop-Function -Message "Failed to copy login" -Target $login -InnerErrorRecord $_
 								}
 							}
 						}
-					}
-					Write-Output "Finished migrating logins for $linkedServerName"
-				}
-			}
-		}
-	}
+					}#end foreach login
+				} #endif skiplogins
+			} #end foreach server
+		}#end Copy-DbaLinkedServers
+	} #end begin
 	process {
 
 		if ($SourceSqlCredential.username -ne $null) {
-			Write-Warning "You are using SQL credentials and this script requires Windows admin access to the source server. Trying anyway."
+			Write-Message -Level Warning -Message "You are using a SQL Credential. Note that this script requires Windows Administrator access on the source server. Attempting with $($SourceSqlCredential.Username)."
 		}
 
 		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
@@ -394,28 +392,31 @@ function Copy-DbaLinkedServer {
 		Invoke-SmoCheck -SqlInstance $destServer
 
 		if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
-			throw "Not a sysadmin on $source. Quitting."
+			Stop-Function -Message "Not a sysadmin on $source. Quitting."
+			return
 		}
 		if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
-			throw "Not a sysadmin on $destination. Quitting."
+			Stop-Function -Message "Not a sysadmin on $destination. Quitting."
+			return
 		}
 
-		Write-Output "Getting NetBios name for $source"
+		Write-Message -Level Verbose -Message "Getting NetBios name for $source"
 		$sourceNetBios = Resolve-NetBiosName $sourceserver
 
-		Write-Output "Checking if remote access is enabled on $source"
+		Write-Message -Level Verbose -Message "Checking if remote access is enabled on $source"
 		winrm id -r:$sourceNetBios 2>$null | Out-Null
 
 		if ($LastExitCode -ne 0) {
-			Write-Warning "Having trouble with accessing PowerShell remotely on $source. Do you have Windows admin access and is PowerShell Remoting enabled? Anyway, good luck! This may work."
+			Write-Message -Level Warning -Message "Having trouble accessing PowerShell remotely on $source. Windows admin access and PowerShell Remoting are required."
 		}
 
-		Write-Output "Checking if Remote Registry is enabled on $source"
+		Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
 		try {
 			Invoke-Command -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
 		}
 		catch {
-			throw "Can't connect to registry on $source. Quitting."
+			Stop-Function -Message "Can't connect to registry on $source. Quitting."
+			return
 		}
 
 		# Magic happens here
