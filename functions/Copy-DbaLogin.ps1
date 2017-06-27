@@ -39,29 +39,29 @@ function Copy-DbaLogin {
 			The login(s) to exclude - this list is autopopulated from the server
 
 		.PARAMETER SyncOnly
-		Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped.
-		Credential removal not currently supported for Syncs. TODO: Application role sync
-
-		.PARAMETER OutFile
-		Calls Export-SqlLogin and exports all logins to a T-SQL formatted file. This does not perform a copy, so no destination is required.
+			Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not exist on the destination, the login will be skipped.
+			Credential removal not currently supported for Syncs. TODO: Application role sync
 
 		.PARAMETER SyncSaName
-		Want to sync up the name of the sa account on the source and destination? Use this switch.
+			Want to sync up the name of the sa account on the source and destination? Use this switch.
 
-		.PARAMETER Force
-		Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
+		.PARAMETER OutFile
+			Calls Export-SqlLogin and exports all logins to a T-SQL formatted file. This does not perform a copy, so no destination is required.
 
-		.PARAMETER WhatIf
-		Shows what would happen if the command were to run. No actions are actually performed.
-
-		.PARAMETER Confirm
-		Prompts you for confirmation before executing any changing operations within the command.
-
-		.PARAMETER pipelogin
-		Takes the parameters required from a login object that has been piped ot the command
+		.PARAMETER PipeLogin
+			Takes the parameters required from a login object that has been piped ot the command
 
 		.PARAMETER LoginRenameHashtable
-		Takes a hash table that will pass to Rename-DbaLogin and update the login and mappings once the copy is completed.
+			Takes a hash table that will pass to Rename-DbaLogin and update the login and mappings once the copy is completed.
+
+		.PARAMETER WhatIf
+			Shows what would happen if the command were to run. No actions are actually performed.
+
+		.PARAMETER Confirm
+			Prompts you for confirmation before executing any changing operations within the command.
+
+		.PARAMETER Force
+			Force drops and recreates logins. Logins that own jobs cannot be dropped at this time.
 
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
@@ -118,13 +118,13 @@ function Copy-DbaLogin {
 		[object[]]$Login,
 		[object[]]$ExcludeLogin,
 		[switch]$SyncOnly,
+		[parameter(ParameterSetName = "Live")]
+		[switch]$SyncSaName,
 		[parameter(ParameterSetName = "File", Mandatory = $true)]
 		[string]$OutFile,
-		[parameter(ParameterSetName = "Live")]
-		[switch]$Force,
-		[switch]$SyncSaName,
 		[object]$PipeLogin,
 		[hashtable]$LoginRenameHashtable,
+		[switch]$Force,
 		[switch]$Silent
 	)
 
