@@ -164,6 +164,7 @@ function Copy-DbaLogin {
 					}
 
 					$copyLoginStatus.Status = "Skipped"
+					$copyLoginStatus.Notes = "Login doing migration"
 					$copyLoginStatus
 					continue
 				}
@@ -181,6 +182,7 @@ function Copy-DbaLogin {
 						}
 
 						$copyLoginStatus.Status = "Skipped"
+						$copyLoginStatus.Notes = "local machine name"
 						$copyLoginStatus
 						continue
 					}
@@ -197,6 +199,7 @@ function Copy-DbaLogin {
 					}
 
 					$copyLoginStatus.Status = "Skipped"
+					$copyLoginStatus.Notes = "Already exist on destination."
 					$copyLoginStatus
 					continue
 				}
@@ -206,6 +209,7 @@ function Copy-DbaLogin {
 						Write-Message -Level Warning -Message "$userName is the destination service account. Skipping drop."
 
 						$copyLoginStatus.Status = "Skipped"
+						$copyLoginStatus.Notes = "Destination service account"
 						$copyLoginStatus
 						continue
 					}
@@ -243,6 +247,7 @@ function Copy-DbaLogin {
 						}
 						catch {
 							$copyLoginStatus.Status = "Failed"
+							$copyLoginStatus.Notes = $_.Exception
 							$copyLoginStatus
 
 							Stop-Function -Message "Could not drop $userName" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
@@ -336,6 +341,7 @@ function Copy-DbaLogin {
 							}
 							catch {
 								$copyLoginStatus.Status = "Failed"
+								$copyLoginStatus.Notes = $_.Exception
 								$copyLoginStatus
 
 								Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
@@ -361,6 +367,7 @@ function Copy-DbaLogin {
 						}
 						catch {
 							$copyLoginStatus.Status = "Failed"
+							$copyLoginStatus.Notes = $_.Exception
 							$copyLoginStatus
 
 							Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
@@ -371,6 +378,7 @@ function Copy-DbaLogin {
 						Write-Message -Level Warning -Message "$($sourceLogin.LoginType) logins not supported. $($sourceLogin.name) skipped."
 
 						$copyLoginStatus.Status = "Skipped"
+						$copyLoginStatus.Notes = "$($sourceLogin.LoginType) not supported"
 						$copyLoginStatus
 
 						continue
@@ -382,6 +390,7 @@ function Copy-DbaLogin {
 						}
 						catch {
 							$copyLoginStatus.Status = "Successful - but could not disable on destination"
+							$copyLoginStatus.Notes = $_.Exception
 							$copyLoginStatus
 
 							Stop-Function -Message "$userName disabled on source, could not be disabled on $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
@@ -393,6 +402,7 @@ function Copy-DbaLogin {
 						}
 						catch {
 							$copyLoginStatus.Status = "Successful - but could not deny login on destination"
+							$copyLoginStatus.Notes = $_.Exception
 							$copyLoginStatus
 
 							Stop-Function -Message "$userName denied login on source, could not be denied login on $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
@@ -418,6 +428,7 @@ function Copy-DbaLogin {
 						catch {
 							$copyLoginStatus.DestinationLogin = $NewLogin
 							$copyLoginStatus.Status = "Failed to rename"
+							$copyLoginStatus.Notes = $_.Exception
 							$copyLoginStatus
 
 							Stop-Function -Message "Issue renaming $userName to $NewLogin" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
