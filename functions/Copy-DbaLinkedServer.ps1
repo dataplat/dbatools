@@ -284,7 +284,7 @@ function Copy-DbaLinkedServer {
 
 				# This does a check to warn of missing OleDbProviderSettings but should only be checked on SQL on Windows
 				if ($destServer.Settings.OleDbProviderSettings.Name.Length -ne 0) {
-					if (!$destServer.Settings.OleDbProviderSettings.Name.Contains($provider) -and !$provider.StartsWith("SQLN")) {
+					if (!$destServer.Settings.OleDbProviderSettings.Name -contains $provider -and !$provider.StartsWith("SQLN")) {
 						Write-Message -Level Warning -Message "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."
 						continue
 					}
