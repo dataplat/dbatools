@@ -180,13 +180,16 @@
     },
     {
         "CommandName":  "Copy-DbaCustomError",
-        "Description":  "By default, all  custom errors are copied. The -CustomError parameter is autopopulated for command-line completion and can be used to copy only specific custom errors.\n\nIf the custom error already exists on the destination, it will be skipped unless -Force is used. Interesting fact, if you drop the us_english version, all the other languages will be dropped for that specific ID as well.\n\nAlso, the us_english version must be created first.",
-        "Tags":  "Migration",
+        "Description":  "By default, all custom errors are copied. The -CustomError parameter is auto-populated for command-line completion and can be used to copy only specific custom errors.\n\nIf the custom error already exists on the destination, it will be skipped unless -Force is used. Interesting fact, if you drop the us_english version, all the other languages will be dropped for that specific ID as well.\n\nAlso, the us_english version must be created first.",
+        "Tags":  [
+                     "Migration",
+                     "CustomError"
+                 ],
         "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Copy-DbaCustomError migrates custom errors (user defined messages) from one SQL Server to another.",
+        "Synopsis":  "Copy-DbaCustomError migrates custom errors (user defined messages), by the customer error ID, from one SQL Server to another.",
         "Name":  "Copy-DbaCustomError",
         "Links":  "https://dbatools.io/Copy-DbaCustomError",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster\r\n\r\nCopies all server custom errors from sqlserver2014a to sqlcluster, using Windows credentials. If custom errors with the \r\nsame name exist on sqlcluster, they will be skipped.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -ServerTrigger 60000 -SourceSqlCredential \r\n$cred -Force\r\n\r\nCopies a single custom error, the custom error with ID number 6000 from sqlserver2014a to sqlcluster, using SQL \r\ncredentials for sqlserver2014a and Windows credentials for sqlcluster. If a custom error with the same name exists on \r\nsqlcluster, it will be updated because -Force was used.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\r\n\r\nShows what would happen if the command were executed using force.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster\r\n\r\nCopies all server custom errors from sqlserver2014a to sqlcluster, using Windows credentials. If custom errors with the \r\nsame name exist on sqlcluster, they will be skipped.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCustomError -Source sqlserver2014a -SourceSqlCredential $scred -Destination sqlcluster \r\n-DestinationSqlCredential $dcred -CustomError 60000 -Force\r\n\r\nCopies a single custom error, the custom error with ID number 60000 from sqlserver2014a to sqlcluster, using SQL \r\ncredentials for sqlserver2014a and Windows credentials for sqlcluster. If a custom error with the same name exists on \r\nsqlcluster, it will be updated because -Force was used.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCustomError -Source slserver2014a -Destination sqlcluster -ExcludeCustomError 60000 -Force\r\n\r\nCopies all the custom errors found on sqlserver2014a, except the custom error with ID number 60000,to sqlcluster. If a \r\ncustom error with the same name exists on sqlcluster, it will be updated because -Force was used.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\r\n\r\nShows what would happen if the command were executed using force.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Copy-DbaDatabase",
@@ -834,14 +837,6 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseFile -SqlInstance sql2016\r\n\r\nWill return an object containing all filegroups and their contained files for every database on the sql2016 SQL Server \r\ninstance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseFile -SqlInstance sql2016 -Database Impromptu\r\n\r\nWill return an object containing all filegroups and their contained files for the Impromptu Database on the sql2016 SQL \r\nServer instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseFile -SqlInstance sql2016 -Database Impromptu, Trading\r\n\r\nWill return an object containing all filegroups and their contained files for the Impromptu and Trading databases on \r\nthe sql2016 SQL Server instance\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Get-DbaDatabaseFreespace",
-        "Description":  "This function returns database file space information for a SQL Instance or group of SQL\nInstances. Information is based on a query against sys.database_files and the FILEPROPERTY\nfunction to query and return information. The function can accept a single instance or\nmultiple instances. By default, only user dbs will be shown, but using the IncludeSystemDBs\nswitch will include system databases\n\nFile free space script borrowed and modified from Glenn Berry\u0027s DMV scripts (http://www.sqlskills.com/blogs/glenn/category/dmv-queries/)",
-        "Synopsis":  "Returns database file space information for database files on a SQL instance.",
-        "Name":  "Get-DbaDatabaseFreespace",
-        "Links":  "https://dbatools.io/Get-DbaDatabaseFreespace",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseFreespace -SqlInstance localhost\r\n\r\nReturns all user database files and free space information for the local host\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseFreespace -SqlInstance localhost | Where-Object {$_.PercentUsed -gt 80}\r\n\r\nReturns all user database files and free space information for the local host. Filters\r\nthe output object by any files that have a percent used of greater than 80%.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e\u0027localhost\u0027,\u0027localhost\\namedinstance\u0027 | Get-DbaDatabaseFreespace\r\n\r\nReturns all user database files and free space information for the localhost and\r\nlocalhost\\namedinstance SQL Server instances. Processes data via the pipeline.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseFreespace -SqlInstance localhost -Database db1, db2\r\n\r\nReturns database files and free space information for the db1 and db2 on localhost.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
         "CommandName":  "Get-DbaDatabaseMasterKey",
         "Description":  "Gets specified database master key",
         "Tags":  [
@@ -862,6 +857,14 @@
         "Name":  "Get-DbaDatabaseSnapshot",
         "Links":  "https://dbatools.io/Get-DbaDatabaseSnapshot",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseSnapshot -SqlInstance sqlserver2014a\r\n\r\nReturns a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting\r\n\r\nReturns information for database snapshots having HR and Accounting as base dbs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot\r\n\r\nReturns information for database snapshots HR_snapshot and Accounting_snapshot\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaDatabaseSpace",
+        "Description":  "This function returns database file space information for a SQL Instance or group of SQL\nInstances. Information is based on a query against sys.database_files and the FILEPROPERTY\nfunction to query and return information. The function can accept a single instance or\nmultiple instances. By default, only user dbs will be shown, but using the IncludeSystemDBs\nswitch will include system databases\n\nFile free space script borrowed and modified from Glenn Berry\u0027s DMV scripts (http://www.sqlskills.com/blogs/glenn/category/dmv-queries/)",
+        "Synopsis":  "Returns database file space information for database files on a SQL instance.",
+        "Name":  "Get-DbaDatabaseSpace",
+        "Links":  "https://dbatools.io/Get-DbaDatabaseSpace",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseSpace -SqlInstance localhost\r\n\r\nReturns all user database files and free space information for the local host\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseSpace -SqlInstance localhost | Where-Object {$_.PercentUsed -gt 80}\r\n\r\nReturns all user database files and free space information for the local host. Filters\r\nthe output object by any files that have a percent used of greater than 80%.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e\u0027localhost\u0027,\u0027localhost\\namedinstance\u0027 | Get-DbaDatabaseSpace\r\n\r\nReturns all user database files and free space information for the localhost and\r\nlocalhost\\namedinstance SQL Server instances. Processes data via the pipeline.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseSpace -SqlInstance localhost -Database db1, db2\r\n\r\nReturns database files and free space information for the db1 and db2 on localhost.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaDatabaseState",
@@ -1283,6 +1286,15 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlService -ComputerName sqlserver2014a\r\n\r\nGets the SQL Server related services on computer sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaSqlService\r\n\r\nGets the SQL Server related services on computers sql1, sql2 and sql3.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlService -ComputerName sql1,sql2 | Out-Gridview\r\n\r\nGets the SQL Server related services on computers sql1 and sql2, and shows them in a grid view.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlService -ComputerName $MyServers -Type SSRS\r\n\r\nGets the SQL Server related services of type \"SSRS\" (Reporting Services) on computers in the variable MyServers.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaSsisEnvironmentVariable",
+        "Description":  "This command gets all variables from specified environment from SSIS Catalog. All sensitive valus are decrypted.\nThe function communicates directly with SSISDB database, \"SQL Server Intergation Services\" service isn\u0027t queried there.\nEach parameter (besides SqlInstance and SqlCredential) acts as the filter to only include or exclude particular element",
+        "Author":  "Bartosz Ratajczyk ( @b_ratajczyk )",
+        "Synopsis":  "This command gets specified SSIS Environment and all its variables",
+        "Name":  "Get-DbaSsisEnvironmentVariable",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -Folder DWH_ETL\r\n\r\nGets variables of \u0027DEV\u0027 environment located in \u0027DWH_ETL\u0027 folder on \u0027localhost\u0027 Server\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -Folder DWH_ETL, DEV2, QA\r\n\r\nGets variables of \u0027DEV\u0027 environment(s) located in folders \u0027DWH_ETL\u0027, \u0027DEV2\u0027 and \u0027QA\u0027 on \u0027localhost\u0027 server\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -FolderExclude DWH_ETL, DEV2, QA\r\n\r\nGets variables of \u0027DEV\u0027 environments located in folders other than \u0027DWH_ETL\u0027, \u0027DEV2\u0027 and \u0027QA\u0027 on \u0027localhost\u0027 server\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV, PROD -Folder DWH_ETL, DEV2, QA\r\n\r\nGets variables of \u0027DEV\u0027 and \u0027PROD\u0027 environment(s) located in folders \u0027DWH_ETL\u0027, \u0027DEV2\u0027 and \u0027QA\u0027 on \u0027localhost\u0027 server\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSsisEnvironmentVariable -SqlInstance localhost -EnvironmentExclude DEV, PROD -Folder DWH_ETL, DEV2, QA\r\n\r\nGets variables of environments other than \u0027DEV\u0027 and \u0027PROD\u0027 located in folders \u0027DWH_ETL\u0027, \u0027DEV2\u0027 and \u0027QA\u0027 on \u0027localhost\u0027 \r\nserver\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSsisEnvironmentVariable -SqlInstance localhost -EnvironmentExclude DEV, PROD -FolderExclude DWH_ETL, \r\nDEV2, QA\r\n\r\nGets variables of environments other than \u0027DEV\u0027 and \u0027PROD\u0027 located in folders other than \u0027DWH_ETL\u0027, \u0027DEV2\u0027 and \u0027QA\u0027 on \r\n\u0027localhost\u0027 server\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003e\u0027localhost\u0027 | Get-DbaSsisEnvironmentVariable -EnvironmentExclude DEV, PROD\r\n\r\nGets all SSIS environments except \u0027DEV\u0027 and \u0027PROD\u0027 from \u0027localhost\u0027 server. The server name comes from pipeline\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 8 --------------------------\r\n\r\nPS C:\\\u003e\u0027SRV1\u0027, \u0027SRV3\u0027 | Get-DbaSsisEnvironmentVariable\r\n\r\nGets all SSIS environments from \u0027SRV1\u0027 and \u0027SRV3\u0027 servers. The server\u0027s names come from pipeline\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 9 --------------------------\r\n\r\nPS C:\\\u003e\u0027SRV1\u0027, \u0027SRV2\u0027 | Get-DbaSsisEnvironmentVariable DEV | Out-GridView\r\n\r\nGets all variables from \u0027DEV\u0027 Environment(s) on servers \u0027SRV1\u0027 and \u0027SRV2\u0027 and outputs it as the GridView. \r\nThe server names come from the pipeline.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 10 --------------------------\r\n\r\nPS C:\\\u003e\u0027localhost\u0027 | Get-DbaSsisEnvironmentVariable -EnvironmentExclude DEV, PROD | Select-Object -Property Name, Value \r\n| Where-Object {$_.Name -match \u0027^a\u0027} | Out-GridView\r\n\r\nGets all variables from Environments other than \u0027DEV\u0027 and \u0027PROD\u0027 on \u0027localhost\u0027 server, \r\nselects Name and Value properties for variables that names start with letter \u0027a\u0027 and outputs it as the GridView\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaStartupParameter",
         "Description":  "Displays values for a detailed list of SQL Server Startup Parameters including Master Data Path, Master Log path, Error Log, Trace Flags, Parameter String and much more.\n\nThis command relies on remote Windows Server (SQL WMI/WinRm) access. You can pass alternative Windows credentials by using the -Credential parameter.\n\nSee https://msdn.microsoft.com/en-us/library/ms190737.aspx for more information.",
         "Tags":  [
@@ -1431,7 +1443,7 @@
     },
     {
         "CommandName":  "Invoke-DbaLogShipping",
-        "Description":  "Invoke-DbaLogShipping helps to easily set up log shipping for one or more databases.",
+        "Description":  "Invoke-DbaLogShipping helps to easily set up log shipping for one or more databases.\n\nThis function will make a lot of decisions for you assuming you want default values like a daily interval for the schedules with a 15 minute interval on the day.\nThere are some settings that cannot be made by the function and they need to be prepared before the function is executed.\n\nThe following settings need to be made before log shipping can be initiated:\n- Backup destination (the folder and the privileges)\n- Copy destination (the folder and the privileges)\n\n* Privileges\nMake sure your agent service on both the primary and the secondary instance is an Active Directory account.\nAlso have the credentials ready to set the folder permissions\n\n** Network share\nThe backup destination needs to be shared and have the share privileges of FULL CONTROL to Everyone.\n\n** NTFS permissions\nThe backup destination must have at least read/write permissions for the primary instance agent account. \nThe backup destination must have at least read permissions for the secondary instance agent account.\nThe copy destination must have at least read/write permission for the secondary instance agent acount.",
         "Tags":  [
                      "Log shippin",
                      "disaster recovery"
@@ -1439,7 +1451,7 @@
         "Synopsis":  "Invoke-DbaLogShipping sets up log shipping for one or more databases",
         "Name":  "Invoke-DbaLogShipping",
         "Links":  "https://dbatools.io/Invoke-DbaLogShipping",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaLogShipping -SourceSqlServer sql1 -DestinationSqlServer sql2 -Database db1 -BackupNetworkPath \r\n\"\\\\sql1\\logshipping\" -BackupLocalPath \"D:\\Data\\logshipping\" -BackupScheduleFrequencyType \"daily\" \r\n-BackupScheduleFrequencyInterval 1 -CompressBackup -CopyScheduleFrequencyType daily -CopyScheduleFrequencyInterval 1 \r\n-GenerateFullBackup -RestoreScheduleFrequencyType daily -RestoreScheduleFrequencyInterval 1 -SecondaryDatabaseSuffix \r\n\"DR\" -CopyDestinationFolder \"\\\\sql2\\logshippingdest\" -Force\r\n\r\nDoes stuff \u003cinsert better explanation here\u003e\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaLogShipping -SourceSqlInstance sql1 -DestinationSqlInstance sql2 -Database db1 -BackupNetworkPath \r\n\\\\sql1\\logshipping -BackupLocalPath D:\\Data\\logshipping -BackupScheduleFrequencyType daily \r\n-BackupScheduleFrequencyInterval 1 -CompressBackup -CopyScheduleFrequencyType daily -CopyScheduleFrequencyInterval 1 \r\n-GenerateFullBackup -RestoreScheduleFrequencyType daily -RestoreScheduleFrequencyInterval 1 -SecondaryDatabaseSuffix DR \r\n-CopyDestinationFolder \\\\sql2\\logshippingdest -Force\r\n\r\nSets up log shiping for database \"db1\" with the backup path to a network share allowing local backups. \r\nIt creates daily schedules for the backup, copy and restore job with all the defaults to be executed every 15 minutes \r\ndaily.\r\nThe secondary databse will be called \"db1_LS\".\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaLogShipping -SourceSqlInstance sql1 -DestinationSqlInstance sql2 -Database db1 -BackupNetworkPath \r\n\\\\sql1\\logshipping -GenerateFullBackup\r\n\r\nSets up log shipping with all defaults except that a backup file is generated.\r\nThe script will show a message that the copy destination has not been supplied and asks if you want to use the default \r\nwhich would be the backup directory of the secondary server with the folder \"logshipping\" i.e. \r\n\"D:\\SQLBackup\\Logshiping\".\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Invoke-DbaSqlCmd",
@@ -1502,7 +1514,7 @@
     },
     {
         "CommandName":  "New-DbaAgentSchedule",
-        "Description":  "New-DbaAgentSchedule will help create a new schedule for a job. It does not attach the schedule to a job.",
+        "Description":  "New-DbaAgentSchedule will help create a new schedule for a job. \nIf the job parameter is not supplied the schedule will not be attached to a job.",
         "Tags":  [
                      "Agent",
                      "Job",
@@ -1511,7 +1523,7 @@
         "Synopsis":  "New-DbaAgentSchedule creates a new schedule in the msdb database.",
         "Name":  "New-DbaAgentSchedule",
         "Links":  "https://dbatools.io/New-DbaAgentSchedule",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -FrequencyType Daily -FrequencyInterval 1 \r\n-Force 1\r\n\r\nCreates a schedule for the job with a daily frequency every day. It also assumes default values for the start date, \r\nstart time, end date and end time.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -ScheduleName weekly -FrequencyType Weekly \r\n-FrequencyInterval Monday, Wednesday, Friday -Force 1\r\n\r\nCreates a schedule for the job with a daily frequency every day. It also assumes default values for the start date, \r\nstart time, end date and end time.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName daily -StartDate 20170530 -StartTime 110000 \r\n-EndTime 150000 -FrequencyType Daily -FrequencyInterval 1 -Force 1\r\n\r\nCreate a daily schedule that starts on the May 30th on 11 AM and ends on 3 PM.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1 -ScheduleName daily -FrequencyType Daily -FrequencyInterval 1 \r\n-Force 1\r\n\r\nCreates a schedule for the job with a daily frequency every day on multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1, Job2, Job3 -ScheduleName daily -FrequencyType Daily \r\n-FrequencyInterval 1 -Force 1\r\n\r\nCreates a schedule for the job with a daily frequency every day on multiple servers for multiple jobs using pipeline\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -Schedule daily -FrequencyType Daily -FrequencyInterval 1 -Force\r\n\r\nCreates a schedule for the job with a daily frequency every day. It also assumes default values for the start date, \r\nstart time, end date and end time.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -Schedule weekly -FrequencyType Weekly \r\n-FrequencyInterval Monday, Wednesday, Friday -Force\r\n\r\nCreates a schedule for the job with a daily frequency every day. It also assumes default values for the start date, \r\nstart time, end date and end time.\r\nThe force will remove any existing schedules that have the same name\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -Schedule daily -StartDate 20170530 -StartTime 110000 -EndTime \r\n150000 -FrequencyType Daily -FrequencyInterval 1\r\n\r\nCreate a daily schedule that starts on the May 30th on 11 AM and ends on 3 PM.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1 -Schedule daily -FrequencyType Daily -FrequencyInterval 1\r\n\r\nCreates a schedule for the job with a daily frequency every day on multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1, Job2, Job3 -Schedule daily -FrequencyType Daily \r\n-FrequencyInterval 1\r\n\r\nCreates a schedule for the job with a daily frequency every day on multiple servers for multiple jobs using pipe line\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Schedule daily -FrequencyType Daily -FrequencyInterval 1\r\n\r\nCreates a schedule that\u0027s not connected to a job\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "New-DbaCmConnection",
@@ -1678,7 +1690,7 @@
     },
     {
         "CommandName":  "Remove-DbaAgentJob",
-        "Description":  "Remove-DbaAgentJob removes a job in the SQL Server Agent.",
+        "Description":  "Remove-DbaAgentJob removes a a job in the SQL Server Agent.",
         "Tags":  [
                      "Agent",
                      "Job"
@@ -1686,7 +1698,7 @@
         "Synopsis":  "Remove-DbaAgentJob removes a job.",
         "Name":  "Remove-DbaAgentJob",
         "Links":  "https://dbatools.io/Remove-DbaAgentJob",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJob -SqlInstance sql1 -Job Job1\r\n\r\nRemoves the job from the instance with the name Job1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepHistory\r\n\r\nRemoves the job but keeps the history\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepUnusedSchedule\r\n\r\nRemoves the job but keeps the unused schedules\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1\r\n\r\nRemoves the job from multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | Remove-DbaAgentJob -Job Job1\r\n\r\nRemoves the job from multiple servers using pipeline\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJob -SqlInstance sql1 -Job Job1\r\n\r\nRemoves the job from the instance with the name Job1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepHistory\r\n\r\nRemoves the job but keeps the history\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepUnusedSchedule\r\n\r\nRemoves the job but keeps the unused schedules\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1\r\n\r\nRemoves the job from multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | Remove-DbaAgentJob -Job Job1\r\n\r\nRemoves the job from multiple servers using pipe line\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Remove-DbaAgentJobStep",
@@ -1703,7 +1715,7 @@
     },
     {
         "CommandName":  "Remove-DbaAgentSchedule",
-        "Description":  "Remove-DbaAgentJobSchedule removes a job schedule in the SQL Server Agent.",
+        "Description":  "Remove-DbaAgentJobSchedule removes a a job in the SQL Server Agent.",
         "Tags":  [
                      "Agent",
                      "Job",
@@ -1712,7 +1724,7 @@
         "Synopsis":  "Remove-DbaAgentJobSchedule removes a job schedule.",
         "Name":  "Remove-DbaAgentSchedule",
         "Links":  "https://dbatools.io/Remove-DbaAgentJobSchedule",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName weekly\r\n\r\nRemove the job schedule weekly from the job\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -ScheduleName weekly -Force\r\n\r\nRemove the job schedule weekly from the job even if the schedule is being used by another job.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -ScheduleName \u0027daily\u0027\r\n\r\nRemove the job schedule for multiple jobs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, Job3 -ScheduleName \u0027daily\u0027\r\n\r\nRemove the job schedule on multiple servers for multiple jobs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | Remove-DbaAgentSchedule -Job Job1, Job2, Job3 -ScheduleName \u0027daily\u0027\r\n\r\nRemove the job schedule on multiple servers using pipeline\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly\r\n\r\nRemove the schedule weekly\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly -Force\r\n\r\nRemove the schedule weekly from the job even if the schedule is being used by another job.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule daily, weekly\r\n\r\nRemove multiple schedule\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Schedule daily, weekly\r\n\r\nRemove the schedule on multiple servers for multiple scheukes\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | Remove-DbaAgentSchedule -Schedule daily, weekly\r\n\r\nRemove the schedule on multiple servers using pipe line\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Remove-DbaBackup",
@@ -1957,7 +1969,7 @@
         "Synopsis":  "Set-DbaAgentJob updates a job.",
         "Name":  "Set-DbaAgentJob",
         "Links":  "https://dbatools.io/Set-DbaAgentJob",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob sql1 -Job Job1 -Disabled\r\n\r\nChanges the job to disabled\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob sql1 -Job Job1 -OwnerLogin user1\r\n\r\nChanges the owner of the job\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1 -Job Job1 -EventLogLevel OnSuccess\r\n\r\nChanges the job and sets the notification to write to the Windows Application event log on success\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1 -Job Job1 -EmailLevel OnFailure -EmailOperator dba\r\n\r\nChanges the job and sets the notification to send an e-mail to the e-mail operator\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1 -Job Job1, Job2, Job3 -Enabled\r\n\r\nChanges multiple jobs to enabled\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, Job3 -Enabled\r\n\r\nChanges multiple jobs to enabled on multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1 -Job Job1 -Description \u0027Just another job\u0027 -Whatif\r\n\r\nDoesn\u0027t Change the job but shows what would happen.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 8 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job \u0027Job One\u0027 -Description \u0027Job One\u0027\r\n\r\nChanges a job with the name \"Job1\" on multiple servers to have another description\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 9 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | Set-DbaAgentJob -Job Job1 -Description \u0027Job One\u0027\r\n\r\nChanges a job with the name \"Job1\" on multiple servers to have another description using pipeline\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob sql1 -Job Job1 -Disabled\r\n\r\nChanges the job to disabled\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob sql1 -Job Job1 -OwnerLogin user1\r\n\r\nChanges the owner of the job\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1 -Job Job1 -EventLogLevel OnSuccess\r\n\r\nChanges the job and sets the notification to write to the Windows Application event log on success\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1 -Job Job1 -EmailLevel OnFailure -EmailOperator dba\r\n\r\nChanges the job and sets the notification to send an e-mail to the e-mail operator\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1 -Job Job1, Job2, Job3 -Enabled\r\n\r\nChanges multiple jobs to enabled\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, Job3 -Enabled\r\n\r\nChanges multiple jobs to enabled on multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1 -Job Job1 -Description \u0027Just another job\u0027 -Whatif\r\n\r\nDoesn\u0027t Change the job but shows what would happen.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 8 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job \u0027Job One\u0027 -Description \u0027Job One\u0027\r\n\r\nChanges a job with the name \"Job1\" on multiple servers to have another description\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 9 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | Set-DbaAgentJob -Job Job1 -Description \u0027Job One\u0027\r\n\r\nChanges a job with the name \"Job1\" on multiple servers to have another description using pipe line\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-DbaAgentJobOutputFile",
@@ -2458,686 +2470,5 @@
         "Name":  "Write-DbaDataTable",
         "Links":  "https://dbatools.io/Write-DbaDataTable",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$datatable = Import-Csv C:\\temp\\customers.csv | Out-DbaDataTable\r\n\r\nWrite-DbaDataTable -SqlInstance sql2014 -InputObject $datatable -Table mydb.dbo.customers\r\n\r\nQuickly and efficiently performs a bulk insert of all the data in customers.csv into Database: mydb, schema: dbo, \r\ntable: customers\r\nShows progress as rows are inserted. If table does not exist, import is halted.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$datatable = Import-Csv C:\\temp\\customers.csv | Out-DbaDataTable\r\n\r\n$datatable | Write-DbaDataTable -SqlInstance sql2014 -Table mydb.dbo.customers\r\n\r\nPerforms row by row insert. Super slow. No progress bar. Don\u0027t do this. Use -InputObject instead.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$datatable = Import-Csv C:\\temp\\customers.csv | Out-DbaDataTable\r\n\r\nWrite-DbaDataTable -SqlInstance sql2014 -InputObject $datatable -Table mydb.dbo.customers -AutoCreateTable\r\n\r\nQuickly and efficiently performs a bulk insert of all the data. If mydb.dbo.customers does not exist, it will be \r\ncreated with inefficient but forgiving datatypes.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$datatable = Import-Csv C:\\temp\\customers.csv | Out-DbaDataTable\r\n\r\nWrite-DbaDataTable -SqlInstance sql2014 -InputObject $datatable -Table mydb.dbo.customers -Truncate\r\n\r\nQuickly and efficiently performs a bulk insert of all the data. Prompts to confirm that truncating mydb.dbo.customers \r\nprior to import is desired.\r\nPrompts again to perform the import. Answer A for Yes to All.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e$datatable = Import-Csv C:\\temp\\customers.csv | Out-DbaDataTable\r\n\r\nWrite-DbaDataTable -SqlInstance sql2014 -InputObject $datatable -Database mydb -Table customers -KeepNulls\r\n\r\nQuickly and efficiently performs a bulk insert of all the data into mydb.dbo.customers -- since Schema was not \r\nspecified, dbo was used.\r\n\r\nPer Microsoft, KeepNulls will \"Preserve null values in the destination table regardless of the settings for default \r\nvalues. When not specified, null values are replaced by default values where applicable.\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e$process = Get-Process | Out-DbaDataTable\r\n\r\nWrite-DbaDataTable -InputObject $process -SqlInstance sql2014 -Database mydb -Table myprocesses -AutoCreateTable\r\n\r\nCreates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server \r\ndata types. After the table is created a bulk insert is performed to add process information into the table.\r\n\r\nThis is a good example of the type conversion in action. All process properties are converted, including special types \r\nlike TimeSpan. Script properties are resolved before the type conversion starts thanks to Out-DbaDataTable.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlAgentCategory",
-        "Description":  "By default, all SQL Agent categories for Jobs, Operators and Alerts are copied.\n\nThe -OperatorCategories parameter is autopopulated for command-line completion and can be used to copy only specific operator categories.\nThe -AgentCategories parameter is autopopulated for command-line completion and can be used to copy only specific agent categories.\nThe -JobCategories parameter is autopopulated for command-line completion and can be used to copy only specific job categories.\n\nIf the category already exists on the destination, it will be skipped unless -Force is used.",
-        "Tags":  [
-                     "Migration",
-                     "Agent"
-                 ],
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Copy-DbaAgentCategory migrates SQL Agent categories from one SQL Server to another. This is similar to sp_add_category.\n\nhttps://msdn.microsoft.com/en-us/library/ms181597.aspx",
-        "Name":  "Copy-DbaAgentCategory",
-        "Links":  "https://dbatools.io/Copy-DbaAgentCategory",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster\r\n\r\nCopies all operator categories from sqlserver2014a to sqlcluster, using Windows credentials. If operator categories \r\nwith the same name exist on sqlcluster, they will be skipped.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -OperatorCategory PSOperator \r\n-SourceSqlCredential $cred -Force\r\n\r\nCopies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster, using SQL \r\ncredentials for sqlserver2014a and Windows credentials for sqlcluster. If a operator category with the same name exists \r\non sqlcluster, it will be dropped and recreated because -Force was used.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\r\n\r\nShows what would happen if the command were executed using force.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlAlert",
-        "Description":  "By default, all alerts are copied. The -Alert parameter is autopopulated for command-line completion and can be used to copy only specific alerts.\n\nIf the alert already exists on the destination, it will be skipped unless -Force is used.",
-        "Tags":  [
-                     "Migration",
-                     "Agent"
-                 ],
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Copy-DbaAgentAlert migrates alerts from one SQL Server to another.",
-        "Name":  "Copy-DbaAgentAlert",
-        "Links":  "https://dbatools.io/Copy-DbaAgentAlert",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster\r\n\r\nCopies all alerts from sqlserver2014a to sqlcluster, using Windows credentials. If alerts with the same name exist on \r\nsqlcluster, they will be skipped.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -Alert PSAlert -SourceSqlCredential $cred \r\n-Force\r\n\r\nCopies a single alert, the PSAlert alert from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a \r\nand Windows credentials for sqlcluster. If a alert with the same name exists on sqlcluster, it will be dropped and \r\nrecreated because -Force was used.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\r\n\r\nShows what would happen if the command were executed using force.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlAudit",
-        "Description":  null,
-        "Synopsis":  [
-                         "Copy-DbaAudit",
-                         "Copy-DbaAuditSpecification"
-                     ],
-        "Name":  [
-                     "Copy-SqlAudit",
-                     "Copy-SqlAuditSpecification"
-                 ],
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Copy-SqlAuditSpecification",
-        "Description":  null,
-        "Synopsis":  "Copy-DbaAuditSpecification",
-        "Name":  "Copy-SqlAuditSpecification",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Copy-SqlBackupDevice",
-        "Description":  "Backups are migrated using Admin shares.  If destination directory does not exist, SQL Server\u0027s default backup directory will be used.\n\nIf backup device with same name exists on destination, it will not be dropped and recreated unless -Force is used.",
-        "Tags":  [
-                     "Migration",
-                     "DisasterRecovery",
-                     "Backup"
-                 ],
-        "Synopsis":  "Copies backup devices one by one. Copies both SQL code and the backup file itself.",
-        "Name":  "Copy-DbaBackupDevice",
-        "Links":  "https://dbatools.io/Copy-DbaBackupDevice",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster\r\n\r\nCopies all server backup devices from sqlserver2014a to sqlcluster, using Windows credentials. If backup devices with \r\nthe same name exist on sqlcluster, they will be skipped.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster -BackupDevice backup01 -SourceSqlCredential \r\n$cred -Force\r\n\r\nCopies a single backup device, backup01, from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a\r\nand Windows credentials for sqlcluster. If a backup device with the same name exists on sqlcluster, it will be dropped \r\nand recreated because -Force was used.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaBackupDevice -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\r\n\r\nShows what would happen if the command were executed using force.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlCentralManagementServer",
-        "Description":  "Copy-DbaCentralManagementServer copies all groups, subgroups, and server instances from one SQL Server to another.",
-        "Tags":  "Migration",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Migrates SQL Server Central Management groups and server instances from one SQL Server to another.",
-        "Name":  "Copy-DbaCentralManagementServer",
-        "Links":  "https://dbatools.io/Copy-DbaCentralManagementServer",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster\r\n\r\nIn the above example, all groups, subgroups, and server instances are copied from sqlserver\u0027s Central Management Server \r\nto sqlcluster\u0027s Central Management Server.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -ServerGroup Group1,Group3\r\n\r\nIn the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from \r\nsqlserver to sqlcluster.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -ServerGroup Group1,Group3 \r\n-SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential\r\n\r\nIn the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from \r\nsqlserver to sqlcluster. When adding sql instances to sqlcluster, if the server name of the migrating instance is \r\n\"sqlcluster\", it will be switched to \"sqlserver\". If SwitchServerName is not specified, \"sqlcluster\" will be skipped.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlCredential",
-        "Description":  "By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another, while maintaining username and password.\n\nCredit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/\nLicense: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause",
-        "Tags":  [
-                     "WSMan",
-                     "Migration"
-                 ],
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another, while maintaining Credential passwords.",
-        "Name":  "Copy-DbaCredential",
-        "Links":  "https://dbatools.io/Copy-DbaCredential",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCredential -Source sqlserver2014a -Destination sqlcluster\r\n\r\nDescription\r\nCopies all SQL Server Credentials on sqlserver2014a to sqlcluster. If credentials exist on destination, they will be \r\nskipped.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCredential -Source sqlserver2014a -Destination sqlcluster -CredentialIdentity \"PowerShell Proxy Account\" \r\n-Force\r\n\r\nDescription\r\nCopies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the credential \r\nalready exists on the destination, it will be dropped and recreated.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlCustomError",
-        "Description":  "By default, all  custom errors are copied. The -CustomError parameter is autopopulated for command-line completion and can be used to copy only specific custom errors.\n\nIf the custom error already exists on the destination, it will be skipped unless -Force is used. Interesting fact, if you drop the us_english version, all the other languages will be dropped for that specific ID as well.\n\nAlso, the us_english version must be created first.",
-        "Tags":  "Migration",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Copy-DbaCustomError migrates custom errors (user defined messages) from one SQL Server to another.",
-        "Name":  "Copy-DbaCustomError",
-        "Links":  "https://dbatools.io/Copy-DbaCustomError",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster\r\n\r\nCopies all server custom errors from sqlserver2014a to sqlcluster, using Windows credentials. If custom errors with the \r\nsame name exist on sqlcluster, they will be skipped.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -ServerTrigger 60000 -SourceSqlCredential \r\n$cred -Force\r\n\r\nCopies a single custom error, the custom error with ID number 6000 from sqlserver2014a to sqlcluster, using SQL \r\ncredentials for sqlserver2014a and Windows credentials for sqlcluster. If a custom error with the same name exists on \r\nsqlcluster, it will be updated because -Force was used.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\r\n\r\nShows what would happen if the command were executed using force.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlDatabase",
-        "Description":  "This script provides the ability to migrate databases using detach/copy/attach or backup/restore. This script works with named instances, clusters and Sql Express.\n\nBy default, databases will be migrated to the destination Sql Server\u0027s default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.\n\nTHIS CODE IS PROVIDED \"AS IS\", WITH NO WARRANTIES.",
-        "Tags":  [
-                     "Migration",
-                     "DisasterRecovery",
-                     "Backup",
-                     "Restore"
-                 ],
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Migrates Sql Server databases from one Sql Server to another.",
-        "Name":  "Copy-DbaDatabase",
-        "Links":  "https://dbatools.io/Copy-DbaDatabase",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaDatabase -Source sqlserver2014a -Destination sqlserver2014b -Database TestDB -BackupRestore \r\n-NetworkShare \\\\fileshare\\sql\\migration\r\n\r\nMigrates a single user database TestDB using Backup and restore from instance sqlserver2014a to sqlserver2014b. Backup \r\nfiles are stored in \\\\fileshare\\sql\\migration.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaDatabase -Source sqlserver2014a -Destination sqlcluster -DetachAttach -Reattach\r\n\r\nDatabases will be migrated from sqlserver2014a to sqlcluster using the detach/copy files/attach method.The following \r\nwill be perfomed: kick all users out of the database, detach all data/log files, move files across the network over an \r\nadmin share (\\\\SqlSERVER\\M$\\MSSql...), attach file on destination server, reattach at source. If the database files \r\n(*.mdf, *.ndf, *.ldf) on *destination* exist and aren\u0027t in use, they will be overwritten.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaDatabase -Source sqlserver2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs \r\n-IncludeSupportDbs -Force -BackupRestore -NetworkShare \\\\fileshare\\sql\\migration\r\n\r\nMigrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored \r\nin \\\\fileshare\\sql\\migration. If the database exists on the destination, it will be dropped prior to attach.\r\n\r\nIt also includes the support databases (ReportServer, ReportServerTempDb, distribution).\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlDatabaseAssembly",
-        "Description":  "By default, all assemblies are copied. The -Assemblies parameter is autopopulated for command-line completion and can be used to copy only specific assemblies.\n\nIf the assembly already exists on the destination, it will be skipped unless -Force is used.\n\nThis script does not yet copy dependents.",
-        "Tags":  [
-                     "Migration",
-                     "Assembly"
-                 ],
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Copy-DbaDatabaseAssembly migrates assemblies from one SQL Server to another.",
-        "Name":  "Copy-DbaDatabaseAssembly",
-        "Links":  "http://dbatools.io/Get-SqlDatabaseAssembly",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaDatabaseAssembly -Source sqlserver2014a -Destination sqlcluster\r\n\r\nCopies all assemblies from sqlserver2014a to sqlcluster, using Windows credentials. If assemblies with the same name \r\nexist on sqlcluster, they will be skipped.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaDatabaseAssembly -Source sqlserver2014a -Destination sqlcluster -Assembly dbname.assemblyname, \r\ndbname3.anotherassembly -SourceSqlCredential $cred -Force\r\n\r\nCopies two assemblies, the dbname.assemblyname and dbname3.anotherassembly, from sqlserver2014a to sqlcluster, using \r\nSQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a assembly with the same name exists on \r\nsqlcluster, it will be dropped and recreated because -Force was used.\r\n\r\nIn this example, anotherassembly will be copied to the dbname3 database on the server \"sqlcluster\".\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaThing -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\r\n\r\nShows what would happen if the command were executed using force.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlDatabaseMail",
-        "Description":  "By default, all mail configurations for Profiles, Accounts, Mail Servers and Configs are copied.\n\nThe -Profiles parameter is autopopulated for command-line completion and can be used to copy only specific mail profiles.\nThe -Accounts parameter is autopopulated for command-line completion and can be used to copy only specific mail accounts.\nThe -mailServers parameter is autopopulated for command-line completion and can be used to copy only specific mail servers.",
-        "Tags":  [
-                     "Migration",
-                     "Mail"
-                 ],
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Migrates Mail Profiles, Accounts, Mail Servers and Mail Server Configs from one SQL Server to another.",
-        "Name":  "Copy-DbaDatabaseMail",
-        "Links":  "https://dbatools.io/Copy-DbaDatabaseMail",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaDatabaseMail -Source sqlserver2014a -Destination sqlcluster\r\n\r\nCopies all database mail objects from sqlserver2014a to sqlcluster, using Windows credentials. If database mail objects \r\nwith the same name exist on sqlcluster, they will be skipped.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaDatabaseMail -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred\r\n\r\nCopies all database mail objects from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and \r\nWindows credentials for sqlcluster.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaDatabaseMail -Source sqlserver2014a -Destination sqlcluster -WhatIf\r\n\r\nShows what would happen if the command were executed.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaDatabaseMailj -Source sqlserver2014a -Destination sqlcluster -Silent:$true\r\n\r\nPerforms execution of function, but disables output of all messages\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlDataCollector",
-        "Description":  null,
-        "Synopsis":  "Copy-DbaDataCollector",
-        "Name":  "Copy-SqlDataCollector",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Copy-SqlEndpoint",
-        "Description":  "By default, all endpoints are copied. The -Endpoints parameter is autopopulated for command-line completion and can be used to copy only specific endpoints.\n\nIf the endpoint already exists on the destination, it will be skipped unless -Force is used.",
-        "Tags":  [
-                     "Migration",
-                     "Endpoint"
-                 ],
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Copy-DbaEndpoint migrates server endpoints from one SQL Server to another.",
-        "Name":  "Copy-DbaEndpoint",
-        "Links":  "https://dbatools.io/Copy-DbaEndpoint",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster\r\n\r\nCopies all server endpoints from sqlserver2014a to sqlcluster, using Windows credentials. If endpoints with the same \r\nname exist on sqlcluster, they will be skipped.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaEndpoint -Source sqlserver2014a -SourceSqlCredential $cred -Destination sqlcluster -Endpoint tg_noDbDrop \r\n-Force\r\n\r\nCopies a single endpoint, the tg_noDbDrop endpoint from sqlserver2014a to sqlcluster, using SQL credentials for \r\nsqlserver2014a and Windows credentials for sqlcluster. If an endpoint with the same name exists on sqlcluster, it will \r\nbe dropped and recreated because -Force was used.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\r\n\r\nShows what would happen if the command were executed using force.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlExtendedEvent",
-        "Description":  "By default, all non-system extended events are migrated. If the event already exists on the destination, it will be skipped unless -Force is used.\n\nThe -Session parameter is autopopulated for command-line completion and can be used to copy only specific objects.",
-        "Tags":  [
-                     "Migration",
-                     "ExtendedEvent",
-                     "XEvent"
-                 ],
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Migrates SQL Extended Event Sessions except the two default sessions, AlwaysOn_health and system_health.",
-        "Name":  "Copy-DbaExtendedEvent",
-        "Links":  "https://dbatools.io/Copy-DbaExtendedEvent",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster\r\n\r\nCopies all extended event sessions from sqlserver2014a to sqlcluster, using Windows credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred\r\n\r\nCopies all extended event sessions from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and \r\nWindows credentials for sqlcluster.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -WhatIf\r\n\r\nShows what would happen if the command were executed.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaExtendedEvent -Source sqlserver2014a -Destination sqlcluster -XeSession CheckQueries, \r\nMonitorUserDefinedException\r\n\r\nCopies two Extended Events, CheckQueries and MonitorUserDefinedException, from sqlserver2014a to sqlcluster.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlJob",
-        "Description":  null,
-        "Synopsis":  [
-                         "Copy-SqlServerAgent",
-                         "Copy-DbaJob"
-                     ],
-        "Name":  [
-                     "Copy-SqlJobServer",
-                     "Copy-SqlJob"
-                 ],
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Copy-SqlJobServer",
-        "Description":  null,
-        "Synopsis":  "Copy-SqlServerAgent",
-        "Name":  "Copy-SqlJobServer",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Copy-SqlLinkedServer",
-        "Description":  "By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Linked Servers from one server to another, while maintaining username and password.\n\nCredit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/\nLicense: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause\n\nTHIS CODE IS PROVIDED \"AS IS\", WITH NO WARRANTIES.",
-        "Tags":  [
-                     "WSMan",
-                     "Migration"
-                 ],
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Copy-DbaLinkedServer migrates Linked Servers from one SQL Server to another. Linked Server logins and passwords are migrated as well.",
-        "Name":  "Copy-DbaLinkedServer",
-        "Links":  "https://dbatools.io/Copy-DbaLinkedServer",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster\r\n\r\nDescription\r\nCopies all SQL Server Linked Servers on sqlserver2014a to sqlcluster. If Linked Server exists on destination, it will \r\nbe skipped.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaLinkedServer -Source sqlserver2014a -Destination sqlcluster -LinkedServer SQL2K5,SQL2k -Force\r\n\r\nDescription\r\nCopies over two SQL Server Linked Servers (SQL2K and SQL2K2) from sqlserver to sqlcluster. If the credential already \r\nexists on the destination, it will be dropped.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlLogin",
-        "Description":  "SQL Server 2000: Migrates logins with SIDs, passwords, server roles and database roles.\n\nSQL Server 2005 \u0026 above: Migrates logins with SIDs, passwords, defaultdb, server roles \u0026 securables, database permissions \u0026 securables, login attributes (enforce password policy, expiration, etc.)\n\nThe login hash algorithm changed in SQL Server 2012, and is not backwards compatible with previous SQL versions. This means that while SQL Server 2000 logins can be migrated to SQL Server 2012, logins created in SQL Server 2012 can only be migrated to SQL Server 2012 and above.",
-        "Tags":  [
-                     "Migration",
-                     "Login"
-                 ],
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Migrates logins from source to destination SQL Servers. Supports SQL Server versions 2000 and above.",
-        "Name":  "Copy-DbaLogin",
-        "Links":  "https://dbatools.io/Copy-DbaLogin",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force\r\n\r\nCopies all logins from source server to destination server. If a SQL login on source exists on the destination, the \r\ndestination login will be dropped and recreated.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred \r\n-DestinationSqlCredential $dcred\r\n\r\nAuthenticates to SQL Servers using SQL Authentication.\r\n\r\nCopies all logins except for realcajun. If a login already exists on the destination, the login will not be migrated.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force\r\n\r\nCopies ONLY logins netnerds and realcajun. If login realcajun or netnerds exists on the destination, they will be \r\ndropped and recreated.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -SyncOnly\r\n\r\nSyncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. If a matching login does not \r\nexist on the destination, the login will be skipped.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaLogin -LoginRenameHashtable @{ \"OldUser\" =\"newlogin\" } -Source $Sql01 -Destination Localhost \r\n-SourceSqlCredential $sqlcred\r\n\r\nCopys down OldUser and then renames it to newlogin.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlOperator",
-        "Description":  null,
-        "Synopsis":  "Copy-DbaOperator",
-        "Name":  "Copy-SqlOperator",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Copy-SqlPolicyManagement",
-        "Description":  null,
-        "Synopsis":  "Copy-DbaPolicyManagement",
-        "Name":  "Copy-SqlPolicyManagement",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Copy-SqlProxyAccount",
-        "Description":  null,
-        "Synopsis":  "Copy-DbaProxyAccount",
-        "Name":  "Copy-SqlProxyAccount",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Copy-SqlResourceGovernor",
-        "Description":  "By default, all non-system resource pools are migrated. If the pool already exists on the destination, it will be skipped unless -Force is used. \n\t\nThe -ResourcePools parameter is autopopulated for command-line completion and can be used to copy only specific objects.\n\nTHIS CODE IS PROVIDED \"AS IS\", WITH NO WARRANTIES.",
-        "Tags":  "Migration",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Migrates Resource Pools",
-        "Name":  "Copy-DbaResourceGovernor",
-        "Links":  "https://dbatools.io/Copy-DbaResourceGovernor",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster\r\n\r\nCopies all extended event policies from sqlserver2014a to sqlcluster, using Windows credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred\r\n\r\nCopies all extended event policies from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and \r\nWindows credentials for sqlcluster.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -WhatIf\r\n\r\nShows what would happen if the command were executed.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlServerAgent",
-        "Description":  null,
-        "Synopsis":  "Copy-DbaServerAgent",
-        "Name":  "Copy-SqlServerAgent",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Copy-SqlServerRole",
-        "Description":  null,
-        "Synopsis":  "Copy-DbaServerRole",
-        "Name":  "Copy-SqlServerRole",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Copy-SqlServerTrigger",
-        "Description":  "By default, all triggers are copied. The -ServerTriggers parameter is autopopulated for command-line completion and can be used to copy only specific triggers.\n\nIf the trigger already exists on the destination, it will be skipped unless -Force is used.",
-        "Tags":  "Migration",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Copy-DbaServerTrigger migrates server triggers from one SQL Server to another.",
-        "Name":  "Copy-DbaServerTrigger",
-        "Links":  "https://dbatools.io/Copy-DbaServerTrigger",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster\r\n\r\nCopies all server triggers from sqlserver2014a to sqlcluster, using Windows credentials. If triggers with the same name \r\nexist on sqlcluster, they will be skipped.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster -ServerTrigger tg_noDbDrop \r\n-SourceSqlCredential $cred -Force\r\n\r\nCopies a single trigger, the tg_noDbDrop trigger from sqlserver2014a to sqlcluster, using SQL credentials for \r\nsqlserver2014a and Windows credentials for sqlcluster. If a trigger with the same name exists on sqlcluster, it will be \r\ndropped and recreated because -Force was used.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\r\n\r\nShows what would happen if the command were executed using force.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlSharedSchedule",
-        "Description":  null,
-        "Synopsis":  "Copy-DbaSharedSchedule",
-        "Name":  "Copy-SqlSharedSchedule",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Copy-SqlSpConfigure",
-        "Description":  "By default, all configuration values are copied. The -Config parameter is autopopulated for command-line completion and can be used to copy only specific configs.",
-        "Tags":  [
-                     "Migration",
-                     "Configure"
-                 ],
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Copy-DbaSpConfigure migrates configuration values from one SQL Server to another.",
-        "Name":  "Copy-DbaSpConfigure",
-        "Links":  "https://dbatools.io/Copy-DbaSpConfigure",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster\r\n\r\nCopies all sp_configure settings from sqlserver2014a to sqlcluster\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -Config DefaultBackupCompression, \r\nIsSqlClrEnabled -SourceSqlCredential $cred -Force\r\n\r\nUpdates the values for two configs, the  IsSqlClrEnabled and DefaultBackupCompression, from sqlserver2014a to \r\nsqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -WhatIf\r\n\r\nShows what would happen if the command were executed.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlSsisCatalog",
-        "Description":  "By default, all folders, projects, and environments are copied. \nThe -Project parameter can be specified to copy only one project, if desired.\nThe parameters get more granular from the Folder level.  i.e. specifying folder will only deploy projects/environments from within that folder.",
-        "Tags":  [
-                     "Migration",
-                     "SSIS"
-                 ],
-        "Synopsis":  "Copy-DbaSsisCatalog migrates Folders, SSIS projects, and environments from one SQL Server to another.",
-        "Name":  "Copy-DbaSsisCatalog",
-        "Links":  "https://dbatools.io/Copy-DbaSsisCatalog",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster\r\n\r\nCopies all folders, environments and all ssis Projects from sqlserver2014a to sqlcluster, using Windows credentials. If \r\nfolders with the same name exist on the destination they will be skipped, but projects will be redeployed.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -Project Archive_Tables -SourceSqlCredential \r\n$cred -Force\r\n\r\nCopies a single Project, the Archive_Tables Project from sqlserver2014a to sqlcluster, using SQL credentials for \r\nsqlserver2014a\r\nand Windows credentials for sqlcluster. If a Project with the same name exists on sqlcluster, it will be deleted and \r\nrecreated because -Force was used.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\r\n\r\nShows what would happen if the command were executed using force.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$SecurePW = Read-Host \"Enter password\" -AsSecureString\r\n\r\nCopy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -CreateCatalogPassword $SecurePW\r\n\r\nDeploy entire SSIS catalog to an instance without a destination catalog.  Passing -CreateCatalogPassword will bypass \r\nany user prompts for creating the destination catalog.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Copy-SqlSysDbUserObjects",
-        "Description":  null,
-        "Synopsis":  "Copy-DbaSysDbUserObjects",
-        "Name":  "Copy-SqlSysDbUserObjects",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Copy-SqlUserDefinedMessage",
-        "Description":  "By default, all  custom errors are copied. The -CustomError parameter is autopopulated for command-line completion and can be used to copy only specific custom errors.\n\nIf the custom error already exists on the destination, it will be skipped unless -Force is used. Interesting fact, if you drop the us_english version, all the other languages will be dropped for that specific ID as well.\n\nAlso, the us_english version must be created first.",
-        "Tags":  "Migration",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Copy-DbaCustomError migrates custom errors (user defined messages) from one SQL Server to another.",
-        "Name":  "Copy-DbaCustomError",
-        "Links":  "https://dbatools.io/Copy-DbaCustomError",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster\r\n\r\nCopies all server custom errors from sqlserver2014a to sqlcluster, using Windows credentials. If custom errors with the \r\nsame name exist on sqlcluster, they will be skipped.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -ServerTrigger 60000 -SourceSqlCredential \r\n$cred -Force\r\n\r\nCopies a single custom error, the custom error with ID number 6000 from sqlserver2014a to sqlcluster, using SQL \r\ncredentials for sqlserver2014a and Windows credentials for sqlcluster. If a custom error with the same name exists on \r\nsqlcluster, it will be updated because -Force was used.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force\r\n\r\nShows what would happen if the command were executed using force.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Expand-SqlTLogResponsibly",
-        "Description":  "As you may already know, having a TLog file with too many VLFs can hurt your database performance in many ways.\n\nExample:\n    Too many virtual log files can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance. \n    References:\n        http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/\n        http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx\n        http://www.brentozar.com/blitz/high-virtual-log-file-vlf-count/\n    \n\tIn order to get rid of this fragmentation we need to grow the file taking the following into consideration:\n        - How many VLFs are created when we perform a grow operation or when an auto-grow is invoked?\n    Note: In SQL Server 2014 this algorithm has changed (http://www.sqlskills.com/blogs/paul/important-change-vlf-creation-algorithm-sql-server-2014/)\n\nAttention:\n    We are growing in MB instead of GB because of known issue prior to SQL 2012:\n        More detail here: \n            http://www.sqlskills.com/BLOGS/PAUL/post/Bug-log-file-growth-broken-for-multiples-of-4GB.aspx\n\t    and \n            http://connect.microsoft.com/SqlInstance/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately\n\t    or \n            https://connect.microsoft.com/SqlInstance/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb\n\nUnderstanding related problems:\n        http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/\n        http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx\n        http://www.brentozar.com/blitz/high-virtual-log-file-vlf-count/\n    \nKnown bug before SQL Server 2012\n        http://www.sqlskills.com/BLOGS/PAUL/post/Bug-log-file-growth-broken-for-multiples-of-4GB.aspx\n        http://connect.microsoft.com/SqlInstance/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately\n        https://connect.microsoft.com/SqlInstance/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb\n\nHow it works?\n    The transaction log will grow in chunks until it reaches the desired size. \n    Example: If you have a log file with 8192MB and you say that the target size is 81920MB (80GB) it will grow in chunks of 8192MB until it reaches 81920MB. 8192 -\u003e 16384 -\u003e 24576 ... 73728 -\u003e 81920",
-        "Tags":  [
-                     "Storage",
-                     "Backup"
-                 ],
-        "Synopsis":  "This command will help you to automatically grow your T-Log database file in a responsible way (preventing the generation of too many VLFs).",
-        "Name":  "Expand-DbaTLogResponsibly",
-        "Links":  "https://dbatools.io/Expand-DbaTLogResponsibly",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSizeMB 50000\r\n\r\nThis is the simplest example. The increment value will be calculated and will grow the T-Log of the db1 database on \r\nsqlcluster to 50000 MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1, db2 -TargetLogSizeMB 10000 -IncrementSizeMB 200\r\n\r\nGrows the T-Log of db1 and db2 databases on sqlcluster to 1000MB. If you don\u0027t provide this parameter, the value will \r\nbe calculated automatically. Otherwise, the input value will be compared with the suggested value for your target size. \r\nIf these values differ, you will be prompted to confirm your choice.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSizeMB 10000 -LogFileId 9\r\n\r\nGrows the T-Log with FileId 9 of the db1 database on sqlcluster instance to 10000MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database (Get-Content D:\\DBs.txt) -TargetLogSizeMB 50000\r\n\r\nGrows the T-Log of the databases specified in the file \u0027D:\\DBs.txt\u0027 on sqlcluster instance to 50000MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1, db2 -TargetLogSizeMB 50000\r\n\r\nGrows the T-Log of the databases db1 and db2 on the sqlcluster instance to 50000MB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance sqlcluster -Database \u0027db with space\u0027 -TargetLogSizeMB 50000 -Verbose\r\n\r\nUse -Verbose to view in detail all actions performed by this script\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eExpand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogSizeMB 100 -IncrementSizeMB 10 \r\n-ShrinkLogFile -ShrinkSizeMB 10 -BackupDirectory R:\\MSSQL\\Backup\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Export-SqlLogin",
-        "Description":  "Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.",
-        "Tags":  [
-                     "Export",
-                     "Login"
-                 ],
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Exports Windows and SQL Logins to a T-SQL file. Export includes login, SID, password, default database, default language, server permissions, server roles, db permissions, db roles.",
-        "Name":  "Export-DbaLogin",
-        "Links":  "https://dbatools.io/Export-DbaLogin",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaLogin -SqlInstance sql2005 -FilePath C:\\temp\\sql2005-logins.sql\r\n\r\nExports SQL for the logins in server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-logins.sql\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -Exclude realcajun -SqlCredential $scred -FilePath \r\nC:\\temp\\logins.sql -Append\r\n\r\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all logins except for realcajun to \r\nC:\\temp\\logins.sql, and appends to the file if it exists. If not, the file will be created.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -FilePath C:\\temp\\logins.sql\r\n\r\nExports ONLY logins netnerds and realcajun FROM sqlsever2014a to the file  C:\\temp\\logins.sql\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting\r\n\r\nExports ONLY logins netnerds and realcajun FROM sqlsever2014a with the permissions on databases HR and Accounting\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Export-SqlSpConfigure",
-        "Description":  "Exports advanced sp_configure global configuration options to sql file.",
-        "Synopsis":  "Exports advanced sp_configure global configuration options to sql file.",
-        "Name":  "Export-DbaSpConfigure",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaSpConfigure $sourceserver -Path C:\\temp\\sp_configure.sql\r\n\r\nExports the SPConfigure on sourceserver to the file C:\\temp\\sp_configure.sql\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Export-SqlUser",
-        "Description":  "Exports users creation and its permissions to a T-SQL file or host. Export includes user, create and add to role(s), database level permissions, object level permissions.",
-        "Tags":  [
-                     "User",
-                     "Export"
-                 ],
-        "Synopsis":  "Exports users creation and its permissions to a T-SQL file or host.",
-        "Name":  "Export-DbaUser",
-        "Links":  "https://dbatools.io/Export-DbaUser",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sql2005 -FilePath C:\\temp\\sql2005-users.sql\r\n\r\nExports SQL for the users in server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-users.sql\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2014a $scred -FilePath C:\\temp\\users.sql -Append\r\n\r\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all users to C:\\temp\\users.sql, and appends to the \r\nfile if it exists. If not, the file will be created.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -FilePath C:\\temp\\users.sql\r\n\r\nExports ONLY users User1 and User2 fron sqlsever2014a to the file  C:\\temp\\users.sql\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -User User1 -FilePath C:\\temp\\users.sql -DestinationVersion \r\nSQLServer2016\r\n\r\nExports user User1 fron sqlsever2008 to the file  C:\\temp\\users.sql with sintax to run on SQL Server 2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\\temp\\users.sql\r\n\r\nExpors ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Find-SqlDuplicateIndex",
-        "Description":  "This command will help you to find duplicate and overlapping indexes on a database or a list of databases\n\nWhen 2008+ filtered property also come to comparison\nAlso tells how much space you can save by dropping the index.\nWe show the type of compression so you can make a more considered decision.\nFor now only supported for CLUSTERED and NONCLUSTERED indexes\n\nYou can select the indexes you want to drop on the gridview and by click OK the drop statement will be generated.\n\nOutput:\n\tTableName\n\tIndexName\n\tKeyCols\n\tIncludedCols\n\tIndexSizeMB\n\tIndexType\n\tCompressionDesc (When 2008+)\n\tNumberRows\n\tIsDisabled\n\tIsFiltered (When 2008+)",
-        "Synopsis":  "Find duplicate and overlapping indexes",
-        "Name":  "Find-DbaDuplicateIndex",
-        "Links":  "https://dbatools.io/Find-DbaDuplicateIndex",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDuplicateIndex -SqlInstance sql2005 -FilePath C:\\temp\\sql2005-DuplicateIndexes.sql\r\n\r\nExports SQL for the duplicate indexes in server \"sql2005\" choosen on grid-view and writes them to the file \r\n\"C:\\temp\\sql2005-DuplicateIndexes.sql\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDuplicateIndex -SqlInstance sql2005 -FilePath C:\\temp\\sql2005-DuplicateIndexes.sql -Append\r\n\r\nExports SQL for the duplicate indexes in server \"sql2005\" choosen on grid-view and writes/appends them to the file \r\n\"C:\\temp\\sql2005-DuplicateIndexes.sql\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDuplicateIndex -SqlInstance sqlserver2014a -SqlCredential $cred\r\n\r\nWill find exact duplicate indexes on all user databases present on sqlserver2014a will be verified using SQL \r\ncredentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDuplicateIndex -SqlInstance sqlserver2014a -Database db1, db2\r\n\r\nWill find exact duplicate indexes on both db1 and db2 databases\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDuplicateIndex -SqlInstance sqlserver2014a -IncludeOverlapping\r\n\r\nWill find exact duplicate or overlapping indexes on all user databases\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Find-SqlUnusedIndex",
-        "Description":  "This command will help you to find Unused indexes on a database or a list of databases\n\nAlso tells how much space you can save by dropping the index.\nWe show the type of compression so you can make a more considered decision.\nFor now only supported for CLUSTERED and NONCLUSTERED indexes\n\nYou can select the indexes you want to drop on the gridview and by click OK the drop statement will be generated.\n\nOutput:\n\tTableName\n\tIndexName\n\tKeyCols\n\tIncludedCols\n\tIndexSizeMB\n\tIndexType\n\tCompressionDesc (When 2008+)\n\tNumberRows\n\tIsDisabled\n\tIsFiltered (When 2008+)",
-        "Tags":  "Indexes",
-        "Synopsis":  "Find Unused indexes",
-        "Name":  "Find-DbaUnusedIndex",
-        "Links":  "https://dbatools.io/Find-DbaUnusedIndex",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sql2005 -FilePath C:\\temp\\sql2005-UnusedIndexes.sql\r\n\r\nExports SQL for the Unused indexes in server \"sql2005\" choosen on grid-view and writes them to the file \r\n\"C:\\temp\\sql2005-UnusedIndexes.sql\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sql2005 -FilePath C:\\temp\\sql2005-UnusedIndexes.sql -Append\r\n\r\nExports SQL for the Unused indexes in server \"sql2005\" choosen on grid-view and writes/appends them to the file \r\n\"C:\\temp\\sql2005-UnusedIndexes.sql\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sqlserver2016 -SqlCredential $cred\r\n\r\nWill find exact Unused indexes on all user databases present on sqlserver2016 will be verified using SQL credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sqlserver2016 -Database db1, db2\r\n\r\nWill find exact Unused indexes on both db1 and db2 databases\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sqlserver2016\r\n\r\nWill find exact Unused indexes on all user databases\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Get-DiskSpace",
-        "Description":  "Returns a custom object with Server name, name of disk, label of disk, total size, free size, percent free, block size and filesystem.\n\nBy default, this funtion only shows drives of type 2 and 3 (removable disk and local disk).\n\nRequires: Windows administrator access on SQL Servers",
-        "Tags":  "Storage",
-        "Author":  "Chrissy LeMaire (clemaire@gmail.com) \u0026 Jakob Bindslet (jakob@bindslet.dk)",
-        "Synopsis":  "Displays Disk information for all local drives on a server",
-        "Name":  "Get-DbaDiskSpace",
-        "Links":  "https://dbatools.io/Get-DbaDiskSpace",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDiskSpace -ComputerName srv0042 | Format-Table -AutoSize\r\n\r\nGet diskspace for the server srv0042\r\n\r\nServer  Name Label  SizeInGB FreeInGB PercentFree BlockSize\r\n------  ---- -----  -------- -------- ----------- ---------\r\nsrv0042 C:\\  System   126,45   114,12       90,25      4096\r\nsrv0042 E:\\  Data1     97,62    96,33       98,67      4096\r\nsrv0042 F:\\  DATA2      29,2     29,2         100     16384\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDiskSpace -ComputerName srv0042 -Unit MB | Format-Table -AutoSize\r\n\r\nGet diskspace for the server srv0042, display in MB\r\n\r\nServer  Name Label  SizeInMB  FreeInMB PercentFree BlockSize\r\n------  ---- -----  --------  -------- ----------- ---------\r\nsrv0042 C:\\  System   129481 116856,11       90,25      4096\r\nsrv0042 E:\\  Data1     99968  98637,56       98,67      4096\r\nsrv0042 F:\\  DATA2     29901  29900,92         100     16384\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDiskSpace -ComputerName srv0042, srv0007 -Unit TB | Format-Table -AutoSize\r\n\r\nGet diskspace from two servers, display in TB\r\n\r\nServer  Name Label  SizeInTB FreeInTB PercentFree BlockSize\r\n------  ---- -----  -------- -------- ----------- ---------\r\nsrv0042 C:\\  System     0,12     0,11       90,25      4096\r\nsrv0042 E:\\  Data1       0,1     0,09       98,67      4096\r\nsrv0042 F:\\  DATA2      0,03     0,03         100     16384\r\nsrv0007 C:\\  System     0,07     0,01       11,92      4096\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDiskSpace -ComputerName srv0042 -Detailed | Format-Table -AutoSize\r\n\r\nGet detailed diskspace information\r\n\r\nServer  Name                                              Label    SizeInGB FreeInGB PercentFree BlockSize IsSqlDisk \r\nFileSystem DriveType\r\n------  ----                                              -----    -------- -------- ----------- --------- --------- \r\n---------- ---------\r\nsrv0042 C:\\                                               System     126,45   114,12       90,25      4096     False \r\nNTFS       Local Disk\r\nsrv0042 E:\\                                               Data1       97,62    96,33       98,67      4096     False \r\nReFS       Local Disk\r\nsrv0042 F:\\                                               DATA2        29,2     29,2         100     16384     False \r\nFAT32      Local Disk\r\nsrv0042 \\\\?\\Volume{7a31be94-b842-42f5-af71-e0464a1a9803}\\ Recovery     0,44     0,13       30,01      4096     False \r\nNTFS       Local Disk\r\nsrv0042 D:\\                                                               0        0           0               False    \r\n        Compact Disk\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Get-SqlMaxMemory",
-        "Description":  "This command retrieves the SQL Server \u0027Max Server Memory\u0027 configuration setting as well as the total  physical installed on the server.",
-        "Tags":  "Memory",
-        "Synopsis":  "Gets the \u0027Max Server Memory\u0027 configuration setting and the memory of the server.  Works on SQL Server 2000-2014.",
-        "Name":  "Get-DbaMaxMemory",
-        "Links":  "https://dbatools.io/Get-DbaMaxMemory",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012\r\n\r\nGet memory settings for all servers within the SQL Server Central Management Server \"sqlcluster\".\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMaxMemory -SqlInstance sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB }\r\n\r\nFind all servers in Server Central Management Server that have \u0027Max Server Memory\u0027 set to higher than the total memory \r\nof the server (think 2147483647)\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Get-SqlRegisteredServerName",
-        "Description":  "Returns a simple array of server names. Be aware of the dynamic parameter \u0027Group\u0027, which can be used to limit results to one or more groups you have created on the CMS. See get-help for examples.",
-        "Synopsis":  "Gets list of SQL Server names stored in SQL Server Central Management Server.",
-        "Name":  "Get-DbaRegisteredServerName",
-        "Links":  "https://dbatools.io/Get-DbaRegisteredServerName",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerName -SqlInstance sqlserver2014a\r\n\r\nGets a list of all server names from the Central Management Server on sqlserver2014a, using Windows Credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerName -SqlInstance sqlserver2014a -SqlCredential $credential\r\n\r\nGets a list of all server names from the Central Management Server on sqlserver2014a, using SQL Authentication\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerName -SqlInstance sqlserver2014a -Group HR, Accounting\r\n\r\nGets a list of server names in the HR and Accounting groups from the Central Management Server on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerName -SqlInstance sqlserver2014a -Group HR, Accounting -IpAddr\r\n\r\nGets a list of server IP addresses in the HR and Accounting groups from the Central Management Server on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Get-SqlServerKey",
-        "Description":  "Using a string of servers, a text file, or Central Management Server to provide a list of servers, this script will go to each server and get the product key for all installed instances. Clustered instances are supported as well. Requires regular user access to the SQL instances, SMO installed locally, Remote Registry enabled and accessible by the account running the script.\n\nUses key decoder by Jakob Bindslet (http://goo.gl/1jiwcB)",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Gets SQL Server Product Keys from local on destination SQL Servers. Works with SQL Server 2005-2014",
-        "Name":  "Get-DbaSqlProductKey",
-        "Links":  "https://dbatools.io/Get-DbaSqlServerKey",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlServerKey winxp, sqlservera, sqlserver2014a, win2k8\r\n\r\nGets SQL Server versions, editions and product keys for all instances within each server or workstation.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlServerKey -SqlCms sqlserver01\r\n\r\nGets SQL Server versions, editions and product keys for all instances within sqlserver01\u0027s Central Management Server\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlServerKey -ServersFromFile C:\\Scripts\\servers.txt\r\n\r\nGets SQL Server versions, editions and product keys for all instances listed within C:\\Scripts\\servers.txt\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Import-SqlSpConfigure",
-        "Description":  "Updates sp_configure settings on destination server.",
-        "Synopsis":  "Updates sp_configure settings on destination server.",
-        "Name":  "Import-DbaSpConfigure",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaSpConfigure sqlserver sqlcluster $SourceSqlCredential $DestinationSqlCredential\r\n\r\nImports the spconfigure settings from the source server sqlserver and sets them on the sqlcluster server\r\nusing the SQL credentials stored in the variables\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaSpConfigure -SqlInstance sqlserver -Path .\\spconfig.sql -SqlCredential $SqlCredential\r\n\r\nImports the spconfigure settings from the file .\\spconfig.sql and sets them on the sqlcluster server\r\nusing the SQL credential stored in the variables\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Install-SqlWhoIsActive",
-        "Description":  "This command downloads, extracts and installs sp_WhoisActive with Adam\u0027s permission. To read more about sp_WhoisActive, please visit:\n\nUpdates: http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx\n\nAlso, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate\n\nNote that you will be prompted a bunch of times to confirm an action. To disable this behavior, pass the -Confirm:$false parameter (see example below).",
-        "Synopsis":  "Automatically installs or updates sp_WhoisActive by Adam Machanic.",
-        "Name":  "Install-DbaWhoIsActive",
-        "Links":  "https://dbatools.io/Install-DbaWhoIsActive",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master\r\n\r\nInstalls sp_WhoisActive to sqlserver2014a\u0027s master database. Logs in using Windows Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred -Confirm:$false\r\n\r\nPops up a dialog box asking which database on sqlserver2014a you want to install the proc to. Logs into SQL Server \r\nusing SQL Authentication.\r\n\r\nDoes not prompt multiple times.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$instances = Get-DbaRegisteredServerName sqlserver\r\n\r\nInstall-DbaWhoIsActive -SqlInstance $instances -Database master\r\n\r\nThis command doesn\u0027t support passing both servers and default database, but you can accomplish the same thing by \r\npassing an array and specifying a database.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Invoke-Sqlcmd2",
-        "Description":  "Runs a T-SQL script. Invoke-DbaSqlCmd runs the whole scipt and only captures the first selected result set, such as the output of PRINT statements when -verbose parameter is specified.\nParamaterized queries are supported.\n\nHelp details below borrowed from Invoke-Sqlcmd",
-        "Synopsis":  "Runs a T-SQL script.",
-        "Name":  "Invoke-DbaSqlCmd",
-        "Links":  [
-                      "https://github.com/RamblingCookieMonster/PowerShell",
-                      null
-                  ],
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaSqlCmd -ServerInstance \"MyComputer\\MyInstance\" -Query \"SELECT login_time AS \u0027StartTime\u0027 FROM \r\nsysprocesses WHERE spid = 1\"\r\n\r\nThis example connects to a named instance of the Database Engine on a computer and runs a basic T-SQL query.\r\nStartTime\r\n-----------\r\n2010-08-12 21:21:03.593\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaSqlCmd -ServerInstance \"MyComputer\\MyInstance\" -InputFile \"C:\\MyFolder\\tsqlscript.sql\" | Out-File \r\n-filePath \"C:\\MyFolder\\tsqlscript.rpt\"\r\n\r\nThis example reads a file containing T-SQL statements, runs the file, and writes the output to another file.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaSqlCmd  -ServerInstance \"MyComputer\\MyInstance\" -Query \"PRINT \u0027hello world\u0027\" -Verbose\r\n\r\nThis example uses the PowerShell -Verbose parameter to return the message output of the PRINT command.\r\nVERBOSE: hello world\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaSqlCmd -ServerInstance MyServer\\MyInstance -Query \"SELECT ServerName, VCNumCPU FROM tblServerInfo\" -as \r\nPSObject | ?{$_.VCNumCPU -gt 8}\r\n\r\nInvoke-DbaSqlCmd -ServerInstance MyServer\\MyInstance -Query \"SELECT ServerName, VCNumCPU FROM tblServerInfo\" -as \r\nPSObject | ?{$_.VCNumCPU}\r\n\r\nThis example uses the PSObject output type to allow more flexibility when working with results.\r\n\r\nIf we used DataRow rather than PSObject, we would see the following behavior:\r\n    Each row where VCNumCPU does not exist would produce an error in the first example\r\n    Results would include rows where VCNumCPU has DBNull value in the second example\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e\u0027Instance1\u0027, \u0027Server1/Instance1\u0027, \u0027Server2\u0027 | Invoke-DbaSqlCmd -query \"Sp_databases\" -as psobject \r\n-AppendServerInstance\r\n\r\nThis example lists databases for each instance.  It includes a column for the ServerInstance in question.\r\n    DATABASE_NAME          DATABASE_SIZE REMARKS        ServerInstance\r\n    -------------          ------------- -------        --------------\r\n    REDACTED                       88320                Instance1\r\n    master                         17920                Instance1\r\n    ...\r\n    msdb                          618112                Server1/Instance1\r\n    tempdb                        563200                Server1/Instance1\r\n    ...\r\n    OperationsManager           20480000                Server2\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e#Construct a query using SQL parameters\r\n\r\n$Query = \"SELECT ServerName, VCServerClass, VCServerContact FROM tblServerInfo WHERE VCServerContact LIKE \r\n@VCServerContact AND VCServerClass LIKE @VCServerClass\"\r\n\r\n#Run the query, specifying values for SQL parameters\r\n    Invoke-DbaSqlCmd -ServerInstance SomeServer\\NamedInstance -Database ServerDB -query $query -SqlParameters @{ \r\nVCServerContact=\"%cookiemonster%\"; VCServerClass=\"Prod\" }\r\n\r\n    ServerName    VCServerClass VCServerContact\r\n    ----------    ------------- ---------------\r\n    SomeServer1   Prod          cookiemonster, blah\r\n    SomeServer2   Prod          cookiemonster\r\n    SomeServer3   Prod          blah, cookiemonster\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaSqlCmd -SQLConnection $Conn -Query \"SELECT login_time AS \u0027StartTime\u0027 FROM sysprocesses WHERE spid = 1\"\r\n\r\nThis example uses an existing SQLConnection and runs a basic T-SQL query against it\r\n\r\nStartTime\r\n-----------\r\n2010-08-12 21:21:03.593\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Remove-SqlDatabaseSafely",
-        "Description":  "Performs a DBCC CHECKDB on the database, backs up the database with Checksum and verify only to a Final Backup location, creates an Agent Job to restore from that backup, Drops the database, runs the agent job to restore the database,\nperforms a DBCC CHECKDB and drops the database\n\nBy default the initial DBCC CHECKDB is performed\nBy default the jobs and databases are created on the same server. Use -Destination to use a seperate server\n\nIt will start the SQL Agent Service on the Destination Server if it is not running\n\n With huge thanks to Grant Fritchey and his verify your backups video \n Take a look its only 3 minutes long\n http://sqlps.io/backuprant",
-        "Tags":  [
-                     "DisasterRecovery",
-                     "Backup",
-                     "Restore",
-                     "Databases"
-                 ],
-        "Author":  "Rob Sewell @SQLDBAWithBeard, sqldbawithabeard.com",
-        "Synopsis":  "Safely removes a SQL Database and creates an Agent Job to restore it",
-        "Name":  "Remove-DbaDatabaseSafely",
-        "Links":  "https://dbatools.io/Remove-DbaDatabaseSafely",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDatabaseSafely -SqlInstance \u0027Fade2Black\u0027 -Database RideTheLightning -BackupFolder \r\n\u0027C:\\MSSQL\\Backup\\Rationalised - DO NOT DELETE\u0027\r\n\r\nFor the database RideTheLightning on the server Fade2Black Will perform a DBCC CHECKDB and if there are no errors \r\nbackup the database to the folder C:\\MSSQL\\Backup\\Rationalised - DO NOT DELETE. It will then create an Agent Job to \r\nrestore the database \r\nfrom that backup. It will drop the database, run the agent job to restore it, perform a DBCC ChECK DB and then drop the \r\ndatabase.\r\n\r\nAny DBCC errors will be written to your documents folder\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$Database = \u0027DemoNCIndex\u0027,\u0027RemoveTestDatabase\u0027\r\n\r\nRemove-DbaDatabaseSafely -SqlInstance \u0027Fade2Black\u0027 -Database $Database -BackupFolder \u0027C:\\MSSQL\\Backup\\Rationalised - DO \r\nNOT DELETE\u0027\r\n\r\nFor the databases \u0027DemoNCIndex\u0027,\u0027RemoveTestDatabase\u0027 on the server Fade2Black Will perform a DBCC CHECKDB and if there \r\nare no errors \r\nbackup the database to the folder C:\\MSSQL\\Backup\\Rationalised - DO NOT DELETE. It will then create an Agent Job for \r\neach database \r\nto restore the database from that backup. It will drop the database, run the agent job, perform a DBCC ChECK DB and \r\nthen drop the database\r\n\r\nAny DBCC errors will be written to your documents folder\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDatabaseSafely -SqlInstance \u0027Fade2Black\u0027 -DestinationServer JusticeForAll -Database RideTheLightning \r\n-BackupFolder \u0027\\\\BACKUPSERVER\\BACKUPSHARE\\MSSQL\\Rationalised - DO NOT DELETE\u0027\r\n\r\nFor the database RideTheLightning on the server Fade2Black Will perform a DBCC CHECKDB and if there are no errors \r\nbackup the database to the folder \\\\BACKUPSERVER\\BACKUPSHARE\\MSSQL\\Rationalised - DO NOT DELETE It will then create an \r\nAgent Job on the server \r\nJusticeForAll to restore the database from that backup. It will drop the database on Fade2Black, run the agent job to \r\nrestore it on JusticeForAll, \r\nperform a DBCC ChECK DB and then drop the database\r\n\r\nAny DBCC errors will be written to your documents folder\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDatabaseSafely -SqlInstance IronMaiden -Database $Database -DestinationServer TheWildHearts \r\n-DBCCErrorFolder C:\\DBCCErrors -BackupFolder z:\\Backups -NoDbccCheckDb -UseDefaultFilePaths -JobOwner \u0027THEBEARD\\Rob\u0027\r\n\r\nFor the databases $Database on the server IronMaiden Will NOT perform a DBCC CHECKDB \r\nIt will backup the databases to the folder Z:\\Backups It will then create an Agent Job on the server with a Job Owner \r\nof THEBEARD\\Rob \r\nTheWildHearts to restore the database from that backup using the instance default filepaths. \r\nIt will drop the database on IronMaiden, run the agent job to restore it on TheWildHearts using the default file paths \r\nfor the instance, perform \r\na DBCC ChECK DB and then drop the database\r\n\r\nAny DBCC errors will be written to your documents folder\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDatabaseSafely -SqlInstance IronMaiden -Database $Database -DestinationServer TheWildHearts \r\n-DBCCErrorFolder C:\\DBCCErrors -BackupFolder z:\\Backups -UseDefaultFilePaths -ContinueAfterDbccError\r\n\r\nFor the databases $Database on the server IronMaiden will backup the databases to the folder Z:\\Backups It will then \r\ncreate an Agent Job\r\nTheWildHearts to restore the database from that backup using the instance default filepaths. \r\nIt will drop the database on IronMaiden, run the agent job to restore it on TheWildHearts using the default file paths \r\nfor the instance, perform \r\na DBCC ChECK DB and then drop the database\r\n\r\nIf there is a DBCC Error it will continue to perform rest of the actions and will create an Agent Job with DBCCERROR in \r\nthe name and a Backup file with DBCCError in the name\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Remove-SqlOrphanUser",
-        "Description":  "An orphan user is defined by a user that does not have their matching login. (Login property = \"\").\nIf user is the owner of the schema with the same name and if if the schema does not have any underlying objects the schema will be dropped.\nIf user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be changed to \u0027dbo\u0027. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.\nIf exists a login to map the drop will not be performed unless you specify the -Force parameter (only when calling from Repair-DbaOrphanUser.",
-        "Tags":  [
-                     "Orphan",
-                     "Databases"
-                 ],
-        "Author":  "Claudio Silva (@ClaudioESSilva)",
-        "Synopsis":  "Drop orphan users with no existing login to map",
-        "Name":  "Remove-DbaOrphanUser",
-        "Links":  "https://dbatools.io/Remove-DbaOrphanUser",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaOrphanUser -SqlInstance sql2005\r\n\r\nWill find and drop all orphan users without matching login of all databases present on server \u0027sql2005\u0027\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred\r\n\r\nWill find and drop all orphan users without matching login of all databases present on server \u0027sqlserver2014a\u0027. Will be \r\nverified using SQL credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1, db2 -Force\r\n\r\nWill find all and drop orphan users even if exists their matching login on both db1 and db2 databases.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaOrphanUser -SqlInstance sqlserver2014a -ExcludeDatabase db1, db2 -Force\r\n\r\nWill finall all and drop orphan users even if exist their matching login from all databases except db1 and db2.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaOrphanUser -SqlInstance sqlserver2014a -User OrphanUser\r\n\r\nWill remove from all databases the user OrphanUser only if not have their matching login\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaOrphanUser -SqlInstance sqlserver2014a -User OrphanUser -Force\r\n\r\nWill remove from all databases the user OrphanUser EVEN if exists their matching login. First will change any schema \r\nthat it owns to \u0027dbo\u0027.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Repair-SqlOrphanUser",
-        "Description":  "An orphan user is defined by a user that does not have their matching login. (Login property = \"\")\n\nIf the matching login exists it must be:\n\tEnabled\n\tNot a system object\n\tNot locked\n\tHave the same name that user\n\nYou can drop users that does not have their matching login by especifing the parameter -RemoveNotExisting This will be made by calling Remove-DbaOrphanUser function.",
-        "Tags":  "Orphan",
-        "Synopsis":  "Find orphan users with existing login and remap.",
-        "Name":  "Repair-DbaOrphanUser",
-        "Links":  "https://dbatools.io/Repair-DbaOrphanUser",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRepair-DbaOrphanUser -SqlInstance sql2005\r\n\r\nWill find and repair all orphan users of all databases present on server \u0027sql2005\u0027\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRepair-DbaOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred\r\n\r\nWill find and repair all orphan users of all databases present on server \u0027sqlserver2014a\u0027. Will be verified using SQL \r\ncredentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRepair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1, db2\r\n\r\nWill find and repair all orphan users on both db1 and db2 databases\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eRepair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1 -Users OrphanUser\r\n\r\nWill find and repair user \u0027OrphanUser\u0027 on \u0027db1\u0027 database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eRepair-DbaOrphanUser -SqlInstance sqlserver2014a -Users OrphanUser\r\n\r\nWill find and repair user \u0027OrphanUser\u0027 on all databases\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eRepair-DbaOrphanUser -SqlInstance sqlserver2014a -RemoveNotExisting\r\n\r\nWill find all orphan users of all databases present on server \u0027sqlserver2014a\u0027\r\nWill also remove all users that does not have their matching login by calling Remove-DbaOrphanUser function\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Reset-SqlAdmin",
-        "Description":  "This function allows administrators to regain access to local or remote SQL Servers by either resetting the sa password, adding sysadmin role to existing login,\nor adding a new login (SQL or Windows) and granting it sysadmin privileges.\n\nThis is accomplished by stopping the SQL services or SQL Clustered Resource Group, then restarting SQL via the command-line\nusing the /mReset-DbaAdmin paramter which starts the server in Single-User mode, and only allows this script to connect.\n\nOnce the service is restarted, the following tasks are performed:\n- Login is added if it doesn\u0027t exist\n- If login is a Windows User, an attempt is made to ensure it exists\n- If login is a SQL Login, password policy will be set to OFF when creating the login, and SQL Server authentication will be set to Mixed Mode.\n- Login will be enabled and unlocked\n- Login will be added to sysadmin role\n\nIf failures occur at any point, a best attempt is made to restart the SQL Server.\n\nIn order to make this script as portable as possible, System.Data.SqlClient and Get-WmiObject are used (as opposed to requiring the Failover Cluster Admin tools or SMO).\nIf using this function against a remote SQL Server, ensure WinRM is configured and accessible. If this is not possible, run the script locally.\n\nTested on Windows XP, 7, 8.1, Server 2012 and Windows Server Technical Preview 2.\nTested on SQL Server 2005 SP4 through 2016 CTP2.",
-        "Tags":  "WSMan",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "This function will allow administrators to regain access to SQL Servers in the event that passwords or access was lost.\n\nSupports SQL Server 2005 and above. Windows administrator access is required.",
-        "Name":  "Reset-DbaAdmin",
-        "Links":  "https://dbatools.io/Reset-DbaAdmin",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eReset-DbaAdmin -SqlInstance sqlcluster\r\n\r\nPrompts for password, then resets the \"sa\" account password on sqlcluster.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eReset-DbaAdmin -SqlInstance sqlserver\\sqlexpress -Login ad\\administrator\r\n\r\nPrompts user to confirm that they understand the SQL Service will be restarted.\r\n\r\nAdds the domain account \"ad\\administrator\" as a sysadmin to the SQL instance.\r\nIf the account already exists, it will be added to the sysadmin role.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eReset-DbaAdmin -SqlInstance sqlserver\\sqlexpress -Login sqladmin -Force\r\n\r\nSkips restart confirmation, prompts for passsword, then adds a SQL Login \"sqladmin\" with sysadmin privleges.\r\nIf the account already exists, it will be added to the sysadmin role and the password will be reset.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Reset-SqlSaPassword",
-        "Description":  "This function allows administrators to regain access to local or remote SQL Servers by either resetting the sa password, adding sysadmin role to existing login,\nor adding a new login (SQL or Windows) and granting it sysadmin privileges.\n\nThis is accomplished by stopping the SQL services or SQL Clustered Resource Group, then restarting SQL via the command-line\nusing the /mReset-DbaAdmin paramter which starts the server in Single-User mode, and only allows this script to connect.\n\nOnce the service is restarted, the following tasks are performed:\n- Login is added if it doesn\u0027t exist\n- If login is a Windows User, an attempt is made to ensure it exists\n- If login is a SQL Login, password policy will be set to OFF when creating the login, and SQL Server authentication will be set to Mixed Mode.\n- Login will be enabled and unlocked\n- Login will be added to sysadmin role\n\nIf failures occur at any point, a best attempt is made to restart the SQL Server.\n\nIn order to make this script as portable as possible, System.Data.SqlClient and Get-WmiObject are used (as opposed to requiring the Failover Cluster Admin tools or SMO).\nIf using this function against a remote SQL Server, ensure WinRM is configured and accessible. If this is not possible, run the script locally.\n\nTested on Windows XP, 7, 8.1, Server 2012 and Windows Server Technical Preview 2.\nTested on SQL Server 2005 SP4 through 2016 CTP2.",
-        "Tags":  "WSMan",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "This function will allow administrators to regain access to SQL Servers in the event that passwords or access was lost.\n\nSupports SQL Server 2005 and above. Windows administrator access is required.",
-        "Name":  "Reset-DbaAdmin",
-        "Links":  "https://dbatools.io/Reset-DbaAdmin",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eReset-DbaAdmin -SqlInstance sqlcluster\r\n\r\nPrompts for password, then resets the \"sa\" account password on sqlcluster.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eReset-DbaAdmin -SqlInstance sqlserver\\sqlexpress -Login ad\\administrator\r\n\r\nPrompts user to confirm that they understand the SQL Service will be restarted.\r\n\r\nAdds the domain account \"ad\\administrator\" as a sysadmin to the SQL instance.\r\nIf the account already exists, it will be added to the sysadmin role.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eReset-DbaAdmin -SqlInstance sqlserver\\sqlexpress -Login sqladmin -Force\r\n\r\nSkips restart confirmation, prompts for passsword, then adds a SQL Login \"sqladmin\" with sysadmin privleges.\r\nIf the account already exists, it will be added to the sysadmin role and the password will be reset.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Restore-HallengrenBackup",
-        "Description":  "Many SQL Server database administrators use Ola Hallengren\u0027s SQL Server Maintenance Solution which can be found at http://ola.hallengren.com\nHallengren uses a predictable backup structure which made it relatively easy to create a script that can restore an entire SQL Server database instance, down to the master database (next version), to a new server. This script is intended to be used in the event that the originating SQL Server becomes unavailable, thus rendering my other SQL restore script (http://goo.gl/QmfQ6s) ineffective.",
-        "Tags":  [
-                     "DisasterRecovery",
-                     "Backup",
-                     "Restore"
-                 ],
-        "Synopsis":  "Restores SQL Server databases from the backup directory structure created by Ola Hallengren\u0027s database maintenance scripts. Different structures coming soon.",
-        "Name":  "Restore-DbaBackupFromDirectory",
-        "Links":  "https://dbatools.io/Restore-SqlBackupFromDirectory",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRestore-SqlBackupFromDirectory -SqlInstance sqlcluster -Path \\\\fileserver\\share\\sqlbackups\\SQLSERVER2014A\r\n\r\nDescription\r\n\r\nAll user databases contained within \\\\fileserver\\share\\sqlbackups\\SQLSERVERA will be restored to sqlcluster, down the \r\nmost recent full/differential/logs.\r\n\r\n\r\nRequires -Version 3.0\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Restore-SqlBackupFromDirectory",
-        "Description":  "Many SQL Server database administrators use Ola Hallengren\u0027s SQL Server Maintenance Solution which can be found at http://ola.hallengren.com\nHallengren uses a predictable backup structure which made it relatively easy to create a script that can restore an entire SQL Server database instance, down to the master database (next version), to a new server. This script is intended to be used in the event that the originating SQL Server becomes unavailable, thus rendering my other SQL restore script (http://goo.gl/QmfQ6s) ineffective.",
-        "Tags":  [
-                     "DisasterRecovery",
-                     "Backup",
-                     "Restore"
-                 ],
-        "Synopsis":  "Restores SQL Server databases from the backup directory structure created by Ola Hallengren\u0027s database maintenance scripts. Different structures coming soon.",
-        "Name":  "Restore-DbaBackupFromDirectory",
-        "Links":  "https://dbatools.io/Restore-SqlBackupFromDirectory",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRestore-SqlBackupFromDirectory -SqlInstance sqlcluster -Path \\\\fileserver\\share\\sqlbackups\\SQLSERVER2014A\r\n\r\nDescription\r\n\r\nAll user databases contained within \\\\fileserver\\share\\sqlbackups\\SQLSERVERA will be restored to sqlcluster, down the \r\nmost recent full/differential/logs.\r\n\r\n\r\nRequires -Version 3.0\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Set-SqlMaxMemory",
-        "Description":  "Sets SQL Server max memory then displays information relating to SQL Server Max Memory configuration settings. \n\nInspired by Jonathan Kehayias\u0027s post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this uses a formula to \ndetermine the default optimum RAM to use, then sets the SQL max value to that number.\n\nJonathan notes that the formula used provides a *general recommendation* that doesn\u0027t account for everything that may \nbe going on in your specific environment.",
-        "Synopsis":  "Sets SQL Server \u0027Max Server Memory\u0027 configuration setting to a new value then displays information this setting.",
-        "Name":  "Set-DbaMaxMemory",
-        "Links":  "https://dbatools.io/Set-DbaMaxMemory",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxMemory sqlserver1\r\n\r\nSet max memory to the recommended MB on just one server named \"sqlserver1\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxMemory -SqlInstance sqlserver1 -MaxMb 2048\r\n\r\nExplicitly max memory to 2048 MB on just one server, \"sqlserver1\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerName -SqlInstance sqlserver| Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt \r\n$_.TotalMB } | Set-DbaMaxMemory\r\n\r\nFind all servers in SQL Server Central Management server that have Max SQL memory set to higher than the total memory \r\nof the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use the default recommendation.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Set-SqlTempDbConfiguration",
-        "Description":  "Function to calculate tempdb size and file configurations based on passed parameters, calculated values, and Microsoft\nbest practices. User must declare SQL Server to be configured and total data file size as mandatory values. Function will\nthen calculate number of data files based on logical cores on the target host and create evenly sized data files based\non the total data size declared by the user, with a log file 25% of the total data file size. Other parameters can adjust \nthe settings as the user desires (such as different file paths, number of data files, and log file size). The function will\nnot perform any functions that would shrink or delete data files. If a user desires this, they will need to reduce tempdb\nso that it is \"smaller\" than what the function will size it to before runnint the function.",
-        "Synopsis":  "Sets tempdb data and log files according to best practices.",
-        "Name":  "Set-DbaTempDbConfiguration",
-        "Links":  "https://dbatools.io/Set-DbaTempDbConfiguration",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000\r\n\r\nCreates tempdb with a number of datafiles equal to the logical cores where\r\neach one is equal to 1000MB divided by number of logical cores and a log file\r\nof 250MB\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -DataFileCount 8\r\n\r\nCreates tempdb with a number of datafiles equal to the logical cores where\r\neach one is equal to 125MB and a log file of 250MB\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly\r\n\r\nProvides a SQL script output to configure tempdb according to the passed parameters\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -DisableGrowth\r\n\r\nDisables the growth for the data and log files\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly\r\n\r\nReturns PSObject representing tempdb configuration.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Show-SqlDatabaseList",
-        "Description":  "Shows a list of databases in a GUI. Returns a simple string. Hitting cancel returns null.",
-        "Synopsis":  "Shows a list of databases in a GUI",
-        "Name":  "Show-DbaDatabaseList",
-        "Links":  "https://dbatools.io/Show-DbaDatabaseList",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eShow-DbaDatabaseList -SqlInstance sqlserver2014a\r\n\r\nShows a GUI list of databases and uses Windows Authentication to log into the SQL Server. Returns a string of the \r\nselected database.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eShow-DbaDatabaseList -Source sqlserver2014a -SqlCredential $cred\r\n\r\nShows a GUI list of databases and SQL credentials to log into the SQL Server. Returns a string of the selected database.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Show-SqlMigrationConstraint",
-        "Description":  "When you want to migrate from a higher edition to a lower one there are some features that can\u0027t be used.\nThis function will validate if you have any of this features in use and will report to you.\nThe validation will be made ONLY on on SQL Server 2008 or higher using the \u0027sys.dm_db_persisted_sku_features\u0027 dmv.\n\nThis function only validate SQL Server 2008 versions or higher.\nThe editions supported by this function are:\n\t- Enterprise\n\t- Developer\n\t- Evaluation\n\t- Standard\n\t- Express\n\nTake into account the new features introduced on SQL Server 2016 SP1 for all versions. More information at https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/\n\nThe -Database parameter is autopopulated for command-line completion.",
-        "Tags":  "Migration",
-        "Author":  "Claudio Silva (@ClaudioESSilva)",
-        "Synopsis":  "Show if you can migrate the database(s) between the servers.",
-        "Name":  "Test-DbaMigrationConstraint",
-        "Links":  "https://dbatools.io/Test-DbaMigrationConstraint",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster\r\n\r\nDescription\r\n\r\nAll databases will be verified for features in use that can\u0027t be supported on the destination server\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred\r\n\r\nDescription\r\n\r\nAll databases will be verified for features in use that can\u0027t be supported on the destination server using SQL \r\ncredentials for sqlserver2014a\r\nand Windows credentials for sqlcluster.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Database db1\r\n\r\nOnly db1 database will be verified for features in use that can\u0027t be supported on the destination server\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Show-SqlServerFileSystem",
-        "Description":  "Similar to the remote file system popup you see when browsing a remote SQL Server in SQL Server Management Studio, this command allows you to traverse the remote SQL Server\u0027s file structure.\n\nShow-DbaServerFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.",
-        "Tags":  "Storage",
-        "Synopsis":  "Shows file system on remote SQL Server and returns the directory name of the directory you select.",
-        "Name":  "Show-DbaServerFileSystem",
-        "Links":  "https://dbatools.io/Show-DbaServerFileSystem",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eShow-DbaServerFileSystem -SqlInstance sqlserver2014a\r\n\r\nShows a GUI and uses Windows Authentication to log into the SQL Server. Returns a string of the path you selected.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eShow-DbaServerFileSystem -Source sqlserver2014a -SqlCredential $cred\r\n\r\nShows a GUI and uses SQL credentials to log into the SQL Server. Returns a string of the path you selected.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Show-SqlWhoIsActive",
-        "Description":  "Output results of Adam Machanic\u0027s sp_WhoIsActive\n\nThis command was built with Adam\u0027s permission. To read more about sp_WhoIsActive, please visit:\n\nUpdates: http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx\n\nAlso, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate",
-        "Tags":  "Memory",
-        "Synopsis":  "Outputs results of Adam Machanic\u0027s sp_WhoIsActive DataTable",
-        "Name":  "Invoke-DbaWhoisActive",
-        "Links":  "https://dbatools.io/Invoke-DbaWhoisActive",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a\r\n\r\nExecute sp_whoisactive on sqlserver2014a. This command expects sp_WhoIsActive to be in the master database. Logs into \r\nthe SQL Server with Windows credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a -SqlCredential $credential -Database dbatools\r\n\r\nExecute sp_whoisactive on sqlserver2014a. This command expects sp_WhoIsActive to be in the dbatools database. Logs into \r\nthe SQL Server with SQL Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a -GetAverageTime\r\n\r\nSimilar to running sp_WhoIsActive @get_avg_time\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaWhoisActive -SqlInstance sqlserver2014a -GetOuterCommand -FindBlockLeaders\r\n\r\nSimilar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 1\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Start-SqlMigration",
-        "Description":  "Start-DbaMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you\u0027re looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:\n\nAll user databases. Use -NoDatabases to skip.\nAll logins. Use -NoLogins to skip.\nAll database mail objects. Use -NoDatabaseMail\nAll credentials. Use -NoCredentials to skip.\nAll objects within the Job Server (SQL Agent). Use -NoAgentServer to skip.\nAll linked servers. Use -NoLinkedServers to skip.\nAll groups and servers within Central Management Server. Use -NoCentralManagementServer to skip.\nAll SQL Server configuration objects (everything in sp_configure). Use -NoSpConfigure to skip.\nAll user objects in system databases. Use -NoSysDbUserObjects to skip.\nAll system triggers. Use -NoSystemTriggers to skip.\nAll system backup devices. Use -NoBackupDevices to skip.\nAll Audits. Use -NoAudits to skip.\nAll Endpoints. Use -NoEndpoints to skip.\nAll Extended Events. Use -NoExtendedEvents to skip.\nAll Policy Management objects. Use -NoPolicyManagement to skip.\nAll Resource Governor objects. Use -NoResourceGovernor to skip.\nAll Server Audit Specifications. Use -NoServerAuditSpecifications to skip.\nAll Custom Errors (User Defined Messages). Use -NoCustomErrors to skip.\nCopies All Data Collector collection sets. Does not configure the server. Use -NoDataCollector to skip.\n\nThis script provides the ability to migrate databases using detach/copy/attach or backup/restore. SQL Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and SQL Express.\n\nBy default, databases will be migrated to the destination SQL Server\u0027s default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.\n\nTHIS CODE IS PROVIDED \"AS IS\", WITH NO WARRANTIES.",
-        "Tags":  [
-                     "Migration",
-                     "DisasterRecovery",
-                     "Backup",
-                     "Restore"
-                 ],
-        "Author":  "Chrissy LeMaire",
-        "Synopsis":  "Migrates SQL Server *ALL* databases, logins, database mail profies/accounts, credentials, SQL Agent objects, linked servers, \nCentral Management Server objects, server configuration settings (sp_configure), user objects in systems databases,\nsystem triggers and backup devices from one SQL Server to another. \n\nFor more granular control, please use one of the -No parameters and use the other functions available within the dbatools module.\n\nAutomatically outputs a transcript to disk.",
-        "Name":  "Start-DbaMigration",
-        "Links":  "https://dbatools.io/Start-DbaMigration",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaMigration -Source sqlserver\\instance -Destination sqlcluster -DetachAttach\r\n\r\nDescription\r\n\r\nAll databases, logins, job objects and sp_configure options will be migrated from sqlserver\\instance to sqlcluster. \r\nDatabases will be migrated using the detach/copy files/attach method. Dbowner will be updated. User passwords, SIDs, \r\ndatabase roles and server roles will be migrated along with the login.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -SourceSqlCredential $scred \r\n-ReuseSourceFolderStructure -DestinationSqlCredential $cred -Force -NetworkShare \r\n\\\\fileserver\\share\\sqlbackups\\Migration -BackupRestore\r\n\r\nMigrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management \r\nServer, SQL global configuration.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -NoDatabases -NoLogins\r\n\r\nMigrates everything but logins and databases.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly\r\n\r\nMigrate databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates \r\neverything else.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Sync-SqlLoginPermissions",
-        "Description":  null,
-        "Synopsis":  "Sync-DbaLoginPermissions",
-        "Name":  "Sync-SqlLoginPermissions",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Test-SqlConnection",
-        "Description":  "Tests a the connection to a single instance and shows the output.",
-        "Tags":  "CIM",
-        "Synopsis":  "Exported function. Tests a the connection to a single instance and shows the output.",
-        "Name":  "Test-DbaConnection",
-        "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaConnection sql01\r\n\r\nSample output:\r\n\r\nLocal PowerShell Enviornment\r\n\r\nWindows    : 10.0.10240.0\r\nPowerShell : 5.0.10240.16384\r\nCLR        : 4.0.30319.42000\r\nSMO        : 13.0.0.0\r\nDomainUser : True\r\nRunAsAdmin : False\r\n\r\nSQL Server Connection Information\r\n\r\nServerName         : sql01\r\nBaseName           : sql01\r\nInstanceName       : (Default)\r\nAuthType           : Windows Authentication (Trusted)\r\nConnectingAsUser   : ad\\dba\r\nConnectSuccess     : True\r\nSqlServerVersion   : 12.0.2370\r\nAddlConnectInfo    : N/A\r\nRemoteServer       : True\r\nIPAddress          : 10.0.1.4\r\nNetBIOSname        : SQLSERVER2014A\r\nRemotingAccessible : True\r\nPingable           : True\r\nDefaultSQLPortOpen : True\r\nRemotingPortOpen   : True\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Test-SqlDiskAllocation",
-        "Description":  "Returns $true or $false by default for one server. Returns Server name and IsBestPractice for more than one server.\n\t\nSpecify -Detailed for details.\n\t\nReferences:\nhttps://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx - \"The performance question here is usually not one of correlation per the formula, but whether the cluster size ..has been explicitly defined at 64 KB, which is a best practice for SQL Server.\"\nhttp://tk.azurewebsites.net/2012/08/",
-        "Tags":  [
-                     "CIM",
-                     "Storage"
-                 ],
-        "Synopsis":  "Checks all disks on a computer to see if they are formatted to 64k.",
-        "Name":  "Test-DbaDiskAllocation",
-        "Links":  "https://dbatools.io/Test-DbaDiskAllocation",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDiskAllocation -ComputerName sqlserver2014a\r\n\r\nTo return true or false for any disk not being formatted to 64k\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDiskAllocation -ComputerName sqlserver2014 -Detailed\r\n\r\nTo return detailed information about disks containing SQL data from any instance being formatted to 64k\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDiskAllocation -ComputerName sqlserver2014a -NoSqlCheck\r\n\r\nTo return true or false for ALL disks being formatted to 64k\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Test-SqlMigrationConstraint",
-        "Description":  "When you want to migrate from a higher edition to a lower one there are some features that can\u0027t be used.\nThis function will validate if you have any of this features in use and will report to you.\nThe validation will be made ONLY on on SQL Server 2008 or higher using the \u0027sys.dm_db_persisted_sku_features\u0027 dmv.\n\nThis function only validate SQL Server 2008 versions or higher.\nThe editions supported by this function are:\n\t- Enterprise\n\t- Developer\n\t- Evaluation\n\t- Standard\n\t- Express\n\nTake into account the new features introduced on SQL Server 2016 SP1 for all versions. More information at https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/\n\nThe -Database parameter is autopopulated for command-line completion.",
-        "Tags":  "Migration",
-        "Author":  "Claudio Silva (@ClaudioESSilva)",
-        "Synopsis":  "Show if you can migrate the database(s) between the servers.",
-        "Name":  "Test-DbaMigrationConstraint",
-        "Links":  "https://dbatools.io/Test-DbaMigrationConstraint",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster\r\n\r\nDescription\r\n\r\nAll databases will be verified for features in use that can\u0027t be supported on the destination server\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred\r\n\r\nDescription\r\n\r\nAll databases will be verified for features in use that can\u0027t be supported on the destination server using SQL \r\ncredentials for sqlserver2014a\r\nand Windows credentials for sqlcluster.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Database db1\r\n\r\nOnly db1 database will be verified for features in use that can\u0027t be supported on the destination server\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Test-SqlNetworkLatency",
-        "Description":  "This function is intended to help measure SQL Server network latency by establishing a connection and making a simple query. This is a better alternative\nthan ping because it actually creates the connection to the SQL Server, and times not ony the entire routine, but also how long the actual queries take vs\nhow long it takes to get the results.\n\nServer\nCount\nTotal\nAvg\nExecuteOnlyTotal\nExecuteOnlyAvg",
-        "Tags":  [
-                     "Performance",
-                     "Network"
-                 ],
-        "Synopsis":  "Tests how long a query takes to return from SQL Server",
-        "Name":  "Test-DbaNetworkLatency",
-        "Links":  "https://dbatools.io/Test-DbaNetworkLatency",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaNetworkLatency -SqlInstance sqlserver2014a, sqlcluster\r\n\r\nTimes the roundtrip return of \"SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES\" on sqlserver2014a and sqlcluster using \r\nWindows credentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaNetworkLatency -SqlInstance sqlserver2014a -SqlCredential $cred\r\n\r\nTimes the execution results return of \"SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES\" on sqlserver2014a using SQL \r\ncredentials.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaNetworkLatency -SqlInstance sqlserver2014a, sqlcluster, sqlserver -Query \"select top 10 * from \r\notherdb.dbo.table\" -Count 10\r\n\r\nTimes the execution results return of \"select top 10 * from otherdb.dbo.table\" 10 times on sqlserver2014a, sqlcluster, \r\nand sqlserver using Windows credentials.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Test-SqlPath",
-        "Description":  null,
-        "Synopsis":  "Test-DbaPath",
-        "Name":  "Test-SqlPath",
-        "Links":  null,
-        "Examples":  ""
-    },
-    {
-        "CommandName":  "Test-SqlTempDbConfiguration",
-        "Description":  "Evaluates tempdb aganst a set of rules to match best practices. The rules are:\nTF 1118 enabled - Is Trace Flag 1118 enabled (See KB328551).\nFile Count - Does the count of data files in tempdb match the number of logical cores, up to 8.\nFile Growth - Are any files set to have percentage growth, as best practice is all files have an explicit growth value.\nFile Location - Is tempdb located on the C:\\? Best practice says to locate it elsewhere.\nFile MaxSize Set(optional) - Do any files have a max size value? Max size could cause tempdb problems if it isn\u0027t allowed to grow.\n\nOther rules can be added at a future date. Only results that don\u0027t match best practices will be displayed. To display all results,\nuse the -Detailed switch.",
-        "Synopsis":  "Evaluates tempdb against several rules to match best practices.",
-        "Name":  "Test-DbaTempDbConfiguration",
-        "Links":  "https://dbatools.io/Test-DbaTempDbConfiguration",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaTempDbConfiguration -SqlInstance localhost\r\n\r\nChecks tempdb on the localhost machine.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaTempDbConfiguration -SqlInstance localhost -Detailed\r\n\r\nChecks tempdb on the localhost machine. All rest results are shown.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
-    },
-    {
-        "CommandName":  "Watch-SqlDbLogin",
-        "Description":  "Watch-DbaDbLogin uses SQL Server process enumeration to track logins in a SQL Server table. This is helpful when you\nneed to migrate a SQL Server, and update connection strings, but have inadequate documentation on which servers/applications\nare logging into your SQL instance.\n\nRunning this script every 5 minutes for a week should give you a sufficient idea about database and login usage.",
-        "Tags":  "Logins",
-        "Author":  "Chrissy LeMaire (@cl), netnerds.net",
-        "Synopsis":  "Tracks SQL Server logins: which host they came from, what database they\u0027re using, and what program is being used to log in.",
-        "Name":  "Watch-DbaDbLogin",
-        "Links":  "https://dbatools.io/Watch-DbaDbLogin",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eWatch-DbaDbLogin -SqlInstance sqlserver -SqlCms SqlCms1\r\n\r\nIn the above example, a list of servers is generated using all database instances within the Central Management Server \r\n\"SqlCms1\". Using this list, the script then enumerates all the processes and gathers login information, and saves it to \r\nthe table \"Dblogins\" within the \"DatabaseLogins\" database on the SQL Server \"sqlserver\".\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eWatch-DbaDbLogin -SqlInstance sqlcluster -Database CentralAudit -ServersFromFile .\\sqlservers.txt\r\n\r\nIn the above example, a list of servers is gathered from the file sqlservers.txt in the current directory. Using this \r\nlist, the script then enumerates all the processes and gathers login information, and saves it to the table \"Dblogins\" \r\nwithin the \"CentralAudit\" database on the SQL Server \"sqlcluster\".\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eWatch-DbaDbLogin -SqlInstance sqlserver -SqlCms SqlCms1 -SqlCmsGroups SQL2014Clusters -SqlCredential $cred\r\n\r\nIn the above example, a list of servers is generated using database instance names within the \"SQL2014Clusters\" group \r\non the Central Management Server \"SqlCms1\". Using this list, the script then enumerates all the processes and gathers \r\nlogin information, and saves it to the table \"Dblogins\" within the \"DatabaseLogins\" database on \"sqlserver\".\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     }
 ]

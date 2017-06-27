@@ -271,7 +271,12 @@ Function Out-DbaDataTable {
 							}
 						}
 						
-						if ($property.value.length -gt 0) {
+                        try {
+                            $propValueLength = $property.value.length
+                        } catch {
+                            $propValueLength = 0
+                        }
+						if ($propValueLength -gt 0) {
 							if ($property.value.ToString() -eq 'System.Object[]') {
 								$datarow.Item($property.Name) = $property.value -join ", "
 							}
