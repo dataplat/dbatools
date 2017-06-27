@@ -129,7 +129,7 @@ function Sync-DbaSqlLoginPermission {
 								Write-Message -Level Verbose -Message "Added $username to $rolename server role."
 							}
 							catch {
-								Stop-Function -Message "Failed to add $username to $rolename server role." -Target $role -InnerErrorRecord $_
+								Stop-Function -Message "Failed to add $username to $rolename server role." -Target $role -ErrorRecord $_
 							}
 						}
 					}
@@ -143,7 +143,7 @@ function Sync-DbaSqlLoginPermission {
 							Write-Message -Level Verbose -Message "Removed $username from $rolename server role on $($destserver.name)."
 						}
 						catch {
-							Stop-Function -Message "Failed to remove $username from $rolename server role on $($destserver.name)." -Target $role -InnerErrorRecord $_
+							Stop-Function -Message "Failed to remove $username from $rolename server role on $($destserver.name)." -Target $role -ErrorRecord $_
 						}
 					}
 				}
@@ -160,7 +160,7 @@ function Sync-DbaSqlLoginPermission {
 							$destownedjob.Alter()
 						}
 						catch {
-							Stop-Function -Message "Could not change job owner for $($ownedjob.name)" -Target $ownedJob -InnerErrorRecord $_
+							Stop-Function -Message "Could not change job owner for $($ownedjob.name)" -Target $ownedJob -ErrorRecord $_
 						}
 					}
 				}
@@ -182,7 +182,7 @@ function Sync-DbaSqlLoginPermission {
 							Write-Message -Level Verbose -Message "Successfully performed $permstate $($perm.permissiontype) to $username"
 						}
 						catch {
-							Stop-Function -Message "Failed to $permstate $($perm.permissiontype) to $username" -Target $perm -InnerErrorRecord $_
+							Stop-Function -Message "Failed to $permstate $($perm.permissiontype) to $username" -Target $perm -ErrorRecord $_
 						}
 					}
 
@@ -201,7 +201,7 @@ function Sync-DbaSqlLoginPermission {
 									Write-Message -Level Verbose -Message "Successfully revoked $($perm.permissiontype) from $username"
 								}
 								catch {
-									Stop-Function -Message "Failed to revoke $($perm.permissiontype) from $username" -Target $perm -InnerErrorRecord $_
+									Stop-Function -Message "Failed to revoke $($perm.permissiontype) from $username" -Target $perm -ErrorRecord $_
 								}
 							}
 						}
@@ -220,7 +220,7 @@ function Sync-DbaSqlLoginPermission {
 								Write-Message -Level Verbose -Message "Successfully created credential for $username"
 							}
 							catch {
-								Stop-Function -Message "Failed to create credential for $username" -Target $credential -InnerErrorRecord $_
+								Stop-Function -Message "Failed to create credential for $username" -Target $credential -ErrorRecord $_
 							}
 						}
 					}
@@ -252,7 +252,7 @@ function Sync-DbaSqlLoginPermission {
 								}
 							}
 							catch {
-								Stop-Function -Message "Failed to drop $dbusername ($dblogin) from $dbname on destination." -Target $db -InnerErrorRecord $_
+								Stop-Function -Message "Failed to drop $dbusername ($dblogin) from $dbname on destination." -Target $db -ErrorRecord $_
 							}
 						}
 					}
@@ -272,7 +272,7 @@ function Sync-DbaSqlLoginPermission {
 											Write-Message -Level Verbose -Message "Dropped username $dbusername (login: $dblogin) from $destrolename on $destination"
 										}
 										catch {
-											Stop-Function -Message "Failed to remove $dbusername from $destrolename database role on $dbname." -Target $destrole -InnerErrorRecord $_
+											Stop-Function -Message "Failed to remove $dbusername from $destrolename database role on $dbname." -Target $destrole -ErrorRecord $_
 										}
 									}
 								}
@@ -302,7 +302,7 @@ function Sync-DbaSqlLoginPermission {
 									Write-Message -Level Verbose -Message "Successfully revoked $($perm.permissiontype) from $username on $dbname on $destination"
 								}
 								catch {
-									Stop-Function -Message "Failed to revoke $($perm.permissiontype) from $username on $dbname on $destination" -Target $perm -InnerErrorRecord $_
+									Stop-Function -Message "Failed to revoke $($perm.permissiontype) from $username on $dbname on $destination" -Target $perm -ErrorRecord $_
 								}
 							}
 						}
@@ -332,7 +332,7 @@ function Sync-DbaSqlLoginPermission {
 								Write-Message -Level Verbose -Message "Added user $dbusername (login: $dblogin) to $dbname"
 							}
 							catch {
-								Stop-Function -Message "Failed to add $dbusername ($dblogin) to $dbname on $destination." -Target $db -InnerErrorRecord $_
+								Stop-Function -Message "Failed to add $dbusername ($dblogin) to $dbname on $destination." -Target $db -ErrorRecord $_
 							}
 						}
 					}
@@ -345,7 +345,7 @@ function Sync-DbaSqlLoginPermission {
 								Write-Message -Level Verbose -Message "Changed $($destdb.name) owner to $($sourcedb.owner)."
 							}
 							catch {
-								Stop-Function -Message "Failed to update $($destdb.name) owner to $($sourcedb.owner)." -Target $db -InnerErrorRecord $_
+								Stop-Function -Message "Failed to update $($destdb.name) owner to $($sourcedb.owner)." -Target $db -ErrorRecord $_
 							}
 						}
 					}
@@ -364,7 +364,7 @@ function Sync-DbaSqlLoginPermission {
 
 									}
 									catch {
-										Stop-Function -Message "Failed to add $username to $rolename database role on $dbname." -Target $db -InnerErrorRecord $_
+										Stop-Function -Message "Failed to add $username to $rolename database role on $dbname." -Target $db -ErrorRecord $_
 									}
 								}
 							}
@@ -390,7 +390,7 @@ function Sync-DbaSqlLoginPermission {
 								Write-Message -Level Verbose -Message "Successfully performed $permstate $($perm.permissiontype) to $username on $dbname"
 							}
 							catch {
-								Stop-Function -Message "Failed to perform $permstate on $($perm.permissiontype) for $username on $dbname." -Target $perm -InnerErrorRecord $_
+								Stop-Function -Message "Failed to perform $permstate on $($perm.permissiontype) for $username on $dbname." -Target $perm -ErrorRecord $_
 							}
 						}
 					}
