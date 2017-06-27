@@ -145,6 +145,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		[Alias("Databases")]
 		[object[]]$Database,
 		[parameter(Mandatory = $false)]
+		[DbaInstanceParameter]$Destination = $sqlinstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$DestinationCredential,
 		[parameter(Mandatory = $false)]
