@@ -113,10 +113,9 @@ function Copy-DbaResourceGovernor {
 			else {
 				try {
 					$sql = $sourceServer.ResourceGovernor.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Message -Level Debug -Message $sql
 					Write-Message -Level Verbose -Message "Updating Resource Governor settings"
-					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $destServer.Query($sql)
 				}
 				catch {
 					Stop-Function -Message "Not able to update settings" -Target $destServer -ErrorRecord $_
