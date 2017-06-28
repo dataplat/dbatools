@@ -8,7 +8,7 @@ Describe "Add-DbaComputerCertificate Integration Tests" -Tags "Integrationtests"
 		
 		$string = $results | Out-String
 		
-		$string
+		Write-Warning $string 
 		$store = $string -match 'PSParentPath: Microsoft.PowerShell.Security\\Certificate::LocalMachine\\My'
 		It "Should be in LocalMachine\My Cert Store" {
             $store | Should Be $true
