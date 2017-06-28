@@ -1,4 +1,4 @@
-function Copy-DbaAgentJob {
+﻿function Copy-DbaAgentJob {
 	<#
 		.SYNOPSIS
 			Copy-DbaAgentJob migrates jobs from one SQL Server to another.
@@ -124,7 +124,7 @@ function Copy-DbaAgentJob {
                 DestinationServer   = $destServer.Name
                 Name                = $jobName
                 Status              = $null
-                DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+                DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
             }
 
             if ($Job -and $jobName -notin $Job -or $jobName -in $ExcludeJob) { 

@@ -72,7 +72,7 @@
     
     Note: Multiple servers in one call were never supported, those old functions were liable to break anyway and should be fixed soonest.
     #>
-    if ($SqlInstance.GetType() -eq [SqlCollective.Dbatools.Parameter.DbaInstanceParameter])
+    if ($SqlInstance.GetType() -eq [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter])
     {
         [DbaInstanceParameter]$ConvertedSqlInstance = $SqlInstance
     }
@@ -129,17 +129,17 @@
         }
 		
 		# Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
-		[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($ConvertedSqlInstance.FullSmoName.ToLower(), $server.ConnectionContext, ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($ConvertedSqlInstance.FullSmoName.ToLower(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
 		
 		# Update cache for instance names
-		if ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $ConvertedSqlInstance.FullSmoName.ToLower()) {
-			[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $ConvertedSqlInstance.FullSmoName.ToLower()
+		if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $ConvertedSqlInstance.FullSmoName.ToLower()) {
+			[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $ConvertedSqlInstance.FullSmoName.ToLower()
 		}
 		
 		# Update lots of registered stuff
-		if (-not [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
+		if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
 			$FullSmoName = $ConvertedSqlInstance.FullSmoName.ToLower()
-			foreach ($scriptBlock in ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
+			foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
 				$ExecutionContext.InvokeCommand.InvokeScript($false, $scriptBlock, $null, $null)
 			}
 		}
@@ -253,18 +253,18 @@
 	}
 	
 	# Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
-	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($ConvertedSqlInstance.FullSmoName.ToLower(), $server.ConnectionContext, ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($ConvertedSqlInstance.FullSmoName.ToLower(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
 	
 	# Update cache for instance names
-    if ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $ConvertedSqlInstance.FullSmoName.ToLower())
+    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $ConvertedSqlInstance.FullSmoName.ToLower())
     {
-        [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $ConvertedSqlInstance.FullSmoName.ToLower()
+        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $ConvertedSqlInstance.FullSmoName.ToLower()
     }
 	
 	# Update lots of registered stuff
-	if (-not [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
+	if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
 		$FullSmoName = $ConvertedSqlInstance.FullSmoName.ToLower()
-		foreach ($scriptBlock in ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
+		foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
 			$ExecutionContext.InvokeCommand.InvokeScript($false, $scriptBlock, $null, $null)
 		}
 	}

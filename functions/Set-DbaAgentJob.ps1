@@ -17,6 +17,12 @@ To connect as a different Windows user, run PowerShell as that user.
 .PARAMETER Job
 The name of the job. 
 
+.PARAMETER Schedule
+Schedule to attach to job. This can be more than one schedule.
+
+.PARAMETER ScheduleId
+Schedule ID to attach to job. This can be more than one schedule ID.
+
 .PARAMETER NewName
 The new name for the job. 
 
@@ -126,319 +132,380 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 
 .EXAMPLE   
 sql1, sql2, sql3 | Set-DbaAgentJob -Job Job1 -Description 'Job One'
-Changes a job with the name "Job1" on multiple servers to have another description using pipeline
+Changes a job with the name "Job1" on multiple servers to have another description using pipe line
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
-	param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[Parameter(Mandatory = $false)]
-		[System.Management.Automation.PSCredential]$SqlCredential,
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object[]]$Job,
-		[Parameter(Mandatory = $false)]
-		[string]$NewName,
-		[Parameter(Mandatory = $false)]
-		[switch]$Enabled,
-		[Parameter(Mandatory = $false)]
-		[switch]$Disabled,
-		[Parameter(Mandatory = $false)]
-		[string]$Description,
-		[Parameter(Mandatory = $false)]
-		[int]$StartStepId,
-		[Parameter(Mandatory = $false)]
-		[string]$Category,
-		[Parameter(Mandatory = $false)]
-		[string]$OwnerLogin,
-		[Parameter(Mandatory = $false)]
-		[ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
-		[object]$EventLogLevel,
-		[Parameter(Mandatory = $false)]
-		[ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
-		[object]$EmailLevel,
-		[Parameter(Mandatory = $false)]
-		[ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
-		[object]$NetsendLevel,
-		[Parameter(Mandatory = $false)]
-		[ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
-		[object]$PageLevel,
-		[Parameter(Mandatory = $false)]
-		[string]$EmailOperator,
-		[Parameter(Mandatory = $false)]
-		[string]$NetsendOperator,
-		[Parameter(Mandatory = $false)]
-		[string]$PageOperator,
-		[Parameter(Mandatory = $false)]
-		[ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
-		[object]$DeleteLevel,
-		[switch]$Silent
-	)
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+
+        [Parameter(Mandatory = $false)]
+        [System.Management.Automation.PSCredential]$SqlCredential,
+		
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [object[]]$Job,
+
+        [Parameter(Mandatory = $false)]
+        [object[]]$Schedule,
+
+        [Parameter(Mandatory = $false)]
+        [int[]]$ScheduleId,
+		
+        [Parameter(Mandatory = $false)]
+        [string]$NewName,
+		
+        [Parameter(Mandatory = $false)]
+        [switch]$Enabled,
+		
+        [Parameter(Mandatory = $false)]
+        [switch]$Disabled,
+		
+        [Parameter(Mandatory = $false)]
+        [string]$Description,
+		
+        [Parameter(Mandatory = $false)]
+        [int]$StartStepId,
+		
+        [Parameter(Mandatory = $false)]
+        [string]$Category,
+		
+        [Parameter(Mandatory = $false)]
+        [string]$OwnerLogin,
+		
+        [Parameter(Mandatory = $false)]
+        [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
+        [object]$EventLogLevel,
+		
+        [Parameter(Mandatory = $false)]
+        [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
+        [object]$EmailLevel,
+		
+        [Parameter(Mandatory = $false)]
+        [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
+        [object]$NetsendLevel,
+		
+        [Parameter(Mandatory = $false)]
+        [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
+        [object]$PageLevel,
+		
+        [Parameter(Mandatory = $false)]
+        [string]$EmailOperator,
+		
+        [Parameter(Mandatory = $false)]
+        [string]$NetsendOperator,
+		
+        [Parameter(Mandatory = $false)]
+        [string]$PageOperator,
+		
+        [Parameter(Mandatory = $false)]
+        [ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
+        [object]$DeleteLevel,
+		
+        [switch]$Silent
+    )
 	
-	begin {
-		# Check of the event log level is of type string and set the integer value
-		if (($EventLogLevel -notin 0, 1, 2, 3) -and ($EventLogLevel -ne $null)) {
-			$EventLogLevel = switch ($EventLogLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
-		}
+    begin {
+        # Check of the event log level is of type string and set the integer value
+        if (($EventLogLevel -notin 0, 1, 2, 3) -and ($EventLogLevel -ne $null)) {
+            $EventLogLevel = switch ($EventLogLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
+        }
 		
-		# Check of the email level is of type string and set the integer value
-		if (($EmailLevel -notin 0, 1, 2, 3) -and ($EmailLevel -ne $null)) {
-			$EmailLevel = switch ($EmailLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
-		}
+        # Check of the email level is of type string and set the integer value
+        if (($EmailLevel -notin 0, 1, 2, 3) -and ($EmailLevel -ne $null)) {
+            $EmailLevel = switch ($EmailLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
+        }
 		
-		# Check of the net send level is of type string and set the integer value
-		if (($NetsendLevel -notin 0, 1, 2, 3) -and ($NetsendLevel -ne $null)) {
-			$NetsendLevel = switch ($NetsendLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
-		}
+        # Check of the net send level is of type string and set the integer value
+        if (($NetsendLevel -notin 0, 1, 2, 3) -and ($NetsendLevel -ne $null)) {
+            $NetsendLevel = switch ($NetsendLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
+        }
 		
-		# Check of the page level is of type string and set the integer value
-		if (($PageLevel -notin 0, 1, 2, 3) -and ($PageLevel -ne $null)) {
-			$PageLevel = switch ($PageLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
-		}
+        # Check of the page level is of type string and set the integer value
+        if (($PageLevel -notin 0, 1, 2, 3) -and ($PageLevel -ne $null)) {
+            $PageLevel = switch ($PageLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
+        }
 		
-		# Check of the delete level is of type string and set the integer value
-		if (($DeleteLevel -notin 0, 1, 2, 3) -and ($DeleteLevel -ne $null)) {
-			$DeleteLevel = switch ($DeleteLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
-		}
+        # Check of the delete level is of type string and set the integer value
+        if (($DeleteLevel -notin 0, 1, 2, 3) -and ($DeleteLevel -ne $null)) {
+            $DeleteLevel = switch ($DeleteLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 } }
+        }
 		
-		# Check the e-mail operator name
-		if (($EmailLevel -ge 1) -and (-not $EmailOperator)) {
-			Stop-Function -Message "Please set the e-mail operator when the e-mail level parameter is set." -Target $sqlinstance
-			return
-		}
+        # Check the e-mail operator name
+        if (($EmailLevel -ge 1) -and (-not $EmailOperator)) {
+            Stop-Function -Message "Please set the e-mail operator when the e-mail level parameter is set." -Target $sqlinstance
+            return
+        }
 		
-		# Check the e-mail operator name
-		if (($NetsendLevel -ge 1) -and (-not $NetsendOperator)) {
-			Stop-Function -Message "Please set the netsend operator when the netsend level parameter is set." -Target $sqlinstance
-			return
-		}
+        # Check the e-mail operator name
+        if (($NetsendLevel -ge 1) -and (-not $NetsendOperator)) {
+            Stop-Function -Message "Please set the netsend operator when the netsend level parameter is set." -Target $sqlinstance
+            return
+        }
 		
-		# Check the e-mail operator name
-		if (($PageLevel -ge 1) -and (-not $PageOperator)) {
-			Stop-Function -Message "Please set the page operator when the page level parameter is set." -Target $sqlinstance
-			return
-		}
-	}
+        # Check the e-mail operator name
+        if (($PageLevel -ge 1) -and (-not $PageOperator)) {
+            Stop-Function -Message "Please set the page operator when the page level parameter is set." -Target $sqlinstance
+            return
+        }
+    }
 	
-	process {
+    process {
 		
-		if (Test-FunctionInterrupt) { return }
+        if (Test-FunctionInterrupt) { return }
 		
-		foreach ($instance in $sqlinstance) {
+        foreach ($instance in $sqlinstance) {
 			
-			# Try connecting to the instance
-			Write-Message -Message "Attempting to connect to $instance" -Level Output
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-			}
-			catch {
-				Stop-Function -Message "Could not connect to Sql Server instance" -Target $instance -Continue
-			}
+            # Try connecting to the instance
+            Write-Message -Message "Attempting to connect to $instance" -Level Output
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            }
+            catch {
+                Stop-Function -Message "Could not connect to Sql Server instance" -Target $instance -Continue
+            }
 			
-			foreach ($j in $Job) {
+            foreach ($j in $Job) {
 				
-				# Check if the job exists
-				if ($Server.JobServer.Jobs.Name -notcontains $j) {
-					Stop-Function -Message "Job $j doesn't exists on $instance" -Target $instance
-				}
-				else {
-					# Get the job
-					try {
-						$smojob = $server.JobServer.Jobs[$j]
-					}
-					catch {
-						Stop-Function -Message "Something went wrong retrieving the job. `n$($_.Exception.Message)" -Target $j -Continue
-					}
-					
-					#region job options
-					# Settings the options for the job
-					if ($NewName) {
-						Write-Message -Message "Setting job name to $NewName" -Level Verbose
-						$smojob.Rename($NewName)
-					}
-					
-					if ($Enabled) {
-						Write-Message -Message "Setting job to enabled" -Level Verbose
-						$smojob.IsEnabled = $true
-					}
-					
-					if ($Disabled) {
-						Write-Message -Message "Setting job to disabled" -Level Verbose
-						$smojob.IsEnabled = $false
-					}
-					
-					if ($Description) {
-						Write-Message -Message "Setting job description to $Description" -Level Verbose
-						$smojob.Description = $Description
-					}
-					
-					if ($StartStepId) {
-						# Get the job steps
-						$smojobSteps = $smojob.JobSteps
+                # Check if the job exists
+                if ($Server.JobServer.Jobs.Name -notcontains $j) {
+                    Stop-Function -Message "Job $j doesn't exists on $instance" -Target $instance
+                }
+                else {
+                    # Get the job
+                    try {
+                        $smojob = $server.JobServer.Jobs[$j]
 						
-						# Check if there are any job steps
-						if ($smojobSteps.Count -ge 1) {
-							# Check if the start step id value is one of the job steps in the job
-							if ($smojobSteps.ID -contains $StartStepId) {
-								Write-Message -Message "Setting job start step id to $StartStepId" -Level Verbose
-								$smojob.StartStepID = $StartStepId
-							}
-							else {
-								Write-Message -Message "The step id is not present in job $j on instance $instance" -Warning
-							}
+                        # Refresh the object
+                        $smoJob.Refresh()
+                    }
+                    catch {
+                        Stop-Function -Message "Something went wrong retrieving the job. `n$($_.Exception.Message)" -Target $j -InnerErrorRecord $_ -Continue
+                    }
+					
+                    #region job options
+                    # Settings the options for the job
+                    if ($NewName) {
+                        Write-Message -Message "Setting job name to $NewName" -Level Verbose
+                        $smojob.Rename($NewName)
+                    }
+					
+                    if ($Schedule) {
+                        # Loop through each of the schedules
+                        foreach ($s in $Schedule) {
+                            if ($Server.JobServer.SharedSchedules.Name -contains $s) {
+                                # Get the schedule ID
+                                $sID = $Server.JobServer.SharedSchedules[$s].ID
 							
-						}
-						else {
-							Stop-Function -Message "There are no job steps present for job $j on instance $instance" -Target $instance -Continue
-						}
+                                # Add schedule to job
+                                Write-Message -Message "Adding schedule id $sID to job" -Level Verbose
+                                $smojob.AddSharedSchedule($sID)
+                            }
+                            else {
+                                Stop-Function -Message "Schedule $s cannot be found on instance $instance" -Target $s -Continue
+                            }
 						
-					}
+                        }
+                    }
+
+                    if ($ScheduleId) {
+                        # Loop through each of the schedules IDs
+                        foreach ($sID in $ScheduleId) {
+                            # Check if the schedule is 
+                            if ($Server.JobServer.SharedSchedules.ID -contains $sID) {
+                                # Add schedule to job
+                                Write-Message -Message "Adding schedule id $sID to job" -Level Verbose
+                                $smojob.AddSharedSchedule($sID)
+                                
+                            }
+                            else {
+                                Stop-Function -Message "Schedule ID $sID cannot be found on instance $instance" -Target $sID -Continue
+                            }
+                        }
+                    }
+
+                    if ($Enabled) {
+                        Write-Message -Message "Setting job to enabled" -Level Verbose
+                        $smojob.IsEnabled = $true
+                    }
 					
-					if ($Category) {
-						Write-Message -Message "Setting job category to $Category" -Level Verbose
-						$smojob.Category = $Category
-					}
+                    if ($Disabled) {
+                        Write-Message -Message "Setting job to disabled" -Level Verbose
+                        $smojob.IsEnabled = $false
+                    }
 					
-					if ($OwnerLogin) {
-						# Check if the login name is present on the instance
-						if ($Server.Logins.Name -contains $OwnerLogin) {
-							Write-Message -Message "Setting job owner login name to $OwnerLogin" -Level Verbose
-							$smojob.OwnerLoginName = $OwnerLogin
-						}
-						else {
-							Stop-Function -Message "The given owner log in name $OwnerLogin does not exist on instance $instance" -Target $instance -Continue
-						}
-					}
+                    if ($Description) {
+                        Write-Message -Message "Setting job description to $Description" -Level Verbose
+                        $smojob.Description = $Description
+                    }
 					
-					if ($EventLogLevel) {
-						Write-Message -Message "Setting job event log level to $EventlogLevel" -Level Verbose
-						$smojob.EventLogLevel = $EventLogLevel
-					}
-					
-					if ($EmailLevel) {
-						# Check if the notifiction needs to be removed
-						if ($EmailLevel -eq 0) {
-							# Remove the operator
-							$smojob.OperatorToEmail = $null
+                    if ($StartStepId) {
+                        # Get the job steps
+                        $smojobSteps = $smojob.JobSteps
+						
+                        # Check if there are any job steps
+                        if ($smojobSteps.Count -ge 1) {
+                            # Check if the start step id value is one of the job steps in the job
+                            if ($smojobSteps.ID -contains $StartStepId) {
+                                Write-Message -Message "Setting job start step id to $StartStepId" -Level Verbose
+                                $smojob.StartStepID = $StartStepId
+                            }
+                            else {
+                                Write-Message -Message "The step id is not present in job $j on instance $instance" -Warning
+                            }
 							
-							# Remove the notification
-							$smojob.EmailLevel = $EmailLevel
-						}
-						else {
-							# Check if either the operator e-mail parameter is set or the operator is set in the job
-							if ($EmailOperator -or $smojob.OperatorToEmail) {
-								Write-Message -Message "Setting job e-mail level to $EmailLevel" -Level Verbose
-								$smojob.EmailLevel = $EmailLevel
-							}
-							else {
-								Stop-Function -Message "Cannot set e-mail level $EmailLevel without a valid e-mail operator name" -Target $instance -Continue
-							}
-						}
-					}
+                        }
+                        else {
+                            Stop-Function -Message "There are no job steps present for job $j on instance $instance" -Target $instance -Continue
+                        }
+						
+                    }
 					
-					if ($NetsendLevel) {
-						# Check if the notifiction needs to be removed
-						if ($NetsendLevel -eq 0) {
-							# Remove the operator
-							$smojob.OperatorToNetSend = $null
+                    if ($Category) {
+                        Write-Message -Message "Setting job category to $Category" -Level Verbose
+                        $smojob.Category = $Category
+                    }
+					
+                    if ($OwnerLogin) {
+                        # Check if the login name is present on the instance
+                        if ($Server.Logins.Name -contains $OwnerLogin) {
+                            Write-Message -Message "Setting job owner login name to $OwnerLogin" -Level Verbose
+                            $smojob.OwnerLoginName = $OwnerLogin
+                        }
+                        else {
+                            Stop-Function -Message "The given owner log in name $OwnerLogin does not exist on instance $instance" -Target $instance -Continue
+                        }
+                    }
+					
+                    if ($EventLogLevel) {
+                        Write-Message -Message "Setting job event log level to $EventlogLevel" -Level Verbose
+                        $smojob.EventLogLevel = $EventLogLevel
+                    }
+					
+                    if ($EmailLevel) {
+                        # Check if the notifiction needs to be removed
+                        if ($EmailLevel -eq 0) {
+                            # Remove the operator
+                            $smojob.OperatorToEmail = $null
 							
-							# Remove the notification
-							$smojob.NetSendLevel = $NetsendLevel
-						}
-						else {
-							# Check if either the operator netsend parameter is set or the operator is set in the job
-							if ($NetsendOperator -or $smojob.OperatorToNetSend) {
-								Write-Message -Message "Setting job netsend level to $NetsendLevel" -Level Verbose
-								$smojob.NetSendLevel = $NetsendLevel
-							}
-							else {
-								Stop-Function -Message "Cannot set netsend level $NetsendLevel without a valid netsend operator name" -Target $instance -Continue
-							}
-						}
-					}
+                            # Remove the notification
+                            $smojob.EmailLevel = $EmailLevel
+                        }
+                        else {
+                            # Check if either the operator e-mail parameter is set or the operator is set in the job
+                            if ($EmailOperator -or $smojob.OperatorToEmail) {
+                                Write-Message -Message "Setting job e-mail level to $EmailLevel" -Level Verbose
+                                $smojob.EmailLevel = $EmailLevel
+                            }
+                            else {
+                                Stop-Function -Message "Cannot set e-mail level $EmailLevel without a valid e-mail operator name" -Target $instance -Continue
+                            }
+                        }
+                    }
 					
-					if ($PageLevel) {
-						# Check if the notifiction needs to be removed
-						if ($PageLevel -eq 0) {
-							# Remove the operator
-							$smojob.OperatorToPage = $null
+                    if ($NetsendLevel) {
+                        # Check if the notifiction needs to be removed
+                        if ($NetsendLevel -eq 0) {
+                            # Remove the operator
+                            $smojob.OperatorToNetSend = $null
 							
-							# Remove the notification
-							$smojob.PageLevel = $PageLevel
-						}
-						else {
-							# Check if either the operator pager parameter is set or the operator is set in the job
-							if ($PageOperator -or $smojob.OperatorToPage) {
-								Write-Message -Message "Setting job pager level to $PageLevel" -Level Verbose
-								$smojob.PageLevel = $PageLevel
-							}
-							else {
-								Stop-Function -Message "Cannot set page level $PageLevel without a valid netsend operator name" -Target $instance -Continue
-							}
-						}
-					}
+                            # Remove the notification
+                            $smojob.NetSendLevel = $NetsendLevel
+                        }
+                        else {
+                            # Check if either the operator netsend parameter is set or the operator is set in the job
+                            if ($NetsendOperator -or $smojob.OperatorToNetSend) {
+                                Write-Message -Message "Setting job netsend level to $NetsendLevel" -Level Verbose
+                                $smojob.NetSendLevel = $NetsendLevel
+                            }
+                            else {
+                                Stop-Function -Message "Cannot set netsend level $NetsendLevel without a valid netsend operator name" -Target $instance -Continue
+                            }
+                        }
+                    }
 					
-					# Check the current setting of the job's email level
-					if ($EmailOperator) {
-						# Check if the operator name is present
-						if ($Server.JobServer.Operators.Name -contains $EmailOperator) {
-							Write-Message -Message "Setting job e-mail operator to $EmailOperator" -Level Verbose
-							$smojob.OperatorToEmail = $EmailOperator
-						}
-						else {
-							Stop-Function -Message "The e-mail operator name $EmailOperator does not exist on instance $instance. Exiting.." -Target $j -Continue
-						}
-					}
-					
-					if ($NetsendOperator) {
-						# Check if the operator name is present
-						if ($Server.JobServer.Operators.Name -contains $NetsendOperator) {
-							Write-Message -Message "Setting job netsend operator to $NetsendOperator" -Level Verbose
-							$smojob.OperatorToNetSend = $NetsendOperator
-						}
-						else {
-							Stop-Function -Message "The netsend operator name $NetsendOperator does not exist on instance $instance. Exiting.." -Target $j -Continue
-						}
-					}
-					
-					if ($PageOperator) {
-						# Check if the operator name is present
-						if ($Server.JobServer.Operators.Name -contains $PageOperator) {
-							Write-Message -Message "Setting job pager operator to $PageOperator" -Level Verbose
-							$smojob.OperatorToPage = $PageOperator
-						}
-						else {
-							Stop-Function -Message "The page operator name $PageOperator does not exist on instance $instance. Exiting.." -Target $instance -Continue
-						}
-					}
-					
-					if ($DeleteLevel) {
-						Write-Message -Message "Setting job delete level to $DeleteLevel" -Level Verbose
-						$smojob.DeleteLevel = $DeleteLevel
-					}
-					#endregion job options
-					
-					# Execute 
-					if ($PSCmdlet.ShouldProcess($SqlInstance, "Changing the job $j")) {
-						try {
-							Write-Message -Message ("Changing the job") -Level Output
+                    if ($PageLevel) {
+                        # Check if the notifiction needs to be removed
+                        if ($PageLevel -eq 0) {
+                            # Remove the operator
+                            $smojob.OperatorToPage = $null
 							
-							# Change the job
-							$smojob.Alter()
-						}
-						catch {
-							Stop-Function -Message "Something went wrong changing the job. `n$($_.Exception.Message)" -Target $instance -Continue
-						}
-						Get-DbaAgentJob -SqlInstance $server | Where-Object Name -eq $smojob.name
-					}
-				}
-			} # foreach object job
-		} # foreach instance
-	} # Process
+                            # Remove the notification
+                            $smojob.PageLevel = $PageLevel
+                        }
+                        else {
+                            # Check if either the operator pager parameter is set or the operator is set in the job
+                            if ($PageOperator -or $smojob.OperatorToPage) {
+                                Write-Message -Message "Setting job pager level to $PageLevel" -Level Verbose
+                                $smojob.PageLevel = $PageLevel
+                            }
+                            else {
+                                Stop-Function -Message "Cannot set page level $PageLevel without a valid netsend operator name" -Target $instance -Continue
+                            }
+                        }
+                    }
+					
+                    # Check the current setting of the job's email level
+                    if ($EmailOperator) {
+                        # Check if the operator name is present
+                        if ($Server.JobServer.Operators.Name -contains $EmailOperator) {
+                            Write-Message -Message "Setting job e-mail operator to $EmailOperator" -Level Verbose
+                            $smojob.OperatorToEmail = $EmailOperator
+                        }
+                        else {
+                            Stop-Function -Message "The e-mail operator name $EmailOperator does not exist on instance $instance. Exiting.." -Target $j -Continue
+                        }
+                    }
+					
+                    if ($NetsendOperator) {
+                        # Check if the operator name is present
+                        if ($Server.JobServer.Operators.Name -contains $NetsendOperator) {
+                            Write-Message -Message "Setting job netsend operator to $NetsendOperator" -Level Verbose
+                            $smojob.OperatorToNetSend = $NetsendOperator
+                        }
+                        else {
+                            Stop-Function -Message "The netsend operator name $NetsendOperator does not exist on instance $instance. Exiting.." -Target $j -Continue
+                        }
+                    }
+					
+                    if ($PageOperator) {
+                        # Check if the operator name is present
+                        if ($Server.JobServer.Operators.Name -contains $PageOperator) {
+                            Write-Message -Message "Setting job pager operator to $PageOperator" -Level Verbose
+                            $smojob.OperatorToPage = $PageOperator
+                        }
+                        else {
+                            Stop-Function -Message "The page operator name $PageOperator does not exist on instance $instance. Exiting.." -Target $instance -Continue
+                        }
+                    }
+					
+                    if ($DeleteLevel) {
+                        Write-Message -Message "Setting job delete level to $DeleteLevel" -Level Verbose
+                        $smojob.DeleteLevel = $DeleteLevel
+                    }
+                    #endregion job options
+					
+                    # Execute 
+                    if ($PSCmdlet.ShouldProcess($SqlInstance, "Changing the job $j")) {
+                        try {
+                            Write-Message -Message ("Changing the job") -Level Output
+							
+                            # Change the job
+                            $smojob.Alter()
+                        }
+                        catch {
+                            Stop-Function -Message "Something went wrong changing the job. `n$($_.Exception.Message)" -Target $instance -Continue
+                        }
+                        Get-DbaAgentJob -SqlInstance $server | Where-Object Name -eq $smojob.name
+                    }
+                }
+            } # foreach object job
+        } # foreach instance
+    } # Process
 	
-	end {
-		Write-Message -Message "Finished changing job(s)." -Level Output
-	}
+    end {
+        Write-Message -Message "Finished changing job(s)." -Level Output
+    }
 }

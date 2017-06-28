@@ -19,7 +19,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Utility.UtilityHost]::FormatDate = $Value
+    [Sqlcollaborative.Dbatools.Utility.UtilityHost]::FormatDate = $Value
     
     return $Result
 }
@@ -47,7 +47,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Utility.UtilityHost]::FormatDateTime = $Value
+    [Sqlcollaborative.Dbatools.Utility.UtilityHost]::FormatDateTime = $Value
     
     return $Result
 }
@@ -75,7 +75,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Utility.UtilityHost]::FormatTime = $Value
+    [Sqlcollaborative.Dbatools.Utility.UtilityHost]::FormatTime = $Value
     
     return $Result
 }

@@ -56,7 +56,7 @@ Get-DbaInstallDate -SqlInstance sqlserver2014a, sql2016 -IncludeWindows
 Returns an object with the Windows Install date and the SQL install date as a string. 
 
 .EXAMPLE   
-Get-SqlRegisteredServerName -SqlInstance sql2014 | Get-DbaInstallDate
+Get-DbaRegisteredServerName -SqlInstance sql2014 | Get-DbaInstallDate
 
 Returns an object with SQL Instance install date as a string for every server listed in the Central Management Server on sql2014
 	

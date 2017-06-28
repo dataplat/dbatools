@@ -125,7 +125,7 @@
 		'Test-DbaPowerPlan',
 		'Set-DbaPowerPlan',
 		'Test-DbaDiskAlignment',
-		'Get-DbaDatabaseFreespace',
+		'Get-DbaDatabaseSpace',
 		'Get-DbaClusterActiveNode',
 		'Test-DbaDatabaseOwner',
 		'Set-DbaDatabaseOwner',
@@ -308,7 +308,9 @@
 		'Remove-DbaComputerCertificate',
 		'Get-DbaServerInstallDate',
 		'Install-DbaFirstResponderKit',
-		'Backup-DbaDatabaseMasterKey'
+		'Backup-DbaDatabaseMasterKey',
+		'Get-DbaAgentJobHistory',
+		'Get-DbaSsisEnvironmentVariable'
 	)
 	
 	# Cmdlets to export from this module
@@ -384,7 +386,11 @@
 	'Test-SqlPath',
 	'Test-SqlTempDbConfiguration',
 	'Watch-SqlDbLogin',
-	'Invoke-Sqlcmd2'
+	'Invoke-Sqlcmd2',
+	'Get-DbaSqlManagementObject',
+	'Get-DbaMaintenanceSolutionLog',
+	'Invoke-DbaLogShippingRecovery',
+	'Sync-DbaLoginPermission'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()

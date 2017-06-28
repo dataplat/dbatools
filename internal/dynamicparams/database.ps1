@@ -1,6 +1,6 @@
 ﻿#region Initialize Cache
-if (-not [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"]) {
-	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"] = @{ }
+if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"]) {
+	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"] = @{ }
 }
 #endregion Initialize Cache
 
@@ -19,7 +19,7 @@ $ScriptBlock = {
     )
     
     $start = Get-Date
-    [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastExecution = $start
+    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastExecution = $start
 	
 	$server = $fakeBoundParameter['SqlInstance']
 	
@@ -39,33 +39,33 @@ $ScriptBlock = {
     }
     catch
     {
-        [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastDuration = (Get-Date) - $start
+        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastDuration = (Get-Date) - $start
         return
     }
     
-    if ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$parServer.FullSmoName.ToLower()])
+    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$parServer.FullSmoName.ToLower()])
     {
-        foreach ($name in ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*"))
+        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*"))
         {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
-        [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastDuration = (Get-Date) - $start
+        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastDuration = (Get-Date) - $start
         return
     }
     
     try
     {
         $serverObject = Connect-SqlInstance -SqlInstance $parServer -SqlCredential $fakeBoundParameter['SqlCredential'] -ErrorAction Stop
-        foreach ($name in ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*"))
+        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*"))
         {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
-        [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastDuration = (Get-Date) - $start
+        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastDuration = (Get-Date) - $start
         return
     }
     catch
     {
-        [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastDuration = (Get-Date) - $start
+        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastDuration = (Get-Date) - $start
         return
     }
 }
@@ -75,7 +75,7 @@ Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name Database
 
 #region Update Cache
 $ScriptBlock = {
-	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$FullSmoName] = $server.Databases.Name
+	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["database"][$FullSmoName] = $server.Databases.Name
 }
 Register-DbaTeppInstanceCacheBuilder -ScriptBlock $ScriptBlock
 #endregion Update Cache

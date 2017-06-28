@@ -1,4 +1,5 @@
 ﻿Describe "Backup-DbaDatabase Integration Tests" -Tags "Integrationtests" {
+	<#
 	Context "Properly restores a database on the local drive using Path" {
 		$results = Backup-DbaDatabase -SqlInstance localhost -BackupDirectory C:\temp\backups
 		It "Should return a database name, specifically master" {
@@ -8,6 +9,7 @@
 			$results.ForEach{ $_.BackupComplete | Should Be $true }
 		}
 	}
+	#>
 	
 	Context "Should not backup if database and exclude match" {
 		$results = Backup-DbaDatabase -SqlInstance localhost -BackupDirectory C:\temp\backups -Database master -Exclude master
