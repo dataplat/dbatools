@@ -40,4 +40,10 @@ foreach ($function in $functions) {
 
 #region Explicit TEPP
 Register-DbaTeppArgumentCompleter -Command "Find-DbaCommand" -Parameter Tag -Name tag
+Register-DbaTeppArgumentCompleter -Command "Get-DbaConfig" -Parameter FullName -Name config
+Register-DbaTeppArgumentCompleter -Command "Get-DbaConfig" -Parameter Name -Name configname
+Register-DbaTeppArgumentCompleter -Command "Get-DbaConfig" -Parameter Module -Name configmodule
+Register-DbaTeppArgumentCompleter -Command "Get-DbaConfigValue" -Parameter Name -Name config
+Register-DbaTeppArgumentCompleter -Command "Set-DbaConfig" -Parameter Name -Name config
+Register-DbaTeppArgumentCompleter -Command "Set-DbaConfig" -Parameter Module -Name configmodule
 #endregion Explicit TEPP
