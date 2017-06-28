@@ -124,7 +124,7 @@ function Copy-DbaCustomError {
 			$copyCustomErrorStatus = [pscustomobject]@{
 				SourceServer        = $sourceServer.Name
 				DestinationServer   = $destServer.Name
-				Name                = $curretnCustomError
+				Name                = $currentCustomError
 				Status              = $null
 				DateTime            = [DbaDateTime](Get-Date)
 			}
