@@ -16,7 +16,7 @@ clone_folder: c:\github\dbatools
 
 before_test:
    # grab appveyor lab files
-   - ps: .\Tests\appveyor.prep.ps1
+  - ps: .\Tests\appveyor.prep.ps1
    # "Get Pester manually"
   - ps: Install-Module -Name Pester -Repository PSGallery -Force | Out-Null
   # "Setting up the local SQL Server environments"
