@@ -114,7 +114,6 @@ function Copy-DbaServerAudit {
 			}
 
 			$sql = $currentAudit.Script() | Out-String
-			$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 
 			if ($destAudits.Name -contains $auditName) {
 				if ($force -eq $false) {
@@ -178,7 +177,7 @@ function Copy-DbaServerAudit {
 				try {
 					Write-Output "File path $($currentAudit.Filepath) exists on $Destination."
 					Write-Output "Copying server audit $auditName"
-					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					$destServer.Query($sql)
 				}
 				catch {
 					Write-Exception $_
