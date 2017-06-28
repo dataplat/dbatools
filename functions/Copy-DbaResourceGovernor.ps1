@@ -79,10 +79,14 @@ function Copy-DbaResourceGovernor {
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$DestinationSqlCredential,
+		[object[]]$ResourcePool,
+		[object[]]$ExcludeResourcePool,
 		[switch]$Force
 	)
 
