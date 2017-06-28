@@ -515,11 +515,6 @@ function Copy-DbaLogin {
 		if ($Pscmdlet.ShouldProcess("console", "Showing time elapsed message")) {
 			Write-Message -Level Verbose -Message "Login migration completed: $(Get-Date)"
 			$totalTime = ($elapsed.Elapsed.toString().Split(".")[0])
-			$sourceServer.ConnectionContext.Disconnect()
-
-			if ($Destination.length -gt 0) {
-				$destServer.ConnectionContext.Disconnect()
-			}
 
 			Write-Message -Level Verbose -Message "Total elapsed time: $totalTime"
 		}
