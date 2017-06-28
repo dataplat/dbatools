@@ -1,78 +1,80 @@
 function Copy-DbaResourceGovernor {
 	<#
-.SYNOPSIS
-Migrates Resource Pools
+		.SYNOPSIS
+			Migrates Resource Pools
 
-.DESCRIPTION
-By default, all non-system resource pools are migrated. If the pool already exists on the destination, it will be skipped unless -Force is used. 
-	
-The -ResourcePools parameter is autopopulated for command-line completion and can be used to copy only specific objects.
+		.DESCRIPTION
+			By default, all non-system resource pools are migrated. If the pool already exists on the destination, it will be skipped unless -Force is used. 
+				
+			The -ResourcePool parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
-THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
+		.PARAMETER Source
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-.PARAMETER Source
-Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+		.PARAMETER SourceSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-.PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
 
-.PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			To connect as a different Windows user, run PowerShell as that user.
 
-$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+		.PARAMETER Destination
+			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+		.PARAMETER DestinationSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-.PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
 
-$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			To connect as a different Windows user, run PowerShell as that user.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+		.PARAMETER ResourcePool
+			The resource pool(s) to process - this list is auto populated from the server. If unspecified, all resource pools will be processed.
 
-.PARAMETER Force
-If policies exists on destination server, it will be dropped and recreated.
+		.PARAMETER ExcludeResourcePool
+			The resource pool(s) to exclude - this list is auto populated from the server
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER WhatIf 
+			Shows what would happen if the command were to run. No actions are actually performed. 
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER Confirm 
+			Prompts you for confirmation before executing any changing operations within the command. 
 
-.NOTES
-Tags: Migration
-Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
+		.PARAMETER Force
+			If policies exists on destination server, it will be dropped and recreated.
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.PARAMETER Silent 
+			Use this switch to disable any kind of verbose messages
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		.NOTES
+			Tags: Migration, ResourceGovernor
+			Author: Chrissy LeMaire (@cl), netnerds.net
+			Requires: sysadmin access on SQL Servers
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.LINK
+			https://dbatools.io/Copy-DbaResourceGovernor
 
-.LINK
-https://dbatools.io/Copy-DbaResourceGovernor
+		.EXAMPLE   
+			Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster
 
-.EXAMPLE   
-Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster
+			Copies all extended event policies from sqlserver2014a to sqlcluster, using Windows credentials. 
 
-Copies all extended event policies from sqlserver2014a to sqlcluster, using Windows credentials. 
+		.EXAMPLE   
+			Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
-.EXAMPLE   
-Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+			Copies all extended event policies from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
-Copies all extended event policies from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
+		.EXAMPLE   
+			Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
-.EXAMPLE   
-Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -WhatIf
-
-Shows what would happen if the command were executed.
-#>
+			Shows what would happen if the command were executed.
+	#>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
