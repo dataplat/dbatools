@@ -79,11 +79,16 @@ function Copy-DbaServerAudit {
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-		[switch]$Force
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$DestinationSqlCredential,
+		[object[]]$Audit,
+		[object[]]$ExcludeAudit,
+		[switch]$Force,
+		[switch]$Silent
 	)
 
 	begin {
