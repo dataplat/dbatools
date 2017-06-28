@@ -1,12 +1,12 @@
 function Copy-DbaServerAudit {
 	<#
-		.SYNOPSIS 
-			Copy-DbaServerAudit migrates server audits from one SQL Server to another. 
+		.SYNOPSIS
+			Copy-DbaServerAudit migrates server audits from one SQL Server to another.
 
 		.DESCRIPTION
 			By default, all audits are copied. The -Audit parameter is autopopulated for command-line completion and can be used to copy only specific audits.
 
-			If the audit already exists on the destination, it will be skipped unless -Force is used. 
+			If the audit already exists on the destination, it will be skipped unless -Force is used.
 
 		.PARAMETER Source
 			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -14,9 +14,9 @@ function Copy-DbaServerAudit {
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
@@ -25,9 +25,9 @@ function Copy-DbaServerAudit {
 		.PARAMETER DestinationSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Audit
@@ -36,16 +36,16 @@ function Copy-DbaServerAudit {
 		.PARAMETER ExcludeAudit
 			The audit(s) to exclude - this list is auto populated from the server
 
-		.PARAMETER WhatIf 
-			Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER WhatIf
+			Shows what would happen if the command were to run. No actions are actually performed.
 
-		.PARAMETER Confirm 
-			Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER Confirm
+			Prompts you for confirmation before executing any changing operations within the command.
 
 		.PARAMETER Force
 			Drops and recreates the XXXXX if it exists
 
-		.PARAMETER Silent 
+		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -60,17 +60,17 @@ function Copy-DbaServerAudit {
 		.LINK
 			https://dbatools.io/Copy-DbaServerAudit
 
-		.EXAMPLE   
+		.EXAMPLE
 			Copy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster
 
 			Copies all server audits from sqlserver2014a to sqlcluster, using Windows credentials. If audits with the same name exist on sqlcluster, they will be skipped.
 
-		.EXAMPLE   
+		.EXAMPLE
 			Copy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster -Audit tg_noDbDrop -SourceSqlCredential $cred -Force
 
 			Copies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an audit with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
-		.EXAMPLE   
+		.EXAMPLE
 			Copy-DbaServerAudit -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
 			Shows what would happen if the command were executed using force.
@@ -93,93 +93,92 @@ function Copy-DbaServerAudit {
 
 	begin {
 
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-		
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
-		
-		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+
+		$source = $sourceServer.DomainInstanceName
+		$destination = $destServer.DomainInstanceName
+
+		if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
 			throw "Server Audits are only supported in SQL Server 2008 and above. Quitting."
-			
 		}
-		
-		$serveraudits = $sourceserver.Audits
-		$destaudits = $destserver.Audits
+
+		$serverAudits = $sourceServer.Audits
+		$destAudits = $destServer.Audits
 	}
 	process {
-		foreach ($audit in $serveraudits) {
-			$auditname = $audit.name
-			if ($audits.length -gt 0 -and $audits -notcontains $auditname) {
+		foreach ($currentAudit in $serverAudits) {
+			$auditName = $currentAudit.Name
+			if ($Audit -and $auditName -notin $Audit -or $auditName -in $ExcludeAudit) {
 				continue
 			}
-			
-			$sql = $audit.Script() | Out-String
+
+			$sql = $currentAudit.Script() | Out-String
 			$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-			
-			if ($destaudits.name -contains $auditname) {
+
+			if ($destAudits.Name -contains $auditName) {
 				if ($force -eq $false) {
-					Write-Warning "Server audit $auditname exists at destination. Use -Force to drop and migrate."
+					Write-Warning "Server audit $auditName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping server audit $auditname")) {
+					if ($Pscmdlet.ShouldProcess($destination, "Dropping server audit $auditName")) {
 						try {
-							Write-Verbose "Dropping server audit $auditname"
-							foreach ($spec in $destserver.ServerAuditSpecifications) {
-								if ($auditSpecification.Auditname -eq $auditname) {
+							Write-Verbose "Dropping server audit $auditName"
+							foreach ($spec in $destServer.ServerAuditSpecifications) {
+								if ($auditSpecification.Auditname -eq $auditName) {
 									$auditSpecification.Drop()
 								}
 							}
-							
-							$destserver.audits[$auditname].Disable()
-							$destserver.audits[$auditname].Alter()
-							$destserver.audits[$auditname].Drop()
+
+							$destServer.audits[$auditName].Disable()
+							$destServer.audits[$auditName].Alter()
+							$destServer.audits[$auditName].Drop()
 						}
-						catch { 
-							Write-Exception $_ 
+						catch {
+							Write-Exception $_
 						}
 					}
 				}
 			}
-			
-			if ((Test-DbaSqlPath -SqlInstance $destserver -Path $audit.Filepath) -eq $false) {
+
+			if ((Test-DbaSqlPath -SqlInstance $destServer -Path $currentAudit.Filepath) -eq $false) {
 				if ($Force -eq $false) {
-					Write-Warning "$($audit.Filepath) does not exist on $destination. Skipping $auditname."
+					Write-Warning "$($currentAudit.Filepath) does not exist on $destination. Skipping $auditName."
 					Write-Warning "Specify -Force to create the directory"
 					continue
 				}
 				else {
 					Write-Verbose "Force specified. Creating directory."
-					
-					$destnetbios = Resolve-NetBiosName $destserver
-					$path = Join-AdminUnc $destnetbios $audit.Filepath
-					$root = $audit.Filepath.Substring(0, 3)
-					$rootunc = Join-AdminUnc $destnetbios $root
-					
-					If ((Test-Path $rootunc) -eq $true) {
+
+					$destNetBios = Resolve-NetBiosName $destServer
+					$path = Join-AdminUnc $destNetBios $currentAudit.Filepath
+					$root = $currentAudit.Filepath.Substring(0, 3)
+					$rootUnc = Join-AdminUnc $destNetBios $root
+
+					if ((Test-Path $rootUnc) -eq $true) {
 						try {
-							If ($Pscmdlet.ShouldProcess($destination, "Creating directory $($audit.Filepath)")) {
-								$null = New-Item -ItemType Directory $audit.Filepath -ErrorAction Continue
+							if ($Pscmdlet.ShouldProcess($destination, "Creating directory $($currentAudit.Filepath)")) {
+								$null = New-Item -ItemType Directory $currentAudit.Filepath -ErrorAction Continue
 							}
 						}
 						catch {
-							Write-Output "Couldn't create diretory $($audit.Filepath). Using default data directory."
-							$datadir = Get-SqlDefaultPaths $destserver data
-							$sql = $sql.Replace($audit.FilePath, $datdir)
+							Write-Output "Couldn't create directory $($currentAudit.Filepath). Using default data directory."
+							$datadir = Get-SqlDefaultPaths $destServer data
+							$sql = $sql.Replace($currentAudit.FilePath, $datdir)
 						}
 					}
 					else {
-						$datadir = Get-SqlDefaultPaths $destserver data
-						$sql = $sql.Replace($audit.FilePath, $datadir)
+						$datadir = Get-SqlDefaultPaths $destServer data
+						$sql = $sql.Replace($currentAudit.FilePath, $datadir)
 					}
 				}
 			}
-			If ($Pscmdlet.ShouldProcess($destination, "Creating server audit $auditname")) {
+			if ($Pscmdlet.ShouldProcess($destination, "Creating server audit $auditName")) {
 				try {
-					Write-Output "File path $($audit.Filepath) exists on $Destination."
-					Write-Output "Copying server audit $auditname"
-					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					Write-Output "File path $($currentAudit.Filepath) exists on $Destination."
+					Write-Output "Copying server audit $auditName"
+					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 				}
 				catch {
 					Write-Exception $_
