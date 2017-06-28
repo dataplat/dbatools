@@ -43,7 +43,7 @@ Function Restore-DBFromFilteredArray {
     Begin {
         $FunctionName = (Get-PSCallstack)[0].Command
         Write-Message -Level Verbose -Message "Starting"
-
+        Write-Message -Level Verbose -Message "Parameters bound: $($PSBoundParameters.Keys -join ", ")"
 
 
         $InternalFiles = @()
@@ -85,8 +85,11 @@ Function Restore-DBFromFilteredArray {
             $DestinationLogDirectory = Get-SqlDefaultPaths $Server log
         }
 
-        If ($DbName -in $Server.databases.name -and !((Was-Bound 'ScriptOnly') -or (Was-Bound 'verifyonly'))) {
-            If ($ReplaceDatabase -eq $true) {	
+        If ($DbName -in $Server.databases.name) {
+            if (($ScriptOnly -eq $true) -or ($verifyonly -eq $true)) {
+                Write-Message -Level Verbose -Message "No need to close db for this operation"
+            }
+            elseIf ($WithReplace -eq $true) {	
                 if ($Pscmdlet.ShouldProcess("Killing processes in $dbname on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
                     try {
                         Write-Message -Level Verbose -Message "Set $DbName single_user to kill processes"
@@ -100,15 +103,12 @@ Function Restore-DBFromFilteredArray {
                 } 
             }
             else {
-                Write-Warning "$FunctionName - Database $DbName exists and will not be overwritten without the WithReplace switch"
+                Stop-Function -Message "$Dbname exists and WithReplace not specified, stopping" -Silent $silent 
                 return
             }
+        }
 
-        }
-        else {
-            Write-Warning "$FunctionName - Database $DbName exists and will not be overwritten without the WithReplace switch"
-            return
-        }
+        
         $MissingFiles = @()
         if ($TrustDbBackupHistory) {
             Write-Message -Level Verbose -Message "Trusted File checks"
