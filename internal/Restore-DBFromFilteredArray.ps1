@@ -105,7 +105,10 @@ Function Restore-DBFromFilteredArray {
             }
 
         }
-
+        else {
+            Write-Warning "$FunctionName - Database $DbName exists and will not be overwritten without the WithReplace switch"
+            return
+        }
         $MissingFiles = @()
         if ($TrustDbBackupHistory) {
             Write-Message -Level Verbose -Message "Trusted File checks"
