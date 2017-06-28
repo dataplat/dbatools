@@ -129,7 +129,7 @@
         }
 		
 		# Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
-		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($ConvertedSqlInstance.FullSmoName.ToLower(), $server.ConnectionContext, ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($ConvertedSqlInstance.FullSmoName.ToLower(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
 		
 		# Update cache for instance names
 		if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $ConvertedSqlInstance.FullSmoName.ToLower()) {
@@ -253,7 +253,7 @@
 	}
 	
 	# Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
-	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($ConvertedSqlInstance.FullSmoName.ToLower(), $server.ConnectionContext, ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($ConvertedSqlInstance.FullSmoName.ToLower(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
 	
 	# Update cache for instance names
     if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $ConvertedSqlInstance.FullSmoName.ToLower())
