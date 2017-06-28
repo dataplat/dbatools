@@ -99,25 +99,27 @@ function Copy-DbaResourceGovernor {
 		$destination = $destServer.DomainInstanceName
 
 		if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
-			throw "Resource Governor is only supported in SQL Server 2008 and above. Quitting."
+			Stop-Function -Message "Resource Governor is only supported in SQL Server 2008 and above. Quitting."
+			return
 		}
 	}
 	process {
+		if (Test-FunctionInterrupt) { return }
 
 		if ($Pscmdlet.ShouldProcess($destination, "Updating Resource Governor settings")) {
 			if ($destServer.Edition -notmatch 'Enterprise' -and $destServer.Edition -notmatch 'Datacenter' -and $destServer.Edition -notmatch 'Developer') {
-				Write-Warning "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
+				Write-Message -Level Warning -Message "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
 			}
 			else {
 				try {
 					$sql = $sourceServer.ResourceGovernor.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-					Write-Verbose $sql
-					Write-Output "Updating Resource Governor settings"
+					Write-Message -Level Debug -Message $sql
+					Write-Message -Level Verbose -Message "Updating Resource Governor settings"
 					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 				}
 				catch {
-					Write-Exception $_
+					Stop-Function -Message "Not able to update settings" -Target $destServer -ErrorRecord $_
 				}
 			}
 		}
@@ -133,19 +135,18 @@ function Copy-DbaResourceGovernor {
 			$pools = $sourceServer.ResourceGovernor.ResourcePools | Where-Object { $_.Name -notin "internal", "default" }
 		}
 
-		Write-Output "Migrating pools"
+		Write-Message -Level Verbose -Message "Migrating pools"
 		foreach ($pool in $pools) {
 			$poolName = $pool.Name
 			if ($destServer.ResourceGovernor.ResourcePools[$poolName] -ne $null) {
 				if ($force -eq $false) {
-					Write-Warning "Pool '$poolName' was skipped because it already exists on $destination"
-					Write-Warning "Use -Force to drop and recreate"
+					Write-Message -Level Warning -Message "Pool '$poolName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 					continue
 				}
 				else {
 					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $poolName")) {
-						Write-Verbose "Pool '$poolName' exists on $destination"
-						Write-Verbose "Force specified. Dropping $poolName."
+						Write-Message -Level Verbose -Message "Pool '$poolName' exists on $destination"
+						Write-Message -Level Verbose -Message "Force specified. Dropping $poolName."
 
 						try {
 							$destPool = $destServer.ResourceGovernor.ResourcePools[$poolName]
@@ -157,8 +158,7 @@ function Copy-DbaResourceGovernor {
 							$destServer.ResourceGovernor.Alter()
 						}
 						catch {
-							Write-Exception "Unable to drop: $_  Moving on."
-							continue
+							Stop-Function -Message "Unable to drop: $_  Moving on." -Target $destPool -ErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -168,8 +168,8 @@ function Copy-DbaResourceGovernor {
 				try {
 					$sql = $pool.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-					Write-Verbose $sql
-					Write-Output "Copying pool $poolName"
+					Write-Message -Level Debug -Message $sql
+					Write-Message -Level Verbose -Message "Copying pool $poolName"
 					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 
 					$workloadGroups = $pool.WorkloadGroups
@@ -177,24 +177,23 @@ function Copy-DbaResourceGovernor {
 						$workgroupName = $workloadGroup.Name
 						$sql = $workloadGroup.Script() | Out-String
 						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-						Write-Verbose $sql
-						Write-Output "Copying $workgroupName"
+						Write-Message -Level Debug -Message $sql
+						Write-Message -Level Verbose -Message "Copying $workgroupName"
 						$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 					}
-
 				}
 				catch {
-					Write-Exception $_
+					Stop-Function -Message "Unable to migrate pool" -Target $pool -ErrorRecord $_
 				}
 			}
 		}
 
 		if ($Pscmdlet.ShouldProcess($destination, "Reconfiguring")) {
 			if ($destServer.Edition -notmatch 'Enterprise' -and $destServer.Edition -notmatch 'Datacenter' -and $destServer.Edition -notmatch 'Developer') {
-				Write-Warning "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
+				Write-Message -Level Warning -Message "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
 			}
 			else {
-				Write-Output "Reconfiguring Resource Governor"
+				Write-Message -Level Verbose -Message "Reconfiguring Resource Governor"
 				$sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
 				$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 			}
