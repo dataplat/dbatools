@@ -167,19 +167,17 @@ function Copy-DbaResourceGovernor {
 			if ($Pscmdlet.ShouldProcess($destination, "Migrating pool $poolName")) {
 				try {
 					$sql = $pool.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Message -Level Debug -Message $sql
 					Write-Message -Level Verbose -Message "Copying pool $poolName"
-					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $destServer.Query($sql)
 
 					$workloadGroups = $pool.WorkloadGroups
 					foreach ($workloadGroup in $workloadGroups) {
 						$workgroupName = $workloadGroup.Name
 						$sql = $workloadGroup.Script() | Out-String
-						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 						Write-Message -Level Debug -Message $sql
 						Write-Message -Level Verbose -Message "Copying $workgroupName"
-						$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+						$null = $destServer.Query($sql)
 					}
 				}
 				catch {
@@ -195,7 +193,7 @@ function Copy-DbaResourceGovernor {
 			else {
 				Write-Message -Level Verbose -Message "Reconfiguring Resource Governor"
 				$sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
-				$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+				$null = $destServer.Query($sql)
 			}
 		}
 	}
