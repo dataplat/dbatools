@@ -87,7 +87,8 @@ function Copy-DbaResourceGovernor {
 		$DestinationSqlCredential,
 		[object[]]$ResourcePool,
 		[object[]]$ExcludeResourcePool,
-		[switch]$Force
+		[switch]$Force,
+		[switch]$Silent
 	)
 
 	begin {
@@ -106,6 +107,16 @@ function Copy-DbaResourceGovernor {
 	process {
 		if (Test-FunctionInterrupt) { return }
 
+		$copyResourceGovSetting = [pscustomobject]@{
+			SourceServer      = $sourceServer.Name
+			DestinationServer = $destServer.Name
+			Type              = "Resource Governor Settings"
+			Name              = $null
+			Status            = $null
+			Notes             = $null
+			DateTime          = [DbaDateTime](Get-Date)
+		}
+
 		if ($Pscmdlet.ShouldProcess($destination, "Updating Resource Governor settings")) {
 			if ($destServer.Edition -notmatch 'Enterprise' -and $destServer.Edition -notmatch 'Datacenter' -and $destServer.Edition -notmatch 'Developer') {
 				Write-Message -Level Warning -Message "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
@@ -115,9 +126,16 @@ function Copy-DbaResourceGovernor {
 					$sql = $sourceServer.ResourceGovernor.Script() | Out-String
 					Write-Message -Level Debug -Message $sql
 					Write-Message -Level Verbose -Message "Updating Resource Governor settings"
-					$null = $destServer.Query($sql)
+					$destServer.Query($sql)
+
+					$copyResourceGovSetting.Status = "Successful"
+					$copyResourceGovSetting
 				}
 				catch {
+					$copyResourceGovSetting.Status = "Failed"
+					$copyResourceGovSetting.Notes = $_.Exception
+					$copyResourceGovSetting
+
 					Stop-Function -Message "Not able to update settings" -Target $destServer -ErrorRecord $_
 				}
 			}
@@ -137,9 +155,24 @@ function Copy-DbaResourceGovernor {
 		Write-Message -Level Verbose -Message "Migrating pools"
 		foreach ($pool in $pools) {
 			$poolName = $pool.Name
+
+			$copyResourceGovPool = [pscustomobject]@{
+				SourceServer      = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Type              = "Pool"
+				Name              = $poolName
+				Status            = $null
+				Notes             = $null
+				DateTime          = [DbaDateTime](Get-Date)
+			}
+
 			if ($destServer.ResourceGovernor.ResourcePools[$poolName] -ne $null) {
 				if ($force -eq $false) {
 					Write-Message -Level Warning -Message "Pool '$poolName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
+
+					$copyResourceGovPool.Status = "Skipped"
+					$copyResourceGovPool.Notes = "Already exist on destination"
+					$copyResourceGovPool
 					continue
 				}
 				else {
@@ -157,6 +190,10 @@ function Copy-DbaResourceGovernor {
 							$destServer.ResourceGovernor.Alter()
 						}
 						catch {
+							$copyResourceGovPool.Status = "Failed to drop from Destination"
+							$copyResourceGovPool.Notes = $_.Exception
+							$copyResourceGovPool
+
 							Stop-Function -Message "Unable to drop: $_  Moving on." -Target $destPool -ErrorRecord $_ -Continue
 						}
 					}
@@ -168,18 +205,39 @@ function Copy-DbaResourceGovernor {
 					$sql = $pool.Script() | Out-String
 					Write-Message -Level Debug -Message $sql
 					Write-Message -Level Verbose -Message "Copying pool $poolName"
-					$null = $destServer.Query($sql)
+					$destServer.Query($sql)
+
+					$copyResourceGovPool.Status = "Successful"
+					$copyResourceGovPool
 
 					$workloadGroups = $pool.WorkloadGroups
 					foreach ($workloadGroup in $workloadGroups) {
 						$workgroupName = $workloadGroup.Name
+
+						$copyResourceGovWorkGroup = [pscustomobject]@{
+							SourceServer      = $sourceServer.Name
+							DestinationServer = $destServer.Name
+							Type              = "Pool Workgroup"
+							Name              = $workgroupName
+							Status            = $null
+							Notes             = $null
+							DateTime          = [DbaDateTime](Get-Date)
+						}
+
 						$sql = $workloadGroup.Script() | Out-String
 						Write-Message -Level Debug -Message $sql
 						Write-Message -Level Verbose -Message "Copying $workgroupName"
-						$null = $destServer.Query($sql)
+						$destServer.Query($sql)
+
+						$copyResourceGovWorkGroup.Status = "Successful"
+						$copyResourceGovWorkGroup
 					}
 				}
 				catch {
+					$copyResourceGovWorkGroup.Status = "Failed"
+					$copyResourceGovWorkGroup.Notes = $_.Exception
+					$copyResourceGovWorkGroup
+
 					Stop-Function -Message "Unable to migrate pool" -Target $pool -ErrorRecord $_
 				}
 			}
@@ -192,7 +250,18 @@ function Copy-DbaResourceGovernor {
 			else {
 				Write-Message -Level Verbose -Message "Reconfiguring Resource Governor"
 				$sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
-				$null = $destServer.Query($sql)
+				$destServer.Query($sql)
+
+				$copyResourceGovReconfig = [pscustomobject]@{
+					SourceServer      = $sourceServer.Name
+					DestinationServer = $destServer.Name
+					Type              = "Reconfigure Resource Governor"
+					Name              = $null
+					Status            = "Successful"
+					Notes             = $null
+					DateTime          = [DbaDateTime](Get-Date)
+				}
+				$copyResourceGovReconfig
 			}
 		}
 	}
