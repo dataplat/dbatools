@@ -1,4 +1,4 @@
-﻿function Where-DbaObject
+﻿function global:Where-DbaObject
 {
     <#
         .SYNOPSIS
@@ -142,3 +142,5 @@
         
     }
 }
+
+(Get-Item Function:\Where-DbaObject).Visibility = "Private"

@@ -1,13 +1,13 @@
 ﻿$scriptBlock = {
 	#region Utility Functions
 	function Get-PriorityServer {
-		$res = [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::InstanceAccess.Values | Where-Object -Property LastUpdate -LT (New-Object System.DateTime(1, 1, 1, 1, 1, 1))
+		$res = [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::InstanceAccess.Values | Where-Object -Property LastUpdate -LT (New-Object System.DateTime(1, 1, 1, 1, 1, 1))
 		$res | Export-Csv "C:\temp\debug-priority.csv"
 		$res
 	}
 	
 	function Get-ActionableServer {
-		$res = [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::InstanceAccess.Values | Where-Object -Property LastUpdate -LT ((Get-Date) - ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppUpdateInterval)) | Where-Object -Property LastUpdate -GT ((Get-Date) - ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppUpdateTimeout))
+		$res = [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::InstanceAccess.Values | Where-Object -Property LastUpdate -LT ((Get-Date) - ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppUpdateInterval)) | Where-Object -Property LastUpdate -GT ((Get-Date) - ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppUpdateTimeout))
 		$res | Export-Csv "C:\temp\debug-regular.csv"
 		$res
 	}
@@ -23,10 +23,10 @@
 			
 		}
 		Process {
-			if ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppUdaterStopper) { break }
+			if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppUdaterStopper) { break }
 			
 			foreach ($instance in $ServerAccess) {
-				if ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppUdaterStopper) { break }
+				if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppUdaterStopper) { break }
 				$server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.ConnectionObject)
 				try {
 					$server.ConnectionContext.Connect()
@@ -36,14 +36,14 @@
 					continue
 				}
 				
-				$FullSmoName = ([Sqlcollective.Dbatools.Parameter.DbaInstanceParameter]$server).FullSmoName.ToLower()
+				$FullSmoName = ([Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]$server).FullSmoName.ToLower()
 				
-				foreach ($scriptBlock in ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
+				foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
 					# Workaround to avoid stupid issue with scriptblock from different runspace
 					[ScriptBlock]::Create($scriptBlock).Invoke()
 				}
 				
-				foreach ($scriptBlock in ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsSlow)) {
+				foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsSlow)) {
 					# Workaround to avoid stupid issue with scriptblock from different runspace
 					[ScriptBlock]::Create($scriptBlock).Invoke()
 				}
@@ -59,7 +59,7 @@
 	
 	#region Main Execution
 	while ($true) {
-		if ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppUdaterStopper) { break }
+		if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppUdaterStopper) { break }
 		
 		Get-PriorityServer | Update-TeppCache
 		
@@ -70,7 +70,7 @@
 	#endregion Main Execution
 }
 
-[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::SetScript($scriptBlock)
-if (-not ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled)) {
-	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Start()
+[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetScript($scriptBlock)
+if (-not ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled)) {
+	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Start()
 }

@@ -78,18 +78,19 @@ function Get-DbaDatabaseFile {
 				df.Type,
 				df.type_desc as TypeDescription,
 				df.name as LogicalName,
-				df.physical_name as PhysicalName,
+				mf.physical_name as PhysicalName,
 				df.state_desc as State,
 				df.max_size as MaxSize,
 				df.growth as Growth,
 				fileproperty(df.name, 'spaceused') as UsedSpace,
 				df.size as Size,
+				vfs.size_on_disk_bytes as size_on_disk_bytes,
 				case df.state_desc when 'OFFLINE' then 'True' else 'False' End as IsOffline,
-				case df.is_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnly,
-				case df.is_media_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnlyMedia,
-				case df.is_sparse when 1 then 'True' when 0 then 'False' End as IsSparse,
-				case df.is_percent_growth when 1 then 'Percent' when 0 then 'kb' End as GrowthType,
-				case df.is_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnly,
+				case mf.is_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnly,
+				case mf.is_media_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnlyMedia,
+				case mf.is_sparse when 1 then 'True' when 0 then 'False' End as IsSparse,
+				case mf.is_percent_growth when 1 then 'Percent' when 0 then 'kb' End as GrowthType,
+				case mf.is_read_only when 1 then 'True' when 0 then 'False' End as IsReadOnly,
 				vfs.num_of_writes as NumberOfDiskWrites,
 				vfs.num_of_reads as NumberOfDiskReads,
 				vfs.num_of_bytes_read as BytesReadFromDisk,
@@ -102,7 +103,9 @@ function Get-DbaDatabaseFile {
 			
 			$sqlfrom = "from sys.database_files df
 				left outer join  sys.filegroups fg on df.data_space_id=fg.data_space_id
-				inner join sys.dm_io_virtual_file_stats(db_id(),NULL) vfs on df.file_id=vfs.file_id"
+				inner join sys.dm_io_virtual_file_stats(db_id(),NULL) vfs on df.file_id=vfs.file_id
+				inner join sys.master_files mf on df.file_id = mf.file_id
+				and mf.database_id = db_id()"
 			$sql2008 = ",vs.available_bytes as 'VolumeFreeSpace'"
 			$sql2008from = "cross apply sys.dm_os_volume_stats(db_id(),df.file_id) vs"
 			
@@ -163,7 +166,12 @@ function Get-DbaDatabaseFile {
 					$size = [dbasize]($result.Size * 8192)
 					$usedspace = [dbasize]($result.UsedSpace * 8192)
 					$maxsize = $result.MaxSize
-					
+					# calculation is done here because for snapshots or sparse files size is not the "virtual" size
+					# (master_files.Size) but the currently allocated one (dm_io_virtual_file_stats.size_on_disk_bytes)
+					$AvailableSpace = $size-$usedspace
+					if($result.size_on_disk_bytes) {
+						$size = [dbasize]($result.size_on_disk_bytes)
+					}
 					if ($maxsize -gt -1) {
 						$maxsize = [dbasize]($result.MaxSize * 8192)
 					}
@@ -195,7 +203,7 @@ function Get-DbaDatabaseFile {
 						GrowthType               = $result.GrowthType
 						Size                     = $size
 						UsedSpace                = $usedspace
-						AvailableSpace           = $size-$usedspace
+						AvailableSpace           = $AvailableSpace
 						IsOffline                = $result.IsOffline
 						IsReadOnly               = $result.IsReadOnly
 						IsReadOnlyMedia          = $result.IsReadOnlyMedia

@@ -44,12 +44,27 @@ foreach ($instance in $instances) {
 	}
 }
 
+do {
+	Start-Sleep 1
+	$null = (& sqlcmd -S localhost -b -Q "select 1" -d master)
+}
+while ($lastexitcode -ne 0 -and $t++ -lt 10)
+
+do {
+	Start-Sleep 1
+	$null = (& sqlcmd -S localhost\sql2016 -b -Q "select 1" -d master)
+}
+while ($lastexitcode -ne 0 -and $s++ -lt 10)
+
 # Agent sometimes takes a moment to start 
 do {
 	Write-Warning "Waiting for SQL Agent to start"
 	Start-Sleep 1
 }
-while ((Get-Service 'SQLAgent$sql2016').Status -ne 'Running' -and $i++ -lt 10)
+while ((Get-Service 'SQLAgent$sql2016').Status -ne 'Running' -and $z++ -lt 10)
+
+# Whatever, just sleep an extra 5
+Start-Sleep 5
 
 Write-Output "Executing startup scripts for SQL Server 2008"
 # Add some jobs to the sql2008r2sp2 instance (1433 = default)

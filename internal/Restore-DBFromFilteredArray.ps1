@@ -85,7 +85,7 @@ Function Restore-DBFromFilteredArray {
             $DestinationLogDirectory = Get-SqlDefaultPaths $Server log
         }
 
-        If ($DbName -in $Server.databases.name -and ($ScriptOnly -eq $false -or $VerfiyOnly -eq $false)) {
+        If ($DbName -in $Server.databases.name -and !((Was-Bound 'ScriptOnly') -or (Was-Bound 'verifyonly'))) {
             If ($ReplaceDatabase -eq $true) {	
                 if ($Pscmdlet.ShouldProcess("Killing processes in $dbname on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
                     try {
@@ -204,7 +204,9 @@ Function Restore-DBFromFilteredArray {
                     if ($DestinationFileNumber) {
                         $FileName = $FileName + '_' + $FileId + '_of_' + $RestoreFileCountFileCount
                     }
-                    $filename = $filename + '.' + $extension
+                    if ($null -ne $extension) { 
+                        $filename = $filename + '.' + $extension
+                    }
                     Write-Verbose "past the checks"
                     if ($File.Type -eq 'L' -and $DestinationLogDirectory -ne '') {
                         $MoveFile.PhysicalFileName = $DestinationLogDirectory + '\' + $FileName					

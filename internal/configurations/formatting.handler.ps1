@@ -19,7 +19,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Utility.UtilityHost]::FormatDate = $Value
+    [Sqlcollaborative.Dbatools.Utility.UtilityHost]::FormatDate = $Value
     
     return $Result
 }
@@ -47,7 +47,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Utility.UtilityHost]::FormatDateTime = $Value
+    [Sqlcollaborative.Dbatools.Utility.UtilityHost]::FormatDateTime = $Value
     
     return $Result
 }
@@ -75,7 +75,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Utility.UtilityHost]::FormatTime = $Value
+    [Sqlcollaborative.Dbatools.Utility.UtilityHost]::FormatTime = $Value
     
     return $Result
 }
@@ -94,7 +94,7 @@ $ScriptBlock = {
         Message = ""
     }
     
-    [Sqlcollective.Ddbatools.Utility.UtilityHost]::DisableCustomDateTime = $Value
+    [Sqlcollaborative.Ddbatools.Utility.UtilityHost]::DisableCustomDateTime = $Value
     
     return $Result
 }
@@ -113,7 +113,7 @@ $ScriptBlock = {
         Message = ""
     }
     
-    [Sqlcollective.Ddbatools.Utility.UtilityHost]::DisableCustomTimeSpan = $Value
+    [Sqlcollaborative.Ddbatools.Utility.UtilityHost]::DisableCustomTimeSpan = $Value
     
     return $Result
 }

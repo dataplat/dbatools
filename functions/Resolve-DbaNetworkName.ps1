@@ -50,9 +50,9 @@ function Resolve-DbaNetworkName {
 
 			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for the SQL instance sql2016\sqlexpress and sql2014
 
-			Get-SqlRegisteredServerName -SqlInstance sql2014 | Resolve-DbaNetworkName
+			Get-DbaRegisteredServerName -SqlInstance sql2014 | Resolve-DbaNetworkName
 
-			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-SqlRegisteredServerName
+			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaRegisteredServerName
 	#>
 	[CmdletBinding()]
 	param (
@@ -93,12 +93,20 @@ function Resolve-DbaNetworkName {
 						Stop-Function -Message "DNS name not found" -Continue -InnerErrorRecord $_
 					}
 				}
-
+				
 				if ($fqdn -notmatch "\.") {
-					$dnsdomain = $env:USERDNSDOMAIN.ToLower()
-					$fqdn = "$fqdn.$dnsdomain"
+					if ($computer -match "\.") {
+						$dnsdomain = $computer.ComputerName.Substring($computer.ComputerName.IndexOf(".") + 1)
+						$fqdn = "$resolved.$dnsdomain"
+					}
+					else {
+						$dnsdomain = $env:USERDNSDOMAIN.ToLower()
+						if ($dnsdomain -match "\.") {
+							$fqdn = "$fqdn.$dnsdomain"
+						}
+					}
 				}
-
+				
 				$hostname = $fqdn.Split(".")[0]
 
 				[PSCustomObject]@{

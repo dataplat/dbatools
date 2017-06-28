@@ -37,8 +37,8 @@
     }
 
     PROCESS {
-        if ($Errors) { return [Sqlcollective.Dbatools.dbaSystem.DebugHost]::GetErrors() }
-        else { return [Sqlcollective.Dbatools.dbaSystem.DebugHost]::GetLog() }
+        if ($Errors) { return [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::GetErrors() }
+        else { return [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::GetLog() }
     }
 
     END {

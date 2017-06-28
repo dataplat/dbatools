@@ -1,6 +1,6 @@
 ﻿#region Initialize Cache
-if (-not [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"]) {
-	[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] = @()
+if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"]) {
+	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] = @()
 }
 #endregion Initialize Cache
 
@@ -19,13 +19,13 @@ $ScriptBlock = {
     )
     
     $start = Get-Date
-    [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts["sqlinstance"].LastExecution = $start
+    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["sqlinstance"].LastExecution = $start
     
-    foreach ($name in ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] | Where-DbaObject -Like "$wordToComplete*"))
+    foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] | Where-DbaObject -Like "$wordToComplete*"))
     {
         New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
     }
-    [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts["sqlinstance"].LastDuration = (Get-Date) - $start
+    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["sqlinstance"].LastDuration = (Get-Date) - $start
 }
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name "sqlinstance"
 #endregion Tepp Data return

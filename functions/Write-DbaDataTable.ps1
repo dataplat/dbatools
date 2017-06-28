@@ -345,16 +345,16 @@ Function Write-DbaDataTable {
             'System.Byte'     = 'tinyint';
             'System.SByte'    = 'smallint';
             'System.TimeSpan' = 'nvarchar(30)';
-            'System.String'   = 'nvarchar(MAX)';
-            'System.Char'     = 'nvarchar(1)'
-            'System.DateTime' = 'datetime';
-            'System.Boolean'  = 'bit';
-            'System.Guid'     = 'uniqueidentifier';
-            'Int32'           = 'int';
-            'UInt32'          = 'bigint';
-            'Int16'           = 'smallint';
-            'UInt16'          = 'int';
-            'Int64'           = 'bigint';
+            'System.String' = 'nvarchar(MAX)';
+            'System.Char' = 'nvarchar(1)'
+            'System.DateTime' = 'datetime2';
+            'System.Boolean' = 'bit';
+            'System.Guid' = 'uniqueidentifier';
+            'Int32' = 'int';
+            'UInt32' = 'bigint';
+            'Int16' = 'smallint';
+            'UInt16' = 'int';
+            'Int64' = 'bigint';
             'UInt64' = 'decimal(20,0)';
             'Decimal'         = 'decimal(20,5)';
             'Single'          = 'bigint';
@@ -363,13 +363,13 @@ Function Write-DbaDataTable {
             'SByte'           = 'smallint';
             'TimeSpan'        = 'nvarchar(30)';
             'String' = 'nvarchar(MAX)';
-            'Char'            = 'nvarchar(1)'
-            'DateTime'        = 'datetime';
-            'Boolean'         = 'bit';
-            'Bool'            = 'bit';
-            'Guid'            = 'uniqueidentifier';
-                'int'         = 'int';
-            'long'            = 'bigint';
+            'Char' = 'nvarchar(1)'
+            'DateTime' = 'datetime2';
+            'Boolean' = 'bit';
+            'Bool' = 'bit';
+            'Guid' = 'uniqueidentifier';
+            'int' = 'int';
+            'long' = 'bigint';
         }
         
     }
