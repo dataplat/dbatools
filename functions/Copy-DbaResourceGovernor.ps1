@@ -4,8 +4,8 @@ function Copy-DbaResourceGovernor {
 			Migrates Resource Pools
 
 		.DESCRIPTION
-			By default, all non-system resource pools are migrated. If the pool already exists on the destination, it will be skipped unless -Force is used. 
-				
+			By default, all non-system resource pools are migrated. If the pool already exists on the destination, it will be skipped unless -Force is used.
+
 			The -ResourcePool parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
 		.PARAMETER Source
@@ -14,9 +14,9 @@ function Copy-DbaResourceGovernor {
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
@@ -25,9 +25,9 @@ function Copy-DbaResourceGovernor {
 		.PARAMETER DestinationSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER ResourcePool
@@ -36,16 +36,16 @@ function Copy-DbaResourceGovernor {
 		.PARAMETER ExcludeResourcePool
 			The resource pool(s) to exclude - this list is auto populated from the server
 
-		.PARAMETER WhatIf 
-			Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER WhatIf
+			Shows what would happen if the command were to run. No actions are actually performed.
 
-		.PARAMETER Confirm 
-			Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER Confirm
+			Prompts you for confirmation before executing any changing operations within the command.
 
 		.PARAMETER Force
 			If policies exists on destination server, it will be dropped and recreated.
 
-		.PARAMETER Silent 
+		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -60,17 +60,17 @@ function Copy-DbaResourceGovernor {
 		.LINK
 			https://dbatools.io/Copy-DbaResourceGovernor
 
-		.EXAMPLE   
+		.EXAMPLE
 			Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster
 
-			Copies all extended event policies from sqlserver2014a to sqlcluster, using Windows credentials. 
+			Copies all extended event policies from sqlserver2014a to sqlcluster, using Windows credentials.
 
-		.EXAMPLE   
+		.EXAMPLE
 			Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
 			Copies all extended event policies from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
-		.EXAMPLE   
+		.EXAMPLE
 			Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 			Shows what would happen if the command were executed.
@@ -92,51 +92,51 @@ function Copy-DbaResourceGovernor {
 
 	begin {
 
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-		
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
-		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
+		$source = $sourceServer.DomainInstanceName
+		$destination = $destServer.DomainInstanceName
+
+		if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
 			throw "Resource Governor is only supported in SQL Server 2008 and above. Quitting."
 		}
 	}
 	process {
 
 		if ($Pscmdlet.ShouldProcess($destination, "Updating Resource Governor settings")) {
-			if ($destserver.Edition -notmatch 'Enterprise' -and $destserver.Edition -notmatch 'Datacenter' -and $destserver.Edition -notmatch 'Developer') {
+			if ($destServer.Edition -notmatch 'Enterprise' -and $destServer.Edition -notmatch 'Datacenter' -and $destServer.Edition -notmatch 'Developer') {
 				Write-Warning "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
 			}
 			else {
 				try {
-					$sql = $sourceserver.resourceGovernor.Script() | Out-String
+					$sql = $sourceServer.ResourceGovernor.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
 					Write-Output "Updating Resource Governor settings"
-					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 				}
 				catch {
 					Write-Exception $_
 				}
 			}
 		}
-		
+
 		# Pools
 		if ($ResourcePool) {
-			$pools = $sourceserver.ResourceGovernor.ResourcePools | Where-Object Name -In $ResourcePool
+			$pools = $sourceServer.ResourceGovernor.ResourcePools | Where-Object Name -In $ResourcePool
 		}
 		elseif ($ExcludeResourcePool) {
-			$pool = $sourceserver.ResourceGovernor.ResourcePools | Where-Object Name -NotIn $ExcludeResourcePool
+			$pool = $sourceServer.ResourceGovernor.ResourcePools | Where-Object Name -NotIn $ExcludeResourcePool
 		}
 		else {
-			$pools = $sourceserver.ResourceGovernor.ResourcePools | Where-Object { $_.Name -notin "internal", "default" }
+			$pools = $sourceServer.ResourceGovernor.ResourcePools | Where-Object { $_.Name -notin "internal", "default" }
 		}
-		
+
 		Write-Output "Migrating pools"
 		foreach ($pool in $pools) {
-			$poolName = $pool.name
-			if ($destserver.ResourceGovernor.ResourcePools[$poolName] -ne $null) {
+			$poolName = $pool.Name
+			if ($destServer.ResourceGovernor.ResourcePools[$poolName] -ne $null) {
 				if ($force -eq $false) {
 					Write-Warning "Pool '$poolName' was skipped because it already exists on $destination"
 					Write-Warning "Use -Force to drop and recreate"
@@ -146,15 +146,15 @@ function Copy-DbaResourceGovernor {
 					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $poolName")) {
 						Write-Verbose "Pool '$poolName' exists on $destination"
 						Write-Verbose "Force specified. Dropping $poolName."
-						
+
 						try {
-							$destpool = $destserver.ResourceGovernor.ResourcePools[$poolName]
-							$workloadgroups = $destpool.WorkloadGroups
-							foreach ($workloadgroup in $workloadgroups) {
-								$workloadgroup.Drop()
+							$destPool = $destServer.ResourceGovernor.ResourcePools[$poolName]
+							$workloadGroups = $destPool.WorkloadGroups
+							foreach ($workloadGroup in $workloadGroups) {
+								$workloadGroup.Drop()
 							}
-							$destpool.Drop()
-							$destserver.ResourceGovernor.Alter()
+							$destPool.Drop()
+							$destServer.ResourceGovernor.Alter()
 						}
 						catch {
 							Write-Exception "Unable to drop: $_  Moving on."
@@ -163,43 +163,42 @@ function Copy-DbaResourceGovernor {
 					}
 				}
 			}
-			
+
 			if ($Pscmdlet.ShouldProcess($destination, "Migrating pool $poolName")) {
 				try {
 					$sql = $pool.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
 					Write-Output "Copying pool $poolName"
-					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
-					
-					$workloadgroups = $pool.WorkloadGroups
-					foreach ($workloadgroup in $workloadgroups) {
-						$workgroupname = $workloadgroup.name
-						$sql = $workloadgroup.script() | Out-String
+					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+
+					$workloadGroups = $pool.WorkloadGroups
+					foreach ($workloadGroup in $workloadGroups) {
+						$workgroupName = $workloadGroup.Name
+						$sql = $workloadGroup.Script() | Out-String
 						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 						Write-Verbose $sql
-						Write-Output "Copying $workgroupname"
-						$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
+						Write-Output "Copying $workgroupName"
+						$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 					}
-					
+
 				}
 				catch {
 					Write-Exception $_
 				}
 			}
 		}
-		
+
 		if ($Pscmdlet.ShouldProcess($destination, "Reconfiguring")) {
-			if ($destserver.Edition -notmatch 'Enterprise' -and $destserver.Edition -notmatch 'Datacenter' -and $destserver.Edition -notmatch 'Developer') {
+			if ($destServer.Edition -notmatch 'Enterprise' -and $destServer.Edition -notmatch 'Datacenter' -and $destServer.Edition -notmatch 'Developer') {
 				Write-Warning "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
 			}
 			else {
 				Write-Output "Reconfiguring Resource Governor"
 				$sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
-				$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
+				$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 			}
 		}
-		
 	}
 	end {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlResourceGovernor
