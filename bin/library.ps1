@@ -90,7 +90,7 @@ if ($ImportLibrary) {
 				}
 				
 				Write-Verbose -Message "Building the library"
-				$null = & $msbuild "bin\projects\dbatools\dbatools.sln"
+				$null = & $msbuild "$libraryBase\projects\dbatools\dbatools.sln"
 				
 				try {
 					Write-Verbose -Message "Found library, trying to copy & import"
