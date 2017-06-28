@@ -11,18 +11,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <summary>
         /// Number of bytes contained in whatever object uses this object as a property
         /// </summary>
-        public long Byte
-        {
-            get
-            {
-                return _Byte;
-            }
-            set
-            {
-                _Byte = value;
-            }
-        }
-        private long _Byte = -1;
+        public long Byte { get; set; }
 
         /// <summary>
         /// Kilobyte representation of the bytes
@@ -31,7 +20,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return ((double)_Byte / (double)1024);
+                return (Byte / (double)1024);
             }
             set
             {
@@ -46,7 +35,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return ((double)_Byte / (double)1048576);
+                return (Byte / (double)1048576);
             }
             set
             {
@@ -61,7 +50,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return ((double)_Byte / (double)1073741824);
+                return (Byte / (double)1073741824);
             }
             set
             {
@@ -76,7 +65,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return ((double)_Byte / (double)1099511627776);
+                return (Byte / (double)1099511627776);
             }
             set
             {
@@ -91,15 +80,13 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return _Digits;
+                return _digits;
             }
-            set
-            {
-                if (value < 0) { _Digits = 0; }
-                else { _Digits = value; }
+            set {
+                _digits = value < 0 ? 0 : value;
             }
         }
-        private int _Digits = 2;
+        private int _digits = 2;
 
         /// <summary>
         /// Shows the default string representation of size
@@ -107,31 +94,31 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <returns></returns>
         public override string ToString()
         {
-            string format = "{0:N" + _Digits + "}";
+            string format = "{0:N" + Digits + "} {1}";
 
             if (Terabyte > 1)
             {
-                return (String.Format(format, Terabyte) + " TB");
+                return (String.Format(format, Terabyte, "TB"));
             }
-            else if (Gigabyte > 1)
+            if (Gigabyte > 1)
             {
-                return (String.Format(format, Gigabyte) + " GB");
+                return (String.Format(format, Gigabyte, "GB"));
             }
-            else if (Megabyte > 1)
+            if (Megabyte > 1)
             {
-                return (String.Format(format, Megabyte) + " MB");
+                return (String.Format(format, Megabyte, "MB"));
             }
-            else if (Kilobyte > 1)
+            if (Kilobyte > 1)
             {
-                return (String.Format(format, Kilobyte) + " KB");
+                return (String.Format(format, Kilobyte, "KB"));
             }
-            else if (Byte > -1)
+            if (Byte > -1)
             {
-                return (String.Format(format, Byte) + " B");
+                return (String.Format("{0} {1}", Byte, "B"));
             }
-            else if (Byte == -1)
+            if (Byte == -1)
                 return "Unlimited";
-            else { return ""; }
+            return "";
         }
 
         /// <summary>
@@ -141,7 +128,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <returns>True if equal, false elsewise</returns>
         public override bool Equals(object obj)
         {
-            return ((obj != null) && (obj is Size) && (this.Byte == ((Size)obj).Byte));
+            return ((obj != null) && (obj is Size) && (Byte == ((Size)obj).Byte));
         }
 
         /// <summary>
@@ -150,7 +137,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <returns>Some meaningless output</returns>
         public override int GetHashCode()
         {
-            return this.Byte.GetHashCode();
+            return Byte.GetHashCode();
         }
 
         /// <summary>
@@ -177,8 +164,8 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <returns>Something</returns>
         public int CompareTo(Size obj)
         {
-            if (this.Byte == obj.Byte) { return 0; }
-            if (this.Byte < obj.Byte) { return -1; }
+            if (Byte == obj.Byte) { return 0; }
+            if (Byte < obj.Byte) { return -1; }
 
             return 1;
         }
@@ -192,8 +179,8 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             try
             {
-                if (this.Byte == ((Size)obj).Byte) { return 0; }
-                if (this.Byte < ((Size)obj).Byte) { return -1; }
+                if (Byte == ((Size)obj).Byte) { return 0; }
+                if (Byte < ((Size)obj).Byte) { return -1; }
 
                 return 1;
             }
@@ -238,7 +225,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <param name="a">The size to convert</param>
         public static implicit operator Int32(Size a)
         {
-            return (Int32)a._Byte;
+            return (Int32)a.Byte;
         }
 
         /// <summary>
@@ -256,7 +243,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <param name="a">The size to convert</param>
         public static implicit operator Int64(Size a)
         {
-            return a._Byte;
+            return a.Byte;
         }
 
         /// <summary>
@@ -283,7 +270,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <param name="a">The size to convert</param>
         public static implicit operator double(Size a)
         {
-            return a._Byte;
+            return a.Byte;
         }
         #endregion Operators
     }
