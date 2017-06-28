@@ -61,6 +61,9 @@ The setting for the backup compression for the backup defaults to the default se
 .PARAMETER AllDatabases
 Runs the script for every user databases on a server - Useful when decomissioning a server - That would need a DestinationServer set
 
+.PARAMETER ReuseSourceFolderStructure
+Reuse source folder structure on restore instead of using destionation default.
+
 .PARAMETER Force
 This switch will continue to perform rest of the actions and will create an Agent Job with DBCCERROR in the name and a Backup file with DBCC in the name
 
