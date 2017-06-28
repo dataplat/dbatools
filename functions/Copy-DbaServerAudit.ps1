@@ -100,13 +100,16 @@ function Copy-DbaServerAudit {
 		$destination = $destServer.DomainInstanceName
 
 		if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
-			throw "Server Audits are only supported in SQL Server 2008 and above. Quitting."
+			Stop-Function -Message "Server Audits are only supported in SQL Server 2008 and above. Quitting."
+			return
 		}
 
 		$serverAudits = $sourceServer.Audits
 		$destAudits = $destServer.Audits
 	}
 	process {
+		if (Test-FunctionInterrupt) { return }
+
 		foreach ($currentAudit in $serverAudits) {
 			$auditName = $currentAudit.Name
 			if ($Audit -and $auditName -notin $Audit -or $auditName -in $ExcludeAudit) {
@@ -117,13 +120,13 @@ function Copy-DbaServerAudit {
 
 			if ($destAudits.Name -contains $auditName) {
 				if ($force -eq $false) {
-					Write-Warning "Server audit $auditName exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Warning -Message "Server audit $auditName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
 					if ($Pscmdlet.ShouldProcess($destination, "Dropping server audit $auditName")) {
 						try {
-							Write-Verbose "Dropping server audit $auditName"
+							Write-Message -Level Verbose -Message "Dropping server audit $auditName"
 							foreach ($spec in $destServer.ServerAuditSpecifications) {
 								if ($auditSpecification.Auditname -eq $auditName) {
 									$auditSpecification.Drop()
@@ -135,7 +138,7 @@ function Copy-DbaServerAudit {
 							$destServer.audits[$auditName].Drop()
 						}
 						catch {
-							Write-Exception $_
+							Stop-Function -Message "Issue dropping audit from destination" -Target $auditName -ErrorRecord $_
 						}
 					}
 				}
@@ -143,12 +146,11 @@ function Copy-DbaServerAudit {
 
 			if ((Test-DbaSqlPath -SqlInstance $destServer -Path $currentAudit.Filepath) -eq $false) {
 				if ($Force -eq $false) {
-					Write-Warning "$($currentAudit.Filepath) does not exist on $destination. Skipping $auditName."
-					Write-Warning "Specify -Force to create the directory"
+					Write-Message -Level Warning -Message "$($currentAudit.Filepath) does not exist on $destination. Skipping $auditName. Specify -Force to create the directory"
 					continue
 				}
 				else {
-					Write-Verbose "Force specified. Creating directory."
+					Write-Message -Level Verbose -Message "Force specified. Creating directory."
 
 					$destNetBios = Resolve-NetBiosName $destServer
 					$path = Join-AdminUnc $destNetBios $currentAudit.Filepath
@@ -162,7 +164,7 @@ function Copy-DbaServerAudit {
 							}
 						}
 						catch {
-							Write-Output "Couldn't create directory $($currentAudit.Filepath). Using default data directory."
+							Write-Message -Level Verbose -Message "Couldn't create directory $($currentAudit.Filepath). Using default data directory."
 							$datadir = Get-SqlDefaultPaths $destServer data
 							$sql = $sql.Replace($currentAudit.FilePath, $datdir)
 						}
@@ -175,12 +177,12 @@ function Copy-DbaServerAudit {
 			}
 			if ($Pscmdlet.ShouldProcess($destination, "Creating server audit $auditName")) {
 				try {
-					Write-Output "File path $($currentAudit.Filepath) exists on $Destination."
-					Write-Output "Copying server audit $auditName"
+					Write-Message -Level Verbose -Message "File path $($currentAudit.Filepath) exists on $Destination."
+					Write-Message -Level Verbose -Message "Copying server audit $auditName"
 					$destServer.Query($sql)
 				}
 				catch {
-					Write-Exception $_
+					Stop-Function -Message "Issue creating audit" -Target $auditName -ErrorRecord $_
 				}
 			}
 		}
