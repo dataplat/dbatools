@@ -85,7 +85,7 @@ Function Restore-DBFromFilteredArray {
             $DestinationLogDirectory = Get-SqlDefaultPaths $Server log
         }
 
-        If ($DbName -in $Server.databases.name -and ($ScriptOnly -eq $false -or $VerfiyOnly -eq $false)) {
+        If ($DbName -in $Server.databases.name -and ($ScriptOnly -eq $false -or $VerifyOnly -eq $false)) {
             If ($ReplaceDatabase -eq $true) {	
                 if ($Pscmdlet.ShouldProcess("Killing processes in $dbname on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
                     try {
