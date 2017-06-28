@@ -123,8 +123,11 @@ function Copy-DbaResourceGovernor {
 		}
 		
 		# Pools
-		if ($respools.length -gt 0) {
-			$pools = $sourceserver.ResourceGovernor.ResourcePools | Where-Object { $respools -contains $_.Name }
+		if ($ResourcePool) {
+			$pools = $sourceserver.ResourceGovernor.ResourcePools | Where-Object Name -In $ResourcePool
+		}
+		elseif ($ExcludeResourcePool) {
+			$pool = $sourceserver.ResourceGovernor.ResourcePools | Where-Object Name -NotIn $ExcludeResourcePool
 		}
 		else {
 			$pools = $sourceserver.ResourceGovernor.ResourcePools | Where-Object { $_.Name -notin "internal", "default" }
