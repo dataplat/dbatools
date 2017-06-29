@@ -119,7 +119,7 @@ function Copy-DbaLinkedServer {
 
 			# Get entropy from the registry - hopefully finds the right SQL server instance
 			try {
-				[byte[]]$entropy = Invoke-Command -ComputerName $sourceNetBios -argumentlist $serviceInstanceId {
+				[byte[]]$entropy = Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -argumentlist $serviceInstanceId {
 					$serviceInstanceId = $args[0]
 					$entropy = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\$serviceInstanceId\Security\").Entropy
 					return $entropy
@@ -132,7 +132,7 @@ function Copy-DbaLinkedServer {
 
 			# Decrypt the service master key
 			try {
-				$serviceKey = Invoke-Command -ComputerName $sourceNetBios -ArgumentList $smkbytes, $Entropy {
+				$serviceKey = Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ArgumentList $smkbytes, $Entropy {
 					Add-Type -assembly System.Security
 					Add-Type -assembly System.Core
 					$smkbytes = $args[0]; $Entropy = $args[1]
@@ -197,7 +197,7 @@ function Copy-DbaLinkedServer {
 
 			# Get entropy from the registry
 			try {
-				$logins = Invoke-Command -ComputerName $sourceNetBios -ArgumentList $connString, $sql {
+				$logins = Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ArgumentList $connString, $sql {
 					$connString = $args[0]; $sql = $args[1]
 					$conn = New-Object System.Data.SqlClient.SQLConnection($connString)
 					$conn.open()
@@ -371,11 +371,11 @@ function Copy-DbaLinkedServer {
 								}
 							}
 						}
-					}#end foreach login
-				} #endif skiplogins
-			} #end foreach server
-		}#end Copy-DbaLinkedServers
-	} #end begin
+					}
+				}
+			}
+		}
+	}
 	process {
 
 		if ($SourceSqlCredential.username -ne $null) {
@@ -412,7 +412,7 @@ function Copy-DbaLinkedServer {
 
 		Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
 		try {
-			Invoke-Command -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
+			Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
 		}
 		catch {
 			Stop-Function -Message "Can't connect to registry on $source. Quitting." -Target $sourceNetBios
