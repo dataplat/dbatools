@@ -100,7 +100,8 @@ function Copy-DbaServerTrigger {
 		$destination = $destServer.DomainInstanceName
 
 		if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
-			throw "Server Triggers are only supported in SQL Server 2005 and above. Quitting."
+			Stop-Function -Message "Server Triggers are only supported in SQL Server 2005 and above. Quitting."
+			return
 		}
 
 		if ($destServer.VersionMajor -lt $sourceServer.VersionMajor) {
@@ -113,6 +114,7 @@ function Copy-DbaServerTrigger {
 
 	}
 	process {
+		if (Test-FunctionInterrupt) { return }
 
 		foreach ($trigger in $serverTriggers) {
 			$triggerName = $trigger.Name
@@ -123,18 +125,17 @@ function Copy-DbaServerTrigger {
 
 			if ($destTriggers.Name -contains $triggerName) {
 				if ($force -eq $false) {
-					Write-Warning "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Warning -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
 					if ($Pscmdlet.ShouldProcess($destination, "Dropping server trigger $triggerName and recreating")) {
 						try {
-							Write-Verbose "Dropping server trigger $triggerName"
+							Write-Message -Level Verbose -Message "Dropping server trigger $triggerName"
 							$destServer.Triggers[$triggerName].Drop()
 						}
 						catch {
-							Write-Exception $_
-							continue
+							Stop-Function -Message "Issue dropping trigger on destination" -Target $triggerName -ErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -142,15 +143,13 @@ function Copy-DbaServerTrigger {
 
 			if ($Pscmdlet.ShouldProcess($destination, "Creating server trigger $triggerName")) {
 				try {
-					Write-Output "Copying server trigger $triggerName"
+					Write-Message -Level Verbose -Message "Copying server trigger $triggerName"
 					$sql = $trigger.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-
-					Write-Verbose $sql
+					Write-Message -Level Debug -Message $sql
 					$destServer.Query($sql)
 				}
 				catch {
-					Write-Exception $_
+					Stop-Function -Message "Issue creating trigger on destination" -Target $triggerName -ErrorRecord $_
 				}
 			}
 		}
