@@ -80,21 +80,28 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 			Test-RunAsAdmin -ComputerName $instance.ComputerName
 			
 			Write-Message -Level Output -Message "Resolving hostname"
-			$resolved = Resolve-DbaNetworkName -ComputerName $instance -Turbo
+			$resolved = Resolve-DbaNetworkName -ComputerName $instance
 			
 			if ($null -eq $resolved) {
 				Write-Message -Level Warning -Message "Can't resolve $instance"
 				return
 			}
 			
-			Write-Message -Level Output -Message "Connecting to SQL WMI on $($instance.ComputerName)"
+			$computername = $instance.ComputerName
+			$instancename = $instance.instancename
+			Write-Message -Level Output -Message "Connecting to SQL WMI on $computername"
 			
 			try {
-				$sqlwmi = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.instancename))"
+				$sqlwmi = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instancename)"
 			}
 			catch {
 				Stop-Function -Message $_ -Target $sqlwmi
 				return
+			}
+			
+			if (!$sqlwmi) {
+				Write-Message -Level Warning -Message "Cannot find $instancename on $computerName"
+				continue
 			}
 			
 			$regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
