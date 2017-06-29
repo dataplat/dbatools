@@ -117,7 +117,7 @@ function Copy-DbaServerTrigger {
 		foreach ($trigger in $serverTriggers) {
 			$triggerName = $trigger.Name
 			
-			if ($triggers.length -gt 0 -and $triggers -notcontains $triggerName) {
+			if ($ServerTrigger -and $triggerName -notin $ServerTrigger -or $triggerName -in $ExcludeServerTrigger) {
 				continue
 			}
 
