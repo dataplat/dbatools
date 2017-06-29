@@ -6,10 +6,8 @@ Describe "Add-DbaComputerCertificate Integration Tests" -Tags "Integrationtests"
             $results.Thumbprint | Should Be "29C469578D6C6211076A09CEE5C5797EEA0C2713"
         }
 		
-		$store = ($results | Out-String) -match 'LocalMachine'
-		
 		It "Should be in LocalMachine\My Cert Store" {
-            $store | Should Be $true
+			$results.PSParentPath | Should Be "Microsoft.PowerShell.Security\Certificate::LocalMachine\My"
         }
     }
 }
