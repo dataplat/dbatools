@@ -145,8 +145,6 @@ function Copy-DbaServerTrigger {
 					Write-Output "Copying server trigger $triggerName"
 					$sql = $trigger.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-					$sql = $sql -replace "CREATE TRIGGER", "`nGO`nCREATE TRIGGER"
-					$sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
 
 					Write-Verbose $sql
 					$destServer.Query($sql)
