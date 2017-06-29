@@ -141,7 +141,7 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 				
 				$oldthumbprint = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
 				
-				$cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction Stop | Where-Object Thumbprint -eq $Thumbprint
+				$cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction Stop | Where-Object { $_.Thumbprint -eq $Thumbprint }
 				
 				if ($null -eq $cert) {
 					Write-Warning "Certificate does not exist on $env:COMPUTERNAME"
@@ -182,15 +182,13 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 					SqlInstance = $vsname
 					ServiceAccount = $serviceaccount
 					CertificateThumbprint = $newthumbprint
-					Certificate = $cert
 					Notes = $notes
 				}
 			}
 			
 			if ($PScmdlet.ShouldProcess("local", "Connecting to $instanceName to import new cert")) {
 				try {
-					Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname, $Thumbprint -ScriptBlock $scriptblock -ErrorAction Stop |
-					Select-DefaultView -ExcludeProperty Certificate
+					Invoke-Command2 -Raw -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname, $Thumbprint -ScriptBlock $scriptblock -ErrorAction Stop
 				}
 				catch {
 					Stop-Function -Message $_ -ErrorRecord $_ -Target $instanceName -Continue
