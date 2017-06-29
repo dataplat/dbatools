@@ -41,16 +41,7 @@ Internal command
 		
 	try
 	{
-		if ($credential.username -ne $null)
-		{
-			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop
-		}
-		else
-		{
-			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ErrorAction Stop
-		}
-		
-		Write-Message -Level Verbose -Message "Local connection for $ComputerName succeeded"
+		Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop
 	}
 	catch
 	{
@@ -62,19 +53,10 @@ Internal command
 			$hostname = [System.Net.Dns]::gethostentry($ipaddr)
 			$hostname = $hostname.HostName
 			
-			if ($credential.username -ne $null)
-			{
-				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ComputerName $hostname -ErrorAction Stop
-			}
-			else
-			{
-				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname -ErrorAction Stop
-			}
+			Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname -ErrorAction Stop
 		}
-		catch{
+		catch {
 			throw "SqlWmi connection failed: $_"
 		}
 	}
-	
-	$result | Select-Object * -ExcludeProperty PSComputerName, RunSpaceID, PSShowComputerName
 }
