@@ -118,7 +118,17 @@ function Copy-DbaServerTrigger {
 
 		foreach ($trigger in $serverTriggers) {
 			$triggerName = $trigger.Name
-			
+
+			$copyTriggerStatus = [pscustomobject]@{
+				SourceServer      = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name              = $triggerName
+				Type              = $null
+				Status            = $null
+				Notes             = $null
+				DateTime          = [DbaDateTime](Get-Date)
+			}
+
 			if ($ServerTrigger -and $triggerName -notin $ServerTrigger -or $triggerName -in $ExcludeServerTrigger) {
 				continue
 			}
@@ -126,6 +136,9 @@ function Copy-DbaServerTrigger {
 			if ($destTriggers.Name -contains $triggerName) {
 				if ($force -eq $false) {
 					Write-Message -Level Warning -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
+
+					$copyTriggerStatus.Status = "Skipped"
+					$copyTriggerStatus
 					continue
 				}
 				else {
@@ -135,6 +148,10 @@ function Copy-DbaServerTrigger {
 							$destServer.Triggers[$triggerName].Drop()
 						}
 						catch {
+							$copyTriggerStatus.Status = "Failed"
+							$copyTriggerStatus.Notes = $_.Exception
+							$copyTriggerStatus
+
 							Stop-Function -Message "Issue dropping trigger on destination" -Target $triggerName -ErrorRecord $_ -Continue
 						}
 					}
@@ -149,8 +166,15 @@ function Copy-DbaServerTrigger {
 					$sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
 					Write-Message -Level Debug -Message $sql
 					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+
+					$copyTriggerStatus.Status = "Successful"
+					$copyTriggerStatus
 				}
 				catch {
+					$copyTriggerStatus.Status = "Failed"
+					$copyTriggerStatus.Notes = $_.Exception
+					$copyTriggerStatus
+
 					Stop-Function -Message "Issue creating trigger on destination" -Target $triggerName -ErrorRecord $_
 				}
 			}
