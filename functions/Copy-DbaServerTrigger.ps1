@@ -149,7 +149,7 @@ function Copy-DbaServerTrigger {
 					$sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
 
 					Write-Verbose $sql
-					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					$destServer.Query($sql)
 				}
 				catch {
 					Write-Exception $_
