@@ -53,6 +53,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="Connection\ManagementConnectionTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utility\SizeTest.cs" />
   </ItemGroup>

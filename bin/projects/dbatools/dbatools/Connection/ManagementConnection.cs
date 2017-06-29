@@ -15,7 +15,7 @@ namespace Sqlcollaborative.Dbatools.Connection
         /// <summary>
         /// The computer to connect to
         /// </summary>
-        public string ComputerName;
+        public string ComputerName { get; set; }
 
         #region Configuration
 
@@ -26,7 +26,7 @@ namespace Sqlcollaborative.Dbatools.Connection
         {
             get
             {
-                switch (_DisableBadCredentialCache)
+                switch (_disableBadCredentialCache)
                 {
                     case -1:
                         return false;
@@ -36,20 +36,12 @@ namespace Sqlcollaborative.Dbatools.Connection
                         return ConnectionHost.DisableBadCredentialCache;
                 }
             }
-            set
-            {
-                if (value)
-                {
-                    _DisableBadCredentialCache = 1;
-                }
-                else
-                {
-                    _DisableBadCredentialCache = -1;
-                }
+            set {
+                _disableBadCredentialCache = value ? 1 : -1;
             }
         }
 
-        private int _DisableBadCredentialCache = 0;
+        private int _disableBadCredentialCache;
 
         /// <summary>
         /// Locally disables the caching of working credentials
@@ -58,7 +50,7 @@ namespace Sqlcollaborative.Dbatools.Connection
         {
             get
             {
-                switch (_DisableCredentialAutoRegister)
+                switch (_disableCredentialAutoRegister)
                 {
                     case -1:
                         return false;
@@ -70,18 +62,11 @@ namespace Sqlcollaborative.Dbatools.Connection
             }
             set
             {
-                if (value)
-                {
-                    _DisableCredentialAutoRegister = 1;
-                }
-                else
-                {
-                    _DisableCredentialAutoRegister = -1;
-                }
+                _disableCredentialAutoRegister = value ? 1 : -1;
             }
         }
 
-        private int _DisableCredentialAutoRegister = 0;
+        private int _disableCredentialAutoRegister;
 
         /// <summary>
         /// Locally overrides explicit credentials with working ones that were cached
@@ -90,7 +75,7 @@ namespace Sqlcollaborative.Dbatools.Connection
         {
             get
             {
-                switch (_OverrideExplicitCredential)
+                switch (_overrideExplicitCredential)
                 {
                     case -1:
                         return false;
@@ -102,18 +87,12 @@ namespace Sqlcollaborative.Dbatools.Connection
             }
             set
             {
-                if (value)
-                {
-                    _OverrideExplicitCredential = 1;
-                }
-                else
-                {
-                    _OverrideExplicitCredential = -1;
-                }
+                _overrideExplicitCredential = value ? 1 : -1;
+                
             }
         }
 
-        private int _OverrideExplicitCredential = 0;
+        private int _overrideExplicitCredential;
 
         /// <summary>
         /// Locally enables automatic failover to working credentials, when passed credentials either are known, or turn out to not work.
@@ -122,7 +101,7 @@ namespace Sqlcollaborative.Dbatools.Connection
         {
             get
             {
-                switch (_EnableCredentialFailover)
+                switch (_enableCredentialFailover)
                 {
                     case -1:
                         return false;
@@ -134,18 +113,11 @@ namespace Sqlcollaborative.Dbatools.Connection
             }
             set
             {
-                if (value)
-                {
-                    _EnableCredentialFailover = 1;
-                }
-                else
-                {
-                    _EnableCredentialFailover = -1;
-                }
+                _enableCredentialFailover = value ? 1 : -1;
             }
         }
 
-        private int _EnableCredentialFailover = 0;
+        private int _enableCredentialFailover;
 
         /// <summary>
         /// Locally disables the persistence of Cim sessions used to connect to a target system.
@@ -154,7 +126,7 @@ namespace Sqlcollaborative.Dbatools.Connection
         {
             get
             {
-                switch (_DisableCimPersistence)
+                switch (_disableCimPersistence)
                 {
                     case -1:
                         return false;
@@ -166,18 +138,11 @@ namespace Sqlcollaborative.Dbatools.Connection
             }
             set
             {
-                if (value)
-                {
-                    _DisableCimPersistence = 1;
-                }
-                else
-                {
-                    _DisableCimPersistence = -1;
-                }
+                _disableCimPersistence = value ? 1 : -1;
             }
         }
 
-        private int _DisableCimPersistence = 0;
+        private int _disableCimPersistence;
 
         /// <summary>
         /// Connectiontypes that will never be used
@@ -247,11 +212,11 @@ namespace Sqlcollaborative.Dbatools.Connection
         /// </summary>
         public void RestoreDefaultConfiguration()
         {
-            _DisableBadCredentialCache = 0;
-            _DisableCredentialAutoRegister = 0;
-            _OverrideExplicitCredential = 0;
-            _DisableCimPersistence = 0;
-            _EnableCredentialFailover = 0;
+            _disableBadCredentialCache = 0;
+            _disableCredentialAutoRegister = 0;
+            _overrideExplicitCredential = 0;
+            _disableCimPersistence = 0;
+            _enableCredentialFailover = 0;
         }
 
         #endregion Configuration
@@ -454,14 +419,10 @@ namespace Sqlcollaborative.Dbatools.Connection
                 {
                     if (EnableCredentialFailover && (Credentials != null))
                         return Credentials;
-                    else
-                        throw new PSArgumentException("Windows authentication was used, but is known to not work!",
-                            "Credential");
+                    throw new PSArgumentException("Windows authentication was used, but is known to not work!",
+                        "Credential");
                 }
-                else
-                {
-                    return null;
-                }
+                return null;
             }
 
             // Compare with bad credential cache
@@ -477,16 +438,12 @@ namespace Sqlcollaborative.Dbatools.Connection
                             {
                                 if ((Credentials != null) || !WindowsCredentialsAreBad)
                                     return Credentials;
-                                else
-                                    throw new PSArgumentException(
-                                        "Specified credentials are known to not work! Credential failover is enabled but there are no known working credentials.",
-                                        "Credential");
-                            }
-                            else
-                            {
-                                throw new PSArgumentException("Specified credentials are known to not work!",
+                                throw new PSArgumentException(
+                                    "Specified credentials are known to not work! Credential failover is enabled but there are no known working credentials.",
                                     "Credential");
                             }
+                            throw new PSArgumentException("Specified credentials are known to not work!",
+                                "Credential");
                         }
                     }
                 }
@@ -541,8 +498,6 @@ namespace Sqlcollaborative.Dbatools.Connection
                     }
                 }
             }
-
-            return;
         }
 
         #endregion Credential Management
@@ -728,7 +683,6 @@ namespace Sqlcollaborative.Dbatools.Connection
                     return null;
                 }
                 return new WSManSessionOptions(_CimWinRMOptions);
-                ;
             }
             set
             {
@@ -761,7 +715,7 @@ namespace Sqlcollaborative.Dbatools.Connection
 
             if (tempSession == null)
             {
-                WSManSessionOptions options = null;
+                WSManSessionOptions options;
                 if (CimWinRMOptions == null)
                 {
                     options = GetDefaultCimWsmanOptions();
@@ -800,10 +754,7 @@ namespace Sqlcollaborative.Dbatools.Connection
                     {
                         throw new UnauthorizedAccessException("Invalid credentials!", e);
                     }
-                    else
-                    {
-                        throw e;
-                    }
+                    throw;
                 }
 
                 cimWinRMSessionLastCredential = Credential;
@@ -842,7 +793,7 @@ namespace Sqlcollaborative.Dbatools.Connection
         public object GetCimRMInstance(PSCredential Credential, string Class, string Namespace = @"root\cimv2")
         {
             CimSession tempSession;
-            IEnumerable<CimInstance> result = new List<CimInstance>();
+            IEnumerable<CimInstance> result;
 
             try
             {
@@ -869,10 +820,7 @@ namespace Sqlcollaborative.Dbatools.Connection
                 {
                     throw new UnauthorizedAccessException("Invalid credentials!", e);
                 }
-                else
-                {
-                    throw e;
-                }
+                throw;
             }
 
             if (DisableCimPersistence)
@@ -888,8 +836,7 @@ namespace Sqlcollaborative.Dbatools.Connection
             }
             else
             {
-                if (cimWinRMSession != tempSession)
-                    cimWinRMSession = tempSession;
+                cimWinRMSession = tempSession;
             }
             return result;
         }
@@ -933,10 +880,7 @@ namespace Sqlcollaborative.Dbatools.Connection
                 {
                     throw new UnauthorizedAccessException("Invalid credentials!", e);
                 }
-                else
-                {
-                    throw e;
-                }
+                throw;
             }
 
             if (DisableCimPersistence)
@@ -1049,10 +993,7 @@ namespace Sqlcollaborative.Dbatools.Connection
                     {
                         throw new UnauthorizedAccessException("Invalid credentials!", e);
                     }
-                    else
-                    {
-                        throw e;
-                    }
+                    throw;
                 }
 
                 cimDComSessionLastCredential = Credential;
@@ -1112,10 +1053,7 @@ namespace Sqlcollaborative.Dbatools.Connection
                 {
                     throw new UnauthorizedAccessException("Invalid credentials!", e);
                 }
-                else
-                {
-                    throw e;
-                }
+                throw;
             }
 
             if (DisableCimPersistence)
@@ -1176,10 +1114,7 @@ namespace Sqlcollaborative.Dbatools.Connection
                 {
                     throw new UnauthorizedAccessException("Invalid credentials!", e);
                 }
-                else
-                {
-                    throw e;
-                }
+                throw;
             }
 
             if (DisableCimPersistence)
