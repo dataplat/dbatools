@@ -4,7 +4,7 @@ function Copy-DbaServerAuditSpecification {
 			Copy-DbaServerAuditSpecification migrates server audit specifications from one SQL Server to another.
 
 		.DESCRIPTION
-			By default, all audits are copied. The -ServerAuditSpecification parameter is autopopulated for command-line completion and can be used to copy only specific audits.
+			By default, all audits are copied. The -ServerAuditSpec parameter is autopopulated for command-line completion and can be used to copy only specific audits.
 
 			If the audit specification already exists on the destination, it will be skipped unless -Force is used.
 
@@ -30,10 +30,10 @@ function Copy-DbaServerAuditSpecification {
 			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 			To connect as a different Windows user, run PowerShell as that user.
 
-		.PARAMETER ServerAuditSpecification
+		.PARAMETER ServerAuditSpec
 			The Server Audit Specification(s) to process - this list is auto populated from the server. If unspecified, all Server Audit Specifications will be processed.
 
-		.PARAMETER ExcludeServerAuditSpecification
+		.PARAMETER ExcludeServerAuditSpec
 			The Server Audit Specification(s) to exclude - this list is auto populated from the server
 
 		.PARAMETER WhatIf
@@ -85,8 +85,8 @@ function Copy-DbaServerAuditSpecification {
 		[DbaInstanceParameter]$Destination,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$DestinationSqlCredential,
-		[object[]]$ServerAuditSpecification,
-		[object[]]$ExcludeServerAuditSpecification,
+		[object[]]$ServerAuditSpec,
+		[object[]]$ExcludeServerAuditSpec,
 		[switch]$Force,
 		[switch]$Silent
 	)
@@ -118,7 +118,7 @@ function Copy-DbaServerAuditSpecification {
 		foreach ($auditSpec in $serverAuditSpecs) {
 			$auditSpecName = $auditSpec.Name
 
-			if ($auditSpecs.length -gt 0 -and $auditSpecs -notcontains $auditSpecName) {
+			if ($ServerAuditSpec -and $auditSpecName -notin $ServerAuditSpec -or $auditSpecName -in $ExcludeServerAuditSpec) {
 				continue
 			}
 
