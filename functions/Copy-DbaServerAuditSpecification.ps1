@@ -99,21 +99,25 @@ function Copy-DbaServerAuditSpecification {
 		$destination = $destServer.DomainInstanceName
 
 		if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
-			throw "Not a sysadmin on $source. Quitting."
+			Stop-Function -Message "Not a sysadmin on $source. Quitting."
+			return
 		}
 
 		if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
-			throw "Not a sysadmin on $destination. Quitting."
+			Stop-Function -Message "Not a sysadmin on $destination. Quitting."
+			return
 		}
 
 		if ($sourceServer.versionMajor -lt 10 -or $destServer.versionMajor -lt 10) {
-			throw "Server Audit Specifications are only supported in SQL Server 2008 and above. Quitting."
+			Stop-Function -Message "Server Audit Specifications are only supported in SQL Server 2008 and above. Quitting."
+			return
 		}
 
 		$serverAuditSpecs = $sourceServer.ServerAuditSpecifications
 		$destAudits = $destServer.ServerAuditSpecifications
 	}
 	process {
+		if (Test-FunctionInterrupt) { return }
 
 		foreach ($auditSpec in $serverAuditSpecs) {
 			$auditSpecName = $auditSpec.Name
@@ -141,8 +145,7 @@ function Copy-DbaServerAuditSpecification {
 							$destServer.ServerAuditSpecifications[$auditSpecName].Drop()
 						}
 						catch {
-							Write-Exception $_
-							continue
+							Stop-Function -Message "Issue dropping audit spec" -Target $auditSpecName -ErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -153,7 +156,7 @@ function Copy-DbaServerAuditSpecification {
 					$destServer.ConnectionContext.ExecuteNonQuery($auditSpec.Script()) | Out-Null
 				}
 				catch {
-					Write-Exception $_
+					Stop-Function -Message "Issue creating audit spec on destination" -Target $auditSpecName -ErrorRecord $_
 				}
 			}
 		}
