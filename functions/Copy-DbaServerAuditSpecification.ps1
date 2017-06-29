@@ -174,7 +174,9 @@ function Copy-DbaServerAuditSpecification {
 			if ($Pscmdlet.ShouldProcess($destination, "Creating server audit $auditSpecName")) {
 				try {
 					Write-Message -Level Verbose -Message "Copying server audit $auditSpecName"
-					$destServer.ConnectionContext.ExecuteNonQuery($auditSpec.Script()) | Out-Null
+					$sql = $auditSpec.Script() | Out-String
+					Write-Message -Level Derbug -Message $sql
+					$destServer.Query($sql)
 
 					$copyAuditSpecStatus.Status = "Successful"
 					$copyAuditSpecStatus
