@@ -15,7 +15,7 @@
 		.PARAMETER SqlCredential
 			PSCredential object to connect as. If not specified, current Windows login will be used.
 
-		.PARAMETER Configs
+		.PARAMETER Config
 			The name of the configuration to be set -- Configs is autopopulated for tabbing convenience. 
 			
 		.PARAMETER Value
@@ -65,6 +65,7 @@
 		[Parameter(Mandatory = $false)]
 		[Alias("NewValue", "NewConfig")]
 		[int]$Value,
+		[object[]]$Config,
 		[switch]$Silent
 	)
 

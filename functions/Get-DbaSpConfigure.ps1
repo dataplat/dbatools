@@ -14,7 +14,7 @@ function Get-DbaSpConfigure {
 		.PARAMETER SqlCredential
 			PSCredential object to connect as. If not specified, current Windows login will be used.
 
-		.PARAMETER Configs
+		.PARAMETER Config
 			Return only specific configurations -- auto-populated from source server
 
 		.PARAMETER Detailed
@@ -55,7 +55,8 @@ function Get-DbaSpConfigure {
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[object[]]$Config
 	)
 
 	foreach ($instance in $SqlInstance) {
