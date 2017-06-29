@@ -240,10 +240,6 @@ Creates a self-signed certificate
 					}
 				}
 				
-				if (!$FriendlyName) {
-					$FriendlyName = $fqdn
-				}
-				
 				$certdir = "$tempdir\$fqdn"
 				$certcfg = "$certdir\request.inf"
 				$certcsr = "$certdir\$fqdn.csr"
