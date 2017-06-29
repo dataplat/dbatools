@@ -112,6 +112,17 @@ function Copy-DbaServerAudit {
 
 		foreach ($currentAudit in $serverAudits) {
 			$auditName = $currentAudit.Name
+
+			$copyAuditStatus = [pscustomobject]@{
+				SourceServer      = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name              = $auditName
+				Type              = $null
+				Status            = $null
+				Notes             = $null
+				DateTime          = [DbaDateTime](Get-Date)
+			}
+
 			if ($Audit -and $auditName -notin $Audit -or $auditName -in $ExcludeAudit) {
 				continue
 			}
@@ -138,6 +149,9 @@ function Copy-DbaServerAudit {
 							$destServer.audits[$auditName].Drop()
 						}
 						catch {
+							$copyAuditStatus.Status = "Failed"
+							$cooyAuditStatus
+
 							Stop-Function -Message "Issue dropping audit from destination" -Target $auditName -ErrorRecord $_
 						}
 					}
@@ -147,6 +161,10 @@ function Copy-DbaServerAudit {
 			if ((Test-DbaSqlPath -SqlInstance $destServer -Path $currentAudit.Filepath) -eq $false) {
 				if ($Force -eq $false) {
 					Write-Message -Level Warning -Message "$($currentAudit.Filepath) does not exist on $destination. Skipping $auditName. Specify -Force to create the directory"
+
+					$copyAuditStatus.Status = "Skipped"
+					$copyAuditStatus.Notes = "Already exist on destination"
+					$copyAuditStatus
 					continue
 				}
 				else {
@@ -180,8 +198,15 @@ function Copy-DbaServerAudit {
 					Write-Message -Level Verbose -Message "File path $($currentAudit.Filepath) exists on $Destination."
 					Write-Message -Level Verbose -Message "Copying server audit $auditName"
 					$destServer.Query($sql)
+
+					$copyAuditStatus.Status = "Successful"
+					$copyAuditStatus
 				}
 				catch {
+					$copyAuditStatus.Status = "Failed"
+					$copyAuditStatus.Notes = $_.Exception
+					$copyAuditStatus
+
 					Stop-Function -Message "Issue creating audit" -Target $auditName -ErrorRecord $_
 				}
 			}
