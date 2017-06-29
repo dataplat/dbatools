@@ -99,8 +99,13 @@ function Copy-DbaServerTrigger {
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 
-		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
+		if ($sourceserver.VersionMajor -lt 9 -or $destserver.VersionMajor -lt 9) {
 			throw "Server Triggers are only supported in SQL Server 2005 and above. Quitting."
+		}
+
+		if ($destServer.VersionMajor -lt $sourceServer.VersionMajor) {
+			Stop-Function -Message "Migration from version $($destServer.VersionMajor) to version $($sourceServer.VersionMajor) is not supported."
+			return
 		}
 
 		$servertriggers = $sourceserver.Triggers
