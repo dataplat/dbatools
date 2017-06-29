@@ -93,13 +93,13 @@ function Copy-DbaServerTrigger {
 
 	begin {
 
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
+		$source = $sourceServer.DomainInstanceName
+		$destination = $destServer.DomainInstanceName
 
-		if ($sourceserver.VersionMajor -lt 9 -or $destserver.VersionMajor -lt 9) {
+		if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
 			throw "Server Triggers are only supported in SQL Server 2005 and above. Quitting."
 		}
 
@@ -108,26 +108,29 @@ function Copy-DbaServerTrigger {
 			return
 		}
 
-		$servertriggers = $sourceserver.Triggers
-		$desttriggers = $destserver.Triggers
+		$serverTriggers = $sourceServer.Triggers
+		$destTriggers = $destServer.Triggers
 
 	}
 	process {
 
-		foreach ($trigger in $servertriggers) {
-			$triggername = $trigger.name
-			if ($triggers.length -gt 0 -and $triggers -notcontains $triggername) { continue }
+		foreach ($trigger in $serverTriggers) {
+			$triggerName = $trigger.Name
+			
+			if ($triggers.length -gt 0 -and $triggers -notcontains $triggerName) {
+				continue
+			}
 
-			if ($desttriggers.name -contains $triggername) {
+			if ($destTriggers.Name -contains $triggerName) {
 				if ($force -eq $false) {
-					Write-Warning "Server trigger $triggername exists at destination. Use -Force to drop and migrate."
+					Write-Warning "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping server trigger $triggername and recreating")) {
+					if ($Pscmdlet.ShouldProcess($destination, "Dropping server trigger $triggerName and recreating")) {
 						try {
-							Write-Verbose "Dropping server trigger $triggername"
-							$destserver.triggers[$triggername].Drop()
+							Write-Verbose "Dropping server trigger $triggerName"
+							$destServer.Triggers[$triggerName].Drop()
 						}
 						catch {
 							Write-Exception $_
@@ -137,16 +140,16 @@ function Copy-DbaServerTrigger {
 				}
 			}
 
-			If ($Pscmdlet.ShouldProcess($destination, "Creating server trigger $triggername")) {
+			if ($Pscmdlet.ShouldProcess($destination, "Creating server trigger $triggerName")) {
 				try {
-					Write-Output "Copying server trigger $triggername"
+					Write-Output "Copying server trigger $triggerName"
 					$sql = $trigger.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					$sql = $sql -replace "CREATE TRIGGER", "`nGO`nCREATE TRIGGER"
 					$sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
 
 					Write-Verbose $sql
-					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 				}
 				catch {
 					Write-Exception $_
