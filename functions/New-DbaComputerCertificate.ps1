@@ -20,7 +20,7 @@ https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registerin
 The certificate is generated using AD's webserver SSL template on the client machine and pushed to the remote machine.
 
 .PARAMETER ComputerName
-The target SQL Server - defaults to localhost. If target is a cluster, you must also specify InstanceClusterName (see below)
+The target SQL Server - defaults to localhost. If target is a cluster, you must also specify ClusterInstanceName (see below)
 
 .PARAMETER Credential
 Allows you to login to $ComputerName using alternative credentials.
@@ -49,7 +49,7 @@ Certificate folder - defaults to My (Personal)
 .PARAMETER CertificateTemplate
 The domain's Certificate Template - WebServer by default.
 
-.PARAMETER InstanceClusterName
+.PARAMETER ClusterInstanceName
 When creating certs for a cluster, use this parameter to create the certificate for the cluster node name. Use ComputerName for each of the nodes.
 		
 .PARAMETER Dns
@@ -86,7 +86,7 @@ Creates a computer certificate signed by the local domain CA _on the local machi
 The certificate is then copied to the new machine over WinRM and imported.
 
 .EXAMPLE
-New-DbaComputerCertificate -ComputerName sqla, sqlb -InstanceClusterName sqlcluster -KeyLength 4096
+New-DbaComputerCertificate -ComputerName sqla, sqlb -ClusterInstanceName sqlcluster -KeyLength 4096
 
 Creates a computer certificate for sqlcluster, signed by the local domain CA, with the keylength of 4096. 
 	
@@ -111,7 +111,7 @@ Creates a self-signed certificate
 		[System.Management.Automation.PSCredential]$Credential,
 		[string]$CaServer,
 		[string]$CaName,
-		[string]$InstanceClusterName,
+		[string]$ClusterInstanceName,
 		[securestring]$Password,
 		[string]$FriendlyName = "SQL Server",
 		[string]$CertificateTemplate = "WebServer",
@@ -215,20 +215,15 @@ Creates a self-signed certificate
 					$Password = ((65 .. 90) + (97 .. 122) | Get-Random -Count 29 | ForEach-Object { [char]$_ }) -join "" | ConvertTo-SecureString -AsPlainText -Force
 				}
 				
-				if ($InstanceClusterName) {
-					if ($InstanceClusterName -notmatch "\.") {
-						$fqdn = (Resolve-DbaNetworkName -ComputerName $InstanceClusterName -WarningAction SilentlyContinue).fqdn
-						if (!$fqdn) {
-							$fqdn = "$ComputerName.$env:USERDNSDOMAIN"
-							Write-Message -Level Warning -Message "Server name cannot be resolved. Guessing it's $fqdn"
-						}
+				if ($ClusterInstanceName) {
+					if ($ClusterInstanceName -notmatch "\.") {
+						$fqdn = "$ClusterInstanceName.$env:USERDNSDOMAIN"
 					}
 					else {
-						$fqdn = $InstanceClusterName
+						$fqdn = $ClusterInstanceName
 					}
 				}
 				else {
-					
 					$resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -WarningAction SilentlyContinue
 					
 					if (!$resolved) {
@@ -345,7 +340,7 @@ Creates a self-signed certificate
 						$storedcert | Remove-Item
 					}
 					
-					if ($InstanceClusterName) { $secondarynode = $true }
+					if ($ClusterInstanceName) { $secondarynode = $true }
 				}
 				
 				$scriptblock = {
