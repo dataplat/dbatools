@@ -175,7 +175,7 @@ function Copy-DbaServerAuditSpecification {
 				try {
 					Write-Message -Level Verbose -Message "Copying server audit $auditSpecName"
 					$sql = $auditSpec.Script() | Out-String
-					Write-Message -Level Derbug -Message $sql
+					Write-Message -Level Debug -Message $sql
 					$destServer.Query($sql)
 
 					$copyAuditSpecStatus.Status = "Successful"
