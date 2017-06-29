@@ -168,7 +168,6 @@ Creates a self-signed certificate
 			}
 		}
 		
-		
 		if ((!$CaServer -or !$CaName) -and !$SelfSigned) {
 			try {
 				Write-Message -Level Output -Message "No CaServer or CaName specified. Finding it."
@@ -210,14 +209,19 @@ Creates a self-signed certificate
 		if (Test-FunctionInterrupt) { return }
 		
 		foreach ($computer in $computername) {
+			
 			if (!$secondarynode) {
-				if (![dbavalidate]::IsLocalhost($computer) -and !$Password) {
+				if (!$Computer.IsLocalhost -and !$Password) {
 					$Password = ((65 .. 90) + (97 .. 122) | Get-Random -Count 29 | ForEach-Object { [char]$_ }) -join "" | ConvertTo-SecureString -AsPlainText -Force
 				}
 				
 				if ($InstanceClusterName) {
 					if ($InstanceClusterName -notmatch "\.") {
-						$fqdn = "$InstanceClusterName.$($env:USERDNSDOMAIN.ToLower())"
+						$fqdn = (Resolve-DbaNetworkName -ComputerName $InstanceClusterName -WarningAction SilentlyContinue).fqdn
+						if (!$fqdn) {
+							$fqdn = "$ComputerName.$env:USERDNSDOMAIN"
+							Write-Message -Level Warning -Message "Server name cannot be resolved. Guessing it's $fqdn"
+						}
 					}
 					else {
 						$fqdn = $InstanceClusterName
@@ -225,7 +229,7 @@ Creates a self-signed certificate
 				}
 				else {
 					
-					$resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Turbo -WarningAction SilentlyContinue
+					$resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -WarningAction SilentlyContinue
 					
 					if (!$resolved) {
 						$fqdn = "$ComputerName.$env:USERDNSDOMAIN"
@@ -303,7 +307,7 @@ Creates a self-signed certificate
 					$serial = (($create -Split "Serial Number:" -Split "Subject")[2]).Trim() # D:
 					$storedcert = Get-ChildItem Cert:\LocalMachine\My -Recurse | Where-Object SerialNumber -eq $serial
 					
-					if ([dbavalidate]::IsLocalhost($computer)) {
+					if ($computer.IsLocalhost) {
 						$storedcert | Select-Object * | Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
 					}
 				}
@@ -327,51 +331,52 @@ Creates a self-signed certificate
 						Stop-Function -Message "Failure when attempting to create the cert on $computer. Exception: $_" -ErrorRecord $_ -Target $computer -Continue
 					}
 					
-					if ([dbavalidate]::IsLocalhost($computer)) {
-						$storedcert | Select * | Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
+					if ($Computer.IsLocalhost) {
+						$storedcert | Select-Object * | Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
 					}
 				}
 			}
-		}
-		
-		if (![dbavalidate]::IsLocalhost($computer)) {
 			
-			if (!$secondarynode) {
-				if ($PScmdlet.ShouldProcess("local", "Generating pfx and reading from disk")) {
-					Write-Message -Level Output -Message "Exporting PFX with password to $temppfx"
-					$certdata = $storedcert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $password)
+			if (!$Computer.IsLocalhost) {
+				
+				if (!$secondarynode) {
+					if ($PScmdlet.ShouldProcess("local", "Generating pfx and reading from disk")) {
+						Write-Message -Level Output -Message "Exporting PFX with password to $temppfx"
+						$certdata = $storedcert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $password)
+					}
+					
+					if ($PScmdlet.ShouldProcess("local", "Removing cert from disk but keeping it in memory")) {
+						$storedcert | Remove-Item
+					}
+					
+					if ($InstanceClusterName) { $secondarynode = $true }
 				}
 				
-				if ($PScmdlet.ShouldProcess("local", "Removing cert from disk")) {
-					$storedcert | Remove-Item
+				$scriptblock = {
+					$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+					$cert.Import($args[0], $args[1], "Exportable,PersistKeySet")
+					
+					$certstore = New-Object System.Security.Cryptography.X509Certificates.X509Store($args[3], $args[2])
+					$certstore.Open('ReadWrite')
+					$certstore.Add($cert)
+					$certstore.Close()
+					Get-ChildItem "Cert:\$($args[2])\$($args[3])" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
 				}
 				
-				if ($InstanceClusterName) { $secondarynode = $true }
-			}
-			
-			$scriptblock = {
-				$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-				$cert.Import($args[0], $args[1], "Exportable,PersistKeySet")
-				
-				$certstore = New-Object System.Security.Cryptography.X509Certificates.X509Store($args[3], $args[2])
-				$certstore.Open('ReadWrite')
-				$certstore.Add($cert)
-				$certstore.Close()
-				Get-ChildItem "Cert:\$($args[2])\$($args[3])" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
-			}
-			
-			if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import new cert")) {
-				try {
-					Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
-					Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
-				}
-				catch {
-					Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue
+				if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import new cert")) {
+					try {
+						Write-Message -Level Output -Message "Connecting to $computer"
+						Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
+						Select-DefaultView -Property DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
+					}
+					catch {
+						Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue
+					}
 				}
 			}
-		}
-		if ($PScmdlet.ShouldProcess("local", "Removing all files from $certdir")) {
-			Remove-Item -Force -Recurse $certdir -ErrorAction SilentlyContinue
+			if ($PScmdlet.ShouldProcess("local", "Removing all files from $certdir")) {
+				Remove-Item -Force -Recurse $certdir -ErrorAction SilentlyContinue
+			}
 		}
 	}
 }
