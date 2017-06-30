@@ -315,7 +315,9 @@
 		'Test-DbaSqlManagementObject',
 		'Get-DbaMaintenanceSolutionLog',
 		'Invoke-DbaLogShippingRecovery',
-		'Sync-DbaLoginPermission'
+		'Sync-DbaLoginPermission',
+		'Find-DbaTrigger',
+		'Find-DbaView'
 	)
 	
 	# Cmdlets to export from this module
