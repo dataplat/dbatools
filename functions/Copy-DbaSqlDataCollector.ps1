@@ -1,5 +1,5 @@
 function Copy-DbaSqlDataCollector {
-<#
+	<#
 .SYNOPSIS
 Migrates user SQL Data Collector collection sets. SQL Data Collector configuration is on the agenda, but it's hard.
 
@@ -95,8 +95,7 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 
 	begin {
 
-		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.Collector") -eq $null)
-		{
+		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.Collector") -eq $null) {
 			throw "SMO version is too old. To migrate collection sets, you must have SQL Server Management Studio 2008 R2 or higher installed."
 		}
 		
@@ -106,16 +105,14 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
 		
-		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
-		{
+		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
 			throw "Collection Sets are only supported in SQL Server 2008 and above. Quitting."
 		}
 		
 	}
 	process {
 
-		if ($NoServerReconfig -eq $false) 
-		{
+		if ($NoServerReconfig -eq $false) {
 			Write-Warning "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
 			$NoServerReconfig = $true
 		}
@@ -129,20 +126,24 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 		$destStore = New-Object Microsoft.SqlServer.Management.Collector.CollectorConfigStore $destSqlStoreConnection
 		
 		$configdb = $sourceStore.ScriptAlter().GetScript() | Out-String
-		$configdb = $configdb -replace "'$source'", "'$destination'"
-		
-		if (!$NoServerReconfig)
-		{
-			if ($Pscmdlet.ShouldProcess($destination, "Attempting to modify Data Collector configuration"))
-			{
-				try
-				{
+
+		<# Regular Expressions for named instances require that the "\" be escaped #>
+		if ($source.SqlInstanceName -ne "mssqlserver") {
+			$sourceReplace = $source -replace "\\", "\\"
+		}
+		if ($destination.SqlInstanceName -ne "mssqlserver") {
+			$destReplace = $destination -replace "\\","\\"
+		}
+		$configdb = $configdb -replace "'$sourceReplace'", "'$destReplace'"
+
+		if (!$NoServerReconfig) {
+			if ($Pscmdlet.ShouldProcess($destination, "Attempting to modify Data Collector configuration")) {
+				try {
 					$sql = "Unknown at this time"
 					$destserver.ConnectionContext.ExecuteNonQuery($sql)
 					$destStore.Alter()
 				}
-				catch 
-				{ 
+				catch { 
 					Write-Exception $_ 
 				}
 			}
@@ -158,30 +159,23 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 		if ($CollectionSet.length -gt 0) { $storeCollectionSets = $storeCollectionSets | Where-Object { $CollectionSet -contains $_.Name } }
 		
 		Write-Output "Migrating collection sets"
-		foreach ($set in $storeCollectionSets)
-		{
+		foreach ($set in $storeCollectionSets) {
 			$collectionName = $set.name
-			if ($deststore.CollectionSets[$collectionName] -ne $null)
-			{
-				if ($force -eq $false)
-				{
+			if ($deststore.CollectionSets[$collectionName] -ne $null) {
+				if ($force -eq $false) {
 					Write-Warning "Collection Set '$collectionName' was skipped because it already exists on $destination"
 					Write-Warning "Use -Force to drop and recreate"
 					continue
 				}
-				else
-				{
-					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $collectionName"))
-					{
+				else {
+					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $collectionName")) {
 						Write-Verbose "Collection Set '$collectionName' exists on $destination"
 						Write-Verbose "Force specified. Dropping $collectionName."
 						
-						try
-						{
+						try {
 							$deststore.CollectionSets[$collectionName].Drop()
 						}
-						catch
-						{
+						catch {
 							Write-Exception "Unable to drop: $_  Moving on."
 							continue
 						}
@@ -189,25 +183,21 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 				}
 			}
 			
-			if ($Pscmdlet.ShouldProcess($destination, "Migrating collection set $collectionName"))
-			{
-				try
-				{
+			if ($Pscmdlet.ShouldProcess($destination, "Migrating collection set $collectionName")) {
+				try {
 					$sql = $set.ScriptCreate().GetScript() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
 					Write-Output "Migrating collection set $collectionName"
 					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
 					
-					if ($set.IsRunning)
-					{
+					if ($set.IsRunning) {
 						Write-Output "Starting collection set $collectionName"
 						$deststore.CollectionSets.Refresh()
 						$deststore.CollectionSets[$collectionName].Start()
 					}
 				}
-				catch
-				{
+				catch {
 					Write-Exception $_
 				}
 			}
