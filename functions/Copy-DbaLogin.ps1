@@ -193,7 +193,7 @@ function Copy-DbaLogin {
 					}
 				}
 
-				if (($Login = $destServer.Logins.Item($userName)) -ne $null -and !$force) {
+				if ($destServer.Logins.Item($userName) -ne $null -and !$force) {
 					if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it exists at destination.")) {
 						Write-Message -Level Warning -Message "$userName already exists in destination. Use -Force to drop and recreate."
 					}
