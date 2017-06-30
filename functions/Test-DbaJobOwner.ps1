@@ -5,11 +5,14 @@ function Test-DbaJobOwner {
 
 		.DESCRIPTION
 			This function will check all SQL Agent Job on an instance against a SQL login to validate if that
-			login owns those SQL Agent Jobs or not. By default, the function will check against 'sa' for 
-			ownership, but the user can pass a specific login if they use something else. Only SQL Agent Jobs
-			that do not match this ownership will be displayed, but if the -Detailed switch is set all
-			SQL Agent Jobs will be shown.
-				
+			login owns those SQL Agent Jobs or not. 
+			
+			By default, the function will check against 'sa' for ownership, but the user can pass a specific 
+			login if they use something else. 
+			
+			Only SQL Agent Jobs that do not match this ownership will be displayed, but if the -Detailed 
+			switch is set all SQL Agent Jobs will be shown.
+
 			Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
 
 		.PARAMETER SqlInstance
@@ -34,14 +37,14 @@ function Test-DbaJobOwner {
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
 
-		.NOTES 
+		.NOTES
 			Tags: Agent, Job, Owner
 			Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-			
+
 		.LINK
 			https://dbatools.io/Test-DbaJobOwner
 
@@ -80,9 +83,9 @@ function Test-DbaJobOwner {
 			#connect to the instance
 			Write-Message -Level Verbose -Message "Connecting to $servername"
 			$server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
-			
+
 			#Validate login
-			if (($server.Logins.Name) -notcontains $Login) {
+			if ($Login -and ($server.Logins.Name) -notcontains $Login) {
 				if ($SqlInstance.count -eq 1) {
 					Stop-Function -Message "Invalid login: $Login"
 					return
@@ -92,39 +95,35 @@ function Test-DbaJobOwner {
 					continue
 				}
 			}
-
-			# dynamic sa name for orgs who have changed their sa name
-			if ($Login) {
-				$Login = ($server.logins | Where-Object { $_.id -eq 1 }).Name
-				
-				#sql2000 id property is empty -force target login to 'sa' login
-				if (($server.versionMajor -lt 9) -and ([string]::IsNullOrEmpty($Login))) {
-					$Login = "sa"
-				}
-			}
-			
-			if ($server.logins[$Login].LoginType -eq 'WindowsGroup') {
+			if ($Login -and $server.Logins[$Login].LoginType -eq 'WindowsGroup') {
 				Stop-Function -Message "$Login is a Windows Group and can not be a job owner."
 				return
 			}
-			
+
+			#sql2000 id property is empty -force target login to 'sa' login
+			if ($Login -and ( ($server.VersionMajor -lt 9) -and ([string]::IsNullOrEmpty($Login)) )) {
+				$Login = "sa"
+			}
+			# dynamic sa name for orgs who have changed their sa name
+			if ($Login -eq "sa") {
+				$Login = ($server.Logins | Where-Object { $_.id -eq 1 }).Name
+			}
+
 			#Get database list. If value for -Job is passed, massage to make it a string array.
 			#Otherwise, use all jobs on the instance where owner not equal to -TargetLogin
 			Write-Message -Level Verbose -Message "Gathering jobs to Check"
-			
 			if ($Job) {
-				$jobcollection = $server.JobServer.Jobs | Where-Object { $Job -contains $_.Name }
+				$jobCollection = $server.JobServer.Jobs | Where-Object { $Job -contains $_.Name }
+			}
+			elseif ($ExcludeJob) {
+				$jobCollection = $jobCollection | Where-Object { $ExcludeJob -notcontains $_.Name }
 			}
 			else {
-				$jobcollection = $server.JobServer.Jobs
+				$jobCollection = $server.JobServer.Jobs
 			}
-			
-			if ($ExcludeJob) {
-				$jobcollection = $jobcollection | Where-Object { $ExcludeJob -notcontains $_.Name }
-			}
-			
+
 			#for each database, create custom object for return set.
-			foreach ($j in $jobcollection) {
+			foreach ($j in $jobCollection) {
 				Write-Message -Level Verbose -Message "Checking $j"
 				$row = [ordered]@{
 					Server       = $server.Name
@@ -132,7 +131,7 @@ function Test-DbaJobOwner {
 					CurrentOwner = $j.OwnerLoginName
 					TargetOwner  = $Login
 					OwnerMatch   = ($j.OwnerLoginName -eq $Login)
-					
+
 				}
 				#add each custom object to the return array
 				$return += New-Object PSObject -Property $row
@@ -150,5 +149,5 @@ function Test-DbaJobOwner {
 			return ($return | Where-Object { $_.OwnerMatch -eq $false })
 		}
 	}
-	
+
 }
