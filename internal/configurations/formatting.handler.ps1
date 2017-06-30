@@ -94,7 +94,7 @@ $ScriptBlock = {
         Message = ""
     }
     
-    [Sqlcollective.Ddbatools.Utility.UtilityHost]::DisableCustomDateTime = $Value
+    [Sqlcollaborative.Dbatools.Utility.UtilityHost]::DisableCustomDateTime = $Value
     
     return $Result
 }
@@ -113,7 +113,7 @@ $ScriptBlock = {
         Message = ""
     }
     
-    [Sqlcollective.Ddbatools.Utility.UtilityHost]::DisableCustomTimeSpan = $Value
+    [Sqlcollaborative.Dbatools.Utility.UtilityHost]::DisableCustomTimeSpan = $Value
     
     return $Result
 }

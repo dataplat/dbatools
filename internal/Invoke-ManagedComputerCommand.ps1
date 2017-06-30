@@ -21,7 +21,8 @@ Internal command
 	
 	Test-RunAsAdmin -ComputerName $ComputerName
 	
-	$ipaddr = (Test-Connection $ComputerName -Count 1 -ErrorAction Stop).Ipv4Address
+	$resolved = Resolve-DbaNetworkName -ComputerName $ComputerName
+	$ipaddr = $resolved.IpAddress
 	$ArgumentList += $ipaddr
 		
 	[scriptblock]$setupScriptBlock = {
@@ -41,16 +42,7 @@ Internal command
 		
 	try
 	{
-		if ($credential.username -ne $null)
-		{
-			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop
-		}
-		else
-		{
-			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ErrorAction Stop
-		}
-		
-		Write-Message -Level Verbose -Message "Local connection for $ComputerName succeeded"
+		Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop
 	}
 	catch
 	{
@@ -59,22 +51,12 @@ Internal command
 			Write-Message -Level Verbose -Message "Local connection attempt to $ComputerName failed. Connecting remotely."
 			
 			# For surely resolve stuff
-			$hostname = [System.Net.Dns]::gethostentry($ipaddr)
-			$hostname = $hostname.HostName
+			$hostname = $resolved.fqdn
 			
-			if ($credential.username -ne $null)
-			{
-				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ComputerName $hostname -ErrorAction Stop
-			}
-			else
-			{
-				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname -ErrorAction Stop
-			}
+			Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname -ErrorAction Stop
 		}
-		catch{
+		catch {
 			throw "SqlWmi connection failed: $_"
 		}
 	}
-	
-	$result | Select-Object * -ExcludeProperty PSComputerName, RunSpaceID, PSShowComputerName
 }

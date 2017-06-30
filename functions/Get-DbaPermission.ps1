@@ -32,6 +32,9 @@ Shows also information on Server Level Permissions
 .PARAMETER NoSystemObjects
 Excludes all permissions on system securables
 
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 Tags: Permissions, Databases
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -77,7 +80,8 @@ Returns a custom object with permissions for the master database
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[switch]$IncludeServerLevel,
-		[switch]$NoSystemObjects
+		[switch]$NoSystemObjects,
+		[switch]$Silent
 	)
 
 	begin {
@@ -129,23 +133,23 @@ Returns a custom object with permissions for the master database
 
 	process {
 		foreach ($instance in $SqlInstance) {
-			Write-Verbose "Connecting to $instance"
+			Write-Message -Level Verbose -Message "Connecting to $instance"
+			
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Write-Warning "Can't connect to $instance"
-				Continue
+				Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue
 			}
-
+			
 			if ($server.versionMajor -lt 9) {
-				Write-Warning "Get-DbaPermission is only supported on SQL Server 2005 and above. Skipping Instance."
+				Write-Warning "Get-DbaPermission is only supported on SQL Server 2005 and above. Skipping $instance."
 				Continue
 			}
 
 			if ($IncludeServerLevel) {
-				Write-Debug "T-SQL: $ServPermsql"
-				$server.Databases["master"].ExecuteWithResults($ServPermsql).Tables.Rows
+				Write-Message -Level Debug -Message "T-SQL: $ServPermsql"
+				$server.Query($ServPermsql).Tables.Rows
 			}
 
 			$dbs = $server.Databases
@@ -159,14 +163,14 @@ Returns a custom object with permissions for the master database
 			}
 
 			foreach ($db in $dbs) {
-				Write-Verbose "Processing $db on $instance"
+				Write-Message -Level Verbose -Message "Processing $db on $instance"
 
 				if ($db.IsAccessible -eq $false) {
 					Write-Warning "The database $db is not accessible. Skipping database."
 					Continue
 				}
 
-				Write-Debug "T-SQL: $DBPermsql"
+				Write-Message -Level Debug -Message "T-SQL: $DBPermsql"
 				$db.ExecuteWithResults($DBPermsql).Tables.Rows
 			}
 		}

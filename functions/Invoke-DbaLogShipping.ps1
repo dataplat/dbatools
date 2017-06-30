@@ -697,14 +697,14 @@ The script will show a message that the copy destination has not been supplied a
                             try {
                                 # If the destination server is remote and the credential is set
                                 if (-not $IsDestinationLocal -and $DestinationCredential) {
-                                    Invoke-Command -ComputerName $DestinationServerName -Credential $DestinationCredential -ScriptBlock {
+                                    Invoke-Command2 -ComputerName $DestinationServerName -Credential $DestinationCredential -ScriptBlock {
                                         Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
                                         New-Item -Path $CopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
                                     }
                                 }
                                 # If the server is local and the credential is set
                                 elseif ($DestinationCredential) {
-                                    Invoke-Command -ScriptBlock -Credential $DestinationCredential {
+                                    Invoke-Command2 -ScriptBlock -Credential $DestinationCredential {
                                         Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
                                         New-Item -Path $CopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
                                     }

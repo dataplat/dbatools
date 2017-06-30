@@ -70,11 +70,14 @@ function Resolve-DbaNetworkName {
 			$conn = $ipaddress = $null
 
 			$OGComputer = $Computer
-
-			if ($Computer -eq 'localhost' -or $Computer -eq '.') {
+			
+			if ($Computer.IsLocalhost) {
 				$Computer = $env:COMPUTERNAME
 			}
-
+			else {
+				$Computer = $Computer.ComputerName
+			}
+			
 			if ($Turbo) {
 				try {
 					Write-Message -Level Verbose -Message "Resolving $Computer using .NET.Dns GetHostEntry"

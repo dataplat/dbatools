@@ -64,11 +64,11 @@ Clears all connection pools on workstation27
 				Write-Verbose "Clearing all pools on remote computer $Computer"
 				if ($credential)
 				{
-					Invoke-Command -ComputerName $computer -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}
 				else
 				{
-					Invoke-Command -ComputerName $computer -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+					Invoke-Command2 -ComputerName $computer -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}
 			}
 			else
@@ -76,11 +76,11 @@ Clears all connection pools on workstation27
 				Write-Verbose "Clearing all local pools"
 				if ($credential)
 				{
-					Invoke-Command -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+					Invoke-Command2 -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}
 				else
 				{
-					Invoke-Command -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+					Invoke-Command2 -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}
 			}
 		}

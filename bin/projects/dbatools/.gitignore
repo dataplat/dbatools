@@ -1,1 +1,6 @@
-.vs/
+.vs
+bin/
+obj/
+vstest.*/
+/*.pdb/
+*.user

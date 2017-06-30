@@ -18,7 +18,7 @@
     Context "Ensuring warning is thrown if database already exists" {
         $results = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WarningVariable warning
         It "Should warn" {
-            $warning | Should Match "exists and will not be overwritten"
+            $warning | Should Match "exists and WithReplace not specified, stopping"
         }
         It "Should not return object" {
             $results | Should Be $null

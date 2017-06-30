@@ -310,7 +310,12 @@
 		'Install-DbaFirstResponderKit',
 		'Backup-DbaDatabaseMasterKey',
 		'Get-DbaAgentJobHistory',
-		'Get-DbaSsisEnvironmentVariable'
+		'Get-DbaSsisEnvironmentVariable',
+		'Get-DbaSqlManagementObject',
+		'Test-DbaSqlManagementObject',
+		'Get-DbaMaintenanceSolutionLog',
+		'Invoke-DbaLogShippingRecovery',
+		'Sync-DbaLoginPermission'
 	)
 	
 	# Cmdlets to export from this module
@@ -386,11 +391,7 @@
 	'Test-SqlPath',
 	'Test-SqlTempDbConfiguration',
 	'Watch-SqlDbLogin',
-	'Invoke-Sqlcmd2',
-	'Get-DbaSqlManagementObject',
-	'Get-DbaMaintenanceSolutionLog',
-	'Invoke-DbaLogShippingRecovery',
-	'Sync-DbaLoginPermission'
+	'Invoke-Sqlcmd2'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()
