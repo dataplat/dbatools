@@ -106,13 +106,13 @@ function Copy-DbaSqlDataCollector {
 			throw "SMO version is too old. To migrate collection sets, you must have SQL Server Management Studio 2008 R2 or higher installed."
 		}
 
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
+		$source = $sourceServer.DomainInstanceName
+		$destination = $destServer.DomainInstanceName
 
-		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
+		if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
 			throw "Collection Sets are only supported in SQL Server 2008 and above. Quitting."
 		}
 
@@ -124,30 +124,23 @@ function Copy-DbaSqlDataCollector {
 			$NoServerReconfig = $true
 		}
 
-		$sourceSqlConn = $sourceserver.ConnectionContext.SqlConnectionObject
+		$sourceSqlConn = $sourceServer.ConnectionContext.SqlConnectionObject
 		$sourceSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceSqlConn
 		$sourceStore = New-Object Microsoft.SqlServer.Management.Collector.CollectorConfigStore $sourceSqlStoreConnection
 
-		$destSqlConn = $destserver.ConnectionContext.SqlConnectionObject
+		$destSqlConn = $destServer.ConnectionContext.SqlConnectionObject
 		$destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
 		$destStore = New-Object Microsoft.SqlServer.Management.Collector.CollectorConfigStore $destSqlStoreConnection
 
-		$configdb = $sourceStore.ScriptAlter().GetScript() | Out-String
+		$configDb = $sourceStore.ScriptAlter().GetScript() | Out-String
 
-		<# Regular Expressions for named instances require that the "\" be escaped #>
-		if ($source.SqlInstanceName -ne "mssqlserver") {
-			$sourceReplace = $source -replace "\\", "\\"
-		}
-		if ($destination.SqlInstanceName -ne "mssqlserver") {
-			$destReplace = $destination -replace "\\", "\\"
-		}
-		$configdb = $configdb -replace "'$sourceReplace'", "'$destReplace'"
+		$configDb = $configDb -replace [Regex]::Escape("'$source'"), "'$destReplace'"
 
 		if (!$NoServerReconfig) {
 			if ($Pscmdlet.ShouldProcess($destination, "Attempting to modify Data Collector configuration")) {
 				try {
 					$sql = "Unknown at this time"
-					$destserver.ConnectionContext.ExecuteNonQuery($sql)
+					$destServer.ConnectionContext.ExecuteNonQuery($sql)
 					$destStore.Alter()
 				}
 				catch {
@@ -156,13 +149,13 @@ function Copy-DbaSqlDataCollector {
 			}
 		}
 
-		if ($deststore.Enabled -eq $false) {
+		if ($destStore.Enabled -eq $false) {
 			Write-Warning "The Data Collector must be setup initially for Collection Sets to be migrated. "
 			Write-Warning "Setup the Data Collector and try again."
 			return
 		}
 
-		$storeCollectionSets = $sourceStore.CollectionSets | Where-Object { $_.isSystem -eq $false }
+		$storeCollectionSets = $sourceStore.CollectionSets | Where-Object { $_.IsSystem -eq $false }
 		if ($CollectionSet) {
 			$storeCollectionSets = $storeCollectionSets | Where-Object Name -In $CollectionSet
 		}
@@ -172,8 +165,8 @@ function Copy-DbaSqlDataCollector {
 
 		Write-Output "Migrating collection sets"
 		foreach ($set in $storeCollectionSets) {
-			$collectionName = $set.name
-			if ($deststore.CollectionSets[$collectionName] -ne $null) {
+			$collectionName = $set.Name
+			if ($destStore.CollectionSets[$collectionName] -ne $null) {
 				if ($force -eq $false) {
 					Write-Warning "Collection Set '$collectionName' was skipped because it already exists on $destination"
 					Write-Warning "Use -Force to drop and recreate"
@@ -185,7 +178,7 @@ function Copy-DbaSqlDataCollector {
 						Write-Verbose "Force specified. Dropping $collectionName."
 
 						try {
-							$deststore.CollectionSets[$collectionName].Drop()
+							$destStore.CollectionSets[$collectionName].Drop()
 						}
 						catch {
 							Write-Exception "Unable to drop: $_  Moving on."
@@ -201,12 +194,12 @@ function Copy-DbaSqlDataCollector {
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
 					Write-Output "Migrating collection set $collectionName"
-					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 
 					if ($set.IsRunning) {
 						Write-Output "Starting collection set $collectionName"
-						$deststore.CollectionSets.Refresh()
-						$deststore.CollectionSets[$collectionName].Start()
+						$destStore.CollectionSets.Refresh()
+						$destStore.CollectionSets[$collectionName].Start()
 					}
 				}
 				catch {
