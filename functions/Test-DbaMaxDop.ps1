@@ -5,7 +5,7 @@ Function Test-DbaMaxDop
 Displays information relating to SQL Server Max Degree of Paralellism setting.  Works on SQL Server 2005-2016.
 
 .DESCRIPTION 
-Inspired by Sakthivel Chidambaram's post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator-sqlserver/), 
+Inspired by Sakthivel Chidambaram's post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator-SqlInstance/), 
 this script displays a SQL Server's: max dop configured, and the calculated recommendation.
 
 For SQL Server 2016 shows:
@@ -20,7 +20,7 @@ These are just general recommendations for SQL Server and are a good starting po
 
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 Allows you to specify a comma separated list of servers to query.
 
 .PARAMETER SqlCredential
@@ -50,17 +50,17 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Test-DbaMaxDop
 
 .EXAMPLE   
-Test-DbaMaxDop -SqlServer sql2008, sqlserver2012
+Test-DbaMaxDop -SqlInstance sql2008, sqlserver2012
 
 Get Max DOP setting for servers sql2008 and sqlserver2012 and also the recommended one.
 
 .EXAMPLE 
-Test-DbaMaxDop -SqlServer sql2014 -Detailed
+Test-DbaMaxDop -SqlInstance sql2014 -Detailed
 
 Shows Max DOP setting for server sql2014 with the recommended value. As the -Detailed switch was used will also show the 'NUMANodes' and 'NumberOfCores' of each instance
 
 .EXAMPLE 
-Test-DbaMaxDop -SqlServer sqlserver2016 -Detailed
+Test-DbaMaxDop -SqlInstance sqlserver2016 -Detailed
 
 Get Max DOP setting for servers sql2016 with the recommended value. As the -Detailed switch was used will also show the 'NUMANodes' and 'NumberOfCores' of each instance. Because it is an 2016 instance will be shown 'InstanceVersion', 'Database' and 'DatabaseMaxDop' columns.
 
@@ -68,8 +68,8 @@ Get Max DOP setting for servers sql2016 with the recommended value. As the -Deta
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer", "SqlServers")]
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Switch]$Detailed
 	)
@@ -88,12 +88,12 @@ Get Max DOP setting for servers sql2016 with the recommended value. As the -Deta
 	{
 		$hasscopedconfiguration = $false
 		
-		foreach ($servername in $sqlserver)
+		foreach ($servername in $SqlInstance)
 		{
 			Write-Verbose "Attempting to connect to $servername"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
 			}
 			catch
 			{

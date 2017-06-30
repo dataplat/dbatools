@@ -1,4 +1,4 @@
-#region message.maximuminfo
+﻿#region message.maximuminfo
 $ScriptBlock = {
     Param (
         $Value
@@ -24,7 +24,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumInformation = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MaximumInformation = $Value
     
     return $Result
 }
@@ -57,7 +57,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumVerbose = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MaximumVerbose = $Value
     
     return $Result
 }
@@ -90,7 +90,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumDebug = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MaximumDebug = $Value
     
     return $Result
 }
@@ -123,7 +123,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumInformation = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MinimumInformation = $Value
     
     return $Result
 }
@@ -156,7 +156,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumVerbose = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MinimumVerbose = $Value
     
     return $Result
 }
@@ -169,7 +169,7 @@ $ScriptBlock = {
         $Value
     )
     
-    $Result = New-Object PSOBject -Property @{
+    $Result = New-Object PSObject -Property @{
         Success = $True
         Message = ""
     }
@@ -189,10 +189,86 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumDebug = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MinimumDebug = $Value
     
     return $Result
 }
 Register-DbaConfigHandler -Name 'message.minimumdebug' -ScriptBlock $ScriptBlock
 #endregion message.minimumdebug
 
+#region message.infocolor
+$ScriptBlock = {
+    Param (
+        $Value
+    )
+    
+    $Result = New-Object PSObject -Property @{
+        Success = $True
+        Message = ""
+    }
+    
+    try { [System.ConsoleColor]$number = $Value }
+    catch
+    {
+        $Result.Message = "Not a console color: $Value"
+        $Result.Success = $False
+        return $Result
+    }
+    
+    [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::InfoColor = $Value
+    
+    return $Result
+}
+Register-DbaConfigHandler -Name 'message.infocolor' -ScriptBlock $ScriptBlock
+#endregion message.infocolor
+
+#region message.developercolor
+$ScriptBlock = {
+    Param (
+        $Value
+    )
+    
+    $Result = New-Object PSObject -Property @{
+        Success = $True
+        Message = ""
+    }
+    
+    try { [System.ConsoleColor]$number = $Value }
+    catch
+    {
+        $Result.Message = "Not a console color: $Value"
+        $Result.Success = $False
+        return $Result
+    }
+    
+    [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::DeveloperColor = $Value
+    
+    return $Result
+}
+Register-DbaConfigHandler -Name 'message.developercolor' -ScriptBlock $ScriptBlock
+#endregion message.DeveloperColor
+
+#region developer.mode.enable
+$ScriptBlock = {
+    Param (
+        $Value
+    )
+    
+    $Result = New-Object PSObject -Property @{
+        Success = $True
+        Message = ""
+    }
+    
+    if ($Value.GetType().FullName -ne "System.Boolean")
+    {
+        $Result.Message = "Not a console color: $Value"
+        $Result.Success = $False
+        return $Result
+    }
+    
+    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::DeveloperMode = $Value
+    
+    return $Result
+}
+Register-DbaConfigHandler -Name 'developer.mode.enable' -ScriptBlock $ScriptBlock
+#endregion developer.mode.enable
