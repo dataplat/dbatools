@@ -124,9 +124,8 @@ Searches in "mydb" database triggers for "runtime" in the textbody
                             SqlInstance      = $server.ServiceName
                             TriggerLevel     = "Server"
                             Database         = $null
-                            Schema         	 = $null
+                            Object           = $null
                             Name             = $trigger.Name
-                            Owner            = $trigger.Owner
                             IsSystemObject   = $trigger.IsSystemObject
                             CreateDate       = $trigger.CreateDate
                             LastModified     = $trigger.DateLastModified
@@ -189,9 +188,8 @@ Searches in "mydb" database triggers for "runtime" in the textbody
                                         SqlInstance      = $server.ServiceName
                                         TriggerLevel     = "Database"
                                         Database         = $db.name
+                                        Object           = $tr.Parent
                                         Name             = $tr.Name
-                                        Schema         	 = $tr.Schema
-                                        Owner            = $tr.Owner
                                         IsSystemObject   = $tr.IsSystemObject
                                         CreateDate       = $tr.CreateDate
                                         LastModified     = $tr.DateLastModified
@@ -227,7 +225,6 @@ Searches in "mydb" database triggers for "runtime" in the textbody
                                         SqlInstance      = $server.ServiceName
                                         TriggerLevel     = "Object"
                                         Database         = $db.name
-                                        Schema         	 = $tr.Schema
                                         Object           = $tr.Parent
                                         Name             = $tr.Name
                                         Owner            = $tr.Owner
@@ -264,9 +261,8 @@ Searches in "mydb" database triggers for "runtime" in the textbody
                                         SqlInstance      = $server.ServiceName
                                         TriggerLevel     = "Database"
                                         Database         = $db.name
-                                        Schema         	 = $tr.Schema
+                                        Object           = $tr.Parent
                                         Name             = $tr.Name
-                                        Owner            = $tr.Owner
                                         IsSystemObject   = $tr.IsSystemObject
                                         CreateDate       = $tr.CreateDate
                                         LastModified     = $tr.DateLastModified
@@ -299,9 +295,8 @@ Searches in "mydb" database triggers for "runtime" in the textbody
                                         SqlInstance      = $server.ServiceName
                                         TriggerLevel     = "Object"
                                         Database         = $db.name
-                                        Schema         	 = $tr.Schema
+                                        Object           = $tr.Parent
                                         Name             = $tr.Name
-                                        Owner            = $tr.Owner
                                         IsSystemObject   = $tr.IsSystemObject
                                         CreateDate       = $tr.CreateDate
                                         LastModified     = $tr.DateLastModified
