@@ -179,7 +179,7 @@ Limitations: Does not support Application Roles yet
 					}
 				}
 				
-				if (($login = $destserver.Logins.Item($username)) -ne $null -and !$force) {
+				if ($destserver.Logins.Item($username) -ne $null -and !$force) {
 					If ($Pscmdlet.ShouldProcess("console", "Stating $username is skipped because it exists at destination.")) {
 						Write-Warning "$username already exists in destination. Use -Force to drop and recreate."
 					}
