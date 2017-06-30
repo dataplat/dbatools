@@ -125,6 +125,19 @@ function Copy-DbaSqlDataCollector {
 		if ($NoServerReconfig -eq $false) {
 			Write-Message -Level Warning -Message "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
 			$NoServerReconfig = $true
+
+			<# for future use when this support is added #>
+			$copyServerConfigStatus = [pscustomobject]@{
+				SourceServer      = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name              = $userName
+				Type              = "Data Collection Server Config"
+				Status            = "Skipped"
+				Notes             = "Not supported at this time"
+				DateTime          = [DbaDateTime](Get-Date)
+			}
+			$copyServerConfigStatus
+
 		}
 
 		$sourceSqlConn = $sourceServer.ConnectionContext.SqlConnectionObject
@@ -147,14 +160,15 @@ function Copy-DbaSqlDataCollector {
 					$destStore.Alter()
 				}
 				catch {
+					$copyServerConfigStatus.Status = "Failed"
+					$copyServerConfigStatus
 					Stop-Function -Message "Issue modifying Data Collector configuration" -Target $destServer -ErrorRecord $_
 				}
 			}
 		}
 
 		if ($destStore.Enabled -eq $false) {
-			Write-Message -Level Warning -Message "The Data Collector must be setup initially for Collection Sets to be migrated. "
-			Write-Message -Level Warning -Message "Setup the Data Collector and try again."
+			Write-Message -Level Warning -Message "The Data Collector must be setup initially for Collection Sets to be migrated. Setup the Data Collector and try again."
 			return
 		}
 
@@ -169,9 +183,24 @@ function Copy-DbaSqlDataCollector {
 		Write-Message -Level Verbose -Message "Migrating collection sets"
 		foreach ($set in $storeCollectionSets) {
 			$collectionName = $set.Name
+
+			$copyCollectionSetStatus = [pscustomobject]@{
+				SourceServer      = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name              = $collectionName
+				Type              = "Collection Set"
+				Status            = $null
+				Notes             = $null
+				DateTime          = [DbaDateTime](Get-Date)
+			}
+
 			if ($destStore.CollectionSets[$collectionName] -ne $null) {
 				if ($force -eq $false) {
 					Write-Message -Level Warning -Message "Collection Set '$collectionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
+
+					$copyCollectionSetStatus.Status = "Skipped"
+					$copyCollectionSetStatus.Notes = "Collection set already exist on destination"
+					$copyCollectionSetStatus
 					continue
 				}
 				else {
@@ -183,6 +212,9 @@ function Copy-DbaSqlDataCollector {
 							$destStore.CollectionSets[$collectionName].Drop()
 						}
 						catch {
+							$copyCollectionSetStatus.Status = "Failed to drop on destination"
+							$copyCollectionSetStatus.Notes = $_.Exception
+							$copyCollectionSetStatus
 							Stop-Function -Message "Issue dropping collection" -Target $collectionName -ErrorRecord $_ -Continue
 						}
 					}
@@ -197,14 +229,31 @@ function Copy-DbaSqlDataCollector {
 					Write-Message -Level Verbose -Message "Migrating collection set $collectionName"
 					$destServer.Query($sql)
 
+					$copyCollectionSetStatus.Status = "Successful"
+					$copyCollectionSetStatus
+				}
+				catch {
+					$copyCollectionSetStatus.Status = "Failed to create collection"
+					$copyCollectionSetStatus.Notes = $_.Exception
+
+					Stop-Function -Message "Issue creating collection set" -Target $collectionName -ErrorRecord $_
+				}
+
+				try {
 					if ($set.IsRunning) {
 						Write-Message -Level Verbose -Message "Starting collection set $collectionName"
 						$destStore.CollectionSets.Refresh()
 						$destStore.CollectionSets[$collectionName].Start()
 					}
+
+					$copyCollectionSetStatus.Status = "Successful started Collection"
+					$copyCollectionSetStatus
 				}
 				catch {
-					Stop-Function -Message "Issue migrating collection set" -Target $collectionName -ErrorRecord $_
+					$copyCollectionSetStatus.Status = "Failed to start collection"
+					$copyCollectionSetStatus.Notes = $_.Exception
+
+					Stop-Function -Message "Issue starting collection set" -Target $collectionName -ErrorRecord $_
 				}
 			}
 		}
