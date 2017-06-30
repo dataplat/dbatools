@@ -1,96 +1,103 @@
 function Copy-DbaSqlDataCollector {
 	<#
-.SYNOPSIS
-Migrates user SQL Data Collector collection sets. SQL Data Collector configuration is on the agenda, but it's hard.
+		.SYNOPSIS
+			Migrates user SQL Data Collector collection sets. SQL Data Collector configuration is on the agenda, but it's hard.
 
-.DESCRIPTION
-By default, all data collector objects are migrated. If the object already exists on the destination, it will be skipped unless -Force is used. 
-	
-The -CollectionSet parameter is autopopulated for command-line completion and can be used to copy only specific objects.
+		.DESCRIPTION
+			By default, all data collector objects are migrated. If the object already exists on the destination, it will be skipped unless -Force is used. 
+				
+			The -CollectionSet parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
-THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
+		.PARAMETER Source
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-.PARAMETER Source
-Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+		.PARAMETER SourceSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-.PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
 
-.PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			To connect as a different Windows user, run PowerShell as that user.
 
-$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+		.PARAMETER Destination
+			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+		.PARAMETER DestinationSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-.PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
 
-$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			To connect as a different Windows user, run PowerShell as that user.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+		.PARAMETER CollectionSet
+			The collection set(s) to process - this list is auto populated from the server. If unspecified, all collection sets will be processed.
+			
+		.PARAMETER ExcludeCollectionSet
+			The collection set(s) to exclude - this list is auto populated from the server
 
-.PARAMETER Force
-If collection sets exists on destination server, it will be dropped and recreated.
+		.PARAMETER NoServerReconfig
+			Upcoming parameter to enable server reconfiguration
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER WhatIf 
+			Shows what would happen if the command were to run. No actions are actually performed. 
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER Confirm 
+			Prompts you for confirmation before executing any changing operations within the command. 
 
-.PARAMETER NoServerReconfig
-Upcoming parameter to enable server reconfiguration
+		.PARAMETER Force
+			If collection sets exists on destination server, it will be dropped and recreated.
 
-.NOTES
-Tags: Migration
-Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
+		.PARAMETER Silent 
+			Use this switch to disable any kind of verbose messages
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.NOTES
+			Tags: Migration,DataCollection
+			Author: Chrissy LeMaire (@cl), netnerds.net
+			Requires: sysadmin access on SQL Servers
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+		.LINK
+			https://dbatools.io/Copy-DbaSqlDataCollector
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.EXAMPLE   
+			Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster
 
-.LINK
-https://dbatools.io/Copy-DbaSqlDataCollector
+			Copies all Data Collector Objects and Configurations from sqlserver2014a to sqlcluster, using Windows credentials. 
 
-.EXAMPLE   
-Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster
+		.EXAMPLE   
+			Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
-Copies all Data Collector Objects and Configurations from sqlserver2014a to sqlcluster, using Windows credentials. 
+			Copies all Data Collector Objects and Configurations from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
-.EXAMPLE   
-Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+		.EXAMPLE   
+			Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
-Copies all Data Collector Objects and Configurations from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
+			Shows what would happen if the command were executed.
+			
+		.EXAMPLE   
+			Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -CollectionSet 'Server Activity', 'Table Usage Analysis' 
 
-.EXAMPLE   
-Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -WhatIf
-
-Shows what would happen if the command were executed.
-	
-.EXAMPLE   
-Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -CollectionSet 'Server Activity', 'Table Usage Analysis' 
-
-Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlserver2014a to sqlcluster.
-#>
+			Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlserver2014a to sqlcluster.
+	#>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$DestinationSqlCredential,
+		[object[]]$CollectionSet,
+		[object[]]$ExcludeCollectionSet,
 		[switch]$NoServerReconfig,
-		[switch]$Force
+		[switch]$Force,
+		[switch]$Silent
 	)
 
 	begin {
@@ -132,7 +139,7 @@ Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlse
 			$sourceReplace = $source -replace "\\", "\\"
 		}
 		if ($destination.SqlInstanceName -ne "mssqlserver") {
-			$destReplace = $destination -replace "\\","\\"
+			$destReplace = $destination -replace "\\", "\\"
 		}
 		$configdb = $configdb -replace "'$sourceReplace'", "'$destReplace'"
 
