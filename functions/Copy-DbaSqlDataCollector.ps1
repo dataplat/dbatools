@@ -103,7 +103,8 @@ function Copy-DbaSqlDataCollector {
 	begin {
 
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.Collector") -eq $null) {
-			throw "SMO version is too old. To migrate collection sets, you must have SQL Server Management Studio 2008 R2 or higher installed."
+			Stop-Function -Message "SMO version is too old. To migrate collection sets, you must have SQL Server Management Studio 2008 R2 or higher installed."
+			return
 		}
 
 		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
@@ -113,14 +114,16 @@ function Copy-DbaSqlDataCollector {
 		$destination = $destServer.DomainInstanceName
 
 		if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
-			throw "Collection Sets are only supported in SQL Server 2008 and above. Quitting."
+			Stop-Function -Message "Collection Sets are only supported in SQL Server 2008 and above. Quitting."
+			return
 		}
 
 	}
 	process {
+		if (Test-FunctionInterrupt) { return }
 
 		if ($NoServerReconfig -eq $false) {
-			Write-Warning "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
+			Write-Message -Level Warning -Message "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
 			$NoServerReconfig = $true
 		}
 
@@ -140,18 +143,18 @@ function Copy-DbaSqlDataCollector {
 			if ($Pscmdlet.ShouldProcess($destination, "Attempting to modify Data Collector configuration")) {
 				try {
 					$sql = "Unknown at this time"
-					$destServer.ConnectionContext.ExecuteNonQuery($sql)
+					$destServer.Query($sql)
 					$destStore.Alter()
 				}
 				catch {
-					Write-Exception $_
+					Stop-Function -Message "Issue modifying Data Collector configuration" -Target $destServer -ErrorRecord $_
 				}
 			}
 		}
 
 		if ($destStore.Enabled -eq $false) {
-			Write-Warning "The Data Collector must be setup initially for Collection Sets to be migrated. "
-			Write-Warning "Setup the Data Collector and try again."
+			Write-Message -Level Warning -Message "The Data Collector must be setup initially for Collection Sets to be migrated. "
+			Write-Message -Level Warning -Message "Setup the Data Collector and try again."
 			return
 		}
 
@@ -163,26 +166,24 @@ function Copy-DbaSqlDataCollector {
 			$storeCollectionSets = $storeCollectionSets | Where-Object Name -NotIn $ExcludeCollectionSet
 		}
 
-		Write-Output "Migrating collection sets"
+		Write-Message -Level Verbose -Message "Migrating collection sets"
 		foreach ($set in $storeCollectionSets) {
 			$collectionName = $set.Name
 			if ($destStore.CollectionSets[$collectionName] -ne $null) {
 				if ($force -eq $false) {
-					Write-Warning "Collection Set '$collectionName' was skipped because it already exists on $destination"
-					Write-Warning "Use -Force to drop and recreate"
+					Write-Message -Level Warning -Message "Collection Set '$collectionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 					continue
 				}
 				else {
 					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $collectionName")) {
-						Write-Verbose "Collection Set '$collectionName' exists on $destination"
-						Write-Verbose "Force specified. Dropping $collectionName."
+						Write-Message -Level Verbose -Message "Collection Set '$collectionName' exists on $destination"
+						Write-Message -Level Verbose -Message "Force specified. Dropping $collectionName."
 
 						try {
 							$destStore.CollectionSets[$collectionName].Drop()
 						}
 						catch {
-							Write-Exception "Unable to drop: $_  Moving on."
-							continue
+							Stop-Function -Message "Issue dropping collection" -Target $collectionName -ErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -192,24 +193,24 @@ function Copy-DbaSqlDataCollector {
 				try {
 					$sql = $set.ScriptCreate().GetScript() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-					Write-Verbose $sql
-					Write-Output "Migrating collection set $collectionName"
-					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+					Write-Message -Level Debug -Message $sql
+					Write-Message -Level Verbose -Message "Migrating collection set $collectionName"
+					$destServer.Query($sql)
 
 					if ($set.IsRunning) {
-						Write-Output "Starting collection set $collectionName"
+						Write-Message -Level Verbose -Message "Starting collection set $collectionName"
 						$destStore.CollectionSets.Refresh()
 						$destStore.CollectionSets[$collectionName].Start()
 					}
 				}
 				catch {
-					Write-Exception $_
+					Stop-Function -Message "Issue migrating collection set" -Target $collectionName -ErrorRecord $_
 				}
 			}
 		}
 	}
 	end {
+		if (Test-FunctionInterrupt) { return }
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDataCollector
 	}
 }
-
