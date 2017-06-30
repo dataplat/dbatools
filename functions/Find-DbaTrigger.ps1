@@ -227,7 +227,6 @@ Searches in "mydb" database triggers for "runtime" in the textbody
                                         Database         = $db.name
                                         Object           = $tr.Parent
                                         Name             = $tr.Name
-                                        Owner            = $tr.Owner
                                         IsSystemObject   = $tr.IsSystemObject
                                         CreateDate       = $tr.CreateDate
                                         LastModified     = $tr.DateLastModified
