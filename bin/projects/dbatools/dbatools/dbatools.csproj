@@ -50,8 +50,10 @@
     <Compile Include="Configuration\Config.cs" />
     <Compile Include="Connection\ConnectionHost.cs" />
     <Compile Include="Database\Dependency.cs" />
+    <Compile Include="Utility\DbaPasswordHash.cs" />
+    <Compile Include="Utility\DbaPasswordHashVersion.cs" />
     <Compile Include="Validation\LinkedServerResult.cs" />
-    <Compile Include="Utility\DateTimeExtension.cs" />
+    <Compile Include="Utility\DbaToolsExtensionMethods.cs" />
     <Compile Include="Utility\DbaDate.cs" />
     <Compile Include="Utility\DbaDateTime.cs" />
     <Compile Include="Utility\DbaDateTimeBase.cs" />
