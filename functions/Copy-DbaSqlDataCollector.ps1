@@ -1,220 +1,265 @@
 function Copy-DbaSqlDataCollector {
-<#
-.SYNOPSIS
-Migrates user SQL Data Collector collection sets. SQL Data Collector configuration is on the agenda, but it's hard.
+	<#
+		.SYNOPSIS
+			Migrates user SQL Data Collector collection sets. SQL Data Collector configuration is on the agenda, but it's hard.
 
-.DESCRIPTION
-By default, all data collector objects are migrated. If the object already exists on the destination, it will be skipped unless -Force is used. 
-	
-The -CollectionSet parameter is autopopulated for command-line completion and can be used to copy only specific objects.
+		.DESCRIPTION
+			By default, all data collector objects are migrated. If the object already exists on the destination, it will be skipped unless -Force is used.
 
-THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
+			The -CollectionSet parameter is autopopulated for command-line completion and can be used to copy only specific objects.
 
-.PARAMETER Source
-Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+		.PARAMETER Source
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-.PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+		.PARAMETER SourceSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-.PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			To connect as a different Windows user, run PowerShell as that user.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+		.PARAMETER Destination
+			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
-.PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+		.PARAMETER DestinationSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Force
-If collection sets exists on destination server, it will be dropped and recreated.
+		.PARAMETER CollectionSet
+			The collection set(s) to process - this list is auto populated from the server. If unspecified, all collection sets will be processed.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER ExcludeCollectionSet
+			The collection set(s) to exclude - this list is auto populated from the server
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER NoServerReconfig
+			Upcoming parameter to enable server reconfiguration
 
-.PARAMETER NoServerReconfig
-Upcoming parameter to enable server reconfiguration
+		.PARAMETER WhatIf
+			Shows what would happen if the command were to run. No actions are actually performed.
 
-.NOTES
-Tags: Migration
-Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
+		.PARAMETER Confirm
+			Prompts you for confirmation before executing any changing operations within the command.
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.PARAMETER Force
+			If collection sets exists on destination server, it will be dropped and recreated.
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		.PARAMETER Silent
+			Use this switch to disable any kind of verbose messages
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+		.NOTES
+			Tags: Migration,DataCollection
+			Author: Chrissy LeMaire (@cl), netnerds.net
+			Requires: sysadmin access on SQL Servers
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.LINK
-https://dbatools.io/Copy-DbaSqlDataCollector
+		.LINK
+			https://dbatools.io/Copy-DbaSqlDataCollector
 
-.EXAMPLE   
-Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster
+		.EXAMPLE
+			Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster
 
-Copies all Data Collector Objects and Configurations from sqlserver2014a to sqlcluster, using Windows credentials. 
+			Copies all Data Collector Objects and Configurations from sqlserver2014a to sqlcluster, using Windows credentials.
 
-.EXAMPLE   
-Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
+		.EXAMPLE
+			Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
-Copies all Data Collector Objects and Configurations from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
+			Copies all Data Collector Objects and Configurations from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
-.EXAMPLE   
-Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -WhatIf
+		.EXAMPLE
+			Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
-Shows what would happen if the command were executed.
-	
-.EXAMPLE   
-Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -CollectionSet 'Server Activity', 'Table Usage Analysis' 
+			Shows what would happen if the command were executed.
 
-Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlserver2014a to sqlcluster.
-#>
+		.EXAMPLE
+			Copy-DbaSqlDataCollector -Source sqlserver2014a -Destination sqlcluster -CollectionSet 'Server Activity', 'Table Usage Analysis'
+
+			Copies two Collection Sets, Server Activity and Table Usage Analysis, from sqlserver2014a to sqlcluster.
+	#>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$DestinationSqlCredential,
+		[object[]]$CollectionSet,
+		[object[]]$ExcludeCollectionSet,
 		[switch]$NoServerReconfig,
-		[switch]$Force
+		[switch]$Force,
+		[switch]$Silent
 	)
 
 	begin {
 
-		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.Collector") -eq $null)
-		{
-			throw "SMO version is too old. To migrate collection sets, you must have SQL Server Management Studio 2008 R2 or higher installed."
-		}
-		
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-		
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
-		
-		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
-		{
-			throw "Collection Sets are only supported in SQL Server 2008 and above. Quitting."
-		}
-		
-	}
-	process {
-
-		if ($NoServerReconfig -eq $false) 
-		{
-			Write-Warning "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
-			$NoServerReconfig = $true
-		}
-		
-		$sourceSqlConn = $sourceserver.ConnectionContext.SqlConnectionObject
-		$sourceSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceSqlConn
-		$sourceStore = New-Object Microsoft.SqlServer.Management.Collector.CollectorConfigStore $sourceSqlStoreConnection
-		
-		$destSqlConn = $destserver.ConnectionContext.SqlConnectionObject
-		$destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
-		$destStore = New-Object Microsoft.SqlServer.Management.Collector.CollectorConfigStore $destSqlStoreConnection
-		
-		$configdb = $sourceStore.ScriptAlter().GetScript() | Out-String
-		$configdb = $configdb -replace "'$source'", "'$destination'"
-		
-		if (!$NoServerReconfig)
-		{
-			if ($Pscmdlet.ShouldProcess($destination, "Attempting to modify Data Collector configuration"))
-			{
-				try
-				{
-					$sql = "Unknown at this time"
-					$destserver.ConnectionContext.ExecuteNonQuery($sql)
-					$destStore.Alter()
-				}
-				catch 
-				{ 
-					Write-Exception $_ 
-				}
-			}
-		}
-		
-		if ($deststore.Enabled -eq $false) {
-			Write-Warning "The Data Collector must be setup initially for Collection Sets to be migrated. "
-			Write-Warning "Setup the Data Collector and try again."
+		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.Collector") -eq $null) {
+			Stop-Function -Message "SMO version is too old. To migrate collection sets, you must have SQL Server Management Studio 2008 R2 or higher installed."
 			return
 		}
-		
-		$storeCollectionSets = $sourceStore.CollectionSets | Where-Object { $_.isSystem -eq $false }
-		if ($CollectionSet.length -gt 0) { $storeCollectionSets = $storeCollectionSets | Where-Object { $CollectionSet -contains $_.Name } }
-		
-		Write-Output "Migrating collection sets"
-		foreach ($set in $storeCollectionSets)
-		{
-			$collectionName = $set.name
-			if ($deststore.CollectionSets[$collectionName] -ne $null)
-			{
-				if ($force -eq $false)
-				{
-					Write-Warning "Collection Set '$collectionName' was skipped because it already exists on $destination"
-					Write-Warning "Use -Force to drop and recreate"
+
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+
+		$source = $sourceServer.DomainInstanceName
+		$destination = $destServer.DomainInstanceName
+
+		if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
+			Stop-Function -Message "Collection Sets are only supported in SQL Server 2008 and above. Quitting."
+			return
+		}
+
+	}
+	process {
+		if (Test-FunctionInterrupt) { return }
+
+		if ($NoServerReconfig -eq $false) {
+			Write-Message -Level Warning -Message "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
+			$NoServerReconfig = $true
+
+			<# for future use when this support is added #>
+			$copyServerConfigStatus = [pscustomobject]@{
+				SourceServer      = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name              = $userName
+				Type              = "Data Collection Server Config"
+				Status            = "Skipped"
+				Notes             = "Not supported at this time"
+				DateTime          = [DbaDateTime](Get-Date)
+			}
+			$copyServerConfigStatus
+
+		}
+
+		$sourceSqlConn = $sourceServer.ConnectionContext.SqlConnectionObject
+		$sourceSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceSqlConn
+		$sourceStore = New-Object Microsoft.SqlServer.Management.Collector.CollectorConfigStore $sourceSqlStoreConnection
+
+		$destSqlConn = $destServer.ConnectionContext.SqlConnectionObject
+		$destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
+		$destStore = New-Object Microsoft.SqlServer.Management.Collector.CollectorConfigStore $destSqlStoreConnection
+
+		$configDb = $sourceStore.ScriptAlter().GetScript() | Out-String
+
+		$configDb = $configDb -replace [Regex]::Escape("'$source'"), "'$destReplace'"
+
+		if (!$NoServerReconfig) {
+			if ($Pscmdlet.ShouldProcess($destination, "Attempting to modify Data Collector configuration")) {
+				try {
+					$sql = "Unknown at this time"
+					$destServer.Query($sql)
+					$destStore.Alter()
+				}
+				catch {
+					$copyServerConfigStatus.Status = "Failed"
+					$copyServerConfigStatus
+					Stop-Function -Message "Issue modifying Data Collector configuration" -Target $destServer -ErrorRecord $_
+				}
+			}
+		}
+
+		if ($destStore.Enabled -eq $false) {
+			Write-Message -Level Warning -Message "The Data Collector must be setup initially for Collection Sets to be migrated. Setup the Data Collector and try again."
+			return
+		}
+
+		$storeCollectionSets = $sourceStore.CollectionSets | Where-Object { $_.IsSystem -eq $false }
+		if ($CollectionSet) {
+			$storeCollectionSets = $storeCollectionSets | Where-Object Name -In $CollectionSet
+		}
+		if ($ExcludeCollectionSet) {
+			$storeCollectionSets = $storeCollectionSets | Where-Object Name -NotIn $ExcludeCollectionSet
+		}
+
+		Write-Message -Level Verbose -Message "Migrating collection sets"
+		foreach ($set in $storeCollectionSets) {
+			$collectionName = $set.Name
+
+			$copyCollectionSetStatus = [pscustomobject]@{
+				SourceServer      = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name              = $collectionName
+				Type              = "Collection Set"
+				Status            = $null
+				Notes             = $null
+				DateTime          = [DbaDateTime](Get-Date)
+			}
+
+			if ($destStore.CollectionSets[$collectionName] -ne $null) {
+				if ($force -eq $false) {
+					Write-Message -Level Warning -Message "Collection Set '$collectionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
+
+					$copyCollectionSetStatus.Status = "Skipped"
+					$copyCollectionSetStatus.Notes = "Collection set already exist on destination"
+					$copyCollectionSetStatus
 					continue
 				}
-				else
-				{
-					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $collectionName"))
-					{
-						Write-Verbose "Collection Set '$collectionName' exists on $destination"
-						Write-Verbose "Force specified. Dropping $collectionName."
-						
-						try
-						{
-							$deststore.CollectionSets[$collectionName].Drop()
+				else {
+					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $collectionName")) {
+						Write-Message -Level Verbose -Message "Collection Set '$collectionName' exists on $destination"
+						Write-Message -Level Verbose -Message "Force specified. Dropping $collectionName."
+
+						try {
+							$destStore.CollectionSets[$collectionName].Drop()
 						}
-						catch
-						{
-							Write-Exception "Unable to drop: $_  Moving on."
-							continue
+						catch {
+							$copyCollectionSetStatus.Status = "Failed to drop on destination"
+							$copyCollectionSetStatus.Notes = $_.Exception
+							$copyCollectionSetStatus
+							Stop-Function -Message "Issue dropping collection" -Target $collectionName -ErrorRecord $_ -Continue
 						}
 					}
 				}
 			}
-			
-			if ($Pscmdlet.ShouldProcess($destination, "Migrating collection set $collectionName"))
-			{
-				try
-				{
+
+			if ($Pscmdlet.ShouldProcess($destination, "Migrating collection set $collectionName")) {
+				try {
 					$sql = $set.ScriptCreate().GetScript() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-					Write-Verbose $sql
-					Write-Output "Migrating collection set $collectionName"
-					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
-					
-					if ($set.IsRunning)
-					{
-						Write-Output "Starting collection set $collectionName"
-						$deststore.CollectionSets.Refresh()
-						$deststore.CollectionSets[$collectionName].Start()
-					}
+					Write-Message -Level Debug -Message $sql
+					Write-Message -Level Verbose -Message "Migrating collection set $collectionName"
+					$destServer.Query($sql)
+
+					$copyCollectionSetStatus.Status = "Successful"
+					$copyCollectionSetStatus
 				}
-				catch
-				{
-					Write-Exception $_
+				catch {
+					$copyCollectionSetStatus.Status = "Failed to create collection"
+					$copyCollectionSetStatus.Notes = $_.Exception
+
+					Stop-Function -Message "Issue creating collection set" -Target $collectionName -ErrorRecord $_
+				}
+
+				try {
+					if ($set.IsRunning) {
+						Write-Message -Level Verbose -Message "Starting collection set $collectionName"
+						$destStore.CollectionSets.Refresh()
+						$destStore.CollectionSets[$collectionName].Start()
+					}
+
+					$copyCollectionSetStatus.Status = "Successful started Collection"
+					$copyCollectionSetStatus
+				}
+				catch {
+					$copyCollectionSetStatus.Status = "Failed to start collection"
+					$copyCollectionSetStatus.Notes = $_.Exception
+
+					Stop-Function -Message "Issue starting collection set" -Target $collectionName -ErrorRecord $_
 				}
 			}
 		}
 	}
 	end {
+		if (Test-FunctionInterrupt) { return }
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDataCollector
 	}
 }
-

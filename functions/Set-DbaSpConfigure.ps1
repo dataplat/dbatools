@@ -15,7 +15,7 @@
 		.PARAMETER SqlCredential
 			PSCredential object to connect as. If not specified, current Windows login will be used.
 
-		.PARAMETER Configs
+		.PARAMETER ConfigName
 			The name of the configuration to be set -- Configs is autopopulated for tabbing convenience. 
 			
 		.PARAMETER Value
@@ -42,17 +42,17 @@
 			https://dbatools.io/Set-DbaSpConfigure
 
 		.EXAMPLE
-			Set-DbaSpConfigure -SqlInstance localhost -Config ScanForStartupProcedures -value 1
+			Set-DbaSpConfigure -SqlInstance localhost -ConfigName ScanForStartupProcedures -value 1
 
 			Adjusts the Scan for startup stored procedures configuration value to 1 and notifies the user that this requires a SQL restart to take effect
 
 		.EXAMPLE
-			Set-DbaSpConfigure -SqlInstance localhost -Config XPCmdShellEnabled -value 1
+			Set-DbaSpConfigure -SqlInstance localhost -ConfigName XPCmdShellEnabled -value 1
 
 			Adjusts the xp_cmdshell configuation value to 1.
 
 		.EXAMPLE
-			Set-DbaSpConfigure -SqlInstance localhost -Config XPCmdShellEnabled -value 1 -WhatIf
+			Set-DbaSpConfigure -SqlInstance localhost -ConfigName XPCmdShellEnabled -value 1 -WhatIf
 
 			Returns information on the action that would be performed. No actual change will be made.
 		#>
@@ -65,11 +65,13 @@
 		[Parameter(Mandatory = $false)]
 		[Alias("NewValue", "NewConfig")]
 		[int]$Value,
+		[Alias("Config")]
+		[object[]]$ConfigName,
 		[switch]$Silent
 	)
 
 	begin {
-		if (!$Config) {
+		if (!$ConfigName) {
 			Stop-Function -Message "You must select one or more configurations to modify" -Target $Instance
 		}
 	}
@@ -86,7 +88,7 @@
 			}
 			
 			#Grab the current config value
-			$currentValues = ($server.Configuration.$Config)
+			$currentValues = ($server.Configuration.$ConfigName)
 			$currentRunValue = $currentValues.RunValue
 			$minValue = $currentValues.Minimum
 			$maxValue = $currentValues.Maximum
@@ -104,7 +106,7 @@
 			
 			If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $Config from $currentRunValue to $value.")) {
 				try {
-					$server.Configuration.$Config.ConfigValue = $value
+					$server.Configuration.$ConfigName.ConfigValue = $value
 					$server.Configuration.Alter()
 					
 					[pscustomobject]@{
