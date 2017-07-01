@@ -61,9 +61,14 @@ function Copy-DbaSpConfigure {
 			Copies all sp_configure settings from sqlserver2014a to sqlcluster
 
 		.EXAMPLE
-			Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -Config DefaultBackupCompression, IsSqlClrEnabled -SourceSqlCredential $cred -Force
+			Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -ConfigName DefaultBackupCompression, IsSqlClrEnabled -SourceSqlCredential $cred -Force
 
 			Updates the values for two configs, the  IsSqlClrEnabled and DefaultBackupCompression, from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
+
+		.EXAMPLE
+			Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -ExcludeConfigName DefaultBackupCompression, IsSqlClrEnabled 
+
+			Updates all configs except for IsSqlClrEnabled and DefaultBackupCompression, from sqlserver2014a to sqlcluster.
 
 		.EXAMPLE
 			Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -WhatIf
