@@ -23,6 +23,12 @@
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
+	
+		.PARAMETER Mode
+			Default: Strict
+			How strict does the command take lesser issues?
+			Strict: Interrupt if the configuration already has the same value as the one specified.
+			Lazy:   Silently skip over instances that already have this configuration at the specified value.
 
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
@@ -60,16 +66,29 @@
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[DbaInstanceParameter[]]
+		$SqlInstance,
+		
+		[System.Management.Automation.PSCredential]
+		$SqlCredential,
+		
 		[Parameter(Mandatory = $false)]
 		[Alias("NewValue", "NewConfig")]
-		[int]$Value,
+		[int]
+		$Value,
+		
 		[Alias("Config")]
-		[object[]]$ConfigName,
-		[switch]$Silent
+		[object[]]
+		$ConfigName,
+		
+		[ValidateSet('Strict', 'Lazy')]
+		[DbaMode]
+		$Mode = 'Strict',
+		
+		[switch]
+		$Silent
 	)
-
+	
 	begin {
 		if (!$ConfigName) {
 			Stop-Function -Message "You must select one or more configurations to modify" -Target $Instance
@@ -79,12 +98,12 @@
 	process {
 		if (Test-FunctionInterrupt) { return }
 		
-		foreach ($instance in $SqlInstance) {
+		:main foreach ($instance in $SqlInstance) {
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $Instance
+				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $Instance -ErrorRecord $_ -ContinueLabel main
 			}
 			
 			#Grab the current config value
@@ -96,12 +115,20 @@
 			
 			#Let us not waste energy setting the value to itself
 			if ($currentRunValue -eq $value) {
-				Stop-Function -Message "Value to set is the same as the existing value. No work being performed." -Continue
+				switch ($Mode) {
+					'Lazy' {
+						Write-Message -Level Verbose -Message "Skipping over <c='green'>$instance</c> since its <c='gray'>$ConfigName</c> is already set to <c='gray'>$Value</c>" -Target $instance
+						continue main
+					}
+					'Strict' {
+						Stop-Function -Message "Value to set is the same as the existing value. No work being performed." -Continue -ContinueLabel main -Target $instance -Category InvalidData
+					}
+				}
 			}
 			
 			#Going outside the min/max boundary can be done, but it can break SQL, so I don't think allowing that is wise at this juncture
 			if ($value -lt $minValue -or $value -gt $maxValue) {
-				Stop-Function -Message "Value out of range for $Config (min: $minValue - max $maxValue)" -Continue
+				Stop-Function -Message "Value out of range for $Config (min: $minValue - max $maxValue)" -Continue -Category InvalidArgument
 			}
 			
 			If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $Config from $currentRunValue to $value.")) {
@@ -113,8 +140,8 @@
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance  = $server.DomainInstanceName
-						OldValue     = $currentRunValue
-						NewValue     = $value
+						OldValue	 = $currentRunValue
+						NewValue	 = $value
 					}
 					
 					#If it's a dynamic setting we're all clear, otherwise let the user know that SQL needs to be restarted for the change to take
@@ -123,7 +150,7 @@
 					}
 				}
 				catch {
-					Write-Message -Level Warning -Message "Unable to change config setting" -Target $Instance
+					Stop-Function -Message "Unable to change config setting" -Target $Instance -ErrorRecord $_ -Continue -ContinueLabel main
 				}
 			}
 		}
