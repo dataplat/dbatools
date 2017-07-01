@@ -44,7 +44,7 @@ function Copy-DbaSpConfigure {
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
-			Tags: Migration, Configure,SpConfigure
+			Tags: Migration, Configure, SpConfigure
 			Author: Chrissy LeMaire (@cl), netnerds.net
 			Requires: sysadmin access on SQL Servers
 
@@ -66,7 +66,7 @@ function Copy-DbaSpConfigure {
 			Updates the values for two configs, the  IsSqlClrEnabled and DefaultBackupCompression, from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
 		.EXAMPLE
-			Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -ExcludeConfigName DefaultBackupCompression, IsSqlClrEnabled 
+			Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -ExcludeConfigName DefaultBackupCompression, IsSqlClrEnabled
 
 			Updates all configs except for IsSqlClrEnabled and DefaultBackupCompression, from sqlserver2014a to sqlcluster.
 
@@ -87,7 +87,7 @@ function Copy-DbaSpConfigure {
 		$DestinationSqlCredential,
 		[object[]]$ConfigName,
 		[object[]]$ExcludeConfigName,
-		[object[]]$Silent
+		[switch]$Silent
 	)
 
 	begin {
@@ -109,6 +109,16 @@ function Copy-DbaSpConfigure {
 			$sConfiguredValue = $sourceProp.ConfiguredValue
 			$requiresRestart = $sourceProp.IsDynamic
 
+			$copySpConfigStatus = [pscustomobject]@{
+				SourceServer      = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name              = $sConfigName
+				Type              = $null
+				Status            = $null
+				Notes             = $null
+				DateTime          = [DbaDateTime](Get-Date)
+			}
+
 			if ($ConfigName -and $sConfigName -notin $ConfigName -or $sConfigName -in $ExcludeConfigName ) {
 				continue
 			}
@@ -116,6 +126,10 @@ function Copy-DbaSpConfigure {
 			$destProp = $destProps | Where-Object ConfigName -eq $sConfigName
 			if (!$destProp) {
 				Write-Message -Level Warning -Message "Configuration $sConfigName ('$displayName') does not exist on the destination instance."
+
+				$copySpConfigStatus.Status = "Skipped"
+				$copySpConfigStatus.Notes = "Configuration does not exist on destination"
+				$copySpConfigStatus
 				continue
 			}
 
@@ -123,15 +137,32 @@ function Copy-DbaSpConfigure {
 				try {
 					$destOldConfigValue = $destProp.ConfiguredValue
 
-					Set-DbaSpConfigure -SqlInstance $destServer -Config $sConfigName -Value $sConfiguredValue
+					$result = Set-DbaSpConfigure -SqlInstance $destServer -Config $sConfigName -Value $sConfiguredValue
+					if ($result) {
+						Write-Message -Level Verbose -Message "Updated $($destProp.ConfigName) ($($destProp.DisplayName)) from $destOldConfigValue to $sConfiguredValue"
+					}
 
-					Write-Message -Level Verbose -Message "Updated $($destProp.ConfigName) ($($destProp.DisplayName)) from $destOldConfigValue to $sConfiguredValue"
 					if ($requiresRestart -eq $false) {
 						Write-Message -Level Warning -Message "Configuration option $sConfigName ($displayName) requires restart."
+						$copySpConfigStatus.Notes = "Requires restart"
 					}
+					$copySpConfigStatus.Status = "Successful"
+					$copySpConfigStatus
 				}
 				catch {
-					Stop-Function -Message "Could not set $($destProp.ConfigName) to $sConfiguredValue. Feature may not be supported." -Target $sConfigName -ErrorRecord $_
+					$msg = $_.Exception.Message
+					if ($msg -match "Value to set is same as the existing value") {
+						$copySpConfigStatus.Status = "Skipped"
+						$copySpConfigStatus.Notes = "Value on source and destination match"
+						$copySpConfigStatus
+					}
+					else {
+						$copySpConfigStatus.Status = "Failed"
+						$copySpConfigStatus.Notes = $_.Exception
+						$copySpConfigStatus
+
+						Stop-Function -Message "Could not set $($destProp.ConfigName) to $sConfiguredValue." -Target $sConfigName -ErrorRecord $_
+					}
 				}
 			}
 		}
