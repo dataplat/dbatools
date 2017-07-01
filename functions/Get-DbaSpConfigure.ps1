@@ -14,7 +14,7 @@ function Get-DbaSpConfigure {
 		.PARAMETER SqlCredential
 			PSCredential object to connect as. If not specified, current Windows login will be used.
 
-		.PARAMETER Config
+		.PARAMETER ConfigName
 			Return only specific configurations -- auto-populated from source server
 
 		.PARAMETER Detailed
@@ -46,7 +46,7 @@ function Get-DbaSpConfigure {
 			Returns server level configuration data on the localhost (ServerName, ConfigName, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
 
 		.EXAMPLE
-			Get-DbaSpConfigure -SqlInstance sql2012 -Config MaxServerMemory
+			Get-DbaSpConfigure -SqlInstance sql2012 -ConfigName MaxServerMemory
 
 			Returns only the system configuration for MaxServerMemory. Configs is autopopulated for tabbing convenience.
 		#>
@@ -56,7 +56,8 @@ function Get-DbaSpConfigure {
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[object[]]$Config
+		[Alias("Config")]
+		[object[]]$ConfigName
 	)
 	
 	process {
@@ -72,8 +73,8 @@ function Get-DbaSpConfigure {
 			#Get a list of the configuration property parents, and exlude the Parent, Properties values
 			$proplist = Get-Member -InputObject $server.Configuration -MemberType Property -Force | Select-Object Name | Where-Object { $_.Name -ne "Parent" -and $_.Name -ne "Properties" }
 			
-			if ($Config) {
-				$proplist = $proplist | Where-Object { $_.Name -in $Config }
+			if ($ConfigName) {
+				$proplist = $proplist | Where-Object { $_.Name -in $ConfigName }
 			}
 			
 			#Grab the default sp_configure property values from the external function
