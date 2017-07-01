@@ -110,7 +110,7 @@ function Copy-DbaSpConfigure {
 
 			$destProp = $destProps | Where-Object ConfigName -eq $sConfigName
 			if (!$destProp) {
-				Write-Warning "Configuration $sConfigName ('$displayName') does not exist on the destination instance."
+				Write-Message -Level Warning -Message "Configuration $sConfigName ('$displayName') does not exist on the destination instance."
 				continue
 			}
 
@@ -120,14 +120,13 @@ function Copy-DbaSpConfigure {
 
 					Set-DbaSpConfigure -SqlInstance $destServer -Config $sConfigName -Value $sConfiguredValue
 
-					Write-Output "Updated $($destProp.ConfigName) ($($destProp.DisplayName)) from $destOldConfigValue to $sConfiguredValue"
+					Write-Message -Level Verbose -Message "Updated $($destProp.ConfigName) ($($destProp.DisplayName)) from $destOldConfigValue to $sConfiguredValue"
 					if ($requiresRestart -eq $false) {
-						Write-Warning "Configuration option $sConfigName ($displayName) requires restart."
+						Write-Message -Level Warning -Message "Configuration option $sConfigName ($displayName) requires restart."
 					}
 				}
 				catch {
-					#Write-Error "Could not set $($destProp.ConfigName) to $sConfiguredValue. Feature may not be supported."
-					$_
+					Stop-Function -Message "Could not set $($destProp.ConfigName) to $sConfiguredValue. Feature may not be supported." -Target $sConfigName -ErrorRecord $_
 				}
 			}
 		}
