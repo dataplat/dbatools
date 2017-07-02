@@ -148,7 +148,7 @@
 	
 	$coloredMessage = $Message
 	$baseMessage = $Message
-	foreach ($match in ($baseMessage | Select-String '<c="(.*?)">(.*?)</c>' -AllMatches).Matches) {
+	foreach ($match in ($baseMessage | Select-String '<c=["''](.*?)["'']>(.*?)</c>' -AllMatches).Matches) {
 		$baseMessage = $baseMessage -replace ([regex]::Escape($match.Value)), $match.Groups[2].Value
 	}
 	

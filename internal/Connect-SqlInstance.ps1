@@ -1,5 +1,4 @@
-﻿function Connect-SqlInstance
-{
+﻿function Connect-SqlInstance {
     <#
         .SYNOPSIS
             Internal function to establish smo connections.
@@ -57,8 +56,7 @@
     #>
     if ($SqlCredential)
     {
-        if ($SqlCredential.GetType() -ne [System.Management.Automation.PSCredential])
-        {
+        if ($SqlCredential.GetType() -ne [System.Management.Automation.PSCredential]) {
             throw "The credential parameter was of a non-supported type! Only specify PSCredentials such as generated from Get-Credential. Input was of type $($SqlCredential.GetType().FullName)"
         }
     }
@@ -72,37 +70,30 @@
     
     Note: Multiple servers in one call were never supported, those old functions were liable to break anyway and should be fixed soonest.
     #>
-    if ($SqlInstance.GetType() -eq [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter])
-    {
+    if ($SqlInstance.GetType() -eq [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]) {
         [DbaInstanceParameter]$ConvertedSqlInstance = $SqlInstance
     }
-    else
-    {
+    else {
         [DbaInstanceParameter]$ConvertedSqlInstance = [DbaInstanceParameter]($SqlInstance | Select-Object -First 1)
         
-        if ($SqlInstance.Count -gt 1)
-        {
+        if ($SqlInstance.Count -gt 1) {
             Write-Message -Level Warning -Silent $true -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)"
         }
     }
     #endregion Safely convert input into instance parameters
     
     #region Input Object was a server object
-    if ($ConvertedSqlInstance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
-    {
+    if ($ConvertedSqlInstance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
         $server = $ConvertedSqlInstance.InputObject
-        if ($ParameterConnection)
-        {
+        if ($ParameterConnection) {
             $paramserver = New-Object Microsoft.SqlServer.Management.Smo.Server
             $paramserver.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
             $paramserver.ConnectionContext.ConnectionString = $server.ConnectionContext.ConnectionString
             
-            if ($SqlCredential.username -ne $null)
-            {
+            if ($SqlCredential.username -ne $null) {
                 $username = ($SqlCredential.username).TrimStart("\")
                 
-                if ($username -like "*\*")
-                {
+                if ($username -like "*\*") {
                     $username = $username.Split("\")[1]
                     $authtype = "Windows Authentication with Credential"
                     $paramserver.ConnectionContext.LoginSecure = $true
@@ -110,8 +101,7 @@
                     $paramserver.ConnectionContext.ConnectAsUserName = $username
                     $paramserver.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
                 }
-                else
-                {
+                else {
                     $authtype = "SQL Authentication"
                     $paramserver.ConnectionContext.LoginSecure = $false
                     $paramserver.ConnectionContext.set_Login($username)
@@ -123,13 +113,12 @@
             return $paramserver
         }
         
-        if ($server.ConnectionContext.IsOpen -eq $false)
-        {
+        if ($server.ConnectionContext.IsOpen -eq $false) {
             $server.ConnectionContext.Connect()
         }
 		
 		# Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
-		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($ConvertedSqlInstance.FullSmoName.ToLower(), $server.ConnectionContext, ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($ConvertedSqlInstance.FullSmoName.ToLower(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
 		
 		# Update cache for instance names
 		if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $ConvertedSqlInstance.FullSmoName.ToLower()) {
@@ -153,7 +142,7 @@
     $server = New-Object Microsoft.SqlServer.Management.Smo.Server $ConvertedSqlInstance.FullSmoName
     $server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
     
-	<#
+    <#
 	 Just realized this will not work because it's SMO ;) We will return to if this is still needed and how to handle it in 1.0.
 	
 	if ($server.Configuration.SmoAndDmoXPsEnabled.RunValue -eq 0)
@@ -165,14 +154,11 @@
     }
 	#>
     
-    try
-    {
-        if ($SqlCredential.username -ne $null)
-        {
+    try {
+        if ($SqlCredential.username -ne $null) {
             $username = ($SqlCredential.username).TrimStart("\")
             
-            if ($username -like "*\*")
-            {
+            if ($username -like "*\*") {
                 $username = $username.Split("\")[1]
                 $authtype = "Windows Authentication with Credential"
                 $server.ConnectionContext.LoginSecure = $true
@@ -180,8 +166,7 @@
                 $server.ConnectionContext.ConnectAsUserName = $username
                 $server.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
             }
-            else
-            {
+            else {
                 $authtype = "SQL Authentication"
                 $server.ConnectionContext.LoginSecure = $false
                 $server.ConnectionContext.set_Login($username)
@@ -191,17 +176,14 @@
     }
     catch { }
     
-    try
-    {
-        if ($ParameterConnection)
-        {
+    try {
+        if ($ParameterConnection) {
             $server.ConnectionContext.ConnectTimeout = 7
         }
         
         $server.ConnectionContext.Connect()
     }
-    catch
-    {
+    catch {
         $message = $_.Exception.InnerException.InnerException
         $message = $message.ToString()
         $message = ($message -Split '-->')[0]
@@ -210,16 +192,13 @@
         throw "Can't connect to $ConvertedSqlInstance`: $message "
     }
     
-    if (-not $RegularUser)
-    {
-        if ($server.ConnectionContext.FixedServerRoles -notmatch "SysAdmin")
-        {
+    if (-not $RegularUser) {
+        if ($server.ConnectionContext.FixedServerRoles -notmatch "SysAdmin") {
             throw "Not a sysadmin on $ConvertedSqlInstance. Quitting."
         }
     }
     
-    if (-not $ParameterConnection)
-    {
+    if (-not $ParameterConnection -or ($Server.ServerType -ne 'SqlAzureDatabase') ) {
         $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Trigger], 'IsSystemObject')
         $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Rule], 'IsSystemObject')
         $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Schema], 'IsSystemObject')
@@ -229,23 +208,20 @@
         $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.StoredProcedure], 'IsSystemObject')
         $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.UserDefinedFunction], 'IsSystemObject')
         
-        if ($server.VersionMajor -eq 8)
-        {
+        if ($server.VersionMajor -eq 8) {
             # 2000
             $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Version')
             $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType')
         }
         
         
-        elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10)
-        {
+        elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
             # 2005 and 2008
             $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
             $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
         }
         
-        else
-        {
+        else {
             # 2012 and above
             $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'ContainmentType', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
             $server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
@@ -253,7 +229,7 @@
 	}
 	
 	# Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
-	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($ConvertedSqlInstance.FullSmoName.ToLower(), $server.ConnectionContext, ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($ConvertedSqlInstance.FullSmoName.ToLower(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
 	
 	# Update cache for instance names
     if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $ConvertedSqlInstance.FullSmoName.ToLower())

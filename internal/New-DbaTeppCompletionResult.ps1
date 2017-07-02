@@ -1,4 +1,4 @@
-﻿function New-DbaTeppCompletionResult
+﻿function global:New-DbaTeppCompletionResult
 {
     <#
         .SYNOPSIS
@@ -79,3 +79,5 @@
         return New-Object System.Management.Automation.CompletionResult($CompletionText, $listItemToUse, $CompletionResultType, $toolTipToUse.Trim())
     }
 }
+
+(Get-Item Function:\New-DbaTeppCompletionResult).Visibility = "Private"

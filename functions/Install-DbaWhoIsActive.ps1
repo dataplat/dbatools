@@ -49,7 +49,7 @@ function Install-DbaWhoIsActive {
 		Does not prompt multiple times.
 	
 	.EXAMPLE
-		$instances = Get-SqlRegisteredServerName sqlserver
+		$instances = Get-DbaRegisteredServerName sqlserver
 		Install-DbaWhoIsActive -SqlInstance $instances -Database master
 		
 		This command doesn't support passing both servers and default database, but you can accomplish the same thing by passing an array and specifying a database.

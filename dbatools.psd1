@@ -125,7 +125,7 @@
 		'Test-DbaPowerPlan',
 		'Set-DbaPowerPlan',
 		'Test-DbaDiskAlignment',
-		'Get-DbaDatabaseFreespace',
+		'Get-DbaDatabaseSpace',
 		'Get-DbaClusterActiveNode',
 		'Test-DbaDatabaseOwner',
 		'Set-DbaDatabaseOwner',
@@ -309,7 +309,15 @@
 		'Get-DbaServerInstallDate',
 		'Install-DbaFirstResponderKit',
 		'Backup-DbaDatabaseMasterKey',
-		'Get-DbaAgentJobHistory'
+		'Get-DbaAgentJobHistory',
+		'Get-DbaSsisEnvironmentVariable',
+		'Get-DbaSqlManagementObject',
+		'Test-DbaSqlManagementObject',
+		'Get-DbaMaintenanceSolutionLog',
+		'Invoke-DbaLogShippingRecovery',
+		'Sync-DbaLoginPermission',
+		'Find-DbaTrigger',
+		'Find-DbaView'
 	)
 	
 	# Cmdlets to export from this module

@@ -1,152 +1,181 @@
-function Copy-DbaServerTrigger
-{
-<#
-.SYNOPSIS 
-Copy-DbaServerTrigger migrates server triggers from one SQL Server to another. 
+function Copy-DbaServerTrigger {
+	<#
+		.SYNOPSIS
+			Copy-DbaServerTrigger migrates server triggers from one SQL Server to another.
 
-.DESCRIPTION
-By default, all triggers are copied. The -ServerTriggers parameter is autopopulated for command-line completion and can be used to copy only specific triggers.
+		.DESCRIPTION
+			By default, all triggers are copied. The -ServerTrigger parameter is autopopulated for command-line completion and can be used to copy only specific triggers.
 
-If the trigger already exists on the destination, it will be skipped unless -Force is used. 
+			If the trigger already exists on the destination, it will be skipped unless -Force is used.
 
-.PARAMETER Source
-Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+		.PARAMETER Source
+			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+		.PARAMETER SourceSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-.PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			To connect as a different Windows user, run PowerShell as that user.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+		.PARAMETER Destination
+			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+		.PARAMETER DestinationSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER ServerTrigger
+			The Server Trigger(s) to process - this list is auto populated from the server. If unspecified, all Server Triggers will be processed.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER ExcludeServerTrigger
+			The Server Trigger(s) to exclude - this list is auto populated from the server
 
-.PARAMETER Force
-Drops and recreates the Trigger if it exists
+		.PARAMETER WhatIf
+			Shows what would happen if the command were to run. No actions are actually performed.
 
-.NOTES
-Tags: Migration
-Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
+		.PARAMETER Confirm
+			Prompts you for confirmation before executing any changing operations within the command.
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.PARAMETER Force
+			Drops and recreates the Trigger if it exists
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		.PARAMETER Silent
+			Use this switch to disable any kind of verbose messages
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+		.NOTES
+			Tags: Migration
+			Author: Chrissy LeMaire (@cl), netnerds.net
+			Requires: sysadmin access on SQL Servers
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.LINK
-https://dbatools.io/Copy-DbaServerTrigger
+		.LINK
+			https://dbatools.io/Copy-DbaServerTrigger
 
-.EXAMPLE   
-Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster
+		.EXAMPLE
+			Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster
 
-Copies all server triggers from sqlserver2014a to sqlcluster, using Windows credentials. If triggers with the same name exist on sqlcluster, they will be skipped.
+			Copies all server triggers from sqlserver2014a to sqlcluster, using Windows credentials. If triggers with the same name exist on sqlcluster, they will be skipped.
 
-.EXAMPLE   
-Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster -ServerTrigger tg_noDbDrop -SourceSqlCredential $cred -Force
+		.EXAMPLE
+			Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster -ServerTrigger tg_noDbDrop -SourceSqlCredential $cred -Force
 
-Copies a single trigger, the tg_noDbDrop trigger from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a trigger with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+			Copies a single trigger, the tg_noDbDrop trigger from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a trigger with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
-.EXAMPLE   
-Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+		.EXAMPLE
+			Copy-DbaServerTrigger -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
-Shows what would happen if the command were executed using force.
-#>
+			Shows what would happen if the command were executed using force.
+	#>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-		[switch]$Force
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$DestinationSqlCredential,
+		[object[]]$ServerTrigger,
+		[object[]]$ExcludeServerTrigger,
+		[switch]$Force,
+		[switch]$Silent
 	)
 
 	begin {
 
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-		
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
-		
-		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
-		{
-			throw "Server Triggers are only supported in SQL Server 2005 and above. Quitting."
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+
+		$source = $sourceServer.DomainInstanceName
+		$destination = $destServer.DomainInstanceName
+
+		if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
+			Stop-Function -Message "Server Triggers are only supported in SQL Server 2005 and above. Quitting."
+			return
 		}
-		
-		$servertriggers = $sourceserver.Triggers
-		$desttriggers = $destserver.Triggers
-		
+
+		if ($destServer.VersionMajor -lt $sourceServer.VersionMajor) {
+			Stop-Function -Message "Migration from version $($destServer.VersionMajor) to version $($sourceServer.VersionMajor) is not supported."
+			return
+		}
+
+		$serverTriggers = $sourceServer.Triggers
+		$destTriggers = $destServer.Triggers
+
 	}
 	process {
+		if (Test-FunctionInterrupt) { return }
 
-		foreach ($trigger in $servertriggers)
-		{
-			$triggername = $trigger.name
-			if ($triggers.length -gt 0 -and $triggers -notcontains $triggername) { continue }
-			
-			if ($desttriggers.name -contains $triggername)
-			{
-				if ($force -eq $false)
-				{
-					Write-Warning "Server trigger $triggername exists at destination. Use -Force to drop and migrate."
+		foreach ($trigger in $serverTriggers) {
+			$triggerName = $trigger.Name
+
+			$copyTriggerStatus = [pscustomobject]@{
+				SourceServer      = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name              = $triggerName
+				Type              = $null
+				Status            = $null
+				Notes             = $null
+				DateTime          = [DbaDateTime](Get-Date)
+			}
+
+			if ($ServerTrigger -and $triggerName -notin $ServerTrigger -or $triggerName -in $ExcludeServerTrigger) {
+				continue
+			}
+
+			if ($destTriggers.Name -contains $triggerName) {
+				if ($force -eq $false) {
+					Write-Message -Level Warning -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
+
+					$copyTriggerStatus.Status = "Skipped"
+					$copyTriggerStatus
 					continue
 				}
-				else
-				{
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping server trigger $triggername and recreating"))
-					{
-						try
-						{
-							Write-Verbose "Dropping server trigger $triggername"
-							$destserver.triggers[$triggername].Drop()
+				else {
+					if ($Pscmdlet.ShouldProcess($destination, "Dropping server trigger $triggerName and recreating")) {
+						try {
+							Write-Message -Level Verbose -Message "Dropping server trigger $triggerName"
+							$destServer.Triggers[$triggerName].Drop()
 						}
-						catch { 
-							Write-Exception $_ 
-							continue
+						catch {
+							$copyTriggerStatus.Status = "Failed"
+							$copyTriggerStatus.Notes = $_.Exception
+							$copyTriggerStatus
+
+							Stop-Function -Message "Issue dropping trigger on destination" -Target $triggerName -ErrorRecord $_ -Continue
 						}
 					}
 				}
 			}
 
-			If ($Pscmdlet.ShouldProcess($destination, "Creating server trigger $triggername"))
-			{
-				try
-				{
-					Write-Output "Copying server trigger $triggername"
+			if ($Pscmdlet.ShouldProcess($destination, "Creating server trigger $triggerName")) {
+				try {
+					Write-Message -Level Verbose -Message "Copying server trigger $triggerName"
 					$sql = $trigger.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					$sql = $sql -replace "CREATE TRIGGER", "`nGO`nCREATE TRIGGER"
 					$sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
-					
-					Write-Verbose $sql
-					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					Write-Message -Level Debug -Message $sql
+					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+
+					$copyTriggerStatus.Status = "Successful"
+					$copyTriggerStatus
 				}
-				catch
-				{
-					Write-Exception $_
+				catch {
+					$copyTriggerStatus.Status = "Failed"
+					$copyTriggerStatus.Notes = $_.Exception
+					$copyTriggerStatus
+
+					Stop-Function -Message "Issue creating trigger on destination" -Target $triggerName -ErrorRecord $_
 				}
 			}
 		}

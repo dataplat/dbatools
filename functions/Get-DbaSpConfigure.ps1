@@ -14,7 +14,7 @@ function Get-DbaSpConfigure {
 		.PARAMETER SqlCredential
 			PSCredential object to connect as. If not specified, current Windows login will be used.
 
-		.PARAMETER Configs
+		.PARAMETER ConfigName
 			Return only specific configurations -- auto-populated from source server
 
 		.PARAMETER Detailed
@@ -46,7 +46,7 @@ function Get-DbaSpConfigure {
 			Returns server level configuration data on the localhost (ServerName, ConfigName, DisplayName, Description, IsAdvanced, IsDynamic, MinValue, MaxValue, ConfiguredValue, RunningValue, DefaultValue, IsRunningDefaultValue)
 
 		.EXAMPLE
-			Get-DbaSpConfigure -SqlInstance sql2012 -Config MaxServerMemory
+			Get-DbaSpConfigure -SqlInstance sql2012 -ConfigName MaxServerMemory
 
 			Returns only the system configuration for MaxServerMemory. Configs is autopopulated for tabbing convenience.
 		#>
@@ -55,55 +55,59 @@ function Get-DbaSpConfigure {
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[Alias("Config")]
+		[object[]]$ConfigName
 	)
-
-	foreach ($instance in $SqlInstance) {
-		try {
-			$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-		}
-		catch {
-			Write-Warning "Failed to connect to: $instance"
-			continue
-		}
-
-		#Get a list of the configuration property parents, and exlude the Parent, Properties values
-		$proplist = Get-Member -InputObject $server.Configuration -MemberType Property -Force | Select-Object Name | Where-Object { $_.Name -ne "Parent" -and $_.Name -ne "Properties" }
-
-		if ($Config) {
-			$proplist = $proplist | Where-Object { $_.Name -in $Config }
-		}
-
-		#Grab the default sp_configure property values from the external function
-		$defaultConfigs = (Get-SqlDefaultSpConfigure -SqlVersion $server.VersionMajor).psobject.properties;
-
-		#Iterate through the properties to get the configuration settings
-		foreach ($prop in $proplist) {
-			$propInfo = $server.Configuration.$($prop.Name)
-			$defaultConfig = $defaultConfigs | Where-Object { $_.Name -eq $propInfo.DisplayName };
-
-			if ($defaultConfig.Value -eq $propInfo.RunValue) { $isDefault = $true }
-			else { $isDefault = $false }
-
-			#Ignores properties that are not valid on this version of SQL
-			if (!([string]::IsNullOrEmpty($propInfo.RunValue))) {
-				# some displaynames were empty
-				$displayname = $propInfo.DisplayName
-				if ($displayname.Length -eq 0) { $displayname = $prop.Name }
-
-				[pscustomobject]@{
-					ServerName            = $server.Name
-					ConfigName            = $prop.Name
-					DisplayName           = $displayname
-					Description           = $propInfo.Description
-					IsAdvanced            = $propInfo.IsAdvanced
-					IsDynamic             = $propInfo.IsDynamic
-					MinValue              = $propInfo.Minimum
-					MaxValue              = $propInfo.Maximum
-					ConfiguredValue       = $propInfo.ConfigValue
-					RunningValue          = $propInfo.RunValue
-					DefaultValue          = $defaultConfig.Value
-					IsRunningDefaultValue = $isDefault
+	
+	process {
+		foreach ($instance in $SqlInstance) {
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+			}
+			catch {
+				Write-Warning "Failed to connect to: $instance"
+				continue
+			}
+			
+			#Get a list of the configuration property parents, and exlude the Parent, Properties values
+			$proplist = Get-Member -InputObject $server.Configuration -MemberType Property -Force | Select-Object Name | Where-Object { $_.Name -ne "Parent" -and $_.Name -ne "Properties" }
+			
+			if ($ConfigName) {
+				$proplist = $proplist | Where-Object { $_.Name -in $ConfigName }
+			}
+			
+			#Grab the default sp_configure property values from the external function
+			$defaultConfigs = (Get-SqlDefaultSpConfigure -SqlVersion $server.VersionMajor).psobject.properties;
+			
+			#Iterate through the properties to get the configuration settings
+			foreach ($prop in $proplist) {
+				$propInfo = $server.Configuration.$($prop.Name)
+				$defaultConfig = $defaultConfigs | Where-Object { $_.Name -eq $propInfo.DisplayName };
+				
+				if ($defaultConfig.Value -eq $propInfo.RunValue) { $isDefault = $true }
+				else { $isDefault = $false }
+				
+				#Ignores properties that are not valid on this version of SQL
+				if (!([string]::IsNullOrEmpty($propInfo.RunValue))) {
+					# some displaynames were empty
+					$displayname = $propInfo.DisplayName
+					if ($displayname.Length -eq 0) { $displayname = $prop.Name }
+					
+					[pscustomobject]@{
+						ServerName = $server.Name
+						ConfigName = $prop.Name
+						DisplayName = $displayname
+						Description = $propInfo.Description
+						IsAdvanced = $propInfo.IsAdvanced
+						IsDynamic = $propInfo.IsDynamic
+						MinValue = $propInfo.Minimum
+						MaxValue = $propInfo.Maximum
+						ConfiguredValue = $propInfo.ConfigValue
+						RunningValue = $propInfo.RunValue
+						DefaultValue = $defaultConfig.Value
+						IsRunningDefaultValue = $isDefault
+					}
 				}
 			}
 		}

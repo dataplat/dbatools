@@ -1,4 +1,4 @@
-﻿function Get-DbaDatabaseFreespace {
+﻿function Get-DbaDatabaseSpace {
 <#
 	.SYNOPSIS
 		Returns database file space information for database files on a SQL instance.
@@ -32,24 +32,24 @@
 		Use this if you want the function to throw terminating errors you want to catch.
 	
 	.EXAMPLE
-		Get-DbaDatabaseFreespace -SqlInstance localhost
+		Get-DbaDatabaseSpace -SqlInstance localhost
 		
 		Returns all user database files and free space information for the local host
 	
 	.EXAMPLE
-		Get-DbaDatabaseFreespace -SqlInstance localhost | Where-Object {$_.PercentUsed -gt 80}
+		Get-DbaDatabaseSpace -SqlInstance localhost | Where-Object {$_.PercentUsed -gt 80}
 		
 		Returns all user database files and free space information for the local host. Filters
 		the output object by any files that have a percent used of greater than 80%.
 	
 	.EXAMPLE
-		'localhost','localhost\namedinstance' | Get-DbaDatabaseFreespace
+		'localhost','localhost\namedinstance' | Get-DbaDatabaseSpace
 		
 		Returns all user database files and free space information for the localhost and
 		localhost\namedinstance SQL Server instances. Processes data via the pipeline.
 	
 	.EXAMPLE
-		Get-DbaDatabaseFreespace -SqlInstance localhost -Database db1, db2
+		Get-DbaDatabaseSpace -SqlInstance localhost -Database db1, db2
 		
 		Returns database files and free space information for the db1 and db2 on localhost.
 	
@@ -60,7 +60,7 @@
 		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 	
 	.LINK
-		https://dbatools.io/Get-DbaDatabaseFreespace
+		https://dbatools.io/Get-DbaDatabaseSpace
 #>
 	[CmdletBinding()]
 	param ([parameter(ValueFromPipeline, Mandatory = $true)]

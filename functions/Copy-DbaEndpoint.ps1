@@ -116,7 +116,7 @@ function Copy-DbaEndpoint {
 				DestinationServer   = $destServer.Name
 				Name                = $endpointName
 				Status              = $null
-				DateTime            = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+				DateTime            = [DbaDateTime](Get-Date)
 			}
 
 			if ($Endpoint -and $Endpoint -notcontains $endpointName -or $ExcludeEndpoint -contains $endpointName) {

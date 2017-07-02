@@ -1,28 +1,23 @@
-﻿namespace Sqlcollaborative.Dbatools
+﻿namespace Sqlcollaborative.Dbatools.Parameter
 {
-    namespace Parameter
+    /// <summary>
+    /// What kind of object was bound to the parameter class?
+    /// </summary>
+    public enum DbaInstanceInputType
     {
-        #region Auxilliary Tools
         /// <summary>
-        /// What kind of object was bound to the parameter class?
+        /// Anything, really. An unspecific not reusable type was bound
         /// </summary>
-        public enum DbaInstanceInputType
-        {
-            /// <summary>
-            /// Anything, really. An unspecific not reusable type was bound
-            /// </summary>
-            Default,
+        Default,
 
-            /// <summary>
-            /// A live smo linked server object was bound
-            /// </summary>
-            Linked,
+        /// <summary>
+        /// A live smo linked server object was bound
+        /// </summary>
+        Linked,
 
-            /// <summary>
-            /// A live smo server object was bound
-            /// </summary>
-            Server,
-        }
-        #endregion ParameterClass Interna
+        /// <summary>
+        /// A live smo server object was bound
+        /// </summary>
+        Server
     }
 }
