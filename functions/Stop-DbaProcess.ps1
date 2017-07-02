@@ -140,7 +140,7 @@ function Stop-DbaProcess {
 					}
 				}
 				catch {
-					Write-Message -Level Warning -Message "Couldn't kill spid $currentspid"
+					Stop-Function -Message "Couldn't kill spid $currentspid" -ErrorRecord $_ -Continue
 				}
 			}
 		}
