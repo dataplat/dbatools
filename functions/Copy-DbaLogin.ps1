@@ -236,12 +236,13 @@ function Copy-DbaLogin {
 								$ownedJob.Set_OwnerLoginName('sa')
 								$ownedJob.Alter()
 							}
-
-							$login.Disable()
+							
+							
+							$destServer.Logins.Item($userName).Disable()
 							$destServer.EnumProcesses() | Where-Object Login -eq $userName | ForEach-Object {
 								$destServer.KillProcess($_.spid)
 							}
-							$login.Drop()
+							$destServer.Logins.Item($userName).Drop()
 
 							Write-Message -Level Verbose -Message "Successfully dropped $userName on $destination"
 						}
