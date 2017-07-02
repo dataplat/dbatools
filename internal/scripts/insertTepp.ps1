@@ -44,10 +44,14 @@ Register-DbaTeppArgumentCompleter -Command "Get-DbaConfig" -Parameter FullName -
 Register-DbaTeppArgumentCompleter -Command "Get-DbaConfig" -Parameter Name -Name configname
 Register-DbaTeppArgumentCompleter -Command "Get-DbaConfig" -Parameter Module -Name configmodule
 Register-DbaTeppArgumentCompleter -Command "Get-DbaConfigValue" -Parameter Name -Name config
-Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess" -Parameter Spid -Name processSpid
 Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess" -Parameter ExcludeSpid -Name processSpid
 Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess" -Parameter Hostname -Name processHostname
 Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess" -Parameter Program -Name processProgram
+Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess" -Parameter Spid -Name processSpid
+Register-DbaTeppArgumentCompleter -Command "Stop-DbaProcess" -Parameter ExcludeSpid -Name processSpid
+Register-DbaTeppArgumentCompleter -Command "Stop-DbaProcess" -Parameter Hostname -Name processHostname
+Register-DbaTeppArgumentCompleter -Command "Stop-DbaProcess" -Parameter Program -Name processProgram
+Register-DbaTeppArgumentCompleter -Command "Stop-DbaProcess" -Parameter Spid -Name processSpid
 Register-DbaTeppArgumentCompleter -Command "Set-DbaConfig" -Parameter Name -Name config
 Register-DbaTeppArgumentCompleter -Command "Set-DbaConfig" -Parameter Module -Name configmodule
 #endregion Explicit TEPP
