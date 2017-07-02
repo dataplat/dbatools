@@ -95,7 +95,6 @@ function Get-DbaProcess {
 				Stop-Function -Message "Could not connect to Sql Server instance $instance : $_" -Target $instance -ErrorRecord $_ -Continue
 			}
 			
-			return
 			$allsessions = @()
 			
 			$processes = $server.EnumProcesses()
