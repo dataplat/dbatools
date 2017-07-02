@@ -12,27 +12,27 @@ function Get-DbaProcess {
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
 
-		.PARAMETER Spids
+		.PARAMETER Spid
 			This parameter is auto-populated from -SqlInstance. You can specify one or more Spids (including blocking spids) to be displayed.
 
-		.PARAMETER Logins
+		.PARAMETER Login
 			This parameter is auto-populated from-SqlInstance and allows only login names that have active processes. You can specify one or more logins whose processes will be displayed.
 
-		.PARAMETER Hosts
+		.PARAMETER Host
 			This parameter is auto-populated from -SqlInstance and allows only host names that have active processes. You can specify one or more Hosts whose processes will be displayed.
 
-		.PARAMETER Programs
+		.PARAMETER Program
 			This parameter is auto-populated from -SqlInstance and allows only program names that have active processes. You can specify one or more Programs whose processes will be displayed.
 
-		.PARAMETER Databases
+		.PARAMETER Database
 			This parameter is auto-populated from -SqlInstance and allows only database names that have active processes. You can specify one or more Databases whose processes will be displayed.
 
-		.PARAMETER Exclude
+		.PARAMETER ExcludeSpid
 			This parameter is auto-populated from -SqlInstance. You can specify one or more Spids to exclude from being displayed (goes well with Logins).
 
 			Exclude is the last filter to run, so even if a Spid matches, for example, Hosts, if it's listed in Exclude it wil be excluded.
 
-		.PARAMETER NoSystemSpids
+		.PARAMETER NoSystemSpid
 			Ignores the System Spids
 			
 		.PARAMETER Silent
@@ -74,7 +74,13 @@ function Get-DbaProcess {
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
-		[switch]$NoSystemSpids,
+		[int[]]$Spid,
+		[int[]]$ExcludeSpid,
+		[string[]]$Database,
+		[string[]]$Login,
+		[string[]]$Host,
+		[string[]]$Program,
+		[switch]$NoSystemSpid,
 		[switch]$Silent
 	)
 	
@@ -94,35 +100,35 @@ function Get-DbaProcess {
 			
 			$processes = $server.EnumProcesses()
 			
-			if ($Login.count -gt 0) {
+			if ($Login) {
 				$allsessions += $processes | Where-Object { $_.Login -in $Login -and $_.Spid -notin $allsessions.Spid }
 			}
 			
-			if ($Spid.count -gt 0) {
+			if ($Spid) {
 				$allsessions += $processes | Where-Object { ($_.Spid -in $Spid -or $_.BlockingSpid -in $Spid) -and $_.Spid -notin $allsessions.Spid }
 			}
 			
-			if ($Host.count -gt 0) {
+			if ($Host) {
 				$allsessions += $processes | Where-Object { $_.Host -in $Host -and $_.Spid -notin $allsessions.Spid }
 			}
 			
-			if ($Program.count -gt 0) {
+			if ($Program) {
 				$allsessions += $processes | Where-Object { $_.Program -in $Program -and $_.Spid -notin $allsessions.Spid }
 			}
 			
-			if ($Database.count -gt 0) {
+			if ($Database) {
 				$allsessions += $processes | Where-Object { $Database -contains $_.Database -and $_.Spid -notin $allsessions.Spid }
 			}
 						
-			if ($PSBoundParameters.Key -notcontains 'Login','Spid','Exclude','Host', 'Program','Database') {
+			if (Was-bound -not 'Login','Spid','ExcludeSpid','Host', 'Program','Database') {
 				$allsessions = $processes
 			}
 			
-			if ($nosystemspids -eq $true) {
+			if ($NoSystemSpid -eq $true) {
 				$allsessions = $allsessions | Where-Object { $_.Spid -gt 50 }
 			}
 			
-			if ($Exclude.count -gt 0) {
+			if ($Exclude) {
 				$allsessions = $allsessions | Where-Object { $Exclude -notcontains $_.SPID -and $_.Spid -notin $allsessions.Spid }
 			}
 			
