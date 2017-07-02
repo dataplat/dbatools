@@ -18,7 +18,7 @@ function Get-DbaProcess {
 		.PARAMETER Login
 			This parameter is auto-populated from-SqlInstance and allows only login names that have active processes. You can specify one or more logins whose processes will be displayed.
 
-		.PARAMETER Host
+		.PARAMETER Hostname
 			This parameter is auto-populated from -SqlInstance and allows only host names that have active processes. You can specify one or more Hosts whose processes will be displayed.
 
 		.PARAMETER Program
@@ -78,14 +78,13 @@ function Get-DbaProcess {
 		[int[]]$ExcludeSpid,
 		[string[]]$Database,
 		[string[]]$Login,
-		[string[]]$Host,
+		[string[]]$Hostname,
 		[string[]]$Program,
 		[switch]$NoSystemSpid,
 		[switch]$Silent
 	)
 	
 	process {
-		
 		foreach ($instance in $sqlinstance) {
 			
 			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
@@ -96,6 +95,7 @@ function Get-DbaProcess {
 				Stop-Function -Message "Could not connect to Sql Server instance $instance : $_" -Target $instance -ErrorRecord $_ -Continue
 			}
 			
+			return
 			$allsessions = @()
 			
 			$processes = $server.EnumProcesses()
@@ -108,8 +108,8 @@ function Get-DbaProcess {
 				$allsessions += $processes | Where-Object { ($_.Spid -in $Spid -or $_.BlockingSpid -in $Spid) -and $_.Spid -notin $allsessions.Spid }
 			}
 			
-			if ($Host) {
-				$allsessions += $processes | Where-Object { $_.Host -in $Host -and $_.Spid -notin $allsessions.Spid }
+			if ($Hostname) {
+				$allsessions += $processes | Where-Object { $_.Host -in $Hostname -and $_.Spid -notin $allsessions.Spid }
 			}
 			
 			if ($Program) {
