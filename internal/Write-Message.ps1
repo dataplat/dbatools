@@ -190,10 +190,11 @@
             if ($Silent) { Write-Error -Message $newRecord -Category $record.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
             else { $null = Write-Error -Message $newRecord -Category $record.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1 }
         }
-        $foo = "bar"
-        [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteErrorEntry($ErrorRecord, $FunctionName, $timestamp, $Message, $Host.InstanceId)
-    }
-    #endregion Handle Errors
+	}
+	if ($ErrorRecord) {
+		[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteErrorEntry($ErrorRecord, $FunctionName, $timestamp, $Message, $Host.InstanceId)
+	}
+	#endregion Handle Errors
     
     $channels = @()
     
