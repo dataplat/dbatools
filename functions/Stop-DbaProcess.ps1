@@ -115,8 +115,8 @@ function Stop-DbaProcess {
 			$sourceserver = $session.Parent
 			
 			if (!$sourceserver) {
-				Write-Message -Level Warning -Message "Only process objects can be passed through the pipeline"
-				break
+				Stop-Function -Message "Only process objects can be passed through the pipeline" -Target $ProcessCollection
+				return
 			}
 			
 			$currentspid = $session.spid
