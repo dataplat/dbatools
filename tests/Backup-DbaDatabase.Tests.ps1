@@ -34,8 +34,7 @@
 	
 	Context "Backup can pipe to restore" {
 		$null = Restore-DbaDatabase -SqlServer localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
-		$results = Backup-DbaDatabase -SqlInstance localhost -BackupDirectory C:\temp\backups -Database singlerestore | Restore-DbaDatabase -SqlInstance localhost\sql2016
-		
+		$results = Backup-DbaDatabase -SqlInstance localhost -BackupDirectory C:\temp\backups -Database singlerestore | Restore-DbaDatabase -SqlInstance localhost\sql2016 -WithReplace
 		It "Should return successful restore" {
 			$results.RestoreComplete | Should Be $true
 		}
