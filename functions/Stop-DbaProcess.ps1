@@ -14,22 +14,22 @@ function Stop-DbaProcess {
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
 
-		.PARAMETER Spids
+		.PARAMETER Spid
 			This parameter is auto-populated from -SqlInstance. You can specify one or more Spids to be killed.
 
-		.PARAMETER Logins
+		.PARAMETER Login
 			This parameter is auto-populated from-SqlInstance and allows only login names that have active processes. You can specify one or more logins whose processes will be killed.
 
-		.PARAMETER Hosts
+		.PARAMETER Hostname
 			This parameter is auto-populated from -SqlInstance and allows only host names that have active processes. You can specify one or more Hosts whose processes will be killed.
 
-		.PARAMETER Programs
+		.PARAMETER Program
 			This parameter is auto-populated from -SqlInstance and allows only program names that have active processes. You can specify one or more Programs whose processes will be killed.
 
-		.PARAMETER Databases
+		.PARAMETER Database
 			This parameter is auto-populated from -SqlInstance and allows only database names that have active processes. You can specify one or more Databases whose processes will be killed.
 
-		.PARAMETER Exclude
+		.PARAMETER ExcludeSpid
 			This parameter is auto-populated from -SqlInstance. You can specify one or more Spids to exclude from being killed (goes well with Logins).
 
 			Exclude is the last filter to run, so even if a Spid matches, for example, Hosts, if it's listed in Exclude it wil be excluded.
@@ -42,6 +42,9 @@ function Stop-DbaProcess {
 			
 		.PARAMETER ProcessCollection 
 			This is the process object passed by Get-DbaProcess if using a pipeline
+	
+		.PARAMETER Silent
+			Use this switch to disable any kind of verbose messages
 			
 		.NOTES 
 			Tags: Processes
@@ -83,126 +86,63 @@ function Stop-DbaProcess {
 			Finds processes that were created with dbatools, then kills them.
 
 	#>
-    [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
-    Param (
-        [parameter(Mandatory, ParameterSetName = "Server")]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter]$SqlInstance,
-        [object]$SqlCredential,
-        [parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Process")]
-        [object[]]$ProcessCollection,
+	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess)]
+	Param (
+		[parameter(Mandatory, ParameterSetName = "Server")]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter]$SqlInstance,
+		[Alias("Credential")]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[int[]]$Spid,
+		[int[]]$ExcludeSpid,
+		[string[]]$Database,
+		[string[]]$Login,
+		[string[]]$Hostname,
+		[string[]]$Program,
+		[parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Process")]
+		[object[]]$ProcessCollection,
 		[switch]$Silent
 	)
 	
-    process {
-        if ($ProcessCollection) {
-            foreach ($session in $ProcessCollection) {
-                $sourceserver = $session.Parent
-				
-                if (!$sourceserver) {
-                    Write-Message -Level Warning -Message "Only process objects can be passed through the pipeline"
-                    break
-                }
-				
-                $spid = $session.spid
-				
-                if ($sourceserver.ConnectionContext.ProcessID -eq $spid) {
-                    Write-Message -Level Warning -Message "Skipping spid $spid because you cannot use KILL to kill your own process"
-                    Continue
-                }
-				
-                if ($Pscmdlet.ShouldProcess($sourceserver, "Killing spid $spid")) {
-                    try {
-                        $sourceserver.KillProcess($spid)
-                        [pscustomobject]@{
-                            SqlInstance = $sourceserver.name
-                            Spid        = $session.Spid
-                            Login       = $session.Login
-                            Host        = $session.Host
-                            Database    = $session.Database
-                            Program     = $session.Program
-                            Status      = 'Killed'
-                        }
-                    }
-                    catch {
-                        Write-Message -Level Warning -Message "Couldn't kill spid $spid"
-                        Write-Exception $_
-                    }
-                }
+	process {
+		
+		if (!$ProcessCollection) {
+			$ProcessCollection = Get-DbaProcess @PSBoundParameters
+		}
+		
+		foreach ($session in $ProcessCollection) {
+			$sourceserver = $session.Parent
+			
+			if (!$sourceserver) {
+				Write-Message -Level Warning -Message "Only process objects can be passed through the pipeline"
+				break
 			}
-			# hard return intended
-			return
-        }
-		
-        $sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-		
-        if ($Login.count -eq 0 -and $Spid.count -eq 0 -and $Host.count -eq 0 -and $Program.count -eq 0 -and $Database.count -eq 0) {
-            Write-Message -Level Warning -Message "At least one login, spid, host, program or database must be specified."
-            continue
-        }
-		
-        $allsessions = @()
-		
-        $processes = $sourceserver.EnumProcesses() | Where-Object { $_.spid -gt 50 }
-		
-        if ($Login) {
-            $allsessions += $processes | Where-Object { $_.Login -in $Login }
-        }
-		
-        if ($Spid) {
-            $allsessions += $processes | Where-Object { $_.Spid -in $Spid }
-        }
-		
-        if ($Host) {
-            $allsessions += $processes | Where-Object { $_.Host -in $Host }
-        }
-		
-        if ($Program) {
-            $allsessions += $processes | Where-Object { $_.Program -in $Program }
-        }
-		
-        if ($Database) {
-            $allsessions += $processes | Where-Object { $_.Database -in $Database }
-        }
-		
-        if ($Exclude) {
-            $allsessions = $allsessions | Where-Object { $Exclude -notcontains $_.Spid }
-        }
-		
-        if ($allsessions.urn) {
-			Write-Message -Level Warning -Message "No sessions found"
-			continue
-        }
-		
-        $duplicates = @()
-		
-        foreach ($session in $allsessions) {
-            if ($session.spid -in $duplicates) { continue }
-            $duplicates += $session.spid
 			
-            $spid = $session.spid
-            if ($sourceserver.ConnectionContext.ProcessID -eq $spid) {
-                Write-Message -Level Warning -Message "Skipping spid $spid because you cannot use KILL to kill your own process"
-                continue
-            }
+			$currentspid = $session.spid
 			
-            if ($Pscmdlet.ShouldProcess($SqlInstance, "Killing spid $spid")) {
-                try {
-                    $sourceserver.KillProcess($spid)
-                    [pscustomobject]@{
-                        SqlInstance = $sourceserver.name
-                        Spid        = $session.Spid
-                        Login       = $session.Login
-                        Host        = $session.Host
-                        Database    = $session.Database
-                        Program     = $session.Program
-                        Status      = 'Killed'
-                    }
-                }
-                catch {
-                    Write-Message -Level Warning -Message "Couldn't kill spid $spid"
-                }
-            }
-        }
-    }
+			if ($sourceserver.ConnectionContext.ProcessID -eq $currentspid) {
+				Write-Message -Level Warning -Message "Skipping spid $currentspid because you cannot use KILL to kill your own process"
+				Continue
+			}
+			
+			if ($Pscmdlet.ShouldProcess($sourceserver, "Killing spid $currentspid")) {
+				try {
+					$sourceserver.KillProcess($currentspid)
+					[pscustomobject]@{
+						SqlInstance = $sourceserver.name
+						Spid = $session.Spid
+						Login = $session.Login
+						Host = $session.Host
+						Database = $session.Database
+						Program = $session.Program
+						Status = 'Killed'
+					}
+				}
+				catch {
+					Write-Message -Level Warning -Message "Couldn't kill spid $currentspid"
+				}
+			}
+		}
+	}
 }
