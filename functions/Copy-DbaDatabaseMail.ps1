@@ -112,8 +112,8 @@
 
 			Write-Message -Message "Migrating mail server configuration values" -Level Verbose
 			$copyMailConfigStatus = [pscustomobject]@{
-				SourceServer      = $sourceServer
-				DestinationServer = $destServer
+				SourceServer      = $sourceServer.Name
+				DestinationServer = $destServer.Name
 				Name              = "Mail Configuration"
 				Type              = "Configuration"
 				Status            = $null
@@ -145,8 +145,8 @@
 			foreach ($account in $sourceAccounts) {
 				$accountName = $account.name
 				$copyMailAccountStatus = [pscustomobject]@{
-					SourceServer      = $sourceServer
-					DestinationServer = $destServer
+					SourceServer      = $sourceServer.Name
+					DestinationServer = $destServer.Name
 					Name              = $accountName
 					Type              = "Mail Account"
 					Status            = $null
@@ -208,8 +208,8 @@
 
 				$profileName = $profile.name
 				$copyMailProfileStatus = [pscustomobject]@{
-					SourceServer      = $sourceServer
-					DestinationServer = $destServer
+					SourceServer      = $sourceServer.Name
+					DestinationServer = $destServer.Name
 					Name              = $profileName
 					Type              = "Mail Profile"
 					Status            = $null
@@ -270,8 +270,8 @@
 			foreach ($mailServer in $sourceMailServers) {
 				$mailServerName = $mailServer.name
 				$copyMailServerStatus = [pscustomobject]@{
-					SourceServer      = $sourceServer
-					DestinationServer = $destServer
+					SourceServer      = $sourceServer.Name
+					DestinationServer = $destServer.Name
 					Name              = $mailServerName
 					Type              = "Mail Server"
 					Status            = $null
