@@ -97,17 +97,17 @@ function Stop-DbaProcess {
     process {
         if ($ProcessCollection) {
             foreach ($session in $ProcessCollection) {
-                $sourceserver = $session.SqlServer
+                $sourceserver = $session.Parent
 				
                 if (!$sourceserver) {
-                    Write-Warning "Only process objects can be passed through the pipeline"
+                    Write-Message -Level Warning -Message "Only process objects can be passed through the pipeline"
                     break
                 }
 				
                 $spid = $session.spid
 				
                 if ($sourceserver.ConnectionContext.ProcessID -eq $spid) {
-                    Write-Warning "Skipping spid $spid because you cannot use KILL to kill your own process"
+                    Write-Message -Level Warning -Message "Skipping spid $spid because you cannot use KILL to kill your own process"
                     Continue
                 }
 				
@@ -125,18 +125,19 @@ function Stop-DbaProcess {
                         }
                     }
                     catch {
-                        Write-Warning "Couldn't kill spid $spid"
+                        Write-Message -Level Warning -Message "Couldn't kill spid $spid"
                         Write-Exception $_
                     }
                 }
-            }
-            return
+			}
+			# hard return intended
+			return
         }
 		
         $sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		
         if ($Login.count -eq 0 -and $Spid.count -eq 0 -and $Host.count -eq 0 -and $Program.count -eq 0 -and $Database.count -eq 0) {
-            Write-Warning "At least one login, spid, host, program or database must be specified."
+            Write-Message -Level Warning -Message "At least one login, spid, host, program or database must be specified."
             continue
         }
 		
@@ -169,7 +170,8 @@ function Stop-DbaProcess {
         }
 		
         if ($allsessions.urn) {
-            Write-Warning "No sessions found"
+			Write-Message -Level Warning -Message "No sessions found"
+			continue
         }
 		
         $duplicates = @()
@@ -180,8 +182,8 @@ function Stop-DbaProcess {
 			
             $spid = $session.spid
             if ($sourceserver.ConnectionContext.ProcessID -eq $spid) {
-                Write-Warning "Skipping spid $spid because you cannot use KILL to kill your own process"
-                Continue
+                Write-Message -Level Warning -Message "Skipping spid $spid because you cannot use KILL to kill your own process"
+                continue
             }
 			
             if ($Pscmdlet.ShouldProcess($SqlInstance, "Killing spid $spid")) {
@@ -198,8 +200,7 @@ function Stop-DbaProcess {
                     }
                 }
                 catch {
-                    Write-Warning "Couldn't kill spid $spid"
-                    Write-Exception $_
+                    Write-Message -Level Warning -Message "Couldn't kill spid $spid"
                 }
             }
         }
