@@ -237,12 +237,17 @@ function Copy-DbaLogin {
 								$ownedJob.Alter()
 							}
 							
+							if ($destServer.Logins.Item($userName) -match '\\') {
+								$destServer.Logins.Item($userName).Disable()
+							}
 							
-							$destServer.Logins.Item($userName).Disable()
 							$destServer.EnumProcesses() | Where-Object Login -eq $userName | ForEach-Object {
 								$destServer.KillProcess($_.spid)
 							}
-							$destServer.Logins.Item($userName).Drop()
+							if ($destServer.Logins.Item($userName) -match '\\') {
+								$destServer.Logins.Item($userName).Drop()
+							}
+							
 
 							Write-Message -Level Verbose -Message "Successfully dropped $userName on $destination"
 						}
