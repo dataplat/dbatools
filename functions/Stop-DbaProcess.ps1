@@ -90,22 +90,42 @@ function Stop-DbaProcess {
 	Param (
 		[parameter(Mandatory, ParameterSetName = "Server")]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter]$SqlInstance,
+		[DbaInstanceParameter]
+		$SqlInstance,
+		
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
+		[System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
-		[int[]]$Spid,
-		[int[]]$ExcludeSpid,
-		[string[]]$Database,
-		[string[]]$Login,
-		[string[]]$Hostname,
-		[string[]]$Program,
+		
+		[int[]]
+		$Spid,
+		
+		[int[]]
+		$ExcludeSpid,
+		
+		[string[]]
+		$Database,
+		
+		[string[]]
+		$Login,
+		
+		[string[]]
+		$Hostname,
+		
+		[string[]]
+		$Program,
+		
 		[parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Process")]
-		[object[]]$ProcessCollection,
-		[switch]$Silent
+		[object[]]
+		$ProcessCollection,
+		
+		[switch]
+		$Silent
 	)
 	
 	process {
+		if (Test-FunctionInterrupt) { return }
 		
 		if (!$ProcessCollection) {
 			$ProcessCollection = Get-DbaProcess @PSBoundParameters
@@ -115,14 +135,14 @@ function Stop-DbaProcess {
 			$sourceserver = $session.Parent
 			
 			if (!$sourceserver) {
-				Stop-Function -Message "Only process objects can be passed through the pipeline" -Target $ProcessCollection
+				Stop-Function -Message "Only process objects can be passed through the pipeline" -Category InvalidData -Target $session
 				return
 			}
 			
 			$currentspid = $session.spid
 			
 			if ($sourceserver.ConnectionContext.ProcessID -eq $currentspid) {
-				Write-Message -Level Warning -Message "Skipping spid $currentspid because you cannot use KILL to kill your own process"
+				Write-Message -Level Warning -Message "Skipping spid $currentspid because you cannot use KILL to kill your own process" -Target $session
 				Continue
 			}
 			
@@ -131,16 +151,16 @@ function Stop-DbaProcess {
 					$sourceserver.KillProcess($currentspid)
 					[pscustomobject]@{
 						SqlInstance = $sourceserver.name
-						Spid = $session.Spid
-						Login = $session.Login
-						Host = $session.Host
-						Database = $session.Database
-						Program = $session.Program
-						Status = 'Killed'
+						Spid	    = $session.Spid
+						Login	    = $session.Login
+						Host	    = $session.Host
+						Database    = $session.Database
+						Program	    = $session.Program
+						Status	    = 'Killed'
 					}
 				}
 				catch {
-					Stop-Function -Message "Couldn't kill spid $currentspid" -ErrorRecord $_ -Continue
+					Stop-Function -Message "Couldn't kill spid $currentspid" -Target $session -ErrorRecord $_ -Continue
 				}
 			}
 		}
