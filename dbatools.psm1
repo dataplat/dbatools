@@ -122,68 +122,68 @@ $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.
 $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\scripts\updateTeppAsync.ps1"))), $null, $null)
 
 # I renamed this function to be more accurate - 1ms
-Set-Alias -Name Reset-SqlSaPassword -Value Reset-SqlAdmin
-Set-Alias -Name Copy-SqlUserDefinedMessage -Value Copy-SqlCustomError
-Set-Alias -Name Copy-SqlJobServer -Value Copy-SqlServerAgent
-Set-Alias -Name Restore-HallengrenBackup -Value Restore-SqlBackupFromDirectory
-Set-Alias -Name Show-SqlMigrationConstraint -Value Test-SqlMigrationConstraint
-Set-Alias -Name Test-SqlDiskAllocation -Value Test-DbaDiskAllocation
-Set-Alias -Name Get-DiskSpace -Value Get-DbaDiskSpace
-Set-Alias -Name Get-SqlMaxMemory -Value Get-DbaMaxMemory
-Set-Alias -Name Set-SqlMaxMemory -Value Set-DbaMaxMemory
-Set-Alias -Name Install-SqlWhoIsActive -Value Install-DbaWhoIsActive
-Set-Alias -Name Show-SqlWhoIsActive -Value Invoke-DbaWhoIsActive
-Set-Alias -Name Copy-SqlAgentCategory -Value Copy-DbaAgentCategory
-Set-Alias -Name Copy-SqlAlert -Value Copy-DbaAgentAlert
-Set-Alias -Name Copy-SqlAudit -Value Copy-DbaAudit
-Set-Alias -Name Copy-SqlAuditSpecification -Value Copy-DbaAuditSpecification
-Set-Alias -Name Copy-SqlBackupDevice -Value Copy-DbaBackupDevice
-Set-Alias -Name Copy-SqlCentralManagementServer -Value Copy-DbaCentralManagementServer
-Set-Alias -Name Copy-SqlCredential -Value Copy-DbaCredential
-Set-Alias -Name Copy-SqlCustomError -Value Copy-DbaCustomError
-Set-Alias -Name Copy-SqlDatabase -Value Copy-DbaDatabase
-Set-Alias -Name Copy-SqlDatabaseAssembly -Value Copy-DbaDatabaseAssembly
-Set-Alias -Name Copy-SqlDatabaseMail -Value Copy-DbaDatabaseMail
-Set-Alias -Name Copy-SqlDataCollector -Value Copy-DbaDataCollector
-Set-Alias -Name Copy-SqlEndpoint -Value Copy-DbaEndpoint
-Set-Alias -Name Copy-SqlExtendedEvent -Value Copy-DbaExtendedEvent
-Set-Alias -Name Copy-SqlJob -Value Copy-DbaJob
-Set-Alias -Name Copy-SqlLinkedServer -Value Copy-DbaLinkedServer
-Set-Alias -Name Copy-SqlLogin -Value Copy-DbaLogin
-Set-Alias -Name Copy-SqlOperator -Value Copy-DbaOperator
-Set-Alias -Name Copy-SqlPolicyManagement -Value Copy-DbaPolicyManagement
-Set-Alias -Name Copy-SqlProxyAccount -Value Copy-DbaProxyAccount
-Set-Alias -Name Copy-SqlResourceGovernor -Value Copy-DbaResourceGovernor
-Set-Alias -Name Copy-SqlServerAgent -Value Copy-DbaServerAgent
-Set-Alias -Name Copy-SqlServerRole -Value Copy-DbaServerRole
-Set-Alias -Name Copy-SqlServerTrigger -Value Copy-DbaServerTrigger
-Set-Alias -Name Copy-SqlSharedSchedule -Value Copy-DbaSharedSchedule
-Set-Alias -Name Copy-SqlSpConfigure -Value Copy-DbaSpConfigure
-Set-Alias -Name Copy-SqlSsisCatalog -Value Copy-DbaSsisCatalog
-Set-Alias -Name Copy-SqlSysDbUserObjects -Value Copy-DbaSysDbUserObjects
-Set-Alias -Name Expand-SqlTLogResponsibly -Value Expand-DbaTLogResponsibly
-Set-Alias -Name Export-SqlLogin -Value Export-DbaLogin
-Set-Alias -Name Export-SqlSpConfigure -Value Export-DbaSpConfigure
-Set-Alias -Name Export-SqlUser -Value Export-DbaUser
-Set-Alias -Name Find-SqlDuplicateIndex -Value Find-DbaDuplicateIndex
-Set-Alias -Name Find-SqlUnusedIndex -Value Find-DbaUnusedIndex
-Set-Alias -Name Get-SqlRegisteredServerName -Value Get-DbaRegisteredServerName
-Set-Alias -Name Get-SqlServerKey -Value Get-DbaSqlProductKey
-Set-Alias -Name Import-SqlSpConfigure -Value Import-DbaSpConfigure
-Set-Alias -Name Invoke-Sqlcmd2 -Value Invoke-DbaSqlcmd
-Set-Alias -Name Remove-SqlDatabaseSafely -Value Remove-DbaDatabaseSafely
-Set-Alias -Name Remove-SqlOrphanUser -Value Remove-DbaOrphanUser
-Set-Alias -Name Repair-SqlOrphanUser -Value Repair-DbaOrphanUser
-Set-Alias -Name Reset-SqlAdmin -Value Reset-DbaAdmin
-Set-Alias -Name Restore-SqlBackupFromDirectory -Value Restore-DbaBackupFromDirectory
-Set-Alias -Name Set-SqlTempDbConfiguration -Value Set-DbaTempDbConfiguration
-Set-Alias -Name Show-SqlDatabaseList -Value Show-DbaDatabaseList
-Set-Alias -Name Show-SqlServerFileSystem -Value Show-DbaServerFileSystem
-Set-Alias -Name Start-SqlMigration -Value Start-DbaMigration
-Set-Alias -Name Sync-SqlLoginPermissions -Value Sync-DbaLoginPermissions
-Set-Alias -Name Test-SqlConnection -Value Test-DbaConnection
-Set-Alias -Name Test-SqlMigrationConstraint -Value Test-DbaMigrationConstraint
-Set-Alias -Name Test-SqlNetworkLatency -Value Test-DbaNetworkLatency
-Set-Alias -Name Test-SqlPath -Value Test-DbaPath
-Set-Alias -Name Test-SqlTempDbConfiguration -Value Test-DbaTempDbConfiguration
-Set-Alias -Name Watch-SqlDbLogin -Value Watch-DbaDbLogin
+Set-Alias -Scope Global -Name Reset-SqlSaPassword -Value Reset-SqlAdmin
+Set-Alias -Scope Global -Name Copy-SqlUserDefinedMessage -Value Copy-SqlCustomError
+Set-Alias -Scope Global -Name Copy-SqlJobServer -Value Copy-SqlServerAgent
+Set-Alias -Scope Global -Name Restore-HallengrenBackup -Value Restore-SqlBackupFromDirectory
+Set-Alias -Scope Global -Name Show-SqlMigrationConstraint -Value Test-SqlMigrationConstraint
+Set-Alias -Scope Global -Name Test-SqlDiskAllocation -Value Test-DbaDiskAllocation
+Set-Alias -Scope Global -Name Get-DiskSpace -Value Get-DbaDiskSpace
+Set-Alias -Scope Global -Name Get-SqlMaxMemory -Value Get-DbaMaxMemory
+Set-Alias -Scope Global -Name Set-SqlMaxMemory -Value Set-DbaMaxMemory
+Set-Alias -Scope Global -Name Install-SqlWhoIsActive -Value Install-DbaWhoIsActive
+Set-Alias -Scope Global -Name Show-SqlWhoIsActive -Value Invoke-DbaWhoIsActive
+Set-Alias -Scope Global -Name Copy-SqlAgentCategory -Value Copy-DbaAgentCategory
+Set-Alias -Scope Global -Name Copy-SqlAlert -Value Copy-DbaAgentAlert
+Set-Alias -Scope Global -Name Copy-SqlAudit -Value Copy-DbaAudit
+Set-Alias -Scope Global -Name Copy-SqlAuditSpecification -Value Copy-DbaAuditSpecification
+Set-Alias -Scope Global -Name Copy-SqlBackupDevice -Value Copy-DbaBackupDevice
+Set-Alias -Scope Global -Name Copy-SqlCentralManagementServer -Value Copy-DbaCentralManagementServer
+Set-Alias -Scope Global -Name Copy-SqlCredential -Value Copy-DbaCredential
+Set-Alias -Scope Global -Name Copy-SqlCustomError -Value Copy-DbaCustomError
+Set-Alias -Scope Global -Name Copy-SqlDatabase -Value Copy-DbaDatabase
+Set-Alias -Scope Global -Name Copy-SqlDatabaseAssembly -Value Copy-DbaDatabaseAssembly
+Set-Alias -Scope Global -Name Copy-SqlDatabaseMail -Value Copy-DbaDatabaseMail
+Set-Alias -Scope Global -Name Copy-SqlDataCollector -Value Copy-DbaDataCollector
+Set-Alias -Scope Global -Name Copy-SqlEndpoint -Value Copy-DbaEndpoint
+Set-Alias -Scope Global -Name Copy-SqlExtendedEvent -Value Copy-DbaExtendedEvent
+Set-Alias -Scope Global -Name Copy-SqlJob -Value Copy-DbaJob
+Set-Alias -Scope Global -Name Copy-SqlLinkedServer -Value Copy-DbaLinkedServer
+Set-Alias -Scope Global -Name Copy-SqlLogin -Value Copy-DbaLogin
+Set-Alias -Scope Global -Name Copy-SqlOperator -Value Copy-DbaOperator
+Set-Alias -Scope Global -Name Copy-SqlPolicyManagement -Value Copy-DbaPolicyManagement
+Set-Alias -Scope Global -Name Copy-SqlProxyAccount -Value Copy-DbaProxyAccount
+Set-Alias -Scope Global -Name Copy-SqlResourceGovernor -Value Copy-DbaResourceGovernor
+Set-Alias -Scope Global -Name Copy-SqlServerAgent -Value Copy-DbaServerAgent
+Set-Alias -Scope Global -Name Copy-SqlServerRole -Value Copy-DbaServerRole
+Set-Alias -Scope Global -Name Copy-SqlServerTrigger -Value Copy-DbaServerTrigger
+Set-Alias -Scope Global -Name Copy-SqlSharedSchedule -Value Copy-DbaSharedSchedule
+Set-Alias -Scope Global -Name Copy-SqlSpConfigure -Value Copy-DbaSpConfigure
+Set-Alias -Scope Global -Name Copy-SqlSsisCatalog -Value Copy-DbaSsisCatalog
+Set-Alias -Scope Global -Name Copy-SqlSysDbUserObjects -Value Copy-DbaSysDbUserObjects
+Set-Alias -Scope Global -Name Expand-SqlTLogResponsibly -Value Expand-DbaTLogResponsibly
+Set-Alias -Scope Global -Name Export-SqlLogin -Value Export-DbaLogin
+Set-Alias -Scope Global -Name Export-SqlSpConfigure -Value Export-DbaSpConfigure
+Set-Alias -Scope Global -Name Export-SqlUser -Value Export-DbaUser
+Set-Alias -Scope Global -Name Find-SqlDuplicateIndex -Value Find-DbaDuplicateIndex
+Set-Alias -Scope Global -Name Find-SqlUnusedIndex -Value Find-DbaUnusedIndex
+Set-Alias -Scope Global -Name Get-SqlRegisteredServerName -Value Get-DbaRegisteredServerName
+Set-Alias -Scope Global -Name Get-SqlServerKey -Value Get-DbaSqlProductKey
+Set-Alias -Scope Global -Name Import-SqlSpConfigure -Value Import-DbaSpConfigure
+Set-Alias -Scope Global -Name Invoke-Sqlcmd2 -Value Invoke-DbaSqlcmd
+Set-Alias -Scope Global -Name Remove-SqlDatabaseSafely -Value Remove-DbaDatabaseSafely
+Set-Alias -Scope Global -Name Remove-SqlOrphanUser -Value Remove-DbaOrphanUser
+Set-Alias -Scope Global -Name Repair-SqlOrphanUser -Value Repair-DbaOrphanUser
+Set-Alias -Scope Global -Name Reset-SqlAdmin -Value Reset-DbaAdmin
+Set-Alias -Scope Global -Name Restore-SqlBackupFromDirectory -Value Restore-DbaBackupFromDirectory
+Set-Alias -Scope Global -Name Set-SqlTempDbConfiguration -Value Set-DbaTempDbConfiguration
+Set-Alias -Scope Global -Name Show-SqlDatabaseList -Value Show-DbaDatabaseList
+Set-Alias -Scope Global -Name Show-SqlServerFileSystem -Value Show-DbaServerFileSystem
+Set-Alias -Scope Global -Name Start-SqlMigration -Value Start-DbaMigration
+Set-Alias -Scope Global -Name Sync-SqlLoginPermissions -Value Sync-DbaLoginPermissions
+Set-Alias -Scope Global -Name Test-SqlConnection -Value Test-DbaConnection
+Set-Alias -Scope Global -Name Test-SqlMigrationConstraint -Value Test-DbaMigrationConstraint
+Set-Alias -Scope Global -Name Test-SqlNetworkLatency -Value Test-DbaNetworkLatency
+Set-Alias -Scope Global -Name Test-SqlPath -Value Test-DbaPath
+Set-Alias -Scope Global -Name Test-SqlTempDbConfiguration -Value Test-DbaTempDbConfiguration
+Set-Alias -Scope Global -Name Watch-SqlDbLogin -Value Watch-DbaDbLogin
