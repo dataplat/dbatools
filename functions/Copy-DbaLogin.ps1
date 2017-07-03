@@ -271,8 +271,8 @@ function Copy-DbaLogin {
 							$copyLoginStatus.Status = "Failed"
 							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
-
-							Stop-Function -Message "Could not drop $userName" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
+							
+							Stop-Function -Message "Could not drop $userName" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
 						}
 					}
 				}
@@ -365,8 +365,8 @@ function Copy-DbaLogin {
 								$copyLoginStatus.Status = "Failed"
 								$copyLoginStatus.Notes = $_.Exception.Message
 								$copyLoginStatus
-
-								Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
+								
+								Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
 							}
 						}
 					}
@@ -391,8 +391,8 @@ function Copy-DbaLogin {
 							$copyLoginStatus.Status = "Failed"
 							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
-
-							Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
+							
+							Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
 						}
 					}
 					# This script does not currently support certificate mapped or asymmetric key users.
@@ -414,8 +414,8 @@ function Copy-DbaLogin {
 							$copyLoginStatus.Status = "Successful - but could not disable on destination"
 							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
-
-							Stop-Function -Message "$userName disabled on source, could not be disabled on $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
+							
+							Stop-Function -Message "$userName disabled on source, could not be disabled on $destination" -Category InvalidOperation -ErrorRecord $_ -Target $destServer  3>$null
 						}
 					}
 					if ($sourceLogin.DenyWindowsLogin) {
@@ -426,8 +426,8 @@ function Copy-DbaLogin {
 							$copyLoginStatus.Status = "Successful - but could not deny login on destination"
 							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
-
-							Stop-Function -Message "$userName denied login on source, could not be denied login on $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
+							
+							Stop-Function -Message "$userName denied login on source, could not be denied login on $destination" -Category InvalidOperation -ErrorRecord $_ -Target $destServer 3>$null
 						}
 					}
 				}
@@ -452,8 +452,8 @@ function Copy-DbaLogin {
 							$copyLoginStatus.Status = "Failed to rename"
 							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
-
-							Stop-Function -Message "Issue renaming $userName to $NewLogin" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
+							
+							Stop-Function -Message "Issue renaming $userName to $NewLogin" -Category InvalidOperation -ErrorRecord $_ -Target $destServer 3>$null
 						}
 					}
 				}
@@ -471,7 +471,7 @@ function Copy-DbaLogin {
 			$sourceVersionMajor = $sourceServer.VersionMajor
 			$destVersionMajor = $destServer.VersionMajor
 			if ($sourceVersionMajor -gt 10 -and $destVersionMajor -lt 11) {
-				Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Category InvalidOperation -InnerErrorRecord $_ -Target $sourceServer
+				Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
 			}
 
 			if ($sourceVersionMajor -lt 8 -or $destVersionMajor -lt 8) {
