@@ -972,7 +972,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						$dbfinish = Get-Date
 						
 						if ($reattach -eq $true) {
-							$null = ($sourceserver.databases).Refresh()
+							$sourceserver.databases.Refresh()
+							$destserver.databases.Refresh()
 							$result = Mount-SqlDatabase $sourceserver $dbname $sourcefilestructure $dbowner
 							
 							if ($result -eq $true) {
@@ -1005,9 +1006,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						}
 					}
 				}
+				$destserver.databases.refresh()
 				
 				# restore poentially lost settings
-				
 				if ($destserver.versionMajor -ge 9 -and $norecovery -eq $false) {
 					if ($sourcedbownerchaining -ne $destserver.databases[$dbname].DatabaseOwnershipChaining) {
 						If ($Pscmdlet.ShouldProcess($destination, "Updating DatabaseOwnershipChaining on $dbname")) {

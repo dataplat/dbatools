@@ -1,4 +1,5 @@
-Describe "Get-DbaSqlBuildReference Unit Test" -Tag Unittest {
+Describe "Get-DbaSqlBuildReference Unit Test" -Tags Unittest {
+	$ModuleBase = (Get-Module -Name dbatools).ModuleBase
 	$idxfile = "$ModuleBase\bin\dbatools-buildref-index.json"
 	Context 'Validate data in json is correct' {
 		It "the json file is there" {

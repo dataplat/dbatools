@@ -148,7 +148,7 @@
 	
 	$coloredMessage = $Message
 	$baseMessage = $Message
-	foreach ($match in ($baseMessage | Select-String '<c="(.*?)">(.*?)</c>' -AllMatches).Matches) {
+	foreach ($match in ($baseMessage | Select-String '<c=["''](.*?)["'']>(.*?)</c>' -AllMatches).Matches) {
 		$baseMessage = $baseMessage -replace ([regex]::Escape($match.Value)), $match.Groups[2].Value
 	}
 	
@@ -190,10 +190,11 @@
             if ($Silent) { Write-Error -Message $newRecord -Category $record.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
             else { $null = Write-Error -Message $newRecord -Category $record.CategoryInfo.Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1 }
         }
-        $foo = "bar"
-        [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteErrorEntry($ErrorRecord, $FunctionName, $timestamp, $Message, $Host.InstanceId)
-    }
-    #endregion Handle Errors
+	}
+	if ($ErrorRecord) {
+		[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteErrorEntry($ErrorRecord, $FunctionName, $timestamp, $Message, $Host.InstanceId)
+	}
+	#endregion Handle Errors
     
     $channels = @()
     
