@@ -218,7 +218,7 @@
 
 			if ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobName")) {
                 try {
-                    Write-Message -Message "Copying Job $jobName" -Level Output
+                    Write-Message -Message "Copying Job $jobName" -Level Verbose
                     $sql = $serverJob.Script() | Out-String
                     Write-Message -Message $sql -Level Debug
                     $destServer.Query($sql)
@@ -232,7 +232,7 @@
 
 			if ($DisableOnDestination) {
 				if ($Pscmdlet.ShouldProcess($destination, "Disabling $jobName")) {
-					Write-Message -Message "Disabling $jobName on $destination" -Level Output
+					Write-Message -Message "Disabling $jobName on $destination" -Level Verbose
 					$destServer.JobServer.Jobs.Refresh()
 					$destServer.JobServer.Jobs[$job.name].IsEnabled = $False
 					$destServer.JobServer.Jobs[$job.name].Alter()
@@ -241,7 +241,7 @@
 
             if ($DisableOnSource) {
                 if ($Pscmdlet.ShouldProcess($source, "Disabling $jobName")) {
-                    Write-Message -Message "Disabling $jobName on $source" -Level Output
+                    Write-Message -Message "Disabling $jobName on $source" -Level Verbose
                     $job.IsEnabled = $false
                     $job.Alter()
                 }
