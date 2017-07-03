@@ -206,10 +206,9 @@ function Copy-DbaSqlPolicyManagement {
 			if ($Pscmdlet.ShouldProcess($destination, "Migrating condition $conditionName")) {
 				try {
 					$sql = $condition.ScriptCreate().GetScript() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Message -Level Debug -Message $sql
 					Write-Message -Level Verbose -Message "Copying condition $conditionName"
-					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+					$destServer.Query($sql)
 					$destStore.Conditions.Refresh()
 
 					$copyConditionStatus.Status = "Successful"
