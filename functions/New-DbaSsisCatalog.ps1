@@ -54,9 +54,9 @@ Prompts for username/password - while only password is used, the username must b
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[parameter(Mandatory = $true)]
-		[System.Management.Automation.PSCredential]$SsisCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SsisCredential,
 		[string]$SsisCatalog = "SSISDB",
 		[switch]$Silent
 	)

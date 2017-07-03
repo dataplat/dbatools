@@ -85,7 +85,7 @@ Displays what would happen trying to set all missing SPNs for sql2016
 		[Alias("InstanceServiceAccount", "AccountName")]
 		[string]$ServiceAccount,
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
-		[pscredential]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[switch]$NoDelegation,
 		[switch]$Silent
 	)

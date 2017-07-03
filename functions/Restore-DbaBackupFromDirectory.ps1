@@ -86,7 +86,7 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 		[switch]$NoRecovery,
 		[Alias("ReuseFolderStructure")]
 		[switch]$ReuseSourceFolderStructure,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[switch]$Force
 		
 	)

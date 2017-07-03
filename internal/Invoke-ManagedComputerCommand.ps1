@@ -10,7 +10,7 @@ Internal command
 		[Parameter(Mandatory = $true)]
 		[Alias("Server")]
 		[dbainstanceparameter]$ComputerName,
-		[System.Management.Automation.PSCredential]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[Parameter(Mandatory = $true)]
 		[scriptblock]$ScriptBlock,
 		[string[]]$ArgumentList,

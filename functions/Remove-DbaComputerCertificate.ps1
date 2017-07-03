@@ -54,7 +54,7 @@ Removes certificate with thumbprint C2BBE81A94FEE7A26FFF86C2DFDAF6BFD28C6C94 in 
 	param (
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-		[System.Management.Automation.PSCredential]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[parameter(ParameterSetName = "Certificate", ValueFromPipeline)]
 		[System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
 		[string]$Thumbprint,

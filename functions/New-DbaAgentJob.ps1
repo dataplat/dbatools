@@ -136,7 +136,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
         [DbaInstanceParameter[]]$SqlInstance,
 
         [Parameter(Mandatory = $false)]
-        [System.Management.Automation.PSCredential]$SqlCredential,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
         
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]

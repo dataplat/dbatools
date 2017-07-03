@@ -80,7 +80,7 @@ Exports all certificates named CertTDE on the specified SQL Server, not specifyi
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[parameter(ParameterSetName = "instance")]
 		[object[]]$Certificate,
 		[parameter(ParameterSetName = "instance")]

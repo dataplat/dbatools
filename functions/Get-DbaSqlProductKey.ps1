@@ -71,7 +71,7 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
         # File with one server per line
 
         [string]$ServersFromFile,
-        [System.Management.Automation.PSCredential]$SqlCredential
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
     )
 	
     BEGIN {

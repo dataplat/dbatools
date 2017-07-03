@@ -126,7 +126,7 @@ srv0042 D:\                                                               0     
 		[ValidateSet('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')]
 		[String]$Unit = 'GB',
 		[Switch]$CheckForSql,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[Switch]$Detailed,
 		[Switch]$CheckFragmentation,
 		[Switch]$AllDrives

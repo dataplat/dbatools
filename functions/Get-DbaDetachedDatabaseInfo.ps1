@@ -62,7 +62,7 @@ SQL Server is required to process offilne MDF files. The abvoe example reutrns i
 		[parameter(Mandatory = $true)]
 		[Alias("Mdf")]
 		[string]$Path,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
 	)
 	
 	BEGIN

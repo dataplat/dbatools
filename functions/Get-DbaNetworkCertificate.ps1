@@ -37,7 +37,7 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
 		[parameter(ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-		[System.Management.Automation.PSCredential]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[switch]$Silent
 	)
 	

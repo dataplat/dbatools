@@ -76,10 +76,10 @@ function Copy-DbaLinkedServer {
 	Param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential,
 		[object[]]$LinkedServer,
 		[object[]]$ExcludeLinkedServer,
 		[switch]$Force,

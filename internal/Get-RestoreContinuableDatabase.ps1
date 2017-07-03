@@ -13,7 +13,7 @@ Takes a SQL instance and checks for databases with a redo_start_lsn value, and r
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object]$SqlInstance,
-        [System.Management.Automation.PSCredential]$SqlCredential,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
         [switch]$silent
 	)
 

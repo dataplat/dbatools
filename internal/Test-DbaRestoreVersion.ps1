@@ -48,7 +48,7 @@ Checks that the Restore chain in $FilteredFiles is compatiable with the SQL Serv
 		[object]$SqlInstance,
         [parameter(Mandatory = $true)]
         [object[]]$FilteredRestoreFiles,
-        [System.Management.Automation.PSCredential]$SqlCredential,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
         [switch]$SystemDatabaseRestore
         
 	)

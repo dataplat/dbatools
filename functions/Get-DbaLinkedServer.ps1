@@ -36,7 +36,7 @@ function Get-DbaLinkedServer {
 		[Parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[switch]$Silent
 	)
 	foreach ($Instance in $SqlInstance) {

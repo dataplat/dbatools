@@ -68,8 +68,8 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 		[parameter(ParameterSetName = "Windows")]
 		[Switch]$WindowsOnly,
 		[Alias("Credential")]
-		[PsCredential]$SqlCredential,
-		[PsCredential]$WindowsCredential
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$WindowsCredential
 	)
 	
 	PROCESS

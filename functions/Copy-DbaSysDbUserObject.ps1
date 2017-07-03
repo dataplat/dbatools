@@ -62,8 +62,8 @@ https://dbatools.io/Copy-DbaSysDbUserObject
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$Destination,
-        [System.Management.Automation.PSCredential]$SourceSqlCredential,
-        [System.Management.Automation.PSCredential]$DestinationSqlCredential
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential
     )
     PROCESS {
         $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential

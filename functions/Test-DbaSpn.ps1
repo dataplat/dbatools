@@ -68,7 +68,7 @@ have be a valid login with appropriate rights on the domain
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[dbainstanceparameter[]]$ComputerName,
 		[Parameter(Mandatory = $false)]
-		[PSCredential]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[Parameter(Mandatory = $false)]
 		[switch]$Silent
 	)

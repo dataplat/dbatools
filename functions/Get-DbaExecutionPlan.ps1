@@ -77,7 +77,7 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PsCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[datetime]$SinceCreation,
