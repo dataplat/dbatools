@@ -14,6 +14,9 @@ to be executed against multiple SQL Server instances.
 .PARAMETER SqlCredential
 SqlCredential object to connect as. If not specified, current Windows login will be used.
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages.
+
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
@@ -42,7 +45,8 @@ Returns all SQL Agent Job Categories for the local and sql2016 SQL Server instan
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[swtich]$Silent
 	)
 	
 	PROCESS
@@ -56,8 +60,7 @@ Returns all SQL Agent Job Categories for the local and sql2016 SQL Server instan
 			}
 			catch
 			{
-				Write-Warning "Can't connect to $instance or access denied. Skipping."
-				continue
+				Stop-Function -Message "Failure" -Target $instance -ErrorRecord $_ -Continue
 			}
 			
 			foreach ($jobCategory in $server.JobServer.JobCategories)

@@ -33,6 +33,9 @@ Allows you to limit the scope to queries with a specified average execution time
 .PARAMETER NoSystemDb
 Allows you to suppress output on system databases
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages.
+
 .NOTES
 Tags: Query, Performance
 Author: Brandon Abshire, netnerds.net
@@ -78,7 +81,8 @@ limiting results to queries with more than 200 total executions and an execution
 		[parameter(Position = 3, Mandatory = $false)]
 		[int]$MinExecMs = 500,
 		[parameter(Position = 4, Mandatory = $false)]
-		[switch]$NoSystemDb
+		[switch]$NoSystemDb,
+		[swtich]$Silent
 	)
 
 	begin {
@@ -181,8 +185,7 @@ limiting results to queries with more than 200 total executions and an execution
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Write-Warning "Can't connect to $instance or access denied. Skipping."
-				continue
+				Stop-Function -Message "Failure" -Target $instance -ErrorRecord $_ -Continue
 			}
 
 			if ($server.versionMajor -lt 10) {
