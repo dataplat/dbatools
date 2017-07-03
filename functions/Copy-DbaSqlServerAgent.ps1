@@ -131,7 +131,7 @@ function Copy-DbaSqlServerAgent {
 				$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 				$sql = $sql -replace [Regex]::Escape("@errorlog_file="), [Regex]::Escape("--@errorlog_file=")
 				Write-Verbose $sql
-				$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+				$null = $destServer.Query($sql)
 			}
 			catch {
 				Write-Exception $_
