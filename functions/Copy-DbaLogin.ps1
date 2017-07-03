@@ -258,6 +258,7 @@ function Copy-DbaLogin {
 							$activeConnections = $destServer.EnumProcesses() | Where-Object Login -eq $userName
 							if ($activeConnections -and $KillActiveConnection) {
 								$activeConnections | ForEach-Object { $destServer.KillProcess($_.Spid)}
+								Write-Message -Level Verbose -Message "-KillActiveConnection was provided. There are $($activeConnections.Count) active connections killed."
 							}
 							elseif ($activeConnections) {
 								Write-Message -Level Warning -Message "There are $($activeConnections.Count) active connections found for the login $userName. Utilize -KillActiveConnection with -Force to kill the connections."
