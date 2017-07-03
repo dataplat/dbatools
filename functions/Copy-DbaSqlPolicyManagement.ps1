@@ -133,11 +133,23 @@ function Copy-DbaSqlPolicyManagement {
 		$storepolicies = $sourceStore.policies | Where-Object { $_.IsSystemObject -eq $false }
 		$storeconditions = $sourceStore.conditions | Where-Object { $_.IsSystemObject -eq $false }
 
-		if ($Policy.length -gt 0) { $storepolicies = $storepolicies | Where-Object { $Policy -contains $_.Name } }
-		if ($Condition.length -gt 0) { $storeconditions = $storeconditions | Where-Object { $Condition -contains $_.Name } }
+		if ($Policy) {
+			$storepolicies = $storepolicies | Where-Object Name -In $Policy
+		}
+		if ($ExcludePolicy) {
+			$storepolicies = $storepolicies | Where-Object Name -NotIn $ExcludePolicy
+		}
+		if ($Condition) {
+			$storeconditions = $storeconditions | Where-Object Name -In $Condition
+		}
+		if ($ExcludeCondition) {
+			$storeconditions = $storeconditions | Where-Object Name -NotIn $ExcludeCondition
+		}
 
-		if ($Policy.length -gt 0 -and $Condition.length -eq 0) { $storeconditions = $null }
-		if ($Condition.length -gt 0 -and $Policy.length -eq 0) { $storepolicies = $null }
+		if ($Policy -and $Condition) {
+			$storeconditions = $null
+			$storepolicies = $null
+		}
 
 		<#
 						Conditions
