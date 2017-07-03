@@ -162,9 +162,23 @@ function Copy-DbaSqlPolicyManagement {
 		foreach ($condition in $storeConditions) {
 			$conditionName = $condition.Name
 
+			$copyConditionStatus = [pscustomobject]@{
+				SourceServer      = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name              = $conditionName
+				Type              = "Condition"
+				Status            = $null
+				Notes             = $null
+				DateTime          = [DbaDateTime](Get-Date)
+			}
+
 			if ($destStore.Conditions[$conditionName] -ne $null) {
 				if ($force -eq $false) {
 					Write-Message -Level Warning -Message "condition '$conditionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
+
+					$copyConditionStatus.Status = "Skipped"
+					$copyConditionStatus.Notes = "Already exist on destination."
+					$copyConditionStatus
 					continue
 				}
 				else {
@@ -180,6 +194,9 @@ function Copy-DbaSqlPolicyManagement {
 							$destStore.Conditions[$conditionName].Drop()
 						}
 						catch {
+							$copyConditionStatus.Status = "Failed"
+							$copyConditionStatus.Notes = $_.Exception.Message
+							$copyConditionStatus
 							Stop-Function -Message "Issue dropping condition on $destination" -Target $conditionName -ErrorRecord $_ -Continue
 						}
 					}
@@ -194,8 +211,15 @@ function Copy-DbaSqlPolicyManagement {
 					Write-Message -Level Verbose -Message "Copying condition $conditionName"
 					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 					$destStore.Conditions.Refresh()
+
+					$copyConditionStatus.Status = "Successful"
+					$copyConditionStatus
 				}
 				catch {
+					$copyConditionStatus.Status = "Failed"
+					$copyConditionStatus.Notes = $_.Exception.Message
+					$copyConditionStatus
+
 					Stop-Function -Message "Issue creating condition on $destination" -Target $conditionName -ErrorRecord $_
 				}
 			}
@@ -208,9 +232,24 @@ function Copy-DbaSqlPolicyManagement {
 		Write-Message -Level Verbose -Message "Migrating policies"
 		foreach ($policy in $storePolicies) {
 			$policyName = $policy.Name
+
+			$copyPolicyStatus = [pscustomobject]@{
+				SourceServer      = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name              = $policyName
+				Type              = "Policy"
+				Status            = $null
+				Notes             = $null
+				DateTime          = [DbaDateTime](Get-Date)
+			}
+
 			if ($destStore.Policies[$policyName] -ne $null) {
 				if ($force -eq $false) {
 					Write-Message -Level Warning -Message "Policy '$policyName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
+
+					$copyPolicyStatus.Status = "Skipped"
+					$copyPolicyStatus.Notes = "Already exist on destination."
+					$copyPolicyStatus
 					continue
 				}
 				else {
@@ -222,6 +261,10 @@ function Copy-DbaSqlPolicyManagement {
 							$destStore.Policies.refresh()
 						}
 						catch {
+							$copyPolicyStatus.Status = "Failed"
+							$copyPolicyStatus.Notes = $_.Exception.Message
+							$copyPolicyStatus
+
 							Stop-Function -Message "Issue dropping policy on $destination" -Target $policyName -ErrorRecord $_ -Continue
 						}
 					}
@@ -237,8 +280,15 @@ function Copy-DbaSqlPolicyManagement {
 					Write-Message -Level Debug -Message $sql
 					Write-Message -Level Verbose -Message "Copying policy $policyName"
 					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+
+					$copyPolicyStatus.Status = "Successful"
+					$copyPolicyStatus
 				}
 				catch {
+					$copyPolicyStatus.Status = "Failed"
+					$copyPolicyStatus.Notes = $_.Exception.Message
+					$copyPolicyStatus
+
 					# This is usually because of a duplicate dependent from above. Just skip for now.
 					Stop-Function -Message "Issue creating policy on $destination" -Target $policyName -ErrorRecord $_ -Continue
 				}
