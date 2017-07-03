@@ -124,17 +124,33 @@ function Copy-DbaSqlServerAgent {
 		#>
 
 		<# Here are the properties, which must be migrated seperately #>
+		$copyAgentPropStatus = [pscustomobject]@{
+			SourceServer      = $sourceServer.Name
+			DestinationServer = $destServer.Name
+			Type              = "Agent Properites"
+			Status            = $null
+			Notes             = $null
+			DateTime          = [DbaDateTime](Get-Date)
+		}
+
 		if ($Pscmdlet.ShouldProcess($destination, "Copying Agent Properties")) {
 			try {
-				Write-Output "Copying SQL Agent Properties"
+				Write-Message -Level Verbose -Message "Copying SQL Agent Properties"
 				$sql = $sourceAgent.Script() | Out-String
 				$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 				$sql = $sql -replace [Regex]::Escape("@errorlog_file="), [Regex]::Escape("--@errorlog_file=")
-				Write-Verbose $sql
+				Write-Message -Level Debug -Message $sql
 				$null = $destServer.Query($sql)
+
+				$copyAgentPropStatus.Status = "Successful"
+				$copyAgentPropStatus
 			}
 			catch {
-				Write-Exception $_
+				$copyAgentPropStatus.Status = "Failed"
+				$copyAgentPropStatus.Notes = $_.Exception.Message
+				$copyAgentPropStatus
+
+				Stop-Function -Message "Issue copying agent properties" -Target $destination -ErrorRecord $_
 			}
 		}
 	}
