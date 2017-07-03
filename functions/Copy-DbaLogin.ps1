@@ -54,6 +54,11 @@ function Copy-DbaLogin {
 		.PARAMETER LoginRenameHashtable
 			Takes a hash table that will pass to Rename-DbaLogin and update the login and mappings once the copy is completed.
 
+		.PARAMETER KillActiveConnection
+			When used in conjunction with the -Force parameter will kill all active connections/sessions on the destination instance.
+
+			A login cannot be dropped when it has active connections on the instance.
+
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -82,6 +87,15 @@ function Copy-DbaLogin {
 			Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force
 
 			Copies all logins from source server to destination server. If a SQL login on source exists on the destination, the destination login will be dropped and recreated.
+
+			If active connections are found the copy of that login will fail as it cannot be dropped.
+
+		.EXAMPLE
+			Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force -KillActiveConnection
+
+			Copies all logins from source server to destination server. If a SQL login on source exists on the destination, the destination login will be dropped and recreated.
+
+			If any active connections are found they WILL BE killed.
 
 		.EXAMPLE
 			Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
@@ -124,6 +138,7 @@ function Copy-DbaLogin {
 		[string]$OutFile,
 		[object]$PipeLogin,
 		[hashtable]$LoginRenameHashtable,
+		[switch]$KillActiveConnection,
 		[switch]$Force,
 		[switch]$Silent
 	)
@@ -236,11 +251,16 @@ function Copy-DbaLogin {
 								$ownedJob.Set_OwnerLoginName('sa')
 								$ownedJob.Alter()
 							}
-							
-							
+
+
 							$destServer.Logins.Item($userName).Disable()
-							$destServer.EnumProcesses() | Where-Object Login -eq $userName | ForEach-Object {
-								$destServer.KillProcess($_.spid)
+
+							$activeConnections = $destServer.EnumProcesses() | Where-Object Login -eq $userName
+							if ($activeConnections -and $KillActiveConnection) {
+								$activeConnections | ForEach-Object { $destServer.KillProcess($_.Spid)}
+							}
+							elseif ($activeConnections) {
+								Write-Message -Level Warning -Message "There are $($activeConnections.Count) active connections found for the login $userName. Utilize -KillActiveConnection with -Force to kill the connections."
 							}
 							$destServer.Logins.Item($userName).Drop()
 
@@ -248,7 +268,7 @@ function Copy-DbaLogin {
 						}
 						catch {
 							$copyLoginStatus.Status = "Failed"
-							$copyLoginStatus.Notes = $_.Exception
+							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
 
 							Stop-Function -Message "Could not drop $userName" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
@@ -342,7 +362,7 @@ function Copy-DbaLogin {
 							}
 							catch {
 								$copyLoginStatus.Status = "Failed"
-								$copyLoginStatus.Notes = $_.Exception
+								$copyLoginStatus.Notes = $_.Exception.Message
 								$copyLoginStatus
 
 								Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
@@ -368,7 +388,7 @@ function Copy-DbaLogin {
 						}
 						catch {
 							$copyLoginStatus.Status = "Failed"
-							$copyLoginStatus.Notes = $_.Exception
+							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
 
 							Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
@@ -391,7 +411,7 @@ function Copy-DbaLogin {
 						}
 						catch {
 							$copyLoginStatus.Status = "Successful - but could not disable on destination"
-							$copyLoginStatus.Notes = $_.Exception
+							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
 
 							Stop-Function -Message "$userName disabled on source, could not be disabled on $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
@@ -403,7 +423,7 @@ function Copy-DbaLogin {
 						}
 						catch {
 							$copyLoginStatus.Status = "Successful - but could not deny login on destination"
-							$copyLoginStatus.Notes = $_.Exception
+							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
 
 							Stop-Function -Message "$userName denied login on source, could not be denied login on $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
@@ -429,7 +449,7 @@ function Copy-DbaLogin {
 						catch {
 							$copyLoginStatus.DestinationLogin = $NewLogin
 							$copyLoginStatus.Status = "Failed to rename"
-							$copyLoginStatus.Notes = $_.Exception
+							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
 
 							Stop-Function -Message "Issue renaming $userName to $NewLogin" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
