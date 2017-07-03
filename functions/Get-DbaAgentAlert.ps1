@@ -52,7 +52,7 @@ FUNCTION Get-DbaAgentAlert {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_
+				Stop-Function -Message "Failure" -Target $instance -ErrorRecord $_ -Continue
 			}
 			
 			Write-Message -Level Verbose -Message "Getting Edition from $server"

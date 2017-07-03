@@ -148,7 +148,7 @@ function Export-DbaUser {
 			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
 		}
 		catch {
-			Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_
+			Stop-Function -Message "Failure" -Target $instance -ErrorRecord $_ -Continue
 		}
 
 		if (!$database) {

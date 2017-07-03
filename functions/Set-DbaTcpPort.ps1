@@ -95,7 +95,7 @@ Function Set-DbaTcpPort {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Can't connect" -Target $instance -ErrorRecord $_ -Continue
+				Stop-Function -Message "Failure" -Target $instance -ErrorRecord $_ -Continue
 			}
 			
 			$wmiinstancename = $server.ServiceName
