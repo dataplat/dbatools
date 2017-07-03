@@ -99,7 +99,7 @@ Removes the job from multiple servers using pipe line
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
-                Stop-Function -Message "Could not connect to Sql Server instance" -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
         
             foreach ($j in $Job) {

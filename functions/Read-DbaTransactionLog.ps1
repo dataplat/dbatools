@@ -62,7 +62,7 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
 	catch {
-		Stop-Function -Message "Failed to connect to: $instance"
+		Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 		return
 	}
 

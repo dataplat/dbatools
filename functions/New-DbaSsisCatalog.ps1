@@ -74,7 +74,7 @@ Prompts for username/password - while only password is used, the username must b
 			}
 			catch
 			{
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			#if SQL 2012 or higher only validate databases with ContainmentType = NONE

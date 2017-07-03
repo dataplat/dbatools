@@ -390,7 +390,7 @@ Creates a schedule that's not connected to a job
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
-                Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -InnerErrorRecord $_ -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             # Check if the jobs parameter is set

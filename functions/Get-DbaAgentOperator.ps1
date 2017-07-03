@@ -71,7 +71,7 @@ function Get-DbaAgentOperator {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
             }
             catch {
-                Stop-Function -Message "Failure" -Target $instance -ErrorRecord $_ -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 			
             Write-Message -Level Verbose -Message "Getting Edition from $server"

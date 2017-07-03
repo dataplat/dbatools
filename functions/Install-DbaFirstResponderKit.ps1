@@ -128,7 +128,7 @@ Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authe
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -ErrorRecord $_ -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			Write-Message -Level Output -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance"

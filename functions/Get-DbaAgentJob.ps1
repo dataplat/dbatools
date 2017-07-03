@@ -81,8 +81,7 @@ FUNCTION Get-DbaAgentJob {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Write-Warning "Can't connect to $instance or access denied. Skipping."
-				continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			$jobs = $server.JobServer.Jobs

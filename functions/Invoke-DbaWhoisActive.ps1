@@ -267,7 +267,7 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failure" -Target $instance -ErrorRecord $_ -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			if ($server.VersionMajor -lt 9) {

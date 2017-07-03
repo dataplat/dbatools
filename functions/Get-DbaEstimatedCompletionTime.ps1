@@ -118,7 +118,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 				
 			}
 			catch {
-				Stop-Function -Message "Can't connect to $instance. Moving on." -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			if ($Database) {

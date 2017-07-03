@@ -155,7 +155,7 @@
 			}
 			catch
 			{
-				Stop-Function -Message "Could not connect to Sql Server instance" -InnerErrorRecord $_ -Target $sqlinstance
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				return
 			}
 			

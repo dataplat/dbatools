@@ -150,7 +150,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue -Silent $Silent
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			#Checks for path existence
 			if ($Path.Length -gt 0) {

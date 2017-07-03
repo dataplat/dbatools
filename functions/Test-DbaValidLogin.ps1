@@ -117,7 +117,7 @@ Tests all logins excluding any that are from the subdomain Domain
 				Write-Message -Message "Connected to: $instance" -Level Verbose
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance -InnerErrorRecord $_
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 

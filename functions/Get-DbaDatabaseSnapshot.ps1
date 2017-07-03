@@ -79,7 +79,7 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
             }
             catch {
-                Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $dbs = $server.Databases

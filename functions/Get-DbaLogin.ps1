@@ -98,7 +98,7 @@ function Get-DbaLogin {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			$serverLogins = $server.Logins

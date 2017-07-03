@@ -128,7 +128,7 @@ function Get-DbaSsisEnvironmentVariable {
             }
             catch
             {
-                Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             
 

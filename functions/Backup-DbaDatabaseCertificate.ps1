@@ -199,7 +199,7 @@ Exports all certificates named CertTDE on the specified SQL Server, not specifyi
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -InnerErrorRecord $_
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				return
 			}
 			$databases = Get-DbaDatabase -SqlInstance $server

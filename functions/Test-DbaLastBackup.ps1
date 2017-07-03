@@ -179,7 +179,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                 $sourceserver = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlCredential
             }
             catch {
-                Stop-Function -Message "Failed to connect to: $instance" -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 			
             try {

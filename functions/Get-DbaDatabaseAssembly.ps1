@@ -13,6 +13,9 @@ to be executed against multiple SQL Server instances.
 .PARAMETER SqlCredential
 SqlCredential object to connect as. If not specified, current Windows login will be used.
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages.
+
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 Website: https://dbatools.io
@@ -35,7 +38,8 @@ Returns all Database Assembly for the local and sql2016 SQL Server instances
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[DbaInstanceParameter]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[switch]$Silent
 	)
 	
 	PROCESS {
@@ -45,8 +49,7 @@ Returns all Database Assembly for the local and sql2016 SQL Server instances
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Write-Warning "Can't connect to $instance or access denied. Skipping."
-				continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			

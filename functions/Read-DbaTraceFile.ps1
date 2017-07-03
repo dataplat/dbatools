@@ -234,7 +234,7 @@ Filters only results where LinkServerName = myls and StartTime is greater than '
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance"
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				return
 			}
 			
