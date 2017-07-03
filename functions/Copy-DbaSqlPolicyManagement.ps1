@@ -208,7 +208,7 @@ function Copy-DbaSqlPolicyManagement {
 					$sql = $condition.ScriptCreate().GetScript() | Out-String
 					Write-Message -Level Debug -Message $sql
 					Write-Message -Level Verbose -Message "Copying condition $conditionName"
-					$destServer.Query($sql)
+					$null = $destServer.Query($sql)
 					$destStore.Conditions.Refresh()
 
 					$copyConditionStatus.Status = "Successful"
