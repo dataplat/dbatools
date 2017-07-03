@@ -74,7 +74,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PsCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,

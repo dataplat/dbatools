@@ -69,7 +69,7 @@ Skips some prompts/confirms but not all of them.
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PsCredential]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[switch]$AutoFix,
 		[switch]$Force
 	)

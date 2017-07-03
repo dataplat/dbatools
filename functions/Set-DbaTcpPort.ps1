@@ -63,8 +63,8 @@ Function Set-DbaTcpPort {
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PsCredential]$SqlCredential,
-		[PsCredential]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[parameter(Mandatory = $true)]
 		[ValidateRange(1, 65535)]
 		[int]$Port,

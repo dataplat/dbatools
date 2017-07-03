@@ -78,7 +78,7 @@ Removes all set SPNs for sql2005 and the relative delegations
 		[Alias("InstanceServiceAccount", "AccountName")]
 		[string]$ServiceAccount,
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
-		[pscredential]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[switch]$Silent
 	)
 	
