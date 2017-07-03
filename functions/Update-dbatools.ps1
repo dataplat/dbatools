@@ -10,6 +10,12 @@ Exported function. Updates dbatools. Deletes current copy and replaces it with f
 .PARAMETER Development
 Installs the current development branch of dbatools instead of the latest release.
 
+.PARAMETER WhatIf
+Shows what would happen if the command were to run. No actions are actually performed.
+
+.PARAMETER Confirm
+Prompts you for confirmation before executing any changing operations within the command.
+
 .NOTES 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
