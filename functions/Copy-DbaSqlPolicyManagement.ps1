@@ -158,19 +158,19 @@ function Copy-DbaSqlPolicyManagement {
 						Conditions
 		#>
 
-		Write-Output "Migrating conditions"
+		Write-Message -Level Verbose -Message "Migrating conditions"
 		foreach ($condition in $storeConditions) {
 			$conditionName = $condition.Name
 			if ($destStore.Conditions[$conditionName] -ne $null) {
 				if ($force -eq $false) {
-					Write-Warning "condition '$conditionName' was skipped because it already exists on $destination"
-					Write-Warning "Use -Force to drop and recreate"
+					Write-Message -Level Warning -Message "condition '$conditionName' was skipped because it already exists on $destination"
+					Write-Message -Level Warning -Message "Use -Force to drop and recreate"
 					continue
 				}
 				else {
 					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $conditionName")) {
-						Write-Verbose "Condition '$conditionName' exists on $destination"
-						Write-Verbose "Force specified. Dropping $conditionName."
+						Write-Message -Level Verbose -Message "Condition '$conditionName' exists on $destination"
+						Write-Message -Level Verbose -Message "Force specified. Dropping $conditionName."
 
 						try {
 							$dependentPolicies = $destStore.Conditions[$conditionName].EnumDependentPolicies()
@@ -191,8 +191,8 @@ function Copy-DbaSqlPolicyManagement {
 				try {
 					$sql = $condition.ScriptCreate().GetScript() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-					Write-Verbose $sql
-					Write-Output "Copying condition $conditionName"
+					Write-Message -Level Debug -Message $sql
+					Write-Message -Level Verbose -Message "Copying condition $conditionName"
 					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 					$destStore.Conditions.Refresh()
 				}
@@ -206,19 +206,19 @@ function Copy-DbaSqlPolicyManagement {
 						Policies
 		#>
 
-		Write-Output "Migrating policies"
+		Write-Message -Level Verbose -Message "Migrating policies"
 		foreach ($policy in $storePolicies) {
 			$policyName = $policy.Name
 			if ($destStore.Policies[$policyName] -ne $null) {
 				if ($force -eq $false) {
-					Write-Warning "Policy '$policyName' was skipped because it already exists on $destination"
-					Write-Warning "Use -Force to drop and recreate"
+					Write-Message -Level Warning -Message "Policy '$policyName' was skipped because it already exists on $destination"
+					Write-Message -Level Warning -Message "Use -Force to drop and recreate"
 					continue
 				}
 				else {
 					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $policyName")) {
-						Write-Verbose "Policy '$policyName' exists on $destination"
-						Write-Verbose "Force specified. Dropping $policyName."
+						Write-Message -Level Verbose -Message "Policy '$policyName' exists on $destination"
+						Write-Message -Level Verbose -Message "Force specified. Dropping $policyName."
 
 						try {
 							$destStore.Policies[$policyName].Drop()
@@ -237,8 +237,8 @@ function Copy-DbaSqlPolicyManagement {
 					$destStore.Policies.Refresh()
 					$sql = $policy.ScriptCreateWithDependencies().GetScript() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-					Write-Verbose $sql
-					Write-Output "Copying policy $policyName"
+					Write-Message -Level Debug -Message $sql
+					Write-Message -Level Verbose -Message "Copying policy $policyName"
 					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 				}
 				catch {
