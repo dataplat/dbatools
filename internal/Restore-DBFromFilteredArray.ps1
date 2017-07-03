@@ -398,9 +398,10 @@ Function Restore-DBFromFilteredArray {
                     Write-Message -Level Verbose -Message "Succeeded, Closing Server connection"
                     $server.ConnectionContext.Disconnect()
                 }
-            }	
-        }
-        if ($server.ConnectionContext.exists) {
+			}
+			Write-Progress -id 1 -Activity "Restoring" -Completed
+		}
+		if ($server.ConnectionContext.exists) {
             $server.ConnectionContext.Disconnect()
         }
     }
