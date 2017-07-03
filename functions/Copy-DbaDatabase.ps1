@@ -540,6 +540,8 @@ function Copy-DbaDatabase {
 
 	}
 	process {
+		if (Test-FunctionInterrupt) { return }
+
 		if (($AllDatabases -or $IncludeSupportDbs -or $Database) -and !$DetachAttach -and !$BackupRestore) {
 			Stop-Function -Message "You must specify -DetachAttach or -BackupRestore when migrating databases."
 			return
@@ -853,7 +855,7 @@ function Copy-DbaDatabase {
 					$WithReplace = $true
 				}
 
-				If ($Pscmdlet.ShouldProcess("console", "Showing start time")) {
+				if ($Pscmdlet.ShouldProcess("console", "Showing start time")) {
 					Write-Message -Level Verbose -Message "Started: $dbStart"
 				}
 
@@ -861,7 +863,6 @@ function Copy-DbaDatabase {
 					$sourceDbOwnerChaining = $sourceServer.Databases[$dbName].DatabaseOwnershipChaining
 					$sourceDbTrustworthy = $sourceServer.Databases[$dbName].Trustworthy
 					$sourceDbBrokerEnabled = $sourceServer.Databases[$dbName].BrokerEnabled
-
 				}
 
 				$sourceDbReadOnly = $sourceServer.Databases[$dbName].ReadOnly
@@ -985,7 +986,6 @@ function Copy-DbaDatabase {
 							}
 						}
 
-
 						if ($migrationResult -eq $true) {
 							Write-Message -Level Verbose -Message "Successfully attached $dbName to $destination"
 						}
@@ -1007,8 +1007,7 @@ function Copy-DbaDatabase {
 								Write-Message -Level Verbose -Message "Successfully updated DatabaseOwnershipChaining for $sourceDbOwnerChaining on $dbName on $destination"
 							}
 							catch {
-								Write-Message -Level Warning -Message "Failed to update DatabaseOwnershipChaining for $sourceDbOwnerChaining on $dbName on $destination" -Silent:$silent
-								Stop-Function -Message "Exception: $_" -Continue -Target $destination
+								Stop-Function -Message "Failed to update DatabaseOwnershipChaining for $sourceDbOwnerChaining on $dbName on $destination" -Target $destination -ErrorRecord $_ -Continue
 							}
 						}
 					}
@@ -1021,8 +1020,7 @@ function Copy-DbaDatabase {
 								Write-Message -Level Verbose -Message "Successfully updated Trustworthy to $sourceDbTrustworthy for $dbName on $destination"
 							}
 							catch {
-								Write-Message -Level Warning -Message "Failed to update Trustworthy to $sourceDbTrustworthy for $dbName on $destination"
-								Stop-Function -Message "Exception: $_" -Continue -Target $destination
+								Stop-Function -Message "Failed to update Trustworthy to $sourceDbTrustworthy for $dbName on $destination" -Target $destination -ErrorRecord $_ -Continue
 							}
 						}
 					}
@@ -1035,8 +1033,7 @@ function Copy-DbaDatabase {
 								Write-Message -Level Verbose -Message "Successfully updated BrokerEnabled to $sourceDbBrokerEnabled for $dbName on $destination"
 							}
 							catch {
-								Write-Message -Level Warning -Message "Failed to update BrokerEnabled to $sourceDbBrokerEnabled for $dbName on $destination"
-								Stop-Function -Message "Exception: $_" -Continue -Target $destination
+								Stop-Function -Message "Failed to update BrokerEnabled to $sourceDbBrokerEnabled for $dbName on $destination" -Target $destination -ErrorRecord $_ -Continue
 							}
 						}
 					}
@@ -1049,8 +1046,7 @@ function Copy-DbaDatabase {
 							Write-Message -Level Verbose -Message "Successfully updated readonly status on $dbName"
 						}
 						else {
-							Write-Message -Level Warning -Message "Failed to update ReadOnly status on $dbName"
-							Stop-Function -Message "Exception: $_" -Continue -Target $destination
+							Stop-Function -Message "Failed to update ReadOnly status on $dbName" -Target $destination -ErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -1073,6 +1069,8 @@ function Copy-DbaDatabase {
 		}
 	}
 	end {
+		if (Test-FunctionInterrupt) { return }
+
 		if ($Pscmdlet.ShouldProcess("console", "Showing migration time elapsed")) {
 			if ($null -ne $elapsed) {
 
