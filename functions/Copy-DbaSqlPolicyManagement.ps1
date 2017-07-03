@@ -109,46 +109,46 @@ function Copy-DbaSqlPolicyManagement {
 			throw "SMO version is too old. To migrate Policies, you must have SQL Server Management Studio 2008 R2 or higher installed."
 		}
 
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
+		$source = $sourceServer.DomainInstanceName
+		$destination = $destServer.DomainInstanceName
 
-		if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
+		if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
 			throw "Policy Management is only supported in SQL Server 2008 and above. Quitting."
 		}
 
 	}
 	process {
 
-		$sourceSqlConn = $sourceserver.ConnectionContext.SqlConnectionObject
+		$sourceSqlConn = $sourceServer.ConnectionContext.SqlConnectionObject
 		$sourceSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceSqlConn
 		$sourceStore = New-Object  Microsoft.SqlServer.Management.DMF.PolicyStore $sourceSqlStoreConnection
 
-		$destSqlConn = $destserver.ConnectionContext.SqlConnectionObject
+		$destSqlConn = $destServer.ConnectionContext.SqlConnectionObject
 		$destSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destSqlConn
 		$destStore = New-Object  Microsoft.SqlServer.Management.DMF.PolicyStore $destSqlStoreConnection
 
-		$storepolicies = $sourceStore.policies | Where-Object { $_.IsSystemObject -eq $false }
-		$storeconditions = $sourceStore.conditions | Where-Object { $_.IsSystemObject -eq $false }
+		$storePolicies = $sourceStore.Policies | Where-Object { $_.IsSystemObject -eq $false }
+		$storeConditions = $sourceStore.Conditions | Where-Object { $_.IsSystemObject -eq $false }
 
 		if ($Policy) {
-			$storepolicies = $storepolicies | Where-Object Name -In $Policy
+			$storePolicies = $storePolicies | Where-Object Name -In $Policy
 		}
 		if ($ExcludePolicy) {
-			$storepolicies = $storepolicies | Where-Object Name -NotIn $ExcludePolicy
+			$storePolicies = $storePolicies | Where-Object Name -NotIn $ExcludePolicy
 		}
 		if ($Condition) {
-			$storeconditions = $storeconditions | Where-Object Name -In $Condition
+			$storeConditions = $storeConditions | Where-Object Name -In $Condition
 		}
 		if ($ExcludeCondition) {
-			$storeconditions = $storeconditions | Where-Object Name -NotIn $ExcludeCondition
+			$storeConditions = $storeConditions | Where-Object Name -NotIn $ExcludeCondition
 		}
 
 		if ($Policy -and $Condition) {
-			$storeconditions = $null
-			$storepolicies = $null
+			$storeConditions = $null
+			$storePolicies = $null
 		}
 
 		<#
@@ -156,9 +156,9 @@ function Copy-DbaSqlPolicyManagement {
 		#>
 
 		Write-Output "Migrating conditions"
-		foreach ($condition in $storeconditions) {
-			$conditionName = $condition.name
-			if ($deststore.conditions[$conditionName] -ne $null) {
+		foreach ($condition in $storeConditions) {
+			$conditionName = $condition.Name
+			if ($destStore.Conditions[$conditionName] -ne $null) {
 				if ($force -eq $false) {
 					Write-Warning "condition '$conditionName' was skipped because it already exists on $destination"
 					Write-Warning "Use -Force to drop and recreate"
@@ -170,12 +170,12 @@ function Copy-DbaSqlPolicyManagement {
 						Write-Verbose "Force specified. Dropping $conditionName."
 
 						try {
-							$dependentpolicies = $deststore.conditions[$conditionName].EnumDependentPolicies()
-							foreach ($dependent in $dependentpolicies) {
+							$dependentPolicies = $destStore.Conditions[$conditionName].EnumDependentPolicies()
+							foreach ($dependent in $dependentPolicies) {
 								$dependent.Drop()
-								$deststore.conditions.Refresh()
+								$destStore.Conditions.Refresh()
 							}
-							$deststore.conditions[$conditionName].Drop()
+							$destStore.Conditions[$conditionName].Drop()
 						}
 						catch {
 							Write-Exception $_
@@ -191,8 +191,8 @@ function Copy-DbaSqlPolicyManagement {
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
 					Write-Output "Copying condition $conditionName"
-					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
-					$deststore.Conditions.Refresh()
+					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+					$destStore.Conditions.Refresh()
 				}
 				catch {
 					Write-Exception $_
@@ -205,9 +205,9 @@ function Copy-DbaSqlPolicyManagement {
 		#>
 
 		Write-Output "Migrating policies"
-		foreach ($policy in $storepolicies) {
-			$policyName = $policy.name
-			if ($deststore.policies[$policyName] -ne $null) {
+		foreach ($policy in $storePolicies) {
+			$policyName = $policy.Name
+			if ($destStore.Policies[$policyName] -ne $null) {
 				if ($force -eq $false) {
 					Write-Warning "Policy '$policyName' was skipped because it already exists on $destination"
 					Write-Warning "Use -Force to drop and recreate"
@@ -219,8 +219,8 @@ function Copy-DbaSqlPolicyManagement {
 						Write-Verbose "Force specified. Dropping $policyName."
 
 						try {
-							$deststore.policies[$policyName].Drop()
-							$deststore.policies.refresh()
+							$destStore.Policies[$policyName].Drop()
+							$destStore.Policies.refresh()
 						}
 						catch {
 							Write-Exception $_
@@ -232,13 +232,13 @@ function Copy-DbaSqlPolicyManagement {
 
 			if ($Pscmdlet.ShouldProcess($destination, "Migrating policy $policyName")) {
 				try {
-					$deststore.conditions.Refresh()
-					$deststore.policies.Refresh()
+					$destStore.Conditions.Refresh()
+					$destStore.Policies.Refresh()
 					$sql = $policy.ScriptCreateWithDependencies().GetScript() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Verbose $sql
 					Write-Output "Copying policy $policyName"
-					$null = $destserver.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
 				}
 				catch {
 					# This is usually because of a duplicate dependent from above. Just skip for now.
