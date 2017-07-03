@@ -17,9 +17,9 @@ function Copy-DbaSqlServerAgent {
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
@@ -28,9 +28,9 @@ function Copy-DbaSqlServerAgent {
 		.PARAMETER DestinationSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER DisableJobsOnDestination
@@ -39,16 +39,16 @@ function Copy-DbaSqlServerAgent {
 		.PARAMETER DisableJobsOnSource
 			Disables the jobs on source
 
-		.PARAMETER WhatIf 
-			Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER WhatIf
+			Shows what would happen if the command were to run. No actions are actually performed.
 
-		.PARAMETER Confirm 
-			Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER Confirm
+			Prompts you for confirmation before executing any changing operations within the command.
 
 		.PARAMETER Force
 			Drops and recreates the objects if it exists
 
-		.PARAMETER Silent 
+		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -63,17 +63,17 @@ function Copy-DbaSqlServerAgent {
 		.LINK
 			https://dbatools.io/Copy-DbaSqlServerAgent
 
-		.EXAMPLE   
+		.EXAMPLE
 			Copy-DbaSqlServerAgent -Source sqlserver2014a -Destination sqlcluster
 
 			Copies all job server objects from sqlserver2014a to sqlcluster, using Windows credentials. If job objects with the same name exist on sqlcluster, they will be skipped.
 
-		.EXAMPLE   
+		.EXAMPLE
 			Copy-DbaSqlServerrAgent -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
 			Copies all job objects from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
-		.EXAMPLE   
+		.EXAMPLE
 			Copy-DbaSqlServerAgent -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
 			Shows what would happen if the command were executed.
@@ -82,31 +82,33 @@ function Copy-DbaSqlServerAgent {
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$DestinationSqlCredential,
 		[Switch]$DisableJobsOnDestination,
 		[Switch]$DisableJobsOnSource,
-		[switch]$Force
-		
+		[switch]$Force,
+		[switch]$Silent
 	)
-	
+
 	BEGIN {
 		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-		
+
 		Invoke-SmoCheck -SqlInstance $sourceserver
 		Invoke-SmoCheck -SqlInstance $destserver
-		
+
 		$source = $sourceserver.DomainInstanceName
 		$destination = $destserver.DomainInstanceName
-		
+
 		$sourceagent = $sourceserver.jobserver
 	}
-	
+
 	PROCESS {
-		
+
 		# All of these support whatif inside of them
 		Copy-DbaAgentCategory -Source $sourceserver -Destination $destserver -Force:$force
 		Copy-DbaAgentOperator -Source $sourceserver -Destination $destserver -Force:$force
@@ -114,15 +116,15 @@ function Copy-DbaSqlServerAgent {
 		Copy-DbaAgentProxyAccount -Source $sourceserver -Destination $destserver -Force:$force
 		Copy-DbaAgentSharedSchedule -Source $sourceserver -Destination $destserver -Force:$force
 		Copy-DbaAgentJob -Source $sourceserver -Destination $destserver -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
-		
+
 		# To do
-		<# 
+		<#
 			Copy-DbaAgentMasterServer -Source $sourceserver -Destination $destserver -Force:$force
 			Copy-DbaAgentTargetServer -Source $sourceserver -Destination $destserver -Force:$force
 			Copy-DbaAgentTargetServerGroup -Source $sourceserver -Destination $destserver -Force:$force
 		#>
-		
-		# Here are the properties, which must be migrated seperately 
+
+		# Here are the properties, which must be migrated seperately
 		If ($Pscmdlet.ShouldProcess($destination, "Copying Agent Properties")) {
 			try {
 				Write-Output "Copying SQL Agent Properties"
@@ -137,7 +139,7 @@ function Copy-DbaSqlServerAgent {
 			}
 		}
 	}
-	
+
 	END {
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
