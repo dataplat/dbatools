@@ -731,6 +731,17 @@ function Copy-DbaDatabase {
 			$dbName = $smoDb.Name
 			$dbOwner = $smoDb.Owner
 
+			$copyDatabaseStatus = [pscustomobject]@{
+				SourceServer      = $sourceServer.Name
+				SourceDatabase       = $dbName
+				DestinationServer = $destServer.Name
+				DestinationDatabase  = $dbname
+				Type              = "Database"
+				Status            = $null
+				Notes             = $null
+				DateTime          = [DbaDateTime](Get-Date)
+			}
+
 			if ($smoDb.Id -le 4) { continue }
 			if ($Database -and $Database -notcontains $dbName) { continue }
 			if ($IncludeSupportDBs -eq $false -and $SupportDBs -contains $dbName) { continue }
@@ -777,6 +788,8 @@ function Copy-DbaDatabase {
 				$dbName = $smoDb.Name
 				$dbOwner = $smoDb.Owner
 
+				$copyDatabaseStatus.SourceDatabase = $dbName
+
 				Write-Message -Level Verbose -Message "`n######### Database: $dbName #########"
 				$dbStart = Get-Date
 
@@ -788,6 +801,10 @@ function Copy-DbaDatabase {
 				Write-Message -Level Verbose -Message "Checking for accessibility"
 				if ($smoDb.IsAccessible -eq $false) {
 					Write-Message -Level Warning -Message "Skipping $dbName. Database is inaccessible."
+
+					$copyDatabaseStatus.Status = "Skipped"
+					$copyDatabaseStatus.Notes = "Database is not accessible."
+					$copyDatabaseStatus
 					continue
 				}
 
@@ -796,6 +813,9 @@ function Copy-DbaDatabase {
 
 					if ($fsRows.Count -gt 0) {
 						Write-Message -Level Warning -Message "Skipping $dbName (contains FILESTREAM)"
+						$copyDatabaseStatus.Status = "Skipped"
+						$copyDatabaseStatus.Notes = "Contains FILESTREAM"
+						$copyDatabaseStatus
 						continue
 					}
 				}
@@ -807,6 +827,10 @@ function Copy-DbaDatabase {
 
 					if (!(Test-Path $remotePath)) {
 						Stop-Function -Message "Cannot resolve $remotePath. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script."
+
+						$copyDatabaseStatus.Status = "Failed"
+						$copyDatabaseStatus.Notes = "Can't resolve $remotePath"
+						$copyDatabaseStatus
 						return
 					}
 				}
@@ -822,21 +846,37 @@ function Copy-DbaDatabase {
 
 				if ($dbStatus.StartsWith("Normal") -eq $false) {
 					Write-Message -Level Warning -Message "$dbName is not in a Normal state. Skipping."
+
+					$copyDatabaseStatus.Status = "Skipped"
+					$copyDatabaseStatus.Notes = "Not in normal state"
+					$copyDatabaseStatus
 					continue
 				}
 
 				if ($smoDb.ReplicationOptions -ne "None" -and $DetachAttach -eq $true) {
 					Write-Message -Level Warning -Message "$dbName is part of replication. Skipping."
+
+					$copyDatabaseStatus.Status = "Skipped"
+					$copyDatabaseStatus.Notes = "Part of replication"
+					$copyDatabaseStatus
 					continue
 				}
 
 				if ($smoDb.IsMirroringEnabled -and !$force -and $DetachAttach) {
 					Write-Message -Level Warning -Message "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method."
+
+					$copyDatabaseStatus.Status = "Skipped"
+					$copyDatabaseStatus.Notes = "Database is mirrored. Use -Force to break mirror."
+					$copyDatabaseStatus
 					continue
 				}
 
 				if (($destServer.Databases[$dbName] -ne $null) -and !$force -and !$WithReplace) {
 					Write-Message -Level Warning -Message "Database exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
+
+					$copyDatabaseStatus.Status = "Skipped"
+					$copyDatabaseStatus.Notes = "Already exist on destination"
+					$copyDatabaseStatus
 					continue
 				}
 				elseif ($destServer.Databases[$dbName] -ne $null -and $force) {
@@ -846,6 +886,10 @@ function Copy-DbaDatabase {
 
 						if ($dropResult -eq $false) {
 							Write-Message -Level Warning -Message "Database could not be dropped. Aborting routine for this database"
+
+							$copyDatabaseStatus.Status = "Failed"
+							$copyDatabaseStatus.Notes = "Issue dropping database"
+							$copyDatabaseStatus
 							continue
 						}
 					}
@@ -881,6 +925,8 @@ function Copy-DbaDatabase {
 
 				if ($BackupRestore) {
 					If ($Pscmdlet.ShouldProcess($destination, "Backup $dbName from $source and restoring.")) {
+						$copyDatabaseStatus.Type = "Database (BackupRestore)"
+
 						$fileName = "$dbName-$timeNow.bak"
 						$backupFile = Join-Path $NetworkShare $fileName
 
@@ -889,6 +935,10 @@ function Copy-DbaDatabase {
 						if ($backupResult -eq $false) {
 							$serviceAccount = $sourceServer.ServiceAccount
 							Write-Message -Level Warning -Message "Backup Failed. Does Sql Server account $serviceAccount have access to $NetworkShare? Aborting routine for this database"
+
+							$copyDatabaseStatus.Status = "Failed"
+							$copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $NetworkShare"
+							$copyDatabaseStatus
 							continue
 						}
 
@@ -898,15 +948,25 @@ function Copy-DbaDatabase {
 
 						if ($restoreResult -eq $true) {
 							Write-Message -Level Verbose -Message "Successfully restored $dbName to $destination"
+							$copyDatabaseStatus.Status = "Successful"
+							$copyDatabaseStatus
 						}
 						else {
 							if ($ReuseSourceFolderStructure) {
 								Write-Message -Level Warning -Message "Failed to restore $dbName to $destination. You specified -ReuseSourceFolderStructure. Does the exact same destination directory structure exist?"
 								Write-Message -Level Warning -Message "Aborting routine for this database"
+
+								$copyDatabaseStatus.Status = "Failed"
+								$copyDatabaseStatus.Notes = "Failed to restore. ReuseSourceFolderStructure was specified, verify same directory structure exist on destination."
+								$copyDatabaseStatus
 								continue
 							}
 							else {
 								Write-Message -Level Warning -Message "Failed to restore $dbName to $destination. Aborting routine for this database."
+
+								$copyDatabaseStatus.Status = "Failed"
+								$copyDatabaseStatus.Notes = "Failed to restore database."
+								$copyDatabaseStatus
 								continue
 							}
 						}
@@ -945,6 +1005,8 @@ function Copy-DbaDatabase {
 				}
 
 				if ($DetachAttach) {
+					$copyDatabaseStatus.Type = "Database (DetachAttach)"
+
 					$sourceFileStructure = New-Object System.Collections.Specialized.StringCollection
 					foreach ($file in $fileStructure.Databases[$dbName].Source.Values) {
 						$null = $sourceFileStructure.Add($file.Physical)
@@ -983,14 +1045,24 @@ function Copy-DbaDatabase {
 							}
 							else {
 								Write-Message -Level Warning -Message "Could not reattach $dbName to $source."
+								$copyDatabaseStatus.Status = "Failed"
+								$copyDatabaseStatus.Notes = "Could not reattach database to $source"
+								$copyDatabaseStatus
 							}
 						}
 
 						if ($migrationResult -eq $true) {
 							Write-Message -Level Verbose -Message "Successfully attached $dbName to $destination"
+							$copyDatabaseStatus.Status = "Successful"
+							$copyDatabaseStatus
 						}
 						else {
 							Write-Message -Level Warning -Message "Failed to attach $dbName to $destination. Aborting routine for this database."
+
+							$copyDatabaseStatus.Status = "Failed"
+							$copyDatabaseStatus.Notes = "Failed to attach database to destination"
+							$copyDatabaseStatus
+
 							continue
 						}
 					}
@@ -1007,6 +1079,8 @@ function Copy-DbaDatabase {
 								Write-Message -Level Verbose -Message "Successfully updated DatabaseOwnershipChaining for $sourceDbOwnerChaining on $dbName on $destination"
 							}
 							catch {
+								$copyDatabaseStatus.Status = "Successful - failed to apply DatabaseOwnershipChaining"
+								$copyDatabaseStatus
 								Stop-Function -Message "Failed to update DatabaseOwnershipChaining for $sourceDbOwnerChaining on $dbName on $destination" -Target $destination -ErrorRecord $_ -Continue
 							}
 						}
@@ -1020,6 +1094,8 @@ function Copy-DbaDatabase {
 								Write-Message -Level Verbose -Message "Successfully updated Trustworthy to $sourceDbTrustworthy for $dbName on $destination"
 							}
 							catch {
+								$copyDatabaseStatus.Status = "Successful - failed to apply Trusthworthy"
+								$copyDatabaseStatus
 								Stop-Function -Message "Failed to update Trustworthy to $sourceDbTrustworthy for $dbName on $destination" -Target $destination -ErrorRecord $_ -Continue
 							}
 						}
@@ -1033,6 +1109,8 @@ function Copy-DbaDatabase {
 								Write-Message -Level Verbose -Message "Successfully updated BrokerEnabled to $sourceDbBrokerEnabled for $dbName on $destination"
 							}
 							catch {
+								$copyDatabaseStatus.Status = "Successful - failed to apply BrokerEnabled"
+								$copyDatabaseStatus
 								Stop-Function -Message "Failed to update BrokerEnabled to $sourceDbBrokerEnabled for $dbName on $destination" -Target $destination -ErrorRecord $_ -Continue
 							}
 						}
@@ -1046,6 +1124,8 @@ function Copy-DbaDatabase {
 							Write-Message -Level Verbose -Message "Successfully updated readonly status on $dbName"
 						}
 						else {
+							$copyDatabaseStatus.Status = "Successful - failed to apply ReadOnly"
+							$copyDatabaseStatus
 							Stop-Function -Message "Failed to update ReadOnly status on $dbName" -Target $destination -ErrorRecord $_ -Continue
 						}
 					}
