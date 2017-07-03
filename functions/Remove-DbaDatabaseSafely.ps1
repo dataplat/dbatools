@@ -337,7 +337,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				[Parameter(Mandatory = $true)]
 				[object]$filestructure,
 				[switch]$norecovery,
-				[System.Management.Automation.PSCredential]$sqlCredential,
+				[PSCredential][System.Management.Automation.CredentialAttribute()]$sqlCredential,
 				[switch]$TSql = $false
 			)
 

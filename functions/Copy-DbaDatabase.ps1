@@ -178,9 +178,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[parameter(Position = 17, ParameterSetName = "DbBackup")]
 		[switch]$NoBackupCleanup,
 		[parameter(Position = 18)]
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,
 		[parameter(Position = 19)]
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential,
 		[parameter(Position = 20)]
 		[switch]$Force,
 		[parameter(ValueFromPipeline = $True)]

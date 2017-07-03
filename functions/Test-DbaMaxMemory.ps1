@@ -51,7 +51,7 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
 	)
 	
 	PROCESS

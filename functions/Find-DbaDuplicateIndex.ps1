@@ -112,7 +112,7 @@ Will find exact duplicate or overlapping indexes on all user databases
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
         [Alias("Databases")]
 		[object[]]$Database,
 		[switch]$IncludeOverlapping,

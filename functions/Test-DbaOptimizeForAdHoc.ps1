@@ -43,7 +43,7 @@ Get Optimize for AdHoc Workloads setting for servers sql2008 and sqlserver2012 a
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
 	)
 	
 	BEGIN

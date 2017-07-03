@@ -74,7 +74,7 @@ In the above example, a list of servers is generated using database instance nam
         [DbaInstanceParameter]$SqlInstance,
         [string]$Database = "DatabaseLogins",
         [string]$Table = "DbLogins",
-        [System.Management.Automation.PSCredential]$SqlCredential,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
         # Central Management Server
 
         [string]$SqlCms,

@@ -67,7 +67,7 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential", "Cred")]
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[switch]$Kerberos,
 		[switch]$Ntlm,
 		[switch]$Detailed

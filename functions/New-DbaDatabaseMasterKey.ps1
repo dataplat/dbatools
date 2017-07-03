@@ -51,7 +51,7 @@ Suppresses all prompts to install but prompts to securely enter your password an
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[object[]]$Database = "master",
 		[parameter(Mandatory)]
 		[Security.SecureString]$Password = (Read-Host "Password" -AsSecureString),

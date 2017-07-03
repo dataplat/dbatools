@@ -56,7 +56,7 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 	param (
 		[Alias("ServerInstance", "SqlServer", "ComputerName")]
 		[DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
-		[System.Management.Automation.PSCredential]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[parameter(Mandatory, ParameterSetName = "Certificate", ValueFromPipeline)]
 		[System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
 		[parameter(Mandatory, ParameterSetName = "Thumbprint")]

@@ -16,7 +16,7 @@ Internal function. Returns dictionary object that contains file structures for S
 		[object]$filelist,
 		[Parameter(Mandatory = $false, Position = 3)]
 		[bool]$ReuseSourceFolderStructure,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
 	)
 	
 	$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
