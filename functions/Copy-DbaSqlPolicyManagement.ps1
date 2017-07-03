@@ -275,10 +275,9 @@ function Copy-DbaSqlPolicyManagement {
 					$destStore.Conditions.Refresh()
 					$destStore.Policies.Refresh()
 					$sql = $policy.ScriptCreateWithDependencies().GetScript() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Message -Level Debug -Message $sql
 					Write-Message -Level Verbose -Message "Copying policy $policyName"
-					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $destServer.Query($sql)
 
 					$copyPolicyStatus.Status = "Successful"
 					$copyPolicyStatus
