@@ -1,11 +1,5 @@
 Function Update-DbaTools
 {
-[CmdletBinding(SupportsShouldProcess=$true,ConfirmImpact="Low")]
-param(
-	[parameter(Mandatory=$false)]
-	[Alias("dev","devbranch")]
-	[switch]$Development
-)
 <#
 .SYNOPSIS
 Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.
@@ -47,6 +41,12 @@ Update-DbaTools -dev
 Updates dbatools to the current development branch. Deletes current copy and replaces it with latest from github
 
 #>	
+[CmdletBinding(SupportsShouldProcess=$true,ConfirmImpact="Low")]
+param(
+	[parameter(Mandatory=$false)]
+	[Alias("dev","devbranch")]
+	[switch]$Development
+)
 	$MyModuleBase = (Get-Module -name dbatools).ModuleBase;
 	$InstallScript = join-path -path $MyModuleBase -ChildPath "install.ps1";
 	if($Development) {
