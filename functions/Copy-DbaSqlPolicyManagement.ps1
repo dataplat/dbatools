@@ -161,16 +161,15 @@ function Copy-DbaSqlPolicyManagement {
 		Write-Message -Level Verbose -Message "Migrating conditions"
 		foreach ($condition in $storeConditions) {
 			$conditionName = $condition.Name
+
 			if ($destStore.Conditions[$conditionName] -ne $null) {
 				if ($force -eq $false) {
-					Write-Message -Level Warning -Message "condition '$conditionName' was skipped because it already exists on $destination"
-					Write-Message -Level Warning -Message "Use -Force to drop and recreate"
+					Write-Message -Level Warning -Message "condition '$conditionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 					continue
 				}
 				else {
 					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $conditionName")) {
-						Write-Message -Level Verbose -Message "Condition '$conditionName' exists on $destination"
-						Write-Message -Level Verbose -Message "Force specified. Dropping $conditionName."
+						Write-Message -Level Verbose -Message "Condition '$conditionName' exists on $destination. Force specified. Dropping $conditionName."
 
 						try {
 							$dependentPolicies = $destStore.Conditions[$conditionName].EnumDependentPolicies()
@@ -211,14 +210,12 @@ function Copy-DbaSqlPolicyManagement {
 			$policyName = $policy.Name
 			if ($destStore.Policies[$policyName] -ne $null) {
 				if ($force -eq $false) {
-					Write-Message -Level Warning -Message "Policy '$policyName' was skipped because it already exists on $destination"
-					Write-Message -Level Warning -Message "Use -Force to drop and recreate"
+					Write-Message -Level Warning -Message "Policy '$policyName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 					continue
 				}
 				else {
 					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $policyName")) {
-						Write-Message -Level Verbose -Message "Policy '$policyName' exists on $destination"
-						Write-Message -Level Verbose -Message "Force specified. Dropping $policyName."
+						Write-Message -Level Verbose -Message "Policy '$policyName' exists on $destination. Force specified. Dropping $policyName."
 
 						try {
 							$destStore.Policies[$policyName].Drop()
