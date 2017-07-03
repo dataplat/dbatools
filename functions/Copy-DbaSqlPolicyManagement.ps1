@@ -106,7 +106,8 @@ function Copy-DbaSqlPolicyManagement {
 
 	begin {
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Dmf") -eq $null) {
-			throw "SMO version is too old. To migrate Policies, you must have SQL Server Management Studio 2008 R2 or higher installed."
+			Stop-Function -Message "SMO version is too old. To migrate Policies, you must have SQL Server Management Studio 2008 R2 or higher installed."
+			return
 		}
 
 		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
@@ -116,11 +117,13 @@ function Copy-DbaSqlPolicyManagement {
 		$destination = $destServer.DomainInstanceName
 
 		if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
-			throw "Policy Management is only supported in SQL Server 2008 and above. Quitting."
+			Stop-Function -Message "Policy Management is only supported in SQL Server 2008 and above. Quitting."
+			return
 		}
 
 	}
 	process {
+		if (Test-FunctionInterrupt) { return }
 
 		$sourceSqlConn = $sourceServer.ConnectionContext.SqlConnectionObject
 		$sourceSqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceSqlConn
@@ -178,8 +181,7 @@ function Copy-DbaSqlPolicyManagement {
 							$destStore.Conditions[$conditionName].Drop()
 						}
 						catch {
-							Write-Exception $_
-							continue
+							Stop-Function -Message "Issue dropping condition on $destination" -Target $conditionName -ErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -195,7 +197,7 @@ function Copy-DbaSqlPolicyManagement {
 					$destStore.Conditions.Refresh()
 				}
 				catch {
-					Write-Exception $_
+					Stop-Function -Message "Issue creating condition on $destination" -Target $conditionName -ErrorRecord $_
 				}
 			}
 		}
@@ -223,8 +225,7 @@ function Copy-DbaSqlPolicyManagement {
 							$destStore.Policies.refresh()
 						}
 						catch {
-							Write-Exception $_
-							continue
+							Stop-Function -Message "Issue dropping policy on $destination" -Target $policyName -ErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -242,7 +243,7 @@ function Copy-DbaSqlPolicyManagement {
 				}
 				catch {
 					# This is usually because of a duplicate dependent from above. Just skip for now.
-					# Write-Exception $_
+					Stop-Function -Message "Issue creating policy on $destination" -Target $policyName -ErrorRecord $_ -Continue
 				}
 			}
 		}
