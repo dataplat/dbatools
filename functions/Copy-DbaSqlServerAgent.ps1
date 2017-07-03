@@ -94,56 +94,51 @@ function Copy-DbaSqlServerAgent {
 		[switch]$Silent
 	)
 
-	BEGIN {
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+	begin {
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
-		Invoke-SmoCheck -SqlInstance $sourceserver
-		Invoke-SmoCheck -SqlInstance $destserver
+		Invoke-SmoCheck -SqlInstance $sourceServer
+		Invoke-SmoCheck -SqlInstance $destServer
 
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
+		$source = $sourceServer.DomainInstanceName
+		$destination = $destServer.DomainInstanceName
 
-		$sourceagent = $sourceserver.jobserver
+		$sourceAgent = $sourceServer.JobServer
 	}
-
-	PROCESS {
+	process {
 
 		# All of these support whatif inside of them
-		Copy-DbaAgentCategory -Source $sourceserver -Destination $destserver -Force:$force
-		Copy-DbaAgentOperator -Source $sourceserver -Destination $destserver -Force:$force
-		Copy-DbaAgentAlert -Source $sourceserver -Destination $destserver -Force:$force -IncludeDefaults
-		Copy-DbaAgentProxyAccount -Source $sourceserver -Destination $destserver -Force:$force
-		Copy-DbaAgentSharedSchedule -Source $sourceserver -Destination $destserver -Force:$force
-		Copy-DbaAgentJob -Source $sourceserver -Destination $destserver -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
+		Copy-DbaAgentCategory -Source $sourceServer -Destination $destServer -Force:$force
+		Copy-DbaAgentOperator -Source $sourceServer -Destination $destServer -Force:$force
+		Copy-DbaAgentAlert -Source $sourceServer -Destination $destServer -Force:$force -IncludeDefaults
+		Copy-DbaAgentProxyAccount -Source $sourceServer -Destination $destServer -Force:$force
+		Copy-DbaAgentSharedSchedule -Source $sourceServer -Destination $destServer -Force:$force
+		Copy-DbaAgentJob -Source $sourceServer -Destination $destServer -Force:$force -DisableOnDestination:$DisableJobsOnDestination -DisableOnSource:$DisableJobsOnSource
 
 		# To do
 		<#
-			Copy-DbaAgentMasterServer -Source $sourceserver -Destination $destserver -Force:$force
-			Copy-DbaAgentTargetServer -Source $sourceserver -Destination $destserver -Force:$force
-			Copy-DbaAgentTargetServerGroup -Source $sourceserver -Destination $destserver -Force:$force
+			Copy-DbaAgentMasterServer -Source $sourceServer -Destination $destServer -Force:$force
+			Copy-DbaAgentTargetServer -Source $sourceServer -Destination $destServer -Force:$force
+			Copy-DbaAgentTargetServerGroup -Source $sourceServer -Destination $destServer -Force:$force
 		#>
 
-		# Here are the properties, which must be migrated seperately
-		If ($Pscmdlet.ShouldProcess($destination, "Copying Agent Properties")) {
+		<# Here are the properties, which must be migrated seperately #>
+		if ($Pscmdlet.ShouldProcess($destination, "Copying Agent Properties")) {
 			try {
 				Write-Output "Copying SQL Agent Properties"
-				$sql = $sourceagent.Script() | Out-String
+				$sql = $sourceAgent.Script() | Out-String
 				$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 				$sql = $sql -replace [Regex]::Escape("@errorlog_file="), [Regex]::Escape("--@errorlog_file=")
 				Write-Verbose $sql
-				$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+				$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
 			}
 			catch {
 				Write-Exception $_
 			}
 		}
 	}
-
-	END {
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Job server migration finished" }
+	end {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlServerAgent
 	}
 }
