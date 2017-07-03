@@ -177,7 +177,12 @@
 		$newMessage = "[$FunctionName][$($timestamp.ToString("HH:mm:ss"))] $baseMessage"
 		$newColoredMessage = "[$FunctionName][$($timestamp.ToString("HH:mm:ss"))] $baseMessage"
     }
-    if ($ErrorRecord -and ($Message -notlike "*$($ErrorRecord[0].Exception.Message)*")) { $newMessage += " | $($ErrorRecord[0].Exception.Message)" }
+	if ($ErrorRecord -and ($Message -notlike "*$($ErrorRecord[0].Exception.Message)*"))
+	{
+		$baseMessage += " | $($ErrorRecord[0].Exception.Message)"
+		$newMessage += " | $($ErrorRecord[0].Exception.Message)"
+		$newColoredMessage += " | $($ErrorRecord[0].Exception.Message)"
+	}
     
     #region Handle Errors
     if ($ErrorRecord -and ((Get-PSCallStack)[1].Command -ne "Stop-Function"))
@@ -192,7 +197,7 @@
         }
 	}
 	if ($ErrorRecord) {
-		[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteErrorEntry($ErrorRecord, $FunctionName, $timestamp, $Message, $Host.InstanceId)
+		[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteErrorEntry($ErrorRecord, $FunctionName, $timestamp, $baseMessage, $Host.InstanceId)
 	}
 	#endregion Handle Errors
     
