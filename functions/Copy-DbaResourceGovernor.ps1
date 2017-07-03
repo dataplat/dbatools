@@ -171,7 +171,7 @@ function Copy-DbaResourceGovernor {
 					Write-Message -Level Warning -Message "Pool '$poolName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 
 					$copyResourceGovPool.Status = "Skipped"
-					$copyResourceGovPool.Notes = "Already exist on destination"
+					$copyResourceGovPool.Notes = "Already exists on destination"
 					$copyResourceGovPool
 					continue
 				}

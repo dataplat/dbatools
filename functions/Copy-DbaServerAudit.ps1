@@ -163,7 +163,7 @@ function Copy-DbaServerAudit {
 					Write-Message -Level Warning -Message "$($currentAudit.Filepath) does not exist on $destination. Skipping $auditName. Specify -Force to create the directory"
 
 					$copyAuditStatus.Status = "Skipped"
-					$copyAuditStatus.Notes = "Already exist on destination"
+					$copyAuditStatus.Notes = "Already exists on destination"
 					$copyAuditStatus
 					continue
 				}

@@ -199,7 +199,7 @@ function Copy-DbaSqlDataCollector {
 					Write-Message -Level Warning -Message "Collection Set '$collectionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 
 					$copyCollectionSetStatus.Status = "Skipped"
-					$copyCollectionSetStatus.Notes = "Collection set already exist on destination"
+					$copyCollectionSetStatus.Notes = "Collection set Already exists on destination"
 					$copyCollectionSetStatus
 					continue
 				}

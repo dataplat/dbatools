@@ -214,7 +214,7 @@ function Copy-DbaLogin {
 					}
 
 					$copyLoginStatus.Status = "Skipped"
-					$copyLoginStatus.Notes = "Already exist on destination."
+					$copyLoginStatus.Notes = "Already exists on destination."
 					$copyLoginStatus
 					continue
 				}
