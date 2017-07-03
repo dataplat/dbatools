@@ -150,19 +150,11 @@ function Copy-DbaSpConfigure {
 					$copySpConfigStatus
 				}
 				catch {
-					$msg = $_.Exception.Message
-					if ($msg -match "Value to set is same as the existing value") {
-						$copySpConfigStatus.Status = "Skipped"
-						$copySpConfigStatus.Notes = "Value on source and destination match"
-						$copySpConfigStatus
-					}
-					else {
-						$copySpConfigStatus.Status = "Failed"
-						$copySpConfigStatus.Notes = $_.Exception
-						$copySpConfigStatus
+					$copySpConfigStatus.Status = "Failed"
+					$copySpConfigStatus.Notes = $_.Exception
+					$copySpConfigStatus
 
-						Stop-Function -Message "Could not set $($destProp.ConfigName) to $sConfiguredValue." -Target $sConfigName -ErrorRecord $_
-					}
+					Stop-Function -Message "Could not set $($destProp.ConfigName) to $sConfiguredValue." -Target $sConfigName -ErrorRecord $_
 				}
 			}
 		}
