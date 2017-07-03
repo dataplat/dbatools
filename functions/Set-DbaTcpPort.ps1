@@ -103,10 +103,9 @@ Function Set-DbaTcpPort {
 			
 			if ($server.IsClustered) {
 				Write-Message -Level Verbose -Message "Instance is clustered fetching nodes..."
-				$clusterquery = "select nodename from sys.dm_os_cluster_nodes where not nodename = '$($server.ComputerNamePhysicalNetBIOS)'"
-				$clusterresult = $server.ConnectionContext.ExecuteWithResults("$clusterquery")
-				foreach ($row in $clusterresult.tables[0].rows) { $ClusterNodes += $row.Item(0) + " " }
-				Write-Warning "$instance is a clustered instance, portchanges will be reflected on other nodes ($clusternodes) after a failover..."
+				$clusternodes = (Get-DbaClusterActiveNode -SqlInstance $server -Detailed).NodeName -join ", "
+				
+				Write-Message -Level Output -Message "$instance is a clustered instance, portchanges will be reflected on all nodes ($clusternodes) after a failover"
 			}
 			
 			$scriptblock = {
@@ -127,7 +126,7 @@ Function Set-DbaTcpPort {
 					$tcpport.value = $port
 					$tcp.Alter()
 					[pscustomobject]@{
-						ComputerName = $instance
+						ComputerName = $env:COMPUTERNAME
 						InstanceName = $wmiinstancename
 						SqlInstance = $sqlinstanceName
 						OldPortNumber = $oldport
@@ -137,7 +136,7 @@ Function Set-DbaTcpPort {
 				}
 				catch {
 					[pscustomobject]@{
-						ComputerName = $instance
+						ComputerName = $env:COMPUTERNAME
 						InstanceName = $wmiinstancename
 						SqlInstance = $sqlinstanceName
 						OldPortNumber = $oldport
@@ -152,53 +151,11 @@ Function Set-DbaTcpPort {
 				$resolved = Resolve-DbaNetworkName -ComputerName $computerName
 				
 				Write-Message -Level Verbose -Message "Writing TCPPort $port for $instance to $($resolved.FQDN)..."
-				$setport = Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock $scriptblock -ArgumentList $Server.NetName, $wmiinstancename, $port, $IpAddress, $server.DomainInstanceName -Credential $Credential
+				Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock $scriptblock -ArgumentList $Server.NetName, $wmiinstancename, $port, $IpAddress, $server.DomainInstanceName -Credential $Credential
 				
-				if ($setport.length -eq 0) {
-					if ($IpAddress -eq '0.0.0.0') {
-						Write-Message -Level Verbose -Message "SqlInstance: $instance IpAddress: ALLIP's Port: $port"
-					}
-					else {
-						Write-Message -Level Verbose -Message "SqlInstance: $instance IpAddress: $IpAddress Port: $port"
-					}
-				}
-				else {
-					if ($IpAddress -eq '0.0.0.0') {
-						Write-Message -Level Verbose -Message "SqlInstance: $instance IpAddress: ALLIP's Port: $port"
-						Write-Message -Level Verbose -Message "FAILED!"
-					}
-					else {
-						Write-Message -Level Verbose -Message "SqlInstance: $instance IpAddress: $IpAddress Port: $port"
-						Write-Message -Level Verbose -Message "FAILED!"
-					}
-				}
 			}
 			catch {
-				try {
-					Write-Message -Level Verbose -Message "Failed to write TCPPort $port for $instance to $($resolved.FQDN) trying computername $($server.ComputerNamePhysicalNetBIOS)...."
-					$setport = Invoke-ManagedComputerCommand -ComputerName $server.ComputerNamePhysicalNetBIOS -ScriptBlock $scriptblock -ArgumentList $Server.NetName, $wmiinstancename, $port, $IpAddress, $server.DomainInstanceName -Credential $Credential
-					if ($setport.length -eq 0) {
-						if ($IpAddress -eq '0.0.0.0') {
-							Write-Message -Level Verbose -Message "SqlInstance: $instance IpAddress: ALLIP's Port: $port"
-						}
-						else {
-							Write-Message -Level Verbose -Message "SqlInstance: $instance IpAddress: $IpAddress Port: $port"
-						}
-					}
-					else {
-						if ($IpAddress -eq '0.0.0.0') {
-							Write-Message -Level Verbose -Message "SqlInstance: $instance IpAddress: ALLIP's Port: $port"
-							Write-Message -Level Verbose -Message " FAILED!"
-						}
-						else {
-							Write-Message -Level Verbose -Message "SqlInstance: $instance IpAddress: $IpAddress Port: $port"
-							Write-Message -Level Verbose -Message " FAILED!"
-						}
-					}
-				}
-				catch {
-					Stop-Function -Message "Could not write new TCPPort for $instance" -Continue -Target $instance -ErrorRecord $_
-				}
+				Invoke-ManagedComputerCommand -ComputerName $server.ComputerNamePhysicalNetBIOS -ScriptBlock $scriptblock -ArgumentList $Server.NetName, $wmiinstancename, $port, $IpAddress, $server.DomainInstanceName -Credential $Credential
 			}
 		}
 	}
