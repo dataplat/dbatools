@@ -59,7 +59,7 @@ Returns all Custom Error Message(s) for the local and sql2016 SQL Server instanc
 			}
 			catch
 			{
-				Stop-Function -Message "Failure" -Target $instance -ErrorRecord $_ -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			

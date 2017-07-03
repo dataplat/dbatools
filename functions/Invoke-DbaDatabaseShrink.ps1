@@ -153,7 +153,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 
 			}
 			catch {
-				Stop-Function -Message "Can't connect to $instance. Moving on." -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			# changing statement timeout to $StatementTimeout

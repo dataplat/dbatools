@@ -86,7 +86,7 @@ function Get-DbaSchemaChangeHistory {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Can't connect to $instance or access denied. Skipping." -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			if ($Server.Version.Major -le 8) {
 				Stop-Function -Message "This command doesn't support SQL Server 2000, sorry about that" 

@@ -60,7 +60,7 @@ Returns all SQL Agent Job Categories for the local and sql2016 SQL Server instan
 			}
 			catch
 			{
-				Stop-Function -Message "Failure" -Target $instance -ErrorRecord $_ -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			foreach ($jobCategory in $server.JobServer.JobCategories)

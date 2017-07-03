@@ -105,7 +105,7 @@ Returns an object with SQL Instance install date as a string for every server li
 			}
 			catch 
 			{
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance -InnerErrorRecord $_
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			if ( $server.VersionMajor -ge 9 )

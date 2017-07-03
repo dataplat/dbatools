@@ -89,7 +89,7 @@ Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql201
                 }
                 catch
                 {
-                    Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
             }
             

@@ -159,7 +159,7 @@ function Install-DbaWhoIsActive {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to $instance" -Continue -Target $instance -ErrorRecord $_
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			if (-not $Database) {

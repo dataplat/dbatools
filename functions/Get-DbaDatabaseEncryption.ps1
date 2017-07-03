@@ -64,7 +64,7 @@ List all encrption found in MyDB
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			#If IncludeSystemDBs is true, include systemdbs

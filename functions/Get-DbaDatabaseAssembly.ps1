@@ -49,7 +49,7 @@ Returns all Database Assembly for the local and sql2016 SQL Server instances
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Failure" -Target $instance -ErrorRecord $_ -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			

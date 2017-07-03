@@ -139,7 +139,7 @@ Returns a custom object with permissions for the master database
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			if ($server.versionMajor -lt 9) {

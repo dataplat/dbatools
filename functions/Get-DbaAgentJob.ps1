@@ -81,7 +81,7 @@ FUNCTION Get-DbaAgentJob {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Failure" -Target $instance -ErrorRecord $_ -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			$jobs = $server.JobServer.Jobs

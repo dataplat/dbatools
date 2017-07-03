@@ -185,7 +185,7 @@ limiting results to queries with more than 200 total executions and an execution
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Failure" -Target $instance -ErrorRecord $_ -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			if ($server.versionMajor -lt 10) {

@@ -148,7 +148,7 @@ function Export-DbaUser {
 			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
 		}
 		catch {
-			Stop-Function -Message "Failure" -Target $instance -ErrorRecord $_ -Continue
+			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 		}
 
 		if (!$database) {

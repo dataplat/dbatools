@@ -334,7 +334,7 @@ function Restore-DbaDatabase {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
         catch {
-            Stop-Function -Message "Failed to connect to $SqlInstance" -Silent $Silent -ErrorRecord $_
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
         #endregion Validation

@@ -258,7 +258,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
-                Stop-Function -Message "Could not connect to $instance. Message: $($_.Exception.Message)" -Target $instance -Continue -InnerErrorRecord $_
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 			
             # Check if the job already exists
