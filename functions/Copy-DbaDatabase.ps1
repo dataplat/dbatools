@@ -731,17 +731,6 @@ function Copy-DbaDatabase {
 			$dbName = $smoDb.Name
 			$dbOwner = $smoDb.Owner
 
-			$copyDatabaseStatus = [pscustomobject]@{
-				SourceServer      = $sourceServer.Name
-				SourceDatabase       = $dbName
-				DestinationServer = $destServer.Name
-				DestinationDatabase  = $dbname
-				Type              = "Database"
-				Status            = $null
-				Notes             = $null
-				DateTime          = [DbaDateTime](Get-Date)
-			}
-
 			if ($smoDb.Id -le 4) { continue }
 			if ($Database -and $Database -notcontains $dbName) { continue }
 			if ($IncludeSupportDBs -eq $false -and $SupportDBs -contains $dbName) { continue }
@@ -788,7 +777,16 @@ function Copy-DbaDatabase {
 				$dbName = $smoDb.Name
 				$dbOwner = $smoDb.Owner
 
-				$copyDatabaseStatus.SourceDatabase = $dbName
+			$copyDatabaseStatus = [pscustomobject]@{
+				SourceServer      = $sourceServer.Name
+				SourceDatabase       = $dbName
+				DestinationServer = $destServer.Name
+				DestinationDatabase  = $dbname
+				Type              = "Database"
+				Status            = $null
+				Notes             = $null
+				DateTime          = [DbaDateTime](Get-Date)
+			}
 
 				Write-Message -Level Verbose -Message "`n######### Database: $dbName #########"
 				$dbStart = Get-Date
