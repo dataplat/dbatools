@@ -82,7 +82,7 @@ limiting results to queries with more than 200 total executions and an execution
 		[int]$MinExecMs = 500,
 		[parameter(Position = 4, Mandatory = $false)]
 		[switch]$NoSystemDb,
-		[swtich]$Silent
+		[switch]$Silent
 	)
 
 	begin {

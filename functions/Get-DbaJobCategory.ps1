@@ -46,7 +46,7 @@ Returns all SQL Agent Job Categories for the local and sql2016 SQL Server instan
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[swtich]$Silent
+		[switch]$Silent
 	)
 	
 	PROCESS

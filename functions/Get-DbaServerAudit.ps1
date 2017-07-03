@@ -45,7 +45,7 @@ Returns all Security Audits for the local and sql2016 SQL Server instances
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[DbaInstanceParameter]$SqlInstance,
 		[System.Management.Automation.PSCredential]$Credential,
-		[swtich]$Silent
+		[switch]$Silent
 	)
 	
 	process
