@@ -46,7 +46,7 @@ Function Set-DbaTcpPort {
         Sets the port number 1337 for ALLIP's on SqlInstance SQLDB2014A and SQLDB2016B
     
     .NOTES
-        Author: Hansson7707@gmail.com
+        Author: Hansson7707@gmail.com, @H0s0n77
         
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -142,7 +142,8 @@ Function Set-DbaTcpPort {
                 
                 Write-Message -Level Verbose -Message "Writing TCPPort $port for $instance to $($resolved.FQDN)..."
                 $setport = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock $scriptblock -ArgumentList $Server.NetName, $wmiinstancename, $port, $ipaddress
-                if ($setport.length -eq 0) {
+				
+				if ($setport.length -eq 0) {
                     if ($ipaddress -eq '0.0.0.0') {
                         Write-Message -Level Verbose -Message "SqlInstance: $instance IPADDRESS: ALLIP's PORT: $port"
                     }
@@ -153,11 +154,11 @@ Function Set-DbaTcpPort {
                 else {
                     if ($ipaddress -eq '0.0.0.0') {
                         Write-Message -Level Verbose -Message "SqlInstance: $instance IPADDRESS: ALLIP's PORT: $port"
-                        Write-Message -Level Verbose -Message " FAILED!" -ForegroundColor Red
+                        Write-Message -Level Verbose -Message "FAILED!"
                     }
                     else {
                         Write-Message -Level Verbose -Message "SqlInstance: $instance IPADDRESS: $ipaddress PORT: $port"
-                        Write-Message -Level Verbose -Message " FAILED!" -ForegroundColor Red
+                        Write-Message -Level Verbose -Message "FAILED!"
                     }
                 }
             }
@@ -176,11 +177,11 @@ Function Set-DbaTcpPort {
                     else {
                         if ($ipaddress -eq '0.0.0.0') {
                             Write-Message -Level Verbose -Message "SqlInstance: $instance IPADDRESS: ALLIP's PORT: $port"
-                            Write-Message -Level Verbose -Message " FAILED!" -ForegroundColor Red
+                            Write-Message -Level Verbose -Message " FAILED!"
                         }
                         else {
                             Write-Message -Level Verbose -Message "SqlInstance: $instance IPADDRESS: $ipaddress PORT: $port"
-                            Write-Message -Level Verbose -Message " FAILED!" -ForegroundColor Red
+                            Write-Message -Level Verbose -Message " FAILED!"
                         }
                     }
                 }
