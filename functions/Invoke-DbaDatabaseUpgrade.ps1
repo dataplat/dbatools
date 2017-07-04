@@ -76,6 +76,11 @@
 		Invoke-DbaDatabaseUpgrade -SqlInstance PRD-SQL-INT01 -Database Test -NoCompatabilityUpgrade -NoRefreshView
 		
 		Runs the upgrade command skipping the compatability update and running sp_refreshview on all views in the database
+	
+	.EXAMPLE
+		Get-DbaDatabase -SqlInstance sql2016 | Out-GridView -Passthru | Invoke-DbaDatabaseUpgrade
+		
+		Get only specific databases using GridView and pass those to Invoke-DbaDatabaseUpgrade
 #>
 	[CmdletBinding(SupportsShouldProcess)]
 	Param (
