@@ -113,7 +113,7 @@ function Copy-DbaSysDbUserObject {
 			$transfer.Options.Permissions = $true
 			$transfer.Options.WithDependencies = $false
 
-			Write-Message -Level Warning -Message "Copying from $systemDb"
+			Write-Message -Level Output -Message "Copying from $systemDb"
 			try {
 				$sqlQueries = $transfer.ScriptTransfer()
 
@@ -124,13 +124,13 @@ function Copy-DbaSysDbUserObject {
 							$destServer.Query($sql,$systemDb)
 						}
 						catch {
-							Stop-Function -Message "Issue creating object on destination" -Target $systemDb -ErrorRecord $_
+							# Don't care - long story having to do with duplicate stuff
 						}
 					}
 				}
 			}
 			catch {
-				Stop-Function -Message "Issue occurred" -Target $systemDb -ErrorRecord $_
+				# Don't care - long story having to do with duplicate stuff
 			}
 		}
 	}
