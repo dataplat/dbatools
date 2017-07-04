@@ -318,7 +318,8 @@
 		'Sync-DbaLoginPermission',
 		'Find-DbaTrigger',
 		'Find-DbaView',
-		'Invoke-DbaDatabaseUpgrade'
+		'Invoke-DbaDatabaseUpgrade',
+		'Get-DbaDatabaseUser'
 	)
 	
 	# Cmdlets to export from this module
