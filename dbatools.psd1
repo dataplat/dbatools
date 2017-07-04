@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.957'
+	ModuleVersion = '0.8.960'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -125,7 +125,7 @@
 		'Test-DbaPowerPlan',
 		'Set-DbaPowerPlan',
 		'Test-DbaDiskAlignment',
-		'Get-DbaDatabaseFreespace',
+		'Get-DbaDatabaseSpace',
 		'Get-DbaClusterActiveNode',
 		'Test-DbaDatabaseOwner',
 		'Set-DbaDatabaseOwner',
@@ -266,25 +266,26 @@
 		'New-DbaAgentSchedule',
 		'Set-DbaAgentSchedule',
 		'Remove-DbaAgentSchedule',
-		'Export-DbaCertificate',
-		'Get-DbaCertificate',
+		'Backup-DbaDatabaseCertificate',
+		'Get-DbaDatabaseCertificate',
 		'Get-DbaCmConnection',
 		'Get-DbaCmObject',
 		'Get-DbaEndpoint',
-		'Get-DbaMasterKey',
+		'Get-DbaDatabaseMasterKey',
 		'Get-DbaSchemaChangeHistory',
 		'Get-DbaServerAudit',
 		'Get-DbaServerAuditSpecification',
 		'Get-DbaSqlProductKey',
 		'Get-DbatoolsLog',
-		'Import-DbaCertificate',
-		'New-DbaCertificate',
+		'Restore-DbaDatabaseCertificate',
+		'New-DbaDatabaseCertificate',
 		'New-DbaCmConnection',
-		'New-DbaMasterKey',
+		'New-DbaDatabaseMasterKey',
+		'New-DbaServiceMasterKey',
 		'New-DbatoolsSupportPackage',
-		'Remove-DbaCertificate',
+		'Remove-DbaDatabaseCertificate',
 		'Remove-DbaCmConnection',
-		'Remove-DbaMasterKey',
+		'Remove-DbaDatabaseMasterKey',
 		'Set-DbaCmConnection',
 		'Set-DbaTcpPort',
 		'Test-DbaCmConnection',
@@ -304,8 +305,21 @@
 		'Enable-DbaForceNetworkEncryption',
 		'Disable-DbaForceNetworkEncryption',
 		'Get-DbaForceNetworkEncryption',
+		'Remove-DbaComputerCertificate',
+		'Get-DbaServerInstallDate',
+		'Install-DbaFirstResponderKit',
+		'Backup-DbaDatabaseMasterKey',
+		'Get-DbaAgentJobHistory',
+		'Get-DbaSsisEnvironmentVariable',
 		'Get-DbaSqlManagementObject',
-		'Test-DbaSqlManagementObject'
+		'Test-DbaSqlManagementObject',
+		'Get-DbaMaintenanceSolutionLog',
+		'Invoke-DbaLogShippingRecovery',
+		'Sync-DbaLoginPermission',
+		'Find-DbaTrigger',
+		'Find-DbaView',
+		'Invoke-DbaDatabaseUpgrade',
+		'Get-DbaDatabaseUser'
 	)
 	
 	# Cmdlets to export from this module
