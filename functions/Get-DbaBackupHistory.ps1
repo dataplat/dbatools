@@ -46,8 +46,11 @@ function Get-DbaBackupHistory {
 	.PARAMETER LastLog
 		Returns last log backup set
 	
+	.PARAMETER DeviceType
+		Filters the backup set by this DeviceType. It takes well-known types ('Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device') as well as custom integers (bring your own types)
+	
 	.PARAMETER Raw
-		By default the command will group mediasets (striped backups across multiple files) into a single return object. If you'd prefer to have an object per backp file returned, use this switch
+		By default the command will group mediasets (striped backups across multiple files) into a single return object. If you'd prefer to have an object per backup file returned, use this switch
 	
 	.PARAMETER Silent
 		Replaces user friendly yellow warnings with bloody red exceptions of doom!
@@ -78,6 +81,16 @@ function Get-DbaBackupHistory {
 		Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last
 		
 		Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014
+	
+	.EXAMPLE
+		Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk
+		
+		Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, only for backups to disk
+	
+	.EXAMPLE
+		Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107
+		
+		Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, only for backups with device_type 148 and 107
 	
 	.EXAMPLE
 		Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull
@@ -153,6 +166,9 @@ function Get-DbaBackupHistory {
 		[switch]
 		$LastLog,
 		
+		[string[]]
+		$DeviceType,
+		
 		[switch]
 		$Raw,
 		
@@ -163,6 +179,25 @@ function Get-DbaBackupHistory {
 	begin {
 		Write-Message -Level System -Message "Active Parameterset: $($PSCmdlet.ParameterSetName)"
 		Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
+		
+		$DeviceTypeMapping = @{
+			'Disk' = 2
+			'Permanent Disk  Device' = 102
+			'Tape' = 5
+			'Permanent Tape Device' = 105
+			'Pipe' = 6
+			'Permanent Pipe Device' = 106
+			'Virtual Device' = 7
+		}
+		$DeviceTypeFilter = @()
+		foreach($DevType in $DeviceType) {
+			if ($DevType -in $DeviceTypeMapping.Keys) {
+				$DeviceTypeFilter += $DeviceTypeMapping[$DevType]
+			} else {
+				$DeviceTypeFilter += $DevType
+			}
+		}
+	
 	}
 	
 	process {
@@ -192,30 +227,34 @@ function Get-DbaBackupHistory {
 			if ($ExcludeDatabase) {
 				$databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
 			}
+			foreach($d in $DeviceTypeFilter) {
+				$DeviceTypeFilterRight = "IN ('" + ($DeviceTypeFilter -Join "','") + "')"
+			}
+			
 			if ($last) {
 				
 				foreach ($db in $databases.Name) {
 					
 					#Get the full and build upwards
 					$allbackups = @()
-					$allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastFull -raw:$Raw
-					$DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw
+					$allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastFull -raw:$Raw -DeviceType $DeviceType
+					$DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw -DeviceType $DeviceType
 					if ($DiffDb.LastLsn -gt $Fulldb.LastLsn -and  $DiffDb.DatabaseBackupLSN -eq $Fulldb.CheckPointLSN ) {
-						$Allbackups += $DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw
+						$Allbackups += $DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw -DeviceType $DeviceType
 
 						$TLogStartLSN = ($diffdb.FirstLsn -as [bigint])
 						$Allbackups += $DiffDB
 					}
 					else {
-						Write-Verbose "No Diff found"												
+						Write-Message -Level Verbose -Message "No Diff found"
 						try { 
-							[bigint]$TLogStartLSN = $fulldb.FirstLsn 
+							[bigint]$TLogStartLSN = $Fulldb.FirstLsn 
 						}
 						catch {
 							continue
 						}
 					}
-					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Databases $db -raw:$raw | Where-object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN }
+					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Databases $db -raw:$raw -DeviceType $DeviceType | Where-object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN }
 					$Allbackups | Sort-Object FirstLsn
 				 
 
@@ -242,8 +281,10 @@ function Get-DbaBackupHistory {
 					Write-Message -Level Verbose -Message "Processing $db" -Target $db
 					
 					$wherecopyonly = $null
-					if ($IgnoreCopyOnly) { $wherecopyonly = "and is_copy_only='0'" }
-					
+					if ($IgnoreCopyOnly) { $wherecopyonly = "AND is_copy_only='0'" }
+					if ($DeviceTypeFilter) {
+						$DevTypeFilterWhere = "AND mediafamily.device_type $DeviceTypeFilterRight"
+					}
 					$sql += "
 								SELECT
 									a.BackupSetRank,
@@ -316,8 +357,9 @@ function Get-DbaBackupHistory {
 								JOIN msdb..backupset AS backupset
 								  ON backupset.media_set_id = mediaset.media_set_id
 								WHERE backupset.database_name = '$db' $wherecopyonly
-								AND (type = '$first'
-								OR type = '$second')) AS a
+								AND (type = '$first' OR type = '$second')
+								$DevTypeFilterWhere
+								) AS a
 								WHERE a.BackupSetRank = 1
 								ORDER BY a.Type;
 								"
@@ -379,8 +421,7 @@ function Get-DbaBackupHistory {
 				$from = " FROM msdb..backupmediafamily mediafamily
 							 INNER JOIN msdb..backupmediaset mediaset ON mediafamily.media_set_id = mediaset.media_set_id
 							 INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
-				
-				if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $IgnoreCopyOnly) {
+				if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $IgnoreCopyOnly -or $DeviceTypeFilter) {
 					$where = " WHERE "
 				}
 				
@@ -392,32 +433,36 @@ function Get-DbaBackupHistory {
 				}
 				
 				if ($Last -or $LastFull -or $LastLog -or $LastDiff) {
-					$tempwhere = $wherearray -join " and "
-					$wherearray += "type = 'Full' and mediaset.media_set_id = (select top 1 mediaset.media_set_id $from $tempwhere order by backupset.backup_finish_date DESC)"
+					$tempwhere = $wherearray -join " AND "
+					$wherearray += "type = 'Full' AND mediaset.media_set_id = (select top 1 mediaset.media_set_id $from $tempwhere order by backupset.backup_finish_date DESC)"
 				}
 				
 				if ($Since -ne $null) {
-					$wherearray += "backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-dd HH:mm:ss"))'"
+					$wherearray += "backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
 				}
 				
 				if ($IgnoreCopyOnly) {
 					$wherearray += "is_copy_only='0'"
 				}
+				if ($DeviceTypeFilter) {
+					$wherearray += "mediafamily.device_type $DeviceTypeFilterRight"
+				}
 				
 				if ($where.length -gt 0) {
-					$wherearray = $wherearray -join " and "
+					$wherearray = $wherearray -join " AND "
 					$where = "$where $wherearray"
 				}
 				
 				$sql = "$select $from $where ORDER BY backupset.backup_finish_date DESC"
 			}
-			
-			Write-Message -Level Debug -Message $sql
+			if (-not($last)) {
+				Write-Message -Level Debug -Message $sql
+			}
 			Write-Message -Level SomewhatVerbose -Message "Executing sql query"
 			$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
 			
 			if ($raw) {
-				Write-Message -Level SomewhatVerbose -Message "Processing as Raw Ouput"
+				Write-Message -Level SomewhatVerbose -Message "Processing as Raw Output"
 				$results | Select-Object *, @{ Name = "FullName"; Expression = { $_.Path } }
 				Write-Message -Level SomewhatVerbose -Message "$($results.Count) result sets found"
 			}
