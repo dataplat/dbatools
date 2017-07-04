@@ -24,8 +24,8 @@
 	.PARAMETER IgnoreUpdateUsage
 		A description of the IgnoreUpdateUsage parameter.
 	
-	.PARAMETER IgnoreUpdatstats
-		A description of the IgnoreUpdatstats parameter.
+	.PARAMETER IgnoreUpdatestats
+		A description of the IgnoreUpdatestats parameter.
 	
 	.PARAMETER IgnoreUpdateView
 		A description of the IgnoreUpdateView parameter.
@@ -79,7 +79,7 @@
 		$IgnoreUpdateUsage,
 		
 		[switch]
-		$IgnoreUpdatstats,
+		$IgnoreUpdatestats,
 		
 		[switch]
 		$IgnoreUpdateView,
@@ -163,7 +163,7 @@
 				Write-Message -Level Verbose -Message "Ignore DBCC UPDATEUSAGE"
 			}
 			
-			if (!($IgnoreUpdatstats)) {
+			if (!($IgnoreUpdatestats)) {
 				Write-Message -Level Verbose -Message "Updating $database statistics"
 				$tsqlStats = "EXEC sp_updatestats;"
 				try {
