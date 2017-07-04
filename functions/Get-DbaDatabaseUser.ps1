@@ -39,6 +39,16 @@ Get-DbaDatabaseUser -SqlInstance Server1 -Database db1
 
 Gets the users for the db1 database
 
+.EXAMPLE
+Get-DbaDatabaseUser -SqlInstance Server1 -ExcludeDatabase db1
+
+Gets the users for all databases except db1
+
+.EXAMPLE
+'Sql1','Sql2/sqlexpress' | Get-DbaDatabaseUser
+
+Gets the users for the databases on Sql1 and Sql2/sqlexpress
+
 #>
 	[CmdletBinding()]
 	param (
