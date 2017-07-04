@@ -48,7 +48,7 @@
 			Prompts you for confirmation before executing any changing operations within the command.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			Use this switch to disable any kind of verbose messages.
 
 		.NOTES
 			Tags: WSMan, Migration
@@ -288,7 +288,7 @@
 			Write-Message -Level Verbose -Message "Collecting Credential logins and passwords on $($sourceServer.Name)"
 			$sourceCredentials = Get-SqlCredential $sourceServer
 			
-			if ($CredentialIdenity -ne $null) {
+			if ($CredentialIdentity -ne $null) {
 				$credentialList = $sourceServer.Credentials | Where-Object { $CredentialIdentity -contains $_.Name }
 			}
 			else {
