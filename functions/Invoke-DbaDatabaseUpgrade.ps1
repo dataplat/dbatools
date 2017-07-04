@@ -36,6 +36,9 @@
 	.PARAMETER NoRefreshView
 	Skip view update
 	
+	.PARAMETER DatabaseCollection
+	A collection of databases (such as returned by Get-DbaDatabase), to be removed.
+	
 	.PARAMETER WhatIf
 	Shows what would happen if the command were to run
 
