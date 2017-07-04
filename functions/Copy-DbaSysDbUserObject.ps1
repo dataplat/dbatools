@@ -48,7 +48,7 @@ function Copy-DbaSysDbUserObject {
 			https://dbatools.io/Copy-DbaSysDbUserObject
 
 		.EXAMPLE
-		Copy-DbaSysDbUserObject $sourceserver $destserve
+		Copy-DbaSysDbUserObject $sourceServer $destserve
 
 		Copies user objects from source to destination
 	#>
@@ -66,20 +66,24 @@ function Copy-DbaSysDbUserObject {
 		$DestinationSqlCredential,
 		[switch]$Silent
 	)
-	PROCESS {
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+	process {
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
+		$source = $sourceServer.DomainInstanceName
+		$destination = $destServer.DomainInstanceName
 		
-		if (!(Test-SqlSa -SqlInstance $sourceserver -SqlCredential $SourceSqlCredential)) { throw "Not a sysadmin on $source. Quitting." }
-		if (!(Test-SqlSa -SqlInstance $destserver -SqlCredential $DestinationSqlCredential)) { throw "Not a sysadmin on $destination. Quitting." }
+		if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
+			throw "Not a sysadmin on $source. Quitting."
+		}
+		if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
+			throw "Not a sysadmin on $destination. Quitting."
+		}
 
-		$systemdbs = "master", "model", "msdb"
+		$systemDbs = "master", "model", "msdb"
 
-		foreach ($systemdb in $systemdbs) {
-			$sysdb = $sourceserver.databases[$systemdb]
+		foreach ($systemDb in $systemDbs) {
+			$sysdb = $sourceServer.databases[$systemDb]
 			$transfer = New-Object Microsoft.SqlServer.Management.Smo.Transfer $sysdb
 			$transfer.CopyAllObjects = $false
 			$transfer.CopyAllDatabaseTriggers = $true
@@ -107,15 +111,15 @@ function Copy-DbaSysDbUserObject {
 			$transfer.Options.Permissions = $true
 			$transfer.Options.WithDependencies = $false
 
-			Write-Output "Copying from $systemdb"
+			Write-Output "Copying from $systemDb"
 			try {
-				$sqlQueries = $transfer.scriptTransfer()
+				$sqlQueries = $transfer.ScriptTransfer()
 
 				foreach ($query in $sqlQueries) {
 					Write-Verbose $query
-					if ($PSCmdlet.ShouldProcess($destserver, $query)) {
+					if ($PSCmdlet.ShouldProcess($destServer, $query)) {
 						try {
-							$destserver.Databases[$systemdb].ExecuteNonQuery($query)
+							$destServer.Databases[$systemDb].ExecuteNonQuery($query)
 						}
 						catch {
 							# This usually occurs if there are existing objects in destination
@@ -129,7 +133,7 @@ function Copy-DbaSysDbUserObject {
 		}
 		Write-Output "Migrating user objects in system databases finished"
 	}
-	END {
+	end {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlSysDbUserObjects
 	}
 }
