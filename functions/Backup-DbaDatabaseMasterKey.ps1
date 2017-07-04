@@ -1,37 +1,37 @@
 ﻿Function Backup-DbaDatabaseMasterKey {
 	<#
 .SYNOPSIS
-Backs up specified database master key
+Backs up specified database master key.
 
 .DESCRIPTION
-Backs up specified database master key
+Backs up specified database master key.
 
 .PARAMETER SqlInstance
-The target SQL Server instance
+The target SQL Server instance.
 
 .PARAMETER SqlCredential
-Allows you to login to SQL Server using alternative credentials
+Allows you to login to SQL Server using alternative credentials.
 
 .PARAMETER Database
-Backup master key from specific database
+Backup master key from specific database(s).
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto populated from the server
+The database(s) to exclude - this list is auto populated from the server.
 
 .PARAMETER BackupDirectory
-The directory to export the key. If no backup directory is specified, the default backup directory will be used.
+The directory to export the key to. If no backup directory is specified, the default backup directory will be used.
 	
 .PARAMETER Password
-The password to encrypt the exported key. This must be a securestring.
+The password to encrypt the exported key. This must be a SecureString.
 
 .PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed
+Shows what would happen if the command were to run. No actions are actually performed.
 
 .PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command
+Prompts you for confirmation before executing any changing operations within the command.
 
 .PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+If this switch is enabled, the internal messaging functions will be silenced.
 
 .NOTES
 Tags: Certificate, Databases
@@ -43,7 +43,7 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 .EXAMPLE
 Backup-DbaDatabaseMasterKey -SqlInstance server1\sql2016
 
-Prompts for export password, then logs into server1\sql2016 with windows credentials then backs up all database keys to the default backup directory
+Prompts for export password, then logs into server1\sql2016 with Windows credentials then backs up all database keys to the default backup directory.
 	
 ComputerName : SERVER1
 InstanceName : SQL2016
@@ -55,7 +55,7 @@ Status       : Success
 .EXAMPLE
 Backup-DbaDatabaseMasterKey -SqlInstance Server1 -Database db1 -BackupDirectory \\nas\sqlbackups\keys
 
-Logs into sql2016 with windows credentials then backs up db1's keys to the \\nas\sqlbackups\keys directory
+Logs into sql2016 with Windows credentials then backs up db1's keys to the \\nas\sqlbackups\keys directory.
 
 #>
 	[CmdletBinding()]

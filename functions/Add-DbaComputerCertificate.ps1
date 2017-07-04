@@ -1,31 +1,31 @@
 ﻿function Add-DbaComputerCertificate {
 <#
 .SYNOPSIS
-Adds a computer certificate - useful for older systems
+Adds a computer certificate - useful for older systems.
 
 .DESCRIPTION
-Adds a computer certificate from a local or remote compuer
+Adds a computer certificate from a local or remote computer.
 
 .PARAMETER ComputerName
-The target SQL Server - defaults to localhost
+The target SQL Server. Defaults to localhost.
 
 .PARAMETER Credential
-Allows you to login to $ComputerName using alternative credentials
+Allows you to login to $ComputerName using alternative credentials.
 
 .PARAMETER Store
-Certificate store - defaults to LocalMachine
+Certificate store - defaults to LocalMachine.
 
 .PARAMETER Folder
-Certificate folder - defaults to My (Personal)
+Certificate folder - defaults to My (Personal).
 	
 .PARAMETER Certificate
-The target certificate object
+The target certificate object.
 
 .PARAMETER Path
-The local path to the target certificate object
+The local path to the target certificate object.
 	
 .PARAMETER Password
-The password for the certificate, if it is password protected
+The password for the certificate, if it is password protected.
 
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
@@ -34,7 +34,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
+If this switch is enabled, the internal messaging functions will be silenced.
 
 .NOTES
 Tags: Certificate

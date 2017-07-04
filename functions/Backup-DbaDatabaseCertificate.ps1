@@ -1,10 +1,10 @@
 function Backup-DbaDatabaseCertificate {
 	<#
 .SYNOPSIS
- Exports database certificates from SQL Server using smo
+ Exports database certificates from SQL Server using SMO.
 
 .DESCRIPTION
-Exports database certificates from SQL Server using smo and outputs the .cer and .pvk files
+Exports database certificates from SQL Server using SMO and outputs the .cer and .pvk files.
 
 .PARAMETER SqlInstance
 The SQL Server that you're connecting to.
@@ -12,12 +12,12 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$scred = Get-Credential, this pass $scred object to the param. 
+$scred = Get-Credential, this passes $scred object to the param. 
 
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
 .PARAMETER Path
-The Path to output the files to. The path is relative to the SQL Server itself. If no path is specified, the default data directory will be used
+The Path to output the files to. The path is relative to the SQL Server itself. If no path is specified, the default data directory will be used.
 
 .PARAMETER Database
 Exports the encryptor for specific database(s).
@@ -29,13 +29,13 @@ Database(s) to skip when exporting encryptors.
 Exports certificate that matches the name(s).
 
 .PARAMETER Suffix
-The suffix of the filename of the exported certificate
+The suffix of the filename of the exported certificate.
 
-.PARAMETER EncryptionPassword 
-A string value that specifies the system path to encrypt the private key.
+.PARAMETER EncryptionPassword
+The password used to encrypt the private key.
 
 .PARAMETER DecryptionPassword 
-A string value that specifies the system path to decrypt the private key.
+The password used to decrypt the private key.
 
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
@@ -44,10 +44,10 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
+If this switch is enabled, the internal messaging functions will be silenced.
 
 .PARAMETER CertificateCollection 
-Internal parameter to support pipeline input
+Internal parameter to support pipeline input.
 
 .NOTES
 Original Author: Jess Pomfret (@jpomfret)
@@ -59,20 +59,20 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
 Get-DbaDatabaseCertificate -SqlInstance sql2016 | Backup-DbaDatabaseCertificate
-Exports all certificates found on sql2016 to the default data directory. Prompts for encryption and decryption  passwords.
+Exports all certificates found on sql2016 to the default data directory. Prompts for encryption and decryption passwords.
 
 .EXAMPLE
 Backup-DbaDatabaseCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
-Exports all the certificates on the specified SQL Server
+Exports all the certificates on the specified SQL Server Instance.
 
 .EXAMPLE
 $EncryptionPassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
 Backup-DbaDatabaseCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword $EncryptionPassword -Database Database1
-Exports the certificate that is used as the encryptor for a specific database on the specified SQL Server
+Exports the certificate that is used as the encryptor for a specific database on the specified SQL Server Instance.
 
 .EXAMPLE
 Backup-DbaDatabaseCertificate -SqlInstance Server1 -Path \\Server1\Certificates -Certificate CertTDE
-Exports all certificates named CertTDE on the specified SQL Server, not specifying the -EncryptionPassword will generate a prompt for user entry.
+Exports all certificates named CertTDE on the specified SQL Server Instance. Because the -EncryptionPassword is not specified, the user will be prompted to enter it.
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
@@ -101,7 +101,7 @@ Exports all certificates named CertTDE on the specified SQL Server, not specifyi
 	begin {
 		
 		if ($EncryptionPassword.Length -eq 0 -and $DecryptionPassword.Length -gt 0) {
-			Stop-Function -Message "If you specify an dencryption password, you must also specify an encryption password" -Target $DecryptionPassword
+			Stop-Function -Message "If you specify an decryption password, you must also specify an encryption password" -Target $DecryptionPassword
 		}
 		
 		function export-cert ($cert) {
