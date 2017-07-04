@@ -7,22 +7,16 @@ Gets database users
 Gets database users
 
 .PARAMETER SqlInstance
-The target SQL Server instance
+The target SQL Server instance(s)
 
 .PARAMETER SqlCredential
 Allows you to login to SQL Server using alternative credentials
 
 .PARAMETER Database
-To get users from specific database
+To get users from specific database(s)
 
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is auto populated from the server
-
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed
-
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command
 
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
