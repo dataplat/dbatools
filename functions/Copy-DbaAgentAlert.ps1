@@ -9,7 +9,7 @@
 			If the alert already exists on the destination, it will be skipped unless -Force is used.
 
 		.PARAMETER Source
-			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 
 		.PARAMETER SourceSqlCredential
@@ -48,10 +48,10 @@
 			Prompts you for confirmation before executing any changing operations within the command.
 
 		.PARAMETER Force
-			Drops and recreates the Alert if it exists
+			Drops and recreates the Alert if it exists.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Migration, Agent

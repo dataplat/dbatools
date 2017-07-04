@@ -37,10 +37,10 @@
 			Prompts you for confirmation before executing any changing operations within the command.
 
 		.PARAMETER Force
-			Drops and recreates the Proxy Account if it exists
+			Drops and recreates the Proxy Account if it exists.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Migration, Agent
@@ -160,6 +160,7 @@
 					Write-Message -Level Debug -Message $sql
 					$destServer.Query($sql)
 
+# Will fixing this misspelled status cause problems downstream?
 					$copyAgentProxyAccountStatus.Status = "Succesful"
 					$copyAgentProxyAccountStatus
 				}

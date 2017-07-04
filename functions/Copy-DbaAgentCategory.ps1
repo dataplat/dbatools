@@ -15,7 +15,7 @@
 			If the category already exists on the destination, it will be skipped unless -Force is used.
 
 		.PARAMETER Source
-			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -39,7 +39,7 @@
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER CategoryType
-			Specifies the Category Type to migrate. Valid options are Job, Alert and Operator. When CategoryType is specified, all categories from the selected type will be migrated. For granular migrations, use the three parameters below.
+			Specifies the Category Type to migrate. Valid options are "Job", "Alert" and "Operator". When CategoryType is specified, all categories from the selected type will be migrated. For granular migrations, use the three parameters below.
 
 		.PARAMETER OperatorCategory
 			This parameter is autopopulated for command-line completion and can be used to copy only specific operator categories.
@@ -57,10 +57,10 @@
 			Prompts you for confirmation before executing any changing operations within the command.
 
 		.PARAMETER Force
-			Drops and recreates the XXXXX if it exists
+			Drops and recreates the category if it exists.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Migration, Agent
@@ -99,7 +99,7 @@
 		[DbaInstanceParameter]$Destination,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$DestinationSqlCredential,
-		[Parameter(ParameterSetName = 'SpecifcAlerts')]
+		[Parameter(ParameterSetName = 'SpecificAlerts')]
 		[ValidateSet('Job', 'Alert', 'Operator')]
 		[string[]]$CategoryType,
 		[switch]$Force,
@@ -231,7 +231,7 @@
 									$destServer.JobServer.OperatorCategories[$categoryName].Drop()
 									Write-Message -Level Verbose -Message "Copying Operator category $categoryName"
 									$sql = $operatorCategory.Script() | Out-String
-									Write-Message -Level Derbug -Message $sql
+									Write-Message -Level Debug -Message $sql
 									$destServer.Query($sql)
 								}
 								catch {

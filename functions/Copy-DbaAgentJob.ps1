@@ -9,7 +9,7 @@
 			If the job already exists on the destination, it will be skipped unless -Force is used.
 
 		.PARAMETER Source
-			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -38,10 +38,10 @@
 			The job(s) to exclude - this list is auto populated from the server
 
 		.PARAMETER DisableOnSource
-			Disable the job on the source server
+			If this switch is enabled, the job will be disabled on the source server
 
 		.PARAMETER DisableOnDestination
-			Disable the newly migrated job on the destination server
+			If this switch is enabled, the newly migrated job will be disabled on the destination server
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
@@ -50,10 +50,10 @@
 			Prompts you for confirmation before executing any changing operations within the command.
 
 		.PARAMETER Force
-			Drops and recreates the Job if it exists
+			Drops and recreates the Job if it exists.
 
 		.PARAMETER Silent
-			Replaces user friendly yellow warnings with bloody red exceptions of doom!
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Migration, Agent, Job
@@ -147,7 +147,7 @@
             if ($MaintenancePlanName) {
 				$copyJobStatus.Status = "Skipped"
 				$copyJobStatus
-                Write-Message -Level Warning -Message "Job [$jobname] is associated with Maintennace Plan: $MaintenancePlanName"
+                Write-Message -Level Warning -Message "Job [$jobname] is associated with Maintenance Plan: $MaintenancePlanName"
 				continue
 			}
 
