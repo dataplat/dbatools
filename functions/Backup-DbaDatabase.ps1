@@ -36,7 +36,7 @@ If the path does not exist, Sql Server will attempt to create it. Folders are cr
 File Names with be suffixed with x-of-y to enable identifying striped sets, where y is the number of files in the set and x ranges from 1 to y.
 
 .PARAMETER NoCopyOnly
-By default this function performs a Copy Only backup. These backups do not intefere with the restore chain of the database, so they are safe to take at any time.
+By default this function performs a Copy Only backup. These backups do not interfere with the restore chain of the database, so they are safe to take at any time.
 This switch indicates that you wish to take normal backups. Be aware that these WILL break your restore chains, so use at your own risk
 
 For more details please refer to this MSDN article - https://msdn.microsoft.com/en-us/library/ms191495.aspx 
@@ -79,8 +79,7 @@ Internal parameter
 .PARAMETER AzureBaseUrl
 The URL to the basecontainer of an Azure storage account to write backups to.
 
-If specified, the only other parameters than can be used are:
-NoCopyOnly, Type, CompressBackup, Checksum, Verify, AzureCredential, CreateFolder
+If specified, the only other parameters than can be used are "NoCopyOnly", "Type", "CompressBackup", "Checksum", "Verify", "AzureCredential", "CreateFolder".
 
 .PARAMETER AzureCredential
 The name of the credential on the SQL instance that can write to the AzureBaseUrl.

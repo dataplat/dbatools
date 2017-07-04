@@ -8,15 +8,15 @@ Resets (or empties) the connection pool.
 
 This command resets (or empties) the connection pool. 
 	
-If there are connections in use at the time of the call, they are marked appropriately and will be discarded (instead of being returned to the pool) when Close is called on them.
+If there are connections in use at the time of the call, they are marked appropriately and will be discarded (instead of being returned to the pool) when Close() is called on them.
 
 Ref: https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.clearallpools(v=vs.110).aspx
 
 .PARAMETER ComputerName
-A remote workstation or server name
+A remote workstation or server name.
 
 .PARAMETER Credential
-Credential for running the command remotely
+Credential for running the command remotely.
 
 .NOTES
 Tags: WSMan
@@ -35,12 +35,12 @@ https://dbatools.io/Clear-DbaSqlConnectionPool
 .EXAMPLE
 Clear-DbaSqlConnectionPool
 
-Clears all local connection pools
+Clears all local connection pools.
 
 .EXAMPLE
 Clear-DbaSqlConnectionPool -ComputerName workstation27
 
-Clears all connection pools on workstation27
+Clears all connection pools on workstation27.
 
 #>
 	
