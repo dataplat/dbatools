@@ -251,14 +251,19 @@ function Copy-DbaLogin {
 								$ownedJob.Set_OwnerLoginName('sa')
 								$ownedJob.Alter()
 							}
-
-
-							$destServer.Logins.Item($userName).Disable()
-
+							
 							$activeConnections = $destServer.EnumProcesses() | Where-Object Login -eq $userName
+							
 							if ($activeConnections -and $KillActiveConnection) {
+								if (!$destServer.Logins.Item($userName).IsDisabled){
+									$disabled = $true
+									$destServer.Logins.Item($userName).Disable()
+								}
+								
 								$activeConnections | ForEach-Object { $destServer.KillProcess($_.Spid)}
 								Write-Message -Level Verbose -Message "-KillActiveConnection was provided. There are $($activeConnections.Count) active connections killed."
+								# just in case the kill didn't work, it'll leave behind a disabled account
+								if ($disabled) { $destServer.Logins.Item($userName).Enable() }
 							}
 							elseif ($activeConnections) {
 								Write-Message -Level Warning -Message "There are $($activeConnections.Count) active connections found for the login $userName. Utilize -KillActiveConnection with -Force to kill the connections."
