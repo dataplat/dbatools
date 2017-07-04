@@ -18,6 +18,9 @@ To get users from specific database(s)
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is auto populated from the server
 
+.PARAMETER ExcludeSystemUser
+This switch removes all system objects from the user collection
+
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
 
@@ -45,6 +48,11 @@ Get-DbaDatabaseUser -SqlInstance Server1 -ExcludeDatabase db1
 Gets the users for all databases except db1
 
 .EXAMPLE
+Get-DbaDatabaseUser -SqlInstance Server1 -ExcludeSystemUser
+
+Gets the users for all databases that are not system objects, like 'dbo', 'guest' or 'INFORMATION_SCHEMA'
+
+.EXAMPLE
 'Sql1','Sql2/sqlexpress' | Get-DbaDatabaseUser
 
 Gets the users for the databases on Sql1 and Sql2/sqlexpress
@@ -58,6 +66,7 @@ Gets the users for the databases on Sql1 and Sql2/sqlexpress
 		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
+        [switch]$ExcludeSystemUser,
 		[switch]$Silent
 	)
 
@@ -92,6 +101,10 @@ Gets the users for the databases on Sql1 and Sql2/sqlexpress
 					Write-Message -Message "No users exist in the $db database on $instance" -Target $db -Level Verbose
 					continue
 				}
+                if ( $PSBoundParameters.ContainsKey('ExcludeSystemUser') ) {
+                    $users = $users.where({$_.IsSystemObject -eq $false})
+                }
+
                 $users | foreach {
 
 				Add-Member -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.NetName
