@@ -59,33 +59,16 @@
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]
-		$SqlInstance,
-		
-		[System.Management.Automation.PSCredential]
-		$SqlCredential,
-		
+		[DbaInstanceParameter[]]$SqlInstance,
+		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Parameter(Mandatory = $true)]
-		[string]
-		$Database,
-		
-		[switch]
-		$IgnoreCompatabilityUpgrade,
-		
-		[switch]
-		$IgnoreCheckDB,
-		
-		[switch]
-		$IgnoreUpdateUsage,
-		
-		[switch]
-		$IgnoreUpdatstats,
-		
-		[switch]
-		$IgnoreUpdateView,
-		
-		[switch]
-		$Silent
+		[string]$Database,
+		[switch]$IgnoreCompatabilityUpgrade,
+		[switch]$IgnoreCheckDB,
+		[switch]$IgnoreUpdateUsage,
+		[switch]$IgnoreUpdatstats,
+		[switch]$IgnoreUpdateView,
+		[switch]$Silent
 	)
 	begin {
 		
@@ -125,14 +108,17 @@
 					$tsqlComp = "ALTER DATABASE [$Database] SET COMPATIBILITY_LEVEL = $Comp"
 					try {
 						$server.Databases["master"].ExecuteNonQuery($tsqlComp)
+						$comResult = $Comp
 					}
 					catch {
 						Write-Message -Level Warning -Message "Failed run Compatability Upgrade" -ErrorRecord $_ -Target $instance
+						$comResult = "Fail"
 					}
 				}
 			}
 			else {
 				Write-Message -Level Verbose -Message "Ignoring Compatability settings"
+				$comResult = "Skipped"
 			}
 			
 			if (!($IgnoreCheckDB)) {
@@ -140,9 +126,11 @@
 				$tsqlCheckDB = "DBCC CHECKDB ('$Database') WITH DATA_PURITY, NO_INFOMSGS"
 				try {
 					$server.Databases["master"].ExecuteNonQuery($tsqlCheckDB)
+					$DataPurityResult = "Success"
 				}
 				catch {
 					Write-Message -Level Warning -Message "Failed run DBCC CHECKDB with DATA_PURITY" -ErrorRecord $_ -Target $instance
+					$DataPurityResult = "Fail"
 				}
 			}
 			else {
@@ -154,13 +142,16 @@
 				$tsqlUpdateUsage = "DBCC UPDATEUSAGE ($Database) WITH NO_INFOMSGS;"
 				try {
 					$server.Databases["master"].ExecuteNonQuery($tsqlUpdateUsage)
+					$UpdateUsageResult = "Success"
 				}
 				catch {
 					Write-Message -Level Warning -Message "Failed to run DBCC UPDATEUSAGE" -ErrorRecord $_ -Target $instance
+					$UpdateUsageResult = "Fail"
 				}
 			}
 			else {
 				Write-Message -Level Verbose -Message "Ignore DBCC UPDATEUSAGE"
+				 $UpdateUsageResult = "Skipped"
 			}
 			
 			if (!($IgnoreUpdatstats)) {
@@ -168,18 +159,22 @@
 				$tsqlStats = "EXEC sp_updatestats;"
 				try {
 					$server.Databases[$Database].ExecuteNonQuery($tsqlStats)
+					$UpdateStatsResult = "Success"
 				}
 				catch {
 					Write-Message -Level Warning -Message "Failed to run sp_updatestats" -ErrorRecord $_ -Target $instance
+					$UpdateStatsResult = "Fail"
 				}
 			}
 			else {
 				Write-Message -Level Verbose -Message "Ignoring sp_updatestats"
+				$UpdateStatsResult = "Skipped"
 			}
 			
 			if (!($IgnoreUpdateView)) {
 				Write-Message -Level Verbose -Message "Updating all $database views"
 				$dbViews = $db.Views | Where-Object IsSystemObject -eq $false
+				$UpdateViewResult = "Success"
 				foreach ($dbview in $dbviews) {
 					$viewName = $dbView.Name
 					$viewSchema = $dbView.Schema
@@ -192,12 +187,26 @@
 					}
 					catch {
 						Write-Message -Level Warning -Message "Failed update view $fullName" -ErrorRecord $_ -Target $instance
+						$UpdateViewResult = "Fail"
 					}
 				}
 			}
 			else {
 				Write-Message -Level Verbose -Message "Ignore View Updates"
+				$UpdateViewResult = "Skipped"
 			}
+
+			[PSCustomObject]@{
+                        ComputerName = $server.NetName
+                        InstanceName = $server.ServiceName
+                        SqlInstance = $server.DomainInstanceName
+                        Database = $Database
+                        Compatability = $comResult
+                        DataPurity = $DataPurityResult
+						UpdateUsage = $UpdateUsageResult
+						UpdateStats = $UpdateStatsResult
+						UpdateViews = $UpdateViewResult
+				    }
 		}
 	}
 }
