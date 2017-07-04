@@ -1,6 +1,4 @@
-﻿
-function Get-DbaErrorLog
-{
+﻿function Get-DbaErrorLog {
 <#
 	.SYNOPSIS
 		Gets SQL Error Logs on servers that are running or not
@@ -8,29 +6,35 @@ function Get-DbaErrorLog
 	.DESCRIPTION
 		The Get-DbaErrorLog returns an object with the error log contents
 	
-	.PARAMETER ServerName
-		This parameter is the server name without the instance
+	.PARAMETER SqlInstance
+		The instance(s) to retrieve the error logs from
 	
-	.PARAMETER InstanceName
-		This parameter is the instance name separate from the servernaem
-		If this is a default instance this parameter can be left blank as the 
-		default for this parameter is DEFAULT
+	.PARAMETER Start
+		Default: 1970
+		Retrieve all errors starting from this timestamp.
 	
-	.PARAMETER From
-		This is a date parameter used to define the beginning point of search by date
-	
-	.PARAMETER To
-		This is a date parameter to use if you are searching up to a certain date/time.
+	.PARAMETER End
+		Default: Now
+		Retrieve all errors that happened before this timestamp
 	
 	.PARAMETER Credential
 		Credential to be used to connect to the Server
 	
 	.PARAMETER MaxThreads
-		Used to control the number of threads used in the runspace
+		Default: Unlimited
+		The maximum number of parallel threads used on the local computer.
+		Given that those will mostly be waiting for the remote system, there is usually no need to limit this.
+	
+	.PARAMETER MayRemoteThreads
+		Default: 2
+		The maximum number of parallel threads that are executed on the target sql server.
+		These processes will cause considerable CPU load, so a low limit is advisable in most scenarios.
+		Any value lower than 1 disables the limit
 	
 	.NOTES
 		Tags: SQL ErrorLog
-		Original Author: Drew Furgiuele 
+		Original Author: Drew Furgiuele
+		Editor: Friedrich "Fred" Weinmann
 		Website: https://dbatools.io
 		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0	
@@ -38,271 +42,257 @@ function Get-DbaErrorLog
 	.LINK
 		https://dbatools.io/Get-DbaErrorLog
 	
-	
 	.EXAMPLE
-	$ErrorLogs = Get-DbaErrorLog -servername COMPUTER1 
-	$ErrorLogs | Where-Object { $_.ErrorNumber -eq 18456 }
-	
-	Returns all lines in the errorlogs that have error number 18456 in them
+		$ErrorLogs = Get-DbaErrorLog -SqlInstance COMPUTER1 
+		$ErrorLogs | Where-Object ErrorNumber -eq 18456
+		
+		Returns all lines in the errorlogs that have error number 18456 in them
 	
 #>	
-	[cmdletbinding()]
+	[CmdletBinding()]
 	param (
-		[Parameter(Mandatory = $true)]
-		[string]$servername,
-		[Parameter(Mandatory = $false)]
-		[string]$instanceName = "DEFAULT",
-		[Parameter(Mandatory = $false)]
-		[string]$From = "1/1/1970 00:00:00",
-		[Parameter(Mandatory = $false)]
-		[string]$To,
-		[Parameter(Mandatory = $false)]
+		[Parameter(ValueFromPipeline = $true)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]
+		$SqlInstance = $env:COMPUTERNAME,
+		
+		[DateTime]
+		$Start = "1/1/1970 00:00:00",
+		
+		[DateTime]
+		$End = (Get-Date),
+		
 		[System.Management.Automation.CredentialAttribute()]
+		[System.Management.Automation.PSCredential]
 		$Credential,
-		[Parameter(Mandatory = $false)]
-		[int]$maxThreads
+		
+		[int]
+		$MaxThreads = 0,
+		
+		[int]
+		$MaxRemoteThreads = 2,
+		
+		[switch]
+		$Silent
 	)
 	
-	begin
-	{
-		$FileReaderScriptBlock = {
+	begin {
+		Write-Message -Level Debug -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
+		
+		#region Helper Functions
+		function Start-Runspace {
+			$Powershell = [PowerShell]::Create().AddScript($scriptBlock_ParallelRemoting).AddParameter("SqlInstance", $instance).AddParameter("Start", $Start).AddParameter("End", $End).AddParameter("Credential", $Credential).AddParameter("MaxRemoteThreads", $MaxRemoteThreads).AddParameter("ScriptBlock", $scriptBlock_RemoteExecution)
+			$Powershell.RunspacePool = $RunspacePool
+			Write-Message -Level Verbose -Message "Launching remote runspace against <c='green'>$instance</c>" -Target $instance
+			$null = $RunspaceCollection.Add((New-Object -TypeName PSObject -Property @{ Runspace = $PowerShell.BeginInvoke(); PowerShell = $PowerShell; Instance = $instance.FullSmoName }))
+		}
+		
+		function Receive-Runspace {
+			[Parameter()]
 			Param (
-				[string]$filepath,
-				[hashtable]$splat
+				[switch]
+				$Wait
 			)
 			
-			$RemoteCommandScriptBlock = {
-				param (
-					[string]$filepath
+			do {
+				foreach ($Run in $RunspaceCollection.ToArray()) {
+					if ($Run.Runspace.IsCompleted) {
+						Write-Message -Level Verbose -Message "Receiving results from <c='green'>$($Run.Instance)</c>" -Target $Run.Instance
+						$Run.PowerShell.EndInvoke($Run.Runspace)
+						$Run.PowerShell.Dispose()
+						$RunspaceCollection.Remove($Run)
+					}
+				}
+				
+				if ($Wait -and ($RunspaceCollection.Count -gt 0)) { Start-Sleep -Milliseconds 250 }
+			}
+			while ($Wait -and ($RunspaceCollection.Count -gt 0))
+		}
+		#endregion Helper Functions
+		
+		#region Scriptblocks
+		$scriptBlock_RemoteExecution = {
+			Param (
+				[System.DateTime]
+				$Start,
+				
+				[System.DateTime]
+				$End,
+				
+				[string]
+				$InstanceName,
+				
+				[int]
+				$Throttle
+			)
+			
+			#region Helper function
+			function Convert-ErrorRecord {
+				Param (
+					$Line
 				)
-				Get-Content $filepath -ReadCount 0
+				
+				if (Get-Variable -Name codesAndStuff -Scope 1) {
+					$line2 = (Get-Variable -Name codesAndStuff -Scope 1).Value
+					Remove-Variable -Name codesAndStuff -Scope 1
+					
+					$groups = [regex]::Matches($line2, '^([\d- :]+.\d\d) (\w+)[ ]+Error: (\d+), Severity: (\d+), State: (\d+)').Groups
+					$groups2 = [regex]::Matches($line, '^[\d- :]+.\d\d \w+[ ]+(.*)$').Groups
+					
+					New-Object PSObject -Property @{
+						Timestamp   = [DateTime]::ParseExact($groups[1].Value, "yyyy-MM-dd HH:mm:ss.ff", $null)
+						Spid	    = $groups[2].Value
+						Message	    = $groups2[1].Value
+						ErrorNumber = [int]($groups[3].Value)
+						Severity    = [int]($groups[4].Value)
+						State	    = [int]($groups[5].Value)
+					}
+				}
+				
+				if ($Line -match '^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d\d[\w ]+((\w+): (\d+)[,\.]\s?){3}') {
+					Set-Variable -Name codesAndStuff -Value $Line -Scope 1
+				}
+			}
+			#endregion Helper function
+			
+			#region Script that processes an individual file
+			$scriptBlock = {
+				Param (
+					[System.IO.FileInfo]
+					$File
+				)
+				
+				try {
+					$stream = New-Object System.IO.FileStream($File.FullName, "Open", "Read", "ReadWrite, Delete")
+					$reader = New-Object System.IO.StreamReader($stream)
+					
+					while (-not $reader.EndOfStream) {
+						Convert-ErrorRecord -Line $reader.ReadLine()
+					}
+				}
+				catch { }
+			}
+			#endregion Script that processes an individual file
+			
+			#region Gather list of files to process
+			$eventSource = "MSSQLSERVER"
+			if ($InstanceName -notmatch "^DEFAULT$|^MSSQLSERVER$")
+			{
+				$eventSource = 'MSSQL$' + $InstanceName
 			}
 			
-			$Content = Invoke-Command @splat -scriptblock $RemoteCommandScriptBlock -ArgumentList $filePath
+			$event = Get-WinEvent -FilterHashtable @{
+				LogName	     = "Application"
+				ID		     = 17111
+				ProviderName = $eventSource
+			} -MaxEvents 1 -ErrorAction SilentlyContinue
 			
-			$RunResult = [pscustomobject] @{
-				FileName	 = $filepath
-				ContentCount = $Content.Count
-				Content	  = $Content
-				ScriptToRun  = $RemoteCommandScriptBlock
+			if (-not $event) { return }
+			
+			$path = $event.Properties[0].Value
+			$errorLogPath = Split-Path -Path $path
+			$errorLogFileName = Split-Path -Path $path -Leaf
+			$errorLogFiles = Get-ChildItem -Path $errorLogPath | Where-Object { ($_.Name -like "$errorLogFileName*") -and ($_.LastWriteTime -gt $Start) -and ($_.CreationTime -lt $End) }
+			#endregion Gather list of files to process
+			
+			#region Prepare Runspaces
+			[Collections.Arraylist]$RunspaceCollection = @()
+			
+			$InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+			$Command = Get-Item function:Convert-ErrorRecord
+			$InitialSessionState.Commands.Add((New-Object System.Management.Automation.Runspaces.SessionStateFunctionEntry($command.Name, $command.Definition)))
+		
+			$RunspacePool = [RunspaceFactory]::CreateRunspacePool($InitialSessionState)
+			$null = $RunspacePool.SetMinRunspaces(1)
+			if ($Throttle -gt 0) { $null = $RunspacePool.SetMaxRunspaces($Throttle) }
+			$RunspacePool.Open()
+			#endregion Prepare Runspaces
+			
+			#region Process Error files
+			$countDone = 0
+			$countStarted = 0
+			$countTotal = ($errorLogFiles | Measure-Object).Count
+			
+			while ($countDone -lt $countTotal) {
+				while (($RunspacePool.GetAvailableRunspaces() -gt 0) -and ($countStarted -lt $countTotal)) {
+					$Powershell = [PowerShell]::Create().AddScript($scriptBlock).AddParameter("File", $errorLogFiles[$countStarted])
+					$Powershell.RunspacePool = $RunspacePool
+					$null = $RunspaceCollection.Add((New-Object -TypeName PSObject -Property @{ Runspace = $PowerShell.BeginInvoke(); PowerShell = $PowerShell }))
+					$countStarted++
+				}
+				
+				foreach ($Run in $RunspaceCollection.ToArray()) {
+					if ($Run.Runspace.IsCompleted) {
+						$Run.PowerShell.EndInvoke($Run.Runspace) | Where-Object { ($_.Timestamp -gt $Start) -and ($_.Timestamp -lt $End) }
+						$Run.PowerShell.Dispose()
+						$RunspaceCollection.Remove($Run)
+						$countDone++
+					}
+				}
+				
+				Start-Sleep -Milliseconds 250
 			}
-			Return $RunResult
+			$RunspacePool.Close()
+			$RunspacePool.Dispose()
+			#endregion Process Error files
 		}
 		
-		$FileParserScriptBlock = {
+		$scriptBlock_ParallelRemoting = {
 			Param (
-				[array]$fileContents,
-				[array]$lineNumbers
+				[DbaInstanceParameter]
+				$SqlInstance,
+				
+				[DateTime]
+				$Start,
+				
+				[DateTime]
+				$End,
+				
+				[object]
+				$Credential,
+				
+				[int]
+				$MaxRemoteThreads,
+				
+				[System.Management.Automation.ScriptBlock]
+				$ScriptBlock
 			)
 			
-			$ErrorLogEntries = New-Object -typename System.Collections.ArrayList
-			
-			For ($l = 0; $l -lt $lineNumbers.Count; $l++)
-			{
-				$LineNumber = $lineNumbers[$l].LineNumber
-				
-				$line = $fileContents[$LineNumber - 1] -replace '\s+', ' '
-				$parsed = $line.split(' ')
-				$logErrorNumber = $parsed[4] -replace ',', ''
-				$logSeverity = $parsed[6] -replace ',', ''
-				$LogState = $parsed[8] -replace '\.', ''
-				
-				$line = $fileContents[$LineNumber] -replace '\s+', ' '
-				$parsed = $line.split(' ')
-				
-				$eventTime = Get-Date -Date ($parsed[0] + ' ' + $parsed[1])
-				if ($parsed[2] -ne "Server")
-				{
-					$spid = ($parsed[2] -replace 'spid', '') -replace 's', ''
-				}
-				else
-				{
-					$Spid = $null
-				}
-				$message = $line.Substring($parsed[0].Length + $parsed[1].Length + $parsed[2].length + 3)
-				
-				$ErrorLogEvent = [pscustomobject] @{
-					EventTime   = $eventTime
-					Spid	    = $spid
-					Message	 = $message
-					ErrorNumber = $logErrorNumber
-					Severity    = $logSeverity
-					State	   = $LogState
-				}
-				
-				$ErrorLogEntries.Add($ErrorLogEvent)
+			$params = @{
+				ArgumentList = $Start, $End, $SqlInstance.InstanceName, $MaxRemoteThreads
+				ScriptBlock = $ScriptBlock
 			}
+			if (-not $SqlInstance.IsLocalhost) { $params["ComputerName"] = $SqlInstance.ComputerName }
+			if ($Credential) { $params["Credential"] = $Credential }
 			
-			$RunResult = New-Object PSObject -Property @{
-				ErrorLogObjects = $ErrorLogEntries
-			}
-			Return $RunResult
+			Invoke-Command @params | Select-Object @{ n = "InstanceName"; e = { $SqlInstance.FullSmoName } }, Timestamp, Spid, Severity, ErrorNumber, State, Message
+		}
+		#endregion Scriptblocks
+		
+		#region Setup Runspace
+		[Collections.Arraylist]$RunspaceCollection = @()
+		$InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+		$RunspacePool = [RunspaceFactory]::CreateRunspacePool($InitialSessionState)
+		$RunspacePool.SetMinRunspaces(1) | Out-Null
+		if ($MaxThreads -gt 0) { $null = $RunspacePool.SetMaxRunspaces($MaxThreads) }
+		$RunspacePool.Open()
+		
+		$countStarted = 0
+		$countReceived = 0
+		#endregion Setup Runspace
+	}
+	
+	process {
+		foreach ($instance in $SqlInstance) {
+			Write-Message -Level VeryVerbose -Message "Processing <c='green'>$instance</c>" -Target $instance
+			Start-Runspace
+			Receive-Runspace
 		}
 	}
 	
-	
-	
-	process
-	{
-		$eventSource = "MSSQLSERVER"
-		if ($instancename -ne "DEFAULT")
-		{
-			$eventSource = 'MSSQL$' + $instanceName
-		}
-		if (!$to)
-		{
-			$to = Get-Date
-			Write-Verbose "Settting to to $to"
-		}
-		
-		$InvokeCommandParamters = @{
-			'ComputerName' = $servername;
-		}
-		if ($Credential)
-		{
-			$InvokeCommandParamters.Add('Credential', $Credential)
-		}
-		
-		Write-Verbose "Server Name: $servername"
-		Write-Verbose "Looking for SQL Server instance information for service $eventsource"
-		$ErrorLogPathFromEventLog = ((Invoke-Command @InvokeCommandParamters -ScriptBlock { param ($eventSource) Get-Eventlog -LogName Application | where-object { $_.EventID -eq 17111 -and $_.Source -eq $eventSource } } -ArgumentList $eventSource | Select -First 1).Message -replace "Logging SQL Server messages in file '", "") -replace "'.", ""
-		$errorLogPath = $ErrorLogPathFromEventLog.Substring(0, $ErrorLogPathFromEventLog.LastIndexOf("\"))
-		$errorLogFileName = $ErrorLogPathFromEventLog.Substring($ErrorLogPathFromEventLog.LastIndexOf("\") + 1)
-		Write-Verbose "SQL Server Error Log Path: $errorlogpath"
-		$ErrorLogs = Invoke-Command @InvokeCommandParamters -ScriptBlock {
-			param ($ErrorLogPath,
-				$ErrorLogFileName) Get-ChildItem -Path $ErrorLogPath | Where-Object { $_.Name -like "$ErrorLogFileName*" }
-		} -ArgumentList $errorlogpath, $errorLogFileName
-		$LastErrorLog = $ErrorLogs | Where-Object { $_.LastWriteTime -le $from } | Sort-Object -Property LastWriteTime -Descending | Select -First 1
-		if ($to -ge ($ErrorLogs | Sort-Object -Property LastWritTime | Select -First 1).LastWriteTime)
-		{
-			$FirstErrorLog = $ErrorLogs | Sort-Object -Property LastWritTime | Select -First 1
-		}
-		else
-		{
-			$FirstErrorLog = $ErrorLogs | Where-Object { $_.LastWriteTime -ge $to } | Sort-Object -Property LastWriteTime | Select -First 1
-		}
-		
-		$ErrorLogs = $ErrorLogs | Where-Object { $_.LastWriteTime -ge $LastErrorLog.LastWriteTime -and $_.LastWriteTime -le $FirstErrorLog.LastWriteTime } | Sort-Object -Property LastWriteTime
-		
-		$fileNumber = 0
-		$jobs = New-Object -typename System.Collections.ArrayList
-		$PowerShellObjects = New-Object -typename System.Collections.ArrayList
-		$Results = @()
-		
-		ForEach ($ErrorLog in $ErrorLogs)
-		{
-			$Runspace = [runspacefactory]::CreateRunspace()
-			$PowerShell = [powershell]::Create().AddScript($FileReaderScriptBlock).AddArgument($ErrorLog.FullName).AddArgument($InvokeCommandParamters)
-			$PowerShell.Runspace = $Runspace
-			[void]$PowerShellObjects.Add($PowerShell)
-		}
-		
-		ForEach ($PowerShellObject in $PowerShellObjects)
-		{
-			$PowerShellObject.Runspace.Open()
-			[void]$Jobs.Add(($PowerShellObject.BeginInvoke()))
-		}
-		
-		Write-Verbose "All files added, waiting for threads to complete"
-		$StopWatch = [System.Diagnostics.Stopwatch]::StartNew()
-		
-		Do
-		{
-			Start-Sleep -Seconds 1
-		}
-		While ($jobs.IsCompleted -contains $false)
-		
-		Write-Verbose "All threads completed!"
-		$StopWatch.Stop()
-		$FileReaderDuration = $StopWatch.Elapsed.TotalMilliseconds
-		Write-Verbose "$FileReaderDuration milliseconds to read all the files"
-		
-		$Counter = 0
-		$AllContent = $null
-		ForEach ($PowerShellObject in $PowerShellObjects)
-		{
-			$Data = $PowerShellObject.EndInvoke($Jobs[$Counter])
-			$AllContent += $Data.Content
-			$Results += $Data
-			$Counter++
-			$PowerShellObject.Runspace.Dispose()
-			$PowerShellObject.Dispose()
-		}
-		
-		Write-Verbose "Matching error lines..."
-		$matchedLines = $AllContent | Select-String -Pattern '((\w+): (\d+)[,\.]\s?){3}'
-		$matchedLinesTotal = $matchedLines.Length
-		$remainder = $matchedLinesTotal % 8
-		$setSize = ($matchedLinesTotal - $remainder) / 8
-		
-		$jobs = New-Object -typename System.Collections.ArrayList
-		$PowerShellObjects = New-Object -typename System.Collections.ArrayList
-		$Results = @()
-		
-		Write-Verbose "There are $matchedLinesTotal to parse"
-		for ($x = 0; $x -lt 8; $x++)
-		{
-			$min = $setSize * $x
-			$max = $min + ($setSize - 1)
-			$subSet = $matchedLines[$min .. $max]
-			Write-Verbose "Chunking $min to $max..."
-			$Runspace = [runspacefactory]::CreateRunspace()
-			$m = $matchedLines[$min .. $max]
-			$PowerShell = [powershell]::Create().AddScript($FileParserScriptBlock).AddArgument($AllContent).AddArgument($subSet)
-			$PowerShell.Runspace = $Runspace
-			[void]$PowerShellObjects.Add($PowerShell)
-		}
-		if ($remainder -gt 0)
-		{
-			$min = $max + 1
-			$max = $matchedLinesTotal
-			$subSet = $matchedLines[$min .. $max]
-			Write-Verbose "Chunking remainder $min to $max..."
-			$Runspace = [runspacefactory]::CreateRunspace()
-			$PowerShell = [powershell]::Create().AddScript($FileParserScriptBlock).AddArgument($AllContent).AddArgument($subSet)
-			$PowerShell.Runspace = $Runspace
-			[void]$PowerShellObjects.Add($PowerShell)
-			
-		}
-		
-		ForEach ($PowerShellObject in $PowerShellObjects)
-		{
-			$PowerShellObject.Runspace.Open()
-			[void]$Jobs.Add(($PowerShellObject.BeginInvoke()))
-		}
-		
-		$StopWatch = [System.Diagnostics.Stopwatch]::StartNew()
-		Write-Verbose "All files chunks chunked, waiting for threads to complete"
-		
-		Do
-		{
-			Write-Verbose "Waiting..."
-			Start-Sleep -Seconds 2
-		}
-		While ($jobs.IsCompleted -contains $false)
-		
-		Write-Verbose "All threads completed!"
-		$StopWatch.Stop()
-		$FileParserDuration = $StopWatch.Elapsed.TotalMilliseconds
-		Write-Verbose "$FileParserDuration milliseconds to parse all the chunks"
-		
-		$Errors = New-Object -typename System.Collections.ArrayList
-		$Counter = 0
-		ForEach ($PowerShellObject in $PowerShellObjects)
-		{
-			$Data = $PowerShellObject.EndInvoke($Jobs[$Counter])
-			[void]$Errors.Add($Data.ErrorLogObjects)
-			$Counter++
-			$PowerShellObject.Runspace.Dispose()
-			$PowerShellObject.Dispose()
-		}
-	}
-	
-	end
-	{
-		return $Errors
-		$Results = $null
-		$AllContent = $null
+	end {
+		Receive-Runspace -Wait
+		$RunspacePool.Close()
+		$RunspacePool.Dispose()
 	}
 }
