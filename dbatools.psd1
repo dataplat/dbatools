@@ -395,7 +395,8 @@
 	'Test-SqlPath',
 	'Test-SqlTempDbConfiguration',
 	'Watch-SqlDbLogin',
-	'Invoke-Sqlcmd2'
+	'Invoke-Sqlcmd2',
+	'Get-DbaErrorLog'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()
