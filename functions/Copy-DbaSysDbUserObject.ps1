@@ -74,10 +74,12 @@ function Copy-DbaSysDbUserObject {
 		$destination = $destServer.DomainInstanceName
 		
 		if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
-			throw "Not a sysadmin on $source. Quitting."
+			Stop-Function -Message "Not a sysadmin on $source. Quitting."
+			return
 		}
 		if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
-			throw "Not a sysadmin on $destination. Quitting."
+			Stop-Function -Message "Not a sysadmin on $destination. Quitting."
+			return
 		}
 
 		$systemDbs = "master", "model", "msdb"
