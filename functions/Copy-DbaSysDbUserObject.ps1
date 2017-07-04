@@ -113,27 +113,26 @@ function Copy-DbaSysDbUserObject {
 			$transfer.Options.Permissions = $true
 			$transfer.Options.WithDependencies = $false
 
-			Write-Output "Copying from $systemDb"
+			Write-Message -Level Warning -Message "Copying from $systemDb"
 			try {
 				$sqlQueries = $transfer.ScriptTransfer()
 
-				foreach ($query in $sqlQueries) {
-					Write-Verbose $query
-					if ($PSCmdlet.ShouldProcess($destServer, $query)) {
+				foreach ($sql in $sqlQueries) {
+					Write-Message -Level Debug -Message $sql
+					if ($PSCmdlet.ShouldProcess($destServer, $sql)) {
 						try {
-							$destServer.Databases[$systemDb].ExecuteNonQuery($query)
+							$destServer.Query($sql,$systemDb)
 						}
 						catch {
-							# This usually occurs if there are existing objects in destination
+							Stop-Function -Message "Issue creating object on destination" -Target $systemDb -ErrorRecord $_
 						}
 					}
 				}
 			}
 			catch {
-				Write-Output "Exception caught."
+				Stop-Function -Message "Issue occurred" -Target $systemDb -ErrorRecord $_
 			}
 		}
-		Write-Output "Migrating user objects in system databases finished"
 	}
 	end {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlSysDbUserObjects
