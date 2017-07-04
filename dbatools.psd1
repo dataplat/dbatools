@@ -317,7 +317,8 @@
 		'Invoke-DbaLogShippingRecovery',
 		'Sync-DbaLoginPermission',
 		'Find-DbaTrigger',
-		'Find-DbaView'
+		'Find-DbaView',
+		'Invoke-DbaDatabaseUpgrade'
 	)
 	
 	# Cmdlets to export from this module
