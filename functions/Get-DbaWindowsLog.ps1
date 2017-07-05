@@ -1,10 +1,10 @@
 ﻿function Get-DbaWindowsLog {
 <#
 	.SYNOPSIS
-		Gets SQL Error Logs on servers that are running or not
+		Gets Windows Application errors associated with an instance
 	
 	.DESCRIPTION
-		The Get-DbaWindowsLog returns an object with the error log contents
+		Gets Windows Application errors associated with an instance
 	
 	.PARAMETER SqlInstance
 		The instance(s) to retrieve the error logs from
