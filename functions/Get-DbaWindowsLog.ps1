@@ -1,10 +1,10 @@
-﻿function Get-DbaErrorLog {
+﻿function Get-DbaWindowsLog {
 <#
 	.SYNOPSIS
 		Gets SQL Error Logs on servers that are running or not
 	
 	.DESCRIPTION
-		The Get-DbaErrorLog returns an object with the error log contents
+		The Get-DbaWindowsLog returns an object with the error log contents
 	
 	.PARAMETER SqlInstance
 		The instance(s) to retrieve the error logs from
@@ -43,10 +43,10 @@
 		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0	
 	
 	.LINK
-		https://dbatools.io/Get-DbaErrorLog
+		https://dbatools.io/Get-DbaWindowsLog
 	
 	.EXAMPLE
-		$ErrorLogs = Get-DbaErrorLog -SqlInstance COMPUTER1 
+		$ErrorLogs = Get-DbaWindowsLog -SqlInstance sql01\sharepoint 
 		$ErrorLogs | Where-Object ErrorNumber -eq 18456
 		
 		Returns all lines in the errorlogs that have error number 18456 in them
