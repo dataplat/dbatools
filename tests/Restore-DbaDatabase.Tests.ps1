@@ -266,17 +266,10 @@
 
     Context "Check Get-DbaBackupHistory pipes into Restore-DbaDatabase" {
         $history = Get-DbaBackupHistory -SqlInstance localhost -Database RestoreTimeClean -Last
-        $results = $history | Restore-DbaDatabase -SqlInstance localhost -WithReplace -WarningVariable WarnVar -ErrorVariable ErrVar -TrustDbBackupHistory
-        It "Should have no warnings" {
-            $WarnVar | Should be BeNullOrEmpty
-        }
-        It "Should have no errors" {
-            $ErrVar | Should be BeNullOrEmpty
-        }
-        It "SHould have restore everything" {
+        $results = $history | Restore-DbaDatabase -SqlInstance localhost -WithReplace -TrustDbBackupHistory
+        It "Should have restored everything successfully" {
             ($results.RestorComplete -contains $false) | Should be $False
         }
-
     }
 
     Context "All user databases are removed post history test" {
