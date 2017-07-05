@@ -52,6 +52,9 @@ function Get-DbaBackupHistory {
 	.PARAMETER Raw
 		By default the command will group mediasets (striped backups across multiple files) into a single return object. If you'd prefer to have an object per backup file returned, use this switch
 	
+	.PARAMETER LastLsn
+		Internal parameter: filter out backup history with last_lsn greater than this value (this helps speed up the retrieval process without resorting to process the full history)
+	
 	.PARAMETER Silent
 		Replaces user friendly yellow warnings with bloody red exceptions of doom!
 		Use this if you want the function to throw terminating errors you want to catch.
@@ -172,6 +175,9 @@ function Get-DbaBackupHistory {
 		[switch]
 		$Raw,
 		
+		[bigint]
+		$LastLsn,
+		
 		[switch]
 		$Silent
 	)
@@ -182,7 +188,7 @@ function Get-DbaBackupHistory {
 		
 		$DeviceTypeMapping = @{
 			'Disk' = 2
-			'Permanent Disk  Device' = 102
+			'Permanent Disk Device' = 102
 			'Tape' = 5
 			'Permanent Tape Device' = 105
 			'Pipe' = 6
@@ -254,7 +260,9 @@ function Get-DbaBackupHistory {
 							continue
 						}
 					}
-					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Databases $db -raw:$raw -DeviceType $DeviceType | Where-object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN }
+					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Databases $db -raw:$raw -DeviceType $DeviceType -LastLsn $TLogstartLSN | Where-Object { 
+						$_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN 
+					}
 					$Allbackups | Sort-Object FirstLsn
 				 
 
@@ -421,7 +429,7 @@ function Get-DbaBackupHistory {
 				$from = " FROM msdb..backupmediafamily mediafamily
 							 INNER JOIN msdb..backupmediaset mediaset ON mediafamily.media_set_id = mediaset.media_set_id
 							 INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
-				if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $IgnoreCopyOnly -or $DeviceTypeFilter) {
+				if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $IgnoreCopyOnly -or $DeviceTypeFilter -or $LastLsn) {
 					$where = " WHERE "
 				}
 				
@@ -446,6 +454,9 @@ function Get-DbaBackupHistory {
 				}
 				if ($DeviceTypeFilter) {
 					$wherearray += "mediafamily.device_type $DeviceTypeFilterRight"
+				}
+				if ($LastLsn) {
+					$wherearray += "backupset.last_lsn > $LastLsn"
 				}
 				
 				if ($where.length -gt 0) {
