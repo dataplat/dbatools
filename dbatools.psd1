@@ -324,7 +324,11 @@
 		'Get-DbaSqlLog',
 		'Get-DbaAgentLog',
 		'Get-DbaDbMailLog',
-		'Get-DbaDbMailHistory'
+		'Get-DbaDbMailHistory',
+		'Get-DbaDatabaseView',
+		'Get-DbaDatabaseUdf',
+		'Get-DbaDatabasePartitionFunction',
+		'Get-DbaDatabasePartitionScheme'
 	)
 	
 	# Cmdlets to export from this module
