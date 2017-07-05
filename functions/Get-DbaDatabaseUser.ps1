@@ -102,7 +102,7 @@ Gets the users for the databases on Sql1 and Sql2/sqlexpress
 					continue
 				}
                 if ( $PSBoundParameters.ContainsKey('ExcludeSystemUser') ) {
-                    $users = $users.where({$_.IsSystemObject -eq $false})
+                    $users = $users | Where-Object { $_.IsSystemObject -eq $false }
                 }
 
                 $users | foreach {
