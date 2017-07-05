@@ -267,7 +267,7 @@
             $ErrVar | Should be BeNullOrEmpty
         }
         It "SHould have restore everything" {
-            ($results.RestorComplete -contains $false | Should be $False
+            ($results.RestorComplete -contains $false) | Should be $False
         }
 
     }
