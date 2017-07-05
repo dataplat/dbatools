@@ -684,6 +684,15 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Job \u0027The Agent Job\u0027\r\n\r\nThis will return the paths to the output files for each of the job step of the The Agent Job Job \r\non the SERVERNAME instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME\r\n\r\nThis will return the paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME,SERVERNAME2 -Job \u0027The Agent Job\u0027\r\n\r\nThis will return the paths to the output files for each of the job step of the The Agent Job Job \r\non the SERVERNAME instance and SERVERNAME2\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$Servers = \u0027SERVER\u0027,\u0027SERVER\\INSTANCE1\u0027\r\n\r\nGet-DbaAgentJobOutputFile -SqlInstance $Servers -Job \u0027The Agent Job\u0027 -OpenFile \r\n\r\nThis will return the paths to the output files for each of the job step of the The Agent Job Job \r\non the SERVER instance and the SERVER\\INSTANCE1 and open the files if they are available\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME  | Out-GridView\r\n\r\nThis will return the paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance and Pipe them to Out-GridView\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e(Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME | ogv -PassThru).FileName | Invoke-Item\r\n\r\nThis will return the paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance and Pipe them to Out-GridView and enable you to choose the output\r\nfile and open it\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Verbose\r\n\r\nThis will return the paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance and also show the job steps without an output file\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaAgentLog",
+        "Description":  "Gets the \"SQL Agent Error Log\" of an instance. Returns all 10 error logs by default.",
+        "Tags":  "Logging",
+        "Synopsis":  "Gets the \"SQL Agent Error Log\" of an instance",
+        "Name":  "Get-DbaAgentLog",
+        "Links":  "https://dbatools.io/Get-DbaAgentLog",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentLog -SqlInstance sql01\\sharepoint\r\n\r\nReturns the entire error log for the SQL Agent on sql01\\sharepoint\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentLog -SqlInstance sql01\\sharepoint -LogNumber 3, 6\r\n\r\nReturns log numbers 3 and 6 for the SQL Agent on sql01\\sharepoint\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\r\n\r\n$servers | Get-DbaAgentLog -LogNumber 0\r\n\r\nReturns the most recent SQL Agent error logs for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaAgentOperator",
         "Description":  "This function returns SQL Agent operators.",
         "Tags":  [
@@ -741,7 +750,7 @@
         "Synopsis":  "Returns backup history details for databases on a SQL Server",
         "Name":  "Get-DbaBackupHistory",
         "Links":  "https://dbatools.io/Get-DbaBackupHistory",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a\r\n\r\nReturns server name, database, username, backup type, date for all backups databases on SqlInstance2014a. This may \r\nreturn a ton of rows; consider using filters that are included in other examples.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$cred = Get-Credential sqladmin\r\n\r\nGet-DbaBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred\r\n\r\nDoes the same as above but logs in as SQL user \"sqladmin\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since \u00277/1/2016 10:47:00\u0027\r\n\r\nReturns backup information only for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table\r\n\r\nReturns information only for AdventureWorks2014 and pubs, and makes the output pretty\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last\r\n\r\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull\r\n\r\nReturns information about the most recent full backup for AdventureWorks2014 on sql2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerName -SqlInstance sql2016 | Get-DbaBackupHistory\r\n\r\nReturns database backup information for every database on every server listed in the Central Management Server on \r\nsql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 8 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force\r\n\r\nLots of detailed information for all databases on SqlInstance2014a and sql2016.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a\r\n\r\nReturns server name, database, username, backup type, date for all backups databases on SqlInstance2014a. This may \r\nreturn a ton of rows; consider using filters that are included in other examples.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$cred = Get-Credential sqladmin\r\n\r\nGet-DbaBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred\r\n\r\nDoes the same as above but logs in as SQL user \"sqladmin\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since \u00277/1/2016 10:47:00\u0027\r\n\r\nReturns backup information only for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table\r\n\r\nReturns information only for AdventureWorks2014 and pubs, and makes the output pretty\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last\r\n\r\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk\r\n\r\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, only \r\nfor backups to disk\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107\r\n\r\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, only \r\nfor backups with device_type 148 and 107\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 8 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull\r\n\r\nReturns information about the most recent full backup for AdventureWorks2014 on sql2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 9 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerName -SqlInstance sql2016 | Get-DbaBackupHistory\r\n\r\nReturns database backup information for every database on every server listed in the Central Management Server on \r\nsql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 10 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force\r\n\r\nLots of detailed information for all databases on SqlInstance2014a and sql2016.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaClientProtocol",
@@ -884,6 +893,26 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseMasterKey -SqlInstance sql2016\r\n\r\nGets all master database keys\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseMasterKey -SqlInstance Server1 -Database db1\r\n\r\nGets the master key for the db1 database\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaDatabasePartitionFunction",
+        "Description":  "Gets database Partition Functions",
+        "Tags":  "Databases",
+        "Author":  "Klaas Vandenberghe ( @PowerDbaKlaas )",
+        "Synopsis":  "Gets database Partition Functions",
+        "Name":  "Get-DbaDatabasePartitionFunction",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabasePartitionFunction -SqlInstance sql2016\r\n\r\nGets all database Partition Functions\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabasePartitionFunction -SqlInstance Server1 -Database db1\r\n\r\nGets the Partition Functions for the db1 database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabasePartitionFunction -SqlInstance Server1 -ExcludeDatabase db1\r\n\r\nGets the Partition Functions for all databases except db1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDatabasePartitionFunction\r\n\r\nGets the Partition Functions for the databases on Sql1 and Sql2/sqlexpress\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaDatabasePartitionScheme",
+        "Description":  "Gets database Partition Schemes",
+        "Tags":  "Databases",
+        "Author":  "Klaas Vandenberghe ( @PowerDbaKlaas )",
+        "Synopsis":  "Gets database Partition Schemes",
+        "Name":  "Get-DbaDatabasePartitionScheme",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabasePartitionScheme -SqlInstance sql2016\r\n\r\nGets all database Partition Schemes\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabasePartitionScheme -SqlInstance Server1 -Database db1\r\n\r\nGets the Partition Schemes for the db1 database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabasePartitionScheme -SqlInstance Server1 -ExcludeDatabase db1\r\n\r\nGets the Partition Schemes for all databases except db1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDatabasePartitionScheme\r\n\r\nGets the Partition Schemes for the databases on Sql1 and Sql2/sqlexpress\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaDatabaseSnapshot",
         "Description":  "Retrieves the list of database snapshot available, along with their base (the db they are the snapshot of) and creation time",
         "Tags":  "Snapshot",
@@ -910,6 +939,72 @@
         "Name":  "Get-DbaDatabaseState",
         "Links":  "https://dbatools.io/Get-DbaDatabaseState",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseState -SqlInstance sqlserver2014a\r\n\r\nGets options for all databases of the sqlserver2014a instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseState -SqlInstance sqlserver2014a -Database HR, Accounting\r\n\r\nGets options for both HR and Accounting database of the sqlserver2014a instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseState -SqlInstance sqlserver2014a -Exclude HR\r\n\r\nGets options for all databases of the sqlserver2014a instance except HR\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e\u0027sqlserver2014a\u0027, \u0027sqlserver2014b\u0027 | Get-DbaDatabaseState\r\n\r\nGets options for all databases of sqlserver2014a and sqlserver2014b instances\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaDatabaseUdf",
+        "Description":  "Gets database User Defined Functions",
+        "Tags":  [
+                     "security",
+                     "Databases"
+                 ],
+        "Author":  "Klaas Vandenberghe ( @PowerDbaKlaas )",
+        "Synopsis":  "Gets database User Defined Functions",
+        "Name":  "Get-DbaDatabaseUdf",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseUdf -SqlInstance sql2016\r\n\r\nGets all database User Defined Functions\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseUdf -SqlInstance Server1 -Database db1\r\n\r\nGets the User Defined Functions for the db1 database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseUdf -SqlInstance Server1 -ExcludeDatabase db1\r\n\r\nGets the User Defined Functions for all databases except db1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseUdf -SqlInstance Server1 -ExcludeSystemUdf\r\n\r\nGets the User Defined Functions for all databases that are not system objects (there can be 100+ system User Defined \r\nFunctions in each DB)\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDatabaseUdf\r\n\r\nGets the User Defined Functions for the databases on Sql1 and Sql2/sqlexpress\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaDatabaseUser",
+        "Description":  "Gets database users",
+        "Tags":  [
+                     "security",
+                     "Databases"
+                 ],
+        "Author":  "Klaas Vandenberghe ( @PowerDbaKlaas )",
+        "Synopsis":  "Gets database users",
+        "Name":  "Get-DbaDatabaseUser",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseUser -SqlInstance sql2016\r\n\r\nGets all database users\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseUser -SqlInstance Server1 -Database db1\r\n\r\nGets the users for the db1 database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseUser -SqlInstance Server1 -ExcludeDatabase db1\r\n\r\nGets the users for all databases except db1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseUser -SqlInstance Server1 -ExcludeSystemUser\r\n\r\nGets the users for all databases that are not system objects, like \u0027dbo\u0027, \u0027guest\u0027 or \u0027INFORMATION_SCHEMA\u0027\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDatabaseUser\r\n\r\nGets the users for the databases on Sql1 and Sql2/sqlexpress\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaDatabaseView",
+        "Description":  "Gets database views",
+        "Tags":  [
+                     "security",
+                     "Databases"
+                 ],
+        "Author":  "Klaas Vandenberghe ( @PowerDbaKlaas )",
+        "Synopsis":  "Gets database views",
+        "Name":  "Get-DbaDatabaseView",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseView -SqlInstance sql2016\r\n\r\nGets all database views\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseView -SqlInstance Server1 -Database db1\r\n\r\nGets the views for the db1 database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseView -SqlInstance Server1 -ExcludeDatabase db1\r\n\r\nGets the views for all databases except db1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseView -SqlInstance Server1 -ExcludeSystemView\r\n\r\nGets the views for all databases that are not system objects (there can be 400+ system views in each DB)\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e\u0027Sql1\u0027,\u0027Sql2/sqlexpress\u0027 | Get-DbaDatabaseView\r\n\r\nGets the views for the databases on Sql1 and Sql2/sqlexpress\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaDbMailHistory",
+        "Description":  "Gets the history of mail sent from a SQL instance",
+        "Tags":  "Logging",
+        "Synopsis":  "Gets the history of mail sent from a SQL instance",
+        "Name":  "Get-DbaDbMailHistory",
+        "Links":  "https://dbatools.io/Get-DbaDbMailHistory",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbMailHistory -SqlInstance sql01\\sharepoint\r\n\r\nReturns the entire dbmail history on sql01\\sharepoint\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbMailHistory -SqlInstance sql01\\sharepoint | Select *\r\n\r\nReturns the entire dbmail history on sql01\\sharepoint then return a bunch more columns\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\r\n\r\n$servers | Get-DbaDbMailHistory\r\n\r\nReturns the all dbmail history for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaDbMailLog",
+        "Description":  "Gets the DBMail log from a SQL instance",
+        "Tags":  "Logging",
+        "Synopsis":  "Gets the DBMail log from a SQL instance",
+        "Name":  "Get-DbaDbMailLog",
+        "Links":  "https://dbatools.io/Get-DbaDbMailLog",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbMailLog -SqlInstance sql01\\sharepoint\r\n\r\nReturns the entire dbmail log on sql01\\sharepoint\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbMailLog -SqlInstance sql01\\sharepoint | Select *\r\n\r\nReturns the entire dbmail log on sql01\\sharepoint then return a bunch more columns\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\r\n\r\n$servers | Get-DbaDbMailLog -Type Error, Information\r\n\r\nReturns only the Error and Information dbmail log for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaDefaultPath",
+        "Description":  "Gets the default SQL Server paths for data, logs and backups",
+        "Tags":  "Config",
+        "Synopsis":  "Gets the default SQL Server paths for data, logs and backups",
+        "Name":  "Get-DbaDefaultPath",
+        "Links":  "https://dbatools.io/Get-DbaDefaultPath",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDefaultPath -SqlInstance sql01\\sharepoint\r\n\r\nReturns the default file paths for sql01\\sharepoint\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\r\n\r\n$servers | Get-DbaDefaultPath\r\n\r\nReturns the default file paths for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaDependency",
@@ -1312,6 +1407,15 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlInstanceUserOption -SqlInstance localhost\r\n\r\nReturns SQL Instance user options on the local default SQL Server instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlInstanceUserOption -SqlInstance sql2, sql4\\sqlexpress\r\n\r\nReturns SQL Instance user options on default instance on sql2 and sqlexpress instance on sql4\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql2\u0027,\u0027sql4\u0027 | Get-DbaSqlInstanceUserOption\r\n\r\nReturns SQL Instance user options on sql2 and sql4\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaSqlLog",
+        "Description":  "Gets the \"SQL Error Log\" of an instance. Returns all 10 error logs by default.",
+        "Tags":  "Logging",
+        "Synopsis":  "Gets the \"SQL Error Log\" of an instance",
+        "Name":  "Get-DbaSqlLog",
+        "Links":  "https://dbatools.io/Get-DbaSqlLog",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlLog -SqlInstance sql01\\sharepoint\r\n\r\nReturns the entire error log for the SQL Server on sql01\\sharepoint\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlLog -SqlInstance sql01\\sharepoint -LogNumber 3, 6\r\n\r\nReturns log numbers 3 and 6 for the SQL Server on sql01\\sharepoint\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$servers = \"sql2014\",\"sql2016\", \"sqlcluster\\sharepoint\"\r\n\r\n$servers | Get-DbaSqlLog -LogNumber 0\r\n\r\nReturns the most recent SQL Server error logs for \"sql2014\",\"sql2016\" and \"sqlcluster\\sharepoint\"\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaSqlManagementObject",
         "Description":  "The Get-DbaSqlManagementObject returns an object with the Version and the \nAdd-Type Load Template for each version on the server.",
         "Tags":  "SMO",
@@ -1421,6 +1525,15 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaUptime -SqlInstance SqlBox1\\Instance2\r\n\r\nReturns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot \r\ntime, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress instance on winserver\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaUptime -SqlInstance winserver\\sqlexpress, sql2016\r\n\r\nReturns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot \r\ntime, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress instance on host winserver  and \r\nthe default instance on host sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaUptime -SqlInstance sqlserver2014a, sql2016 -SqlOnly\r\n\r\nReturns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string for the sqlexpress instance \r\non host winserver  and the default instance on host sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServerName -SqlInstance sql2014 | Get-DbaUptime\r\n\r\nReturns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot \r\ntime, host uptime as TimeSpan objects and host uptime as a string for every server listed in the Central Management \r\nServer on sql2014\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaWindowsLog",
+        "Description":  "Gets Windows Application events associated with an instance",
+        "Tags":  "Logging",
+        "Synopsis":  "Gets Windows Application events associated with an instance",
+        "Name":  "Get-DbaWindowsLog",
+        "Links":  "https://dbatools.io/Get-DbaWindowsLog",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$ErrorLogs = Get-DbaWindowsLog -SqlInstance sql01\\sharepoint\r\n\r\n$ErrorLogs | Where-Object ErrorNumber -eq 18456\r\n\r\nReturns all lines in the errorlogs that have event number 18456 in them\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaXEventsSession",
         "Description":  "Retrieves a list of Extended Events Sessions",
         "Tags":  "Memory",
@@ -1488,10 +1601,15 @@
     {
         "CommandName":  "Invoke-DbaDatabaseUpgrade",
         "Description":  "Updates compatability level, then runs CHECKDB with data_purity, DBCC updateusage, sp_updatestats and finally sp_refreshview against all user views.",
+        "Tags":  [
+                     "Shrink",
+                     "Databases"
+                 ],
+        "Author":  "Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/",
         "Synopsis":  "Take a database and upgrades it to compatability of the SQL Instance its hosted on. Based on https://thomaslarock.com/2014/06/upgrading-to-sql-server-2014-a-dozen-things-to-check/",
         "Name":  "Invoke-DbaDatabaseUpgrade",
         "Links":  "https://dbatools.io/Invoke-DbaDatabaseUpgrade",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eUpdate-Database -SqlInstance PRD-SQL-MSD01 -Database Test\r\n\r\nRuns the below processes against the databases\r\n-- Puts compatability of database to level of SQL Instance\r\n-- Runs CHECKDB DATA_PRUITY\r\n-- Runs DBCC UPDATESUSAGE\r\n-- Updates all users staistics\r\n-- Runs sp_refreshview against every view in the database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseUpgrade -SqlInstance PRD-SQL-INT01 -Database Test -IgnoreCompatabilityUpgrade -IgnoreUpdateView\r\n\r\nRuns the upgrade command skipping the compatability update and running sp_refreshview on all views in the database\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseUpgrade -SqlInstance PRD-SQL-MSD01 -Database Test\r\n\r\nRuns the below processes against the databases\r\n-- Puts compatability of database to level of SQL Instance\r\n-- Runs CHECKDB DATA_PURITY\r\n-- Runs DBCC UPDATESUSAGE\r\n-- Updates all users staistics\r\n-- Runs sp_refreshview against every view in the database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseUpgrade -SqlInstance PRD-SQL-INT01 -Database Test -NoCompatabilityUpgrade -NoRefreshView\r\n\r\nRuns the upgrade command skipping the compatability update and running sp_refreshview on all views in the database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016 | Out-GridView -Passthru | Invoke-DbaDatabaseUpgrade\r\n\r\nGet only specific databases using GridView and pass those to Invoke-DbaDatabaseUpgrade\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Invoke-DbaDiagnosticQuery",
@@ -1593,7 +1711,7 @@
         "Synopsis":  "New-DbaAgentSchedule creates a new schedule in the msdb database.",
         "Name":  "New-DbaAgentSchedule",
         "Links":  "https://dbatools.io/New-DbaAgentSchedule",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -Schedule daily -FrequencyType Daily -FrequencyInterval 1 -Force\r\n\r\nCreates a schedule for the job with a daily frequency every day. It also assumes default values for the start date, \r\nstart time, end date and end time.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -Schedule weekly -FrequencyType Weekly \r\n-FrequencyInterval Monday, Wednesday, Friday -Force\r\n\r\nCreates a schedule for the job with a daily frequency every day. It also assumes default values for the start date, \r\nstart time, end date and end time.\r\nThe force will remove any existing schedules that have the same name\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -Schedule daily -StartDate 20170530 -StartTime 110000 -EndTime \r\n150000 -FrequencyType Daily -FrequencyInterval 1\r\n\r\nCreate a daily schedule that starts on the May 30th on 11 AM and ends on 3 PM.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1 -Schedule daily -FrequencyType Daily -FrequencyInterval 1\r\n\r\nCreates a schedule for the job with a daily frequency every day on multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1, Job2, Job3 -Schedule daily -FrequencyType Daily \r\n-FrequencyInterval 1\r\n\r\nCreates a schedule for the job with a daily frequency every day on multiple servers for multiple jobs using pipe line\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Schedule daily -FrequencyType Daily -FrequencyInterval 1\r\n\r\nCreates a schedule that\u0027s not connected to a job\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -Schedule daily -FrequencyType Daily -FrequencyInterval 1 -Force\r\n\r\nCreates a schedule for the job with a daily frequency every day. It also assumes default values for the start date, \r\nstart time, end date and end time.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -Schedule weekly -FrequencyType Weekly \r\n-FrequencyInterval Monday, Wednesday, Friday -Force\r\n\r\nCreates a schedule for the job with a daily frequency every day. It also assumes default values for the start date, \r\nstart time, end date and end time.\r\nThe force will remove any existing schedules that have the same name\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -Schedule daily -StartDate 20170530 -StartTime 110000 -EndTime \r\n150000 -FrequencyType Daily -FrequencyInterval 1\r\n\r\nCreate a daily schedule that starts on the May 30th on 11 AM and ends on 3 PM.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1 -Schedule daily -FrequencyType Daily -FrequencyInterval 1\r\n\r\nCreates a schedule for the job with a daily frequency every day on multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1, Job2, Job3 -Schedule daily -FrequencyType Daily \r\n-FrequencyInterval 1\r\n\r\nCreates a schedule for the job with a daily frequency every day on multiple servers for multiple jobs using pipe line\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentSchedule -SqlInstance sql1 -Schedule daily -FrequencyType Daily -FrequencyInterval 1 -Force\r\n\r\nCreates a schedule that\u0027s not connected to a job\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "New-DbaCmConnection",
