@@ -260,8 +260,8 @@ function Get-DbaBackupHistory {
 					}
 					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Databases $db -raw:$raw -DeviceType $DeviceType -LastLsn $TLogstartLSN | Where-Object { 
 						$_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN 
-					}
-					$Allbackups | Sort-Object FirstLsn
+					} | Sort-Object LastLsn
+					$Allbackups
 				
 				}
 				continue
