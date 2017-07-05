@@ -246,8 +246,6 @@ function Get-DbaBackupHistory {
 					$allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastFull -raw:$Raw -DeviceType $DeviceType
 					$DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw -DeviceType $DeviceType
 					if ($DiffDb.LastLsn -gt $Fulldb.LastLsn -and  $DiffDb.DatabaseBackupLSN -eq $Fulldb.CheckPointLSN ) {
-						$Allbackups += $DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw -DeviceType $DeviceType
-
 						$TLogStartLSN = ($diffdb.FirstLsn -as [bigint])
 						$Allbackups += $DiffDB
 					}
