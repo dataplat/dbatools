@@ -323,7 +323,8 @@
 		'Get-DbaWindowsLog',
 		'Get-DbaSqlLog',
 		'Get-DbaAgentLog',
-		'Get-DbaDbMailLog'
+		'Get-DbaDbMailLog',
+		'Get-DbaDbMailHistory'
 	)
 	
 	# Cmdlets to export from this module
