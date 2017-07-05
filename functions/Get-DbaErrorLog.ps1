@@ -25,11 +25,14 @@
 		The maximum number of parallel threads used on the local computer.
 		Given that those will mostly be waiting for the remote system, there is usually no need to limit this.
 	
-	.PARAMETER MayRemoteThreads
+	.PARAMETER MaxRemoteThreads
 		Default: 2
 		The maximum number of parallel threads that are executed on the target sql server.
 		These processes will cause considerable CPU load, so a low limit is advisable in most scenarios.
 		Any value lower than 1 disables the limit
+	
+	.PARAMETER Silent 
+		Use this switch to disable any kind of verbose messages
 	
 	.NOTES
 		Tags: SQL ErrorLog
