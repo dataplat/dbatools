@@ -434,7 +434,7 @@ function Get-DbaBackupHistory {
 				$wherearray = @()
 				
 				if ($Database.length -gt 0) {
-					$dblist = $Database.Name -join "','"
+					$dblist = $Database -join "','"
 					$wherearray += "database_name IN ('$dblist')"
 				}
 				
