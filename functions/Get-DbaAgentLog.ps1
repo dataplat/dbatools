@@ -41,7 +41,7 @@
 		$servers = "sql2014","sql2016", "sqlcluster\sharepoint"
 		$servers | Get-DbaAgentLog -LogNumber 0
 		
-		Returns the most recent error logs for "sql2014","sql2016" and "sqlcluster\sharepoint"
+		Returns the most recent SQL Agent error logs for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
 #>	
 	[CmdletBinding()]
