@@ -328,7 +328,9 @@
 		'Get-DbaDatabaseView',
 		'Get-DbaDatabaseUdf',
 		'Get-DbaDatabasePartitionFunction',
-		'Get-DbaDatabasePartitionScheme'
+		'Get-DbaDatabasePartitionScheme',
+		'Get-DbaErrorLog',
+		'Get-DbaDefaultPath'
 	)
 	
 	# Cmdlets to export from this module
@@ -404,8 +406,7 @@
 	'Test-SqlPath',
 	'Test-SqlTempDbConfiguration',
 	'Watch-SqlDbLogin',
-	'Invoke-Sqlcmd2',
-	'Get-DbaErrorLog'
+	'Invoke-Sqlcmd2'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()
