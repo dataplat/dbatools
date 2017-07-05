@@ -249,7 +249,12 @@
         }
 
     }
-
+    Context "Backup DB For next test" {
+        $results = Backup-DbaDatabase -SqlInstance localhost host -Database RestoreTimeClean
+        It "Should return successful restore" {
+			$results.RestoreComplete | Should Be $true
+		}
+    }
     Context "All user databases are removed post continue test" {
         $results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
         It "Should say the status was dropped" {
