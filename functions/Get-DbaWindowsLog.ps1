@@ -35,7 +35,7 @@
 		Use this switch to disable any kind of verbose messages
 	
 	.NOTES
-		Tags: SQL ErrorLog
+		Tags: Logging
 		Original Author: Drew Furgiuele
 		Editor: Friedrich "Fred" Weinmann
 		Website: https://dbatools.io
