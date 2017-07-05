@@ -15,6 +15,9 @@
 	.PARAMETER Since
 	Datetime object used to narrow the results to the send request date
 	
+	.PARAMETER Status
+	Narrow the results by status. Valid values include Unsent, Sent, Failed and Retrying
+	
 	.PARAMETER Silent 
 		Use this switch to disable any kind of verbose messages
 	
@@ -30,14 +33,18 @@
 	.EXAMPLE
 		Get-DbaDbMailHistory -SqlInstance sql01\sharepoint 
 		
-		Returns the entire dbmail log for the SQL Agent on sql01\sharepoint 
+		Returns the entire dbmail history on sql01\sharepoint 
 
-	
+	.EXAMPLE
+		Get-DbaDbMailHistory -SqlInstance sql01\sharepoint | Select *
+		
+		Returns the entire dbmail history on sql01\sharepoint then return a bunch more columns
+
 	.EXAMPLE
 		$servers = "sql2014","sql2016", "sqlcluster\sharepoint"
 		$servers | Get-DbaDbMailHistory
 		
-		Returns the all dbmail logs for "sql2014","sql2016" and "sqlcluster\sharepoint"
+		Returns the all dbmail history for "sql2014","sql2016" and "sqlcluster\sharepoint"
 
 #>	
 	[CmdletBinding()]
@@ -49,6 +56,8 @@
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
 		[DateTime]$Since,
+		[ValidateSet('Unsent', 'Sent','Failed','Retrying')]
+		[string]$Status,
 		[switch]$Silent
 	)
 	process {
@@ -66,7 +75,8 @@
 					ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, 
 					SERVERPROPERTY('ServerName') AS SqlInstance, 
 					mailitem_id as MailItemId,
-					profile_id as ProfileId,
+					a.profile_id as ProfileId,
+					p.name as Profile,
 					recipients as Recipients,
 					copy_recipients as CopyRecipients,
 					blind_copy_recipients as BlindCopyRecipients,
@@ -88,17 +98,37 @@
 					send_request_date as SendRequestDate,
 					send_request_user as SendRequestUser,
 					sent_account_id as SentAccountId,
-					sent_status as SentStatus,
+					CASE sent_status
+					WHEN 'unsent' THEN 'Unsent'
+					WHEN 'sent' THEN 'Sent'
+					WHEN 'failed' THEN 'Failed'
+					WHEN 'retrying' THEN 'Retrying'
+					END AS SentStatus,
 					sent_date as SentDate,
 					last_mod_date as LastModDate,
-					last_mod_user as LastModUser
-					from msdb.dbo.sysmail_allitems"
+					a.last_mod_user as LastModUser
+					from msdb.dbo.sysmail_allitems a
+					join msdb.dbo.sysmail_profile p 
+					on a.profile_id = p.profile_id"
 			
-			if ($Since) {
-				$sql += " WHERE send_request_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
+			if ($Since -or $Status) {
+				$wherearray = @()
+				
+				if ($Since) {
+					$wherearray += "send_request_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
+				}
+				
+				if ($Status) {
+					$Status = $Status -join "', '"
+					$wherearray += "sent_status in ('$Status')"
+				}
+				
+				$wherearray = $wherearray -join ' and '
+				$where = "where $wherearray"
+				$sql = "$sql $where"
 			}
 			
-			$server.Query($sql)# | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance
+			$server.Query($sql) | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Profile, Recipients, CopyRecipients, BlindCopyRecipients, Subject, Importance, Sensitivity, FileAttachments, AttachmentEncoding, SendRequestDate, SendRequestUser, SentStatus, SentDate
 		}
 	}
 }
