@@ -101,7 +101,7 @@ Gets the users for the databases on Sql1 and Sql2/sqlexpress
 					Write-Message -Message "No users exist in the $db database on $instance" -Target $db -Level Verbose
 					continue
 				}
-                if ( $PSBoundParameters.ContainsKey('ExcludeSystemUser') ) {
+                if (Was-Bound -ParameterName ExcludeSystemUser) {
                     $users = $users | Where-Object { $_.IsSystemObject -eq $false }
                 }
 
