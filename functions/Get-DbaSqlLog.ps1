@@ -37,6 +37,12 @@
 		
 		Returns log numbers 3 and 6 for the SQL Server on sql01\sharepoint 
 	
+	.EXAMPLE
+		$servers = "sql2014","sql2016", "sqlcluster\sharepoint"
+		$servers | Get-DbaSqlLog -LogNumber 0
+		
+		Returns the most recent SQL Server error logs for "sql2014","sql2016" and "sqlcluster\sharepoint"
+	
 #>	
 	[CmdletBinding()]
 	param (
