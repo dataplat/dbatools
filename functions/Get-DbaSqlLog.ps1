@@ -28,9 +28,14 @@
 		https://dbatools.io/Get-DbaSqlLog
 	
 	.EXAMPLE
-		$ErrorLogs = Get-DbaSqlLog -SqlInstance sql01\sharepoint 
+		Get-DbaSqlLog -SqlInstance sql01\sharepoint 
 		
-		Returns all lines in the errorlogs that have number 18456 in them
+		Returns the entire error log for the SQL Server on sql01\sharepoint 
+
+	.EXAMPLE
+		Get-DbaSqlLog -SqlInstance sql01\sharepoint -LogNumber 3, 6
+		
+		Returns log numbers 3 and 6 for the SQL Server on sql01\sharepoint 
 	
 #>	
 	[CmdletBinding()]
