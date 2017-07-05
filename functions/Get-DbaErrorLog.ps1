@@ -18,7 +18,7 @@
 		Retrieve all errors that happened before this timestamp
 	
 	.PARAMETER Credential
-		Credential to be used to connect to the Server
+		Credential to be used to connect to the Server. Note this is a Windows credential, as this command requires we communicate with the computer and not with the SQL instance.
 	
 	.PARAMETER MaxThreads
 		Default: Unlimited
