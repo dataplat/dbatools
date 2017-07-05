@@ -239,11 +239,11 @@ function Get-DbaDatabase {
 						$Notes = "Only CopyOnly backups"
 					}
 				}
-				Add-Member -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
+				Add-Member -Force -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
 
-				Add-Member -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
-				Add-Member -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-				Add-Member -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+				Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
+				Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+				Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 				Select-DefaultView -InputObject $db -Property $defaults
 
 			}
