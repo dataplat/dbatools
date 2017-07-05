@@ -319,7 +319,8 @@
 		'Find-DbaTrigger',
 		'Find-DbaView',
 		'Invoke-DbaDatabaseUpgrade',
-		'Get-DbaDatabaseUser'
+		'Get-DbaDatabaseUser',
+		'Get-DbaErrorLog'
 	)
 	
 	# Cmdlets to export from this module
