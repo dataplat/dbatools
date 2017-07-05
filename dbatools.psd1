@@ -320,7 +320,10 @@
 		'Find-DbaView',
 		'Invoke-DbaDatabaseUpgrade',
 		'Get-DbaDatabaseUser',
-		'Get-DbaWindowsLog'
+		'Get-DbaWindowsLog',
+		'Get-DbaSqlLog',
+		'Get-DbaAgentLog',
+		'Get-DbaDbMailLog'
 	)
 	
 	# Cmdlets to export from this module
