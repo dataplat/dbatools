@@ -118,7 +118,7 @@ sql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1, Job2, Job3 -Schedule daily -F
 Creates a schedule for the job with a daily frequency every day on multiple servers for multiple jobs using pipe line
 
 .EXAMPLE
-New-DbaAgentSchedule -SqlInstance sql1 -Schedule daily -FrequencyType Daily -FrequencyInterval 1
+New-DbaAgentSchedule -SqlInstance sql1 -Schedule daily -FrequencyType Daily -FrequencyInterval 1 -Force
 Creates a schedule that's not connected to a job
 
 #>
@@ -323,7 +323,7 @@ Creates a schedule that's not connected to a job
             Write-Message -Message "Start date was not set. Force is being used. Setting it to $StartDate" -Level Verbose
         }
         elseif (-not $StartDate) {
-            Stop-Function -Message "Please enter a start date or use -Force 1 to use defaults." -Target $SqlInstance 
+            Stop-Function -Message "Please enter a start date or use -Force to use defaults." -Target $SqlInstance 
             return
         }
         elseif ($StartDate -notmatch $RegexDate) {
@@ -337,7 +337,7 @@ Creates a schedule that's not connected to a job
             Write-Message -Message "End date was not set. Force is being used. Setting it to $EndDate" -Level Verbose
         }
         elseif (-not $EndDate) {
-            Stop-Function -Message "Please enter an end date or use -Force 1 to use defaults." -Target $SqlInstance 
+            Stop-Function -Message "Please enter an end date or use -Force to use defaults." -Target $SqlInstance 
             return
         }
 
@@ -356,7 +356,7 @@ Creates a schedule that's not connected to a job
             Write-Message -Message "Start time was not set. Force is being used. Setting it to $StartTime" -Level Verbose
         }
         elseif (-not $StartTime) {
-            Stop-Function -Message "Please enter a start time or use -Force 1 to use defaults." -Target $SqlInstance 
+            Stop-Function -Message "Please enter a start time or use -Force to use defaults." -Target $SqlInstance 
             return
         }
         elseif ($StartTime -notmatch $RegexTime) {
@@ -370,7 +370,7 @@ Creates a schedule that's not connected to a job
             Write-Message -Message "End time was not set. Force is being used. Setting it to $EndTime" -Level Verbose
         }
         elseif (-not $EndTime) {
-            Stop-Function -Message "Please enter an end time or use -Force 1 to use defaults." -Target $SqlInstance 
+            Stop-Function -Message "Please enter an end time or use -Force to use defaults." -Target $SqlInstance 
             return
         }
         elseif ($EndTime -notmatch $RegexTime) {
