@@ -80,7 +80,7 @@ Searches in "mydb" database views for "runtime" in the textbody
     )
 
     begin {
-        $sql = "SELECT vw.name, m.definition as TextBody FROM sys.sql_modules m, sys.views vw WHERE m.object_id = vw.object_id"
+        $sql = "SELECT OBJECT_SCHEMA_NAME(vw.object_id) as ViewSchema, vw.name, m.definition as TextBody FROM sys.sql_modules m, sys.views vw WHERE m.object_id = vw.object_id"
         if (!$IncludeSystemObjects) { $sql = "$sql AND vw.is_ms_shipped = 0" }
         $everyservervwcount = 0
     }
@@ -131,11 +131,12 @@ Searches in "mydb" database views for "runtime" in the textbody
                     foreach ($row in $rows) {
                         $totalcount++; $vwcount++; $everyservervwcount++
 
-                        $proc = $row.name
+                        $viewSchema = $row.ViewSchema
+                        $view = $row.name
 
-                        Write-Message -Level Verbose -Message "Looking in View: $proc TextBody for $pattern"
+                        Write-Message -Level Verbose -Message "Looking in View: $viewSchema.$view TextBody for $pattern"
                         if ($row.TextBody -match $Pattern) {
-                            $vw = $db.Views | Where-Object name -eq $row.name
+                            $vw = $db.Views | Where-Object {$_.Schema -eq $viewSchema -and $_.Name -eq $view}
 
                             $viewText = $vw.TextBody.split("`n`r")
                             $vwTextFound = $viewText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
@@ -143,7 +144,7 @@ Searches in "mydb" database views for "runtime" in the textbody
                             [PSCustomObject]@{
                                 ComputerName   = $server.NetName
                                 SqlInstance    = $server.ServiceName
-                                Database       = $db.name
+                                Database       = $db.Name
                                 Schema         = $vw.Schema
                                 Name           = $vw.Name
                                 Owner          = $vw.Owner
@@ -162,9 +163,11 @@ Searches in "mydb" database views for "runtime" in the textbody
 
                     foreach ($vw in $Views) {
                         $totalcount++; $vwcount++; $everyservervwcount++
-                        $proc = $vw.Name
+                        
+                        $viewSchema = $row.ViewSchema
+                        $view = $vw.Name
 
-                        Write-Message -Level Verbose -Message "Looking in View: $proc TextBody for $pattern"
+                        Write-Message -Level Verbose -Message "Looking in View: $viewSchema.$view TextBody for $pattern"
                         if ($vw.TextBody -match $Pattern) {
 
                             $viewText = $vw.TextBody.split("`n`r")
@@ -173,7 +176,7 @@ Searches in "mydb" database views for "runtime" in the textbody
                             [PSCustomObject]@{
                                 ComputerName   = $server.NetName
                                 SqlInstance    = $server.ServiceName
-                                Database       = $db.name
+                                Database       = $db.Name
                                 Schema         = $vw.Schema
                                 Name           = $vw.Name
                                 Owner          = $vw.Owner
