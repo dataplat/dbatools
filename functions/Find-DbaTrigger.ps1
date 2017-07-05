@@ -88,7 +88,7 @@ Searches in "mydb" database triggers for "runtime" in the textbody
     begin {
         $sqlDatabaseTriggers = "SELECT tr.name, m.definition as TextBody FROM sys.sql_modules m, sys.triggers tr WHERE m.object_id = tr.object_id AND tr.parent_class = 0"
 
-        $sqlTableTriggers = "SELECT OBJECT_NAME(tr.parent_id) AS TableName, tr.name, m.definition as TextBody FROM sys.sql_modules m, sys.triggers tr WHERE m.object_id = tr.object_id AND tr.parent_class = 1"
+        $sqlTableTriggers = "SELECT OBJECT_SCHEMA_NAME(tr.parent_id) TableSchema, OBJECT_NAME(tr.parent_id) AS TableName, tr.name, m.definition as TextBody FROM sys.sql_modules m, sys.triggers tr WHERE m.object_id = tr.object_id AND tr.parent_class = 1"
         if (!$IncludeSystemObjects) { $sqlTableTriggers = "$sqlTableTriggers AND tr.is_ms_shipped = 0" }
 
         $everyserverstcount = 0
@@ -176,7 +176,7 @@ Searches in "mydb" database triggers for "runtime" in the textbody
 
                                 $trigger = $row.name
 
-                                Write-Message -Level Verbose -Message "Looking in Trigger: $trigger TextBody for $pattern"
+                                Write-Message -Level Verbose -Message "Looking in trigger $trigger for textBody with pattern $pattern on database $db"
                                 if ($row.TextBody -match $Pattern) {
                                     $tr = $db.Triggers | Where-Object name -eq $row.name
 
@@ -211,11 +211,13 @@ Searches in "mydb" database triggers for "runtime" in the textbody
                                 $totalcount++; $triggercount++; $everyserverstcount++
 
                                 $trigger = $row.name
+                                $triggerParentSchema = $row.TableSchema
                                 $triggerParent = $row.TableName
 
-                                Write-Message -Level Verbose -Message "Looking in Trigger: $trigger TextBody for $pattern"
+                                Write-Message -Level Verbose -Message "Looking in trigger $trigger for textBody with pattern $pattern in object $triggerParentSchema.$triggerParent at database $db"
                                 if ($row.TextBody -match $Pattern) {
-                                    $tr = $db.Tables[$triggerParent].Triggers | Where-Object name -eq $row.name
+
+                                    $tr = ($db.Tables | Where-Object{$_.Name -eq $triggerParent -and $_.Schema -eq $triggerParentSchema}).Triggers | Where-Object name -eq $row.name
 
                                     $triggerText = $tr.TextBody.split("`n`r")
                                     $trTextFound = $triggerText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
@@ -249,7 +251,7 @@ Searches in "mydb" database triggers for "runtime" in the textbody
                                 $totalcount++; $triggercount++; $everyserverstcount++
                                 $trigger = $tr.Name
 
-                                Write-Message -Level Verbose -Message "Looking in Trigger: $trigger TextBody for $pattern"
+                                Write-Message -Level Verbose -Message "Looking in trigger $trigger for textBody with pattern $pattern on database $db"
                                 if ($tr.TextBody -match $Pattern) {
 
                                     $triggerText = $tr.TextBody.split("`n`r")
@@ -283,7 +285,7 @@ Searches in "mydb" database triggers for "runtime" in the textbody
                                 $totalcount++; $triggercount++; $everyserverstcount++
                                 $trigger = $tr.Name
 
-                                Write-Message -Level Verbose -Message "Looking in Trigger: $trigger TextBody for $pattern"
+                                Write-Message -Level Verbose -Message "Looking in trigger $trigger for textBody with pattern $pattern in object $($tr.Parent) at database $db"
                                 if ($tr.TextBody -match $Pattern) {
 
                                     $triggerText = $tr.TextBody.split("`n`r")
