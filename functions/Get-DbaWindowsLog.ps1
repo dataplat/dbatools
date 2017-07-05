@@ -1,21 +1,21 @@
 ﻿function Get-DbaWindowsLog {
 <#
 	.SYNOPSIS
-		Gets Windows Application errors associated with an instance
+		Gets Windows Application events associated with an instance
 	
 	.DESCRIPTION
-		Gets Windows Application errors associated with an instance
+		Gets Windows Application events associated with an instance
 	
 	.PARAMETER SqlInstance
-		The instance(s) to retrieve the error logs from
+		The instance(s) to retrieve the event logs from
 	
 	.PARAMETER Start
 		Default: 1970
-		Retrieve all errors starting from this timestamp.
+		Retrieve all events starting from this timestamp.
 	
 	.PARAMETER End
 		Default: Now
-		Retrieve all errors that happened before this timestamp
+		Retrieve all events that happened before this timestamp
 	
 	.PARAMETER Credential
 		Credential to be used to connect to the Server. Note this is a Windows credential, as this command requires we communicate with the computer and not with the SQL instance.
@@ -49,7 +49,7 @@
 		$ErrorLogs = Get-DbaWindowsLog -SqlInstance sql01\sharepoint 
 		$ErrorLogs | Where-Object ErrorNumber -eq 18456
 		
-		Returns all lines in the errorlogs that have error number 18456 in them
+		Returns all lines in the errorlogs that have event number 18456 in them
 	
 #>	
 	[CmdletBinding()]
