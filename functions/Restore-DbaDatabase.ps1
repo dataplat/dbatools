@@ -361,9 +361,9 @@ function Restore-DbaDatabase {
                 }
                 if ("BackupSetGUID" -notin $f.PSobject.Properties.name) {
                     #This line until Get-DbaBackupHistory gets fixed
-                    $f = $f | Select-Object *, @{ Name = "BackupSetGUID"; Expression = { $_.BackupSetupID } }
+                    #$f = $f | Select-Object *, @{ Name = "BackupSetGUID"; Expression = { $_.BackupSetupID } }
                     #This one once it's sorted:
-                    #$f = $f | Select-Object *, @{Name="BackupSetGUID";Expression={$_.BackupSetID}}
+                    $f = $f | Select-Object *, @{Name="BackupSetGUID";Expression={$_.BackupSetID}}
                 }
                 if ($f.BackupPath -like 'http*' -and '' -eq $AzureCredential) {
                     Stop-Function -Message "At least one Azure backup passed in, and no Credential supplied. Stopping"
