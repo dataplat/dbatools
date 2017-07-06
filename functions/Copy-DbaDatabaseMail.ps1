@@ -11,7 +11,7 @@
 		The -mailServers parameter is autopopulated for command-line completion and can be used to copy only specific mail servers.
 
 	.PARAMETER Source
-		Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+		Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 	.PARAMETER Destination
 		Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -52,10 +52,10 @@
 		Prompts you for confirmation before executing any changing operations within the command.
 
 	.PARAMETER Force
-		Drops and recreates the object if it exists
+		Drops and recreates the object if it exists.
 
 	.PARAMETER Silent
-		Use this switch to disable any kind of verbose messages
+		If this switch is enabled, the internal messaging functions will be silenced.
 
 	.NOTES
 		Tags: Migration, Mail
@@ -85,7 +85,7 @@
 		Shows what would happen if the command were executed.
 	
 	.EXAMPLE
-		Copy-DbaDatabaseMailj -Source sqlserver2014a -Destination sqlcluster -Silent:$true
+		Copy-DbaDatabaseMail -Source sqlserver2014a -Destination sqlcluster -Silent:$true
 
 		Performs execution of function, but disables output of all messages
 	#>
@@ -95,7 +95,7 @@
 		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[Parameter(ParameterSetName = 'SpecifcTypes')]
+		[Parameter(ParameterSetName = 'SpecificTypes')]
 		[ValidateSet('ConfigurationValues', 'Profiles', 'Accounts', 'mailServers')]
 		[string[]]$Type,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,

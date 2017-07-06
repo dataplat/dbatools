@@ -45,10 +45,10 @@
 			Prompts you for confirmation before executing any changing operations within the command.
 
 		.PARAMETER Force
-			Drops and recreates the XXXXX if it exists
+			Drops and recreates the assembly if it exists
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Migration, Assembly
@@ -135,7 +135,7 @@
 			$dbName = $currentAssembly.Parent.Name
 			$destDb = $destServer.Databases[$dbName]
 
-			$copyDbAssemlbyStatus = [pscustomobject]@{
+			$copyDbAssemblyStatus = [pscustomobject]@{
 				SourceServer        = $sourceServer.Name
 				SourceDatabase      = $dbName
 				DestinationServer   = $destServer.Name
@@ -147,8 +147,8 @@
 
 
 			if (!$destDb) {
-				$copyDbAssemlbyStatus.Status = "Skipped"
-				$copyDbAssemlbyStatus
+				$copyDbAssemblyStatus.Status = "Skipped"
+				$copyDbAssemblyStatus
 
 				Write-Message -Level Warning -Message "Destination database $dbName does not exist. Skipping $assemblyName.";
 				continue
@@ -167,8 +167,8 @@
 						$destServer.Query($sql)
 					}
 					catch {
-                        $copyDbAssemlbyStatus.Status = "Failed"
-                        $copyDbAssemlbyStatus
+                        $copyDbAssemblyStatus.Status = "Failed"
+                        $copyDbAssemblyStatus
 
                         Stop-Function -Message "Issue setting security level" -Target $destDb -InnerErrorRecord $_
 					}
@@ -177,8 +177,8 @@
 
 			if ($destServer.Databases[$dbName].Assemblies.Name -contains $currentAssembly.name) {
 				if ($force -eq $false) {
-                    $copyDbAssemlbyStatus.Status = "Skipped"
-                    $copyDbAssemlbyStatus
+                    $copyDbAssemblyStatus.Status = "Skipped"
+                    $copyDbAssemblyStatus
 
                     Write-Message -Level Warning -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
 					continue
@@ -195,8 +195,8 @@
 							$destServer.Query($sql,$dbName)
                         }
 						catch {
-                            $copyDbAssemlbyStatus.Status = "Failed"
-                            $copyDbAssemlbyStatus
+                            $copyDbAssemblyStatus.Status = "Failed"
+                            $copyDbAssemblyStatus
 
                             Stop-Function -Message "Issue dropping assembly" -Target $assemblyName -InnerErrorRecord $_ -Continue
 						}
@@ -211,13 +211,13 @@
 					Write-Message -Level Debug -Message $sql
 					$destServer.Query($sql,$dbName)
 
-                    $copyDbAssemlbyStatus.Status = "Successful"
-                    $copyDbAssemlbyStatus
+                    $copyDbAssemblyStatus.Status = "Successful"
+                    $copyDbAssemblyStatus
 
                 }
 				catch {
-                    $copyDbAssemlbyStatus.Status = "Failed"
-                    $copyDbAssemlbyStatus
+                    $copyDbAssemblyStatus.Status = "Failed"
+                    $copyDbAssemblyStatus
 
                     Stop-Function -Message "Issue creating assembly" -Target $assemblyName -InnerErrorRecord $_
 				}

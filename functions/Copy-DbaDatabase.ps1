@@ -11,13 +11,13 @@ By default, databases will be migrated to the destination Sql Server's default d
 THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
 
 .PARAMETER Source
-Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER Destination
 Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:F
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
 $scred = Get-Credential, this pass $scred object to the param. 
 
@@ -31,13 +31,13 @@ $dcred = Get-Credential, this pass this $dcred to the param.
 Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
 .PARAMETER AllDatabases
-This is a parameter that was included for safety, so you don't accidentally detach/attach all databases without specifying. Migrates user databases. Does not migrate system or support databases. Requires -BackupRestore or -DetachAttach. 
+If this switch is enabled, all databases will be copied. This is included for safety, so you don't accidentally detach/attach all databases without specifying. This only migrates user databases; system and support databases are not migrated. Requires -BackupRestore or -DetachAttach. 
 
 .PARAMETER IncludeSupportDbs
-Migration of ReportServer, ReportServerTempDb, SSIDb, and distribution databases if they exist. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
+If this switch is enabled, ReportServer, ReportServerTempDb, SSISDB, and distribution databases will be migrated if they exist. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
 
 .PARAMETER BackupRestore
-Use the a Copy-Only Backup and Restore Method. This parameter requires that you specify -NetworkShare in a valid UNC format (\\server\share)
+Use the a Copy-Only Backup and Restore Method. This parameter requires that you specify -NetworkShare in a valid UNC format (\\server\share).
 	
 Backups will be immediately deleted after use unless -NoBackupCleanup is specified.
 
@@ -48,19 +48,20 @@ Uses the detach/copy/attach method to perform database migrations. No files are 
 Reattaches all source databases after DetachAttach migration.
 
 .PARAMETER ReuseSourceFolderStructure
-By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. 
-The same structure on the SOURCE will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
+If this switch is enabled, databases will be migrated into a directory structure which matches the structure used on the source. Otherwise, databases will be migrated to the destination Sql Server's default data and log directories.
+
+Consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
 
 * note, to reuse destination folder structure, specify -WithReplace
 
 .PARAMETER NetworkShare
-Specifies the network location for the backup files. The Sql Service service accounts must read/write permission to access this location.
+Specifies the network location for the backup files. The Sql Service service accounts for both the source and destination instances must read/write permission to access this location.
 
 .PARAMETER Database
-Migrates ONLY specified databases. This list is auto-populated for tab completion. Multiple databases are allowed.
+Migrates ONLY specified database(s). This list is auto-populated for tab completion. Multiple databases are allowed.
 
 .PARAMETER ExcludeDatabase
-Excludes specified databases when performing -AllDatabases migrations. This list is auto-populated for tab completion.
+Excludes specified database(s) when performing -AllDatabases migrations. This list is auto-populated for tab completion.
 
 .PARAMETER SetSourceReadOnly
 Sets all migrated databases to ReadOnly prior to detach/attach & backup/restore. If -Reattach is used, db is set to read-only after reattach.
@@ -69,10 +70,10 @@ Sets all migrated databases to ReadOnly prior to detach/attach & backup/restore.
 Sets restore to NoRecovery. Ideal for staging. 
 	
 .PARAMETER WithReplace
-It's exactly WITH REPLACE. This is useful if you want to stage some complex file paths.
+Restores databases using WITH REPLACE. This is useful if you want to stage some complex file paths.
 	
 .PARAMETER NoBackupCleanup
-By default, backups generated by the module will be deleted immediately after they are restored. Use this to skip.
+If this switch is enabled, backups generated by the module will be not deleted after they are restored.
 
 .PARAMETER Force
 Drops existing databases with matching names. If using -DetachAttach, -Force will break mirrors and drop dbs from Availability Groups.
@@ -93,7 +94,7 @@ Number of files to split the backup. Default is 3.
 By default, Copy-DbaDatabase backups are backed up with COPY_ONLY, which avoids breaking the LSN backup chain. This parameter will set CopyOnly to $false.
 
 .PARAMETER SetSourceOffline
-Sets the Source db to offline after copy
+If this switch is enabled, the Source database(s) will be set to offline after copy.
 
 .PARAMETER Silent
 Replaces user friendly yellow warnings with bloody red exceptions of doom!
