@@ -246,8 +246,6 @@ function Get-DbaBackupHistory {
 					$allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastFull -raw:$Raw -DeviceType $DeviceType
 					$DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw -DeviceType $DeviceType
 					if ($DiffDb.LastLsn -gt $Fulldb.LastLsn -and  $DiffDb.DatabaseBackupLSN -eq $Fulldb.CheckPointLSN ) {
-						$Allbackups += $DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw -DeviceType $DeviceType
-
 						$TLogStartLSN = ($diffdb.FirstLsn -as [bigint])
 						$Allbackups += $DiffDB
 					}
@@ -262,10 +260,9 @@ function Get-DbaBackupHistory {
 					}
 					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Databases $db -raw:$raw -DeviceType $DeviceType -LastLsn $TLogstartLSN | Where-Object { 
 						$_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN 
-					}
-					$Allbackups | Sort-Object FirstLsn
-				 
-
+					} | Sort-Object LastLsn
+					$Allbackups
+				
 				}
 				continue
 			}
@@ -283,11 +280,10 @@ function Get-DbaBackupHistory {
 					$first = 'L'; $second = 'L'
 				}
 				
-				$Database = $Database | Select-Object -Unique
+				$databases = $databases | Select-Object -Unique
 				
-				foreach ($db in $database) {
+				foreach ($db in $databases) {
 					Write-Message -Level Verbose -Message "Processing $db" -Target $db
-					
 					$wherecopyonly = $null
 					if ($IgnoreCopyOnly) { $wherecopyonly = "AND is_copy_only='0'" }
 					if ($DeviceTypeFilter) {
@@ -344,7 +340,7 @@ function Get-DbaBackupHistory {
 								  backupset.backup_set_id as BackupSetID,
 								  CASE mediafamily.device_type
 									WHEN 2 THEN 'Disk'
-									WHEN 102 THEN 'Permanent Disk  Device'
+									WHEN 102 THEN 'Permanent Disk Device'
 									WHEN 5 THEN 'Tape'
 									WHEN 105 THEN 'Permanent Tape Device'
 									WHEN 6 THEN 'Pipe'
@@ -364,7 +360,7 @@ function Get-DbaBackupHistory {
 								  ON mediafamily.media_set_id = mediaset.media_set_id
 								JOIN msdb..backupset AS backupset
 								  ON backupset.media_set_id = mediaset.media_set_id
-								WHERE backupset.database_name = '$db' $wherecopyonly
+								WHERE backupset.database_name = '$($db.Name)' $wherecopyonly
 								AND (type = '$first' OR type = '$second')
 								$DevTypeFilterWhere
 								) AS a
@@ -405,7 +401,7 @@ function Get-DbaBackupHistory {
 							  backupset.backup_set_id as backupsetid,
 							  CASE mediafamily.device_type
 								WHEN 2 THEN 'Disk'
-								WHEN 102 THEN 'Permanent Disk  Device'
+								WHEN 102 THEN 'Permanent Disk Device'
 								WHEN 5 THEN 'Tape'
 								WHEN 105 THEN 'Permanent Tape Device'
 								WHEN 6 THEN 'Pipe'
@@ -437,7 +433,7 @@ function Get-DbaBackupHistory {
 				
 				if ($Database.length -gt 0) {
 					$dblist = $Database -join "','"
-					$wherearray += "database_name in ('$dblist')"
+					$wherearray += "database_name IN ('$dblist')"
 				}
 				
 				if ($Last -or $LastFull -or $LastLog -or $LastDiff) {
@@ -458,7 +454,6 @@ function Get-DbaBackupHistory {
 				if ($LastLsn) {
 					$wherearray += "backupset.last_lsn > $LastLsn"
 				}
-				
 				if ($where.length -gt 0) {
 					$wherearray = $wherearray -join " AND "
 					$where = "$where $wherearray"
@@ -466,9 +461,7 @@ function Get-DbaBackupHistory {
 				
 				$sql = "$select $from $where ORDER BY backupset.backup_finish_date DESC"
 			}
-			if (-not($last)) {
-				Write-Message -Level Debug -Message $sql
-			}
+			Write-Message -Level Debug -Message $sql
 			Write-Message -Level SomewhatVerbose -Message "Executing sql query"
 			$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
 			
@@ -499,7 +492,7 @@ function Get-DbaBackupHistory {
 					$historyObject.End = ($group.Group.End | Measure-Object -Maximum).Maximum
 					$historyObject.Duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
 					$historyObject.Path = $group.Group.Path
-					$historyObject.TotalSize = ($group.group.TotalSize | Measure-Object -Sum).sum
+					$historyObject.TotalSize = ($group.Group.TotalSize | Measure-Object -Sum).Sum
 					$historyObject.Type = $group.Group[0].Type
 					$historyObject.BackupSetId = $group.Group[0].BackupSetId
 					$historyObject.DeviceType = $group.Group[0].DeviceType
