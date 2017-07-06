@@ -253,6 +253,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 		
 		# need to pick up here
 		foreach ($db in $dbs) {
+			$server = $db.Parent
 			$db_status = Get-DbState $db
 			
 			# normalizing properties returned by SMO to something more "fixed"
