@@ -76,26 +76,43 @@ Returns information on the CommandLog table in the DBA database on both instance
 		
 		if ($Table) {
 			foreach ($t in $Table) {
-				$dotcount = ([regex]::Matches($t, "\.")).count
-				
+                $splitName = [regex]::Matches($t, "(\[.+?\])|([^\.]+)").Value
+				$dotcount = $splitName.Count
+				Write-Verbose "$dotcount"
 				$database = $NULL
 				$Schema = $NULL
 
-				if ($dotcount -eq 0) {
-				    $tbl = $t
-				}
+                switch ($dotcount) {
+                    1 {
+                        $tbl = $t
+                    }
+                    2 {
+                        $schema = $splitName[0]
+                        $tbl = $splitName[1]
+                    }
+                    3 {
+                        $database = $splitName[0]
+		                $schema = $splitName[1]
+		                $tbl = $splitName[2]
+                    }
+                    default {
+                        Write-Message -Level Warning -Message "Please make sure that you are using up to three-part names. If your search value contains '.' character you must use [ ] to wrap the name. The value $t is not a valid name."
+                        Continue
+                    }
+                }
+                
+                if ($database -like "[[]*[]]") {
+                    $database = $database.Substring(1, ($database.Length -2))
+                }
 
-				if ($dotcount -eq 1) {
-					$schema = $t.Split(".")[0]
-					$tbl = $t.Split(".")[1]
-				}
-				
-				if ($dotcount -eq 2) {
-					$database = $t.Split(".")[0]
-					$schema = $t.Split(".")[1]
-					$tbl = $t.Split(".")[2]
-				}
-				
+                if ($schema -like "[[]*[]]") {
+                    $schema = $schema.Substring(1, ($schema.Length -2))
+                }
+
+                if ($tbl -like "[[]*[]]") {
+                    $tbl = $tbl.Substring(1, ($tbl.Length -2))
+                }
+
 				$fqtn = [PSCustomObject] @{
 					Database = $database
 					Schema   = $Schema
@@ -104,7 +121,6 @@ Returns information on the CommandLog table in the DBA database on both instance
 				$fqtns += $fqtn
 			}
 		}
-		#$fqtns
 	}
 	
 	process {
