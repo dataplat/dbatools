@@ -17,10 +17,10 @@ Credential object used to connect to the SQL Server as a different user
 Creates snapshot for all eligible databases
 
 .PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is autopopulated from the server
+The database(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run

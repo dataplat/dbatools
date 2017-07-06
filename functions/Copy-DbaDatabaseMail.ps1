@@ -6,9 +6,9 @@
 	.DESCRIPTION
 		By default, all mail configurations for Profiles, Accounts, Mail Servers and Configs are copied.
 
-		The -Profiles parameter is autopopulated for command-line completion and can be used to copy only specific mail profiles.
-		The -Accounts parameter is autopopulated for command-line completion and can be used to copy only specific mail accounts.
-		The -mailServers parameter is autopopulated for command-line completion and can be used to copy only specific mail servers.
+		The -Profiles parameter is auto-populated for command-line completion and can be used to copy only specific mail profiles.
+		The -Accounts parameter is auto-populated for command-line completion and can be used to copy only specific mail accounts.
+		The -mailServers parameter is auto-populated for command-line completion and can be used to copy only specific mail servers.
 
 	.PARAMETER Source
 		Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -37,13 +37,13 @@
 		Specifies the object type to migrate. Valid options are Job, Alert and Operator. When CategoryType is specified, all categories from the selected type will be migrated. For granular migrations, use the three parameters below.
 
 	.PARAMETER Profiles
-		This parameter is autopopulated for command-line completion and can be used to copy only specific mail profiles.
+		This parameter is auto-populated for command-line completion and can be used to copy only specific mail profiles.
 
 	.PARAMETER Accounts
-		This parameter is autopopulated for command-line completion and can be used to copy only specific mail accounts.
+		This parameter is auto-populated for command-line completion and can be used to copy only specific mail accounts.
 
 	.PARAMETER mailServers
-		The parameter is autopopulated for command-line completion and can be used to copy only specific mail servers.
+		The parameter is auto-populated for command-line completion and can be used to copy only specific mail servers.
 
 	.PARAMETER WhatIf
 		Shows what would happen if the command were to run. No actions are actually performed.

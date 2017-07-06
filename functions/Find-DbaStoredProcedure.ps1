@@ -7,22 +7,22 @@ Returns all stored procedures that contain a specific case-insensitive string or
 This function can either run against specific databases or all databases searching all user or user and system stored procedures.
 
 .PARAMETER SqlInstance
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input
+SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
 
 .PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, currend Windows login will be used.
+PSCredential object to connect as. If not specified, current Windows login will be used.
 
 .PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is autopopulated from the server
+The database(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER Pattern
 String pattern that you want to search for in the stored procedure textbody
 
 .PARAMETER IncludeSystemObjects
-By default, system stored proceures are ignored but you can include them within the search using this parameter.
+By default, system stored procedures are ignored but you can include them within the search using this parameter.
 
 Warning - this will likely make it super slow if you run it on all databases.
 

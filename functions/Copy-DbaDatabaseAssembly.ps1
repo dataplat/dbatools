@@ -4,7 +4,7 @@
 			Copy-DbaDatabaseAssembly migrates assemblies from one SQL Server to another.
 
 		.DESCRIPTION
-			By default, all assemblies are copied. The -Assemblies parameter is autopopulated for command-line completion and can be used to copy only specific assemblies.
+			By default, all assemblies are copied. The -Assemblies parameter is auto-populated for command-line completion and can be used to copy only specific assemblies.
 
 			If the assembly already exists on the destination, it will be skipped unless -Force is used.
 
@@ -33,10 +33,10 @@
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Assembly
-			The assembly(ies) to process - this list is auto populated from the server. If unspecified, all assemblies will be processed.
+			The assembly(ies) to process - this list is auto-populated from the server. If unspecified, all assemblies will be processed.
 
 		.PARAMETER ExcludeAssembly
-			The assembly(ies) to exclude - this list is auto populated from the server
+			The assembly(ies) to exclude - this list is auto-populated from the server
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.

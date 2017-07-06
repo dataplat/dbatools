@@ -33,10 +33,10 @@ function Copy-DbaCustomError {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER CustomError
-			The customer error(s) to process - this list is auto populated from the server. If unspecified, all customer errors will be processed.
+			The customer error(s) to process - this list is auto-populated from the server. If unspecified, all customer errors will be processed.
 
 		.PARAMETER ExcludeCustomError
-			The custom error(s) to exclude - this list is auto populated from the server.
+			The custom error(s) to exclude - this list is auto-populated from the server.
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.

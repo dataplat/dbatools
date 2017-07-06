@@ -4,7 +4,7 @@
 			Copy-DbaAgentProxyAccount migrates proxy accounts from one SQL Server to another.
 
 		.DESCRIPTION
-			By default, all proxy accounts are copied. The -ProxyAccounts parameter is autopopulated for command-line completion and can be used to copy only specific proxy accounts.
+			By default, all proxy accounts are copied. The -ProxyAccounts parameter is auto-populated for command-line completion and can be used to copy only specific proxy accounts.
 
 			If the associated credential for the account does not exist on the destination, it will be skipped. If the proxy account already exists on the destination, it will be skipped unless -Force is used.
 

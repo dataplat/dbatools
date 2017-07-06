@@ -6,7 +6,7 @@ function Copy-DbaSqlDataCollector {
 		.DESCRIPTION
 			By default, all data collector objects are migrated. If the object already exists on the destination, it will be skipped unless -Force is used.
 
-			The -CollectionSet parameter is autopopulated for command-line completion and can be used to copy only specific objects.
+			The -CollectionSet parameter is auto-populated for command-line completion and can be used to copy only specific objects.
 
 		.PARAMETER Source
 			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
@@ -31,10 +31,10 @@ function Copy-DbaSqlDataCollector {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER CollectionSet
-			The collection set(s) to process - this list is auto populated from the server. If unspecified, all collection sets will be processed.
+			The collection set(s) to process - this list is auto-populated from the server. If unspecified, all collection sets will be processed.
 
 		.PARAMETER ExcludeCollectionSet
-			The collection set(s) to exclude - this list is auto populated from the server
+			The collection set(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER NoServerReconfig
 			Upcoming parameter to enable server reconfiguration

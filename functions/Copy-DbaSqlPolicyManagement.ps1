@@ -6,7 +6,7 @@ function Copy-DbaSqlPolicyManagement {
 		.DESCRIPTION
 			By default, all policies and conditions are copied. If an object already exist on the destination, it will be skipped unless -Force is used.
 
-			The -Policy and -Condition parameters are autopopulated for command-line completion and can be used to copy only specific objects.
+			The -Policy and -Condition parameters are auto-populated for command-line completion and can be used to copy only specific objects.
 
 		.PARAMETER Source
 			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2008 or higher.
@@ -31,16 +31,16 @@ function Copy-DbaSqlPolicyManagement {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Policy
-			The policy(ies) to process - this list is auto populated from the server. If unspecified, all policies will be processed.
+			The policy(ies) to process - this list is auto-populated from the server. If unspecified, all policies will be processed.
 
 		.PARAMETER ExcludePolicy
-			The policy(ies) to exclude - this list is auto populated from the server
+			The policy(ies) to exclude - this list is auto-populated from the server
 
 		.PARAMETER Condition
-			The condition(s) to process - this list is auto populated from the server. If unspecified, all conditions will be processed.
+			The condition(s) to process - this list is auto-populated from the server. If unspecified, all conditions will be processed.
 
 		.PARAMETER ExcludeCondition
-			The condition(s) to exclude - this list is auto populated from the server
+			The condition(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER Force
 			If policies exists on destination server, it will be dropped and recreated.

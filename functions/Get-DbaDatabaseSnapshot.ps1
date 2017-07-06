@@ -17,13 +17,13 @@ Credential object used to connect to the SQL Server as a different user
 Return information for only specific databases
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is autopopulated from the server
+The database(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER Snapshot
 Return information for only specific snapshots
 
 .PARAMETER ExcludeSnapshot
-The snapshot(s) to exclude - this list is autopopulated from the server
+The snapshot(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages

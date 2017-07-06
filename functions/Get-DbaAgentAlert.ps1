@@ -11,7 +11,7 @@ FUNCTION Get-DbaAgentAlert {
 	This can be a collection and receive pipeline input.
 
 	.PARAMETER SqlCredential
-	PSCredential object to connect as. If not specified, currend Windows login will be used.
+	PSCredential object to connect as. If not specified, current Windows login will be used.
 
 	.NOTES
 	Author: Klaas Vandenberghe ( @PowerDBAKlaas )

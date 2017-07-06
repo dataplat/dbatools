@@ -6,7 +6,7 @@ function Set-DbaJobOwner {
 		.DESCRIPTION
 			This function will alter SQL Agent Job ownership to match a specified login if their
 			current owner does not match the target login. By default, the target login will
-			be 'sa', but the fuction will allow the user to specify a different login for
+			be 'sa', but the function will allow the user to specify a different login for
 			ownership. The user can also apply this to all jobs or only to a select list
 			of jobs (passed as either a comma separated list or a string array).
 
@@ -22,19 +22,19 @@ function Set-DbaJobOwner {
 
 		.PARAMETER SqlInstance
 			SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-			collection and recieve pipeline input
+			collection and receive pipeline input
 
 		.PARAMETER SqlCredential
-			PSCredential object to connect under. If not specified, currend Windows login will be used.
+			PSCredential object to connect under. If not specified, current Windows login will be used.
 
 		.PARAMETER Job
-			The job(s) to process - this list is auto populated from the server. If unspecified, all jobs will be processed.
+			The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
 
 		.PARAMETER ExcludeJob
-			The job(s) to exclude - this list is auto populated from the server.
+			The job(s) to exclude - this list is auto-populated from the server.
 
 		.PARAMETER Login
-			Specific login that you wish to set as owner - this list is auto populated from the server. This defaults to 'sa' or the sysadmin name if sa was renamed.
+			Specific login that you wish to set as owner - this list is auto-populated from the server. This defaults to 'sa' or the sysadmin name if sa was renamed.
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.

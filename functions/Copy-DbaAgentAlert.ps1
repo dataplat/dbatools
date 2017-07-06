@@ -4,7 +4,7 @@
 			Copy-DbaAgentAlert migrates alerts from one SQL Server to another.
 
 		.DESCRIPTION
-			By default, all alerts are copied. The -Alert parameter is autopopulated for command-line completion and can be used to copy only specific alerts.
+			By default, all alerts are copied. The -Alert parameter is auto-populated for command-line completion and can be used to copy only specific alerts.
 
 			If the alert already exists on the destination, it will be skipped unless -Force is used.
 
@@ -33,10 +33,10 @@
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Alert
-			The alert(s) to process - this list is auto populated from the server. If unspecified, all alerts will be processed.
+			The alert(s) to process - this list is auto-populated from the server. If unspecified, all alerts will be processed.
 
 		.PARAMETER ExcludeAlert
-			The alert(s) to exclude - this list is auto populated from the server
+			The alert(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER IncludeDefaults
 			Copy SQL Agent defaults such as FailSafeEmailAddress, ForwardingServer, and PagerSubjectTemplate.

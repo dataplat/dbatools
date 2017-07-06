@@ -15,12 +15,12 @@ Looks at the below list of objects to see if they are either owned by a user or 
     Server Roles
     Database Schemas
     Database Roles
-    Dabtabase Assembles
+    Database Assembles
     Database Synonyms
 
 
 .PARAMETER SqlInstance
-SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input
+SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
 
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, current Windows login will be used.

@@ -11,13 +11,13 @@ function Get-DbaAgentOperator {
 			This can be a collection and receive pipeline input.
 
 		.PARAMETER SqlCredential
-			PSCredential object to connect as. If not specified, currend Windows login will be used.
+			PSCredential object to connect as. If not specified, current Windows login will be used.
 		
 		.PARAMETER Operator
-			The operator(s) to process - this list is autopopulated from the server. If unspecified, all operators will be processed.
+			The operator(s) to process - this list is auto-populated from the server. If unspecified, all operators will be processed.
 
 		.PARAMETER ExcludeOperator
-			The operator(s) to exclude - this list is autopopulated from the server
+			The operator(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages

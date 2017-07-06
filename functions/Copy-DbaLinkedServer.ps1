@@ -32,10 +32,10 @@ function Copy-DbaLinkedServer {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER LinkedServer
-			The linked server(s) to process - this list is auto populated from the server. If unspecified, all linked servers will be processed.
+			The linked server(s) to process - this list is auto-populated from the server. If unspecified, all linked servers will be processed.
 
 		.PARAMETER ExcludeLinkedServer
-			The linked server(s) to exclude - this list is auto populated from the server
+			The linked server(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.

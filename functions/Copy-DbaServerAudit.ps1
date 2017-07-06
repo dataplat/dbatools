@@ -4,7 +4,7 @@ function Copy-DbaServerAudit {
 			Copy-DbaServerAudit migrates server audits from one SQL Server to another.
 
 		.DESCRIPTION
-			By default, all audits are copied. The -Audit parameter is autopopulated for command-line completion and can be used to copy only specific audits.
+			By default, all audits are copied. The -Audit parameter is auto-populated for command-line completion and can be used to copy only specific audits.
 
 			If the audit already exists on the destination, it will be skipped unless -Force is used.
 
@@ -31,10 +31,10 @@ function Copy-DbaServerAudit {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Audit
-			The audit(s) to process - this list is auto populated from the server. If unspecified, all audits will be processed.
+			The audit(s) to process - this list is auto-populated from the server. If unspecified, all audits will be processed.
 
 		.PARAMETER ExcludeAudit
-			The audit(s) to exclude - this list is auto populated from the server
+			The audit(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.

@@ -20,10 +20,10 @@ function Test-DbaFullRecoveryModel {
 		Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
 	.PARAMETER Database
-		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 	.PARAMETER ExcludeDatabase
-		The database(s) to exclude - this list is autopopulated from the server
+		The database(s) to exclude - this list is auto-populated from the server
 
 	.PARAMETER Detailed
 		Returns default information plus 'Notes' column

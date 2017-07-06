@@ -4,10 +4,10 @@ function Copy-DbaSpConfigure {
 			Copy-DbaSpConfigure migrates configuration values from one SQL Server to another.
 
 		.DESCRIPTION
-			By default, all configuration values are copied. The -ConfigName parameter is autopopulated for command-line completion and can be used to copy only specific configs.
+			By default, all configuration values are copied. The -ConfigName parameter is auto-populated for command-line completion and can be used to copy only specific configs.
 
 		.PARAMETER Source
-			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -29,10 +29,10 @@ function Copy-DbaSpConfigure {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER ConfigName
-			The ConfigName(s) to process - this list is auto populated from the server. If unspecified, all ConfigNames will be processed.
+			The ConfigName(s) to process - this list is auto-populated from the server. If unspecified, all ConfigNames will be processed.
 
 		.PARAMETER ExcludeConfigName
-			The ConfigName(s) to exclude - this list is auto populated from the server
+			The ConfigName(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.

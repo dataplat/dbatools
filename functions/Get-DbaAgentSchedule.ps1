@@ -12,7 +12,7 @@ FUNCTION Get-DbaAgentSchedule
 	This can be a collection and receive pipeline input.
 
 	.PARAMETER SqlCredential
-	PSCredential object to connect as. If not specified, currend Windows login will be used.
+	PSCredential object to connect as. If not specified, current Windows login will be used.
 
 	.PARAMETER Silent
 	Use this switch to disable any kind of verbose messages

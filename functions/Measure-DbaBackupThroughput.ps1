@@ -27,10 +27,10 @@ This can be a collection and receive pipeline input.
 PSCredential object to connect as. If not specified, current Windows login will be used.
 
 .PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is autopopulated from the server
+The database(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER Type
 By default, this command measures the speed of Full backups. You can also specify Log or Differential.

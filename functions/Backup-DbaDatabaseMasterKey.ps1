@@ -16,7 +16,7 @@ Allows you to login to SQL Server using alternative credentials.
 Backup master key from specific database(s).
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto populated from the server.
+The database(s) to exclude - this list is auto-populated from the server.
 
 .PARAMETER BackupDirectory
 The directory to export the key to. If no backup directory is specified, the default backup directory will be used.
@@ -96,7 +96,7 @@ Logs into sql2016 with Windows credentials then backs up db1's keys to the \\nas
 			}
 			
 			if (!$backupdirectory) {
-				Stop-Function -Message "Backup directory discovery failed. Please expliticly specify -BackupDirectory" -Target $server -Continue
+				Stop-Function -Message "Backup directory discovery failed. Please explicitly specify -BackupDirectory" -Target $server -Continue
 			}
 			
 			if (!(Test-DbaSqlPath -SqlInstance $server -Path $BackupDirectory)) {

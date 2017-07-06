@@ -13,16 +13,16 @@
 		File free space script borrowed and modified from Glenn Berry's DMV scripts (http://www.sqlskills.com/blogs/glenn/category/dmv-queries/)
 	
 	.PARAMETER SqlInstance
-		SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input
+		SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
 	
 	.PARAMETER SqlCredential
-		PSCredential object to connect under. If not specified, currend Windows login will be used.
+		PSCredential object to connect under. If not specified, current Windows login will be used.
 	
 	.PARAMETER Database
-		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 	
 	.PARAMETER ExcludeDatabase
-		The database(s) to exclude - this list is autopopulated from the server
+		The database(s) to exclude - this list is auto-populated from the server
 	
 	.PARAMETER IncludeSystemDBs
 		Switch parameter that when used will display system database information

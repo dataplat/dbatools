@@ -23,7 +23,7 @@ The SQL Server that you're connecting to.
 Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
 .PARAMETER Database
-The database(s) to process - this list is auto populated from the server.
+The database(s) to process - this list is auto-populated from the server.
 
 .PARAMETER AccessToken	
 Gets or sets the access token for the connection.

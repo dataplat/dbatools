@@ -17,10 +17,10 @@ function Export-DbaUser {
 			Windows Authentication will be used if SqlCredential is not specified
 
 		.PARAMETER Database
-			The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+			The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 		.PARAMETER ExcludeDatabase
-			The database(s) to exclude - this list is autopopulated from the server
+			The database(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER User
 			Export only the specified database user(s). If not specified will export all users from the database(s)

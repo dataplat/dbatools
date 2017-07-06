@@ -8,9 +8,9 @@
 		.DESCRIPTION
 			By default, all SQL Agent categories for Jobs, Operators and Alerts are copied.
 
-			The -OperatorCategories parameter is autopopulated for command-line completion and can be used to copy only specific operator categories.
-			The -AgentCategories parameter is autopopulated for command-line completion and can be used to copy only specific agent categories.
-			The -JobCategories parameter is autopopulated for command-line completion and can be used to copy only specific job categories.
+			The -OperatorCategories parameter is auto-populated for command-line completion and can be used to copy only specific operator categories.
+			The -AgentCategories parameter is auto-populated for command-line completion and can be used to copy only specific agent categories.
+			The -JobCategories parameter is auto-populated for command-line completion and can be used to copy only specific job categories.
 
 			If the category already exists on the destination, it will be skipped unless -Force is used.
 
@@ -42,13 +42,13 @@
 			Specifies the Category Type to migrate. Valid options are "Job", "Alert" and "Operator". When CategoryType is specified, all categories from the selected type will be migrated. For granular migrations, use the three parameters below.
 
 		.PARAMETER OperatorCategory
-			This parameter is autopopulated for command-line completion and can be used to copy only specific operator categories.
+			This parameter is auto-populated for command-line completion and can be used to copy only specific operator categories.
 
 		.PARAMETER AgentCategory
-			This parameter is autopopulated for command-line completion and can be used to copy only specific agent categories.
+			This parameter is auto-populated for command-line completion and can be used to copy only specific agent categories.
 
 		.PARAMETER JobCategory
-			This parameter is autopopulated for command-line completion and can be used to copy only specific job categories.
+			This parameter is auto-populated for command-line completion and can be used to copy only specific job categories.
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
@@ -114,7 +114,7 @@
 					Copy-JobCategory migrates job categories from one SQL Server to another.
 
 				.DESCRIPTION
-					By default, all job categories are copied. The -JobCategories parameter is autopopulated for command-line completion and can be used to copy only specific job categories.
+					By default, all job categories are copied. The -JobCategories parameter is auto-populated for command-line completion and can be used to copy only specific job categories.
 
 					If the associated credential for the category does not exist on the destination, it will be skipped. If the job category already exists on the destination, it will be skipped unless -Force is used.
 			#>
@@ -190,7 +190,7 @@
 					Copy-OperatorCategory migrates operator categories from one SQL Server to another.
 
 				.DESCRIPTION
-					By default, all operator categories are copied. The -OperatorCategories parameter is autopopulated for command-line completion and can be used to copy only specific operator categories.
+					By default, all operator categories are copied. The -OperatorCategories parameter is auto-populated for command-line completion and can be used to copy only specific operator categories.
 
 					If the associated credential for the category does not exist on the destination, it will be skipped. If the operator category already exists on the destination, it will be skipped unless -Force is used.
 			#>
@@ -270,7 +270,7 @@
 					Copy-AlertCategory migrates alert categories from one SQL Server to another.
 
 				.DESCRIPTION
-					By default, all alert categories are copied. The -AlertCategories parameter is autopopulated for command-line completion and can be used to copy only specific alert categories.
+					By default, all alert categories are copied. The -AlertCategories parameter is auto-populated for command-line completion and can be used to copy only specific alert categories.
 
 					If the associated credential for the category does not exist on the destination, it will be skipped. If the alert category already exists on the destination, it will be skipped unless -Force is used.
 			#>

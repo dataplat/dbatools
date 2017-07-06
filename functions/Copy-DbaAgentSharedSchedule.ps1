@@ -4,7 +4,7 @@
 			Copy-DbaAgentSharedSchedule migrates shared job schedules from one SQL Server to another.
 
 		.DESCRIPTION
-			By default, all shared job schedules are copied. The -SharedSchedules parameter is autopopulated for command-line completion and can be used to copy only specific shared job schedules.
+			By default, all shared job schedules are copied. The -SharedSchedules parameter is auto-populated for command-line completion and can be used to copy only specific shared job schedules.
 
 			If the associated credential for the account does not exist on the destination, it will be skipped. If the shared job schedule already exists on the destination, it will be skipped unless -Force is used.
 

@@ -4,7 +4,7 @@
 			Copy-DbaAgentJob migrates jobs from one SQL Server to another.
 
 		.DESCRIPTION
-			By default, all jobs are copied. The -Job parameter is autopopulated for command-line completion and can be used to copy only specific jobs.
+			By default, all jobs are copied. The -Job parameter is auto-populated for command-line completion and can be used to copy only specific jobs.
 
 			If the job already exists on the destination, it will be skipped unless -Force is used.
 
@@ -32,10 +32,10 @@
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Job
-			The job(s) to process - this list is auto populated from the server. If unspecified, all jobs will be processed.
+			The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
 
 		.PARAMETER ExcludeJob
-			The job(s) to exclude - this list is auto populated from the server
+			The job(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER DisableOnSource
 			If this switch is enabled, the job will be disabled on the source server
