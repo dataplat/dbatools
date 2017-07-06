@@ -127,7 +127,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 		[switch]$MultiUser,
 		[switch]$Force,
 		[parameter(Mandatory = $true, ValueFromPipeline, ParameterSetName = "Database")]
-		[PsCustomObject[]]$SmoDatabase
+		[PsCustomObject[]]$DatabaseCollection
 	)
 	
 	begin {
@@ -214,12 +214,12 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 	}
 	process {
 		# use PROCESS to gather info, and END to execute on it
-		if (!$database -and !$AllDatabases -and !$smodatabase) {
+		if (!$database -and !$AllDatabases -and !$DatabaseCollection) {
 			throw "You must specify a -AllDatabases or -Database to continue"
 		}
 		
-		if ($smodatabase) {
-			$dbs += $smodatabase.Database
+		if ($DatabaseCollection) {
+			$dbs += $DatabaseCollection.Database
 		}
 		else {
 			foreach ($instance in $SqlInstance) {
