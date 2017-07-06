@@ -66,7 +66,7 @@ For most options, this translates to istantly rolling back any open transactions
 that may be stopping the process.
 For -Detached it is required to break mirroring and Availability Groups
 
-.PARAMETER SmoDatabase
+.PARAMETER DatabaseCollection
 Internal parameter for piped objects - this will likely go away once we move to better dynamic parameters
 	
 .NOTES
