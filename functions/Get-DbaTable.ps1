@@ -81,6 +81,10 @@ Returns information on the CommandLog table in the DBA database on both instance
 				$database = $NULL
 				$Schema = $NULL
 
+				if ($dotcount -eq 0) {
+				    $tbl = $t
+				}
+
 				if ($dotcount -eq 1) {
 					$schema = $t.Split(".")[0]
 					$tbl = $t.Split(".")[1]
