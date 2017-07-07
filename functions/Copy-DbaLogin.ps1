@@ -219,7 +219,7 @@ function Copy-DbaLogin {
 					continue
 				}
 
-				if ($Login -ne $null -and $force) {
+				if ($destServer.Logins.Item($userName) -ne $null -and $force) {
 					if ($userName -eq $destServer.ServiceAccount) {
 						Write-Message -Level Warning -Message "$userName is the destination service account. Skipping drop."
 
