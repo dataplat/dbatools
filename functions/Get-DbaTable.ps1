@@ -85,7 +85,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 			foreach ($t in $Table) {
                 $splitName = [regex]::Matches($t, "(\[.+?\])|([^\.]+)").Value
 				$dotcount = $splitName.Count
-				Write-Verbose "$dotcount"
+
 				$database = $NULL
 				$Schema = $NULL
 
@@ -201,4 +201,3 @@ Returns information on the CommandLog table in the DBA database on both instance
 		}
 	}
 }
-
