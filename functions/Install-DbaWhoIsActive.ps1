@@ -88,6 +88,8 @@ function Install-DbaWhoIsActive {
 		[object]
 		$Database,
 		
+		
+		
 		[switch]
 		$Silent
 	)
@@ -178,6 +180,8 @@ function Install-DbaWhoIsActive {
 			}
 			
 			if ($PSCmdlet.ShouldProcess($instance, "Installing sp_WhoisActive")) {
+				$allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
+				$allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 				foreach ($batch in $batches) {
 					try {
 						$null = $server.databases[$Database].ExecuteNonQuery($batch)
@@ -186,7 +190,19 @@ function Install-DbaWhoIsActive {
 						Stop-Function -Message "Failed to install stored procedure." -ErrorRecord $_ -Continue -Target $instance
 					}
 				}
-				
+				$baseres = @{
+					ComputerName = $server.NetName
+					InstanceName = $server.ServiceName
+					SqlInstance  = $server.DomainInstanceName
+					Database     = $Database
+					Name         = $scriptname.TrimEnd('.sql')
+				}
+				if('sp_WhoisActive' -in $allprocedures) {
+					$baseres['Status'] = 'Updated'
+				} else {
+					$baseres['Status'] = 'Installed'
+				}
+				[PSCustomObject]$baseres
 				Write-Message -Level Output -Message "Finished installing/updating sp_WhoisActive in $Database on $instance"
 			}
 		}
