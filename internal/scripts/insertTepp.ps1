@@ -35,7 +35,7 @@ foreach ($function in $functions) {
 	if ($function.Parameters.Keys -contains "ExcludeSnapshot") {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeSnapshot -Name Snapshot
 	}
-	
+
 	if ($function.Parameters.Keys -contains "ConfigName") {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ConfigName -Name ConfigName
 	}
@@ -49,19 +49,82 @@ foreach ($function in $functions) {
 	if ($function.Parameters.Keys -contains "Alert") {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeAlert -Name Alert
 	}
-	
+
 	if ($function.Parameters.Keys -contains "AlertCategory") {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter AlertCategory -Name AlertCategory
 	}
 	if ($function.Parameters.Keys -contains "AlertCategory") {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeAlertCategory -Name AlertCategory
 	}
-	
+
 	if ($function.Parameters.Keys -contains "JobCategory") {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter JobCategory -Name JobCategory
 	}
 	if ($function.Parameters.Keys -contains "JobCategory") {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeJobCategory -Name JobCategory
+	}
+
+	if ($function.Parameters.Keys -contains "AvailabilityGroup") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter AvailabilityGroup -Name AvailabilityGroup
+	}
+	if ($function.Parameters.Keys -contains "AvailabilityGroup") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeAvailabilityGroup -Name AvailabilityGroup
+	}
+
+	if ($function.Parameters.Keys -contains "BackupDevice") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter BackupDevice -Name BackupDevice
+	}
+	if ($function.Parameters.Keys -contains "BackupDevice") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeBackupDevice -Name BackupDevice
+	}
+
+	if ($function.Parameters.Keys -contains "Credential") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter Credential -Name Credential
+	}
+	if ($function.Parameters.Keys -contains "Credential") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeCredential -Name Credential
+	}
+
+	if ($function.Parameters.Keys -contains "CustomError") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter CustomError -Name CustomError
+	}
+	if ($function.Parameters.Keys -contains "CustomError") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeCustomError -Name CustomError
+	}
+
+	if ($function.Parameters.Keys -contains "MailAccount") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter MailAccount -Name MailAccount
+	}
+	if ($function.Parameters.Keys -contains "MailAccount") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeMailAccount -Name MailAccount
+	}
+
+	if ($function.Parameters.Keys -contains "MailServer") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter MailServer -Name MailServer
+	}
+	if ($function.Parameters.Keys -contains "MailServer") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeMailServer -Name MailServer
+	}
+
+	if ($function.Parameters.Keys -contains "MailProfile") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter MailProfile -Name MailProfile
+	}
+	if ($function.Parameters.Keys -contains "MailProfile") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeMailProfile -Name MailProfile
+	}
+
+	if ($function.Parameters.Keys -contains "Endpoint") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter Endpoint -Name Endpoint
+	}
+	if ($function.Parameters.Keys -contains "Endpoint") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeEndpoint -Name Endpoint
+	}
+
+	if ($function.Parameters.Keys -contains "LinkedServer") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter LinkedServer -Name LinkedServer
+	}
+	if ($function.Parameters.Keys -contains "LinkedServer") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeLinkedServer -Name LinkedServer
 	}
 }
 #endregion Automatic TEPP by parameter name
