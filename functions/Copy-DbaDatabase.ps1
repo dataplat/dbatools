@@ -981,7 +981,7 @@ function Copy-DbaDatabase {
 										Write-Message -Level Verbose -Message "Trying alternate SQL method to delete $backupFile"
 										$sql = "EXEC master.sys.xp_delete_file 0, '$backupFile'"
 										Write-Message -Level Debug -Message $sql
-										$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+										$null = $sourceServer.ConnectionContext.ExecuteNonQuery($sql)
 									}
 									catch {
 										Write-Message -Level Warning -Message "Cannot delete backup file $backupFile"
@@ -995,10 +995,16 @@ function Copy-DbaDatabase {
 					}
 
 					$dbFinish = Get-Date
-
 					if ($NoRecovery -eq $false) {
+						$dbOwner = $sourceServer.Databases[$dbName].Owner
+						if ($dbOwner -eq $null) {
+							$dbOwner = Get-SaLoginName -SqlInstance $destServer
+						}
 						Write-Message -Level Verbose -Message "Updating database owner"
-						$result = Update-Sqldbowner -source $sourceServer -destination $destServer -dbname $dbName
+						try {
+							$null = Set-DbaDatabaseOwner -SqlInstance $destServer -Database $dbName -TargetLogin $dbOwner -Silent
+						} catch {
+						}
 					}
 				}
 
