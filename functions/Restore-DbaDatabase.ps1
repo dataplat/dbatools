@@ -508,7 +508,7 @@ function Restore-DbaDatabase {
         if (Test-FunctionInterrupt) { return }
 		
         if ($null -ne $DatabaseName) {
-            If (($null -ne $server.Databases[$DatabaseName]) -and ($WithReplace -eq $false)) {
+            If (($DatabaseName -in ($server.Databases.name)) -and ($WithReplace -eq $false)) {
                 Write-Warning "$FunctionName - $DatabaseName exists on Sql Instance $SqlInstance , must specify WithReplace to continue"
                 break
             }
