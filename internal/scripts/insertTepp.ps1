@@ -126,6 +126,48 @@ foreach ($function in $functions) {
 	if ($function.Parameters.Keys -contains "LinkedServer") {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeLinkedServer -Name LinkedServer
 	}
+
+	if ($function.Parameters.Keys -contains "ProxyAccount") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ProxyAccount -Name ProxyAccount
+	}
+	if ($function.Parameters.Keys -contains "ProxyAccount") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeProxyAccount -Name ProxyAccount
+	}
+
+	if ($function.Parameters.Keys -contains "ResourcePool") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ResourcePool -Name ResourcePool
+	}
+	if ($function.Parameters.Keys -contains "ResourcePool") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeResourcePool -Name ResourcePool
+	}
+
+	if ($function.Parameters.Keys -contains "Audit") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter Audit -Name Audit
+	}
+	if ($function.Parameters.Keys -contains "Audit") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeAudit -Name Audit
+	}
+
+	if ($function.Parameters.Keys -contains "AuditSpecification") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter AuditSpecification -Name AuditSpecification
+	}
+	if ($function.Parameters.Keys -contains "AuditSpecification") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeAuditSpecification -Name AuditSpecification
+	}
+
+	if ($function.Parameters.Keys -contains "ServerTrigger") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ServerTrigger -Name ServerTrigger
+	}
+	if ($function.Parameters.Keys -contains "ServerTrigger") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeServerTrigger -Name ServerTrigger
+	}
+
+	if ($function.Parameters.Keys -contains "Schedule") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter Schedule -Name Schedule
+	}
+	if ($function.Parameters.Keys -contains "Schedule") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeSchedule -Name Schedule
+	}
 }
 #endregion Automatic TEPP by parameter name
 
