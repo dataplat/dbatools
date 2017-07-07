@@ -1004,6 +1004,7 @@ function Copy-DbaDatabase {
 						try {
 							$null = Set-DbaDatabaseOwner -SqlInstance $destServer -Database $dbName -TargetLogin $dbOwner -Silent
 						} catch {
+							Write-Message -Level Warning -Message "Failed to update database owner"
 						}
 					}
 				}
