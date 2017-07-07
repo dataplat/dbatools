@@ -84,13 +84,18 @@ if ($ImportLibrary) {
 				$start = Get-Date
 				$system = [Appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -like "System, *"
 				$msbuild = (Resolve-Path "$(Split-Path $system.Location)\..\..\..\..\Framework$(if ([intptr]::Size -eq 8) { "64" })\$($system.ImageRuntimeVersion)\msbuild.exe").Path
-				
+				$msbuildOptions = ""
+				if($env:APPVEYOR -eq 'True') {
+					Write-Debug "msbuild output will be logged to appveyor console"
+					$msbuildOptions = '/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"' 
+				}
+
 				if (-not (Test-Path $msbuild)) {
 					throw "msbuild not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
 				}
 				
 				Write-Verbose -Message "Building the library"
-				$null = & $msbuild "$libraryBase\projects\dbatools\dbatools.sln"
+				$null = & $msbuild "$libraryBase\projects\dbatools\dbatools.sln" $msbuildOptions
 				
 				try {
 					Write-Verbose -Message "Found library, trying to copy & import"
