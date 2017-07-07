@@ -11,7 +11,7 @@ SQLServer name or SMO object representing the SQL Server to connect to. This can
 collection and recieve pipeline input
 
 .PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, currend Windows login will be used.
+PSCredential object to connect as. If not specified, current Windows login will be used.
 
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
@@ -23,7 +23,10 @@ The database(s) to exclude - this list is autopopulated from the server
 Switch parameter that when used will display system database information
 
 .PARAMETER Table
-Define a specific table you would like to query
+Define a specific table you would like to query. You can specify up to three-part name like db.sch.tbl. 
+If the object has special characters please wrap them in square brackets [ ].
+This dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
+The correct way to find table named 'First.Table' on schema 'dbo' is passing dbo.[First.Table]
 
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
@@ -50,7 +53,11 @@ Return only information on the table MyTable from the database MyDB
 .EXAMPLE
 Get-DbaTable -SqlInstance DEV01 -Table MyTable
 Returns information on table called MyTable if it exists in any database on the server, under any schema
-	
+
+.EXAMPLE
+Get-DbaTable -SqlInstance DEV01 -Table dbo.[First.Table]
+Returns information on table called First.Table on schema dbo if it exists in any database on the server
+
 .EXAMPLE
 'localhost','localhost\namedinstance' | Get-DbaTable -Database DBA -Table Commandlog
 Returns information on the CommandLog table in the DBA database on both instances localhost and the named instance localhost\namedinstance
