@@ -111,51 +111,45 @@ Remove the schedule on multiple servers using pipe line
 						# Loop through each of the schedules and drop them
 						Write-Message -Message "Removing schedule $s on $instance" -Level Output
 
-						# Get the job ids 
-						$jobGuids = $Server.JobServer.SharedSchedules[$s].EnumJobReferences()
-
 						#Check if multiple jobs use the schedule
 						if ($jobCount -ge 1) {
-							if ($jobCount -gt 1 -and $Force) {
+							# Get the job object
+							$smoSchedules = $server.JobServer.SharedSchedules | Where-Object {($_.Name -eq $s)}
+                            
+							Write-Message -Message "Schedule $sched is used in one or more jobs. Removing it for each job." -Level Output
 
-								Write-Message -Message "Schedule $sched is used in multiple jobs. Removing it for each job." -Level Output
-								
-								# Loop though each of the jobs
-								foreach ($guid in $jobGuids) {
-									# Get the job object
-									$smoJob = $Server.JobServer.GetJobByID($guid)
+							# Loop through each if the schedules
+							foreach ($smoSchedule in $smoSchedules) {
 
-									# Get the job schedule
-									$jobSchedule = $Server.JobServer.Jobs[$smoJob].JobSchedules[$s]
+								# Get the job ids 
+								$jobGuids = $Server.JobServer.SharedSchedules[$smoSchedule].EnumJobReferences()
 
-									try {
-										Write-Message -Message "Removing the schedule $jobSchedule for job $smoJob" -Level Output
+								if (($jobCount -gt 1 -and $Force) -or $jobCount -eq 1) {
 
-										$jobSchedule.Drop()
-									}
-									catch {
-										Stop-Function -Message  "Something went wrong removing the job schedule. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
-									}
-								}
-							}
-							elseif (($jobCount -gt 1 -and -not $Force) -or $jobCount -eq 1) {
-								# Get the job object
-								$smoJob = $Server.JobServer.GetJobByID($jobGuids[0])
+									# Loop though each of the jobs
+									foreach ($guid in $jobGuids) {
+										# Get the job object
+										$smoJob = $Server.JobServer.GetJobByID($guid)
 
-								# Get the job schedule
-								$jobSchedule = $Server.JobServer.Jobs[$smoJob].JobSchedules[$s]
+										# Get the job schedule
+										$jobSchedules = $Server.JobServer.Jobs[$smoJob].JobSchedules | Where-Object {$_.Name -eq $smoSchedule}
+                                        
+										foreach ($jobSchedule in $jobSchedules) {
+											try {
+												Write-Message -Message "Removing the schedule $jobSchedule for job $smoJob" -Level Output
 
-								try {
-									Write-Message -Message "Removing the schedule $jobSchedule for job $smoJob" -Level Output
+												$jobSchedule.Drop()
+											}
+											catch {
+												Stop-Function -Message  "Something went wrong removing the job schedule. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
+											}
+										}
+									} # foreach guid
+								} # if jobcount
 
-									$jobSchedule.Drop()
-								}
-								catch {
-									Stop-Function -Message  "Something went wrong removing the job schedule. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
-								}
-							}	
-						}
- 
+							} # foreach smoschedule	
+						} # if jobcount ge 1
+
 						Write-Message -Message "Removing schedules that are not being used by other jobs." -Level Output
 
 						# Get the schedules
@@ -164,7 +158,7 @@ Remove the schedule on multiple servers using pipe line
 						# Remove the schedules that have no jobs
 						foreach ($smoSchedule in $smoSchedules) {
 							try {
-									$smoSchedule.Drop()
+								$smoSchedule.Drop()
 							}
 							catch {
 								Stop-Function -Message  "Something went wrong removing the schedule. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
