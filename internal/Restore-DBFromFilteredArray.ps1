@@ -94,7 +94,9 @@ Function Restore-DBFromFilteredArray {
                     try {
                         Write-Message -Level Verbose -Message "Set $DbName single_user to kill processes"
                         Stop-DbaProcess -SqlInstance $Server -Databases $Dbname -WarningAction Silentlycontinue
-                        Invoke-DbaSqlcmd -ServerInstance:$SqlInstance -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; alter database $DbName set restricted_user; Alter database $DbName set online with rollback immediate" -database master
+                        if ($Continue -eq $false) {
+                            Invoke-DbaSqlcmd -ServerInstance:$SqlInstance -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; alter database $DbName set restricted_user; Alter database $DbName set online with rollback immediate" -database master
+                        }
                         $server.ConnectionContext.Connect()
                     }
                     catch {
