@@ -54,6 +54,11 @@ function Copy-DbaLogin {
 		.PARAMETER LoginRenameHashtable
 			Takes a hash table that will pass to Rename-DbaLogin and update the login and mappings once the copy is completed.
 
+		.PARAMETER KillActiveConnection
+			When used in conjunction with the -Force parameter will kill all active connections/sessions on the destination instance.
+
+			A login cannot be dropped when it has active connections on the instance.
+
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -82,6 +87,15 @@ function Copy-DbaLogin {
 			Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force
 
 			Copies all logins from source server to destination server. If a SQL login on source exists on the destination, the destination login will be dropped and recreated.
+
+			If active connections are found the copy of that login will fail as it cannot be dropped.
+
+		.EXAMPLE
+			Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Force -KillActiveConnection
+
+			Copies all logins from source server to destination server. If a SQL login on source exists on the destination, the destination login will be dropped and recreated.
+
+			If any active connections are found they WILL BE killed.
 
 		.EXAMPLE
 			Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun -SourceSqlCredential $scred -DestinationSqlCredential $dcred
@@ -124,6 +138,7 @@ function Copy-DbaLogin {
 		[string]$OutFile,
 		[object]$PipeLogin,
 		[hashtable]$LoginRenameHashtable,
+		[switch]$KillActiveConnection,
 		[switch]$Force,
 		[switch]$Silent
 	)
@@ -193,13 +208,13 @@ function Copy-DbaLogin {
 					}
 				}
 
-				if (($Login = $destServer.Logins.Item($userName)) -ne $null -and !$force) {
+				if ($destServer.Logins.Item($userName) -ne $null -and !$force) {
 					if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it exists at destination.")) {
 						Write-Message -Level Warning -Message "$userName already exists in destination. Use -Force to drop and recreate."
 					}
 
 					$copyLoginStatus.Status = "Skipped"
-					$copyLoginStatus.Notes = "Already exist on destination."
+					$copyLoginStatus.Notes = "Already exists on destination."
 					$copyLoginStatus
 					continue
 				}
@@ -236,21 +251,33 @@ function Copy-DbaLogin {
 								$ownedJob.Set_OwnerLoginName('sa')
 								$ownedJob.Alter()
 							}
-
-							$login.Disable()
-							$destServer.EnumProcesses() | Where-Object Login -eq $userName | ForEach-Object {
-								$destServer.KillProcess($_.spid)
+							
+							$activeConnections = $destServer.EnumProcesses() | Where-Object Login -eq $userName
+							
+							if ($activeConnections -and $KillActiveConnection) {
+								if (!$destServer.Logins.Item($userName).IsDisabled){
+									$disabled = $true
+									$destServer.Logins.Item($userName).Disable()
+								}
+								
+								$activeConnections | ForEach-Object { $destServer.KillProcess($_.Spid)}
+								Write-Message -Level Verbose -Message "-KillActiveConnection was provided. There are $($activeConnections.Count) active connections killed."
+								# just in case the kill didn't work, it'll leave behind a disabled account
+								if ($disabled) { $destServer.Logins.Item($userName).Enable() }
 							}
-							$login.Drop()
+							elseif ($activeConnections) {
+								Write-Message -Level Warning -Message "There are $($activeConnections.Count) active connections found for the login $userName. Utilize -KillActiveConnection with -Force to kill the connections."
+							}
+							$destServer.Logins.Item($userName).Drop()
 
 							Write-Message -Level Verbose -Message "Successfully dropped $userName on $destination"
 						}
 						catch {
 							$copyLoginStatus.Status = "Failed"
-							$copyLoginStatus.Notes = $_.Exception
+							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
-
-							Stop-Function -Message "Could not drop $userName" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
+							
+							Stop-Function -Message "Could not drop $userName" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
 						}
 					}
 				}
@@ -341,10 +368,10 @@ function Copy-DbaLogin {
 							}
 							catch {
 								$copyLoginStatus.Status = "Failed"
-								$copyLoginStatus.Notes = $_.Exception
+								$copyLoginStatus.Notes = $_.Exception.Message
 								$copyLoginStatus
-
-								Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
+								
+								Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
 							}
 						}
 					}
@@ -367,10 +394,10 @@ function Copy-DbaLogin {
 						}
 						catch {
 							$copyLoginStatus.Status = "Failed"
-							$copyLoginStatus.Notes = $_.Exception
+							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
-
-							Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
+							
+							Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
 						}
 					}
 					# This script does not currently support certificate mapped or asymmetric key users.
@@ -390,10 +417,10 @@ function Copy-DbaLogin {
 						}
 						catch {
 							$copyLoginStatus.Status = "Successful - but could not disable on destination"
-							$copyLoginStatus.Notes = $_.Exception
+							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
-
-							Stop-Function -Message "$userName disabled on source, could not be disabled on $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
+							
+							Stop-Function -Message "$userName disabled on source, could not be disabled on $destination" -Category InvalidOperation -ErrorRecord $_ -Target $destServer  3>$null
 						}
 					}
 					if ($sourceLogin.DenyWindowsLogin) {
@@ -402,10 +429,10 @@ function Copy-DbaLogin {
 						}
 						catch {
 							$copyLoginStatus.Status = "Successful - but could not deny login on destination"
-							$copyLoginStatus.Notes = $_.Exception
+							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
-
-							Stop-Function -Message "$userName denied login on source, could not be denied login on $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
+							
+							Stop-Function -Message "$userName denied login on source, could not be denied login on $destination" -Category InvalidOperation -ErrorRecord $_ -Target $destServer 3>$null
 						}
 					}
 				}
@@ -428,10 +455,10 @@ function Copy-DbaLogin {
 						catch {
 							$copyLoginStatus.DestinationLogin = $NewLogin
 							$copyLoginStatus.Status = "Failed to rename"
-							$copyLoginStatus.Notes = $_.Exception
+							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
-
-							Stop-Function -Message "Issue renaming $userName to $NewLogin" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
+							
+							Stop-Function -Message "Issue renaming $userName to $NewLogin" -Category InvalidOperation -ErrorRecord $_ -Target $destServer 3>$null
 						}
 					}
 				}
@@ -449,7 +476,7 @@ function Copy-DbaLogin {
 			$sourceVersionMajor = $sourceServer.VersionMajor
 			$destVersionMajor = $destServer.VersionMajor
 			if ($sourceVersionMajor -gt 10 -and $destVersionMajor -lt 11) {
-				Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Category InvalidOperation -InnerErrorRecord $_ -Target $sourceServer
+				Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
 			}
 
 			if ($sourceVersionMajor -lt 8 -or $destVersionMajor -lt 8) {

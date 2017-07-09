@@ -18,7 +18,7 @@ Function Rename-LogicalFile
 		[Alias("ServerInstance", "SqlServer")]
 		[object]$SqlInstance,
 		[string]$DbName,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
         [string]$Prefix,
         [hashtable]$Mapping
 	)

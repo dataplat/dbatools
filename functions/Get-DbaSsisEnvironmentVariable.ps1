@@ -101,7 +101,7 @@ function Get-DbaSsisEnvironmentVariable {
 		[Alias('SqlServer', 'ServerInstance')]
 		[DbaInstanceParameter[]]$SqlInstance,
         [Parameter(Mandatory=$false)]
-        [System.Management.Automation.PSCredential]$SqlCredential,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
         [parameter(Mandatory=$false)]
 		[object[]]$Environment,
         [parameter(Mandatory=$false)]
@@ -128,7 +128,7 @@ function Get-DbaSsisEnvironmentVariable {
             }
             catch
             {
-                Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             
 

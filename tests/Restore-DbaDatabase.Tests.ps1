@@ -31,7 +31,7 @@
             $results.Status | Should Be "Dropped"
         }
     }
-	
+
     Context "Properly restores a database on the local drive using piped Get-ChildItem results" {
         $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance localhost
         It "Should Return the proper backup file location" {
@@ -250,7 +250,29 @@
 
     }
 
+    Context "Backup DB For next test" {
+        $results = Backup-DbaDatabase -SqlInstance localhost -Database RestoreTimeClean -BackupDirectory C:\temp\backups
+        It "Should return successful backup" {
+			$results.BackupComplete | Should Be $true
+		}
+    }
+
     Context "All user databases are removed post continue test" {
+        $results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
+        It "Should say the status was dropped" {
+            Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
+        }
+    }
+
+    Context "Check Get-DbaBackupHistory pipes into Restore-DbaDatabase" {
+        $history = Get-DbaBackupHistory -SqlInstance localhost -Database RestoreTimeClean -Last
+        $results = $history | Restore-DbaDatabase -SqlInstance localhost -WithReplace -TrustDbBackupHistory
+        It "Should have restored everything successfully" {
+            ($results.RestorComplete -contains $false) | Should be $False
+        }
+    }
+
+    Context "All user databases are removed post history test" {
         $results = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }

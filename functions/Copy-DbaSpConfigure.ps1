@@ -1,143 +1,165 @@
 function Copy-DbaSpConfigure {
 	<#
-.SYNOPSIS 
-Copy-DbaSpConfigure migrates configuration values from one SQL Server to another. 
+		.SYNOPSIS
+			Copy-DbaSpConfigure migrates configuration values from one SQL Server to another.
 
-.DESCRIPTION
-By default, all configuration values are copied. The -Config parameter is autopopulated for command-line completion and can be used to copy only specific configs.
+		.DESCRIPTION
+			By default, all configuration values are copied. The -ConfigName parameter is autopopulated for command-line completion and can be used to copy only specific configs.
 
-.PARAMETER Source
-Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+		.PARAMETER Source
+			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+		.PARAMETER SourceSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-.PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			To connect as a different Windows user, run PowerShell as that user.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+		.PARAMETER Destination
+			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-.PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+		.PARAMETER DestinationSqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Config 
-Copy only specific configs. This will be autopopulated shortly.
+		.PARAMETER ConfigName
+			The ConfigName(s) to process - this list is auto populated from the server. If unspecified, all ConfigNames will be processed.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER ExcludeConfigName
+			The ConfigName(s) to exclude - this list is auto populated from the server
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER WhatIf
+			Shows what would happen if the command were to run. No actions are actually performed.
 
-.NOTES
-Tags: Migration, Configure
-Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
+		.PARAMETER Confirm
+			Prompts you for confirmation before executing any changing operations within the command.
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.PARAMETER Silent
+			Use this switch to disable any kind of verbose messages
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		.NOTES
+			Tags: Migration, Configure, SpConfigure
+			Author: Chrissy LeMaire (@cl), netnerds.net
+			Requires: sysadmin access on SQL Servers
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.LINK
+			https://dbatools.io/Copy-DbaSpConfigure
 
-.LINK
-https://dbatools.io/Copy-DbaSpConfigure 
+		.EXAMPLE
+			Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster
 
-.EXAMPLE   
-Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster
+			Copies all sp_configure settings from sqlserver2014a to sqlcluster
 
-Copies all sp_configure settings from sqlserver2014a to sqlcluster
+		.EXAMPLE
+			Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -ConfigName DefaultBackupCompression, IsSqlClrEnabled -SourceSqlCredential $cred -Force
 
-.EXAMPLE   
-Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -Config DefaultBackupCompression, IsSqlClrEnabled -SourceSqlCredential $cred -Force
+			Updates the values for two configs, the  IsSqlClrEnabled and DefaultBackupCompression, from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
 
-Updates the values for two configs, the  IsSqlClrEnabled and DefaultBackupCompression, from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
+		.EXAMPLE
+			Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -ExcludeConfigName DefaultBackupCompression, IsSqlClrEnabled
 
-.EXAMPLE   
-Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -WhatIf
+			Updates all configs except for IsSqlClrEnabled and DefaultBackupCompression, from sqlserver2014a to sqlcluster.
 
-Shows what would happen if the command were executed.
-#>
+		.EXAMPLE
+			Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -WhatIf
+
+			Shows what would happen if the command were executed.
+	#>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-        [string[]]$Config
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$DestinationSqlCredential,
+		[object[]]$ConfigName,
+		[object[]]$ExcludeConfigName,
+		[switch]$Silent
 	)
-	
 
-	
 	begin {
 
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-		
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+
+		$source = $sourceServer.DomainInstanceName
+		$destination = $destServer.DomainInstanceName
 	}
 	process {
 
-		$destprops = $destserver.Configuration.Properties
-		
-		# crude but i suck with properties
-		$lookups = $sourceserver.Configuration.PsObject.Properties.Name | Where-Object { $_ -notin "Parent", "Properties" }
-		
-		$proplookup = @()
-		foreach ($lookup in $lookups) {
-			$proplookup += [PSCustomObject]@{
-				ShortName   = $lookup
-				DisplayName = $sourceserver.Configuration.$lookup.Displayname
-				IsDynamic   = $sourceserver.Configuration.$lookup.IsDynamic
+		$sourceProps = Get-DbaSpConfigure -SqlInstance $sourceServer
+		$destProps = Get-DbaSpConfigure -SqlInstance $destServer
+
+		foreach ($sourceProp in $sourceProps) {
+			$displayName = $sourceProp.DisplayName
+			$sConfigName = $sourceProp.ConfigName
+			$sConfiguredValue = $sourceProp.ConfiguredValue
+			$requiresRestart = $sourceProp.IsDynamic
+
+			$copySpConfigStatus = [pscustomobject]@{
+				SourceServer      = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name              = $sConfigName
+				Type              = $null
+				Status            = $null
+				Notes             = $null
+				DateTime          = [DbaDateTime](Get-Date)
 			}
-		}
-		
-		foreach ($sourceprop in $sourceserver.Configuration.Properties) {
-			$displayname = $sourceprop.DisplayName
-			$lookup = $proplookup | Where-Object { $_.DisplayName -eq $displayname }
-			
-			if ($config.length -gt 0 -and $config -notcontains $lookup.ShortName) { continue }
-			
-			$destprop = $destprops | Where-Object { $_.Displayname -eq $displayname }
-			if ($destprop -eq $null) {
-				Write-Warning "Configuration option '$displayname' does not exist on the destination instance."
+
+			if ($ConfigName -and $sConfigName -notin $ConfigName -or $sConfigName -in $ExcludeConfigName ) {
 				continue
 			}
-			
-			If ($Pscmdlet.ShouldProcess($destination, "Updating $displayname")) {
+
+			$destProp = $destProps | Where-Object ConfigName -eq $sConfigName
+			if (!$destProp) {
+				Write-Message -Level Warning -Message "Configuration $sConfigName ('$displayName') does not exist on the destination instance."
+
+				$copySpConfigStatus.Status = "Skipped"
+				$copySpConfigStatus.Notes = "Configuration does not exist on destination"
+				$copySpConfigStatus
+				continue
+			}
+
+			if ($Pscmdlet.ShouldProcess($destination, "Updating $sConfigName [$displayName]")) {
 				try {
-					$destOldPropValue = $destprop.configvalue
-					$destprop.configvalue = $sourceprop.configvalue
-					$destserver.Configuration.Alter()
-					Write-Output "Updated $($destprop.displayname) from $destOldPropValue to $($sourceprop.configvalue)"
-					if ($lookup.IsDynamic -eq $false) {
-						Write-Warning "Configuration option '$displayname' requires restart."	
+					$destOldConfigValue = $destProp.ConfiguredValue
+
+					$result = Set-DbaSpConfigure -SqlInstance $destServer -ConfigName $sConfigName -Value $sConfiguredValue -Silent -Mode 'Lazy'
+					if ($result) {
+						Write-Message -Level Verbose -Message "Updated $($destProp.ConfigName) ($($destProp.DisplayName)) from $destOldConfigValue to $sConfiguredValue"
 					}
+
+					if ($requiresRestart -eq $false) {
+						Write-Message -Level Warning -Message "Configuration option $sConfigName ($displayName) requires restart."
+						$copySpConfigStatus.Notes = "Requires restart"
+					}
+					$copySpConfigStatus.Status = "Successful"
+					$copySpConfigStatus
 				}
 				catch {
-					Write-Error "Could not $($destprop.displayname) to $($sourceprop.configvalue). Feature may not be supported."
+					$copySpConfigStatus.Status = "Failed"
+					$copySpConfigStatus.Notes = $_.Exception
+					$copySpConfigStatus
+
+					Stop-Function -Message "Could not set $($destProp.ConfigName) to $sConfiguredValue." -Target $sConfigName -ErrorRecord $_
 				}
 			}
-		  
 		}
-
 	}
 	end {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlSpConfigure
 	}
-	
 }

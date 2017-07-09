@@ -53,7 +53,7 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[object[]]$Database,
 		[parameter(Mandatory, ParameterSetName = "instance")]
@@ -106,7 +106,7 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -Target $instance -InnerErrorRecord $_ -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			foreach ($db in $Database) {

@@ -126,7 +126,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(Mandatory = $false)]
-        [System.Management.Automation.PSCredential]$SqlCredential,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
         [object[]]$Job,
@@ -328,7 +328,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
                     $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 }
                 catch {
-                    Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -InnerErrorRecord $_ -Continue
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
                 # Check if the job exists

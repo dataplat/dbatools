@@ -149,7 +149,7 @@ Filters only results where LinkServerName = myls and StartTime is greater than '
 		[parameter(Position = 0, Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[parameter(Mandatory = $true)]
 		[string[]]$Path,
 		[string[]]$Database,
@@ -234,7 +234,7 @@ Filters only results where LinkServerName = myls and StartTime is greater than '
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance"
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				return
 			}
 			

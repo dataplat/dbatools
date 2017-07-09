@@ -231,7 +231,7 @@
 									$destServer.JobServer.OperatorCategories[$categoryName].Drop()
 									Write-Message -Level Verbose -Message "Copying Operator category $categoryName"
 									$sql = $operatorCategory.Script() | Out-String
-									Write-Message -Level Derbug -Message $sql
+									Write-Message -Level Debug -Message $sql
 									$destServer.Query($sql)
 								}
 								catch {

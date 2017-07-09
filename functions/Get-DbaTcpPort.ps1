@@ -66,7 +66,7 @@ Returns an object with server name, IPAddress (just ipv4), port and static ($tru
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("SqlCredential")]
-		[PsCredential]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[switch]$Detailed,
 		[Alias("Ipv4")]
 		[switch]$NoIpv6

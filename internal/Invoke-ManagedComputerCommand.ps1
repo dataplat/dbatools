@@ -10,7 +10,7 @@ Internal command
 		[Parameter(Mandatory = $true)]
 		[Alias("Server")]
 		[dbainstanceparameter]$ComputerName,
-		[System.Management.Automation.PSCredential]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[Parameter(Mandatory = $true)]
 		[scriptblock]$ScriptBlock,
 		[string[]]$ArgumentList,
@@ -21,7 +21,8 @@ Internal command
 	
 	Test-RunAsAdmin -ComputerName $ComputerName
 	
-	$ipaddr = (Test-Connection $ComputerName -Count 1 -ErrorAction Stop).Ipv4Address
+	$resolved = Resolve-DbaNetworkName -ComputerName $ComputerName
+	$ipaddr = $resolved.IpAddress
 	$ArgumentList += $ipaddr
 		
 	[scriptblock]$setupScriptBlock = {
@@ -50,8 +51,7 @@ Internal command
 			Write-Message -Level Verbose -Message "Local connection attempt to $ComputerName failed. Connecting remotely."
 			
 			# For surely resolve stuff
-			$hostname = [System.Net.Dns]::gethostentry($ipaddr)
-			$hostname = $hostname.HostName
+			$hostname = $resolved.fqdn
 			
 			Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname -ErrorAction Stop
 		}

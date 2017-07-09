@@ -54,6 +54,9 @@ Specifies the method that is used to shrink the database
 .PARAMETER StatementTimeout
 Timeout in minutes. Defaults to infinity (shrinks can take a while.)
 
+.PARAMETER LogsOnly
+Only shrink the log file, not the entire database
+	
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
 
@@ -110,6 +113,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 		[ValidateSet('Default', 'EmptyFile', 'NoTruncate', 'TruncateOnly')]
 		[string]$ShrinkMethod = "Default",
 		[int]$StatementTimeout = 0,
+		[switch]$LogsOnly,
 		[switch]$Silent
 	)
 
@@ -149,7 +153,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 
 			}
 			catch {
-				Stop-Function -Message "Can't connect to $instance. Moving on." -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			# changing statement timeout to $StatementTimeout
@@ -205,23 +209,40 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						else {
 							$startingtopfrag = $startingfrag = $null
 						}
-
+						
 						$start = Get-Date
-
-						try {
-							Write-Message -Level Verbose -Message "Beginning shrink"
-							$db.Shrink($PercentFreeSpace, $ShrinkMethod)
-							$db.Refresh()
-							Write-Message -Level Verbose -Message "Recalculating space usage"
-							$db.RecalculateSpaceUsage()
-							$success = $true
-							$notes = $null
+						
+						if ($LogsOnly) {
+							try {
+								Write-Message -Level Verbose -Message "Beginning shrink of log files"
+								$db.LogFiles.Shrink($PercentFreeSpace, $ShrinkMethod)
+								$db.LogFiles.Refresh()
+								Write-Message -Level Verbose -Message "Recalculating space usage"
+								$db.RecalculateSpaceUsage()
+								$success = $true
+								$notes = $null
+							}
+							catch {
+								$success = $false
+								$notes = $_.Exception.InnerException
+							}
 						}
-						catch {
-							$success = $false
-							$notes = $_.Exception.InnerException
+						else {
+							try {
+								Write-Message -Level Verbose -Message "Beginning shrink of entire database"
+								$db.Shrink($PercentFreeSpace, $ShrinkMethod)
+								$db.Refresh()
+								Write-Message -Level Verbose -Message "Recalculating space usage"
+								$db.RecalculateSpaceUsage()
+								$success = $true
+								$notes = $null
+							}
+							catch {
+								$success = $false
+								$notes = $_.Exception.InnerException
+							}
 						}
-
+						
 						$end = Get-Date
 						$dbsize = $db.Size
 						$newSpaceAvailableMB = $db.SpaceAvailable/1024

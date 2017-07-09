@@ -87,7 +87,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue -Silent $Silent
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			$alldbs = $server.Databases

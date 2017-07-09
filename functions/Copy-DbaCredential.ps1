@@ -112,7 +112,7 @@
 			[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 			param (
 				[DbaInstanceParameter]$SqlInstance,
-				[System.Management.Automation.PSCredential]$SqlCredential
+				[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
 			)
 			
 			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential

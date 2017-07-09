@@ -104,7 +104,7 @@
 		[Parameter(Mandatory = $false, Position = 2, ValueFromPipeline = $true)]
 		[object[]]$Database,
 		[Parameter(Mandatory = $false, Position = 3)]
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[Parameter(Mandatory = $false, Position = 4)]
 		[switch]$NoRecovery,
 		[Parameter(Mandatory = $false, Position = 5)]
@@ -155,7 +155,7 @@
 			}
 			catch
 			{
-				Stop-Function -Message "Could not connect to Sql Server instance" -InnerErrorRecord $_ -Target $sqlinstance
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				return
 			}
 			

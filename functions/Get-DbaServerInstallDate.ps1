@@ -1,5 +1,4 @@
-function Get-DbaServerInstallDate
-{
+function Get-DbaServerInstallDate {
 <#
 .SYNOPSIS
 Returns the install date of a SQL Instance and Windows Server, depending on what is passed. 
@@ -61,102 +60,67 @@ Get-DbaRegisteredServerName -SqlInstance sql2014 | Get-DbaInstallDate
 Returns an object with SQL Instance install date as a string for every server listed in the Central Management Server on sql2014
 	
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default")]
+	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer", "ComputerName")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential] 
-		[System.Management.Automation.CredentialAttribute()]$SqlCredential,
-		[PSCredential] 
-		[System.Management.Automation.CredentialAttribute()]$Credential,
-		[parameter(ParameterSetName = "Sql")]
-		[Switch]$IncludeWindows, 
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$Credential,
+		[Switch]$IncludeWindows,
 		[switch]$Silent
 	)
 	
-	PROCESS
-	{
-		foreach ($instance in $SqlInstance)
-		{
-			if ($instance.SqlInstance)
-			{
-				$servername = $instance.SqlInstance
+	process {
+		foreach ($instance in $SqlInstance) {
+			try {
+				Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
-			elseif ($instance.NetName)
-			{
-				$servername = $instance.NetName
+			catch {
+				Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
 			}
-			else
-			{
-				$servername = $instance
-			}
-							
-			try 
-			{
-				Write-Message -Level Verbose -Message "Connecting to $instance"
-				if ($SqlCredential)
-				{ 
-					$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
-				} else 
-				{
-					$server = Connect-SqlInstance -SqlInstance $servername
-				}					
-			}
-			catch 
-			{
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance -InnerErrorRecord $_
-			}
-
-			if ( $server.VersionMajor -ge 9 )
-			{ 
-				Write-Message -Level Verbose -Message "Getting Install Date for: $instance" 
+			
+			if ($server.VersionMajor -ge 9) {
+				Write-Message -Level Verbose -Message "Getting Install Date for: $instance"
 				$sql = "SELECT create_date FROM sys.server_principals WHERE sid = 0x010100000000000512000000"
 				[DbaDateTime]$sqlInstallDate = $server.Query($sql, 'master', $true).create_date
-
-			} else { 
-				Write-Message -Level Verbose -Message "Getting Install Date for: $instance" 
+				
+			}
+			else {
+				Write-Message -Level Verbose -Message "Getting Install Date for: $instance"
 				$sql = "SELECT schemadate FROM sysservers"
 				[DbaDateTime]$sqlInstallDate = $server.Query($sql, 'master', $true).create_date
 			}
-
-			if ( $IncludeWindows )			
-			{ 
-				Write-Message -Level Verbose -Message "Getting Windows Server Name for: $servername" 				
-				try
-				{
-					if (Was-Bound $Credential) {
-						$WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $Credential).ComputerName
-						[DbaDateTime]$windowsInstallDate = (Get-DbaCmObject -ClassName win32_OperatingSystem -ComputerName $WindowsServerName -Credential $Credential -Silent).InstallDate
-					}
-					else {
-						$WindowsServerName = (Resolve-DbaNetworkName $servername ).ComputerName
-						[DbaDateTime]$windowsInstallDate = (Get-DbaCmObject -ClassName win32_OperatingSystem -ComputerName $WindowsServerName -Silent).InstallDate
-					} 				
+			
+			$WindowsServerName = $server.ComputerNamePhysicalNetBIOS
+			
+			if ($IncludeWindows) {
+				try {
+					[DbaDateTime]$windowsInstallDate = (Get-DbaCmObject -ClassName win32_OperatingSystem -ComputerName $WindowsServerName -Credential $Credential -Silent).InstallDate
 				}
-				catch
-				{				
-					Stop-Function -Message "Failed to connect to: $WindowsServerName" -Continue -Target $instance -InnerErrorRecord $_
+				catch {
+					Stop-Function -Message "Failed to connect to: $WindowsServerName" -Continue -Target $instance -ErrorRecord $_
 				}
 			}
-
+			
 			$object = [PSCustomObject]@{
-							ComputerName = $( if ( $server.NetName) { $server.NetName } else { $WindowsServerName } ) 
-							InstanceName = $server.ServiceName
-							SqlServer = $server.InstanceName
-							SqlInstallDate = $sqlInstallDate
-							WindowsInstallDate = $windowsInstallDate
-						}
-
-			if ($IncludeWindows) 
-			{
-				Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlServer, SqlInstallDate, WindowsInstallDate
+				ComputerName = $server.NetName
+				InstanceName = $server.ServiceName
+				SqlInstance = $server.DomainInstanceName
+				SqlInstallDate = $sqlInstallDate
+				WindowsInstallDate = $windowsInstallDate
 			}
-			else 
-			{
-				Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlServer, SqlInstallDate				
+			
+			if ($IncludeWindows) {
+				Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, SqlInstallDate, WindowsInstallDate
 			}
-
-        } 
-    }
+			else {
+				Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, SqlInstallDate
+			}
+			
+		}
+	}
 }

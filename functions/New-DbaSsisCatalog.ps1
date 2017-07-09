@@ -54,9 +54,9 @@ Prompts for username/password - while only password is used, the username must b
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[parameter(Mandatory = $true)]
-		[System.Management.Automation.PSCredential]$SsisCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SsisCredential,
 		[string]$SsisCatalog = "SSISDB",
 		[switch]$Silent
 	)
@@ -74,7 +74,7 @@ Prompts for username/password - while only password is used, the username must b
 			}
 			catch
 			{
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			#if SQL 2012 or higher only validate databases with ContainmentType = NONE

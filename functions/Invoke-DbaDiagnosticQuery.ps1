@@ -75,7 +75,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 		[parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PsCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[System.IO.FileInfo]$Path,
 		[string[]]$QueryName,
 		[switch]$UseSelectionHelper,
@@ -151,7 +151,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			Write-Message -Level Verbose -Message "Collecting diagnostic query data from server: $instance"

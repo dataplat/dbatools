@@ -36,7 +36,7 @@ function Get-DbaLinkedServer {
 		[Parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[switch]$Silent
 	)
 	foreach ($Instance in $SqlInstance) {
@@ -45,7 +45,7 @@ function Get-DbaLinkedServer {
 			$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 		}
 		catch {
-			Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
+			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 		}
 
 		$lservers = $server.LinkedServers

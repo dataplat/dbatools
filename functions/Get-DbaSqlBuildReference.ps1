@@ -263,7 +263,7 @@ Function Get-DbaSqlBuildReference {
 				$null = $server.Version.ToString()
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Silent $Silent -Target $instance
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			#endregion Ensure the connection is established
 			

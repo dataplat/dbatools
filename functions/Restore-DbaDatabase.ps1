@@ -243,7 +243,7 @@ function Restore-DbaDatabase {
         [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [System.Management.Automation.PSCredential]$SqlCredential,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
         [string]$DatabaseName,
         [String]$DestinationDataDirectory,
         [String]$DestinationLogDirectory,
@@ -334,7 +334,7 @@ function Restore-DbaDatabase {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
         catch {
-            Stop-Function -Message "Failed to connect to $SqlInstance" -Silent $Silent -ErrorRecord $_
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
         #endregion Validation
@@ -361,9 +361,9 @@ function Restore-DbaDatabase {
                 }
                 if ("BackupSetGUID" -notin $f.PSobject.Properties.name) {
                     #This line until Get-DbaBackupHistory gets fixed
-                    $f = $f | Select-Object *, @{ Name = "BackupSetGUID"; Expression = { $_.BackupSetupID } }
+                    #$f = $f | Select-Object *, @{ Name = "BackupSetGUID"; Expression = { $_.BackupSetupID } }
                     #This one once it's sorted:
-                    #$f = $f | Select-Object *, @{Name="BackupSetGUID";Expression={$_.BackupSetID}}
+                    $f = $f | Select-Object *, @{Name="BackupSetGUID";Expression={$_.BackupSetID}}
                 }
                 if ($f.BackupPath -like 'http*' -and '' -eq $AzureCredential) {
                     Stop-Function -Message "At least one Azure backup passed in, and no Credential supplied. Stopping"
@@ -508,7 +508,7 @@ function Restore-DbaDatabase {
         if (Test-FunctionInterrupt) { return }
 		
         if ($null -ne $DatabaseName) {
-            If (($null -ne $server.Databases[$DatabaseName]) -and ($WithReplace -eq $false)) {
+            If (($DatabaseName -in ($server.Databases.name)) -and ($WithReplace -eq $false)) {
                 Write-Warning "$FunctionName - $DatabaseName exists on Sql Instance $SqlInstance , must specify WithReplace to continue"
                 break
             }

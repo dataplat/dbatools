@@ -121,7 +121,7 @@
 					DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
 				try {
-					Write-Message -Message "Creating Alert Defaults" -Level Output
+					Write-Message -Message "Creating Alert Defaults" -Level Verbose
 					$sql = $sourceServer.JobServer.AlertSystem.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$Destination'"
 
@@ -195,8 +195,8 @@
 				continue
 			}
 
-			if ($dest.JobServer.Jobs.Name -NotContains $serverAlert.JobName) {
-				Write-Message -Level Warning -Message "Alert [$alertName] has job [$($serverAlert.JobName)] configured as repsonse. The job does not exist on destination $dest. Skipping."
+			if ($serverAlert.JobName -and $dest.JobServer.Jobs.Name -NotContains $serverAlert.JobName) {
+				Write-Message -Level Warning -Message "Alert [$alertName] has job [$($serverAlert.JobName)] configured as response. The job does not exist on destination $dest. Skipping."
 
 				$copyAgentAlertStatus.Status = "Skipped"
 				$copyAgentAlertStatus
@@ -205,7 +205,7 @@
 
 			if ($PSCmdlet.ShouldProcess($Destination, "Creating Alert $alertName")) {
 				try {
-					Write-Message -Message "Copying Alert $alertName" -Level Output
+					Write-Message -Message "Copying Alert $alertName" -Level Verbose
 					$sql = $serverAlert.Script() | Out-String
 					$sql = $sql -replace "@job_id=N'........-....-....-....-............", "@job_id=N'00000000-0000-0000-0000-000000000000"
 
@@ -242,7 +242,7 @@
 				if ($PSCmdlet.ShouldProcess($Destination, "Adding $alertName to $jobName")) {
 					try {
 						<# THERE needs to be validation within this block to see if the $jobName actually exists on the source server. #>
-						Write-Message -Message "Adding $alertName to $jobName" -Level Output
+						Write-Message -Message "Adding $alertName to $jobName" -Level Verbose
 						$newJob = $destServer.JobServer.Jobs[$jobName]
 						$newJobId = ($newJob.JobId) -replace " ", ""
 						$sql = $sql -replace '00000000-0000-0000-0000-000000000000', $newJobId
@@ -281,12 +281,12 @@
 						}
 
 						if ($notify.UseEmail -eq $true) {
-							Write-Message -Message "Adding email" -Level Output
+							Write-Message -Message "Adding email" -Level Verbose
 							$notifyCollection += "NotifyEmail"
 						}
 
 						if ($notify.UsePager -eq $true) {
-							Write-Message -Message "Adding pager" -Level Output
+							Write-Message -Message "Adding pager" -Level Verbose
 							$notifyCollection += "Pager"
 						}
 

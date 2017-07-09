@@ -122,8 +122,8 @@
                 else {
                     if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
                         $copySharedScheduleStatus.Status = "Skipped"
-                        $copySharedScheduleStatus
-                        Write-Message -Level Warning -Message "Schedule $scheduleName has associated jobs. Skipping."
+						$copySharedScheduleStatus
+						Write-Message -Level Warning -Message "Schedule [$scheduleName] has associated jobs. Skipping."
                         continue
                     }
                     else {

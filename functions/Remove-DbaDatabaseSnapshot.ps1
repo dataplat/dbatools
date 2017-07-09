@@ -111,7 +111,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 				try {
 					$server = Connect-SqlInstance -SqlInstance $PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName -SqlCredential $Credential
 				} catch {
-					Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
+					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				}
 				try {
 					if ($Force) {
@@ -140,7 +140,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
 			} catch {
-				Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 

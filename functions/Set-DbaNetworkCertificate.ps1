@@ -56,7 +56,7 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 	param (
 		[Alias("ServerInstance", "SqlServer", "ComputerName")]
 		[DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
-		[System.Management.Automation.PSCredential]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[parameter(Mandatory, ParameterSetName = "Certificate", ValueFromPipeline)]
 		[System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
 		[parameter(Mandatory, ParameterSetName = "Thumbprint")]
@@ -80,21 +80,28 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 			Test-RunAsAdmin -ComputerName $instance.ComputerName
 			
 			Write-Message -Level Output -Message "Resolving hostname"
-			$resolved = Resolve-DbaNetworkName -ComputerName $instance -Turbo
+			$resolved = Resolve-DbaNetworkName -ComputerName $instance
 			
 			if ($null -eq $resolved) {
 				Write-Message -Level Warning -Message "Can't resolve $instance"
 				return
 			}
 			
-			Write-Message -Level Output -Message "Connecting to SQL WMI on $($instance.ComputerName)"
+			$computername = $instance.ComputerName
+			$instancename = $instance.instancename
+			Write-Message -Level Output -Message "Connecting to SQL WMI on $computername"
 			
 			try {
-				$sqlwmi = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.instancename))"
+				$sqlwmi = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instancename)"
 			}
 			catch {
 				Stop-Function -Message $_ -Target $sqlwmi
 				return
+			}
+			
+			if (!$sqlwmi) {
+				Write-Message -Level Warning -Message "Cannot find $instancename on $computerName"
+				continue
 			}
 			
 			$regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
@@ -134,7 +141,7 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 				
 				$oldthumbprint = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
 				
-				$cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction Stop | Where-Object Thumbprint -eq $Thumbprint
+				$cert = Get-ChildItem Cert:\LocalMachine -Recurse -ErrorAction Stop | Where-Object { $_.Thumbprint -eq $Thumbprint }
 				
 				if ($null -eq $cert) {
 					Write-Warning "Certificate does not exist on $env:COMPUTERNAME"
@@ -175,15 +182,13 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 					SqlInstance = $vsname
 					ServiceAccount = $serviceaccount
 					CertificateThumbprint = $newthumbprint
-					Certificate = $cert
 					Notes = $notes
 				}
 			}
 			
 			if ($PScmdlet.ShouldProcess("local", "Connecting to $instanceName to import new cert")) {
 				try {
-					Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname, $Thumbprint -ScriptBlock $scriptblock -ErrorAction Stop |
-					Select-DefaultView -ExcludeProperty Certificate
+					Invoke-Command2 -Raw -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname, $Thumbprint -ScriptBlock $scriptblock -ErrorAction Stop
 				}
 				catch {
 					Stop-Function -Message $_ -ErrorRecord $_ -Target $instanceName -Continue

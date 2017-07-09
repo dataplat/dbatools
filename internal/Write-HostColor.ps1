@@ -63,9 +63,9 @@
 	process {
 		foreach ($line in $String) {
 			foreach ($row in $line.Split("`n").Split([environment]::NewLine)) {
-				if ($row -notlike '*<c="*">*</c>*') { Write-Host -Object $row -ForegroundColor $DefaultColor }
+				if ($row -notlike '*<c=["'']*["'']>*</c>*') { Write-Host -Object $row -ForegroundColor $DefaultColor }
 				else {
-					$match = ($row | Select-String '<c="(.*?)">(.*?)</c>' -AllMatches).Matches
+					$match = ($row | Select-String '<c=["''](.*?)["'']>(.*?)</c>' -AllMatches).Matches
 					$index = 0
 					$count = 0
 					

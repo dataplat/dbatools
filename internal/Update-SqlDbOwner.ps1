@@ -13,8 +13,8 @@ Internal function. Updates specified database dbowner.
 		[ValidateNotNullOrEmpty()]
 		[object]$destination,
 		[string]$dbname,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential
 	)
 	
 	$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential

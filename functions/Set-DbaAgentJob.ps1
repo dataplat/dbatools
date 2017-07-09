@@ -142,7 +142,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
         [DbaInstanceParameter[]]$SqlInstance,
 
         [Parameter(Mandatory = $false)]
-        [System.Management.Automation.PSCredential]$SqlCredential,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -264,7 +264,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
-                Stop-Function -Message "Could not connect to Sql Server instance" -Target $instance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 			
             foreach ($j in $Job) {

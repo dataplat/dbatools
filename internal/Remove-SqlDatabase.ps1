@@ -12,7 +12,7 @@ an SMO server object.
 		[object]$SqlInstance,
 		[Parameter(Mandatory = $true)]
 		[string]$DBName,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
 	)
 	
 	$escapedname = "[$dbname]"

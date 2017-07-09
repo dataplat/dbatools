@@ -174,7 +174,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance -InnerErrorRecord $_
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			# Reset all the arrays
 			$dirtreefiles = $valid = $paths = $matching = @()
@@ -232,6 +232,9 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 
 					$result = [pscustomobject]@{
 						Server = $server.name
+						ComputerName = $server.NetName
+						InstanceName = $server.ServiceName
+						SqlInstance = $server.DomainInstanceName
 						Filename = $fullpath
 						RemoteFilename = Join-AdminUnc -Servername $server.netname -Filepath $fullpath
 					}
@@ -246,7 +249,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 						continue
 					}
 
-					$result
+					$result | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Filename, RemoteFilename
 
 				}
 			}
