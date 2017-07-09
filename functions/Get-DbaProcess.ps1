@@ -6,8 +6,8 @@ function Get-DbaProcess {
 		.DESCRIPTION
 			This command displays processes associated with a spid, login, host, program or database.
 			
-			Thanks to https://sqlperformance.com/2017/07/sql-performance/find-database-connection-leaks for the
-			query to get the last executed SQL statement
+			Thanks to Michael J Swart at https://sqlperformance.com/2017/07/sql-performance/find-database-connection-leaks for the
+			query to get the last executed SQL statement, minutesasleep and host process ID
 	
 		.PARAMETER SqlInstance
 			The SQL Server instance.
@@ -170,8 +170,9 @@ function Get-DbaProcess {
 				Add-Member -InputObject $session -MemberType NoteProperty -Name Command -value $command -Force
 				Add-Member -InputObject $session -MemberType NoteProperty -Name LastQuery -value $row.Query -Force
 				Add-Member -InputObject $session -MemberType NoteProperty -Name HostProcessId -value $row.HostProcessId -Force
+				Add-Member -InputObject $session -MemberType NoteProperty -Name MinutesAsleep -value $row.MinutesAsleep -Force
 				
-				Select-DefaultView -InputObject $session -Property ComputerName, InstanceName, SqlInstance, Spid, Login, Host, Database, BlockingSpid, Program, Status, Command, Cpu, MemUsage, IsSystem, HostProcessId, LastQuery
+				Select-DefaultView -InputObject $session -Property ComputerName, InstanceName, SqlInstance, Spid, Login, Host, Database, BlockingSpid, Program, Status, Command, Cpu, MemUsage, IsSystem, MinutesAsleep, HostProcessId, LastQuery
 			}
 		}
 	}
