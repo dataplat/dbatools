@@ -5,7 +5,10 @@ function Get-DbaProcess {
 
 		.DESCRIPTION
 			This command displays processes associated with a spid, login, host, program or database.
-
+			
+			Thanks to https://sqlperformance.com/2017/07/sql-performance/find-database-connection-leaks for the
+			query to get the last executed SQL statement
+	
 		.PARAMETER SqlInstance
 			The SQL Server instance.
 
@@ -95,6 +98,16 @@ function Get-DbaProcess {
 				Stop-Function -Message "Could not connect to Sql Server instance $instance : $_" -Target $instance -ErrorRecord $_ -Continue
 			}
 			
+			$sql = "SELECT datediff(minute, s.last_request_end_time, getdate()) as MinutesAsleep, s.session_id as spid, s.host_process_id as HostProcessId, t.text as Query
+					FROM sys.dm_exec_connections c join sys.dm_exec_sessions s on c.session_id = s.session_id cross apply sys.dm_exec_sql_text(c.most_recent_sql_handle) t"
+			
+			if ($server.VersionMajor -gt 8) {
+				$results = $server.Query($sql)
+			}
+			else {
+				$results = $null
+			}
+			
 			$allsessions = @()
 			
 			$processes = $server.EnumProcesses()
@@ -147,14 +160,18 @@ function Get-DbaProcess {
 					$command = $session.Command
 				}
 				
+				$row = $results | Where-Object { $_.Spid -eq $session.Spid }
+
 				Add-Member -InputObject $session -MemberType NoteProperty -Name Parent -value $server
 				Add-Member -InputObject $session -MemberType NoteProperty -Name ComputerName -value $server.NetName
 				Add-Member -InputObject $session -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
 				Add-Member -InputObject $session -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 				Add-Member -InputObject $session -MemberType NoteProperty -Name Status -value $status -Force
 				Add-Member -InputObject $session -MemberType NoteProperty -Name Command -value $command -Force
+				Add-Member -InputObject $session -MemberType NoteProperty -Name LastQuery -value $row.Query -Force
+				Add-Member -InputObject $session -MemberType NoteProperty -Name HostProcessId -value $row.HostProcessId -Force
 				
-				Select-DefaultView -InputObject $session -Property ComputerName, InstanceName, SqlInstance, Spid, Login, Host, Database, BlockingSpid, Program, Status, Command, Cpu, MemUsage, IsSystem
+				Select-DefaultView -InputObject $session -Property ComputerName, InstanceName, SqlInstance, Spid, Login, Host, Database, BlockingSpid, Program, Status, Command, Cpu, MemUsage, IsSystem, HostProcessId, LastQuery
 			}
 		}
 	}
