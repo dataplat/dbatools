@@ -996,14 +996,15 @@ function Copy-DbaDatabase {
 
 					$dbFinish = Get-Date
 					if ($NoRecovery -eq $false) {
+						# needed because the newly restored database doesn't show up
+						$destServer.Databases.Refresh()
 						$dbOwner = $sourceServer.Databases[$dbName].Owner
-						if ($dbOwner -eq $null) {
+						if ($null -eq $dbOwner -or $destServer.Logins.Name -notcontains $dbOwner) {
 							$dbOwner = Get-SaLoginName -SqlInstance $destServer
 						}
-						Write-Message -Level Verbose -Message "Updating database owner"
-						try {
-							$null = Set-DbaDatabaseOwner -SqlInstance $destServer -Database $dbName -TargetLogin $dbOwner -Silent
-						} catch {
+						Write-Message -Level Verbose -Message "Updating database owner to $dbOwner"
+						$OwnerResult = Set-DbaDatabaseOwner -SqlInstance $destServer -Database $dbName -TargetLogin $dbOwner -Silent
+						if ($OwnerResult.Length -eq 0) {
 							Write-Message -Level Warning -Message "Failed to update database owner"
 						}
 					}
@@ -1019,7 +1020,7 @@ function Copy-DbaDatabase {
 
 					$dbOwner = $sourceServer.Databases[$dbName].Owner
 
-					if ($dbOwner -eq $null) {
+					if ($null -eq $dbOwner -or $destServer.Logins.Name -notcontains $dbOwner) {
 						$dbOwner = Get-SaLoginName -SqlInstance $destServer
 					}
 
