@@ -83,7 +83,7 @@ function Get-DbaTcpPort {
 						foreach ($instance in $wmi.ServerInstances) {
 							$instanceName = $instance.Name
 							
-							$tcp = $instance.ServerProtocols | Where-Object { $_.DisplayName -eq "TCP/IP" }
+							$tcp = $instance.ServerProtocols | Where-Object Name -eq Tcp
 							$ips = $tcp.IPAddresses
 							
 							Write-Verbose "Parsing information for $($ips.count) IP addresses"
