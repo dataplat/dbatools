@@ -125,6 +125,8 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 				}
 
 				[PSCustomObject]@{
+					ComputerName = $PipelineSnapshot.SnapshotDb.Parent.NetName
+					InstanceName = $PipelineSnapshot.SnapshotDb.Parent.ServiceName
 					SqlInstance = $PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName
 					Database    = $PipelineSnapshot.Database
 					SnapshotOf  = $PipelineSnapshot.SnapshotOf
@@ -145,26 +147,29 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 			
 
 			$dbs = $server.Databases
-
 			if ($Database) {
-				$dbs = $dbs | Where-Object { $Databases -contains $_.DatabaseSnapshotBaseName }
+				$dbs = $dbs | Where-Object { $Database -contains $_.DatabaseSnapshotBaseName }
 			}
+			
 			if ($ExcludeDatabase) {
 				$dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.DatabaseSnapshotBaseName }
 			}
+			
 			if ($Snapshot) {
 				$dbs = $dbs | Where-Object { $Snapshot -contains $_.Name }
 			}
+			
 			if (!$Snapshot -and !$Database) {
 				$dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
 			}
+			
 
 			foreach ($db in $dbs) {
 				if ($db.IsAccessible -eq $false) {
 					Write-Message -Level Warning -Message "Database $db is not accessible."
 					continue
 				}
-				If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $db")) {
+				if ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $db")) {
 					try {
 						if ($Force) {
 							# cannot drop the snapshot if someone is using it
@@ -180,7 +185,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance  = $server.DomainInstanceName
-						Database     = $db.Name
+						Database     = $db
 						SnapshotOf   = $db.DatabaseSnapshotBaseName
 						Status       = $status
 					}
