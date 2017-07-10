@@ -58,7 +58,7 @@ function Get-DbaTcpPort {
 			Returns an object with server name, IPAddress (just ipv4), port and static ($true/$false) for every server listed in the Central Management Server on sql2014
 	#>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
@@ -70,19 +70,19 @@ function Get-DbaTcpPort {
 		[switch]$NoIpv6
 	)
 	
-	PROCESS {
-		foreach ($servername in $SqlInstance) {
+	process {
+		foreach ($serverName in $SqlInstance) {
 			if ($detailed -eq $true) {
 				try {
 					$scriptblock = {
-						$servername = $args[0]
+						$serverName = $args[0]
 						
 						Add-Type -AssemblyName Microsoft.VisualBasic
-						$wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $servername
+						$wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $serverName
 						
 						foreach ($instance in $wmi.ServerInstances) {
-							$allips = @()
-							$instancename = $instance.name
+							$allIps = @()
+							$instanceName = $instance.Name
 							
 							$tcp = $instance.ServerProtocols | Where-Object { $_.DisplayName -eq "TCP/IP" }
 							$ips = $tcp.IPAddresses
@@ -105,8 +105,8 @@ function Get-DbaTcpPort {
 								}
 								
 								[PsCustomObject]@{
-									ComputerName = $servername
-									InstanceName = $instancename
+									ComputerName = $serverName
+									InstanceName = $instanceName
 									IPAddress    = $ip.Ipaddress.IPAddressToString
 									Port         = $port
 									Static       = $static
@@ -115,49 +115,49 @@ function Get-DbaTcpPort {
 						}
 					}
 					
-					$resolved = Resolve-DbaNetworkName -ComputerName $servername -Verbose:$false
+					$resolved = Resolve-DbaNetworkName -ComputerName $serverName -Verbose:$false
 					$fqdn = $resolved.FQDN
-					$computername = $resolved.ComputerName
+					$computerName = $resolved.ComputerName
 					try {
-						Write-Verbose "Trying with ComputerName ($computername)"
-						$someips = Invoke-ManagedComputerCommand -ComputerName $computername -ArgumentList $computername -ScriptBlock $scriptblock
+						Write-Verbose "Trying with ComputerName ($computerName)"
+						$someIps = Invoke-ManagedComputerCommand -ComputerName $computerName -ArgumentList $computerName -ScriptBlock $scriptblock
 					}
 					catch {
 						Write-Verbose "Trying with FQDN because ComputerName failed"
-						$someips = Invoke-ManagedComputerCommand -ComputerName $fqdn -ArgumentList $fqdn -ScriptBlock $scriptblock
+						$someIps = Invoke-ManagedComputerCommand -ComputerName $fqdn -ArgumentList $fqdn -ScriptBlock $scriptblock
 					}
 				}
 				catch {
-					Write-Warning "Could not get detailed information for $servername"
+					Write-Warning "Could not get detailed information for $serverName"
 					Write-Warning $_.Exception.Message
 				}
 				
-				$cleanedup = $someips | Sort-Object IPAddress
+				$cleanedUp = $someIps | Sort-Object IPAddress
 				
 				if ($NoIpv6) {
 					$octet = '(?:0?0?[0-9]|0?[1-9][0-9]|1[0-9]{2}|2[0-5][0-5]|2[0-4][0-9])'
 					[regex]$ipv4 = "^(?:$octet\.){3}$octet$"
-					$cleanedup = $cleanedup | Where-Object { $_.IPAddress -match $ipv4 }
+					$cleanedUp = $cleanedUp | Where-Object { $_.IPAddress -match $ipv4 }
 				}
 				
-				$cleanedup
+				$cleanedUp
 			}
 			
-			if ($Detailed -eq $false -or ($Detailed -eq $true -and $someips -eq $null)) {
+			if ($Detailed -eq $false -or ($Detailed -eq $true -and $someIps -eq $null)) {
 				try {
-					$server = Connect-SqlInstance -SqlInstance "TCP:$servername" -SqlCredential $Credential
+					$server = Connect-SqlInstance -SqlInstance "TCP:$serverName" -SqlCredential $Credential
 				}
 				catch {
-					Write-Warning "Can't connect to $servername. Moving on."
+					Write-Warning "Can't connect to $serverName. Moving on."
 					Continue
 				}
 				
 				if ($server.VersionMajor -lt 9) {
-					if ($servercount -eq 1) {
+					if ($serverCount -eq 1) {
 						throw "SQL Server 2000 not supported."
 					}
 					else {
-						Write-Warning "SQL Server 2000 not supported. Skipping $servername."
+						Write-Warning "SQL Server 2000 not supported. Skipping $serverName."
 						Continue
 					}
 				}
@@ -167,7 +167,7 @@ function Get-DbaTcpPort {
 				$port = $server.ConnectionContext.ExecuteScalar($sql)
 				
 				[PSCustomObject]@{
-					Server = $servername
+					Server = $serverName
 					Port   = $port
 				}
 			}
