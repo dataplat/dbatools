@@ -493,13 +493,6 @@ function Copy-DbaLogin {
 			}
 		}
 
-		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-		$started = Get-Date
-
-		if ($Pscmdlet.ShouldProcess("console", "Showing time started message")) {
-			Write-Message -Level Verbose -Message "Migration started: $started"
-		}
-
 		if ($Login) {
 			$LoginParms += @{ 'Logins' = $Login }
 		}
@@ -548,12 +541,6 @@ function Copy-DbaLogin {
 		}
 	}
 	end {
-		if ($Pscmdlet.ShouldProcess("console", "Showing time elapsed message")) {
-			Write-Message -Level Verbose -Message "Login migration completed: $(Get-Date)"
-			$totalTime = ($elapsed.Elapsed.toString().Split(".")[0])
-
-			Write-Message -Level Verbose -Message "Total elapsed time: $totalTime"
-		}
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlLogin
 	}
 }
