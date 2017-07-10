@@ -11,8 +11,9 @@ function New-DbaAgentSchedule {
 			SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 		.PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+
+			To use: $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Job
@@ -25,19 +26,25 @@ function New-DbaAgentSchedule {
 			Set the schedule to disabled. Default is enabled
 
 		.PARAMETER FrequencyType
-			A value indicating when a job is to be executed. Allowed values are "Once", "Daily", "Weekly", "Monthly", "MonthlyRelative", "AgentStart", or "IdleComputer"
+			A value indicating when a job is to be executed.
+
+			Allowed values: Once, Daily, Weekly, Monthly, MonthlyRelative, AgentStart or IdleComputer
 
 			If force is used the default will be "Once".
 
 		.PARAMETER FrequencyInterval
 			The days that a job is executed
-			Allowed values are 1, "Sunday", 2, "Monday", 4, "Tuesday", 8, "Wednesday", 16, "Thursday", 32, "Friday", 64, "Saturday", 62, "Weekdays", 65, "Weekend", 127, "EveryDay".
-			If 62, "Weekdays", 65, "Weekend", 127, "EveryDay" is used it overwwrites any other value that has been passed before.
+
+			Allowed values: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Weekdays, Weekend or EveryDay.
+
+			If "Weekdays", "Weekend" or "EveryDay" is used it over writes any other value that has been passed before.
+
 			If force is used the default will be 1.
 
 		.PARAMETER FrequencySubdayType
 			Specifies the units for the subday FrequencyInterval.
-			Allowed values are 1, "Time", 2, "Seconds", 4, "Minutes", 8 or "Hours"
+
+			Allowed values: Time, Seconds, Minutes, or Hours
 
 		.PARAMETER FrequencySubdayInterval
 			The number of subday type periods to occur between each execution of a job.
@@ -45,9 +52,12 @@ function New-DbaAgentSchedule {
 		.PARAMETER FrequencyRelativeInterval
 			A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
 
+			Allowed values: First, Second, Third, Fourth or Last
+
 		.PARAMETER FrequencyRecurrenceFactor
 			The number of weeks or months between the scheduled execution of a job.
-			FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative".
+
+			FrequencyRecurrenceFactor is used only if FrequencyType is "Weekly", "Monthly" or "MonthlyRelative".
 
 		.PARAMETER StartDate
 			The date on which execution of a job can begin.
@@ -139,15 +149,16 @@ function New-DbaAgentSchedule {
 		[System.Management.Automation.PSCredential]
 		$SqlCredential,
 		[object[]]$Job,
-		[ValidateNotNullOrEmpty()]
 		[object]$Schedule,
 		[switch]$Disabled,
 		[ValidateSet('Once','Daily','Weekly','Monthly','MonthlyRelative','AgentStart','IdleComputer')]
 		[object]$FrequencyType,
+		[ValidateSet('EveryDay','Weekdays','Weekend','Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday')]
 		[object]$FrequencyInterval,
 		[ValidateSet('Time','Seconds','Minutes','Hours')]
 		[object]$FrequencySubdayType,
 		[int]$FrequencySubdayInterval,
+		[ValidateSet('First','Second','Third','Fourth','Last')]
 		[int]$FrequencyRelativeInterval,
 		[int]$FrequencyRecurrenceFactor,
 		[string]$StartDate,
@@ -159,20 +170,72 @@ function New-DbaAgentSchedule {
 	)
 
 	begin {
-
-		# Check of the FrequencyType value is of type string and set the integer value
-		if ($FrequencyType -notin 0, 1, 4, 8, 16, 32, 64, 128) {
-			[int]$FrequencyType = switch ($FrequencyType) { "Once" { 1 } "Daily" { 4 } "Weekly" { 8 } "Monthly" { 16 } "MonthlyRelative" { 32 } "AgentStart" { 64 } "IdleComputer" { 128 } default {0} }
+		# if a Schedule is not provided there is no much point
+		if (!$Schedule) {
+			Stop-Function -Message "A schedule was not provided! Please provide a schedule name."
+			return
 		}
 
-		# Check of the FrequencySubdayType value is of type string and set the integer value
-		if ($FrequencySubdayType -notin 0, 1, 2, 4, 8) {
-			[int]$FrequencySubdayType = switch ($FrequencySubdayType) { "Time" { 1 } "Seconds" { 2 } "Minutes" { 4 } "Hours" { 8 } default {0} }
+		# Translate FrequencyType value from string to the integer value
+		if (!$FrequencyType -or $FrequencyType) {
+			[int]$FrequencyType =
+				switch ($FrequencyType) {
+					"Once" { 1 }
+					"Daily" { 4 }
+					"Weekly" { 8 }
+					"Monthly" { 16 }
+					"MonthlyRelative" { 32 }
+					"AgentStart" { 64 }
+					"IdleComputer" { 128 }
+					default { 0 }
+				}
+		}
+
+		# Translate FrequencySubdayType value from string to the integer value
+		if (!$FrequencySubdayType -or $FrequencySubdayType) {
+			[int]$FrequencySubdayType =
+				switch ($FrequencySubdayType) {
+					"Time" { 1 }
+					"Seconds" { 2 }
+					"Minutes" { 4 }
+					"Hours" { 8 }
+					default { 0 }
+				}
+		}
+		# Translate FrequencyInterval value from string to the integer value
+		if (!$FrequencyInterval -or $FrequencyInterval) {
+			[int]$FrequencyInterval =
+				switch ($FrequencyInterval) {
+					 "Sunday" { 1 }
+					 "Monday" { 2 } 
+					 "Tuesday" { 4 }
+					 "Wednesday" { 8 } 
+					 "Thursday" { 16 }
+					 "Friday" { 32 }
+					 "Saturday" { 64 }
+					 "Weekdays" { 62 }
+					 "Weekend" { 65 }
+					 "EveryDay" { 127 }
+					default { 0 }
+				}
+		}
+
+		# Check of the relative FrequencyInterval value is of type string and set the integer value
+		if ($FrequencyRelativeInterval -notin 1, 2, 4, 8, 16) {
+			$FrequencyRelativeInterval = 
+				switch ($FrequencyRelativeInterval) { 
+					"First" { 1 } 
+					"Second" { 2 } 
+					"Third" { 4 } 
+					"Fourth" { 8 } 
+					"Last" { 16 } 
+					default {0} 
+				}
 		}
 
 		# Check if the interval is valid
-		if (($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
-			Stop-Function -Message "The interval $FrequencyInterval needs to be higher than 1 and lower than 365 when using a daily frequency the interval." -Target $SqlInstance
+		if (($FrequencyType -eq "Minutes") -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
+			Stop-Function -Message "The $FrequencyType requires a frequency interval to be between 1 and 365." -Target $SqlInstance
 			return
 		}
 
@@ -183,18 +246,18 @@ function New-DbaAgentSchedule {
 				Write-Message -Message "Recurrence factor not set for weekly or monthly interval. Setting it to $FrequencyRecurrenceFactor." -Level Verbose
 			}
 			else {
-				Stop-Function -Message "The recurrence fctor $FrequencyRecurrenceFactor needs to be at least on when using a weekly or monthly interval." -Target $SqlInstance
+				Stop-Function -Message "The recurrence factor $FrequencyRecurrenceFactor needs to be at least one when using a weekly or monthly interval." -Target $SqlInstance
 				return
 			}
 		}
 
 		# Check the subday interval
 		if (($FrequencySubdayType -in 2, 4) -and (-not ($FrequencySubdayInterval -ge 1 -or $FrequencySubdayInterval -le 59))) {
-			Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 59 when subday type is 2, 'Seconds', 4 or 'Minutes'" -Target $SqlInstance
+			Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 59 when subday type is 'Seconds' or 'Minutes'" -Target $SqlInstance
 			return
 		}
 		elseif (($FrequencySubdayType -eq 8) -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
-			Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 23 when subday type is 8 or 'Hours" -Target $SqlInstance
+			Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 23 when subday type is 'Hours'" -Target $SqlInstance
 			return
 		}
 
@@ -262,19 +325,14 @@ function New-DbaAgentSchedule {
 			}
 		}
 
-		# Check of the relative FrequencyInterval value is of type string and set the integer value
-		if ($FrequencyRelativeInterval -notin 1, 2, 4, 8, 16) {
-			$FrequencyRelativeInterval = switch ($FrequencyRelativeInterval) { "First" { 1 } "Second" { 2 } "Third" { 4 } "Fourth" { 8 } "Last" { 16 } default {0} }
-		}
-
 		# Check if the interval is valid for the frequency
 		if ($FrequencyType -eq 0) {
 			if ($Force) {
-				Write-Message -Message "Parameter FrequencyType must be set to at least once. Setting it to 1 (Once)." -Warning
+				Write-Message -Message "Parameter FrequencyType must be set to at least [Once]. Setting it to 'Once'." -Warning
 				$FrequencyType = 1
 			}
 			else {
-				Stop-Function -Message "Parameter FrequencyType must be set to at least once." -Target $SqlInstance
+				Stop-Function -Message "Parameter FrequencyType must be set to at least [Once]" -Target $SqlInstance
 				return
 			}
 		}
@@ -282,11 +340,11 @@ function New-DbaAgentSchedule {
 		# Check if the interval is valid for the frequency
 		if (($FrequencyType -in 4, 8, 32) -and ($Interval -lt 1)) {
 			if ($Force) {
-				Write-Message -Message "Parameter FrequencyInterval must be at least 1 for a recurring schedule. Setting it to 1." -Warning
+				Write-Message -Message "Parameter FrequencyInterval must be provided for a recurring schedule. Setting it to 'Sunday'." -Warning
 				$Interval = 1
 			}
 			else {
-				Stop-Function -Message "Parameter FrequencyInterval must be at least 1 for a recurring schedule" -Target $SqlInstance
+				Stop-Function -Message "Parameter FrequencyInterval must be provided for a recurring schedule." -Target $SqlInstance
 				return
 			}
 		}
