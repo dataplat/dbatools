@@ -92,6 +92,11 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 				Stop-Function -Message "$TargetLogin is not a valid login on $instance. Moving on." -Continue -Silent $Silent
 			}
 			
+			#Owner cannot be a group
+			$TargetLoginObject = $server.Logins | where Name -eq $TargetLogin | select Name, LoginType
+			if ($TargetLoginObject.LoginType -eq 'WindowsGroup') {
+				Stop-Function -Message "$TargetLogin is a group, therefore can't be set as owner. Moving on." -Continue -Silent $Silent
+			}
 			
 			#Get database list. If value for -Database is passed, massage to make it a string array.
 			#Otherwise, use all databases on the instance where owner not equal to -TargetLogin
