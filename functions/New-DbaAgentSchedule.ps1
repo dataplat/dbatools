@@ -453,7 +453,7 @@ function New-DbaAgentSchedule {
 									}
 								}
 								else {
-									Stop-Function -Message "Schedule $Schedule already exists for job $j on instance $instance" -Target $instance -InnerErrorRecord $_ -Continue
+									Stop-Function -Message "Schedule $Schedule already exists for job $j on instance $instance" -Target $instance -ErrorRecord $_ -Continue
 								}
 							}
 
@@ -462,7 +462,7 @@ function New-DbaAgentSchedule {
 
 						}
 						catch {
-							Stop-Function -Message "Something went wrong creating the job schedule $Schedule for job $j. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
+							Stop-Function -Message "Something went wrong creating the job schedule $Schedule for job $j." -Target $instance -ErrorRecord $_ -Continue
 						}
 
 						#region job schedule options
@@ -540,7 +540,7 @@ function New-DbaAgentSchedule {
 								Write-Message -Message "Job schedule created with UID $($JobSchedule.ScheduleUid)" -Level Verbose
 							}
 							catch {
-								Stop-Function -Message "Something went wrong adding the schedule. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
+								Stop-Function -Message "Something went wrong adding the schedule." -Target $instance -ErrorRecord $_ -Continue
 							}
 
 							# Output the job schedule
@@ -627,7 +627,7 @@ function New-DbaAgentSchedule {
 						Write-Message -Message "Job schedule created with UID $($schedule.ScheduleUid)" -Level Verbose
 					}
 					catch {
-						Stop-Function -Message "Something went wrong adding the schedule. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
+						Stop-Function -Message "Something went wrong adding the schedule." -Target $instance -ErrorRecord $_ -Continue
 					}
 
 					# Output the job schedule
@@ -636,10 +636,4 @@ function New-DbaAgentSchedule {
 			}
 		} # foreach object instance
 	} #process
-
-	END {
-		Write-Message -Message "Finished adding the job schedule(s)." -Level Output
-	}
-
-
 }
