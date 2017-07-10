@@ -19,7 +19,7 @@ function Get-DbaTcpPort {
 
 			Remote sqlwmi is used by default. If this doesn't work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.
 
-		.PARAMETER NoIpv6
+		.PARAMETER ExcludeIpv6
 			Excludes IPv6 information when -Detailed is specified.
 
 		.PARAMETER Silent
@@ -67,7 +67,7 @@ function Get-DbaTcpPort {
 		$Credential,
 		[switch]$Detailed,
 		[Alias("Ipv4")]
-		[switch]$NoIpv6,
+		[switch]$ExcludeIpv6,
 		[switch]$Silent
 	)
 
@@ -133,7 +133,7 @@ function Get-DbaTcpPort {
 
 				$cleanedUp = $someIps | Sort-Object IPAddress
 
-				if ($NoIpv6) {
+				if ($ExcludeIpv6) {
 					$octet = '(?:0?0?[0-9]|0?[1-9][0-9]|1[0-9]{2}|2[0-5][0-5]|2[0-4][0-9])'
 					[regex]$ipv4 = "^(?:$octet\.){3}$octet$"
 					$cleanedUp = $cleanedUp | Where-Object { $_.IPAddress -match $ipv4 }
