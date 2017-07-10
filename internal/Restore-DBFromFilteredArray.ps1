@@ -213,7 +213,7 @@ Function Restore-DBFromFilteredArray {
                         $filename = $filename + '.' + $extension
                     }
                     Write-Verbose "past the checks"
-                    if ($File.Type -eq 'L' -and $DestinationLogDirectory -ne '') {
+                    if (($File.Type -eq 'L' -or $File.filetype -eq 'L') -and $DestinationLogDirectory -ne '') {
                         $MoveFile.PhysicalFileName = $DestinationLogDirectory + '\' + $FileName					
                     }
                     else {
