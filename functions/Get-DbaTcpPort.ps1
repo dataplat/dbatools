@@ -81,7 +81,6 @@ function Get-DbaTcpPort {
 						$wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $serverName
 						
 						foreach ($instance in $wmi.ServerInstances) {
-							$allIps = @()
 							$instanceName = $instance.Name
 							
 							$tcp = $instance.ServerProtocols | Where-Object { $_.DisplayName -eq "TCP/IP" }
