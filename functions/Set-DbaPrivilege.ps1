@@ -73,8 +73,9 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                 $SQLServiceAccounts = (Get-DbaSqlService -ComputerName $computer -Type Engine).StartName
                 if ( $SQLServiceAccounts.count -ge 1 ) {
                     Write-Message -Level Verbose -Message "Setting Privileges on $Computer"
-				    Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ArgumentList $ResolveAccountToSID, $SQLServiceAccounts, $BatchLogon, $IFI, $LPIM -ScriptBlock {
-					    Param ($ResolveAccountToSID, $SQLServiceAccounts, $BatchLogon, $IFI, $LPIM)
+				    Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -Verbose -ArgumentList $ResolveAccountToSID, $SQLServiceAccounts, $BatchLogon, $IFI, $LPIM -ScriptBlock {
+					    [CmdletBinding()]
+                        Param ($ResolveAccountToSID, $SQLServiceAccounts, $BatchLogon, $IFI, $LPIM)
 					    . ([ScriptBlock]::Create($ResolveAccountToSID))
 					    $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                         $tempfile = "$temp\secpolByDbatools.cfg"
@@ -85,10 +86,10 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                 if ( $BLline -notmatch $SID ) {
                                     (Get-Content $tempfile) -replace "SeBatchLogonRight = ","SeBatchLogonRight = *$SID," |
                                     Set-Content $tempfile
-                                    Write-Message -Level Verbose -Message "Added $acc to Batch Logon Privileges on $Computer"
+                                    Write-Verbose "Added $acc to Batch Logon Privileges on $env:ComputerName"
                                 }
                                 else {
-                                    Write-Message -Level Warning -Message "$acc already has Batch Logon Privilege on $Computer"
+                                    Write-Warning "$acc already has Batch Logon Privilege on $env:ComputerName"
                                 }
                             }
                         }
@@ -99,10 +100,10 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                 if ( $IFIline -notmatch $SID ) {
                                     (Get-Content $tempfile) -replace "SeManageVolumePrivilege = ","SeManageVolumePrivilege = *$SID," |
                                     Set-Content $tempfile
-                                    Write-Message -Level Verbose -Message "Added $acc to Instant File Initialization Privileges on $Computer"
+                                    Write-Verbose "Added $acc to Instant File Initialization Privileges on $env:ComputerName"
                                 }
                                 else {
-                                    Write-Message -Level Warning -Message "$acc already has Instant File Initialization Privilege on $Computer"
+                                    Write-Warning "$acc already has Instant File Initialization Privilege on $env:ComputerName"
                                 }
                             }
                         }
@@ -113,14 +114,14 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                 if ( $LPIMline -notmatch $SID ) {
                                     (Get-Content $tempfile) -replace "SeLockMemoryPrivilege = ","SeLockMemoryPrivilege = *$SID," |
                                     Set-Content $tempfile
-                                    Write-Message -Level Verbose -Message "Added $acc to Lock Pages in Memory Privileges on $Computer"
+                                    Write-Verbose "Added $acc to Lock Pages in Memory Privileges on $env:ComputerName"
                                 }
                                 else {
-                                    Write-Message -Level Warning -Message "$acc already has Lock Pages in Memory Privilege on $Computer"
+                                    Write-Warning "$acc already has Lock Pages in Memory Privilege on $env:ComputerName"
                                 }
                             }
                         }
-                        $null = secedit /configure /cfg $tempfile /db secedit.sdb /areas USER_RIGHTS
+                        $null = secedit /configure /cfg $tempfile /db secedit.sdb /areas USER_RIGHTS /overwrite
                     } -ErrorAction SilentlyContinue
 				    Write-Message -Level Verbose -Message "Removing secpol file on $computer"
 				    Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock { $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); Remove-Item $temp\secpolByDbatools.cfg -Force > $NULL }
