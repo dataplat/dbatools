@@ -41,6 +41,13 @@ Datetime object used to narrow the results to a date
 .PARAMETER Last
 Measure only the last backup
 
+.PARAMETER DeviceType
+Filters the backup set by this DeviceType. It takes well-known types ('Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device') as well as custom integers (bring your own types)
+
+.PARAMETER Silent
+Replaces user friendly yellow warnings with bloody red exceptions of doom!
+Use this if you want the function to throw terminating errors you want to catch.
+
 .NOTES
 Tags: DisasterRecovery, Backup, Databases
 
@@ -95,53 +102,48 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 		[object[]]$ExcludeDatabase,
 		[datetime]$Since,
 		[switch]$Last,
-		[ValidateSet("Full", "Log", "Differential")]
-		[string]$Type = "Full"
+		[ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
+		[string]$Type = "Full",
+		[string[]]$DeviceType,
+		[switch]$Silent
 	)
 	
-	begin
-	{
-		if ($Since)
-		{
-			$Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
-		}
-	}
 	process
 	{
 		foreach ($instance in $SqlInstance)
 		{
-			try
-			{
-				Write-Verbose "Connecting to $instance"
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance"
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
-			catch
-			{
-				Write-Warning "Failed to connect to $instance"
-				continue
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			if (!$Database) { $Database = $server.databases.name }
-			
+			if ($Database) {
+				$DatabaseCollection = $server.Databases | Where-Object Name -in $Database
+			}
+			else {
+				$DatabaseCollection = $server.Databases
+			}
 			
 			if ($ExcludeDatabase) {
-				$database = $database | Where-Object { $_ -notin $ExcludeDatabase }
+				$DatabaseCollection = $DatabaseCollection | Where-Object Name -NotIn $ExcludeDatabase
 			}
 			
-			foreach ($db in $database)
+			foreach ($db in $DatabaseCollection)
 			{
-				Write-Verbose "Getting backup history for $db"
-				
+				Write-Message -Level VeryVerbose -Message "Retrieving history for $db"
 				$allhistory = @()
 				
-				# Splatting didnt work
+				# Splatting didn't work
 				if ($since)
 				{	
-					$histories = Get-DbaBackupHistory -SqlInstance $server -Database $db -Since $since | Where-Object Type -eq $Type
+					$histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -Since $since -DeviceType $DeviceType | Where-Object Type -eq $Type
 				}
 				else
 				{
-					$histories = Get-DbaBackupHistory -SqlInstance $server -Database $db -Last:$last | Where-Object Type -eq $Type
+					$histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -Last:$last -DeviceType $DeviceType | Where-Object Type -eq $Type
 				}
 				
 				foreach ($history in $histories)
@@ -150,27 +152,25 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 					
 					if ($timetaken.TotalMilliseconds -eq 0)
 					{
-						$throughput = $history.TotalSizeMB
+						$throughput = $history.TotalSize.Megabyte
 					}
 					else
 					{
-						$throughput = $history.TotalSizeMB % $timetaken.TotalSeconds + 1
+						$throughput = $history.TotalSize.Megabyte / $timetaken.TotalSeconds
 					}
 					
 					Add-Member -InputObject $history -MemberType Noteproperty -Name MBps -value $throughput
 					
-					$allhistory += $history | Select-Object ComputerName, InstanceName, SqlInstance, Database, MBps, TotalSizeMB, Start, End
+					$allhistory += $history | Select-Object ComputerName, InstanceName, SqlInstance, Database, MBps, TotalSize, Start, End
 				}
-				
+				Write-Message -Level VeryVerbose -Message "Calculating averages for $db"
 				foreach ($db in ($allhistory | Sort-Object Database | Group-Object Database))
 				{
 					$measuremb = $db.Group.MBps | Measure-Object -Average -Minimum -Maximum
 					$measurestart = $db.Group.Start | Measure-Object -Minimum
 					$measureend = $db.Group.End | Measure-Object -Maximum
-					$measuresize = $db.Group.TotalSizeMB | Measure-Object -Average
+					$measuresize = $db.Group.TotalSize.Megabyte | Measure-Object -Average
 					$avgduration = $db.Group | ForEach-Object { New-TimeSpan -Start $_.Start -End $_.End } | Measure-Object -Average TotalSeconds
-					
-					$date = Get-Date
 					
 					[pscustomobject]@{
 						ComputerName = $db.Group.ComputerName | Select-Object -First 1
@@ -179,11 +179,11 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 						Database = $db.Name
 						AvgThroughputMB = [System.Math]::Round($measuremb.Average, 2)
 						AvgSizeMB = [System.Math]::Round($measuresize.Average, 2)
-						AvgDuration = New-TimeSpan -Start $date -End $date.AddSeconds($avgduration.Average)
+						AvgDuration = [dbatimespan](New-TimeSpan -Seconds $avgduration.Average)
 						MinThroughputMB = [System.Math]::Round($measuremb.Minimum, 2)
 						MaxThroughputMB = [System.Math]::Round($measuremb.Maximum, 2)
-						MinBackupDate = $measurestart.Minimum
-						MaxBackupDate = $measureend.Maximum
+						MinBackupDate = [dbadatetime]$measurestart.Minimum
+						MaxBackupDate = [dbadatetime]$measureend.Maximum
 						BackupCount = $db.Count
 					} | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
 				}
