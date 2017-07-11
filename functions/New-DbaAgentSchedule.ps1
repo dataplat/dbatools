@@ -340,7 +340,7 @@ function New-DbaAgentSchedule {
 		# Check if the interval is valid for the frequency
 		if (($FrequencyType -in 4, 8, 32) -and ($Interval -lt 1)) {
 			if ($Force) {
-				Write-Message -Message "Parameter FrequencyInterval must be provided for a recurring schedule. Setting it to 'Sunday'." -Warning
+				Write-Message -Message "Parameter FrequencyInterval must be provided for a recurring schedule. Setting it to first day of the week." -Warning
 				$Interval = 1
 			}
 			else {
