@@ -86,7 +86,7 @@ if ($ImportLibrary) {
 				$msbuild = (Resolve-Path "$(Split-Path $system.Location)\..\..\..\..\Framework$(if ([intptr]::Size -eq 8) { "64" })\$($system.ImageRuntimeVersion)\msbuild.exe").Path
 				$msbuildOptions = ""
 				if($env:APPVEYOR -eq 'True') {
-					Write-Host "msbuild output will be logged to appveyor console"
+					Write-Output "msbuild output will be logged to appveyor console"
 					$msbuildOptions = '/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"' 
 				}
 				gci $env
