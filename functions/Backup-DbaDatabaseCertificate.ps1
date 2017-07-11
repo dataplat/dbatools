@@ -216,7 +216,7 @@ function Backup-DbaDatabaseCertificate {
 	
 	process {
 		if (Test-FunctionInterrupt) { return }
-		foreach ($instance in $sqlInstance) {
+		foreach ($instance in $SqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
