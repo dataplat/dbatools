@@ -139,11 +139,11 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 				# Splatting didn't work
 				if ($since)
 				{	
-					$histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -Since $since -DeviceType $DeviceType | Where-Object Type -eq $Type
+					$histories = Get-DbaBackupHistory -SqlInstance $server -Database $db -Since $since -DeviceType $DeviceType | Where-Object Type -eq $Type
 				}
 				else
 				{
-					$histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -Last:$last -DeviceType $DeviceType | Where-Object Type -eq $Type
+					$histories = Get-DbaBackupHistory -SqlInstance $server -Database $db -Last:$last -DeviceType $DeviceType | Where-Object Type -eq $Type
 				}
 				
 				foreach ($history in $histories)
