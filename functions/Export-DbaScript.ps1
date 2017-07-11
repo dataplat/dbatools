@@ -87,7 +87,7 @@
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$InputObject,
-		[Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionObject,
+		[Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,
 		[string]$Path,
 		[ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
 		[string]$Encoding = 'UTF8',
@@ -140,6 +140,11 @@
 			
 			$server = $parent
 			$servername = $server.name.replace('\', '$')
+
+            if ($ScriptingOptionsObject) {
+                $scripter = New-Object Microsoft.SqlServer.Management.Smo.Scripter "$($server.name)" 
+                $scripter.Options = $ScriptingOptionsObject
+            }
 			
 			if (!$passthru) {
 				if ($path) {
@@ -168,10 +173,15 @@
 			
 			If ($Pscmdlet.ShouldProcess($env:computername, "Exporting $object from $server to $actualpath")) {
 				Write-Message -Level Verbose -Message "Exporting $object"
-				
+
+			
 				if ($passthru) {
+
 					if ($ScriptingOptionsObject) {
-						$object.Script($ScriptingOptionsObject) | Out-String
+
+                        foreach ($script in $scripter.EnumScript($object)) {
+                            $script | Out-String
+                        }
 					}
 					else {
 						$object.Script() | Out-String
@@ -179,7 +189,9 @@
 				}
 				else {
 					if ($ScriptingOptionsObject) {
-						$object.Script($ScriptingOptionsObject) | Out-File -FilePath $actualpath -Encoding $encoding -Append
+                        foreach ($script in $scripter.EnumScript($object)) {
+                            $script | Out-File -FilePath $actualpath -Encoding $encoding -Append
+                        }
 					}
 					else {
 						$object.Script() | Out-File -FilePath $actualpath -Encoding $encoding -Append
