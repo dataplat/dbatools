@@ -328,7 +328,7 @@ function New-DbaAgentSchedule {
 		# Check if the interval is valid for the frequency
 		if ($FrequencyType -eq 0) {
 			if ($Force) {
-				Write-Message -Message "Parameter FrequencyType must be set to at least [Once]. Setting it to 'Once'." -Warning
+				Write-Message -Message "Parameter FrequencyType must be set to at least [Once]. Setting it to 'Once'." -Level Warning
 				$FrequencyType = 1
 			}
 			else {
@@ -340,7 +340,7 @@ function New-DbaAgentSchedule {
 		# Check if the interval is valid for the frequency
 		if (($FrequencyType -in 4, 8, 32) -and ($Interval -lt 1)) {
 			if ($Force) {
-				Write-Message -Message "Parameter FrequencyInterval must be provided for a recurring schedule. Setting it to first day of the week." -Warning
+				Write-Message -Message "Parameter FrequencyInterval must be provided for a recurring schedule. Setting it to first day of the week." -Level Warning
 				$Interval = 1
 			}
 			else {
@@ -435,7 +435,7 @@ function New-DbaAgentSchedule {
 
 					# Check if the job exists
 					if ($Server.JobServer.Jobs.Name -notcontains $j) {
-						Write-Message -Message "Job $j doesn't exists on $instance" -Warning
+						Write-Message -Message "Job $j doesn't exists on $instance" -Level Warning
 					}
 					else {
 						# Create the job schedule object
