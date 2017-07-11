@@ -102,7 +102,7 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 		[object[]]$ExcludeDatabase,
 		[datetime]$Since,
 		[switch]$Last,
-		[ValidateSet("Full", "Log", "Differential")]
+		[ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
 		[string]$Type = "Full",
 		[string[]]$DeviceType,
 		[switch]$Silent
