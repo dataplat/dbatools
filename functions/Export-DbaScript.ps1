@@ -36,7 +36,7 @@
 	.PARAMETER Passthru
 	Output script to console
 	
-	.PARAMETER ScriptingOptionObject 
+	.PARAMETER ScriptingOptionsObject 
 	An SMO Scripting Object that can be used to customize the output - see New-DbaScriptingOption
 
 	.PARAMETER WhatIf 
@@ -77,7 +77,7 @@
 	$options = New-DbaScriptingOption
 	$options.ScriptDrops = $false
 	$options.WithDependencies = $true
-	Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -ScriptingOptionObject $options
+	Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -ScriptingOptionsObject $options
 	
 	Exports Agent Jobs with the Scripting Options ScriptDrops set to $false and WithDependencies set to true.
 
