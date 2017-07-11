@@ -14,16 +14,13 @@ The SQL Server that you're connecting to
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Database
-Restores from the last snapshot databases with this names only
-NB: you can pass either Databases or Snapshots
+Removes snapshots for only this specific base db
 
 .PARAMETER ExcludeDatabase
-Processes all databases excepting the these 
-NB: you can pass either Databases or Snapshots
+Removes snapshots excluding this specific base dbs
 
 .PARAMETER Snapshot
-Restores databases from snapshots with this names only
-NB: you can pass either Databases or Snapshots
+Restores databases from snapshot with this name only
 
 .PARAMETER AllSnapshots
 Specifies that you want to remove all snapshots from the server
