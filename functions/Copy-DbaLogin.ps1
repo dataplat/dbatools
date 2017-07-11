@@ -296,8 +296,18 @@ function Copy-DbaLogin {
 					$destLogin.Language = $sourceLogin.Language
 
 					if ($destServer.databases[$defaultDb] -eq $null) {
-						Write-Message -Level Warning -Message "$defaultDb does not exist on destination. Setting defaultdb to master."
-						$defaultDb = "master"
+						# we end up here when the default database on source doesn't exist on dest
+						# if source login is a sysadmin, then set the default database to master
+						# if not, set it to tempdb (see #303)
+						$OrigdefaultDb = $defaultDb
+						try { $sourcesysadmins = $sourceServer.roles['sysadmin'].EnumMemberNames() }
+						catch { $sourcesysadmins = $sourceServer.roles['sysadmin'].EnumServerRoleMembers() }
+						if ($sourcesysadmins -contains $userName) {
+							$defaultDb = "master"
+						} else {
+							$defaultDb = "tempdb"
+						}
+						Write-Message -Level Warning -Message "$OrigdefaultDb does not exist on destination. Setting defaultdb to $defaultDb."
 					}
 
 					Write-Message -Level Verbose -Message "Set $userName defaultdb to $defaultDb"
@@ -484,13 +494,6 @@ function Copy-DbaLogin {
 			}
 		}
 
-		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-		$started = Get-Date
-
-		if ($Pscmdlet.ShouldProcess("console", "Showing time started message")) {
-			Write-Message -Level Verbose -Message "Migration started: $started"
-		}
-
 		if ($Login) {
 			$LoginParms += @{ 'Logins' = $Login }
 		}
@@ -539,12 +542,6 @@ function Copy-DbaLogin {
 		}
 	}
 	end {
-		if ($Pscmdlet.ShouldProcess("console", "Showing time elapsed message")) {
-			Write-Message -Level Verbose -Message "Login migration completed: $(Get-Date)"
-			$totalTime = ($elapsed.Elapsed.toString().Split(".")[0])
-
-			Write-Message -Level Verbose -Message "Total elapsed time: $totalTime"
-		}
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlLogin
 	}
 }
