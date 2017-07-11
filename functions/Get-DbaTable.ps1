@@ -11,7 +11,7 @@ SQLServer name or SMO object representing the SQL Server to connect to. This can
 collection and recieve pipeline input
 
 .PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, currend Windows login will be used.
+PSCredential object to connect as. If not specified, current Windows login will be used.
 
 .PARAMETER Database
 The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
@@ -23,7 +23,10 @@ The database(s) to exclude - this list is autopopulated from the server
 Switch parameter that when used will display system database information
 
 .PARAMETER Table
-Define a specific table you would like to query
+Define a specific table you would like to query. You can specify up to three-part name like db.sch.tbl. 
+If the object has special characters please wrap them in square brackets [ ].
+This dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
+The correct way to find table named 'First.Table' on schema 'dbo' is passing dbo.[First.Table]
 
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
@@ -50,7 +53,11 @@ Return only information on the table MyTable from the database MyDB
 .EXAMPLE
 Get-DbaTable -SqlInstance DEV01 -Table MyTable
 Returns information on table called MyTable if it exists in any database on the server, under any schema
-	
+
+.EXAMPLE
+Get-DbaTable -SqlInstance DEV01 -Table dbo.[First.Table]
+Returns information on table called First.Table on schema dbo if it exists in any database on the server
+
 .EXAMPLE
 'localhost','localhost\namedinstance' | Get-DbaTable -Database DBA -Table Commandlog
 Returns information on the CommandLog table in the DBA database on both instances localhost and the named instance localhost\namedinstance
@@ -76,22 +83,43 @@ Returns information on the CommandLog table in the DBA database on both instance
 		
 		if ($Table) {
 			foreach ($t in $Table) {
-				$dotcount = ([regex]::Matches($t, "\.")).count
-				
+                $splitName = [regex]::Matches($t, "(\[.+?\])|([^\.]+)").Value
+				$dotcount = $splitName.Count
+
 				$database = $NULL
 				$Schema = $NULL
 
-				if ($dotcount -eq 1) {
-					$schema = $t.Split(".")[0]
-					$tbl = $t.Split(".")[1]
-				}
-				
-				if ($dotcount -eq 2) {
-					$database = $t.Split(".")[0]
-					$schema = $t.Split(".")[1]
-					$tbl = $t.Split(".")[2]
-				}
-				
+                switch ($dotcount) {
+                    1 {
+                        $tbl = $t
+                    }
+                    2 {
+                        $schema = $splitName[0]
+                        $tbl = $splitName[1]
+                    }
+                    3 {
+                        $database = $splitName[0]
+		                $schema = $splitName[1]
+		                $tbl = $splitName[2]
+                    }
+                    default {
+                        Write-Message -Level Warning -Message "Please make sure that you are using up to three-part names. If your search value contains '.' character you must use [ ] to wrap the name. The value $t is not a valid name."
+                        Continue
+                    }
+                }
+                
+                if ($database -like "[[]*[]]") {
+                    $database = $database.Substring(1, ($database.Length -2))
+                }
+
+                if ($schema -like "[[]*[]]") {
+                    $schema = $schema.Substring(1, ($schema.Length -2))
+                }
+
+                if ($tbl -like "[[]*[]]") {
+                    $tbl = $tbl.Substring(1, ($tbl.Length -2))
+                }
+
 				$fqtn = [PSCustomObject] @{
 					Database = $database
 					Schema   = $Schema
@@ -100,7 +128,6 @@ Returns information on the CommandLog table in the DBA database on both instance
 				$fqtns += $fqtn
 			}
 		}
-		#$fqtns
 	}
 	
 	process {
@@ -174,4 +201,3 @@ Returns information on the CommandLog table in the DBA database on both instance
 		}
 	}
 }
-
