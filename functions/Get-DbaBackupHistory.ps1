@@ -270,7 +270,7 @@ function Get-DbaBackupHistory {
 					$allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType
 					$DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType
 					if ($DiffDb.LastLsn -gt $Fulldb.LastLsn -and  $DiffDb.DatabaseBackupLSN -eq $Fulldb.CheckPointLSN ) {
-						$Allbackups += $DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType
+						$Allbackups += $DiffDB
 
 						$TLogStartLSN = ($diffdb.FirstLsn -as [bigint])
 						$Allbackups += $DiffDB
@@ -287,7 +287,7 @@ function Get-DbaBackupHistory {
 					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $TLogstartLSN | Where-Object { 
 						$_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN 
 					}
-					$Allbackups | Sort-Object FirstLsn
+					$Allbackups | Sort-Object LastLsn
 				
 				}
 				continue
