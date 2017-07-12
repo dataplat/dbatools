@@ -231,21 +231,26 @@ function Get-DbaDatabase {
 			if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
 				$defaults += ('Notes')
 			}
-			foreach ($db in $inputobject) {
-
-				$Notes = $null
-				if ($NoFullBackup -or $NoFullBackupSince) {
-					if (@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | Where-Object { $_.IsCopyOnly }).count -and (@($db.EnumBackupSets()).count -gt 0)) {
-						$Notes = "Only CopyOnly backups"
+			
+			try {
+				foreach ($db in $inputobject) {
+					
+					$Notes = $null
+					if ($NoFullBackup -or $NoFullBackupSince) {
+						if (@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | Where-Object { $_.IsCopyOnly }).count -and (@($db.EnumBackupSets()).count -gt 0)) {
+							$Notes = "Only CopyOnly backups"
+						}
 					}
+					Add-Member -Force -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
+					
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+					Select-DefaultView -InputObject $db -Property $defaults
 				}
-				Add-Member -Force -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
-
-				Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
-				Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-				Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-				Select-DefaultView -InputObject $db -Property $defaults
-
+			}
+			catch {
+				Write-Message -Level Warning -Message "Collection has been modified. Please use parens (Get-DbaDatabase ....) | when working with commands that modify the collection such as Remove-DbaDatabase" -Continue
 			}
 		}
 	}
