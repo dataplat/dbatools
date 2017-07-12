@@ -22,6 +22,12 @@ before_test:
   # "Setting up the local SQL Server environments"
   - ps: .\Tests\appveyor.sqlserver.ps1
   
+test:
+  # only assemblies to test
+  assemblies:
+    only:
+      bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.Tests.dll
+
 test_script:
   # "Installing nuget and PSScriptAnalyzer"
   #- ps: Install-PackageProvider NuGet -MinimumVersion '2.8.5.201' -Force | Out-Null
