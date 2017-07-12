@@ -52,6 +52,9 @@ function Get-DbaBackupHistory {
 	.PARAMETER Raw
 		By default the command will group mediasets (striped backups across multiple files) into a single return object. If you'd prefer to have an object per backup file returned, use this switch
 	
+	.PARAMETER Type
+		By default this command returns all types of backup together, unless one of the -Last* parameters is passed. Passing this allows to filter with this types
+	
 	.PARAMETER LastLsn
 		Internal parameter: filter out backup history with last_lsn greater than this value (this helps speed up the retrieval process without resorting to process the full history)
 	
@@ -99,6 +102,11 @@ function Get-DbaBackupHistory {
 		Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull
 		
 		Returns information about the most recent full backup for AdventureWorks2014 on sql2014
+	
+	.EXAMPLE
+		Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full
+		
+		Returns information about all Full backups for AdventureWorks2014 on sql2014
 	
 	.EXAMPLE
 		Get-DbaRegisteredServerName -SqlInstance sql2016 | Get-DbaBackupHistory
@@ -172,11 +180,15 @@ function Get-DbaBackupHistory {
 		[string[]]
 		$DeviceType,
 		
+		
 		[switch]
 		$Raw,
 		
 		[bigint]
 		$LastLsn,
+		
+		[ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
+		[string[]]$Type,
 		
 		[switch]
 		$Silent
@@ -202,6 +214,19 @@ function Get-DbaBackupHistory {
 			} else {
 				$DeviceTypeFilter += $DevType
 			}
+		}
+		$BackupTypeMapping = @{
+			'Log' = 'L'
+			'Full' = 'D'
+			'File' = 'F'
+			'Differential' = 'I'
+			'Differential File' = 'G'
+			'Partial Full' = 'P'
+			'Partial Differential' = 'Q'
+		}
+		$BackupTypeFilter = @()
+		foreach($TypeFilter in $Type) {
+			$BackupTypeFilter += $BackupTypeMapping[$TypeFilter]
 		}
 	
 	}
@@ -237,15 +262,21 @@ function Get-DbaBackupHistory {
 				$DeviceTypeFilterRight = "IN ('" + ($DeviceTypeFilter -Join "','") + "')"
 			}
 			
+			foreach($b in $BackupTypeFilter) {
+				$BackupTypeFilterRight = "IN ('" + ($BackupTypeFilter -Join "','") + "')"
+			}
+			
 			if ($last) {
 				
-				foreach ($db in $databases.Name) {
+				foreach ($db in $databases) {
 					
 					#Get the full and build upwards
 					$allbackups = @()
-					$allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastFull -raw:$Raw -DeviceType $DeviceType
-					$DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db -LastDiff -raw:$Raw -DeviceType $DeviceType
+					$allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType
+					$DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType
 					if ($DiffDb.LastLsn -gt $Fulldb.LastLsn -and  $DiffDb.DatabaseBackupLSN -eq $Fulldb.CheckPointLSN ) {
+						$Allbackups += $DiffDB
+
 						$TLogStartLSN = ($diffdb.FirstLsn -as [bigint])
 						$Allbackups += $DiffDB
 					}
@@ -258,10 +289,10 @@ function Get-DbaBackupHistory {
 							continue
 						}
 					}
-					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Databases $db -raw:$raw -DeviceType $DeviceType -LastLsn $TLogstartLSN | Where-Object { 
+					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $TLogstartLSN | Where-Object { 
 						$_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN 
-					} | Sort-Object LastLsn
-					$Allbackups
+					}
+					$Allbackups | Sort-Object LastLsn
 				
 				}
 				continue
@@ -269,7 +300,6 @@ function Get-DbaBackupHistory {
 			
 			if ($LastFull -or $LastDiff -or $LastLog) {
 				$sql = @()
-
 				if ($LastFull) {
 					$first = 'D'; $second = 'P'
 				}
@@ -279,9 +309,7 @@ function Get-DbaBackupHistory {
 				if ($LastLog) {
 					$first = 'L'; $second = 'L'
 				}
-				
 				$databases = $databases | Select-Object -Unique
-				
 				foreach ($db in $databases) {
 					Write-Message -Level Verbose -Message "Processing $db" -Target $db
 					$wherecopyonly = $null
@@ -425,7 +453,7 @@ function Get-DbaBackupHistory {
 				$from = " FROM msdb..backupmediafamily mediafamily
 							 INNER JOIN msdb..backupmediaset mediaset ON mediafamily.media_set_id = mediaset.media_set_id
 							 INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
-				if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $IgnoreCopyOnly -or $DeviceTypeFilter -or $LastLsn) {
+				if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $IgnoreCopyOnly -or $DeviceTypeFilter -or $LastLsn -or $BackupTypeFilter) {
 					$where = " WHERE "
 				}
 				
@@ -451,6 +479,10 @@ function Get-DbaBackupHistory {
 				if ($DeviceTypeFilter) {
 					$wherearray += "mediafamily.device_type $DeviceTypeFilterRight"
 				}
+				if ($BackupTypeFilter) {
+					$wherearray += "backupset.type $BackupTypeFilterRight"
+				}
+				
 				if ($LastLsn) {
 					$wherearray += "backupset.last_lsn > $LastLsn"
 				}
