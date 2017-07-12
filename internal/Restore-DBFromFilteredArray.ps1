@@ -47,12 +47,12 @@ Function Restore-DBFromFilteredArray {
 
         $InternalFiles = @()
         if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -gt 4mb) {
-            Write-Warning "$FunctionName - MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
+            Write-Message -Level Warning -Message "MaxTransferSize value must be a multiple of 64kb and no greater than 4MB"
             break
         }
         if ($BlockSize) {
             if ($BlockSize -notin (0.5kb, 1kb, 2kb, 4kb, 8kb, 16kb, 32kb, 64kb)) {
-                Write-Warning "$FunctionName - Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
+                Write-Message -Level Warning -Message "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
                 break
             }
         }
@@ -69,8 +69,7 @@ Function Restore-DBFromFilteredArray {
             $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
         catch {
-
-            Write-Warning "$FunctionName - Cannot connect to $SqlInstance"
+            Write-Message -Level Warning -Message "Cannot connect to $SqlInstance"
             break
         }
 
@@ -115,13 +114,13 @@ Function Restore-DBFromFilteredArray {
                 if ($File.BackupPath -notlike "http*") {
                     Write-Message -Level Verbose -Message "Checking $($File.BackupPath) exists"
                     if ((Test-DbaSqlPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $File.BackupPath) -eq $false) {
-                        Write-verbose "$$FunctionName - $($File.backupPath) is missing"
+                        Write-Message -Level VeryVerbose "$($File.backupPath) is missing"
                         $MissingFiles += $File.BackupPath
                     }
                 }
             }
             if ($MissingFiles.Length -gt 0) {
-                Write-Warning "$FunctionName - Files $($MissingFiles -Join ',') are missing, cannot progress"
+                Write-Message -Level Warning -Message "Files $($MissingFiles -Join ',') are missing, cannot progress"
                 return false
             }
         }
@@ -142,10 +141,10 @@ Function Restore-DBFromFilteredArray {
         if ($ReuseSourceFolderStructure) {
             Write-Message -Level Verbose -Message "Checking for folders for Reusing old structure"
             foreach ($File in ($RestorePoints.Files.filelist.PhysicalName | Sort-Object -Unique)) {
-                write-verbose "File = $file"
+                Write-Message -Level VeryVerbose -Message "File = $file"
                 if ((Test-DbaSqlPath -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential) -ne $true) {
                     if ((New-DbaSqlDirectory -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential).Created -ne $true) {
-                        write-Warning  "$FunctionName - Destination File $File does not exist, and could not be created on $SqlInstance"
+                        Write-Message -Level Warning -Message "Destination File $File does not exist, and could not be created on $SqlInstance"
 
                         return
                     }
@@ -160,9 +159,9 @@ Function Restore-DBFromFilteredArray {
         }
         $RestoreCount = 0
         $RPCount = if ($SortedRestorePoints.count -gt 0) {$SortedRestorePoints.count}else {1}
-        Write-Verbose "RPcount = $rpcount"
+        Write-Message -Level VeryVerbose -Message "RPcount = $rpcount"
         if ($continue) {
-            Write-Verbose "continuing in restore script = $ScriptOnly"
+            Write-Message -Level VeryVerbose -Message "continuing in restore script = $ScriptOnly"
             $SortedRestorePoints = $SortedRestorePoints | Where-Object {$_.order -ne 1}
         }
         #$SortedRestorePoints
@@ -209,7 +208,7 @@ Function Restore-DBFromFilteredArray {
                     if ($null -ne $extension) {
                         $filename = $filename + '.' + $extension
                     }
-                    Write-Verbose "past the checks"
+                    Write-Message -Level VeryVerbose -Message "past the checks"
                     if ($File.Type -eq 'L' -and $DestinationLogDirectory -ne '') {
                         $MoveFile.PhysicalFileName = $DestinationLogDirectory + '\' + $FileName
                     }
@@ -235,11 +234,11 @@ Function Restore-DBFromFilteredArray {
                 }
             }
             elseif ($DestinationDataDirectory -ne '' -and $null -ne $FileStructure) {
-                Write-Warning "$FunctionName - Conflicting options only one of FileStructure or DestinationDataDirectory allowed"
+                Write-Message -Level Warning -Message "Conflicting options only one of FileStructure or DestinationDataDirectory allowed"
                 break
             }
             $LogicalFileMovesString = $LogicalFileMoves -Join ", `n"
-            Write-Message -Level Verbose -Message "$LogicalFileMovesString"
+            Write-Message -Level VeryVerbose -Message "$LogicalFileMovesString"
 
             if ($MaxTransferSize) {
                 $restore.MaxTransferSize = $MaxTransferSize
@@ -394,10 +393,10 @@ Function Restore-DBFromFilteredArray {
                     Write-Message -Level Verbose -Message "Succeeded, Closing Server connection"
                     $server.ConnectionContext.Disconnect()
                 }
-			}
-			Write-Progress -id 1 -Activity "Restoring" -Completed
-		}
-		if ($server.ConnectionContext.exists) {
+            }
+            Write-Progress -id 1 -Activity "Restoring" -Completed
+        }
+        if ($server.ConnectionContext.exists) {
             $server.ConnectionContext.Disconnect()
         }
     }
