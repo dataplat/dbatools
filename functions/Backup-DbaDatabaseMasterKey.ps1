@@ -1,40 +1,40 @@
 ﻿Function Backup-DbaDatabaseMasterKey {
 	<#
-		.SYNOPSIS
-		Backs up specified database master key
+.SYNOPSIS
+Backs up specified database master key
 
-		.DESCRIPTION
-		Backs up specified database master key
+.DESCRIPTION
+Backs up specified database master key
 
-		.PARAMETER SqlInstance
-		The target SQL Server instance
+.PARAMETER SqlInstance
+The target SQL Server instance
 
-		.PARAMETER SqlCredential
-		Allows you to login to SQL Server using alternative credentials
+.PARAMETER SqlCredential
+Allows you to login to SQL Server using alternative credentials
 
-		.PARAMETER Database
-		Backup master key from specific database
+.PARAMETER Database
+Backup master key from specific database
 
-		.PARAMETER ExcludeDatabase
-		The database(s) to exclude - this list is auto populated from the server
+.PARAMETER ExcludeDatabase
+The database(s) to exclude - this list is auto populated from the server
 
-		.PARAMETER Path
-		The directory to export the key. If no path is specified, the default backup directory for the instance will be used.
-			
-		.PARAMETER Password
-		The password to encrypt the exported key. This must be a securestring.
+.PARAMETER Path
+The directory to export the key. If no path is specified, the default backup directory for the instance will be used.
+	
+.PARAMETER Password
+The password to encrypt the exported key. This must be a securestring.
 
-		.PARAMETER WhatIf
-		Shows what would happen if the command were to run. No actions are actually performed
+.PARAMETER WhatIf
+Shows what would happen if the command were to run. No actions are actually performed
 
-		.PARAMETER Confirm
-		Prompts you for confirmation before executing any changing operations within the command
+.PARAMETER Confirm
+Prompts you for confirmation before executing any changing operations within the command
 
-		.PARAMETER Silent
-		Use this switch to disable any kind of verbose messages
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
 
-		.NOTES
-		Tags: Certificate, Databases
+.NOTES
+Tags: Certificate, Databases
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
