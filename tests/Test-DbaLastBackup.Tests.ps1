@@ -16,8 +16,8 @@
 	
     Context "Testing the whole instance" {
         $results = Test-DbaLastBackup -SqlInstance localhost
-        It "Should say the status was success" {
-            $results.ForEach{ $_.RestoreResult | Should Be "Success" }
+        It "Should be more than one database" {
+            $results.count | Should BeGreaterThan 1
         }
     }
 }
