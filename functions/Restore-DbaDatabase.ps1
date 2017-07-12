@@ -577,7 +577,7 @@ function Restore-DbaDatabase {
                 Write-Message -Level Verbose -Message "Dbname set from backup = $DatabaseName"
             }
 			
-            if (($FilteredRestoreFiles.Count -gt 0) -and (Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles -continue:$continue) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlInstance $SqlInstance -SqlCredential $SqlCredential)) {
+            if (($FilteredFiles.Count -gt 0) -and (Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles -continue:$continue) -and (Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlInstance $SqlInstance -SqlCredential $SqlCredential)) {
                 try {
                     $FilteredFiles | Restore-DBFromFilteredArray -SqlInstance $SqlInstance -DBName $databasename -SqlCredential $SqlCredential -RestoreTime $RestoreTime -DestinationDataDirectory $DestinationDataDirectory -DestinationLogDirectory $DestinationLogDirectory -NoRecovery:$NoRecovery -TrustDbBackupHistory:$TrustDbBackupHistory -ReplaceDatabase:$WithReplace -ScriptOnly:$OutputScriptOnly -FileStructure $FileMapping -VerifyOnly:$VerifyOnly -UseDestinationDefaultDirectories:$useDestinationDefaultDirectories -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DestinationFilePrefix $DestinationFilePrefix -MaxTransferSize $MaxTransferSize -BufferCount $BufferCount -BlockSize $BlockSize -StandbyDirectory $StandbyDirectory -continue:$continue -AzureCredential $AzureCredential -ReplaceDbNameInFile:$ReplaceDbNameInFile -DestinationFileSuffix $DestinationFileSuffix -OldDatabaseName $OldDatabaseName
                     $Completed = 'successfully'
