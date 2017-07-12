@@ -30,7 +30,7 @@ test:
   # only assemblies to test
   assemblies:
     only:
-      bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.Tests.dll
+      - bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.Tests.dll
 
 test_script:
   # "Installing nuget and PSScriptAnalyzer"
