@@ -295,6 +295,10 @@ Function Restore-DBFromFilteredArray {
                     Write-Message -Level Verbose -Message "Setting standby on last file"
                     $Restore.StandbyFile = $StandByDirectory + "\" + $Dbname + (get-date -Format yyyMMddHHmmss) + ".bak"
                 }
+                else {
+                    Write-Message -Level Verbose -Message "Last File and NoRecovery specified"
+                    $Restore.NoRecovery = $true
+                }
             }
             else {
                 Write-Message -Level Verbose -Message "More files to restore, NoRecovery set"
