@@ -42,7 +42,7 @@ Function Restore-DBFromFilteredArray {
     Begin {
         $FunctionName = (Get-PSCallstack)[0].Command
         Write-Message -Level Verbose -Message "Starting"
-        Write-Message -Level Verbose -Message "Parameters bound: $($PSBoundParameters.Keys -join ", ")"
+        Write-Message -Level Verbose -Message "Parameters bound: $($PSBoundParameters.Keys -Join ", ")"
 
 
         $InternalFiles = @()
@@ -121,7 +121,7 @@ Function Restore-DBFromFilteredArray {
                 }
             }
             if ($MissingFiles.Length -gt 0) {
-                Write-Warning "$FunctionName - Files $($MissingFiles -join ',') are missing, cannot progress"
+                Write-Warning "$FunctionName - Files $($MissingFiles -Join ',') are missing, cannot progress"
                 return false
             }
         }
@@ -173,7 +173,7 @@ Function Restore-DBFromFilteredArray {
             $RestoreCount++
             Write-Progress -id 1 -Activity "Restoring" -Status "Restoring File" -CurrentOperation "$RestoreCount of $RpCount for database $Dbname"
             $RestoreFiles = $RestorePoint.files
-            $RestoreFileNames = $RestoreFiles.BackupPath -join '`n ,'
+            $RestoreFileNames = $RestoreFiles.BackupPath -Join '`n ,'
             Write-Message -Level Verbose -Message "Restoring $Dbname backup starting at order $($RestorePoint.order) - LSN $($RestoreFiles[0].FirstLSN) in $($RestoreFiles[0].BackupPath)"
             $LogicalFileMoves = @()
 
@@ -238,7 +238,7 @@ Function Restore-DBFromFilteredArray {
                 Write-Warning "$FunctionName - Conflicting options only one of FileStructure or DestinationDataDirectory allowed"
                 break
             }
-            $LogicalFileMovesString = $LogicalFileMoves -join ", `n"
+            $LogicalFileMovesString = $LogicalFileMoves -Join ", `n"
             Write-Message -Level Verbose -Message "$LogicalFileMovesString"
 
             if ($MaxTransferSize) {
@@ -352,14 +352,14 @@ Function Restore-DBFromFilteredArray {
                 }
                 finally {
                     if ($ReuseSourceFolderStructure) {
-                        $RestoreDirectory = ((Split-Path $RestoreFiles[0].FileList.PhysicalName) | sort-Object -unique) -join ','
-                        $RestoredFile = ((Split-Path $RestoreFiles[0].FileList.PhysicalName -Leaf) | sort-Object -unique) -join ','
-                        $RestoredFileFull = $RestoreFiles[0].Filelist.PhysicalName -join ','
+                        $RestoreDirectory = ((Split-Path $RestoreFiles[0].FileList.PhysicalName) | sort-Object -unique) -Join ','
+                        $RestoredFile = ((Split-Path $RestoreFiles[0].FileList.PhysicalName -Leaf) | sort-Object -unique) -Join ','
+                        $RestoredFileFull = $RestoreFiles[0].Filelist.PhysicalName -Join ','
                     }
                     else {
-                        $RestoreDirectory = ((Split-Path $Restore.RelocateFiles.PhysicalFileName) | sort-Object -unique) -join ','
-                        $RestoredFile = (Split-Path $Restore.RelocateFiles.PhysicalFileName -Leaf) -join ','
-                        $RestoredFileFull = $Restore.RelocateFiles.PhysicalFileName -join ','
+                        $RestoreDirectory = ((Split-Path $Restore.RelocateFiles.PhysicalFileName) | sort-Object -unique) -Join ','
+                        $RestoredFile = (Split-Path $Restore.RelocateFiles.PhysicalFileName -Leaf) -Join ','
+                        $RestoredFileFull = $Restore.RelocateFiles.PhysicalFileName -Join ','
                     }
                     if ($ScriptOnly -eq $false) {
                         [PSCustomObject]@{
@@ -373,7 +373,7 @@ Function Restore-DBFromFilteredArray {
                             RestoredFilesCount     = $RestoreFiles[0].Filelist.PhysicalName.count
                             BackupSizeMB           = if ([bool]($RestoreFiles[0].psobject.Properties.Name -match 'BackupSizeMB')) {($RestoreFiles | measure-object -property BackupSizeMB -Sum).sum}else {$null}
                             CompressedBackupSizeMB = if ([bool]($RestoreFiles[0].psobject.Properties.Name -match 'CompressedBackupSizeMb')) {($RestoreFiles | measure-object -property CompressedBackupSizeMB -Sum).sum}else {$null}
-                            BackupFile             = $RestoreFiles.BackupPath -join ','
+                            BackupFile             = $RestoreFiles.BackupPath -Join ','
                             RestoredFile           = $RestoredFile
                             RestoredFileFull       = $RestoredFileFull
                             RestoreDirectory       = $RestoreDirectory
