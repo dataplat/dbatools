@@ -14,6 +14,10 @@ environment:
 # Set alternative clone folder
 clone_folder: c:\github\dbatools
 
+artifacts:
+  - path: msbuild.log
+    name: MSBuild Log
+
 before_test:
    # grab appveyor lab files
   - ps: .\Tests\appveyor.prep.ps1
