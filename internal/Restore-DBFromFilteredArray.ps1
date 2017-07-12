@@ -180,11 +180,11 @@ Function Restore-DBFromFilteredArray {
                 $Restore.RelocateFiles.Clear()
             }
             if ($DestinationDataDirectory -ne '' -and $null -eq $FileStructure) {
-                if ($DestinationDataDirectory[-1] -eq '\') {
-                    $DestinationDataDirectory = $DestinationDataDirectory.Substring(0, ($DestinationDataDirectory.length - 1))
+                if ($DestinationDataDirectory.EndsWith('\')) {
+                    $DestinationDataDirectory = $DestinationDataDirectory.TrimEnd('\')
                 }
-                if ($DestinationLogDirectory[-1] -eq '\') {
-                    $DestinationLogDirectory = $DestinationLogDirectory.Substring(0, ($DestinationLogDirectory.length - 1))
+                if ($DestinationLogDirectory.EndsWith('\')) {
+                    $DestinationLogDirectory = $DestinationLogDirectory.TrimEnd('\')
                 }
                 $FileID = 1
                 foreach ($File in $RestoreFiles.Filelist) {
