@@ -241,13 +241,13 @@ Function Restore-DBFromFilteredArray {
             Write-Message -Level VeryVerbose -Message "$LogicalFileMovesString"
 
             if ($MaxTransferSize) {
-                $restore.MaxTransferSize = $MaxTransferSize
+                $Restore.MaxTransferSize = $MaxTransferSize
             }
             if ($BufferCount) {
-                $restore.BufferCount = $BufferCount
+                $Restore.BufferCount = $BufferCount
             }
             if ($BlockSize) {
-                $restore.Blocksize = $BlockSize
+                $Restore.Blocksize = $BlockSize
             }
 
             Write-Message -Level Verbose -Message "Beginning Restore of $Dbname"
@@ -259,7 +259,7 @@ Function Restore-DBFromFilteredArray {
             $Restore.add_Complete($complete)
             $Restore.ReplaceDatabase = $ReplaceDatabase
             if ($RestoreTime -gt (Get-Date)) {
-                $restore.ToPointInTime = $null
+                $Restore.ToPointInTime = $null
                 Write-Message -Level Verbose -Message "restoring $DbName to latest point in time"
 
             }
@@ -284,7 +284,7 @@ Function Restore-DBFromFilteredArray {
                 Default {'Unknown'}
             }
             Write-Message -Level Verbose -Message "restore action = $Action"
-            $restore.Action = $Action
+            $Restore.Action = $Action
             if ($RestorePoint -eq $SortedRestorePoints[-1]) {
                 if ($NoRecovery -ne $true -and '' -eq $StandbyDirectory) {
                     #Do recovery on last file
@@ -320,11 +320,11 @@ Function Restore-DBFromFilteredArray {
                 try {
                     $RestoreComplete = $true
                     if ($ScriptOnly) {
-                        $script = $restore.Script($server)
+                        $script = $Restore.Script($server)
                     }
                     elseif ($VerifyOnly) {
                         Write-Progress -id 2 -activity "Verifying $dbname backup file on $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-                        $Verify = $restore.sqlverify($server)
+                        $Verify = $Restore.sqlverify($server)
                         Write-Progress -id 2 -activity "Verifying $dbname backup file on $servername" -status "Complete" -Completed
 
                         if ($verify -eq $true) {
@@ -336,7 +336,7 @@ Function Restore-DBFromFilteredArray {
                     }
                     else {
                         Write-Progress -id 2 -activity "Restoring $DbName to ServerName" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-                        $script = $restore.Script($Server)
+                        $script = $Restore.Script($Server)
                         $Restore.sqlrestore($Server)
                         Write-Progress -id 2 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
                     }
@@ -365,7 +365,7 @@ Function Restore-DBFromFilteredArray {
                             SqlInstance            = $SqlInstance
                             DatabaseName           = $DatabaseName
                             DatabaseOwner          = $server.ConnectionContext.TrueLogin
-                            NoRecovery             = $restore.NoRecovery
+                            NoRecovery             = $Restore.NoRecovery
                             WithReplace            = $ReplaceDatabase
                             RestoreComplete        = $RestoreComplete
                             BackupFilesCount       = $RestoreFiles.Count
@@ -387,8 +387,8 @@ Function Restore-DBFromFilteredArray {
                         $script
                     }
                     while ($Restore.Devices.count -gt 0) {
-                        $device = $restore.devices[0]
-                        $null = $restore.devices.remove($Device)
+                        $device = $Restore.devices[0]
+                        $null = $Restore.devices.remove($Device)
                     }
                     Write-Message -Level Verbose -Message "Succeeded, Closing Server connection"
                     $server.ConnectionContext.Disconnect()
