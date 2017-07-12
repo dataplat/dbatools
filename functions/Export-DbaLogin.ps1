@@ -130,9 +130,12 @@ function Export-DbaLogin {
 			$DbMapping = @()
 			$DbsToMap = $server.Databases
 			if ($Database) {
-				$DbsToMap = $DbsToMap | where Name -in $Database
+				$DbsToMap = $DbsToMap | Where-Object Name -in $Database 
 			}
 			foreach($db in $DbsToMap) {
+				if ($db.IsAccessible -eq $false) {
+					continue
+				}
 				$dbmap = $db.EnumLoginMappings()
 				foreach($el in $dbmap) {
 					$DbMapping += [pscustomobject]@{
