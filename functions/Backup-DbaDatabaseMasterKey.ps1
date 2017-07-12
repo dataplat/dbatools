@@ -1,40 +1,40 @@
 ﻿Function Backup-DbaDatabaseMasterKey {
 	<#
-.SYNOPSIS
-Backs up specified database master key
+		.SYNOPSIS
+		Backs up specified database master key
 
-.DESCRIPTION
-Backs up specified database master key
+		.DESCRIPTION
+		Backs up specified database master key
 
-.PARAMETER SqlInstance
-The target SQL Server instance
+		.PARAMETER SqlInstance
+		The target SQL Server instance
 
-.PARAMETER SqlCredential
-Allows you to login to SQL Server using alternative credentials
+		.PARAMETER SqlCredential
+		Allows you to login to SQL Server using alternative credentials
 
-.PARAMETER Database
-Backup master key from specific database
+		.PARAMETER Database
+		Backup master key from specific database
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto populated from the server
+		.PARAMETER ExcludeDatabase
+		The database(s) to exclude - this list is auto populated from the server
 
-.PARAMETER BackupDirectory
-The directory to export the key. If no backup directory is specified, the default backup directory will be used.
-	
-.PARAMETER Password
-The password to encrypt the exported key. This must be a securestring.
+		.PARAMETER Path
+		The directory to export the key. If no path is specified, the default backup directory for the instance will be used.
+			
+		.PARAMETER Password
+		The password to encrypt the exported key. This must be a securestring.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed
+		.PARAMETER WhatIf
+		Shows what would happen if the command were to run. No actions are actually performed
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command
+		.PARAMETER Confirm
+		Prompts you for confirmation before executing any changing operations within the command
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+		.PARAMETER Silent
+		Use this switch to disable any kind of verbose messages
 
-.NOTES
-Tags: Certificate, Databases
+		.NOTES
+		Tags: Certificate, Databases
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -53,7 +53,7 @@ Filename     : E:\MSSQL13.SQL2016\MSSQL\Backup\server1$sql2016-master-2017061416
 Status       : Success
 
 .EXAMPLE
-Backup-DbaDatabaseMasterKey -SqlInstance Server1 -Database db1 -BackupDirectory \\nas\sqlbackups\keys
+Backup-DbaDatabaseMasterKey -SqlInstance Server1 -Database db1 -Path \\nas\sqlbackups\keys
 
 Logs into sql2016 with windows credentials then backs up db1's keys to the \\nas\sqlbackups\keys directory
 
@@ -67,7 +67,7 @@ Logs into sql2016 with windows credentials then backs up db1's keys to the \\nas
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[Security.SecureString]$Password,
-		[string]$BackupDirectory,
+		[string]$Path,
 		[switch]$Silent
 	)
 	
@@ -91,16 +91,16 @@ Logs into sql2016 with windows credentials then backs up db1's keys to the \\nas
 				$databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
 			}
 			
-			if (Was-bound -ParameterName BackupDirectory -Not) {
-				$backupdirectory = $server.BackupDirectory
+			if (Was-bound -ParameterName Path -Not) {
+				$Path = $server.BackupDirectory
 			}
 			
-			if (!$backupdirectory) {
-				Stop-Function -Message "Backup directory discovery failed. Please expliticly specify -BackupDirectory" -Target $server -Continue
+			if (!$Path) {
+				Stop-Function -Message "Path discovery failed. Please expliticly specify -Path" -Target $server -Continue
 			}
 			
-			if (!(Test-DbaSqlPath -SqlInstance $server -Path $BackupDirectory)) {
-				Stop-Function -Message "$instance cannot access $backupdirectory" -Target $server -InnerErrorRecord $_ -Continue
+			if (!(Test-DbaSqlPath -SqlInstance $server -Path $Path)) {
+				Stop-Function -Message "$instance cannot access $Path" -Target $server -InnerErrorRecord $_ -Continue
 			}
 			
 			foreach ($db in $databases) {
@@ -129,9 +129,9 @@ Logs into sql2016 with windows credentials then backs up db1's keys to the \\nas
 				
 				$time = (Get-Date -Format yyyMMddHHmmss)
 				$dbname = $db.name
-				$BackupDirectory = $BackupDirectory.TrimEnd("\")
+				$Path = $Path.TrimEnd("\")
 				$fileinstance = $instance.ToString().Replace('\','$')
-				$filename = "$BackupDirectory\$fileinstance-$dbname-$time.key"
+				$filename = "$Path\$fileinstance-$dbname-$time.key"
 				
 				try {
 					$masterkey.export($filename, [System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))
