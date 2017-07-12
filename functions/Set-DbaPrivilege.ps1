@@ -15,7 +15,16 @@
       Credential object used to connect to the computer as a different user.
 	
 	  .PARAMETER Silent 
-	  Use this switch to disable any kind of verbose messages
+	  Use this switch to disable any kind of verbose messages.
+	
+	  .PARAMETER IFI 
+	  Use this switch to add the SQL Service account to local privileges 'Instant File Initialization'.
+	
+	  .PARAMETER LPIM 
+	  Use this switch to add the SQL Service account to local privileges 'Lock Pages in Memory'.
+	
+	  .PARAMETER BatchLogon 
+	  Use this switch to add the SQL Service account to local privileges 'Logon as Batch'.
 
       .NOTES
       Author: Klaas Vandenberghe ( @PowerDBAKlaas )
