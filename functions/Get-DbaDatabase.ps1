@@ -133,13 +133,13 @@ function Get-DbaDatabase {
 	begin {
 
 		if ($NoUserDb -and $NoSystemDb) {
-			Stop-Function -Message "You cannot specify both NoUserDb and NoSystemDb" -Continue -Silent $Silent
+			Stop-Function -Message "You cannot specify both NoUserDb and NoSystemDb" -Continue
 		}
 
 		if ($status.count -gt 0) {
 			foreach ($state in $status) {
 				if ($state -notin ('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')) {
-					Stop-Function -Message "$state is not a valid status ('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')" -Continue -Silent $Silent
+					Stop-Function -Message "$state is not a valid status ('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')" -Continue
 				}
 			}
 		}
@@ -231,23 +231,27 @@ function Get-DbaDatabase {
 			if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
 				$defaults += ('Notes')
 			}
-			foreach ($db in $inputobject) {
-
-				$Notes = $null
-				if ($NoFullBackup -or $NoFullBackupSince) {
-					if (@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | Where-Object { $_.IsCopyOnly }).count -and (@($db.EnumBackupSets()).count -gt 0)) {
-						$Notes = "Only CopyOnly backups"
+			
+			try {
+				foreach ($db in $inputobject) {
+					
+					$Notes = $null
+					if ($NoFullBackup -or $NoFullBackupSince) {
+						if (@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | Where-Object { $_.IsCopyOnly }).count -and (@($db.EnumBackupSets()).count -gt 0)) {
+							$Notes = "Only CopyOnly backups"
+						}
 					}
+					Add-Member -Force -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
+					
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+					Select-DefaultView -InputObject $db -Property $defaults
 				}
-				Add-Member -Force -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
-
-				Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
-				Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-				Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-				Select-DefaultView -InputObject $db -Property $defaults
-
+			}
+			catch {
+				Stop-Message -ErrorRecord $_ -Target $instance -Message "Failure. Collection may have been modified. If so, please use parens (Get-DbaDatabase ....) | when working with commands that modify the collection such as Remove-DbaDatabase" -Continue
 			}
 		}
 	}
 }
-
