@@ -237,7 +237,9 @@ sql credential dbatoolscred registered on the sql2016 instance
 				Write-Message -Level Verbose -Message "$dbname is in $($Database.RecoveryModel) recovery model"
 			}
 			
-			if ($Database.RecoveryModel -eq 'Simple' -and $Type -eq 'Log') {
+			# Fixes one-off cases of StackOverflowException crashes, see issue 1481 
+			$dbRecovery = $Database.RecoveryModel.ToString()
+ 			if ($dbRecovery -ne 'Simple' -and $Type -eq 'Log') {
 				$failreason = "$database is in simple recovery mode, cannot take log backup"
 				$failures += $failreason
 				Write-Message -Level Warning -Message "$failreason"
