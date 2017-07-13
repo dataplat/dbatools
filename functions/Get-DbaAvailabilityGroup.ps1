@@ -85,20 +85,17 @@ function Get-DbaAvailabilityGroup {
 	}
 	process {
 
-		foreach ($servername in $SqlInstance) {
+		foreach ($serverName in $SqlInstance) {
 			$agReplicas = @()
-			$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
-			
-			$version = $server.VersionMajor
-			if ($version -lt 11) {
-				Write-Verbose "$server Major Version detected: $version"
-				Write-Warning "$server is version $version. Availability Groups are only supported in SQL Server 2012 and above."
-				continue
+			try {
+				$server = Connect-SqlInstance -SqlInstance $serverName -SqlCredential $SqlCredential -MinimumVersion 11
+			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
-			if (!$server.IsHadrEnabled) {
-				Write-Warning "$server Availability Group is not configured."
-				continue
+			if ($server.IsHadrEnabled -eq $false) {
+				Stop-Function "Availability Group (HADR) is not configured for this instance" -Target $serverName -Continue
 			}
 
 			if ($AvailabilityGroup) {
@@ -111,7 +108,7 @@ function Get-DbaAvailabilityGroup {
 			}
 			
 			if (!$agReplicas) {
-				Write-Warning "[$servername] Availability Groups not found"
+				Write-Warning "[$serverName] Availability Groups not found"
 				continue
 			}
 			
