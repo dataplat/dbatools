@@ -50,8 +50,10 @@ namespace Sqlcollaborative.Dbatools.Utility
                 var hashBytes = HexadecimalStringToByteArray_BestEffort(password.Hash);
                 var passwordHash = new DbaPasswordHash(hashBytes);
                 var generatedHash = DbaPasswordHash.GenerateHash(password.PlainText, passwordHash.Salt, passwordHash.HashVersion, passwordHash.RawHashUpperCase != null);
-                Assert.IsTrue(hashBytes.EqualsArray(generatedHash), $"Password hash for {password.PlainText} is incorrect.");
-                Assert.IsTrue(passwordHash.VerifyPassword(password.PlainText), $"Verifying password {password.PlainText} against hash failed.");
+                Assert.IsTrue(hashBytes.EqualsArray(generatedHash),
+                    string.Format("Password hash for {0} is incorrect.", password.PlainText));
+                Assert.IsTrue(passwordHash.VerifyPassword(password.PlainText),
+                    string.Format("Verifying password {0} against hash failed.", password.PlainText));
             }
         }
 

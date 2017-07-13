@@ -84,7 +84,10 @@ namespace Sqlcollaborative.Dbatools.Utility
                     //TODO: deal with SQL Server 2000 case insensitive format
                     if (rawHash.Length != Sha1PasswordHashLength && rawHash.Length != Sha1CaseInsensitivePasswordHashLength)
                     {
-                        var msg = $"Password hash for a Sql Server 2005 or 2008 password must be {Sha1PasswordHashLength} or {Sha1CaseInsensitivePasswordHashLength} bytes long";
+                        var msg =
+                            string.Format(
+                                "Password hash for a Sql Server 2005 or 2008 password must be {0} or {1} bytes long",
+                                Sha1PasswordHashLength, Sha1CaseInsensitivePasswordHashLength);
                         throw new ArgumentOutOfRangeException(nameof(rawHash), msg);
                     }
                     RawHash = new byte[Sha1PasswordHashLength];
@@ -103,13 +106,15 @@ namespace Sqlcollaborative.Dbatools.Utility
                     Hash = new byte[Sha512Length];
                     if (rawHash.Length != Sha512PasswordHashLength)
                     {
-                        var msg = $"Password hash for a Sql Server 2012+ password must be {Sha512PasswordHashLength} bytes long";
+                        var msg = string.Format("Password hash for a Sql Server 2012+ password must be {0} bytes long",
+                            Sha512PasswordHashLength);
                         throw new ArgumentOutOfRangeException(nameof(rawHash), msg);
                     }
                     Array.Copy(rawHash, HashOffset, Hash, 0, Sha512Length);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(rawHash), $"Incorrect password version of {HashVersion}.");
+                    throw new ArgumentOutOfRangeException(nameof(rawHash),
+                        string.Format("Incorrect password version of {0}.", HashVersion));
             }
             Salt = BitConverter.ToUInt32(rawHash, SaltOffset);
         }
@@ -156,7 +161,8 @@ namespace Sqlcollaborative.Dbatools.Utility
                     hash = Sha512.ComputeHash(passwordBytes);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(version), $"Unsupported password version of {(uint)version}");
+                    throw new ArgumentOutOfRangeException(nameof(version),
+                        string.Format("Unsupported password version of {0}", (uint) version));
             }
             return version.GetBytes().Concat(saltBytes).Concat(hash).ToArray();
         }
