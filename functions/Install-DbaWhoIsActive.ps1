@@ -47,6 +47,11 @@ function Install-DbaWhoIsActive {
 		
 	
 	.EXAMPLE
+		Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -Update
+		
+		Installs sp_WhoisActive to sqlserver2014a's master database. Forces a retrieval of the script from internet
+	
+	.EXAMPLE
 		$instances = Get-DbaRegisteredServerName sqlserver
 		Install-DbaWhoIsActive -SqlInstance $instances -Database master
 		
@@ -171,6 +176,7 @@ function Install-DbaWhoIsActive {
 				if ($databases.Count -eq 0) {
 					Stop-Function -Message "Failed to find database $Database on $instance" -ErrorRecord $_ -Continue -Target $instance
 				}
+				$allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 				foreach ($batch in $batches) {
 					try {
 						$null = $server.databases[$Database].ExecuteNonQuery($batch)
