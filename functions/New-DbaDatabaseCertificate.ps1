@@ -86,13 +86,22 @@ Suppresses all prompts to install but prompts to securely enter your password an
 			}
 			
 			foreach ($db in $Database) {
-				
+
 				$smodb = $server.Databases[$db]
 				
 				if ($null -eq $smodb) {
 					Stop-Function -Message "Database '$db' does not exist on $instance" -Target $server -Continue
 				}
 				
+				if($null -eq $name) {
+					Write-Message -Level Verbose -Message "Name is NULL, setting it to '$db'"
+					$name = $db
+				}
+				if($null -eq $subject) {
+					Write-Message -Level Verbose -Message "Subject is NULL, setting it to '$db Database Certificate'"
+					$subject = "$db Database Certificate"
+				}
+
 				foreach ($cert in $name) {
 					if ($null -ne $smodb.Certificates[$cert]) {
 						Stop-Function -Message "Certificate '$cert' already exists in the $db database on $instance" -Target $smodb -Continue
