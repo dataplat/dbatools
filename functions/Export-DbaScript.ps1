@@ -70,12 +70,12 @@
 	Exports all jobs on the SQL Server sql2016 instance using a trusted connection - automatically determines filename as .\sql2016-Job-Export-date.sql
 
 	.EXAMPLE
-	Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -Path C:\temp\export.sql -Apeend 
+	Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -Path C:\temp\export.sql -Append 
 	
 	Exports all jobs on the SQL Server sql2016 instance using a trusted connection - Will append the output to the file C:\temp\export.sql if it already exists
 	
 	.EXAMPLE 
-	Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credetnial sqladmin) | Export-DbaScript -Path C:\temp\export.sql
+	Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credential sqladmin) | Export-DbaScript -Path C:\temp\export.sql
 		
 	Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
 	
@@ -90,7 +90,7 @@
 	$options.WithDependencies = $true
 	Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -ScriptingOptionsObject $options
 	
-	Exports Agent Jobs with the Scripting Options ScriptDrops set to $false and WithDependencies set to true.
+	Exports Agent Jobs with the Scripting Options ScriptDrops set to $false and WithDependencies set to $true.
 
 	#>
 	
@@ -179,6 +179,10 @@
 			}
 			else {
 				if ($prefixarray -notcontains $actualpath) {
+                    
+                    if ((Test-Path -Path $actualpath) -and $NoClobber){
+                        Stop-Function -Message "File already exists. If you want to overwrite it remove the -NoClobber parameter. If you want to append data, please Use -Append parameter." -Silent $Silent -Continue -Target $actualpath
+                    }
                     #Only at the first output we use the passed variables Append & NoClobber. For this execution the next ones need to buse -Append
 					$prefix | Out-File -FilePath $actualpath -Encoding $encoding -Append:$Append -NoClobber:$NoClobber
 					$prefixarray += $actualpath
