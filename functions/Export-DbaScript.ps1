@@ -42,6 +42,12 @@
 	.PARAMETER WhatIf 
 	Shows what would happen if the command were to run. No actions are actually performed
 
+	.PARAMETER NoClobber
+	Do not overwrite file
+
+	.PARAMETER Append
+	Append to file
+
 	.PARAMETER Confirm 
 	Prompts you for confirmation before executing any changing operations within the command
 
@@ -62,6 +68,11 @@
 	Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript
 	
 	Exports all jobs on the SQL Server sql2016 instance using a trusted connection - automatically determines filename as .\sql2016-Job-Export-date.sql
+
+	.EXAMPLE
+	Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -Path C:\temp\export.sql -Apeend 
+	
+	Exports all jobs on the SQL Server sql2016 instance using a trusted connection - Will append the output to the file C:\temp\export.sql if it already exists
 	
 	.EXAMPLE 
 	Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credetnial sqladmin) | Export-DbaScript -Path C:\temp\export.sql
@@ -92,6 +103,8 @@
 		[ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
 		[string]$Encoding = 'UTF8',
 		[switch]$Passthru,
+        	[switch]$NoClobber,
+		[switch]$Append,
 		[switch]$Silent
 	)
 	
@@ -104,7 +117,7 @@
 	
 	process {
 		foreach ($object in $inputobject) {
-			
+
 			$typename = $object.GetType().ToString()
 			
 			if ($typename.StartsWith('Microsoft.SqlServer.')) {
@@ -166,7 +179,8 @@
 			}
 			else {
 				if ($prefixarray -notcontains $actualpath) {
-					$prefix | Out-File -FilePath $actualpath -Encoding $encoding -Append
+                    #Only at the first output we use the passed variables Append & NoClobber. For this execution the next ones need to buse -Append
+					$prefix | Out-File -FilePath $actualpath -Encoding $encoding -Append:$Append -NoClobber:$NoClobber
 					$prefixarray += $actualpath
 				}
 			}
@@ -178,7 +192,6 @@
 				if ($passthru) {
 
 					if ($ScriptingOptionsObject) {
-
                         foreach ($script in $scripter.EnumScript($object)) {
                             $script | Out-String
                         }
