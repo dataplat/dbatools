@@ -61,7 +61,12 @@
 	)
 	
 	begin {
-$ResolveAccountToSID = @"
+        if ( !$IFI -and !$LPIM -and !$BatchLogon ) {
+            Stop-Function -Message "Add at least one privilege (IFI | LPIM | BatchLogon)."
+			break
+        }
+
+        $ResolveAccountToSID = @"
 function Convert-UserNameToSID ([string] `$Acc ) {
 `$objUser = New-Object System.Security.Principal.NTAccount(`"`$Acc`")
 `$strSID = `$objUser.Translate([System.Security.Principal.SecurityIdentifier])
@@ -73,6 +78,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
 	process {
 		foreach ($computer in $ComputerName) {
 			Write-Message -Level Verbose -Message "Connecting to $computer"
+		    Test-RunAsAdmin
 			if (Test-PSRemoting -ComputerName $Computer) {
 				Write-Message -Level Verbose -Message "Exporting Privileges on $Computer"
 				Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock {
