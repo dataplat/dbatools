@@ -73,6 +73,16 @@ Converts output from Invoke-DbaDiagnosticQuery to Excel worksheet(s) in the Docu
 				return
 			}
 		}
+
+		if(!$(Test-Path $Path)) {
+			try 
+			{				
+				New-Item $Path -ItemType Directory -ErrorAction Stop | Out-Null
+				Write-Message -Level Output -Message "Created directory $Path"
+			} catch {
+				Stop-Function -Message "Failed to create directory $Path" -Continue
+			}
+		}
 		
 		Function Remove-InvalidFileNameChars {
 			[CmdletBinding()]
