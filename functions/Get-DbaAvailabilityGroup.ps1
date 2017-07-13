@@ -27,11 +27,8 @@ function Get-DbaAvailabilityGroup {
 		.PARAMETER IsPrimary
 			Returns true or false for the server passed in.
 
-		.PARAMETER WhatIf 
-			Shows what would happen if the command were to run. No actions are actually performed. 
-
-		.PARAMETER Confirm 
-			Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER Silent 
+			Use this switch to disable any kind of verbose messages
 
 		.NOTES
 			Tags: DisasterRecovery, AG, AvailabilityGroup
@@ -69,15 +66,18 @@ function Get-DbaAvailabilityGroup {
 
 			Returns true/false if the server, sqlserver2014a, is the primary replica for AG-a Availability Group
 	#>
-	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	[CmdletBinding()]
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[object]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[object[]]$AvailabilityGroup,
 		[switch]$Simple,
 		[switch]$Detailed,
-		[switch]$IsPrimary
+		[switch]$IsPrimary,
+		[switch]$Silent
 	)
 
 	begin {
