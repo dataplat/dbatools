@@ -133,13 +133,13 @@ function Get-DbaDatabase {
 	begin {
 
 		if ($NoUserDb -and $NoSystemDb) {
-			Stop-Function -Message "You cannot specify both NoUserDb and NoSystemDb" -Continue -Silent $Silent
+			Stop-Function -Message "You cannot specify both NoUserDb and NoSystemDb" -Continue
 		}
 
 		if ($status.count -gt 0) {
 			foreach ($state in $status) {
 				if ($state -notin ('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')) {
-					Stop-Function -Message "$state is not a valid status ('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')" -Continue -Silent $Silent
+					Stop-Function -Message "$state is not a valid status ('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')" -Continue
 				}
 			}
 		}
@@ -250,9 +250,8 @@ function Get-DbaDatabase {
 				}
 			}
 			catch {
-				Write-Message -Level Warning -Message "Collection has been modified. Please use parens (Get-DbaDatabase ....) | when working with commands that modify the collection such as Remove-DbaDatabase" -Continue
+				Stop-Message -ErrorRecord $_ -Target $instance -Message "Failure. Collection may have been modified. If so, please use parens (Get-DbaDatabase ....) | when working with commands that modify the collection such as Remove-DbaDatabase" -Continue
 			}
 		}
 	}
 }
-
