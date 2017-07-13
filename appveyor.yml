@@ -14,6 +14,10 @@ environment:
 # Set alternative clone folder
 clone_folder: c:\github\dbatools
 
+artifacts:
+  - path: msbuild.log
+    name: MSBuild Log
+
 before_test:
    # grab appveyor lab files
   - ps: .\Tests\appveyor.prep.ps1
@@ -27,6 +31,7 @@ test_script:
   #- ps: Install-PackageProvider NuGet -MinimumVersion '2.8.5.201' -Force | Out-Null
   #- ps: Import-PackageProvider NuGet -MinimumVersion '2.8.5.201' -Force | Out-Null
   - ps: Install-Module -Name PSScriptAnalyzer -RequiredVersion 1.6.0 -Repository PSGallery -Force | Out-Null
+  - vstest.console /logger:Appveyor bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.Tests.dll
   # "Test with native PS version"
   - ps: .\Tests\appveyor.pester.ps1
   

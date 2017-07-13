@@ -12,3 +12,9 @@ dbatools.psprojs
 bin/dbatools.dll
 bin/dbatools.xml
 bin/dbatools.pdb
+
+# VIM backup files
+*~
+
+# msbuild log file
+msbuild.log
