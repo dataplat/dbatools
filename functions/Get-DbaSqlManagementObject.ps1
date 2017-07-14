@@ -1,5 +1,4 @@
-﻿function Get-DbaSqlManagementObject
-{
+﻿function Get-DbaSqlManagementObject {
 	<#
 		.SYNOPSIS
 			Gets SQL Mangaement Object versions installed on the machine.
@@ -39,45 +38,43 @@
 	#>
 	[CmdletBinding()]
 	param (
-		[Parameter(Mandatory = $false, Position=0)]
+		[Parameter(Mandatory = $false, Position = 0)]
 		[int]$VersionNumber = 0,
 		[switch]$Silent
 	)
 	process {
-        Write-Message -Level Verbose -Message "Looking for SMO in the Global Assembly Cache"
+		Write-Message -Level Verbose -Message "Checking currently loaded SMO version"
 		
-		$smolist = (Get-ChildItem -Path "$env:SystemRoot\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" | Sort-Object Name -Desc).Name
+		$loadedversion = ((([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }).FullName -Split ", ")[1]).TrimStart("Version=")
+		
+		Write-Message -Level Verbose -Message "Looking for SMO in the Global Assembly Cache"
+		
+		$smolist = (Get-ChildItem -Path "$env:SystemRoot\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" | Sort-Object Name -Descending).Name
 		
 		$VersionList = [System.Collections.ArrayList]@()
 		
-		foreach ($version in $smolist)
-		{
+		foreach ($version in $smolist) {
 			$array = $version.Split("__")
-			if ($VersionNumber -eq 0)
-			{
+			if ($VersionNumber -eq 0) {
 				Write-Message -Level Verbose -Message "Did not pass a version, looking for all versions"
 				$VersionList += [PSCustomObject]@{
 					Version = $array[0]
 					LoadTemplate = "Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=$($array[0]), Culture=neutral, PublicKeyToken=89845dcd8080cc91`""
 				}
 			}
-			else
-			{
+			else {
 				Write-Message -Level Verbose -Message "Passed version $VersionNumber, looking for that specific version"
-				if ($array[0].StartsWith("$VersionNumber."))
-				{
+				if ($array[0].StartsWith("$VersionNumber.")) {
+					
 					Write-Message -Level Verbose -Message "Found the Version $VersionNumber"
 					$VersionList += [PSCustomObject]@{
-						Version	  = $array[0]
+						Version = $array[0]
 						LoadTemplate = "Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=$($array[0]), Culture=neutral, PublicKeyToken=89845dcd8080cc91`""
 					}
 					break
 				}
 			}
-			
 		}
-		
 		return $VersionList
-		
-    }
+	}
 }
