@@ -44,7 +44,6 @@
 	)
 	process {
 		Write-Message -Level Verbose -Message "Checking currently loaded SMO version"
-		
 		$loadedversion = ((([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }).FullName -Split ", ")[1]).TrimStart("Version=")
 		
 		Write-Message -Level Verbose -Message "Looking for SMO in the Global Assembly Cache"
@@ -57,8 +56,10 @@
 			$array = $version.Split("__")
 			if ($VersionNumber -eq 0) {
 				Write-Message -Level Verbose -Message "Did not pass a version, looking for all versions"
+				$currentversion = $array[0]
 				$VersionList += [PSCustomObject]@{
-					Version = $array[0]
+					Version = $currentversion
+					LoadedAssembly = $currentversion -eq $loadedversion
 					LoadTemplate = "Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=$($array[0]), Culture=neutral, PublicKeyToken=89845dcd8080cc91`""
 				}
 			}
@@ -67,8 +68,10 @@
 				if ($array[0].StartsWith("$VersionNumber.")) {
 					
 					Write-Message -Level Verbose -Message "Found the Version $VersionNumber"
+					$currentversion = $array[0]
 					$VersionList += [PSCustomObject]@{
-						Version = $array[0]
+						Version = $currentversion
+						LoadedAssembly = $currentversion -eq $loadedversion
 						LoadTemplate = "Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=$($array[0]), Culture=neutral, PublicKeyToken=89845dcd8080cc91`""
 					}
 					break
