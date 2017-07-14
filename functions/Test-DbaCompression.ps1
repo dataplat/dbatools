@@ -305,6 +305,8 @@ DROP TABLE ##tmpEstimatePage;"
 				Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
 			}
 			
+            $Server.ConnectionContext.StatementTimeout = 0
+
 			#If IncludeSystemDBs is true, include systemdbs
 			#look at all databases, online/offline/accessible/inaccessible and tell user if a db can't be queried.
 			try {
@@ -337,8 +339,6 @@ DROP TABLE ##tmpEstimatePage;"
 						continue
 					    }
                     #Execute query against individual database and add to output
-                    #invoke-sqlcmd2 -ServerInstance $instance -Database $db -Query $sql -QueryTimeout 65535
-                    #foreach ($row in $SQLResults)
                     foreach ($row in ($db.ExecuteWithResults($sql)).Tables.Rows) 
                         {
 						[pscustomobject]@{
