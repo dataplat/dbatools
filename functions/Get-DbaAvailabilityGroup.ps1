@@ -1,6 +1,6 @@
 function Get-DbaAvailabilityGroup {
 	<#
-		.SYNOPSIS 
+		.SYNOPSIS
 			Outputs information of the Availability Group(s) found on the server.
 
 		.DESCRIPTION
@@ -10,7 +10,7 @@ function Get-DbaAvailabilityGroup {
 			The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2012 or higher.
 
 		.PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
 		.PARAMETER Detailed
 			Output is expanded with more information around each Availability Group replica found on the server.
@@ -27,7 +27,7 @@ function Get-DbaAvailabilityGroup {
 		.PARAMETER IsPrimary
 			Returns true or false for the server passed in.
 
-		.PARAMETER Silent 
+		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -46,22 +46,22 @@ function Get-DbaAvailabilityGroup {
 
 			Returns basic information on all the Availability Group(s) found on sqlserver2014a
 
-		.EXAMPLE   
+		.EXAMPLE
 			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -Simple
 
 			Show only server name, availability groups and role
 
-		.EXAMPLE   
+		.EXAMPLE
 			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -Detailed
 
 			Returns basic information plus additional info on each replica for all Availability Group(s) on sqlserver2014a
 
-		.EXAMPLE   
+		.EXAMPLE
 			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
 
 			Shows basic information on the Availability Group AG-a on sqlserver2014a
-			
-		.EXAMPLE   
+
+		.EXAMPLE
 			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -IsPrimary
 
 			Returns true/false if the server, sqlserver2014a, is the primary replica for AG-a Availability Group
@@ -106,13 +106,13 @@ function Get-DbaAvailabilityGroup {
 			else {
 				$agReplicas += $server.AvailabilityGroups.AvailabilityReplicas
 			}
-			
+
 			if (!$agReplicas) {
 				Write-Warning "[$serverName] Availability Groups not found"
 				continue
 			}
-			
-			
+
+
 			foreach ($r in $agReplicas) {
 				$agCollection += [pscustomobject]@{
 					AvailabilityGroup           = $r.Parent.Name
@@ -132,7 +132,7 @@ function Get-DbaAvailabilityGroup {
 					ReadonlyRoutingList         = $r.ReadonlyRoutingList -join ","
 				}
 			}
-			
+
 			$server.ConnectionContext.Disconnect()
 		}
 	}
@@ -144,11 +144,11 @@ function Get-DbaAvailabilityGroup {
 		if ($IsPrimary) {
 			return ($agCollection | Where-Object { $_.ReplicaName -in $SqlInstance -and $_.Role -ne 'Unknown' } | Select-Object ReplicaName, AvailabilityGroup, @{ Name="IsPrimary"; Expression= { $_.Role -eq "Primary" } } )
 		}
-		
+
 		if ($Simple) {
 			return $agCollection | Select-Object ReplicaName, AvailabilityGroup, Role
 		}
-		
+
 		if ($Detailed) {
 			return $agCollection
 		}
