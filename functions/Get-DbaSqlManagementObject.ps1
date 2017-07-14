@@ -43,13 +43,6 @@
 		[int]$VersionNumber = 0,
 		[switch]$Silent
 	)
-	begin
-	{
-		if ($VersionNumber -lt 9 -and $VersionNumber -ne 0)
-		{
-			throw "SMO existed from SQL 2005 (version 9) onward. Please use a version after 9. Quitting."
-		}	
-	}
 	process {
         Write-Message -Level Verbose -Message "Looking for SMO in the Global Assembly Cache"
 		
@@ -82,9 +75,9 @@
 				}
 			}
 			
-		} #foreach
+		}
 		
 		return $VersionList
 		
-    } # process
-} #function
+    }
+}
