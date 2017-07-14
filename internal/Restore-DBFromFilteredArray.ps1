@@ -123,7 +123,7 @@ Function Restore-DBFromFilteredArray {
             }
             if ($MissingFiles.Length -gt 0) {
                 Write-Message -Level Warning -Message "Files $($MissingFiles -Join ',') are missing, cannot progress"
-                return false
+                return $false
             }
         }
         $RestorePoints = @()
