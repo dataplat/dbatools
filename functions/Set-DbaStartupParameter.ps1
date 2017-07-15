@@ -395,12 +395,12 @@ After the work has been completed, we can push the original startup parameters b
                 if ($Credential) {
                     $response = Invoke-ManagedComputerCommand -Server $instance -Credential $Credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -Silent
                     $output = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential -Silent
-                    Add-Member -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
+                    Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
                 }
                 else {
                     $response = Invoke-ManagedComputerCommand -Server $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -Silent
                     $output = Get-DbaStartupParameter -SqlInstance $server -Silent
-                    Add-Member -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
+                    Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
                 }
                 
                 $output

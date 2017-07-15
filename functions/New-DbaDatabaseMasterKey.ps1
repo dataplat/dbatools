@@ -84,10 +84,10 @@ Suppresses all prompts to install but prompts to securely enter your password an
 						$masterkey = New-Object Microsoft.SqlServer.Management.Smo.MasterKey $smodb
 						$masterkey.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
 						
-						Add-Member -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.NetName
-						Add-Member -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-						Add-Member -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-						Add-Member -InputObject $masterkey -MemberType NoteProperty -Name Database -value $smodb
+						Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.NetName
+						Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+						Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+						Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $smodb
 						
 						Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
 					}

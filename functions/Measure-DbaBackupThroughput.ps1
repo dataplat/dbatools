@@ -159,7 +159,7 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 						$throughput = $history.TotalSize.Megabyte / $timetaken.TotalSeconds
 					}
 					
-					Add-Member -InputObject $history -MemberType Noteproperty -Name MBps -value $throughput
+					Add-Member -Force -InputObject $history -MemberType Noteproperty -Name MBps -value $throughput
 					
 					$allhistory += $history | Select-Object ComputerName, InstanceName, SqlInstance, Database, MBps, TotalSize, Start, End
 				}

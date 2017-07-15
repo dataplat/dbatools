@@ -164,13 +164,13 @@ Function Test-DbaDiskAlignment
                 $disks = @()
                 $disks += $($partitions | ForEach-Object {
                         Get-CimInstance -CimSession $CimSession -Query "ASSOCIATORS OF {Win32_DiskPartition.DeviceID=""$($_.DeviceID.Replace("\", "\\"))""} WHERE AssocClass = Win32_LogicalDiskToPartition" |
-                        Add-Member -MemberType noteproperty -Name BlockSize -Value $_.BlockSize -PassThru -Force |
-                        Add-Member -MemberType noteproperty -Name BootPartition -Value $_.BootPartition -PassThru |
-                        Add-Member -MemberType noteproperty -Name DiskIndex -Value $_.DiskIndex -PassThru |
-                        Add-Member -MemberType noteproperty -Name Index -Value $_.Index -PassThru |
-                        Add-Member -MemberType noteproperty -Name NumberOfBlocks -Value $_.NumberOfBlocks -PassThru -Force |
-                        Add-Member -MemberType noteproperty -Name StartingOffset -Value $_.StartingOffset -PassThru |
-                        Add-Member -MemberType noteproperty -Name Type -Value $_.Type -PassThru
+                        Add-Member -Force -MemberType noteproperty -Name BlockSize -Value $_.BlockSize -PassThru |
+                        Add-Member -Force -MemberType noteproperty -Name BootPartition -Value $_.BootPartition -PassThru |
+                        Add-Member -Force -MemberType noteproperty -Name DiskIndex -Value $_.DiskIndex -PassThru |
+                        Add-Member -Force -MemberType noteproperty -Name Index -Value $_.Index -PassThru |
+                        Add-Member -Force -MemberType noteproperty -Name NumberOfBlocks -Value $_.NumberOfBlocks -PassThru |
+                        Add-Member -Force -MemberType noteproperty -Name StartingOffset -Value $_.StartingOffset -PassThru |
+                        Add-Member -Force -MemberType noteproperty -Name Type -Value $_.Type -PassThru
                     } |
                     Select-Object BlockSize, BootPartition, Description, DiskIndex, Index, Name, NumberOfBlocks, Size, StartingOffset, Type
                 )

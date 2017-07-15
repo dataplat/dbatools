@@ -162,15 +162,15 @@ function Get-DbaProcess {
 				
 				$row = $results | Where-Object { $_.Spid -eq $session.Spid }
 
-				Add-Member -InputObject $session -MemberType NoteProperty -Name Parent -value $server
-				Add-Member -InputObject $session -MemberType NoteProperty -Name ComputerName -value $server.NetName
-				Add-Member -InputObject $session -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-				Add-Member -InputObject $session -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-				Add-Member -InputObject $session -MemberType NoteProperty -Name Status -value $status -Force
-				Add-Member -InputObject $session -MemberType NoteProperty -Name Command -value $command -Force
-				Add-Member -InputObject $session -MemberType NoteProperty -Name LastQuery -value $row.Query -Force
-				Add-Member -InputObject $session -MemberType NoteProperty -Name HostProcessId -value $row.HostProcessId -Force
-				Add-Member -InputObject $session -MemberType NoteProperty -Name MinutesAsleep -value $row.MinutesAsleep -Force
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name Parent -value $server
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name ComputerName -value $server.NetName
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name Status -value $status
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name Command -value $command
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name LastQuery -value $row.Query
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name HostProcessId -value $row.HostProcessId
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name MinutesAsleep -value $row.MinutesAsleep
 				
 				Select-DefaultView -InputObject $session -Property ComputerName, InstanceName, SqlInstance, Spid, Login, Host, Database, BlockingSpid, Program, Status, Command, Cpu, MemUsage, IsSystem, MinutesAsleep, HostProcessId, LastQuery
 			}

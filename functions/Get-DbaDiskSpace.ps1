@@ -289,18 +289,18 @@ srv0042 D:\                                                               0     
 					
 					if ($CheckForSql -or $Detailed)
 					{
-						Add-Member -InputObject $diskinfo -MemberType Noteproperty IsSqlDisk -value $sqldisk
+						Add-Member -Force -InputObject $diskinfo -MemberType Noteproperty IsSqlDisk -value $sqldisk
 					}
 					
 					if ($Detailed)
 					{
-						Add-Member -InputObject $diskinfo -MemberType Noteproperty FileSystem -value $disk.FileSystem
-						Add-Member -InputObject $diskinfo -MemberType Noteproperty DriveType -value $driveTypeName["$($disk.DriveType)"]
+						Add-Member -Force -InputObject $diskinfo -MemberType Noteproperty FileSystem -value $disk.FileSystem
+						Add-Member -Force -InputObject $diskinfo -MemberType Noteproperty DriveType -value $driveTypeName["$($disk.DriveType)"]
 					}
 					
 					if ($CheckFragmentation)
 					{
-						Add-Member -InputObject $diskinfo -MemberType Noteproperty PercentFragmented -value $disk.FilePercentFragmentation
+						Add-Member -Force -InputObject $diskinfo -MemberType Noteproperty PercentFragmented -value $disk.FilePercentFragmentation
 					}
 					$alldisks += $diskinfo
 				}

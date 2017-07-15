@@ -123,10 +123,10 @@ Suppresses all prompts to install but prompts to securely enter your password an
 								$smocert.Create()
 							}
 							
-							Add-Member -InputObject $smocert -MemberType NoteProperty -Name ComputerName -value $server.NetName
-							Add-Member -InputObject $smocert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-							Add-Member -InputObject $smocert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-							Add-Member -InputObject $smocert -MemberType NoteProperty -Name Database -value $smodb.Name
+							Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name ComputerName -value $server.NetName
+							Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+							Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+							Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name Database -value $smodb.Name
 							
 							Select-DefaultView -InputObject $smocert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
 						}
