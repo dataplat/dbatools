@@ -95,7 +95,7 @@ function Get-DbaAvailabilityGroup {
 			}
 
 			if ($server.IsHadrEnabled -eq $false) {
-				Stop-Function "Availability Group (HADR) is not configured for this instance" -Target $serverName -Continue
+				Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $serverName" -Target $serverName -Continue
 			}
 
 			if ($AvailabilityGroup) {
@@ -108,10 +108,8 @@ function Get-DbaAvailabilityGroup {
 			}
 
 			if (!$agReplicas) {
-				Write-Warning "[$serverName] Availability Groups not found"
-				continue
+				Stop-Function -Message "[$serverName] Availability Groups not found" -Target $serverName -Continue
 			}
-
 
 			foreach ($r in $agReplicas) {
 				$agCollection += [pscustomobject]@{
