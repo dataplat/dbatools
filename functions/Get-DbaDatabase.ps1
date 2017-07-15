@@ -46,13 +46,13 @@ function Get-DbaDatabase {
 			Returns databases without a full backup recorded by SQL Server. Will indicate those which only have CopyOnly full backups
 
 		.PARAMETER NoFullBackupSince
-			DateTime value. Returns list of SQL Server databases that haven't had a full backup since the passed iin DateTime
+			DateTime value. Returns list of SQL Server databases that haven't had a full backup since the passed in DateTime
 
 		.PARAMETER NoLogBackup
 			Returns databases without a Log backup recorded by SQL Server. Will indicate those which only have CopyOnly Log backups
 
 		.PARAMETER NoLogBackupSince
-			DateTime value. Returns list of SQL Server databases that haven't had a Log backup since the passed iin DateTime
+			DateTime value. Returns list of SQL Server databases that haven't had a Log backup since the passed in DateTime
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
@@ -202,30 +202,28 @@ function Get-DbaDatabase {
 			}
 
 			if ($NoFullBackup -or $NoFullBackupSince) {
-				if ($NoFullBackup) {
-					$dabs = (Get-DbaBackuphistory -SqlInstance $server -LastFull -IgnoreCopyOnly).Database
+				$dabs = (Get-DbaBackupHistory -SqlInstance $server -LastFull -IgnoreCopyOnly)
+				if ($null -ne $NoFullBackupSince) {
+					$dabsWithinScope = ($dabs | Where-Object End -lt $NoFullBackupSince)
+					
+					$inputobject = $inputobject | Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' }
+				} else {
+					$inputObject = $inputObject | Where-Object { $_.name -notin $dabs.Database -and $_.Name -ne 'tempdb' }
 				}
-				else {
-					$dabs = (Get-DbaBackuphistory -SqlInstance $server -LastFull -IgnoreCopyOnly -Since $NoFullBackupSince).Database
-				}
-				$inputobject = $inputObject | where-object { $_.name -notin $dabs -and $_.name -ne 'tempdb' }
+				
 			}
 			if ($NoLogBackup -or $NoLogBackupSince) {
-				if ($NoLogBackup) {
-					$dabs = (Get-DbaBackuphistory -SqlInstance $server -LastLog -IgnoreCopyOnly).Database
+				$dabs = (Get-DbaBackupHistory -SqlInstance $server -LastLog -IgnoreCopyOnly)
+				if ($null -ne $NoLogBackupSince) {
+					$dabsWithinScope = ($dabs | Where-Object End -lt $NoLogBackupSince)
+					$inputobject = $inputobject | Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
+				} else {
+					$inputobject = $inputObject | Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
 				}
-				else {
-					$dabs = (Get-DbaBackuphistory -SqlInstance $server -LastLog -IgnoreCopyOnly -Since $NoLogBackupSince).Database
-				}
-				$inputobject = $inputObject | where-object { $_.name -notin $dabs -and $_.name -ne 'tempdb' -and $_.RecoveryModel -ne 'simple' }
 			}
 
-			if ($null -ne $NoFullBackupSince) {
-				$inputobject = $inputobject | Where-Object LastBackupdate -lt $NoFullBackupSince
-			}
-			elseif ($null -ne $NoLogBackupSince) {
-				$inputobject = $inputobject | Where-Object LastBackupdate -lt $NoLogBackupSince
-			}
+			
+			
 			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel', 'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
 
 			if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
