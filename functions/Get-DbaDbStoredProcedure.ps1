@@ -107,10 +107,10 @@ Gets the Stored Procedures for the databases on Sql1 and Sql2/sqlexpress
 
                 $StoredProcedures | foreach {
 
-				Add-Member -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.NetName
-				Add-Member -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-				Add-Member -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-				Add-Member -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name
+				Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.NetName
+				Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+				Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+				Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name
 
 				Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, Database, Schema, CreateDate, DateLastModified, Name, ImplementationType, Startup
                 }

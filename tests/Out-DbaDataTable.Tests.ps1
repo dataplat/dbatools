@@ -15,7 +15,7 @@
         Mission = 'Keep Hank alive'
     }
     
-    Add-Member -InputObject $obj -MemberType NoteProperty -Name myobject -Value $innedobj
+    Add-Member -Force -InputObject $obj -MemberType NoteProperty -Name myobject -Value $innedobj
     $result = Out-DbaDataTable -InputObject $obj
     
     Context "Property: guid" {
@@ -240,7 +240,7 @@ Describe "Testing input parameters" {
         
         It "Returns string column if a script property returns null" {
             $myobj = New-Object -TypeName psobject -Property @{ Name = 'Test' }
-            $myobj | Add-Member -MemberType ScriptProperty -Name ScriptNothing -Value { $null }
+            $myobj | Add-Member -Force -MemberType ScriptProperty -Name ScriptNothing -Value { $null }
             $r = Out-DbaDataTable -InputObject $myobj
             ($r.Columns | Where-Object ColumnName -eq ScriptNothing | Select-Object -ExpandProperty DataType).ToString() | Should Be 'System.String'
             

@@ -60,9 +60,9 @@ Returns all Security Audits for the local and sql2016 SQL Server instances
 				continue
 			}
 			foreach ($audit in $server.Audits) {
-				Add-Member -InputObject $audit -MemberType NoteProperty -Name ComputerName -value $audit.Parent.NetName
-				Add-Member -InputObject $audit -MemberType NoteProperty -Name InstanceName -value $audit.Parent.ServiceName
-				Add-Member -InputObject $audit -MemberType NoteProperty -Name SqlInstance -value $audit.Parent.DomainInstanceName
+				Add-Member -Force -InputObject $audit -MemberType NoteProperty -Name ComputerName -value $audit.Parent.NetName
+				Add-Member -Force -InputObject $audit -MemberType NoteProperty -Name InstanceName -value $audit.Parent.ServiceName
+				Add-Member -Force -InputObject $audit -MemberType NoteProperty -Name SqlInstance -value $audit.Parent.DomainInstanceName
 				
 				Select-DefaultView -InputObject $audit -Property ComputerName, InstanceName, SqlInstance, Name, 'Enabled as IsEnabled', FilePath, FileName
 			}

@@ -71,9 +71,9 @@
 				foreach ($number in $lognumber) {
 					foreach ($object in $server.JobServer.ReadErrorLog($number)) {
 						Write-Message -Level Verbose -Message "Processing $object"
-						Add-Member -InputObject $object -MemberType NoteProperty ComputerName -value $server.NetName
-						Add-Member -InputObject $object -MemberType NoteProperty InstanceName -value $server.ServiceName
-						Add-Member -InputObject $object -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
+						Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.NetName
+						Add-Member -Force -InputObject $object -MemberType NoteProperty InstanceName -value $server.ServiceName
+						Add-Member -Force -InputObject $object -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
 						
 						# Select all of the columns you'd like to show
 						Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, LogDate, ProcessInfo, Text
@@ -83,9 +83,9 @@
 			else {
 				foreach ($object in $server.JobServer.ReadErrorLog()) {
 					Write-Message -Level Verbose -Message "Processing $object"
-					Add-Member -InputObject $object -MemberType NoteProperty ComputerName -value $server.NetName
-					Add-Member -InputObject $object -MemberType NoteProperty InstanceName -value $server.ServiceName
-					Add-Member -InputObject $object -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
+					Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.NetName
+					Add-Member -Force -InputObject $object -MemberType NoteProperty InstanceName -value $server.ServiceName
+					Add-Member -Force -InputObject $object -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
 					
 					# Select all of the columns you'd like to show
 					Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, LogDate, ProcessInfo, Text
