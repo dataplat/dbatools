@@ -132,7 +132,7 @@ Adds the local C:\temp\cer.cer to the local computer's LocalMachine\My (Personal
             Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
         }
         catch {
-          Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $computer -Continue
+          Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
         }
       }
     }
