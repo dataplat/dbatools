@@ -46,13 +46,13 @@ function Get-DbaDatabase {
 			Returns databases without a full backup recorded by SQL Server. Will indicate those which only have CopyOnly full backups
 
 		.PARAMETER NoFullBackupSince
-			DateTime value. Returns list of SQL Server databases that haven't had a full backup since the passed iin DateTime
+			DateTime value. Returns list of SQL Server databases that haven't had a full backup since the passed in DateTime
 
 		.PARAMETER NoLogBackup
 			Returns databases without a Log backup recorded by SQL Server. Will indicate those which only have CopyOnly Log backups
 
 		.PARAMETER NoLogBackupSince
-			DateTime value. Returns list of SQL Server databases that haven't had a Log backup since the passed iin DateTime
+			DateTime value. Returns list of SQL Server databases that haven't had a Log backup since the passed in DateTime
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
