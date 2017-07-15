@@ -212,8 +212,9 @@ Returns information on the CommandLog table in the DBA database on both instance
 					$tables | Add-Member -MemberType NoteProperty -Name ComputerName -Value $server.NetName
 					$tables | Add-Member -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
 					$tables | Add-Member -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+					$tables | Add-Member -MemberType NoteProperty -Name Database -Value $db.Name
 
-					$defaultprops = "ComputerName", "InstanceName", "SqlInstance", "Parent as Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
+					$defaultprops = "ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
 
 					Select-DefaultView -InputObject $tables -Property $defaultprops
 				}
