@@ -981,7 +981,7 @@ function Copy-DbaDatabase {
 										Write-Message -Level Verbose -Message "Trying alternate SQL method to delete $backupFile"
 										$sql = "EXEC master.sys.xp_delete_file 0, '$backupFile'"
 										Write-Message -Level Debug -Message $sql
-										$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+										$null = $sourceServer.ConnectionContext.ExecuteNonQuery($sql)
 									}
 									catch {
 										Write-Message -Level Warning -Message "Cannot delete backup file $backupFile"
@@ -995,10 +995,18 @@ function Copy-DbaDatabase {
 					}
 
 					$dbFinish = Get-Date
-
 					if ($NoRecovery -eq $false) {
-						Write-Message -Level Verbose -Message "Updating database owner"
-						$result = Update-Sqldbowner -source $sourceServer -destination $destServer -dbname $dbName
+						# needed because the newly restored database doesn't show up
+						$destServer.Databases.Refresh()
+						$dbOwner = $sourceServer.Databases[$dbName].Owner
+						if ($null -eq $dbOwner -or $destServer.Logins.Name -notcontains $dbOwner) {
+							$dbOwner = Get-SaLoginName -SqlInstance $destServer
+						}
+						Write-Message -Level Verbose -Message "Updating database owner to $dbOwner"
+						$OwnerResult = Set-DbaDatabaseOwner -SqlInstance $destServer -Database $dbName -TargetLogin $dbOwner -Silent
+						if ($OwnerResult.Length -eq 0) {
+							Write-Message -Level Warning -Message "Failed to update database owner"
+						}
 					}
 				}
 
@@ -1012,7 +1020,7 @@ function Copy-DbaDatabase {
 
 					$dbOwner = $sourceServer.Databases[$dbName].Owner
 
-					if ($dbOwner -eq $null) {
+					if ($null -eq $dbOwner -or $destServer.Logins.Name -notcontains $dbOwner) {
 						$dbOwner = Get-SaLoginName -SqlInstance $destServer
 					}
 
