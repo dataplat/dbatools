@@ -43,7 +43,7 @@ function Get-XpDirTreeRestoreFile {
 		$Path = $Path + "\"
 	}
 	
-	If (!(Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -path $path)) {
+	If (!(Test-DbaSqlPath -SqlInstance $server -path $path)) {
 		Stop-Function -Message "SqlInstance $SqlInstance cannot access $path" -Silent $true
 	}
 	
@@ -57,7 +57,7 @@ function Get-XpDirTreeRestoreFile {
 	ForEach ($d in $dirs) {
 		$fullpath = "$path$($d.Subdirectory)"
 		Write-Message -Level Verbose -Message "Enumerating subdirectory '$fullpath'"
-		$Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlInstance $Server -SqlCredential $SqlCredential
+		$Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlInstance $server
 	}
 	return $Results
 	
