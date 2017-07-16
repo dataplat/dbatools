@@ -38,19 +38,14 @@ function Get-DbaAvailabilityGroup {
 			Returns basic information on all the Availability Group(s) found on sqlserver2014a
 
 		.EXAMPLE
-			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a
+			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
 
-			Show only server name, availability groups and role
+			Shows basic information on the Availability Group AG-a on sqlserver2014a
 
 		.EXAMPLE
 			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select *
 
 			Returns full object properties on all Availability Group(s) on sqlserver2014a
-
-		.EXAMPLE
-			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
-
-			Shows basic information on the Availability Group AG-a on sqlserver2014a
 
 		.EXAMPLE
 			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -IsPrimary
