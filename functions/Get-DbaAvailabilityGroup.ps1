@@ -1,10 +1,10 @@
 function Get-DbaAvailabilityGroup {
 	<#
 		.SYNOPSIS
-			Outputs information of the Availability Group(s) found on the server.
+			Outputs the Availability Group(s) object found on the server.
 
 		.DESCRIPTION
-			By default outputs a small set of information around the Availability Group found on the server.
+			Default view provides most common set of properties for nformation on the Availability Group(s).
 
 		.PARAMETER SqlInstance
 			The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2012 or higher.
@@ -12,17 +12,8 @@ function Get-DbaAvailabilityGroup {
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
-		.PARAMETER Detailed
-			Output is expanded with more information around each Availability Group replica found on the server.
-
 		.PARAMETER AvailabilityGroup
 			Specify the Availability Group name that you want to get information on.
-
-		.PARAMETER Simple
-			Show only server name, availability groups and role.
-
-		.PARAMETER Detailed
-			Shows detailed information about the AGs including EndpointUrl and BackupPriority.
 
 		.PARAMETER IsPrimary
 			Returns true or false for the server passed in.
@@ -47,14 +38,14 @@ function Get-DbaAvailabilityGroup {
 			Returns basic information on all the Availability Group(s) found on sqlserver2014a
 
 		.EXAMPLE
-			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -Simple
+			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a
 
 			Show only server name, availability groups and role
 
 		.EXAMPLE
-			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -Detailed
+			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select *
 
-			Returns basic information plus additional info on each replica for all Availability Group(s) on sqlserver2014a
+			Returns full object properties on all Availability Group(s) on sqlserver2014a
 
 		.EXAMPLE
 			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
@@ -74,19 +65,12 @@ function Get-DbaAvailabilityGroup {
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
 		[object[]]$AvailabilityGroup,
-		[switch]$Simple,
-		[switch]$Detailed,
 		[switch]$IsPrimary,
 		[switch]$Silent
 	)
 
-	begin {
-		$agCollection = @()
-	}
 	process {
-
 		foreach ($serverName in $SqlInstance) {
-			$agReplicas = @()
 			try {
 				$server = Connect-SqlInstance -SqlInstance $serverName -SqlCredential $SqlCredential -MinimumVersion 11
 			}
@@ -98,60 +82,33 @@ function Get-DbaAvailabilityGroup {
 				Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $serverName" -Target $serverName -Continue
 			}
 
+			$ags = $server.AvailabilityGroups
 			if ($AvailabilityGroup) {
-				foreach ($ag in $AvailabilityGroup) {
-					$agReplicas += $server.AvailabilityGroups[$ag].AvailabilityReplicas
+				$ags = $ags | Where-Object Name -in $AvailabilityGroup
+			}
+
+			foreach ($ag in $ags) {
+				Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name ComputerName -value $server.NetName
+				Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+				Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+
+				if ($IsPrimary) {
+					$defaults = 'ComputerName','InstanceName','SqlInstance','Name as AvailabilityGroup','IsPrimary'
+					$value = $false
+					if ($serverName -eq $ag.PrimaryReplicaServerName) {
+						$value = $true
+					}
+					Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name IsPrimary -Value $value
+					Select-DefaultView -InputObject $ag -Property $defaults
+				}
+				else {
+					$defaults = 'ComputerName','InstanceName','SqlInstance','LocalReplicaRole','Name as AvailabilityGroup','PrimaryReplicaServerName as PrimaryReplica','Replicas', 'AutomatedBackupPreference'
+
+					$replicas = $ag.AvailabilityReplicas.Name -join ","
+					Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name Replicas -Value $replicas
+					Select-DefaultView -InputObject $ag -Property $defaults
 				}
 			}
-			else {
-				$agReplicas += $server.AvailabilityGroups.AvailabilityReplicas
-			}
-
-			if (!$agReplicas) {
-				Stop-Function -Message "[$serverName] Availability Groups not found" -Target $serverName -Continue
-			}
-
-			foreach ($r in $agReplicas) {
-				$agCollection += [pscustomobject]@{
-					AvailabilityGroup           = $r.Parent.Name
-					ReplicaName                 = $r.name
-					Role                        = $r.Role
-					SyncState                   = $r.RollupSynchronizationState
-					AvailabilityMode            = $r.AvailabilityMode
-					FailoverMode                = $r.FailoverMode
-					ConnectionModeInPrimaryRole = $r.ConnectionModeInPrimaryRole
-					ReadableSecondary           = $r.ConnectionModeInSecondaryRole
-					SessionTimeout              = $r.SessionTimeout
-					EndpointUrl                 = $r.EndpointUrl
-					BackupPriority              = $r.BackupPriority
-					ExcludeReplica              = if ($r.BackupPriority -eq 0) { $true } else { $false }
-					QuorumVoteCount             = $r.QuorumVoteCount
-					ReadonlyRoutingUrl          = $r.ReadonlyRoutingConnectionUrl
-					ReadonlyRoutingList         = $r.ReadonlyRoutingList -join ","
-				}
-			}
-
-			$server.ConnectionContext.Disconnect()
-		}
-	}
-	end {
-		if ($AvailabilityGroup) {
-			$agCollection = ($agCollection | Where-Object AvailabilityGroup -in $AvailabilityGroup)
-		}
-
-		if ($IsPrimary) {
-			return ($agCollection | Where-Object { $_.ReplicaName -in $SqlInstance -and $_.Role -ne 'Unknown' } | Select-Object ReplicaName, AvailabilityGroup, @{ Name="IsPrimary"; Expression= { $_.Role -eq "Primary" } } )
-		}
-
-		if ($Simple) {
-			return $agCollection | Select-Object ReplicaName, AvailabilityGroup, Role
-		}
-
-		if ($Detailed) {
-			return $agCollection
-		}
-		else {
-			return ($agCollection | Select-Object AvailabilityGroup, ReplicaName, Role, SyncState, AvailabilityMode, FailoverMode)
 		}
 	}
 }
