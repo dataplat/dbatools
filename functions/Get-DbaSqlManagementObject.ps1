@@ -101,7 +101,7 @@
 	process {
 		foreach ($computer in $ComputerName.ComputerName) {
 			try {
-				Invoke-Command2 -Verbose -ComputerName $computer -ScriptBlock $scriptblock -Credential $Credential -ArgumentList $VersionNumber -ErrorAction Stop
+				Invoke-Command2 -ComputerName $computer -ScriptBlock $scriptblock -Credential $Credential -ArgumentList $VersionNumber -ErrorAction Stop
 			}
 			catch {
 				Stop-Function -Continue -Message "Faiure" -ErrorRecord $_ -Target $ComputerName
