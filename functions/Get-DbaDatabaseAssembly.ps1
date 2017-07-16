@@ -1,5 +1,4 @@
-FUNCTION Get-DbaDatabaseAssembly
-{
+FUNCTION Get-DbaDatabaseAssembly {
 <#
 .SYNOPSIS
 Gets SQL Database Assembly information for each instance(s) of SQL Server.
@@ -14,16 +13,14 @@ to be executed against multiple SQL Server instances.
 .PARAMETER SqlCredential
 SqlCredential object to connect as. If not specified, current Windows login will be used.
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages.
+
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
-
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.	
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Get-DbaDatabaseAssembly
@@ -40,45 +37,37 @@ Returns all Database Assembly for the local and sql2016 SQL Server instances
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[object]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[DbaInstanceParameter]$SqlInstance,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[switch]$Silent
 	)
 	
-	PROCESS
-	{
-		foreach ($instance in $SqlInstance)
-		{
+	PROCESS {
+		foreach ($instance in $SqlInstance) {
 			Write-Verbose "Attempting to connect to $instance"
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
-			catch
-			{
-				Write-Warning "Can't connect to $instance or access denied. Skipping."
-				continue
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			
 			
-			foreach ($database in $Server.Databases)
-			{
-				try
-				{
-					foreach ($assembly in $database.assemblies)
-					{
+			foreach ($database in $Server.Databases) {
+				try {
+					foreach ($assembly in $database.assemblies) {
 						
-						Add-Member -InputObject $assembly -MemberType NoteProperty ComputerName -value $assembly.Parent.Parent.NetName
-						Add-Member -InputObject $assembly -MemberType NoteProperty InstanceName -value $assembly.Parent.Parent.ServiceName
-						Add-Member -InputObject $assembly -MemberType NoteProperty SqlInstance -value $assembly.Parent.Parent.DomainInstanceName
+						Add-Member -InputObject $assembly -MemberType NoteProperty -Name ComputerName -value $assembly.Parent.Parent.NetName
+						Add-Member -InputObject $assembly -MemberType NoteProperty -Name InstanceName -value $assembly.Parent.Parent.ServiceName
+						Add-Member -InputObject $assembly -MemberType NoteProperty -Name SqlInstance -value $assembly.Parent.Parent.DomainInstanceName
 						
 						Select-DefaultView -InputObject $assembly -Property ComputerName, InstanceName, SqlInstance, ID, Name, Owner, 'AssemblySecurityLevel as SecurityLevel', CreateDate, IsSystemObject, Version
 						
 					}
 				}
-				catch
-				{
-					Write-Warning $_	
+				catch {
+					Write-Warning $_
 				}
 			}
 		}

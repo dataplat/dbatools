@@ -1,178 +1,153 @@
-function Test-DbaJobOwner
-{
-<#
-.SYNOPSIS
-Checks SQL Agent Job owners against a login to validate which jobs do not match that owner.
+function Test-DbaJobOwner {
+	<#
+		.SYNOPSIS
+			Checks SQL Agent Job owners against a login to validate which jobs do not match that owner.
 
-.DESCRIPTION
-This function will check all SQL Agent Job on an instance against a SQL login to validate if that
-login owns those SQL Agent Jobs or not. By default, the function will check against 'sa' for 
-ownership, but the user can pass a specific login if they use something else. Only SQL Agent Jobs
-that do not match this ownership will be displayed, but if the -Detailed switch is set all
-SQL Agent Jobs will be shown.
-	
-Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
-	
-.NOTES 
-Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
+		.DESCRIPTION
+			This function will check all SQL Agent Job on an instance against a SQL login to validate if that
+			login owns those SQL Agent Jobs or not. 
+			
+			By default, the function will check against 'sa' for ownership, but the user can pass a specific 
+			login if they use something else. 
+			
+			Only SQL Agent Jobs that do not match this ownership will be displayed, but if the -Detailed 
+			switch is set all SQL Agent Jobs will be shown.
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+			Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		.PARAMETER SqlInstance
+			SQLServer name or SMO object representing the SQL Server to connect to. This can be a
+			collection and recieve pipeline input
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+		.PARAMETER SqlCredential
+			PSCredential object to connect under. If not specified, currend Windows login will be used.
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.PARAMETER Job
+			The job(s) to process - this list is auto populated from the server. If unspecified, all jobs will be processed.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.PARAMETER ExcludeJob
+			The job(s) to exclude - this list is auto populated from the server.
 
-.PARAMETER SqlServer
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-collection and recieve pipeline input
+		.PARAMETER Login
+			Specific login that you wish to check for ownership - this list is auto populated from the server. This defaults to 'sa' or the sysadmin name if sa was renamed.
 
-.PARAMETER SqlCredential
-PSCredential object to connect under. If not specified, currend Windows login will be used.
+		.PARAMETER Detailed
+			Provides Detailed information
 
-.PARAMETER TargetLogin
-Specific login that you wish to check for ownership. This defaults to 'sa'.
+		.PARAMETER Silent
+			Use this switch to disable any kind of verbose messages
 
+		.NOTES
+			Tags: Agent, Job, Owner
+			Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
-.PARAMETER Jobs
-Auto-populated list of Jobs to apply changes to. Will accept a comma separated list or a string array.
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.PARAMETER Exclude
-Jobs to exclude
+		.LINK
+			https://dbatools.io/Test-DbaJobOwner
 
-.PARAMETER Detailed
-Provides Detailed information
-	
-.LINK
-https://dbatools.io/Test-DbaJobOwner
+		.EXAMPLE
+			Test-DbaJobOwner -SqlInstance localhost
 
-.EXAMPLE
-Test-DbaJobOwner -SqlServer localhost
+			Returns all databases where the owner does not match 'sa'.
 
-Returns all databases where the owner does not match 'sa'.
+		.EXAMPLE
+			Test-DbaJobOwner -SqlInstance localhost -Login DOMAIN\account
 
-.EXAMPLE
-Test-DbaJobOwner -SqlServer localhost -TargetLogin DOMAIN\account
-
-Returns all databases where the owner does not match DOMAIN\account. Note
-that TargetLogin must be a valid security principal that exists on the target server.
-#>
+			Returns all databases where the owner does not match DOMAIN\account. Note
+			that Login must be a valid security principal that exists on the target server.
+	#>
 	[CmdletBinding()]
 	[OutputType('System.Object[]')]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential,
-		[string]$TargetLogin,
-		[Switch]$Detailed
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[object[]]$Job,
+		[object[]]$ExcludeJob,
+		[object]$Login,
+		[Switch]$Detailed,
+		[switch]$Silent
 	)
-	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlJobs -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
-	
-	BEGIN
-	{
-		$jobs = $psboundparameters.Jobs
-		$exclude = $psboundparameters.Exclude
-		
+
+	begin {
 		#connect to the instance and set return array empty
 		$return = @()
 	}
-	
-	
-	PROCESS
-	{
-		foreach ($servername in $sqlserver)
-		{
+	process {
+		foreach ($servername in $SqlInstance) {
 			#connect to the instance
-			Write-Verbose "Connecting to $servername"
-			$server = Connect-SqlServer $servername -SqlCredential $SqlCredential
-			
-			# dynamic sa name for orgs who have changed their sa name
-			if ($psboundparameters.TargetLogin.length -eq 0)
-			{
-				$TargetLogin = ($server.logins | Where-Object { $_.id -eq 1 }).Name
-                
-                #sql2000 id property is empty -force target login to 'sa' login
-                if (($server.versionMajor -lt 9) -and ([string]::IsNullOrEmpty($TargetLogin)))
-                {
-                    $TargetLogin = "sa"
-                }
-			}
-			
+			Write-Message -Level Verbose -Message "Connecting to $servername"
+			$server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
+
 			#Validate login
-			if (($server.Logins.Name) -notcontains $TargetLogin)
-			{
-				if ($sqlserver.count -eq 1)
-				{
-					throw "Invalid login: $TargetLogin"
+			if ($Login -and ($server.Logins.Name) -notcontains $Login) {
+				if ($SqlInstance.count -eq 1) {
+					Stop-Function -Message "Invalid login: $Login"
+					return
 				}
-				else
-				{
-					Write-Warning "$TargetLogin is not a valid login on $servername. Moving on."
-					Continue
+				else {
+					Write-Message -Level Warning -Message "$Login is not a valid login on $servername. Moving on."
+					continue
 				}
 			}
-			
-			if ($server.logins[$TargetLogin].LoginType -eq 'WindowsGroup')
-			{
-				throw "$TargetLogin is a Windows Group and can not be a job owner."
+			if ($Login -and $server.Logins[$Login].LoginType -eq 'WindowsGroup') {
+				Stop-Function -Message "$Login is a Windows Group and can not be a job owner."
+				return
 			}
-			
-			#Get database list. If value for -Jobs is passed, massage to make it a string array.
+
+			#sql2000 id property is empty -force target login to 'sa' login
+			if ($Login -and ( ($server.VersionMajor -lt 9) -and ([string]::IsNullOrEmpty($Login)) )) {
+				$Login = "sa"
+			}
+			# dynamic sa name for orgs who have changed their sa name
+			if ($Login -eq "sa") {
+				$Login = ($server.Logins | Where-Object { $_.id -eq 1 }).Name
+			}
+
+			#Get database list. If value for -Job is passed, massage to make it a string array.
 			#Otherwise, use all jobs on the instance where owner not equal to -TargetLogin
-			Write-Verbose "Gathering jobs to Check"
-			
-			if ($Jobs.Length -gt 0)
-			{
-				$jobcollection = $server.JobServer.Jobs | Where-Object { $jobs -contains $_.Name }
+			Write-Message -Level Verbose -Message "Gathering jobs to Check"
+			if ($Job) {
+				$jobCollection = $server.JobServer.Jobs | Where-Object { $Job -contains $_.Name }
 			}
-			else
-			{
-				$jobcollection = $server.JobServer.Jobs
+			elseif ($ExcludeJob) {
+				$jobCollection = $jobCollection | Where-Object { $ExcludeJob -notcontains $_.Name }
 			}
-			
-			if ($Exclude.Length -gt 0)
-			{
-				$jobcollection = $jobcollection | Where-Object { $Exclude -notcontains $_.Name }
+			else {
+				$jobCollection = $server.JobServer.Jobs
 			}
-			
+
 			#for each database, create custom object for return set.
-			foreach ($job in $jobcollection)
-			{
-				Write-Verbose "Checking $job"
+			foreach ($j in $jobCollection) {
+				Write-Message -Level Verbose -Message "Checking $j"
 				$row = [ordered]@{
-					Server = $server.Name
-					Job = $job.Name
-					CurrentOwner = $job.OwnerLoginName
-					TargetOwner = $TargetLogin
-					OwnerMatch = ($job.OwnerLoginName -eq $TargetLogin)
-					
+					Server       = $server.Name
+					Job          = $j.Name
+					CurrentOwner = $j.OwnerLoginName
+					TargetOwner  = $Login
+					OwnerMatch   = ($j.OwnerLoginName -eq $Login)
+
 				}
 				#add each custom object to the return array
 				$return += New-Object PSObject -Property $row
 			}
 		}
 	}
-	
-	END
-	{
+	end {
 		#return results
-		if ($Detailed)
-		{
-			Write-Verbose "Returning detailed results."
+		if ($Detailed) {
+			Write-Message -Level Verbose -Message "Returning detailed results."
 			return $return
 		}
-		else
-		{
-			Write-Verbose "Returning default results."
+		else {
+			Write-Message -Level Verbose -Message "Returning default results."
 			return ($return | Where-Object { $_.OwnerMatch -eq $false })
 		}
 	}
-	
+
 }

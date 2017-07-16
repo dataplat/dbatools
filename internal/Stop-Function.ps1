@@ -89,8 +89,9 @@
         $Category = ([System.Management.Automation.ErrorCategory]::NotSpecified),
         
         [Parameter(ParameterSetName = 'Exception')]
-        [System.Management.Automation.ErrorRecord]
-        $InnerErrorRecord,
+        [Alias('InnerErrorRecord')]
+        [System.Management.Automation.ErrorRecord[]]
+        $ErrorRecord,
         
         [string]
         $FunctionName = ((Get-PSCallStack)[0].Command),
@@ -107,23 +108,47 @@
         [string]
         $ContinueLabel
     )
+	
+	#region Handle Input Objects
+	if ($Target) {
+		$targetType = $Target.GetType().FullName
+		
+		switch ($targetType) {
+			"Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter" { $targetToAdd = $Target.InstanceName }
+			"Microsoft.SqlServer.Management.Smo.Server" { $targetToAdd = ([Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]$Target).InstanceName }
+			default { $targetToAdd = $Target }
+		}
+		if ($targetToAdd.GetType().FullName -like "Microsoft.SqlServer.Management.Smo.*") { $targetToAdd = $targetToAdd.ToString() }
+	}
+	#endregion Handle Input Objects
+	
+	$records = @()
     
-    $timestamp = Get-Date
-    
-    $Exception = New-Object System.Exception($Message, $InnerErrorRecord.Exception)
-    if ((-not $PSBoundParameters.ContainsKey("Category")) -and ($PSBoundParameters.ContainsKey("InnerErrorRecord")) -and ($InnerErrorRecord.CategoryInfo.Category)) { $Category = $InnerErrorRecord.CategoryInfo.Category }
-    $record = New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $Target)
+    if ($ErrorRecord)
+    {
+        foreach ($record in $ErrorRecord)
+        {
+            $exception = New-Object System.Exception($record.Exception.Message, $record.Exception)
+            if ($record.CategoryInfo.Category) { $Category = $record.CategoryInfo.Category }
+            $records += New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $targetToAdd)
+        }
+    }
+    else
+    {
+        $exception = New-Object System.Exception($Message)
+        $records += New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $targetToAdd)
+    }
     
     # Manage Debugging
-    Write-Message -Message $Message -Warning -Silent $Silent -FunctionName $FunctionName
+	Write-Message -Level Warning -Message $Message -Silent $Silent -FunctionName $FunctionName -Target $targetToAdd -ErrorRecord $records
+    #[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteErrorEntry($records, $FunctionName, $timestamp, $Message, $Host.InstanceId)
     
     #region Silent Mode
     if ($Silent)
     {
         if ($SilentlyContinue)
         {
-            Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue
-            [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteErrorEntry($Record, $FunctionName, $timestamp, $Message)
+            foreach ($record in $records) { Write-Error -Message $record -Category $Category -TargetObject $targetToAdd -Exception $record.Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
             if ($ContinueLabel) { continue $ContinueLabel }
             else { Continue }
         }
@@ -136,7 +161,7 @@
 		# Write-Message -Message "Terminating function!" -Level 9 -Silent $Silent -FunctionName $FunctionName
         
         
-        throw $record
+        throw $records[0]
     }
     #endregion Silent Mode
     
@@ -144,8 +169,10 @@
     else
     {
         # This ensures that the error is stored in the $error variable AND has its Stacktrace (simply adding the record would lack the stacktrace)
-        $null = Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1
-        [sqlcollective.dbatools.dbaSystem.DebugHost]::WriteErrorEntry($Record, $FunctionName, $timestamp, $Message)
+        foreach ($record in $records)
+        {
+            $null = Write-Error -Message $record -Category $Category -TargetObject $targetToAdd -Exception $record.Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1
+        }
         
         if ($Continue)
         {

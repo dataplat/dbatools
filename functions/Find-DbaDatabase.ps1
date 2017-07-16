@@ -9,7 +9,7 @@ Allows you to search SQL Server instances for database that have either the same
 
 There a several reasons for the service broker guid not matching on a restored database primarily using alter database new broker. or turn off broker to return a guid of 0000-0000-0000-0000. 
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER SqlCredential
@@ -41,25 +41,25 @@ You should have received a copy of the GNU General Public License along with thi
  https://dbatools.io/Find-DbaDatabase
 
 .EXAMPLE
-Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern Report
+Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern Report
 Returns all database from the SqlInstances that have a database with Report in the name
 	
 .EXAMPLE
-Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern TestDB -Exact -Detailed 
+Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern TestDB -Exact -Detailed 
 Returns all database from the SqlInstances that have a database named TestDB with a detailed output.
 
 .EXAMPLE
-Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Property ServiceBrokerGuid -Pattern '-faeb-495a-9898-f25a782835f5' -Detailed 
+Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Property ServiceBrokerGuid -Pattern '-faeb-495a-9898-f25a782835f5' -Detailed 
 Returns all database from the SqlInstances that have the same Service Broker GUID with a deatiled output
 
 #>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[ValidateSet('Name', 'ServiceBrokerGuid', 'Owner')]
 		[string]$Property = 'Name',
 		[parameter(Mandatory = $true)]
@@ -69,12 +69,12 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 	)
 	process
 	{
-		foreach ($instance in $SqlServer)
+		foreach ($instance in $SqlInstance)
 		{
 			try
 			{
 				Write-Verbose "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{

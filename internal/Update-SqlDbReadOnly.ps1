@@ -8,8 +8,8 @@ Internal function. Updates specified database to read-only or read-write. Necess
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[string]$dbname,
@@ -29,7 +29,7 @@ Internal function. Updates specified database to read-only or read-write. Necess
 	
 	try
 	{
-		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		$null = $server.ConnectionContext.ExecuteNonQuery($sql)
 		Write-Output "Changed ReadOnly status to $readonly for $dbname on $($server.name)"
 		return $true

@@ -78,14 +78,18 @@ Removes all set SPNs for sql2005 and the relative delegations
 		[Alias("InstanceServiceAccount", "AccountName")]
 		[string]$ServiceAccount,
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
-		[pscredential]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[switch]$Silent
 	)
 	
 	process {
 		Write-Message -Message "Looking for account $ServiceAccount..." -Level Verbose
+		$searchfor = 'User'
+		if($ServiceAccount.EndsWith('$')) {
+			$searchfor = 'Computer'
+		}
 		try {
-			$Result = Get-DbaADObject -ADObject $ServiceAccount -Type User -Credential $Credential -Silent
+			$Result = Get-DbaADObject -ADObject $ServiceAccount -Type $searchfor -Credential $Credential -Silent
 		}
 		catch {
 			Stop-Function -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($ServiceAccount). $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ServiceAccount

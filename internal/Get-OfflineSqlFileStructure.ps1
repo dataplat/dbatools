@@ -9,17 +9,17 @@ Internal function. Returns dictionary object that contains file structures for S
 	param (
 		[Parameter(Mandatory = $true, Position = 0)]
 		[ValidateNotNullOrEmpty()]
-		[object]$SqlServer,
+		[object]$SqlInstance,
 		[Parameter(Mandatory = $true, Position = 1)]
 		[string]$dbname,
 		[Parameter(Mandatory = $true, Position = 2)]
 		[object]$filelist,
 		[Parameter(Mandatory = $false, Position = 3)]
 		[bool]$ReuseSourceFolderStructure,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
 	)
 	
-	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	
 	$destinationfiles = @{ };
 	$logfiles = $filelist | Where-Object { $_.Type -eq "L" }

@@ -12,7 +12,7 @@ By default, this funtion only shows drives of type 2 and 3 (removable disk and l
 Requires: Windows administrator access on SQL Servers
 
 .PARAMETER ComputerName
-The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works.
+The SQL Server (or server in general) that you're connecting to. The -SqlInstance parameter also works.
 
 .PARAMETER Unit
 Display the disk space information in a specific unit. Valid values include 'Bytes', 'KB', 'MB', 'GB', 'TB', and 'PB'. Default is GB.
@@ -126,7 +126,7 @@ srv0042 D:\                                                               0     
 		[ValidateSet('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')]
 		[String]$Unit = 'GB',
 		[Switch]$CheckForSql,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[Switch]$Detailed,
 		[Switch]$CheckFragmentation,
 		[Switch]$AllDrives
@@ -189,7 +189,7 @@ srv0042 D:\                                                               0     
 			
 			if ($CheckForSql -or $Detailed)
 			{
-				$sqlservers = @()
+				$SqlInstances = @()
 				$FailedToGetServiceInformation = $false
 				try
 				{
@@ -216,12 +216,12 @@ srv0042 D:\                                                               0     
 					
           if ($instance -eq 'MSSQLSERVER')
           {
-            $sqlservers += $server
+            $SqlInstances += $server
             Write-Verbose "$FunctionName - Instance resolved as $server"
           }
           else
           {
-            $sqlservers += "$server\$instance"
+            $SqlInstances += "$server\$instance"
             Write-Verbose "$FunctionName - Instance resolved as $server\$instance"
           }
         }
@@ -239,12 +239,12 @@ srv0042 D:\                                                               0     
 					}
 					else
 					{
-						foreach ($sqlserver in $sqlservers)
+						foreach ($SqlInstance in $SqlInstances)
 						{
 							try
 							{
-								Write-Verbose "$FunctionName - Checking disk $diskname on $SqlServer"
-								$smoserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+								Write-Verbose "$FunctionName - Checking disk $diskname on $SqlInstance"
+								$smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 								$sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
 								$sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
 								if ($sqlcount -gt 0)
@@ -255,7 +255,7 @@ srv0042 D:\                                                               0     
 							}
 							catch
 							{
-								Write-Warning "$FunctionName - Can't connect to $server ($sqlserver)"
+								Write-Warning "$FunctionName - Can't connect to $server ($SqlInstance)"
 								continue
 							}
 						}

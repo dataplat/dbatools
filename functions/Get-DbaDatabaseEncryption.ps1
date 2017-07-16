@@ -1,5 +1,4 @@
-function Get-DbaDatabaseEncryption
-{
+function Get-DbaDatabaseEncryption {
 <#
 .SYNOPSIS
 Returns a summary of encrption used on databases based to it.
@@ -15,7 +14,10 @@ collection and recieve pipeline input
 PSCredential object to connect as. If not specified, currend Windows login will be used.
 
 .PARAMETER Database
-Define the database you wish to search
+The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+
+.PARAMETER ExcludeDatabase
+The database(s) to exclude - this list is autopopulated from the server
 
 .PARAMETER IncludeSystemDBs
 Switch parameter that when used will display system database information
@@ -25,13 +27,9 @@ Use this switch to disable any kind of verbose messages
 	
 .NOTES 
 Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.	
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Get-DbaDatabaseEncryption
@@ -47,76 +45,58 @@ List all encrption found in MyDB
 	[CmdletBinding()]
 	param ([parameter(ValueFromPipeline, Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
 		[switch]$IncludeSystemDBs,
 		[switch]$Silent
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlInstance $SqlInstance[0] -SqlCredential $SourceSqlCredential } }
-	
-	BEGIN
-	{
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-	}
-	
-	PROCESS
-	{
-		foreach ($instance in $SqlInstance)
-		{
+	process {
+		foreach ($instance in $SqlInstance) {
 			#For each SQL Server in collection, connect and get SMO object
 			Write-Verbose "Connecting to $instance"
 			
-			try
-			{
+			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
-			catch
-			{
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			#If IncludeSystemDBs is true, include systemdbs
 			#only look at online databases (Status equal normal)
-			try
-			{
-				if ($databases.length -gt 0)
-				{
-					$dbs = $server.Databases | Where-Object { $databases -contains $_.Name }
+			try {
+				if ($Database) {
+					$dbs = $server.Databases | Where-Object Name -In $Database
 				}
-				elseif ($IncludeSystemDBs)
-				{
+				elseif ($IncludeSystemDBs) {
 					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' }
 				}
-				else
-				{
+				else {
 					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsSystemObject -eq 0 }
 				}
 				
-				if ($exclude.length -gt 0)
-				{
-					$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+				if ($ExcludeDatabase) {
+					$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 				}
 			}
-			catch
-			{
+			catch {
 				Stop-Function -Message "Unable to gather dbs for $instance" -Target $instance -Continue
 			}
 			
-			foreach ($db in $dbs)
-			{
+			foreach ($db in $dbs) {
 				Write-Message -Level Verbose -Message "Processing $db"
 				
-				if ($db.EncryptionEnabled -eq $true)
-				{
-					
+				if ($db.EncryptionEnabled -eq $true) {
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance = $server.DomainInstanceName
-						Database = $db
+						Database = $db.Name
 						Encryption = "EncryptionEnabled (tde)"
 						Name = $null
 						LastBackup = $null
@@ -124,18 +104,17 @@ List all encrption found in MyDB
 						EncryptionAlgorithm = $null
 						KeyLength = $null
 						Owner = $null
+						Object = $null
 					}
 					
 				}
 				
-				foreach ($cert in $db.Certificates)
-				{
-					
+				foreach ($cert in $db.Certificates) {
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance = $server.DomainInstanceName
-						Database = $db
+						Database = $db.Name
 						Encryption = "Certificate"
 						Name = $cert.Name
 						LastBackup = $cert.LastBackupDate
@@ -143,18 +122,17 @@ List all encrption found in MyDB
 						EncryptionAlgorithm = $null
 						KeyLength = $null
 						Owner = $cert.Owner
+						Object = $cert
 					}
 					
 				}
 				
-				foreach ($ak in $db.AsymmetricKeys)
-				{
-					
+				foreach ($ak in $db.AsymmetricKeys) {
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance = $server.DomainInstanceName
-						Database = $db
+						Database = $db.Name
 						Encryption = "Asymentric key"
 						Name = $ak.Name
 						LastBackup = $null
@@ -162,16 +140,15 @@ List all encrption found in MyDB
 						EncryptionAlgorithm = $ak.KeyEncryptionAlgorithm
 						KeyLength = $ak.KeyLength
 						Owner = $ak.Owner
+						Object = $ak
 					}
 					
 				}
-				foreach ($sk in $db.SymmetricKeys)
-				{
-					
+				foreach ($sk in $db.SymmetricKeys) {
 					[PSCustomObject]@{
 						Server = $server.name
 						Instance = $server.InstanceName
-						Database = $db
+						Database = $db.Name
 						Encryption = "Symmetric key"
 						Name = $sk.Name
 						LastBackup = $null
@@ -179,9 +156,11 @@ List all encrption found in MyDB
 						EncryptionAlgorithm = $ak.EncryptionAlgorithm
 						KeyLength = $sk.KeyLength
 						Owner = $sk.Owner
+						Object = $sk
 					}
 				}
 			}
 		}
 	}
 }
+

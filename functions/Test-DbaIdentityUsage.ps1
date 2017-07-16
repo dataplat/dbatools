@@ -1,85 +1,76 @@
-Function Test-DbaIdentityUsage
-{
-<# 
-.SYNOPSIS 
-Displays information relating to IDENTITY seed usage.  Works on SQL Server 2008 and above.
+function Test-DbaIdentityUsage {
+	<# 
+	.SYNOPSIS 
+		Displays information relating to IDENTITY seed usage.  Works on SQL Server 2008 and above.
 
-.DESCRIPTION 
-IDENTITY seeds have max values based off of their data type.  This module will locate identity columns and report the seed usage.
+	.DESCRIPTION 
+		IDENTITY seeds have max values based off of their data type.  This module will locate identity columns and report the seed usage.
 
-.PARAMETER SqlInstance
-Allows you to specify a comma separated list of servers to query.
+	.PARAMETER SqlInstance
+		Allows you to specify a comma separated list of servers to query.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$cred = Get-Credential, this pass this $cred to the param. 
+	.PARAMETER SqlCredential
+		Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+		$cred = Get-Credential, this pass this $cred to the param. 
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+		Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
-.PARAMETER Threshold
-Allows you to specify a minimum % of the seed range being utilized.  This can be used to ignore seeds that have only utilized a small fraction of the range.
+	.PARAMETER Database
+		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER NoSystemDb
-Allows you to suppress output on system databases
+	.PARAMETER ExcludeDatabase
+		The database(s) to exclude - this list is autopopulated from the server
 
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
+	.PARAMETER Threshold
+		Allows you to specify a minimum % of the seed range being utilized.  This can be used to ignore seeds that have only utilized a small fraction of the range.
 
-.NOTES 
-Author: Brandon Abshire, netnerds.net
-Tags: Identity
+	.PARAMETER NoSystemDb
+		Allows you to suppress output on system databases
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	.PARAMETER Silent 
+		Use this switch to disable any kind of verbose messages
 
-.LINK 
-https://dbatools.io/Test-DbaIdentityUsage
+	.NOTES 
+		Author: Brandon Abshire, netnerds.net
+		Tags: Identity
 
-.EXAMPLE   
-Test-DbaIdentityUsage -SqlServer sql2008, sqlserver2012
-Check identity seeds for servers sql2008 and sqlserver2012.
+		Website: https://dbatools.io
+		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.EXAMPLE   
-Test-DbaIdentityUsage -SqlServer sql2008 -Database TestDB
-Check identity seeds on server sql2008 for only the TestDB database
+	.LINK 
+		https://dbatools.io/Test-DbaIdentityUsage
 
-.EXAMPLE   
-Test-DbaIdentityUsage -SqlServer sql2008 -Database TestDB -Threshold 20
-Check identity seeds on server sql2008 for only the TestDB database, limiting results to 20% utilization of seed range or higher
+	.EXAMPLE   
+		Test-DbaIdentityUsage -SqlInstance sql2008, sqlserver2012
+		Check identity seeds for servers sql2008 and sqlserver2012.
 
+	.EXAMPLE   
+		Test-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB
+		Check identity seeds on server sql2008 for only the TestDB database
 
-#>
+	.EXAMPLE   
+		Test-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB -Threshold 20
+		Check identity seeds on server sql2008 for only the TestDB database, limiting results to 20% utilization of seed range or higher
+	#>
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
-		[string[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
 		[parameter(Position = 1, Mandatory = $false)]
 		[int]$Threshold = 0,
 		[parameter(Position = 2, Mandatory = $false)]
 		[switch]$NoSystemDb,
 		[switch]$Silent
 	)
-	
-	DynamicParam
-	{
-		if ($SqlInstance)
-		{
-			return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential
-		}
-	}
-	
-	BEGIN
-	{
-		
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-		
-		$threshold = $psboundparameters.Threshold
+
+	BEGIN {
 		
 		$sql = ";WITH CTE_1
 		AS
@@ -121,7 +112,7 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 							ELSE 0
 							END
 						--) 
-                        / CONVERT(bigint, increment_value) 
+						/ CONVERT(bigint, increment_value) 
 					AS Numeric(20, 0)) AS MaxNumberRows
 			FROM sys.identity_columns a
 				INNER JOIN sys.objects o
@@ -140,82 +131,70 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 		SELECT DB_NAME() as DatabaseName, SchemaName, TableName, ColumnName, SeedValue, IncrementValue, LastValue, MaxNumberRows, NumberOfUses, [PercentUsed]
 		  FROM CTE_2"
 
-        If($Threshold -gt 0) { $sql += " WHERE [PercentUsed] >= " + $Threshold + " ORDER BY [PercentUsed] DESC" }
-        Else { $sql += " ORDER BY [PercentUsed] DESC" }
-		
+		if ($Threshold -gt 0) { 
+			$sql += " WHERE [PercentUsed] >= " + $Threshold + " ORDER BY [PercentUsed] DESC" 
+		}
+		else { 
+			$sql += " ORDER BY [PercentUsed] DESC" 
+		}
 	}
-	
-	PROCESS
-	{
-		
-		foreach ($instance in $SqlInstance)
-		{
+
+	process {
+		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
-			catch
-			{
-				Stop-Function -Message "Can't connect to $instance or access denied. Skipping." -Continue
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			if ($server.versionMajor -lt 10)
-			{
+			if ($server.versionMajor -lt 10) {
 				Stop-Function -Message "This function does not support versions lower than SQL Server 2008 (v10). Skipping server $instance." -Continue
-			}
-			
+			}			
 			
 			$dbs = $server.Databases
 			
-			if ($databases.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
+			if ($Database) {
+				$dbs = $dbs | Where-Object {$Database -contains $_.Name}
 			}
 			
-			if ($exclude.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
 			
-			if ($NoSystemDb)
-			{
-				$dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }
+			if ($NoSystemDb) {
+				$dbs = $dbs | Where-Object IsSystemObject -eq $false
 			}
 			
-			foreach ($db in $dbs)
-			{
+			foreach ($db in $dbs) {
 				Write-Message -Level Verbose -Message "Processing $db on $instance"
 				
-				if ($db.IsAccessible -eq $false)
-				{
+				if ($db.IsAccessible -eq $false) {
 					Stop-Function -Message "The database $db is not accessible. Skipping database." -Continue
 				}
 				
-				foreach ($row in $db.ExecuteWithResults($sql).Tables[0])
-				{
-					if ($row.PercentUsed -eq [System.DBNull]::Value)
-					{
+				foreach ($row in $db.ExecuteWithResults($sql).Tables[0]) {
+					if ($row.PercentUsed -eq [System.DBNull]::Value) {
 						continue
 					}
 					
-					if ($row.PercentUsed -ge $threshold)
-					{
+					if ($row.PercentUsed -ge $threshold) {
 						[PSCustomObject]@{
-							ComputerName = $server.NetName
-							InstanceName = $server.ServiceName
-							SqlInstance = $server.DomainInstanceName
-							Database = $row.DatabaseName
-							Schema = $row.SchemaName
-							Table = $row.TableName
-							Column = $row.ColumnName
-							SeedValue = $row.SeedValue
+							ComputerName   = $server.NetName
+							InstanceName   = $server.ServiceName
+							SqlInstance    = $server.DomainInstanceName
+							Database       = $row.DatabaseName
+							Schema         = $row.SchemaName
+							Table          = $row.TableName
+							Column         = $row.ColumnName
+							SeedValue      = $row.SeedValue
 							IncrementValue = $row.IncrementValue
-							LastValue = $row.LastValue
-							MaxNumberRows = $row.MaxNumberRows
-							NumberOfUses = $row.NumberOfUses
-							PercentUsed = $row.PercentUsed
+							LastValue      = $row.LastValue
+							MaxNumberRows  = $row.MaxNumberRows
+							NumberOfUses   = $row.NumberOfUses
+							PercentUsed    = $row.PercentUsed
 						}
 					}
 				}
@@ -223,3 +202,4 @@ Check identity seeds on server sql2008 for only the TestDB database, limiting re
 		}
 	}
 }
+

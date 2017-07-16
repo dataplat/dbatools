@@ -7,11 +7,11 @@ Internal function. Gets the name of the sa login in case someone changed it.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
 	)
-	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	$sa = $server.Logins | Where-Object { $_.id -eq 1 }
 	
 	return $sa.name

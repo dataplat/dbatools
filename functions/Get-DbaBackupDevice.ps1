@@ -14,6 +14,9 @@ to be executed against multiple SQL Server instances.
 .PARAMETER SqlCredential
 SqlCredential object to connect as. If not specified, current Windows login will be used.
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages.
+
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
@@ -40,8 +43,9 @@ Returns all Backup Devices for the local and sql2016 SQL Server instances
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[object]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[DbaInstanceParameter]$SqlInstance,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[switch]$Silent
 	)
 	
 	PROCESS
@@ -51,20 +55,19 @@ Returns all Backup Devices for the local and sql2016 SQL Server instances
 			Write-Verbose "Attempting to connect to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch
 			{
-				Write-Warning "Can't connect to $instance or access denied. Skipping."
-				continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			
 			foreach ($backupDevice in $server.BackupDevices)
 			{
-				Add-Member -InputObject $backupDevice -MemberType NoteProperty ComputerName -value $backupDevice.Parent.NetName
-				Add-Member -InputObject $backupDevice -MemberType NoteProperty InstanceName -value $backupDevice.Parent.ServiceName
-				Add-Member -InputObject $backupDevice -MemberType NoteProperty SqlInstance -value $backupDevice.Parent.DomainInstanceName
+				Add-Member -InputObject $backupDevice -MemberType NoteProperty -Name ComputerName -value $backupDevice.Parent.NetName
+				Add-Member -InputObject $backupDevice -MemberType NoteProperty -Name InstanceName -value $backupDevice.Parent.ServiceName
+				Add-Member -InputObject $backupDevice -MemberType NoteProperty -Name SqlInstance -value $backupDevice.Parent.DomainInstanceName
 				
 				Select-DefaultView -InputObject $backupDevice -Property ComputerName, InstanceName, SqlInstance, Name, BackupDeviceType, PhysicalLocation, SkipTapeLabel
 			}

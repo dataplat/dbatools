@@ -4,7 +4,7 @@ function Remove-DbaAgentJobStep {
 Remove-DbaAgentJobStep removes a job step.
 
 .DESCRIPTION
-Remove-DbaAgentJobStep removes a a job step in the SQL Server Agent.
+Remove-DbaAgentJobStep removes a job step in the SQL Server Agent.
 
 .PARAMETER SqlInstance
 SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -61,7 +61,7 @@ Remove the job step from the job on multiple servers
 
 .EXAMPLE   
 sql1, sql2, sql3 | Remove-DbaAgentJobStep -Job Job1 -StepName Step1
-Remove the job step from the job on multiple servers using pipe line
+Remove the job step from the job on multiple servers using pipeline
 
 #>	
 	
@@ -69,9 +69,9 @@ Remove the job step from the job on multiple servers using pipe line
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Parameter(Mandatory = $false)]
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[object[]]$Job,
@@ -89,10 +89,10 @@ Remove the job step from the job on multiple servers using pipe line
 			# Try connecting to the instance
 			Write-Message -Message "Attempting to connect to $instance" -Level Output
 			try {
-				$Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -Continue -InnerErrorRecord $_
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			foreach ($j in $Job) {

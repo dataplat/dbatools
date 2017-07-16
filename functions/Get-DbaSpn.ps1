@@ -56,7 +56,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 		[Parameter(Mandatory = $false)]
 		[string[]]$AccountName,
 		[Parameter(Mandatory = $false)]
-		[PSCredential]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[switch]$Silent
 	)
 	begin
@@ -66,9 +66,13 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 			ForEach ($account in $AccountName)
 			{
 				Write-Message -Message "Looking for account $account..." -Level Verbose
+				$searchfor = 'User'
+				if($account.EndsWith('$')) {
+					$searchfor = 'Computer'
+				}
 				try
 				{
-					$Result = Get-DbaADObject -ADObject $account -Type User -Credential $Credential -Silent
+					$Result = Get-DbaADObject -ADObject $account -Type $searchfor -Credential $Credential -Silent
 				}
 				catch
 				{
@@ -81,11 +85,11 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 						$results = $Result.GetUnderlyingObject()
 						$spns = $results.Properties.servicePrincipalName
 					} catch {
-						Write-Message -Message "The SQL Service account ($serviceAccount) has been found, but you don't have enough permission to inspect its SPNs" -Level Warning
+						Write-Message -Message "The SQL Service account ($Account) has been found, but you don't have enough permission to inspect its SPNs" -Level Warning
 						continue
 					}
 				} else {
-					Write-Message -Message "The SQL Service account ($serviceAccount) has not been found" -Level Warning
+					Write-Message -Message "The SQL Service account ($Account) has not been found" -Level Warning
 					continue
 				}
 				
@@ -107,8 +111,8 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 						}
 					}
 					[pscustomobject] @{
-						Input = $account
-						AccountName = $account
+						Input = $Account
+						AccountName = $Account
 						ServiceClass = "MSSQLSvc" # $serviceclass
 						Port = $port
 						SPN = $spn

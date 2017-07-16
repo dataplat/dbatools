@@ -13,7 +13,7 @@ It then checks conditions that would prevent a rename like database mirroring an
 
 https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER Credential
@@ -40,17 +40,17 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Test-DbaServerName
 
 .EXAMPLE
-Test-DbaServerName -SqlServer sqlserver2014a
+Test-DbaServerName -SqlInstance sqlserver2014a
 
 Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a.
 
 .EXAMPLE
-Test-DbaServerName -SqlServer sqlserver2014a, sql2016
+Test-DbaServerName -SqlInstance sqlserver2014a, sql2016
 
 Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
 
 .EXAMPLE
-Test-DbaServerName -SqlServer sqlserver2014a, sql2016 -Detailed
+Test-DbaServerName -SqlInstance sqlserver2014a, sql2016 -Detailed
 
 Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
 
@@ -61,9 +61,9 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 	[OutputType([System.Collections.ArrayList])]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
-		[PsCredential]$Credential,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[switch]$Detailed,
 		[switch]$NoWarning
 	)
@@ -71,11 +71,11 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 	PROCESS
 	{
 
-		foreach ($servername in $SqlServer)
+		foreach ($servername in $SqlInstance)
 		{
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $Credential
 			}
 			catch
 			{
@@ -90,7 +90,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 
 			if ($server.VersionMajor -eq 8)
 			{
-				if ($servercount -eq 1 -and $SqlServer.count -eq 1)
+				if ($servercount -eq 1 -and $SqlInstance.count -eq 1)
 				{
 					throw "SQL Server 2000 not supported."
 				}
@@ -101,7 +101,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				}
 			}
 
-			$sqlservername = $server.ConnectionContext.ExecuteScalar("select @@servername")
+			$SqlInstancename = $server.ConnectionContext.ExecuteScalar("select @@servername")
 			$instance = $server.InstanceName
 
 			if ($instance.length -eq 0)
@@ -117,9 +117,9 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 
 			$serverinfo = [PSCustomObject]@{
 				ServerInstanceName = $serverinstancename
-				SqlServerName = $sqlservername
-				IsEqual = $serverinstancename -eq $sqlservername
-				RenameRequired = $serverinstancename -ne $sqlservername
+				SqlServerName = $SqlInstancename
+				IsEqual = $serverinstancename -eq $SqlInstancename
+				RenameRequired = $serverinstancename -ne $SqlInstancename
                 Updatable = "N/A"
                 Warnings = $null
                 Blockers = $null

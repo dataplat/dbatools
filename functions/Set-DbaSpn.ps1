@@ -85,19 +85,22 @@ Displays what would happen trying to set all missing SPNs for sql2016
 		[Alias("InstanceServiceAccount", "AccountName")]
 		[string]$ServiceAccount,
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
-		[pscredential]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
 		[switch]$NoDelegation,
 		[switch]$Silent
 	)
 	
 	process
 	{
-		
 		#did we find the server account?
 		Write-Message -Message "Looking for account $ServiceAccount..." -Level Verbose
+		$searchfor = 'User'
+		if($ServiceAccount.EndsWith('$')) {
+			$searchfor = 'Computer'
+		}
 		try
 		{
-			$Result = Get-DbaADObject -ADObject $ServiceAccount -Type User -Credential $Credential -Silent
+			$Result = Get-DbaADObject -ADObject $ServiceAccount -Type $searchfor -Credential $Credential -Silent
 		}
 		catch
 		{

@@ -1,4 +1,4 @@
-function Get-DbaDependency
+﻿function Get-DbaDependency
 {
     <#
         .SYNOPSIS
@@ -166,7 +166,7 @@ function Get-DbaDependency
                     $richobject = $Server.GetSmoObject($Item.urn)
                     $parent = $Server.GetSmoObject($Item.Parent.Urn)
                     
-                    $NewObject = New-Object sqlcollective.dbatools.Database.Dependency
+                    $NewObject = New-Object Sqlcollaborative.Dbatools.Database.Dependency
                     $NewObject.ComputerName = $server.NetName
                     $NewObject.ServiceName = $server.ServiceName
                     $NewObject.SqlInstance = $server.DomainInstanceName

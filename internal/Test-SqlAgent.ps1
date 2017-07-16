@@ -8,17 +8,17 @@ Internal function. Checks to see if SQL Server Agent is running on a server.
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
 	)
 	
-	if ($SqlServer.GetType() -ne [Microsoft.SqlServer.Management.Smo.Server])
+	if ($SqlInstance.GetType() -ne [Microsoft.SqlServer.Management.Smo.Server])
 	{
-		$SqlServer = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		$SqlInstance = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
 	
-	if ($SqlServer.JobServer -eq $null) { return $false }
-	try { $null = $SqlServer.JobServer.script(); return $true }
+	if ($SqlInstance.JobServer -eq $null) { return $false }
+	try { $null = $SqlInstance.JobServer.script(); return $true }
 	catch { return $false }
 }

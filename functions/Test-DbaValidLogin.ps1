@@ -1,6 +1,5 @@
-Function Test-DbaValidLogin
-{
-<#
+Function Test-DbaValidLogin {
+	<#
 .SYNOPSIS
 Test-DbaValidLogin finds any logins on SQL instance that are AD logins with either disabled AD user accounts or ones that no longer exist
 
@@ -8,17 +7,17 @@ Test-DbaValidLogin finds any logins on SQL instance that are AD logins with eith
 The purpose of this function is to find SQL Server logins that are used by active directory users that are either disabled or removed from the domain. It allows you to
 keep your logins accurate and up to date by removing accounts that are no longer needed.
 
-.PARAMETER SQLServer
+.PARAMETER SqlInstance
 SQL instance to check. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
-.PARAMETER Logins
-Filters the results to only the login you wish
+.PARAMETER Login
+Filters the results to only the login you wish - this list is auto populated from the server.
 
-.PARAMETER Exclude
-Excludes any login you pass into it from the results.
+.PARAMETER ExcludeLogin
+Excludes any login you pass into it from the results - this list is auto populated from the server.
 
 .PARAMETER FilterBy
 By default the function returns both Logins and Groups. you can use the FilterBy parameter to only return Groups (GroupsOnly) or Logins (LoginsOnly)
@@ -36,28 +35,26 @@ Use this switch to disable any kind of verbose messages
 Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
 Author: Chrissy LeMaire (@cl), netnerds.net
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+dWebsite: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
 https://dbatools.io/Test-DbaValidLogin
 
 .EXAMPLE
-Test-DbaValidLogin -SqlServer Dev01
+Test-DbaValidLogin -SqlInstance Dev01
 
 Tests all logins in the domain ran from (check $env:domain) that are either disabled or do not exist
 
 .EXAMPLE
-Test-DbaValidLogin -SqlServer Dev01 -FilterBy GroupsOnly -Detailed
+Test-DbaValidLogin -SqlInstance Dev01 -FilterBy GroupsOnly -Detailed
 
 Tests all Active directory groups that have logins on Dev01 returning a detailed view.
 
 .EXAMPLE
-Test-DbaValidLogin -SqlServer Dev01 -ExcludeDomains subdomain
+Test-DbaValidLogin -SqlInstance Dev01 -ExcludeDomains subdomain
 
 Tests all logins excluding any that are from the subdomain Domain
 
@@ -65,9 +62,12 @@ Tests all logins excluding any that are from the subdomain Domain
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[Alias("ServerInstance", "SqlServer", "SqlServers")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$SqlCredential,
+		[object[]]$Login,
+		[object[]]$ExcludeLogin,
 		[ValidateSet("LoginsOnly", "GroupsOnly")]
 		[string]$FilterBy = "None",
 		[string[]]$IgnoreDomains,
@@ -75,18 +75,12 @@ Tests all logins excluding any that are from the subdomain Domain
 		[switch]$Silent
 	)
 
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlLogins -SqlServer $SqlServer[0] -SqlCredential $SqlCredential -WindowsOnly } }
-
-	BEGIN
-	{
-		$Logins = $psboundparameters.Logins
-		$Exclude = $psboundparameters.Exclude
-
-		if($IgnoreDomains) {
+	begin {
+		if ($IgnoreDomains) {
 			$IgnoreDomainsNormalized = $IgnoreDomains.toUpper()
 			Write-Message -Message ("Excluding logins for domains " + ($IgnoreDomains -join ',')) -Level Verbose
 		}
-		if($Detailed) {
+		if ($Detailed) {
 			Write-Message -Message "Detailed is deprecated and will be removed in dbatools 1.0" -Once "DetailedDeprecation" -Level Warning
 		}
 
@@ -116,47 +110,38 @@ Tests all logins excluding any that are from the subdomain Domain
 			'PARTIAL_SECRETS_ACCOUNT'                = 67108864
 		}
 	}
-
-	PROCESS
-	{
-		foreach ($instance in $sqlserver)
-		{
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+	process {
+		foreach ($instance in $SqlInstance) {
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 				Write-Message -Message "Connected to: $instance" -Level Verbose
 			}
-			catch
-			{
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance -InnerErrorRecord $_
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
+
 
 			# we can only validate AD logins
 			$allwindowsloginsgroups = $server.Logins | Where-Object { $_.LoginType -in ('WindowsUser', 'WindowsGroup') }
 
 			# we cannot validate local users
 			$allwindowsloginsgroups = $allwindowsloginsgroups | Where-Object { $_.Name.StartsWith("NT ") -eq $false -and $_.Name.StartsWith($server.NetName) -eq $false -and $_.Name.StartsWith("BUILTIN") -eq $false }
-			if ($Logins)
-			{
-				$allwindowsloginsgroups = $allwindowsloginsgroups | Where-Object { $Logins -contains $_.Name }
+			if ($Login) {
+				$allwindowsloginsgroups = $allwindowsloginsgroups | Where-Object { $Login -contains $_.Name }
 			}
-			if ($Exclude)
-			{
-				$allwindowsloginsgroups = $allwindowsloginsgroups | Where-Object { $Exclude -notcontains $_.Name }
+			if ($ExcludeLogin) {
+				$allwindowsloginsgroups = $allwindowsloginsgroups | Where-Object { $ExcludeLogin -notcontains $_.Name }
 			}
 			switch ($FilterBy) {
-				"LoginsOnly"
-				{
+				"LoginsOnly" {
 					Write-Message -Message "Search restricted to logins" -Level Verbose
 					$windowslogins = $allwindowsloginsgroups | Where-Object { $_.LoginType -eq 'WindowsUser' }
 				}
-				"GroupsOnly"
-				{
+				"GroupsOnly" {
 					Write-Message -Message "Search restricted to groups" -Level Verbose
 					$windowsGroups = $allwindowsloginsgroups | Where-Object { $_.LoginType -eq 'WindowsGroup' }
 				}
-				"None"
-				{
+				"None" {
 					Write-Message -Message "Search both logins and groups" -Level Verbose
 					$windowslogins = $allwindowsloginsgroups | Where-Object { $_.LoginType -eq 'WindowsUser' }
 					$windowsGroups = $allwindowsloginsgroups | Where-Object { $_.LoginType -eq 'WindowsGroup' }
@@ -166,14 +151,13 @@ Tests all logins excluding any that are from the subdomain Domain
 				$adlogin = $login.Name
 				$loginsid = $login.Sid -join ''
 				$domain, $username = $adlogin.Split("\")
-				if($domain.toUpper() -in $IgnoreDomainsNormalized) {
+				if ($domain.toUpper() -in $IgnoreDomainsNormalized) {
 					Write-Message -Message "Skipping Login $adlogin" -Level Verbose
 					continue
 				}
 				Write-Message -Message "Parsing Login $adlogin" -Level Verbose
 				$exists = $false
-				try
-				{
+				try {
 					$u = Get-DbaADObject -ADObject $adlogin -Type User -Silent
 					$founduser = $u.GetUnderlyingObject()
 					$foundsid = $founduser.objectSid.Value -join ''
@@ -186,81 +170,80 @@ Tests all logins excluding any that are from the subdomain Domain
 						$exists = $false
 					}
 				}
-				catch
-				{
+				catch {
 					Write-Message -Message "AD Searcher Error for $username" -Level Warning
 				}
 				
 				$UAC = $founduser.Properties.userAccountControl
 				
 				$additionalProps = @{
-					AccountNotDelegated = $null
-					AllowReversiblePasswordEncryption  = $null
-					CannotChangePassword  = $null
-					PasswordExpired  = $null
-					Lockedout  = $null
-					Enabled  = $null
-					PasswordNeverExpires  = $null
-					PasswordNotRequired  = $null
-					SmartcardLogonRequired  = $null
-					TrustedForDelegation = $null
+					AccountNotDelegated               = $null
+					AllowReversiblePasswordEncryption = $null
+					CannotChangePassword              = $null
+					PasswordExpired                   = $null
+					Lockedout                         = $null
+					Enabled                           = $null
+					PasswordNeverExpires              = $null
+					PasswordNotRequired               = $null
+					SmartcardLogonRequired            = $null
+					TrustedForDelegation              = $null
 				}
-				if($UAC) {
+				if ($UAC) {
 					$additionalProps = @{
-						AccountNotDelegated = [bool]($UAC.Value -band $MappingRaw['NOT_DELEGATED'])
-						AllowReversiblePasswordEncryption  = [bool]($UAC.Value -band $MappingRaw['ENCRYPTED_TEXT_PASSWORD_ALLOWED'])
-						CannotChangePassword  = [bool]($UAC.Value -band $MappingRaw['PASSWD_CANT_CHANGE'])
-						PasswordExpired  = [bool]($UAC.Value -band $MappingRaw['PASSWORD_EXPIRED'])
-						Lockedout  = [bool]($UAC.Value -band $MappingRaw['LOCKOUT'])
-						Enabled  = !($UAC.Value -band $MappingRaw['ACCOUNTDISABLE'])
-						PasswordNeverExpires  = [bool]($UAC.Value -band $MappingRaw['DONT_EXPIRE_PASSWD'])
-						PasswordNotRequired  = [bool]($UAC.Value -band $MappingRaw['PASSWD_NOTREQD'])
-						SmartcardLogonRequired  = [bool]($UAC.Value -band $MappingRaw['SMARTCARD_REQUIRED'])
-						TrustedForDelegation = [bool]($UAC.Value -band $MappingRaw['TRUSTED_FOR_DELEGATION'])
-						UserAccountControl = $UAC.Value
+						AccountNotDelegated               = [bool]($UAC.Value -band $MappingRaw['NOT_DELEGATED'])
+						AllowReversiblePasswordEncryption = [bool]($UAC.Value -band $MappingRaw['ENCRYPTED_TEXT_PASSWORD_ALLOWED'])
+						CannotChangePassword              = [bool]($UAC.Value -band $MappingRaw['PASSWD_CANT_CHANGE'])
+						PasswordExpired                   = [bool]($UAC.Value -band $MappingRaw['PASSWORD_EXPIRED'])
+						Lockedout                         = [bool]($UAC.Value -band $MappingRaw['LOCKOUT'])
+						Enabled                           = !($UAC.Value -band $MappingRaw['ACCOUNTDISABLE'])
+						PasswordNeverExpires              = [bool]($UAC.Value -band $MappingRaw['DONT_EXPIRE_PASSWD'])
+						PasswordNotRequired               = [bool]($UAC.Value -band $MappingRaw['PASSWD_NOTREQD'])
+						SmartcardLogonRequired            = [bool]($UAC.Value -band $MappingRaw['SMARTCARD_REQUIRED'])
+						TrustedForDelegation              = [bool]($UAC.Value -band $MappingRaw['TRUSTED_FOR_DELEGATION'])
+						UserAccountControl                = $UAC.Value
 					}
 				}
 				$rtn = [PSCustomObject]@{
-						Server = $server.DomainInstanceName
-						Domain = $domain
-						Login = $username
-						Type = "User"
-						Found = $exists
-						DisabledInSQLServer = $login.IsDisabled
-						AccountNotDelegated = $additionalProps.AccountNotDelegated
-						AllowReversiblePasswordEncryption  = $additionalProps.AllowReversiblePasswordEncryption
-						CannotChangePassword  = $additionalProps.CannotChangePassword
-						PasswordExpired  = $additionalProps.PasswordExpired
-						Lockedout  = $additionalProps.Lockedout
-						Enabled  = $additionalProps.Enabled
-						PasswordNeverExpires  = $additionalProps.PasswordNeverExpires
-						PasswordNotRequired  = $additionalProps.PasswordNotRequired
-						SmartcardLogonRequired  = $additionalProps.SmartcardLogonRequired
-						TrustedForDelegation = $additionalProps.TrustedForDelegation
-						UserAccountControl = $additionalProps.UserAccountControl
-					}
+					Server                            = $server.DomainInstanceName
+					Domain                            = $domain
+					Login                             = $username
+					Type                              = "User"
+					Found                             = $exists
+					DisabledInSQLServer               = $login.IsDisabled
+					AccountNotDelegated               = $additionalProps.AccountNotDelegated
+					AllowReversiblePasswordEncryption = $additionalProps.AllowReversiblePasswordEncryption
+					CannotChangePassword              = $additionalProps.CannotChangePassword
+					PasswordExpired                   = $additionalProps.PasswordExpired
+					Lockedout                         = $additionalProps.Lockedout
+					Enabled                           = $additionalProps.Enabled
+					PasswordNeverExpires              = $additionalProps.PasswordNeverExpires
+					PasswordNotRequired               = $additionalProps.PasswordNotRequired
+					SmartcardLogonRequired            = $additionalProps.SmartcardLogonRequired
+					TrustedForDelegation              = $additionalProps.TrustedForDelegation
+					UserAccountControl                = $additionalProps.UserAccountControl
+				}
 				if ($Detailed) {
 					Select-DefaultView -InputObject $rtn -ExcludeProperty UserAccountControl
-				} else {
-					Select-DefaultView -InputObject $rtn -ExcludeProperty UserAccountControl,AccountNotDelegated,AllowReversiblePasswordEncryption,CannotChangePassword,PasswordNeverExpires,SmartcardLogonRequired,TrustedForDelegation
+				}
+				else {
+					Select-DefaultView -InputObject $rtn -ExcludeProperty UserAccountControl, AccountNotDelegated, AllowReversiblePasswordEncryption, CannotChangePassword, PasswordNeverExpires, SmartcardLogonRequired, TrustedForDelegation
 				}
 
 			}
 
-			foreach ($login in $windowsGroups)
-			{
+			foreach ($login in $windowsGroups) {
 				$adlogin = $login.Name
-				$loginsid = $login.Sid
+				$loginsid = $login.Sid -join ''
 				$domain, $groupname = $adlogin.Split("\")
-				if($domain.toUpper() -in $IgnoreDomainsNormalized) {
+				if ($domain.toUpper() -in $IgnoreDomainsNormalized) {
 					Write-Message -Message "Skipping Login $adlogin" -Level Verbose
 					continue
 				}
 				Write-Message -Message "Parsing Login $adlogin on $server" -Level Verbose
 				$exists = $false
-				if ($true)
-				{
-					$founduser = Get-DbaADObject -ADObject $adlogin -Type Group -Silent
+				if ($true) {
+					$u = Get-DbaADObject -ADObject $adlogin -Type Group -Silent
+					$founduser = $u.GetUnderlyingObject()
 					if ($founduser) {
 						$exists = $true
 					}
@@ -271,33 +254,33 @@ Tests all logins excluding any that are from the subdomain Domain
 						$exists = $false
 					}
 				}
-				else
-				{
+				else {
 					Write-Warning -Message "AD Searcher Error for $groupname on $server" -Level Warning
 				}
 				$rtn = [PSCustomObject]@{
-					Server = $server.DomainInstanceName
-					Domain = $domain
-					Login = $groupname
-					Type = "Group"
-					Found = $exists
-					DisabledInSQLServer = $login.IsDisabled
-					AccountNotDelegated = $null
-					AllowReversiblePasswordEncryption  = $null
-					CannotChangePassword  = $null
-					PasswordExpired  = $null
-					Lockedout  = $null
-					Enabled  = $null
-					PasswordNeverExpires  = $null
-					PasswordNotRequired  = $null
-					SmartcardLogonRequired  = $null
-					TrustedForDelegation = $null
-					UserAccountControl = $null
+					Server                            = $server.DomainInstanceName
+					Domain                            = $domain
+					Login                             = $groupname
+					Type                              = "Group"
+					Found                             = $exists
+					DisabledInSQLServer               = $login.IsDisabled
+					AccountNotDelegated               = $null
+					AllowReversiblePasswordEncryption = $null
+					CannotChangePassword              = $null
+					PasswordExpired                   = $null
+					Lockedout                         = $null
+					Enabled                           = $null
+					PasswordNeverExpires              = $null
+					PasswordNotRequired               = $null
+					SmartcardLogonRequired            = $null
+					TrustedForDelegation              = $null
+					UserAccountControl                = $null
 				}
 				if ($Detailed) {
 					Select-DefaultView -InputObject $rtn -ExcludeProperty UserAccountControl
-				} else {
-					Select-DefaultView -InputObject $rtn -ExcludeProperty UserAccountControl,AccountNotDelegated,AllowReversiblePasswordEncryption,CannotChangePassword,PasswordNeverExpires,SmartcardLogonRequired,TrustedForDelegation
+				}
+				else {
+					Select-DefaultView -InputObject $rtn -ExcludeProperty UserAccountControl, AccountNotDelegated, AllowReversiblePasswordEncryption, CannotChangePassword, PasswordNeverExpires, SmartcardLogonRequired, TrustedForDelegation
 				}
 			}
 		}
