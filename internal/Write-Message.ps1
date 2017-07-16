@@ -158,7 +158,7 @@
 		if (($max_verbose -ge $Level) -and ($min_verbose -le $Level)) { $channels_future += "Verbose" }
 		if (($max_debug -ge $Level) -and ($min_debug -le $Level)) { $channels_future += "Debug" }
 		
-		if ((Was-Bound "Target") -and ($null -ne $Target)) {
+		if ((Test-Bound "Target") -and ($null -ne $Target)) {
 			if ($Target.ToString() -ne $Target.GetType().FullName) { $targetString = " [T: $($Target.ToString())] " }
 			else { $targetString = " [T: <$($Target.GetType().FullName.Split(".")[-1])>] " }
 		}

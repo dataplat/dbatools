@@ -243,7 +243,7 @@
 										ErrorAction = 'Stop'
 									}
 									if ($cred) { $parameters["Credential"] = $cred }
-									if (Was-Bound "Namespace") { $parameters["Namespace"] = $Namespace }
+									if (Test-Bound "Namespace") { $parameters["Namespace"] = $Namespace }
 									
 								}
 								"Query" {
@@ -253,7 +253,7 @@
 										ErrorAction = 'Stop'
 									}
 									if ($cred) { $parameters["Credential"] = $cred }
-									if (Was-Bound "Namespace") { $parameters["Namespace"] = $Namespace }
+									if (Test-Bound "Namespace") { $parameters["Namespace"] = $Namespace }
 								}
 							}
 							

@@ -243,7 +243,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                 $logdirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType ldf
             }
 
-			if ((Was-Bound "AzureCredential") -and (Was-Bound "CopyFile")){
+			if ((Test-Bound "AzureCredential") -and (Test-Bound "CopyFile")){
 				Stop-Function -Message "Cannot use copyfile with Azure backups, set to false" -continue
 				$CopyFile = $false 
 			}
@@ -282,7 +282,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                             Write-Message -Level Verbose -Message "Gathering information for file copy"
                             $removearray = @()
 
-                            if (Was-Bound "IgnoreLogBackup"){
+                            if (Test-Bound "IgnoreLogBackup"){
                                 Write-Message -Level Verbose -Message "Skipping Log backups as requested"
                                 $lastbackup = @()
                                 $lastbackup += $full = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IgnoreCopyOnly:$ignorecopyonly -raw	-LastFull
