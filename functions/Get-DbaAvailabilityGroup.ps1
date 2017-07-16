@@ -4,7 +4,7 @@ function Get-DbaAvailabilityGroup {
 			Outputs the Availability Group(s) object found on the server.
 
 		.DESCRIPTION
-			Default view provides most common set of properties for nformation on the Availability Group(s).
+			Default view provides most common set of properties for information on the Availability Group(s).
 
 		.PARAMETER SqlInstance
 			The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2012 or higher.
@@ -97,10 +97,7 @@ function Get-DbaAvailabilityGroup {
 					Select-DefaultView -InputObject $ag -Property $defaults
 				}
 				else {
-					$defaults = 'ComputerName','InstanceName','SqlInstance','LocalReplicaRole','Name as AvailabilityGroup','PrimaryReplicaServerName as PrimaryReplica','Replicas', 'AutomatedBackupPreference', 'AvailabilityDatabases', 'AvailabilityGroupListeners'
-
-					$replicas = $ag.AvailabilityReplicas.Name -join ","
-					Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name Replicas -Value $replicas
+					$defaults = 'ComputerName','InstanceName','SqlInstance','LocalReplicaRole','Name as AvailabilityGroup','PrimaryReplicaServerName as PrimaryReplica','AutomatedBackupPreference','AvailabilityReplicas','AvailabilityDatabases','AvailabilityGroupListeners'
 					Select-DefaultView -InputObject $ag -Property $defaults
 				}
 			}
