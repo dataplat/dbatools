@@ -100,7 +100,7 @@
 		$serverOperator = $sourceServer.JobServer.Operators
 		$destOperator = $destServer.JobServer.Operators
 		
-		$failsafe = $server.JobServer.AlertSystem | Select-Object FailSafeOperator
+		$failsafe = $destServer.JobServer.AlertSystem | Select-Object FailSafeOperator
 	}
 	process {
 
@@ -112,7 +112,7 @@
 				DestinationServer   = $destServer.Name
 				Name                = $operatorName
 				Status              = $null
-				DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+				DateTime            = [DbaDateTime](Get-Date)
 			}
 			
 			if ($Operator -and $Operator -notcontains $operatorName -or $ExcludeOperator -in $operatorName) {
