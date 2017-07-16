@@ -1,5 +1,4 @@
-﻿function Test-DbaSqlManagementObject
-{
+﻿function Test-DbaSqlManagementObject {
 	<#
 		.SYNOPSIS
 			Tests to see if the SMO version specified exists on the computer.
@@ -7,6 +6,12 @@
 		.DESCRIPTION
 		 	The Test-DbaSqlManagementObject returns True if the Version is on the computer, and False if it does not exist.
 		
+		.PARAMETER ComputerName
+			The name of the target you would like to check
+	
+		.PARAMETER Credential
+			This command uses Windows credentials. This parameter allows you to connect remotely as a different user.
+	
 		.PARAMETER VersionNumber
 			This is the specific version number you are looking for and the return will be True.
 		
@@ -31,27 +36,46 @@
 	#>
 	[CmdletBinding()]
 	param (
-		[Parameter(Mandatory = $true, Position = 0)]
-		[int]$VersionNumber
+		[parameter(ValueFromPipeline)]
+		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
+		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		$Credential,
+		[Parameter(Mandatory)]
+		[int[]]$VersionNumber,
+		[switch]$Silent
 	)
-	begin
-	{
-		if ($VersionNumber -lt 9)
-		{
-			throw "SMO existed from SQL 2005 (version 9) onward. Please use a version after 9. Quitting."
+	
+	begin {
+		$scriptblock = {
+			foreach ($number in $args) {
+				$smolist = (Get-ChildItem -Path "$($env:SystemRoot)\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" -Filter "$number.*" | Sort-Object Name -Descending).Name
+				
+				if ($smolist) {
+					[pscustomobject]@{
+						ComputerName = $env:COMPUTERNAME
+						Version = $number
+						Exists = $true
+					}
+				}
+				else {
+					[pscustomobject]@{
+						ComputerName = $env:COMPUTERNAME
+						Version = $number
+						Exists = $false
+					}
+				}
+			}
 		}
 	}
-	process
-	{
-		$smolist = (Get-ChildItem -Path "$($env:SystemRoot)\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" -Filter "$VersionNumber.*" | Sort-Object Name -Desc).Name
-		
-		if ($smolist.Length -gt 0)
-		{
-			return $true
-		}
-		else
-		{
-			return $false
+	process {
+		foreach ($computer in $ComputerName.ComputerName) {
+			try {
+				Invoke-Command2 -ComputerName $computer -ScriptBlock $scriptblock -Credential $Credential -ArgumentList $VersionNumber -ErrorAction Stop
+			}
+			catch {
+				Stop-Function -Continue -Message "Faiure" -ErrorRecord $_ -Target $ComputerName
+			}
 		}
 	}
 }
