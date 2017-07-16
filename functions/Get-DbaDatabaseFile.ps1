@@ -160,7 +160,7 @@ function Get-DbaDatabaseFile {
 					continue
 				}
 				Write-Message -Level Verbose -Message "Querying database $db"
-				$results = Invoke-DbaSqlcmd -ServerInstance $server -Query $sql -Database $db.name
+				$results = $server.Query($sql,$db.name)
 				
 				foreach ($result in $results) {
 					$size = [dbasize]($result.Size * 8192)
@@ -180,7 +180,7 @@ function Get-DbaDatabaseFile {
 						$VolumeFreeSpace = [dbasize]$result.VolumeFreeSpace
 					}
 					else {
-						$disks = Invoke-DbaSqlcmd -ServerInstance $server -Query "xp_fixeddrives" -Database $db.name
+						$disks = $server.Query("xp_fixeddrives",$db.name)
 						$free = $disks | Where-Object { $_.drive -eq $result.PhysicalName.Substring(0, 1) } | Select-Object 'MB Free' -ExpandProperty 'MB Free'
 						$VolumeFreeSpace = [dbasize]($free * 1024 * 1024)
 					}

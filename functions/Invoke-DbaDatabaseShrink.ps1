@@ -203,8 +203,8 @@ Shrinks all databases on SQL2012 (not ideal for production)
 					if ($Pscmdlet.ShouldProcess("$db on $instance", "Shrinking from $([int]$spaceavailableMB) MB space available to $([int]$desiredSpaceAvailable) MB space available")) {
 						if ($db.Tables.Indexes.Name -and $server.VersionMajor -gt 8) {
 							Write-Message -Level Verbose -Message "Getting average fragmentation"
-							$startingfrag = (Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sql -Database  $db.name -Verbose:$false | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
-							$startingtopfrag = (Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sqltop1 -Database  $db.name -Verbose:$false).avg_fragmentation_in_percent
+							$startingfrag = ($server.Query($sql,$db.name) | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
+							$startingtopfrag = ($server.Query($sqltop1, $db.name)).avg_fragmentation_in_percent
 						}
 						else {
 							$startingtopfrag = $startingfrag = $null
@@ -252,8 +252,8 @@ Shrinks all databases on SQL2012 (not ideal for production)
 
 						if ($db.Tables.Indexes.Name -and $server.VersionMajor -gt 8) {
 							Write-Message -Level Verbose -Message "Refreshing indexes and getting average fragmentation"
-							$endingdefrag = (Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sql -Database  $db.name -Verbose:$false | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
-							$endingtopfrag = (Invoke-DbaSqlcmd -ServerInstance $instance -Credential $SqlCredential -Query $sqltop1 -Database  $db.name -Verbose:$false).avg_fragmentation_in_percent
+							$endingdefrag = ($server.Query($sql, $db.name) | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
+							$endingtopfrag = ($server.Query($sqltop1, $db.name)).avg_fragmentation_in_percent
 						}
 						else {
 							$endingtopfrag = $endingdefrag = $null
