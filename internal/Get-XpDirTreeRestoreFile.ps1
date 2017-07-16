@@ -48,7 +48,7 @@ function Get-XpDirTreeRestoreFile {
 	}
 	
 	$query = "EXEC master.sys.xp_dirtree '$Path',1,1;"
-	$queryResult = $server.Query($query,'tempdb')
+	$queryResult = $server.Query($query)
 	
 	$dirs = $queryResult | where-object file -eq 0
 	$Results = @()
