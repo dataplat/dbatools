@@ -1,10 +1,10 @@
 ﻿Function Invoke-DbaDatabaseUpgrade {
 <#
 	.SYNOPSIS
-	Take a database and upgrades it to compatability of the SQL Instance its hosted on. Based on https://thomaslarock.com/2014/06/upgrading-to-sql-server-2014-a-dozen-things-to-check/
+	Take a database and upgrades it to compatibility of the SQL Instance its hosted on. Based on https://thomaslarock.com/2014/06/upgrading-to-sql-server-2014-a-dozen-things-to-check/
 
 	.DESCRIPTION
-	Updates compatability level, then runs CHECKDB with data_purity, DBCC updateusage, sp_updatestats and finally sp_refreshview against all user views. 
+	Updates compatibility level, then runs CHECKDB with data_purity, DBCC updateusage, sp_updatestats and finally sp_refreshview against all user views. 
 		
 	.PARAMETER SqlInstance
 	The SQL Server that you're connecting to.
@@ -21,8 +21,8 @@
 	.PARAMETER AllUserDatabases
 	Run command against all user databases
 
-	.PARAMETER NoCompatabilityUpgrade
-	Skip compatability upgrade
+	.PARAMETER NoCompatibilityUpgrade
+	Skip compatibility upgrade
 
 	.PARAMETER NoCheckDb
 	Skip checkdb
@@ -69,16 +69,16 @@
 		Invoke-DbaDatabaseUpgrade -SqlInstance PRD-SQL-MSD01 -Database Test
 		
 		Runs the below processes against the databases
-		-- Puts compatability of database to level of SQL Instance
+		-- Puts compatibility of database to level of SQL Instance
 		-- Runs CHECKDB DATA_PURITY
 		-- Runs DBCC UPDATESUSAGE
 		-- Updates all users staistics
 		-- Runs sp_refreshview against every view in the database
 
 	.EXAMPLE
-		Invoke-DbaDatabaseUpgrade -SqlInstance PRD-SQL-INT01 -Database Test -NoCompatabilityUpgrade -NoRefreshView
+		Invoke-DbaDatabaseUpgrade -SqlInstance PRD-SQL-INT01 -Database Test -NoCompatibilityUpgrade -NoRefreshView
 		
-		Runs the upgrade command skipping the compatability update and running sp_refreshview on all views in the database
+		Runs the upgrade command skipping the compatibility update and running sp_refreshview on all views in the database
 	
 	.EXAMPLE
 		Get-DbaDatabase -SqlInstance sql2016 | Out-GridView -Passthru | Invoke-DbaDatabaseUpgrade
@@ -93,7 +93,7 @@
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[switch]$NoCompatabilityUpgrade,
+		[switch]$NoCompatibilityUpgrade,
 		[switch]$NoCheckDb,
 		[switch]$NoUpdateUsage,
 		[switch]$NoUpdatestats,
@@ -142,8 +142,8 @@
 			
 			$ogcompat = $db.CompatibilityLevel
 			$dbname = $db.Name
-			if (-not $NoCompatabilityUpgrade) {
-				Write-Message -Level Verbose -Message "Updating $db compatability to SQL Instance level"
+			if (-not $NoCompatibilityUpgrade) {
+				Write-Message -Level Verbose -Message "Updating $db compatibility to SQL Instance level"
 				$dbversion = switch ($db.CompatibilityLevel) {
 					"Version100"  { 10 } # SQL Server 2008
 					"Version110"  { 11 } # SQL Server 2012
@@ -162,7 +162,7 @@
 							$comResult = $Comp
 						}
 						catch {
-							Write-Message -Level Warning -Message "Failed run Compatability Upgrade" -ErrorRecord $_ -Target $instance
+							Write-Message -Level Warning -Message "Failed run Compatibility Upgrade" -ErrorRecord $_ -Target $instance
 							$comResult = "Fail"
 						}
 					}
@@ -172,7 +172,7 @@
 				}
 			}
 			else {
-				Write-Message -Level Verbose -Message "Ignoring Compatability settings"
+				Write-Message -Level Verbose -Message "Ignoring Compatibility settings"
 				$comResult = "Skipped"
 			}
 			
@@ -264,9 +264,9 @@
 					InstanceName = $server.ServiceName
 					SqlInstance = $server.DomainInstanceName
 					Database = $db.name
-					OriginalCompatability = $ogcompat.ToString().Replace('Version', '')
-					CurrentCompatability = $db.CompatibilityLevel.ToString().Replace('Version', '')
-					Compatability = $comResult
+					OriginalCompatibility = $ogcompat.ToString().Replace('Version', '')
+					CurrentCompatibility = $db.CompatibilityLevel.ToString().Replace('Version', '')
+					Compatibility = $comResult
 					DataPurity = $DataPurityResult
 					UpdateUsage = $UpdateUsageResult
 					UpdateStats = $UpdateStatsResult
