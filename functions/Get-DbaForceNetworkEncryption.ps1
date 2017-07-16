@@ -41,7 +41,7 @@ Get-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
 Gets Force Network Encryption for the SQL2008R2SP2 on sql01
 	
 #>
-	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
+	[CmdletBinding()]
 	param (
 		[Alias("ServerInstance", "SqlServer", "ComputerName")]
 		[DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
