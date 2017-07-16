@@ -289,10 +289,10 @@ namespace Sqlcollaborative.Dbatools.Parameter
             }
 
             // Case: Named instance
-            else if (Name.Split('\\').Length == 2)
+            else if (tempString.Split('\\').Length == 2)
             {
-                string tempComputerName = Name.Split('\\')[0];
-                string tempInstanceName = Name.Split('\\')[1];
+                string tempComputerName = tempString.Split('\\')[0];
+                string tempInstanceName = tempString.Split('\\')[1];
 
                 if (Regex.IsMatch(tempComputerName, @"[:,]\d{1,5}$") && !Regex.IsMatch(tempComputerName, RegexHelper.IPv6))
                 {
