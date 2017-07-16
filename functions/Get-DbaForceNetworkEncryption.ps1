@@ -1,10 +1,10 @@
 ﻿function Get-DbaForceNetworkEncryption {
 <#
 .SYNOPSIS
-Gets Force Encryption for a SQL Server instance
+Gets Force Encryption settings for a SQL Server instance
 
 .DESCRIPTION
-Gets Force Encryption for an instance Note that this requires access to the Windows Server - not the SQL instance itself.
+Gets Force Encryption settings for a SQL Server instance. Note that this requires access to the Windows Server - not the SQL instance itself.
 
 This setting is found in Configuration Manager.
 
@@ -31,19 +31,15 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-Enable-DbaForceNetworkEncryption
+Get-DbaForceNetworkEncryption
 	
-Enables Force Encryption on the default (MSSQLSERVER) instance on localhost - requires (and checks for) RunAs admin.
+Gets Force Encryption properties on the default (MSSQLSERVER) instance on localhost - requires (and checks for) RunAs admin.
 
 .EXAMPLE
-Enable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
+Get-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
 
-Enables Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both login and modify the registry.
-
-.EXAMPLE
-Enable-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2 -WhatIf
-
-Shows what would happen if the command were executed.
+Gets Force Network Encryption for the SQL2008R2SP2 on sql01
+	
 #>
 	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
 	param (
