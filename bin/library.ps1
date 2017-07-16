@@ -1,5 +1,5 @@
 ﻿# Current library Version the module expects
-$currentLibraryVersion = New-Object System.Version(0, 6, 0, 13)
+$currentLibraryVersion = New-Object System.Version(0, 6, 0, 14)
 
 <#
 Library Versioning 101:
@@ -168,7 +168,7 @@ aka "The guy who made most of The Library that Failed to import"
 }
 
 #region Version Warning
-if ($currentLibraryVersion -ne ([Sqlcollaborative.Dbatools.Utility.UtilityHost]::LibraryVersion)) {
+if ($currentLibraryVersion -ne ([version](([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object ManifestModule -like "dbatools.dll").CustomAttributes | Where-Object AttributeType -like "System.Reflection.AssemblyFileVersionAttribute" ).ConstructorArguments.Value)) {
 	Write-Warning @"
 A version missmatch between the dbatools library loaded and the one expected by
 this module. This usually happens when you update the dbatools module and use

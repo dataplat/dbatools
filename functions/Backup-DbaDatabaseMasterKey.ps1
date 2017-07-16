@@ -91,7 +91,7 @@ Logs into sql2016 with windows credentials then backs up db1's keys to the \\nas
 				$databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
 			}
 			
-			if (Was-bound -ParameterName Path -Not) {
+			if (Test-Bound -ParameterName Path -Not) {
 				$Path = $server.BackupDirectory
 			}
 			
@@ -118,7 +118,7 @@ Logs into sql2016 with windows credentials then backs up db1's keys to the \\nas
 				}
 				
 				# If you pass a password param, then you will not be prompted for each database, but it wouldn't be a good idea to build in insecurity
-				if (Was-bound -ParameterName Password -Not) {
+				if (Test-Bound -ParameterName Password -Not) {
 					$password = Read-Host -AsSecureString -Prompt "You must enter Service Key password for $instance"
 					$password2 = Read-Host -AsSecureString -Prompt "Type the password again"
 					

@@ -187,3 +187,7 @@ if (-not (Test-Path Alias:Test-SqlTempDbConfiguration)) { Set-Alias -Scope Globa
 if (-not (Test-Path Alias:Watch-SqlDbLogin)) { Set-Alias -Scope Global -Name Watch-SqlDbLogin -Value Watch-DbaDbLogin }
 if (-not (Test-Path Alias:Get-DiskSpace)) { Set-Alias -Scope Global -Name Get-DiskSpace -Value Get-DbaDiskSpace }
 if (-not (Test-Path Alias:Restore-HallengrenBackup)) { Set-Alias -Scope Global -Name Restore-HallengrenBackup -Value Restore-SqlBackupFromDirectory }
+
+# Leave forever
+Set-Alias -Scope Global -Name Attach-DbaDatabase -Value Mount-DbaDatabase
+Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase

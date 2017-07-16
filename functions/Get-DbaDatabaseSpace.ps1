@@ -170,7 +170,7 @@
 			#If IncludeSystemDBs is true, include systemdbs
 			#look at all databases, online/offline/accessible/inaccessible and tell user if a db can't be queried.
 			try {
-				if (Was-Bound "Database") {
+				if (Test-Bound "Database") {
 					$dbs = $server.Databases | Where-Object Name -In $Database
 				}
 				elseif ($IncludeSystemDBs) {
@@ -180,7 +180,7 @@
 					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsSystemObject -eq 0 }
 				}
 				
-				if (Was-Bound "ExcludeDatabase") {
+				if (Test-Bound "ExcludeDatabase") {
 					$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 				}
 			}

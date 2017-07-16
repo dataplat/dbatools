@@ -105,12 +105,12 @@
 	)
 	process {
 		
-		if (Was-Bound -not 'SqlInstance','DatabaseCollection') {
+		if (Test-Bound -not 'SqlInstance','DatabaseCollection') {
 			Write-Message -Level Warning -Message "You must specify either a SQL instance or pipe a database collection"
 			continue
 		}
 		
-		if (Was-Bound -not 'Database', 'DatabaseCollection', 'ExcludeDatabase', 'AllUserDatabases') {
+		if (Test-Bound -not 'Database', 'DatabaseCollection', 'ExcludeDatabase', 'AllUserDatabases') {
 			Write-Message -Level Warning -Message "You must explicitly specify a database. Use -Database, -ExcludeDatabase, -AllUserDatabases or pipe a database collection"
 			continue
 		}

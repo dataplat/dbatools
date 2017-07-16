@@ -197,10 +197,10 @@ Function Restore-DBFromFilteredArray {
                     if ($ReplaceDbNameInFile) {
                         $Filename = $filename -replace $OldDatabaseName, $dbname
                     }
-                    if (Was-Bound "DestinationFilePrefix") {
+                    if (Test-Bound "DestinationFilePrefix") {
                         $Filename = $DestinationFilePrefix + $FileName
                     }
-                    if (Was-Bound "DestinationFileSuffix") {
+                    if (Test-Bound "DestinationFileSuffix") {
                         $Filename = $FileName + $DestinationFileSuffix
                     }
                     #Not happy with this, but leaving in in case someone can convince me to make it available

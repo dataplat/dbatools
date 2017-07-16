@@ -132,7 +132,7 @@ function Get-DbaProcess {
 				$allsessions += $processes | Where-Object { $Database -contains $_.Database -and $_.Spid -notin $allsessions.Spid }
 			}
 						
-			if (Was-bound -not 'Login','Spid','ExcludeSpid','Host', 'Program','Database') {
+			if (Test-Bound -not 'Login','Spid','ExcludeSpid','Host', 'Program','Database') {
 				$allsessions = $processes
 			}
 			

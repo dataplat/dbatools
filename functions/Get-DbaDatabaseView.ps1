@@ -101,7 +101,7 @@ Gets the views for the databases on Sql1 and Sql2/sqlexpress
 					Write-Message -Message "No views exist in the $db database on $instance" -Target $db -Level Verbose
 					continue
 				}
-                if (Was-Bound -ParameterName ExcludeSystemView) {
+                if (Test-Bound -ParameterName ExcludeSystemView) {
                     $views = $views | Where-Object { $_.IsSystemObject -eq $false }
                 }
 
