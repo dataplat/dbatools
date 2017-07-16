@@ -38,7 +38,7 @@ Gets Force Encryption properties on the default (MSSQLSERVER) instance on localh
 .EXAMPLE
 Get-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
 
-Gets Force Network Encryption for the SQL2008R2SP2 on sql01
+Gets Force Network Encryption for the SQL2008R2SP2 on sql011. Uses Windows Credentials to both login and view the registry.
 	
 #>
 	[CmdletBinding()]
