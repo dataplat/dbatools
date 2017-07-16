@@ -198,7 +198,6 @@
 	
 	if (-not $ParameterConnection -or ($Server.ServerType -ne 'SqlAzureDatabase')) {
 		$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Trigger], 'IsSystemObject')
-		$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Rule], 'IsSystemObject')
 		$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Schema], 'IsSystemObject')
 		$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.SqlAssembly], 'IsSystemObject')
 		$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Table], 'IsSystemObject')
