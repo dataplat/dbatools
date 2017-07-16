@@ -101,6 +101,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
                 string temp = _ComputerName;
                 if (_NetworkProtocol == SqlConnectionProtocol.NP) { temp = "NP:" + temp; }
                 if (_NetworkProtocol == SqlConnectionProtocol.TCP) { temp = "TCP:" + temp; }
+                if (!String.IsNullOrEmpty(_InstanceName) && _Port > 0) { return String.Format(@"{0}\{1},{2}", temp, _InstanceName, _Port); }
                 if (_Port > 0) { return temp + "," + _Port; }
                 if (!String.IsNullOrEmpty(_InstanceName)) { return temp + "\\" + _InstanceName; }
                 return temp;
@@ -296,7 +297,41 @@ namespace Sqlcollaborative.Dbatools.Parameter
 
                 if (Regex.IsMatch(tempComputerName, @"[:,]\d{1,5}$") && !Regex.IsMatch(tempComputerName, RegexHelper.IPv6))
                 {
-                    throw new PSArgumentException("Both port and instancename detected! This is redundant and bad practice, specify only one: " + Name);
+                    char delimiter;
+                    if (Regex.IsMatch(tempComputerName, @"[:]\d{1,5}$"))
+                        delimiter = ':';
+                    else
+                        delimiter = ',';
+
+                    try
+                    {
+                        Int32.TryParse(tempComputerName.Split(delimiter)[1], out _Port);
+                        if (_Port > 65535) { throw new PSArgumentException("Failed to parse instance name: " + Name); }
+                        tempComputerName = tempComputerName.Split(delimiter)[0];
+                    }
+                    catch
+                    {
+                        throw new PSArgumentException("Failed to parse instance name: " + Name);
+                    }
+                }
+                else if (Regex.IsMatch(tempInstanceName, @"[:,]\d{1,5}$") && !Regex.IsMatch(tempInstanceName, RegexHelper.IPv6))
+                {
+                    char delimiter;
+                    if (Regex.IsMatch(tempString, @"[:]\d{1,5}$"))
+                        delimiter = ':';
+                    else
+                        delimiter = ',';
+
+                    try
+                    {
+                        Int32.TryParse(tempInstanceName.Split(delimiter)[1], out _Port);
+                        if (_Port > 65535) { throw new PSArgumentException("Failed to parse instance name: " + Name); }
+                        tempInstanceName = tempInstanceName.Split(delimiter)[0];
+                    }
+                    catch
+                    {
+                        throw new PSArgumentException("Failed to parse instance name: " + Name);
+                    }
                 }
 
                 if (Utility.Validation.IsValidComputerTarget(tempComputerName) && Utility.Validation.IsValidInstanceName(tempInstanceName))
