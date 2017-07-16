@@ -118,7 +118,7 @@ Gets Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Creden
 					Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
 				}
 				catch {
-					Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue
+					Stop-Function -Message $_ -ErrorRecord $_ -Target $instance -Continue
 				}
 			}
 		}
