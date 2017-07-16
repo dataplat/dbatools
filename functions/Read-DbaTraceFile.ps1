@@ -259,7 +259,7 @@ Filters only results where LinkServerName = myls and StartTime is greater than '
 								   SERVERPROPERTY('ServerName') AS SqlInstance,
 									* FROM [fn_trace_gettable]('$file', DEFAULT) $Where"
 				try {
-					Invoke-DbaSqlcmd -ServerInstance $server -Query $sql -Silent:$false
+					$server.Query($sql)
 				}
 				catch {
 					Stop-Function -Message "Error returned from SQL Server: $_" -Target $server -InnerErrorRecord $_
