@@ -47,6 +47,16 @@
         }
 	    This produces a full analysis of all your servers listed and is pushed to a csv for you to 
         analyize.
+    
+    .EXAMPLE
+        $servers = 'Server1','Server2'
+
+        foreach-Object
+        {
+        Test-DbaCompression -SqlInstance $_ | Export-Csv -Path C:\temp\CompressionAnalysisPAC.csv -Append
+        }
+	    This produces a full analysis of all your servers listed and is pushed to a csv for you to 
+        analyize.
 
     .EXAMPLE
         Test-DbaCompression -SqlInstance $svr1,$svr2 | Export-Csv -Path C:\temp\CompressionAnalysisPAC.csv -Append
@@ -175,7 +185,7 @@
 	            ,sample_cur 
 	            ,sample_req 
 	            )
-				Exec (sp_estimate_data_compression_savings '''  + @schema + ''', ''' + @tbname + ''', ''' + convert(nvarchar,@ixid) + ''', NULL, ''ROW''') ;
+				Exec sp_estimate_data_compression_savings '''  + @schema + ''', ''' + @tbname + ''', ''' + convert(nvarchar,@ixid) + ''', NULL, ''ROW'';' ;
 	        
             EXECUTE sp_executesql @sql;
 
@@ -190,7 +200,7 @@
 	            ,sample_cur 
 	            ,sample_req 
 	            )
-				Exec sp_estimate_data_compression_savings '''  + @schema + ''', ''' + @tbname + ''', ''' + convert(nvarchar,@ixid) + ''', NULL, ''PAGE''' ;
+				Exec sp_estimate_data_compression_savings '''  + @schema + ''', ''' + @tbname + ''', ''' + convert(nvarchar,@ixid) + ''', NULL, ''PAGE'';' ;
 
 			EXECUTE sp_executesql @sql;
 	        FETCH NEXT FROM cur INTO @schema, @tbname, @ixid
@@ -358,7 +368,9 @@
 						continue
 					    }
                     #Execute query against individual database and add to output
+                                      
                     $data = $server.Query($sql,$db.Name)
+
                     foreach ($row in $data) {
 						[pscustomobject]@{
 							ComputerName = $server.NetName
