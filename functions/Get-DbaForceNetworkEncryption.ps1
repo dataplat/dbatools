@@ -4,12 +4,12 @@
 Gets Force Encryption for a SQL Server instance
 
 .DESCRIPTION
-Gets Force Encryption for a SQL Server instance. Note that this requires access to the Windows Server - not the SQL instance itself.
+Gets Force Encryption for every instance on a server. Note that this requires access to the Windows Server - not the SQL instance itself.
 
 This setting is found in Configuration Manager.
 
 .PARAMETER ComputerName
-The target SQL Server - defaults to localhost.
+The target computer. Defaults to localhost.
 
 .PARAMETER Credential
 Allows you to login to the computer (not sql instance) using alternative Windows credentials
@@ -40,10 +40,6 @@ Get-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2
 
 Gets Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both login and view the registry.
 
-.EXAMPLE
-Get-DbaForceNetworkEncryption -SqlInstance sql01\SQL2008R2SP2 -WhatIf
-
-Shows what would happen if the command were executed.
 #>
 	[CmdletBinding()]
 	param (
