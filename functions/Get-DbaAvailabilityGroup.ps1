@@ -97,7 +97,7 @@ function Get-DbaAvailabilityGroup {
 					Select-DefaultView -InputObject $ag -Property $defaults
 				}
 				else {
-					$defaults = 'ComputerName','InstanceName','SqlInstance','LocalReplicaRole','Name as AvailabilityGroup','PrimaryReplicaServerName as PrimaryReplica','Replicas', 'AutomatedBackupPreference', AvailabilityDatabases, AvailabilityGroupListeners
+					$defaults = 'ComputerName','InstanceName','SqlInstance','LocalReplicaRole','Name as AvailabilityGroup','PrimaryReplicaServerName as PrimaryReplica','Replicas', 'AutomatedBackupPreference', 'AvailabilityDatabases', 'AvailabilityGroupListeners'
 
 					$replicas = $ag.AvailabilityReplicas.Name -join ","
 					Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name Replicas -Value $replicas
