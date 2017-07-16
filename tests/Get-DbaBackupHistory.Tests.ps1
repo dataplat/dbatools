@@ -1,7 +1,8 @@
 ﻿Describe "Get-DbaBackupHistory Integration Tests" -Tags "Integrationtests" {
 	
 	Context "Setup removes, restores and backups on the local drive for Get-DbaBackupHistory" {
-		$null = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WithReplace
+		$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
+		$null = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
 		$db = Get-DbaDatabase -SqlInstance localhost -Database singlerestore
 		$db | Backup-DbaDatabase -Type Full
 		$db | Backup-DbaDatabase -Type Differential
