@@ -1,4 +1,4 @@
-﻿function Was-Bound
+﻿function Test-Bound
 {
     <#
         .SYNOPSIS
@@ -21,7 +21,7 @@
             The hashtable of bound parameters. Is automatically inherited from the calling function via default value. Needs not be bound explicitly.
         
         .EXAMPLE
-            if (Was-Bound "Day")
+            if (Test-Bound "Day")
             {
                 
             }
@@ -29,12 +29,12 @@
             Snippet as part of a function. Will check whether the parameter "Day" was bound. If yes, whatever logic is in the conditional will be executed.
 	
 		.EXAMPLE
-			Was-Bound -Not 'Login', 'Spid', 'ExcludeSpid', 'Host', 'Program', 'Database'
+			Test-Bound -Not 'Login', 'Spid', 'ExcludeSpid', 'Host', 'Program', 'Database'
 	
 			Returns whether none of the parameters above were specified.
 	
 		.EXAMPLE
-			Was-Bound -And 'Login', 'Spid', 'ExcludeSpid', 'Host', 'Program', 'Database' 
+			Test-Bound -And 'Login', 'Spid', 'ExcludeSpid', 'Host', 'Program', 'Database' 
 	
 			Returns whether any of the specified parameters was not bound
     #>

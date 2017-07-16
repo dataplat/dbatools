@@ -101,7 +101,7 @@ Gets the Stored Procedures for the databases on Sql1 and Sql2/sqlexpress
 					Write-Message -Message "No Stored Procedures exist in the $db database on $instance" -Target $db -Level Verbose
 					continue
 				}
-                if (Was-Bound -ParameterName ExcludeSystemSp) {
+                if (Test-Bound -ParameterName ExcludeSystemSp) {
                     $StoredProcedures = $StoredProcedures | Where-Object { $_.IsSystemObject -eq $false }
                 }
 

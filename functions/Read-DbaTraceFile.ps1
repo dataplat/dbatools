@@ -237,7 +237,7 @@ Filters only results where LinkServerName = myls and StartTime is greater than '
 				return
 			}
 			
-			if (Was-Bound -Parameter Path) {
+			if (Test-Bound -Parameter Path) {
 				$currentpath = $path
 			}
 			else {

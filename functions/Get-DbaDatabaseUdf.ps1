@@ -101,7 +101,7 @@ Gets the User Defined Functions for the databases on Sql1 and Sql2/sqlexpress
 					Write-Message -Message "No User Defined Functions exist in the $db database on $instance" -Target $db -Level Verbose
 					continue
 				}
-                if (Was-Bound -ParameterName ExcludeSystemUdf) {
+                if (Test-Bound -ParameterName ExcludeSystemUdf) {
                     $UserDefinedFunctions = $UserDefinedFunctions | Where-Object { $_.IsSystemObject -eq $false }
                 }
 

@@ -317,7 +317,7 @@
 					$dbs = $server.Databases | Where-Object { $_.IsAccessible -and $_.IsSystemObject -eq 0 }
 				}
 				
-				if (Was-Bound "ExcludeDatabase") {
+				if (Test-Bound "ExcludeDatabase") {
 					$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 				}
 			}

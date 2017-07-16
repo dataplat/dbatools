@@ -242,20 +242,20 @@
                 $connection.AddBadCredential($badCred)
             }
 
-            if (Was-Bound "Credential") { $connection.Credentials = $Credential }
+            if (Test-Bound "Credential") { $connection.Credentials = $Credential }
             if ($UseWindowsCredentials) {
                 $connection.Credentials = $null
                 $connection.UseWindowsCredentials = $UseWindowsCredentials
             }
-            if (Was-Bound "OverrideExplicitCredential") { $connection.OverrideExplicitCredential = $OverrideExplicitCredential }
-            if (Was-Bound "DisabledConnectionTypes") { $connection.DisabledConnectionTypes = $DisabledConnectionTypes }
-            if (Was-Bound "DisableBadCredentialCache") { $connection.DisableBadCredentialCache = $DisableBadCredentialCache }
-            if (Was-Bound "DisableCimPersistence") { $connection.DisableCimPersistence = $DisableCimPersistence }
-            if (Was-Bound "DisableCredentialAutoRegister") { $connection.DisableCredentialAutoRegister = $DisableCredentialAutoRegister }
-            if (Was-Bound "EnableCredentialFailover") { $connection.DisableCredentialAutoRegister = $EnableCredentialFailover }
-            if (Was-Bound "WindowsCredentialsAreBad") { $connection.WindowsCredentialsAreBad = $WindowsCredentialsAreBad }
-            if (Was-Bound "CimWinRMOptions") { $connection.CimWinRMOptions = $CimWinRMOptions }
-            if (Was-Bound "CimDCOMOptions") { $connection.CimDCOMOptions = $CimDCOMOptions }
+            if (Test-Bound "OverrideExplicitCredential") { $connection.OverrideExplicitCredential = $OverrideExplicitCredential }
+            if (Test-Bound "DisabledConnectionTypes") { $connection.DisabledConnectionTypes = $DisabledConnectionTypes }
+            if (Test-Bound "DisableBadCredentialCache") { $connection.DisableBadCredentialCache = $DisableBadCredentialCache }
+            if (Test-Bound "DisableCimPersistence") { $connection.DisableCimPersistence = $DisableCimPersistence }
+            if (Test-Bound "DisableCredentialAutoRegister") { $connection.DisableCredentialAutoRegister = $DisableCredentialAutoRegister }
+            if (Test-Bound "EnableCredentialFailover") { $connection.DisableCredentialAutoRegister = $EnableCredentialFailover }
+            if (Test-Bound "WindowsCredentialsAreBad") { $connection.WindowsCredentialsAreBad = $WindowsCredentialsAreBad }
+            if (Test-Bound "CimWinRMOptions") { $connection.CimWinRMOptions = $CimWinRMOptions }
+            if (Test-Bound "CimDCOMOptions") { $connection.CimDCOMOptions = $CimDCOMOptions }
 
             if (-not $disable_cache) {
                 Write-Message -Level Verbose -Message "Writing connection to cache"

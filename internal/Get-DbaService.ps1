@@ -69,7 +69,7 @@
 		Write-Message -Level InternalComment -Message "Starting"
 		Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 		
-		if (-not (Was-Bound "Name") -and -not (Was-Bound "DisplayName")) {
+		if (-not (Test-Bound "Name") -and -not (Test-Bound "DisplayName")) {
 			$Name = "%"
 		}
 	}
@@ -79,7 +79,7 @@
 			foreach ($serviceName in $Name) {
 				Write-Message -Level Verbose -Message "Searching for services with name: $serviceName" -Target $computer.ComputerName
 				try {
-					if (Was-Bound "Credential") { Get-DbaCmObject -Query "SELECT * FROM Win32_Service WHERE Name LIKE '$serviceName'" -ComputerName $computer.ComputerName -Credential $Credential -Silent -DoNotUse $DoNotUse }
+					if (Test-Bound "Credential") { Get-DbaCmObject -Query "SELECT * FROM Win32_Service WHERE Name LIKE '$serviceName'" -ComputerName $computer.ComputerName -Credential $Credential -Silent -DoNotUse $DoNotUse }
 					else { Get-DbaCmObject -Query "SELECT * FROM Win32_Service WHERE Name LIKE '$serviceName'" -ComputerName $computer.ComputerName -Silent -DoNotUse $DoNotUse }
 				}
 				catch {
@@ -95,7 +95,7 @@
 			foreach ($serviceDisplayName in $DisplayName) {
 				Write-Message -Level Verbose -Message "Searching for services with display name: $serviceDisplayName" -Target $computer.ComputerName
 				try {
-					if (Was-Bound "Credential") { Get-DbaCmObject -Query "SELECT * FROM Win32_Service WHERE DisplayName LIKE '$serviceDisplayName'" -ComputerName $computer.ComputerName -Credential $Credential -Silent -DoNotUse $DoNotUse }
+					if (Test-Bound "Credential") { Get-DbaCmObject -Query "SELECT * FROM Win32_Service WHERE DisplayName LIKE '$serviceDisplayName'" -ComputerName $computer.ComputerName -Credential $Credential -Silent -DoNotUse $DoNotUse }
 					else { Get-DbaCmObject -Query "SELECT * FROM Win32_Service WHERE DisplayName LIKE '$serviceDisplayName'" -ComputerName $computer.ComputerName -Silent -DoNotUse $DoNotUse }
 				}
 				catch {

@@ -155,7 +155,7 @@ function Resolve-DbaNetworkName {
                 Write-Message -Level Verbose -Message "Your PowerShell Version is $($PSVersionTable.PSVersion.Major)"
 				try {
 					Write-Message -Level Verbose -Message "Getting computer information from $Computer"
-					if (Was-Bound "Credential") {
+					if (Test-Bound "Credential") {
 						$conn = Get-DbaCmObject -ClassName win32_ComputerSystem -Computer $Computer -Credential $Credential -Silent
 					}
 					else {
