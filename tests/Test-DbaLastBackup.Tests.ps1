@@ -9,7 +9,7 @@
 		$null = $db | Backup-DbaDatabase -Type Log
 		$null = $db | Backup-DbaDatabase -Type Log
     }
-	
+	<#
     Context "Test a single database" {
         $results = Test-DbaLastBackup -SqlInstance localhost -Database singlerestore
 		
@@ -23,5 +23,6 @@
         It "Should be more than one database" {
             $results.count | Should BeGreaterThan 1
         }
-    }
+	}
+	#>
 }
