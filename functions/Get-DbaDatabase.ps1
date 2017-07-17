@@ -111,11 +111,11 @@ function Get-DbaDatabase {
 		[string[]]$Owner,
 		[switch]$Encrypted,
 		[ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
-		[string[]]$Status,
+		[string[]]$Status = @('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect'),
 		[ValidateSet('ReadOnly', 'ReadWrite')]
-		[string]$Access,
+		[string]$Access = @('ReadOnly', 'ReadWrite'),
 		[ValidateSet('Full', 'Simple', 'BulkLogged')]
-		[string]$RecoveryModel,
+		[string]$RecoveryModel = @('Full', 'Simple', 'BulkLogged'),
 		[switch]$NoFullBackup,
 		[datetime]$NoFullBackupSince,
 		[switch]$NoLogBackup,
@@ -129,13 +129,6 @@ function Get-DbaDatabase {
 			Stop-Function -Message "You cannot specify both NoUserDb and NoSystemDb" -Continue -Silent $Silent
 		}
 
-		if ($status.count -gt 0) {
-			foreach ($state in $status) {
-				if ($state -notin ('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')) {
-					Stop-Function -Message "$state is not a valid status ('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')" -Continue -Silent $Silent
-				}
-			}
-		}
 	}
 	process {
 		if (Test-FunctionInterrupt) { return }
@@ -149,25 +142,19 @@ function Get-DbaDatabase {
 			}
 
 			if ($NoUserDb) {
-				$inputobject = $server.Databases | Where-Object IsSystemObject
+                $DBType = @($true)
 			}
-
-			if ($NoSystemDb) {
-				$inputobject = $server.Databases | Where-Object IsSystemObject -eq $false
+			elseif ($NoSystemDb) {
+                $DBType = @($false)
 			}
+            else {
+                $DBType = @($false,$true)
+            }
 
 			if ($Database) {
-				$inputobject = $server.Databases | Where-Object Name -in $Database
+				$inputobject = $server.Databases |
+                    Where-Object { $_.Name -in $Database -and $_.IsSystemObject -in $DBType -and $_.status -in $Status }
 			}
-
-			if ($status) {
-				$StatusInput = @()
-				foreach ($state in $status) {
-					$StatusInput += $server.Databases | Where-Object { ($_.Status -split ', ') -contains $state }
-				}
-				$inputobject = $StatusInput | Select-object -unique
-			}
-
 			if ($Owner) {
 				$inputobject = $server.Databases | Where-Object Owner -in $Owner
 			}
