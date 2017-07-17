@@ -139,7 +139,7 @@
 							InstanceName = $server.ServiceName
 							SqlInstance = $server.DomainInstanceName
 							Database = $db
-							AttachStatus = "Success"
+							AttachResult = "Success"
 							AttachOption = $AttachOption
 							FileStructure = $FileStructure
 						}

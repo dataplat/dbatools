@@ -186,7 +186,7 @@
 						InstanceName = $server.ServiceName
 						SqlInstance = $server.DomainInstanceName
 						Database = $db.name
-						DetachStatus = "Success"
+						DetachResult = "Success"
 					}
 				}
 				catch {
