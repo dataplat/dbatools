@@ -202,7 +202,7 @@
 					
 					$inputobject = $inputobject | Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' }
 				} else {
-					$inputObject = $inputObject | Where-Object { $_.name -notin $dabs.Database -and $_.Name -ne 'tempdb' }
+					$inputObject = $inputObject | Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' }
 				}
 				
 			}
