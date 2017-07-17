@@ -20,10 +20,16 @@
 	
 		.PARAMETER DatabaseOwner
 			Returns list of SQL Server databases owned by the specified logins
+	
+		.PARAMETER DatabaseCollection
+			A collection of databases (such as returned by Get-DbaDatabase), to be deetached.
 
 		.PARAMETER AttachOption
 			A AttachOptions object value that contains the attachment options. Valid options include 
 			None, RebuildLog, EnableBroker, NewBroker and ErrorBrokerConversations
+		
+		.PARAMETER UpdateStatistics
+			A switch that specifies whether to update the statistics for the database before detaching it
 	
 		.PARAMETER Force
 			If database is part of a mirror, it will break the mirror. If it is part of an Availability Group, it will remove it from the Availability Group.
@@ -62,7 +68,7 @@
 			Incomplete example, hold on
 	
 	#>
-	[CmdletBinding(SupportsShouldProcess, DefaultParameterSetName="Default")]
+	[CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
 	Param (
 		[parameter(Mandatory, ParameterSetName = 'SqlInstance')]
 		[Alias("ServerInstance", "SqlServer")]
