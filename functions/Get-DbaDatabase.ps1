@@ -113,7 +113,7 @@ function Get-DbaDatabase {
 		[ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
 		[string[]]$Status = @('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect'),
 		[ValidateSet('ReadOnly', 'ReadWrite')]
-		[string]$Access = @('ReadOnly', 'ReadWrite'),
+		[string]$Access,
 		[ValidateSet('Full', 'Simple', 'BulkLogged')]
 		[string]$RecoveryModel = @('Full', 'Simple', 'BulkLogged'),
 		[switch]$NoFullBackup,
@@ -151,30 +151,16 @@ function Get-DbaDatabase {
                 $DBType = @($false,$true)
             }
 
+            $Readonly = switch ( $Access ) { 'Readonly' { @($true) } 'ReadWrite' { @($false) } default { @($true,$false)} }
+
+			$Encrypt = switch ( Test-Bound $Encrypted) { $true { @($true) } default { @($true,$false)} }
+
 			if ($Database) {
 				$inputobject = $server.Databases |
-                    Where-Object { $_.Name -in $Database -and $_.IsSystemObject -in $DBType -and $_.status -in $Status }
+                    Where-Object { $_.Name -in $Database -and $_.IsSystemObject -in $DBType -and $_.status -in $Status -and $_.recoveryModel -in $recoverymodel -and $_.EncryptionEnabled -in $Encrypt }
 			}
 			if ($Owner) {
 				$inputobject = $server.Databases | Where-Object Owner -in $Owner
-			}
-
-			switch ($Access) {
-				"ReadOnly" { $inputobject = $server.Databases | Where-Object ReadOnly }
-				"ReadWrite" { $inputobject = $server.Databases | Where-Object ReadOnly -eq $false }
-			}
-
-			if ($Encrypted) {
-				$inputobject = $server.Databases | Where-Object EncryptionEnabled
-			}
-
-			if ($RecoveryModel) {
-				$inputobject = $server.Databases | Where-Object RecoveryModel -eq $RecoveryModel
-			}
-
-			# I forgot the pretty way to do this
-			if (!$NoUserDb -and !$NoSystemDb -and !$database -and !$status -and !$Owner -and !$Access -and !$Encrypted -and !$RecoveryModel) {
-				$inputobject = $server.Databases
 			}
 
 			if ($ExcludeDatabase) {
