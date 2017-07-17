@@ -8,27 +8,22 @@
 		$null = $db | Backup-DbaDatabase -Type Full
 		$null = $db | Backup-DbaDatabase -Type Differential
 		$null = $db | Backup-DbaDatabase -Type Log
-		$null = $db | Backup-DbaDatabase -Type Log
-		
-		It "Should return success temporarily" {
-			$true | Should Be True
-		}
 	}
 	
-	<#
+
     Context "Test a single database" {
         $results = Test-DbaLastBackup -SqlInstance localhost -Database singlerestore
 		
         It "Should return success" {
             $results.RestoreResult | Should Be "Success"
         }
-    }
+	}
 	
-    Context "Testing the whole instance" {
-        $results = Test-DbaLastBackup -SqlInstance localhost
-        It "Should be more than one database" {
-            $results.count | Should BeGreaterThan 1
+	Context "Testing the whole instance" {
+		$results = Test-DbaLastBackup -SqlInstance localhost -ExcludeDatabase tempdb
+		$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
+        It "Should be 5 databases" {
+            $results.count | Should Be 5
         }
 	}
-	#>
 }
