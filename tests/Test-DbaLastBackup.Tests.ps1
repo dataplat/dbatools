@@ -23,7 +23,7 @@
 		$results = Test-DbaLastBackup -SqlInstance localhost -ExcludeDatabase tempdb
 		$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
         It "Should be 5 databases" {
-            $results.count | Should Be 5
+            $results.count | Should BeGreaterThan 3
         }
 	}
 }
