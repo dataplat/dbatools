@@ -8,7 +8,7 @@
 			SQL Server. If the name of the database is provided, the command will return only the specific database information.
 
 		.PARAMETER SqlInstance
-			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
+			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
 			to be executed against multiple SQL Server instances.
 
 		.PARAMETER SqlCredential
@@ -193,7 +193,16 @@
 			$Encrypt = switch ( Test-Bound $Encrypted) { $true { @($true) } default { @($true,$false)} }
 
 			$inputobject = $server.Databases |
-                Where-Object { ($_.Name -in $Database -or !$Database) -and ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and ($_.Owner -in $Owner -or !$Owner) -and $_.ReadOnly -in $readonly -and $_.IsSystemObject -in $DBType -and $_.status -in $Status -and $_.recoveryModel -in $recoverymodel -and $_.EncryptionEnabled -in $Encrypt }
+                Where-Object {
+                    ($_.Name -in $Database -or !$Database) -and 
+                    ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and 
+                    ($_.Owner -in $Owner -or !$Owner) -and 
+                    $_.ReadOnly -in $readonly -and 
+                    $_.IsSystemObject -in $DBType -and 
+                    $_.status -in $Status -and 
+                    $_.recoveryModel -in $recoverymodel -and 
+                    $_.EncryptionEnabled -in $Encrypt
+                }
 
 			if ($NoFullBackup -or $NoFullBackupSince) {
 				$dabs = (Get-DbaBackupHistory -SqlInstance $server -LastFull -IgnoreCopyOnly)
@@ -210,15 +219,18 @@
 				$dabs = (Get-DbaBackupHistory -SqlInstance $server -LastLog -IgnoreCopyOnly)
 				if ($null -ne $NoLogBackupSince) {
 					$dabsWithinScope = ($dabs | Where-Object End -lt $NoLogBackupSince)
-					$inputobject = $inputobject | Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
+					$inputobject = $inputobject |
+                        Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
 				} else {
-					$inputobject = $inputObject | Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
+					$inputobject = $inputObject |
+                        Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
 				}
 			}
 
-			
-			
-			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel', 'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
+			$defaults =  'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
+                         'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner',
+                         'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
+                         'LastLogBackupDate as LastLogBackup'
 
 			if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
 				$defaults += ('Notes')
