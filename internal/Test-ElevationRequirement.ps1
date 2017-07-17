@@ -48,7 +48,7 @@ function Test-ElevationRequirement {
 	#>
 	[CmdletBinding(DefaultParameterSetName = 'Stop')]
 	Param (
-		[Sqlcollective.Dbatools.Parameter.DbaInstanceParameter]
+		[DbaInstanceParameter]
 		$ComputerName,
 		
 		[Parameter(ParameterSetName = 'Stop')]
@@ -73,7 +73,7 @@ function Test-ElevationRequirement {
 	
 	$isElevated = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 	$testResult = $true
-	if ($ComputerName.IsLocalHost -and (-not $isElevated)) { return $false }
+	if ($ComputerName.IsLocalHost -and (-not $isElevated)) { $testResult = $false }
 	
 	switch ($PSCmdlet.ParameterSetName) {
 		"NoStop" {
@@ -90,7 +90,7 @@ function Test-ElevationRequirement {
 			if (Test-Bound "ContinueLabel") { $splatStopFunction["ContinueLabel"] = $ContinueLabel }
 			if (Test-Bound "SilentlyContinue") { $splatStopFunction["SilentlyContinue"] = $SilentlyContinue }
 			
-			Stop-Function @splatStopFunction -FunctionName (Get-PSCallStack)[1].Command
+			. Stop-Function @splatStopFunction -FunctionName (Get-PSCallStack)[1].Command
 			return $testResult
 		}
 	}
