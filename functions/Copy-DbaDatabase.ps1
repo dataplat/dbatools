@@ -489,7 +489,7 @@ function Copy-DbaDatabase {
 						}
 					}
 					else {
-						Write-Message -Level Verbose "Copying $from for $dbName"
+						Write-Message -Level Verbose -Message "Copying $from for $dbName"
 						Start-BitsTransfer -Source $from -Destination $remotefilename
 					}
 					$fn = Split-Path $($dbdestination[$file].physical) -leaf
