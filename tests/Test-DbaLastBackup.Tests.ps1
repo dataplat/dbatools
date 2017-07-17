@@ -15,15 +15,26 @@
         $results = Test-DbaLastBackup -SqlInstance localhost -Database singlerestore
 		
         It "Should return success" {
-            $results.RestoreResult | Should Be "Success"
+			$results.RestoreResult | Should Be "Success"
+			$results.DbccResult | Should Be "Success"
         }
 	}
 	
 	Context "Testing the whole instance" {
 		$results = Test-DbaLastBackup -SqlInstance localhost -ExcludeDatabase tempdb
-		$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
-        It "Should be 5 databases" {
+        It "Should be more than 3 databases" {
             $results.count | Should BeGreaterThan 3
         }
 	}
+	
+	Context "Testing that it restores to a specific path" {
+		$null = Test-DbaLastBackup -SqlInstance localhost -Database singlerestore -DataDirectory C:\temp -LogDirectory C:\temp -NoDrop
+		$results = Get-DbaDatabaseFile -SqlInstance localhost -Database dbatools-testrestore-singlerestore
+		It "Should match C:\temp" {
+			('C:\temp\dbatools-testrestore-singlerestore.mdf' -in $results.PhysicalName) | Should Be $true
+			('C:\temp\dbatools-testrestore-singlerestore_log.ldf' -in $results.PhysicalName) | Should Be $true
+		}
+		$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
+	}
+	
 }
