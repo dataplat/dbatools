@@ -64,9 +64,7 @@
 		[string]$AttachOption = "None",
 		[switch]$Silent
 	)
-	process {
-		if (Test-FunctionInterrupt) { return }
-		
+	process {		
 		foreach ($instance in $SqlInstance) {
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
@@ -85,9 +83,18 @@
 			}
 			
 			foreach ($db in $database) {
+				
+				if ($server.Databases[$db]) {
+					Stop-Function -Message "$db is already attached to $server" -Target $db -Continue
+				}
+				
+				if ($server.Databases[$db].IsSystemObject) {
+					Stop-Function -Message "$db is a system database and cannot be attached using this method" -Target $db -Continue
+				}
+				
 				if (-Not (Test-Bound -Parameter FileStructure)) {
 					#$backuphistory = Get-DbaBackupHistory -SqlInstance $server -LastFull -Database $db
-					$backuphistory = Get-DbaBackupHistory -SqlInstance sql2016 -Database DBWithCDC -Type Full | Sort-Object End -Descending | Select-Object -First 1
+					$backuphistory = Get-DbaBackupHistory -SqlInstance $server -Database $db -Type Full | Sort-Object End -Descending | Select-Object -First 1
 
 					if (-not $backuphistory) {
 						$message = "Could not enumerate backup history to automatically build FileStructure. Rerun the command and provide the filestructure parameter"

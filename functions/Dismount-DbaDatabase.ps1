@@ -53,9 +53,9 @@
 			https://dbatools.io/Dismount-DbaDatabase
 
 		.EXAMPLE
-			Detach-DbaDatabase -SqlInstance sql2016b -Database SharePoint_Config
+			Detach-DbaDatabase -SqlInstance sql2016b -Database SharePoint_Config, WSS_Logging
 
-			Incomplete example, hold on
+			Detach
 
 		.EXAMPLE
 			Get-DbaDatabase -SqlInstance sql2016b -Database 'PerformancePoint Service Application_10032db0fa0041df8f913f558a5dc0d4' | Detach-DbaDatabase -Force
@@ -106,6 +106,11 @@
 		
 		foreach ($db in $DatabaseCollection) {
 			$server = $db.Parent
+		
+			if ($db.IsSystemObject) {
+				Stop-Function -Message "$db is a system database and cannot be detached using this method" -Target $db -Continue
+			}
+			
 			Write-Message -Level Verbose -Message "Checking replication status"
 			if ($db.ReplicationOptions -ne "None") {
 				Stop-Function -Message "Skipping $db  on $server because it is replicated" -Target $db -Continue
@@ -132,7 +137,9 @@
 			if ($force) {
 				
 				if ($sessions) {
-					$null = $sessions | Stop-DbaProcess -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+					If ($Pscmdlet.ShouldProcess($server, "Killing $($sessions.count) sessions which are connected to $db")) {
+						$null = $sessions | Stop-DbaProcess -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+					}
 				}
 				
 				if ($db.IsMirroringEnabled) {
@@ -167,9 +174,12 @@
 					}
 				}
 				
-				# try again w/e
+				$sessions = Get-DbaProcess -SqlInstance $db.Parent -Database $db.Name
+				
 				if ($sessions) {
-					$null = $sessions | Stop-DbaProcess -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+					If ($Pscmdlet.ShouldProcess($server, "Killing $($sessions.count) sessions which are still connected to $db")) {
+						$null = $sessions | Stop-DbaProcess -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+					}
 				}
 			}
 			
