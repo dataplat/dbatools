@@ -59,7 +59,7 @@
 			.EXAMPLE
 			Get-DbaDatabase -SqlInstance sql2016b -Database WSS_Logging | Detach-DbaDatabase -Force -WhatIf
 
-			Shows what would happen if the command were to execute 
+			Shows what would happen if the command were to execute (without actually executing the detach/break/remove commands) 
 	
 	#>
 	[CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
