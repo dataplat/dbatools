@@ -336,13 +336,13 @@ function Copy-DbaDatabase {
 				[string]$dbName
 			)
 
-			$smoDb = $server.databases[$dbName]
-			if ($smoDb.IsMirroringEnabled) {
+			$currentdb = $server.databases[$dbName]
+			if ($currentdb.IsMirroringEnabled) {
 				try {
 					Write-Message -Level Warning -Message "Breaking mirror for $dbName"
-					$smoDb.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
-					$smoDb.Alter()
-					$smoDb.Refresh()
+					$currentdb.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
+					$currentdb.Alter()
+					$currentdb.Refresh()
 					Write-Message -Level Warning -Message "Could not break mirror for $dbName. Skipping."
 				}
 				catch {
@@ -351,11 +351,11 @@ function Copy-DbaDatabase {
 				}
 			}
 
-			if ($smoDb.AvailabilityGroupName.Length -gt 0) {
-				$agName = $smoDb.AvailabilityGroupName
+			if ($currentdb.AvailabilityGroupName.Length -gt 0) {
+				$agName = $currentdb.AvailabilityGroupName
 				Write-Message -Level Verbose -Message "Attempting remove from Availability Group $agName"
 				try {
-					$server.AvailabilityGroups[$smoDb.AvailabilityGroupName].AvailabilityDatabases[$dbName].Drop()
+					$server.AvailabilityGroups[$currentdb.AvailabilityGroupName].AvailabilityDatabases[$dbName].Drop()
 					Write-Message -Level Verbose -Message "Successfully removed $dbName from  detach from $agName on $($server.Name)"
 				}
 				catch {
@@ -366,14 +366,14 @@ function Copy-DbaDatabase {
 
 			Write-Message -Level Verbose -Message "Attempting detach from $dbName from $source"
 
-			####### Using Sql to detach does not modify the $smoDb collection #######
+			####### Using Sql to detach does not modify the $currentdb collection #######
 
 			$server.KillAllProcesses($dbName)
 
 			try {
 				$sql = "ALTER DATABASE [$dbName] SET SINGLE_USER WITH ROLLBACK IMMEDIATE"
 				Write-Message -Level Verbose -Message $sql
-				$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+				$null = $server.Query($sql)
 				Write-Message -Level Verbose -Message "Successfully set $dbName to single-user from $source"
 			}
 			catch {
@@ -383,13 +383,14 @@ function Copy-DbaDatabase {
 			try {
 				$sql = "EXEC master.dbo.sp_detach_db N'$dbName'"
 				Write-Message -Level Verbose -Message $sql
-				$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+				$null = $server.Query($sql)
 				Write-Message -Level Verbose -Message "Successfully detached $dbName from $source"
+				return $true
 			}
 			catch {
 				Stop-Function -Message "Issue detaching database" -Target $dbName -ErrorRecord $_
+				return $false
 			}
-
 		}
 
 		function Mount-SqlDatabase {
@@ -453,7 +454,7 @@ function Copy-DbaDatabase {
 						}
 					}
 					else {
-						Write-Host "Copying $fn for $dbName"
+						Write-Message -Level Verbose "Copying $from for $dbName"
 						Start-BitsTransfer -Source $from -Destination $remotefilename
 					}
 					$fn = Split-Path $($dbdestination[$file].physical) -leaf
@@ -511,11 +512,10 @@ function Copy-DbaDatabase {
 
 			foreach ($file in $fileStructure.databases[$dbName].destination.values) { $null = $destfilestructure.add($file.physical) }
 			foreach ($file in $fileStructure.databases[$dbName].source.values) { $null = $sourceFileStructure.add($file.physical) }
-
+			
 			$detachresult = Dismount-SqlDatabase $sourceServer $dbName
 
 			if ($detachresult) {
-
 				$transfer = Start-SqlFileTransfer $fileStructure $dbName
 				if ($transfer -eq $false) { Write-Warning "Could not copy files."; return "Could not copy files." }
 				$attachresult = Mount-SqlDatabase $destServer $dbName $destfilestructure $dbOwner
@@ -727,17 +727,17 @@ function Copy-DbaDatabase {
 		Write-Message -Level Verbose -Message "Building database list"
 		$databaseList = New-Object System.Collections.ArrayList
 		$SupportDBs = "ReportServer", "ReportServerTempDB", "distribution"
-		foreach ($smoDb in $sourceServer.Databases) {
-			$dbName = $smoDb.Name
-			$dbOwner = $smoDb.Owner
+		foreach ($currentdb in $sourceServer.Databases) {
+			$dbName = $currentdb.Name
+			$dbOwner = $currentdb.Owner
 
-			if ($smoDb.Id -le 4) { continue }
+			if ($currentdb.Id -le 4) { continue }
 			if ($Database -and $Database -notcontains $dbName) { continue }
 			if ($IncludeSupportDBs -eq $false -and $SupportDBs -contains $dbName) { continue }
 			if ($IncludeSupportDBs -eq $true -and $SupportDBs -notcontains $dbName) {
 				if ($AllDatabases -eq $false -and $Database.length -eq 0) { continue }
 			}
-			$null = $databaseList.Add($smoDb)
+			$null = $databaseList.Add($currentdb)
 		}
 
 		Write-Message -Level Verbose -Message "Performing count"
@@ -772,10 +772,10 @@ function Copy-DbaDatabase {
 		$allDbElapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
 		if ($AllDatabases -or $ExcludeDatabase.length -gt 0 -or $IncludeSupportDbs -or $Database.length -gt 0) {
-			foreach ($smoDb in $databaseList) {
+			foreach ($currentdb in $databaseList) {
 				$dbElapsed = [System.Diagnostics.Stopwatch]::StartNew()
-				$dbName = $smoDb.Name
-				$dbOwner = $smoDb.Owner
+				$dbName = $currentdb.Name
+				$dbOwner = $currentdb.Owner
 
 			$copyDatabaseStatus = [pscustomobject]@{
 				SourceServer      = $sourceServer.Name
@@ -797,7 +797,7 @@ function Copy-DbaDatabase {
 				}
 
 				Write-Message -Level Verbose -Message "Checking for accessibility"
-				if ($smoDb.IsAccessible -eq $false) {
+				if ($currentdb.IsAccessible -eq $false) {
 					Write-Message -Level Warning -Message "Skipping $dbName. Database is inaccessible."
 
 					$copyDatabaseStatus.Status = "Skipped"
@@ -834,13 +834,13 @@ function Copy-DbaDatabase {
 				}
 
 				Write-Message -Level Verbose -Message "Checking Availability Group status"
-				if ($smoDb.AvailabilityGroupName.Length -gt 0 -and !$force -and $DetachAttach) {
-					$agName = $smoDb.AvailabilityGroupName
+				if ($currentdb.AvailabilityGroupName.Length -gt 0 -and !$force -and $DetachAttach) {
+					$agName = $currentdb.AvailabilityGroupName
 					Write-Message -Level Warning -Message "Database is part of an Availability Group ($agName). Use -Force to drop from $agName and migrate. Alternatively, you can use the safer backup/restore method."
 					continue
 				}
 
-				$dbStatus = $smoDb.Status.ToString()
+				$dbStatus = $currentdb.Status.ToString()
 
 				if ($dbStatus.StartsWith("Normal") -eq $false) {
 					Write-Message -Level Warning -Message "$dbName is not in a Normal state. Skipping."
@@ -851,7 +851,7 @@ function Copy-DbaDatabase {
 					continue
 				}
 
-				if ($smoDb.ReplicationOptions -ne "None" -and $DetachAttach -eq $true) {
+				if ($currentdb.ReplicationOptions -ne "None" -and $DetachAttach -eq $true) {
 					Write-Message -Level Warning -Message "$dbName is part of replication. Skipping."
 
 					$copyDatabaseStatus.Status = "Skipped"
@@ -860,7 +860,7 @@ function Copy-DbaDatabase {
 					continue
 				}
 
-				if ($smoDb.IsMirroringEnabled -and !$force -and $DetachAttach) {
+				if ($currentdb.IsMirroringEnabled -and !$force -and $DetachAttach) {
 					Write-Message -Level Warning -Message "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method."
 
 					$copyDatabaseStatus.Status = "Skipped"
@@ -981,7 +981,7 @@ function Copy-DbaDatabase {
 										Write-Message -Level Verbose -Message "Trying alternate SQL method to delete $backupFile"
 										$sql = "EXEC master.sys.xp_delete_file 0, '$backupFile'"
 										Write-Message -Level Debug -Message $sql
-										$null = $sourceServer.ConnectionContext.ExecuteNonQuery($sql)
+										$null = $sourceServer.Query($sql)
 									}
 									catch {
 										Write-Message -Level Warning -Message "Cannot delete backup file $backupFile"
@@ -1056,7 +1056,7 @@ function Copy-DbaDatabase {
 								$copyDatabaseStatus
 							}
 						}
-
+						
 						if ($migrationResult -eq $true) {
 							Write-Message -Level Verbose -Message "Successfully attached $dbName to $destination"
 							$copyDatabaseStatus.Status = "Successful"
