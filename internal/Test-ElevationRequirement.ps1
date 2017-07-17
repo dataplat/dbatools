@@ -25,6 +25,10 @@ function Test-ElevationRequirement {
 		
 		.PARAMETER NoStop
 			Does not call stop-function when the test fails, rather only returns $false instead
+	
+		.PARAMETER Silent
+		    Replaces user friendly yellow warnings with bloody red exceptions of doom!
+		    Use this if you want the function to throw terminating errors you want to catch.
 		
 		.EXAMPLE
 			$null = Test-ElevationRequirement -ComputerName $instance -Continue
@@ -61,7 +65,10 @@ function Test-ElevationRequirement {
 		
 		[Parameter(ParameterSetName = 'NoStop')]
 		[switch]
-		$NoStop
+		$NoStop,
+		
+		[bool]
+		$Silent = $Silent
 	)
 	
 	$isElevated = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
