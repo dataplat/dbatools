@@ -381,7 +381,8 @@ function Get-DbaBackupHistory {
 								  backupset.checkpoint_lsn,
 								  backupset.last_lsn,
 								  backupset.software_major_version,
-								  mediaset.software_name AS Software
+								  mediaset.software_name AS Software,
+								  backupset.is_copy_only
 								FROM msdb..backupmediafamily AS mediafamily
 								JOIN msdb..backupmediaset AS mediaset
 								  ON mediafamily.media_set_id = mediaset.media_set_id
@@ -446,7 +447,8 @@ function Get-DbaBackupHistory {
 							  backupset.checkpoint_lsn as 'CheckpointLsn',
 							  backupset.last_lsn as 'Lastlsn',
 							  backupset.software_major_version,
-							  mediaset.software_name AS Software"
+							  mediaset.software_name AS Software,
+							backupset.is_copy_only"
 				}
 				
 				$from = " FROM msdb..backupmediafamily mediafamily
@@ -536,6 +538,7 @@ function Get-DbaBackupHistory {
 					$historyObject.CheckpointLsn = $group.Group[0].checkpoint_lsn
 					$historyObject.LastLsn = $group.Group[0].Last_Lsn
 					$historyObject.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
+					$historyObject.IsCopyOnly = if($group.Group[0].is_copy_only -eq 1){$true}else{$false}
 					$groupResults += $historyObject
 				}
 				$groupResults | Sort-Object -Property End -Descending
