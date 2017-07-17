@@ -179,16 +179,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 							}
 						}
 
-						$tables = $db.Tables | Where-Object { $_.Name -eq $fqtn.Table }
-
-						if ($fqtn.Schema) {
-							$tables = $tables | Where-Object { $_.Schema -eq $fqtn.Schema }
-						}
-
-						if ($fqtn.Database) {
-							$tables = $tables | Where-Object { $_.Parent.Name -eq $fqtn.Database }
-						}
-
+						$tables = $db.tables | Where-Object {$fqtn.Table -eq $_.name -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null)}
 						if ($tables.Count -eq 0) {
 							$outSchema = ""
 							if ($fqtn.Schema) {
