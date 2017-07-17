@@ -6,22 +6,22 @@ if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\"))
 }
 
 
-Add-Type -Path " $PSScriptRoot\bin\Microsoft.SqlServer.Smo.dll"
-Add-Type -Path " $PSScriptRoot\bin\Microsoft.SqlServer.Dmf.dll"
-Add-Type -Path " $PSScriptRoot\bin\Microsoft.SqlServer.SqlWmiManagement.dll"
-Add-Type -Path " $PSScriptRoot\bin\Microsoft.SqlServer.ConnectionInfo.dll"
-Add-Type -Path " $PSScriptRoot\bin\Microsoft.SqlServer.SmoExtended.dll"
-Add-Type -Path " $PSScriptRoot\bin\Microsoft.SqlServer.Management.RegisteredServers.dll"
-Add-Type -Path " $PSScriptRoot\bin\Microsoft.SqlServer.Management.Sdk.Sfc.dll"
-Add-Type -Path " $PSScriptRoot\bin\Microsoft.SqlServer.SqlEnum.dll"
-Add-Type -Path " $PSScriptRoot\bin\Microsoft.SqlServer.RegSvrEnum.dll"
-Add-Type -Path " $PSScriptRoot\bin\Microsoft.SqlServer.WmiEnum.dll"
-Add-Type -Path " $PSScriptRoot\bin\Microsoft.SqlServer.ServiceBrokerEnum.dll"
-Add-Type -Path " $PSScriptRoot\bin\Microsoft.SqlServer.Management.Collector.dll"
-Add-Type -Path " $PSScriptRoot\bin\Microsoft.SqlServer.Management.CollectorEnum.dll"
-Add-Type -Path " $PSScriptRoot\bin\Microsoft.SqlServer.Management.Utility.dll"
-Add-Type -Path " $PSScriptRoot\bin\Microsoft.SqlServer.Management.UtilityEnum.dll"
-Add-Type -Path " $PSScriptRoot\bin\Microsoft.SqlServer.Management.HadrDMF.dll"
+Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.Smo.dll"
+Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.Dmf.dll"
+Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.SqlWmiManagement.dll"
+Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.ConnectionInfo.dll"
+Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.SmoExtended.dll"
+Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.Management.RegisteredServers.dll"
+Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.Management.Sdk.Sfc.dll"
+Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.SqlEnum.dll"
+Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.RegSvrEnum.dll"
+Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.WmiEnum.dll"
+Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.ServiceBrokerEnum.dll"
+Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.Management.Collector.dll"
+Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.Management.CollectorEnum.dll"
+Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.Management.Utility.dll"
+Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.Management.UtilityEnum.dll"
+Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.Management.HadrDMF.dll"
 
 
 <# 
