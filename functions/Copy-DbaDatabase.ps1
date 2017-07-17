@@ -180,8 +180,38 @@ function Copy-DbaDatabase {
 		[switch]$Force,
 		[switch]$Silent
 	)
-
+	
 	begin {
+		
+		function Join-AdminUnc {
+		<#
+		.SYNOPSIS
+		Internal function. Parses a path to make it an admin UNC.
+		#>
+			[CmdletBinding()]
+			param (
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[string]$servername,
+				[Parameter(Mandatory = $true)]
+				[ValidateNotNullOrEmpty()]
+				[string]$filepath
+				
+			)
+			
+			if ($script:sameserver) { return $filepath }
+			if (!$filepath) { return }
+			if ($filepath.StartsWith("\\")) { return $filepath }
+			
+			$servername = $servername.Split("\")[0]
+			
+			if ($filepath.length -gt 0 -and $filepath -ne [System.DbNull]::Value) {
+				$newpath = Join-Path "\\$servername\" $filepath.replace(':', '$')
+				return $newpath
+			}
+			else { return }
+		}
+		
 		# Global Database Function
 		function Get-SqlFileStructure {
 			$dbcollection = @{ };
@@ -562,12 +592,24 @@ function Copy-DbaDatabase {
 			return
 		}
 
-		Write-Message -Level Verbose -Message "Attempting to connect to Sql Servers.."
+		Write-Message -Level Verbose -Message "Attempting to connect to Sql Servers"
 		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-
+		
+		if ($sourceServer.ComputerNamePhysicalNetBIOS -eq $destServer.ComputerNamePhysicalNetBIOS) {
+			$script:sameserver = $true
+		}
+		else {
+			$script:sameserver = $false
+		}
+		
+		if ($script:sameserver -and $DetachAttach) {
+			Test-RunAsAdmin
+		}
+		
 		$destVersionLower = $destServer.VersionMajor -lt $sourceServer.VersionMajor
 		$destVersionMinorLow = ($destServer.VersionMajor -eq 10 -and $sourceServer.VersionMajor -eq 10) -and ($destServer.VersionMinor -lt $sourceServer.VersionMinor)
+		
 		if ($destVersionLower -or $destVersionMinorLow) {
 			Stop-Function -Message "Error: copy database cannot be made from newer $($sourceServer.VersionString) to older $($destServer.VersionString) SQL Server version"
 			return
@@ -576,7 +618,7 @@ function Copy-DbaDatabase {
 		if ($DetachAttach) {
 			if ($sourceServer.NetName -eq $env:COMPUTERNAME -or $destServer.NetName -eq $env:COMPUTERNAME) {
 				if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-					Write-Message -Level Warning -Message "When running DetachAttach locally on the console, it's likely you'll need to Run As Administrator. Trying anyway."
+					Write-Message -Level Warning -Message "When running DetachAttach locally on the console, it's possible you'll need to Run As Administrator. Trying anyway."
 				}
 			}
 		}
@@ -622,24 +664,26 @@ function Copy-DbaDatabase {
 			Stop-Function -Message "Source and Destination Sql Servers instances are the same. Quitting."
 			return
 		}
-
+		
 		if ($NetworkShare.Length -gt 0) {
 			Write-Message -Level Verbose -Message "Checking to ensure network path is valid"
-			if (!($NetworkShare.StartsWith("\\"))) {
+			if (!($NetworkShare.StartsWith("\\")) -and !$sameserver) {
 				Stop-Function -Message "Network share must be a valid UNC path (\\server\share)."
 				return
 			}
-
-			try {
-				if (Test-Path $NetworkShare -ErrorAction Stop) {
-					Write-Message -Level Verbose -Message "$NetworkShare share can be accessed."
+			
+			if (!$sameserver) {
+				try {
+					if ((Test-Path $NetworkShare -ErrorAction Stop)) {
+						Write-Message -Level Verbose -Message "$NetworkShare share can be accessed."
+					}
+				}
+				catch {
+					Write-Message -Level Warning -Message "$NetworkShare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
 				}
 			}
-			catch {
-				Write-Message -Level Warning -Message "$NetworkShare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
-			}
 		}
-
+		
 		Write-Message -Level Verbose -Message "Checking to ensure server is not SQL Server 7 or below"
 		if ($sourceServer.VersionMajor -lt 8 -and $destServer.VersionMajor -lt 8) {
 			Stop-Function -Message "This script can only be run on Sql Server 2000 and above. Quitting."
@@ -648,13 +692,13 @@ function Copy-DbaDatabase {
 
 		Write-Message -Level Verbose -Message "Checking to ensure detach/attach is not attempted on SQL Server 2000"
 		if ($destServer.VersionMajor -lt 9 -and $DetachAttach) {
-			Stop-Function -Message "Detach/Attach not supported when destination Sql Server is version 2000. Quitting."
+			Stop-Function -Message "Detach/Attach not supported when destination Sql Server is version 2000. Quitting." -Target $destServer
 			return
 		}
 
 		Write-Message -Level Verbose -Message "Checking to ensure SQL Server 2000 migration isn't directly attempted to SQL Server 2012"
 		if ($sourceServer.VersionMajor -lt 9 -and $destServer.VersionMajor -gt 10) {
-			Stop-Function -Message "Sql Server 2000 databases cannot be migrated to Sql Server versions 2012 and above. Quitting."
+			Stop-Function -Message "Sql Server 2000 databases cannot be migrated to Sql Server versions 2012 and above. Quitting." -Target $destServer
 			return
 		}
 
@@ -677,10 +721,12 @@ function Copy-DbaDatabase {
 		}
 
 		Write-Message -Level Verbose -Message "Ensuring destination server version is equal to or greater than source"
-		if ([version]$sourceServer.ResourceVersionString -gt [version]$destServer.ResourceVersionString) {
-			Stop-Function -Message "Source Sql Server version build must be <= destination Sql Server for database migration."
+		if ($sourceServer.VersionMajor -ge $destServer.VersionMajor) {
+			if ($sourceServer.VersionMinor -gt $destServer.VersionMinor) {
+				Stop-Function -Message "Source Sql Server version build must be <= destination Sql Server for database migration."
+			}
 		}
-
+		
 		# SMO's filestreamlevel is sometimes null
 		$sql = "select coalesce(SERVERPROPERTY('FilestreamConfiguredLevel'),0) as fs"
 		$sourceFilestream = $sourceServer.ConnectionContext.ExecuteScalar($sql)
