@@ -105,22 +105,15 @@ function Get-DbaDatabase {
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[Alias("SystemDbOnly")]
-		[parameter()]
 		[switch]$NoUserDb,
 		[Alias("UserDbOnly")]
-		[parameter()]
 		[switch]$NoSystemDb,
-		[parameter()]
 		[string[]]$Owner,
-		[parameter()]
 		[switch]$Encrypted,
-		[parameter()]
 		[ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
 		[string[]]$Status,
-		[parameter()]
 		[ValidateSet('ReadOnly', 'ReadWrite')]
 		[string]$Access,
-		[parameter()]
 		[ValidateSet('Full', 'Simple', 'BulkLogged')]
 		[string]$RecoveryModel,
 		[switch]$NoFullBackup,
