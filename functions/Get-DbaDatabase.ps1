@@ -197,10 +197,10 @@
                     ($_.Name -in $Database -or !$Database) -and 
                     ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and 
                     ($_.Owner -in $Owner -or !$Owner) -and 
-                    $_.ReadOnly -in $readonly -and 
+                    $_.ReadOnly -in $Readonly -and 
                     $_.IsSystemObject -in $DBType -and 
-                    $_.status -in $Status -and 
-                    $_.recoveryModel -in $recoverymodel -and 
+                    $_.Status -in $Status -and 
+                    $_.RecoveryModel -in $RecoveryModel -and 
                     $_.EncryptionEnabled -in $Encrypt
                 }
 
