@@ -57,8 +57,7 @@
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
 		[parameter(Mandatory)]
-		[string]$Database,
-		[parameter(Mandatory)]
+		[string[]]$Database,
 		[System.Collections.Specialized.StringCollection]$FileStructure,
 		[string]$DatabaseOwner,
 		[ValidateSet('None','RebuildLog','EnableBroker','NewBroker', 'ErrorBrokerConversations')]
@@ -85,12 +84,48 @@
 				}
 			}
 			
-			If ($Pscmdlet.ShouldProcess($server, "Attaching $Database with $DatabaseOwner as database owner and $AttachOption as attachoption")) {
-				try {
-					$server.AttachDatabase($Database, $FileStructure, $DatabaseOwner, [Microsoft.SqlServer.Management.Smo.AttachOptions]::$AttachOption)
+			foreach ($db in $database) {
+				if (-Not (Test-Bound -Parameter FileStructure)) {
+					#$backuphistory = Get-DbaBackupHistory -SqlInstance $server -LastFull -Database $db
+					$backuphistory = Get-DbaBackupHistory -SqlInstance sql2016 -Database DBWithCDC -Type Full | Sort-Object End -Descending | Select-Object -First 1
+
+					if (-not $backuphistory) {
+						$message = "Could not enumerate backup history to automatically build FileStructure. Rerun the command and provide the filestructure parameter"
+						Stop-Function -Message $message -Target $db -Continue
+					}
+					
+					$backupfile = $backuphistory.Path[0]
+					$filepaths = (Read-DbaBackupHeader -SqlInstance $server -FileList -Path $backupfile).PhysicalName
+					
+					$FileStructure = New-Object System.Collections.Specialized.StringCollection
+					foreach ($file in $filepaths) {
+						$exists = Test-DbaSqlpath -SqlInstance $server -Path $file
+						if (-not $exists) {
+							$message = "Could not find the files to build the FileStructure. Rerun the command and provide the FileStructure parameter"
+							Stop-Function -Message $message -Target $file -Continue
+						}
+						
+						$null = $FileStructure.Add($file)
+					}
 				}
-				catch {
-					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server
+				
+				If ($Pscmdlet.ShouldProcess($server, "Attaching $Database with $DatabaseOwner as database owner and $AttachOption as attachoption")) {
+					try {
+						$server.AttachDatabase($db, $FileStructure, $DatabaseOwner, [Microsoft.SqlServer.Management.Smo.AttachOptions]::$AttachOption)
+						
+						[pscustomobject]@{
+							ComputerName = $server.NetName
+							InstanceName = $server.ServiceName
+							SqlInstance = $server.DomainInstanceName
+							Database = $db
+							AttachStatus = "Success"
+							AttachOption = $AttachOption
+							FileStructure = $FileStructure
+						}
+					}
+					catch {
+						Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server
+					}
 				}
 			}
 		}

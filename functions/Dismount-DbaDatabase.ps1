@@ -132,7 +132,7 @@
 			if ($force) {
 				
 				if ($sessions) {
-					$sessions | Stop-DbaProcess
+					$null = $sessions | Stop-DbaProcess -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 				}
 				
 				if ($db.IsMirroringEnabled) {
@@ -169,7 +169,7 @@
 				
 				# try again w/e
 				if ($sessions) {
-					$sessions | Stop-DbaProcess
+					$null = $sessions | Stop-DbaProcess -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 				}
 			}
 			
