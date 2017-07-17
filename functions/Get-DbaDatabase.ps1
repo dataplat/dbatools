@@ -193,7 +193,7 @@
 			$Encrypt = switch ( Test-Bound $Encrypted) { $true { @($true) } default { @($true,$false)} }
 
 			$inputobject = $server.Databases |
-                Where-Object { ($_.Name -in $Database -or !$Database) -and ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and ($_.Owner -in $Owner -or !$Owner) -and $_.IsSystemObject -in $DBType -and $_.status -in $Status -and $_.recoveryModel -in $recoverymodel -and $_.EncryptionEnabled -in $Encrypt }
+                Where-Object { ($_.Name -in $Database -or !$Database) -and ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and ($_.Owner -in $Owner -or !$Owner) -and $_.ReadOnly -in $readonly -and $_.IsSystemObject -in $DBType -and $_.status -in $Status -and $_.recoveryModel -in $recoverymodel -and $_.EncryptionEnabled -in $Encrypt }
 
 			if ($NoFullBackup -or $NoFullBackupSince) {
 				$dabs = (Get-DbaBackupHistory -SqlInstance $server -LastFull -IgnoreCopyOnly)
