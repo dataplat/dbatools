@@ -118,5 +118,10 @@ namespace Sqlcollaborative.Dbatools.Database
         /// The primary version number of the Sql Server
         /// </summary>
         public int SoftwareVersionMajor;
+        
+        /// <summary>
+        /// Was the backup performed with the CopyOnlyOption
+        /// </summary>
+        public Boolean IsCopyOnly;
     }
 }

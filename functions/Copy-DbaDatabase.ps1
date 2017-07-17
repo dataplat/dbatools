@@ -180,8 +180,13 @@ function Copy-DbaDatabase {
 		[switch]$Force,
 		[switch]$Silent
 	)
-	
 	begin {
+		if ($NoCopyOnly -eq $True){
+			$CopyOnly = $False
+		}
+		else {
+			$CopyOnly = $True
+		}
 		
 		function Join-AdminUnc {
 		<#
@@ -974,7 +979,7 @@ function Copy-DbaDatabase {
 						$fileName = "$dbName-$timeNow.bak"
 						$backupFile = Join-Path $NetworkShare $fileName
 
-						$backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -backupDirectory (Split-Path -Path $backupFile -parent) -FileCount $numberfiles -NoCopyOnly:$NoCopyOnly
+						$backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -backupDirectory (Split-Path -Path $backupFile -parent) -FileCount $numberfiles -CopyOnly:$CopyOnly
 						$backupResult = $BackupTmpResult.BackupComplete
 						if ($backupResult -eq $false) {
 							$serviceAccount = $sourceServer.ServiceAccount
