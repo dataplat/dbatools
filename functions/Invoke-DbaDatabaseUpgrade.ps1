@@ -20,9 +20,9 @@
 
 	.PARAMETER AllUserDatabases
 	Run command against all user databases
-
-	.PARAMETER NoCompatibilityUpgrade
-	Skip compatibility upgrade
+	
+	.PARAMETER Force
+	Don't skip over databases that are already at the same level the instance is
 
 	.PARAMETER NoCheckDb
 	Skip checkdb
@@ -30,14 +30,14 @@
 	.PARAMETER NoUpdateUsage
 	Skip usage update
 
-	.PARAMETER NoUpdatestats
+	.PARAMETER NoUpdateStats
 	Skip stats update
 
 	.PARAMETER NoRefreshView
 	Skip view update
 	
 	.PARAMETER DatabaseCollection
-	A collection of databases (such as returned by Get-DbaDatabase), to be removed.
+	A collection of databases (such as returned by Get-DbaDatabase)
 	
 	.PARAMETER WhatIf
 	Shows what would happen if the command were to run
@@ -72,13 +72,18 @@
 		-- Puts compatibility of database to level of SQL Instance
 		-- Runs CHECKDB DATA_PURITY
 		-- Runs DBCC UPDATESUSAGE
-		-- Updates all users staistics
+		-- Updates all users statistics
 		-- Runs sp_refreshview against every view in the database
 
 	.EXAMPLE
-		Invoke-DbaDatabaseUpgrade -SqlInstance PRD-SQL-INT01 -Database Test -NoCompatibilityUpgrade -NoRefreshView
+		Invoke-DbaDatabaseUpgrade -SqlInstance PRD-SQL-INT01 -Database Test -NoRefreshView
 		
-		Runs the upgrade command skipping the compatibility update and running sp_refreshview on all views in the database
+		Runs the upgrade command skipping the sp_refreshview update on all views
+	
+	.EXAMPLE
+		Invoke-DbaDatabaseUpgrade -SqlInstance PRD-SQL-INT01 -Database Test -Force
+		
+		If database Test is already at the correct compatibility, runs every necessary step
 	
 	.EXAMPLE
 		Get-DbaDatabase -SqlInstance sql2016 | Out-GridView -Passthru | Invoke-DbaDatabaseUpgrade
@@ -93,12 +98,12 @@
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[switch]$NoCompatibilityUpgrade,
 		[switch]$NoCheckDb,
 		[switch]$NoUpdateUsage,
-		[switch]$NoUpdatestats,
+		[switch]$NoUpdateStats,
 		[switch]$NoRefreshView,
 		[switch]$AllUserDatabases,
+		[switch]$Force,
 		[parameter(ValueFromPipeline)]
 		[Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
 		[switch]$Silent
@@ -123,10 +128,10 @@
 			catch {
 				Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
 			}
-			
-			$DatabaseCollection += $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
+			$DatabaseCollection += $server.Databases
 		}
 		
+		$DatabaseCollection =  $DatabaseCollection | Where-Object { $_.IsSystemObject -eq $false }
 		if ($Database) {
 			$DatabaseCollection = $DatabaseCollection | Where-Object { $_.Name -contains $Database }
 		}
@@ -142,9 +147,7 @@
 			
 			$ogcompat = $db.CompatibilityLevel
 			$dbname = $db.Name
-			if (-not $NoCompatibilityUpgrade) {
-				Write-Message -Level Verbose -Message "Updating $db compatibility to SQL Instance level"
-				$dbversion = switch ($db.CompatibilityLevel) {
+			$dbversion = switch ($db.CompatibilityLevel) {
 					"Version100"  { 10 } # SQL Server 2008
 					"Version110"  { 11 } # SQL Server 2012
 					"Version120"  { 12 } # SQL Server 2014
@@ -152,28 +155,30 @@
 					"Version140"  { 14 } # SQL Server 2017
 					default { 9 } # SQL Server 2005
 				}
-				
-				if ($dbversion -lt $ServerVersion) {
-					If ($Pscmdlet.ShouldProcess($server, "Updating $db version on $server from $dbversion to $ServerVersion")) {
-						$Comp = $ServerVersion * 10
-						$tsqlComp = "ALTER DATABASE $db SET COMPATIBILITY_LEVEL = $Comp"
-						try {
-							$db.ExecuteNonQuery($tsqlComp)
-							$comResult = $Comp
-						}
-						catch {
-							Write-Message -Level Warning -Message "Failed run Compatibility Upgrade" -ErrorRecord $_ -Target $instance
-							$comResult = "Fail"
-						}
-					}
+			if (-not $Force) {
+				# skip over databases at the correct level, unless -Force
+				if ($dbversion -ge $ServerVersion) {
+					Write-Message -Level VeryVerbose -Message "Skipping $db because compatibility is at the correct level. Use -Force if you want to run all the additional steps"
+					continue
 				}
-				else {
-					$comResult = "No change"
+			}
+			Write-Message -Level Verbose -Message "Updating $db compatibility to SQL Instance level"
+			if ($dbversion -lt $ServerVersion) {
+				If ($Pscmdlet.ShouldProcess($server, "Updating $db version on $server from $dbversion to $ServerVersion")) {
+					$Comp = $ServerVersion * 10
+					$tsqlComp = "ALTER DATABASE $db SET COMPATIBILITY_LEVEL = $Comp"
+					try {
+						$db.ExecuteNonQuery($tsqlComp)
+						$comResult = $Comp
+					}
+					catch {
+						Write-Message -Level Warning -Message "Failed run Compatibility Upgrade" -ErrorRecord $_ -Target $instance
+						$comResult = "Fail"
+					}
 				}
 			}
 			else {
-				Write-Message -Level Verbose -Message "Ignoring Compatibility settings"
-				$comResult = "Skipped"
+				$comResult = "No change"
 			}
 			
 			if (!($NoCheckDb)) {
@@ -230,7 +235,6 @@
 			}
 			
 			if (!($NoRefreshView)) {
-				Write-Message -Level Verbose -Message "Refreshing all $db views"
 				$dbViews = $db.Views | Where-Object IsSystemObject -eq $false
 				$RefreshViewResult = "Success"
 				foreach ($dbview in $dbviews) {
