@@ -225,9 +225,10 @@ function Copy-DbaDatabase {
 		[switch]
 		$Silent
 	)
-	
 	begin {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDatabase
+
+		$CopyOnly = -not $NoCopyOnly
 		function Join-AdminUnc {
 		<#
 		.SYNOPSIS
@@ -545,7 +546,7 @@ function Copy-DbaDatabase {
 						}
 					}
 					else {
-						Write-Message -Level Verbose "Copying $from for $dbName"
+						Write-Message -Level Verbose -Message "Copying $from for $dbName"
 						Start-BitsTransfer -Source $from -Destination $remotefilename
 					}
 					$fn = Split-Path $($dbdestination[$file].physical) -leaf
@@ -1041,8 +1042,7 @@ function Copy-DbaDatabase {
 						
 						$fileName = "$dbName-$timeNow.bak"
 						$backupFile = Join-Path $NetworkShare $fileName
-						
-						$backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -backupDirectory (Split-Path -Path $backupFile -parent) -FileCount $numberfiles -NoCopyOnly:$NoCopyOnly
+						$backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceServer -Database $dbName -backupDirectory (Split-Path -Path $backupFile -parent) -FileCount $numberfiles -CopyOnly:$CopyOnly
 						$backupResult = $BackupTmpResult.BackupComplete
 						if ($backupResult -eq $false) {
 							$serviceAccount = $sourceServer.ServiceAccount

@@ -9,6 +9,8 @@ function Get-DbaBackupHistory {
 		Returns backup history details for some or all databases on a SQL Server.
 		
 		You can even get detailed information (including file path) for latest full, differential and log files.
+
+		Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present
 		
 		Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
 	
@@ -25,8 +27,8 @@ function Get-DbaBackupHistory {
 	.PARAMETER ExcludeDatabase
 		The database(s) to not process.
 	
-	.PARAMETER IgnoreCopyOnly
-		If set, Get-DbaBackupHistory will ignore CopyOnly backups
+	.PARAMETER IncludeCopyOnly
+		By default Get-DbaBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them
 	
 	.PARAMETER Force
 		Returns a boatload of information, the way SQL Server returns it
@@ -151,7 +153,7 @@ function Get-DbaBackupHistory {
 		$ExcludeDatabase,
 		
 		[switch]
-		$IgnoreCopyOnly,
+		$IncludeCopyOnly,
 		
 		[Parameter(ParameterSetName = "NoLast")]
 		[switch]
@@ -198,6 +200,11 @@ function Get-DbaBackupHistory {
 		Write-Message -Level System -Message "Active Parameterset: $($PSCmdlet.ParameterSetName)"
 		Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 		
+		$IgnoreCopyOnly = $true
+		If ($IncludeCopyOnly -eq $True) {
+			$IgnoreCopyOnly = $false
+		}
+
 		$DeviceTypeMapping = @{
 			'Disk' = 2
 			'Permanent Disk Device' = 102
@@ -275,10 +282,9 @@ function Get-DbaBackupHistory {
 					$allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType
 					$DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType
 					if ($DiffDb.LastLsn -gt $Fulldb.LastLsn -and  $DiffDb.DatabaseBackupLSN -eq $Fulldb.CheckPointLSN ) {
+						Write-Message -Level Verbose -Message "Valid Differential backup "
 						$Allbackups += $DiffDB
-
 						$TLogStartLSN = ($diffdb.FirstLsn -as [bigint])
-						$Allbackups += $DiffDB
 					}
 					else {
 						Write-Message -Level Verbose -Message "No Diff found"
@@ -382,7 +388,8 @@ function Get-DbaBackupHistory {
 								  backupset.checkpoint_lsn,
 								  backupset.last_lsn,
 								  backupset.software_major_version,
-								  mediaset.software_name AS Software
+								  mediaset.software_name AS Software,
+								  backupset.is_copy_only
 								FROM msdb..backupmediafamily AS mediafamily
 								JOIN msdb..backupmediaset AS mediaset
 								  ON mediafamily.media_set_id = mediaset.media_set_id
@@ -447,7 +454,8 @@ function Get-DbaBackupHistory {
 							  backupset.checkpoint_lsn as 'CheckpointLsn',
 							  backupset.last_lsn as 'Lastlsn',
 							  backupset.software_major_version,
-							  mediaset.software_name AS Software"
+							  mediaset.software_name AS Software,
+							backupset.is_copy_only"
 				}
 				
 				$from = " FROM msdb..backupmediafamily mediafamily
@@ -537,6 +545,7 @@ function Get-DbaBackupHistory {
 					$historyObject.CheckpointLsn = $group.Group[0].checkpoint_lsn
 					$historyObject.LastLsn = $group.Group[0].Last_Lsn
 					$historyObject.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
+					$historyObject.IsCopyOnly = if($group.Group[0].is_copy_only -eq 1){$true}else{$false}
 					$groupResults += $historyObject
 				}
 				$groupResults | Sort-Object -Property End -Descending
