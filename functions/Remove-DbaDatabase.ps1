@@ -70,6 +70,7 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 		[object[]]$Database,
 		[Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "databases")]
 		[Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
+		$IncludeSystemDbs = $false,
 		[switch]$Silent
 	)
 
@@ -84,7 +85,21 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
-			$databasecollection += $server.Databases | Where-Object { $_.Name -in $Database }
+			$system_dbs = @( "master", "model", "tempdb", "resource", "msdb" )
+			if ($IncludeSystemDbs){
+				$databasecollection += $server.Databases | Where-Object { $_.Name -in $Database }
+			}
+			else {
+				$databasecollection += $server.Databases | Where-Object { $_.Name -in $Database -and $_.Name -notin $system_dbs}
+			}			
+		}
+
+		if (-not($IncludeSystemDbs)){
+			if ($DatabaseCollection.Count -gt 0){
+				foreach ($db in $system_dbs){
+					$DatabaseCollection.Remove($db)
+				}			
+			}
 		}
 
 		foreach ($db in $databasecollection) {
