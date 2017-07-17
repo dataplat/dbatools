@@ -1,7 +1,7 @@
 ﻿function Mount-DbaDatabase {
 	<#
 		.SYNOPSIS
-			Attach a SQL Server Database
+			Attach a SQL Server Database - aliased to Attach-DbaDatabase
 
 		.DESCRIPTION
 			This command will attach a SQL Server database
@@ -13,13 +13,13 @@
 			PSCredential object to connect as. If not specified, current Windows login will be used
 
 		.PARAMETER Database
-			A string value that specifies the name of the database to be attached
+			A string value that specifies the name of the database or databases to be attached
 
 		.PARAMETER FileStructure
-			A StringCollection object value that contains a list database files
+			A StringCollection object value that contains a list database files. If FileStructure is not specified, BackupHistory will be used to guess the structure.
 	
 		.PARAMETER DatabaseOwner
-			Returns list of SQL Server databases owned by the specified logins
+			Sets the database owner for the database. The sa account (or equialent) will be used if DatabaseOwner is not specified.
 
 		.PARAMETER AttachOption
 			A AttachOptions object value that contains the attachment options. Valid options include 
@@ -44,10 +44,24 @@
 			https://dbatools.io/Mount-DbaDatabase
 
 		.EXAMPLE
-			Mount-DbaDatabase -SqlInstance localhost
-
-			Incomplete example, hold on
+			$fileStructure = New-Object System.Collections.Specialized.StringCollection
+			$fileStructure.Add("E:\archive\example.mdf")
+			$filestructure.Add("E:\archive\example.ldf")
+			$filestructure.Add("E:\archive\example.ndf")
+			Mount-DbaDatabase -SqlInstance sql2016 -Database example -FileStructure $fileStructure
 	
+			Will mount a database named "example" to sql2016 with the files "E:\archive\example.mdf", "E:\archive\example.ldf", "E:\archive\example.ndf".
+			The database will be given the owner "sa" and the attach option is None (as opposed to rebuildlog, enable broker, new broker, or errorbrokerconversations
+	
+		.EXAMPLE
+			Mount-DbaDatabase -SqlInstance sql2016 -Database example
+	
+			Since the FileStructure was not provided, this command will attempt to determine it based on backup history. If found, a database named example will be attached to sql2016.
+	
+		.EXAMPLE
+			Mount-DbaDatabase -SqlInstance sql2016 -Database example -WhatIf
+			
+			Shows what would happen if the command were executed (without actually performing the command)
 	#>
 	[CmdletBinding(SupportsShouldProcess)]
 	Param (
