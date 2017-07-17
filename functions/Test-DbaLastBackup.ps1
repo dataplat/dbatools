@@ -69,7 +69,7 @@ Do not restore databases larger than MaxMB
 The name of the SQL Server credential on the destination instance that holds the key to the azure storage account
 fied, Copy Options are not allowed.
 
-.PARAMETER IgnoreCopyOnly
+.PARAMETER IncludeCopyOnly
 If set, copy only backups will not be counted as a last backup
 
 .PARAMETER IgnoreLogBackup
@@ -159,7 +159,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
         [switch]$CopyFile,
         [string]$CopyPath,
         [int]$MaxMB,
-        [switch]$IgnoreCopyOnly,
+        [switch]$IncludeCopyOnly,
         [switch]$IgnoreLogBackup,
 		[string]$AzureCredential,
         [switch]$Silent
@@ -276,7 +276,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                         Stop-Function -Message "$dbname does not exist on $source." -Continue
                     }
 
-                    $lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IgnoreCopyOnly:$ignorecopyonly -raw
+                    $lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly -raw
                     if ($CopyFile) {
                         try {
                             Write-Message -Level Verbose -Message "Gathering information for file copy"
@@ -285,14 +285,14 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                             if (Test-Bound "IgnoreLogBackup"){
                                 Write-Message -Level Verbose -Message "Skipping Log backups as requested"
                                 $lastbackup = @()
-                                $lastbackup += $full = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IgnoreCopyOnly:$ignorecopyonly -raw	-LastFull
-                                $diff = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IgnoreCopyOnly:$ignorecopyonly -raw -LastDiff
+                                $lastbackup += $full = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -raw	-LastFull
+                                $diff = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -raw -LastDiff
                                 if ($full.start -le $diff.start){
                                     $lastbackup += $diff
                                 }									
                             }
                             else {
-                                $lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IgnoreCopyOnly:$ignorecopyonly -raw
+                                $lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly -raw
                             }
                                 
                             foreach ($backup in $lastbackup) {
