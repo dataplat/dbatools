@@ -99,6 +99,36 @@ function Get-DbaDatabase {
 			'localhost','sql2016' | Get-DbaDatabase
 
 			Returns databases on multiple instances piped into the function
+
+		.EXAMPLE
+			Get-DbaDatabase -SqlInstance SQL1\SQLExpress -RecoveryModel full,Simple
+
+			Returns only the user databases in Full or Simple recovery model from SQL1\SQLExpress
+
+		.EXAMPLE
+			Get-DbaDatabase -SqlInstance SQL1\SQLExpress -Status Normal
+
+			Returns only the user databases with status 'normal' from sql instance SQL1\SQLExpress
+
+		.EXAMPLE
+			Get-DbaDatabase -SqlInstance SQL1\SQLExpress,SQL2 -ExcludeDatabase model,master
+
+			Returns all databases except master and model from sql instances SQL1\SQLExpress and SQL2
+
+		.EXAMPLE
+			Get-DbaDatabase -SqlInstance SQL1\SQLExpress,SQL2 -Encrypted
+
+			Returns only encrypted databases from sql instances SQL1\SQLExpress and SQL2
+
+		.EXAMPLE
+			Get-DbaDatabase -SqlInstance SQL1\SQLExpress,SQL2 -Access ReadOnly
+
+			Returns only read only databases from sql instances SQL1\SQLExpress and SQL2
+
+		.EXAMPLE
+			Get-DbaDatabase -SqlInstance SQL2,SQL3 -Database OneDB,OtherDB
+
+			Returns databases 'OneDb' and 'OtherDB' from sql instances SQL2 and SQL3 if the databases exist on those instances
 	#>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
     [OutputType([Microsoft.SqlServer.Management.Smo.Database[]])]
