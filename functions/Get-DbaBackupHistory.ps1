@@ -9,6 +9,8 @@ function Get-DbaBackupHistory {
 		Returns backup history details for some or all databases on a SQL Server.
 		
 		You can even get detailed information (including file path) for latest full, differential and log files.
+
+		Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present
 		
 		Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
 	
@@ -25,8 +27,8 @@ function Get-DbaBackupHistory {
 	.PARAMETER ExcludeDatabase
 		The database(s) to not process.
 	
-	.PARAMETER IgnoreCopyOnly
-		If set, Get-DbaBackupHistory will ignore CopyOnly backups
+	.PARAMETER IncludeCopyOnly
+		By default Get-DbaBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them
 	
 	.PARAMETER Force
 		Returns a boatload of information, the way SQL Server returns it
@@ -151,7 +153,7 @@ function Get-DbaBackupHistory {
 		$ExcludeDatabase,
 		
 		[switch]
-		$IgnoreCopyOnly,
+		$IncludeCopyOnly,
 		
 		[Parameter(ParameterSetName = "NoLast")]
 		[switch]
@@ -198,6 +200,11 @@ function Get-DbaBackupHistory {
 		Write-Message -Level System -Message "Active Parameterset: $($PSCmdlet.ParameterSetName)"
 		Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 		
+		$IgnoreCopyOnly = $true
+		If ($IncludeCopyOnly -eq $True) {
+			$IgnoreCopyOnly = $false
+		}
+
 		$DeviceTypeMapping = @{
 			'Disk' = 2
 			'Permanent Disk Device' = 102
