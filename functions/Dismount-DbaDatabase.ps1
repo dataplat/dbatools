@@ -4,7 +4,7 @@
 			Detach a SQL Server Database
 
 		.DESCRIPTION
-			This command will detach a SQL Server database
+			This command detaches one or more SQL Server databases. If necessary, -Force can be used to break mirrors and remove databases from avaialblity groups prior to detaching.
 
 		.PARAMETER SqlInstance
 			The target SQL Server
@@ -13,20 +13,13 @@
 			PSCredential object to connect as. If not specified, current Windows login will be used
 
 		.PARAMETER Database
-			A string value that specifies the name of the database to be detached
+			A string value that specifies the name of the database or databases to be detached
 
 		.PARAMETER FileStructure
-			A StringCollection object value that contains a list database files
-	
-		.PARAMETER DatabaseOwner
-			Returns list of SQL Server databases owned by the specified logins
+			A StringCollection object value that contains a list database files. If this value is not provided, a best effort will be made to figure out the filestructure based on previous backup history.
 	
 		.PARAMETER DatabaseCollection
-			A collection of databases (such as returned by Get-DbaDatabase), to be deetached.
-
-		.PARAMETER AttachOption
-			A AttachOptions object value that contains the attachment options. Valid options include 
-			None, RebuildLog, EnableBroker, NewBroker and ErrorBrokerConversations
+			A collection of databases (such as returned by Get-DbaDatabase), to be detached.
 		
 		.PARAMETER UpdateStatistics
 			A switch that specifies whether to update the statistics for the database before detaching it
@@ -55,17 +48,18 @@
 		.EXAMPLE
 			Detach-DbaDatabase -SqlInstance sql2016b -Database SharePoint_Config, WSS_Logging
 
-			Detach
+			Detaches SharePoint_Config and WSS_Logging from sql2016b
 
 		.EXAMPLE
 			Get-DbaDatabase -SqlInstance sql2016b -Database 'PerformancePoint Service Application_10032db0fa0041df8f913f558a5dc0d4' | Detach-DbaDatabase -Force
 
-			Incomplete example, hold on
+			Detaches 'PerformancePoint Service Application_10032db0fa0041df8f913f558a5dc0d4' from sql2016b. Since Force was specified, if the databse is part of mirror, the mirror will be broken prior to detaching.
+			If the database is part of an availability group, it will first be dropped prior to detachment
 	
 			.EXAMPLE
-			Get-DbaDatabase -SqlInstance sql2016b -Database 'PerformancePoint Service Application_10032db0fa0041df8f913f558a5dc0d4' | Detach-DbaDatabase -Force -WhatIf
+			Get-DbaDatabase -SqlInstance sql2016b -Database WSS_Logging | Detach-DbaDatabase -Force -WhatIf
 
-			Incomplete example, hold on
+			Shows what would happen if the command were to execute 
 	
 	#>
 	[CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
