@@ -135,6 +135,7 @@ function Get-DbaDatabase {
 
 		foreach ($instance in $SqlInstance) {
 			try {
+			    Write-Message -Level Verbose -Message "Connecting to $instance"
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
@@ -152,13 +153,10 @@ function Get-DbaDatabase {
             }
 
             $Readonly = switch ( $Access ) { 'Readonly' { @($true) } 'ReadWrite' { @($false) } default { @($true,$false)} }
-
 			$Encrypt = switch ( Test-Bound $Encrypted) { $true { @($true) } default { @($true,$false)} }
 
-			if ($Database) {
-				$inputobject = $server.Databases |
-                    Where-Object { ($_.Name -in $Database -or !$Database) -and ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and ($_.Owner -in $Owner -or !$Owner) -and $_.IsSystemObject -in $DBType -and $_.status -in $Status -and $_.recoveryModel -in $recoverymodel -and $_.EncryptionEnabled -in $Encrypt }
-			}
+			$inputobject = $server.Databases |
+                Where-Object { ($_.Name -in $Database -or !$Database) -and ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and ($_.Owner -in $Owner -or !$Owner) -and $_.IsSystemObject -in $DBType -and $_.status -in $Status -and $_.recoveryModel -in $recoverymodel -and $_.EncryptionEnabled -in $Encrypt }
 
 			if ($NoFullBackup -or $NoFullBackupSince) {
 				if ($NoFullBackup) {
