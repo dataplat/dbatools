@@ -115,7 +115,7 @@ function Get-DbaDatabase {
 		[ValidateSet('ReadOnly', 'ReadWrite')]
 		[string]$Access,
 		[ValidateSet('Full', 'Simple', 'BulkLogged')]
-		[string]$RecoveryModel = @('Full', 'Simple', 'BulkLogged'),
+		[string[]]$RecoveryModel = @('Full', 'Simple', 'BulkLogged'),
 		[switch]$NoFullBackup,
 		[datetime]$NoFullBackupSince,
 		[switch]$NoLogBackup,
