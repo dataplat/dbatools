@@ -667,12 +667,12 @@ function Copy-DbaDatabase {
 		
 		if ($NetworkShare.Length -gt 0) {
 			Write-Message -Level Verbose -Message "Checking to ensure network path is valid"
-			if (!($NetworkShare.StartsWith("\\")) -and !$sameserver) {
+			if (!($NetworkShare.StartsWith("\\")) -and !$script:sameserver) {
 				Stop-Function -Message "Network share must be a valid UNC path (\\server\share)."
 				return
 			}
 			
-			if (!$sameserver) {
+			if (!$script:sameserver) {
 				try {
 					if ((Test-Path $NetworkShare -ErrorAction Stop)) {
 						Write-Message -Level Verbose -Message "$NetworkShare share can be accessed."
