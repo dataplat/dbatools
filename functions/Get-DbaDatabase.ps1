@@ -21,38 +21,42 @@ function Get-DbaDatabase {
 			The database(s) to exclude.
 
 		.PARAMETER NoUserDb
-			Returns all SQL Server System databases from the SQL Server instance(s) executed against.
+			Returns only databases that are not User Databases.
+            This parameter cannot be used together with -NoSystemDb.
 
 		.PARAMETER NoSystemDb
-			Returns SQL Server user databases from the SQL Server instance(s) executed against.
+			Returns only databases that are not System Databases.
+            This parameter cannot be used together with -NoUserDb.
 
 		.PARAMETER Status
-			Returns SQL Server databases in the status passed to the function.  Could include Emergency, Online, Offline, Recovering, Restoring, Standby or Suspect
-			statuses of databases from the SQL Server instance(s) executed against.
+			Returns SQL Server databases in the status(es) listed.
+            Could include Emergency, Online, Offline, Recovering, Restoring, Standby or Suspect.
+			
 
 		.PARAMETER Access
-			Returns SQL Server databases that are Read Only or all other Online databases from the SQL Server intance(s) executed against.
+			Returns SQL Server databases that are Read Only or Read/Write.
+            To collect both, don't use this parameter.
 
 		.PARAMETER Owner
-			Returns list of SQL Server databases owned by the specified logins
+			Returns list of databases owned by the specified logins.
 
 		.PARAMETER Encrypted
-			Returns list of SQL Server databases that have TDE enabled from the SQL Server instance(s) executed against.
+			Returns list of databases that have TDE enabled from the SQL Server instance(s) executed against.
 
 		.PARAMETER RecoveryModel
-			Returns list of SQL Server databases in Full, Simple or Bulk Logged recovery models from the SQL Server instance(s) executed against.
+			Returns list of databases in listed recovery models (Full, Simple or Bulk Logged).
 
 		.PARAMETER NoFullBackup
-			Returns databases without a full backup recorded by SQL Server. Will indicate those which only have CopyOnly full backups
+			Returns databases without a full backup recorded by SQL Server. Will indicate those which only have CopyOnly full backups.
 
 		.PARAMETER NoFullBackupSince
-			DateTime value. Returns list of SQL Server databases that haven't had a full backup since the passed iin DateTime
+			DateTime value. Returns list of databases that haven't had a full backup since the passed in DateTime.
 
 		.PARAMETER NoLogBackup
-			Returns databases without a Log backup recorded by SQL Server. Will indicate those which only have CopyOnly Log backups
+			Returns databases without a Log backup recorded by SQL Server. Will indicate those which only have CopyOnly Log backups.
 
 		.PARAMETER NoLogBackupSince
-			DateTime value. Returns list of SQL Server databases that haven't had a Log backup since the passed iin DateTime
+			DateTime value. Returns list of databases that haven't had a Log backup since the passed in DateTime.
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
@@ -66,6 +70,8 @@ function Get-DbaDatabase {
 		.NOTES
 			Tags: Database
 			Original Author: Garry Bargsley (@gbargsley | http://blog.garrybargsley.com)
+            Author: Klaas Vandenberghe ( @PowerDbaKlaas )
+            Author: Simone Bizzotto ( @niphlod )
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -95,6 +101,7 @@ function Get-DbaDatabase {
 			Returns databases on multiple instances piped into the function
 	#>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
+    [OutputType([Microsoft.SqlServer.Management.Smo.Database[]])]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
@@ -207,4 +214,3 @@ function Get-DbaDatabase {
 		}
 	}
 }
-
