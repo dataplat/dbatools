@@ -1,70 +1,83 @@
-﻿function Set-DbaNetworkCertificate {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+
+function Set-DbaNetworkCertificate {
 <#
-.SYNOPSIS
-Sets the network certificate for SQL Server instance
-
-.DESCRIPTION
-Sets the network certificate for SQL Server instance. This setting is found in Configuration Manager.
-
-This command also grants read permissions for the service account on the certificate's private key.
-
-References:
-http://sqlmag.com/sql-server/7-steps-ssl-encryption
-https://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/
-https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/
-
-.PARAMETER SqlInstance
-The target SQL Server - defaults to localhost.
-
-.PARAMETER Credential
-Allows you to login to the computer (not sql instance) using alternative credentials.
-
-.PARAMETER Certificate
-The target certificate object
+	.SYNOPSIS
+		Sets the network certificate for SQL Server instance
 	
-.PARAMETER Thumbprint
-The thumbprint of the target certificate
-
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
-
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
-
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
-
-.NOTES
-Tags: Certificate
-
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-
-.EXAMPLE
-New-DbaComputerCertificate | Set-DbaNetworkCertificate -SqlInstance localhost\SQL2008R2SP2
-
-Creates and imports a new certificate signed by an Active Directory CA on localhost then sets the network certificate for the SQL2008R2SP2 to that newly created certificate.
-
-.EXAMPLE
-Set-DbaNetworkCertificate -SqlInstance sql1\SQL2008R2SP2 -Thumbprint 1223FB1ACBCA44D3EE9640F81B6BA14A92F3D6E2
-
-Sets the network certificate for the SQL2008R2SP2 instance to the certificate with the thumbprint of 1223FB1ACBCA44D3EE9640F81B6BA14A92F3D6E2 in LocalMachine\My on sql1
-
+	.DESCRIPTION
+		Sets the network certificate for SQL Server instance. This setting is found in Configuration Manager.
+		
+		This command also grants read permissions for the service account on the certificate's private key.
+		
+		References:
+		http://sqlmag.com/sql-server/7-steps-ssl-encryption
+		https://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/
+		https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/
+	
+	.PARAMETER SqlInstance
+		The target SQL Server - defaults to localhost.
+	
+	.PARAMETER Credential
+		Allows you to login to the computer (not sql instance) using alternative credentials.
+	
+	.PARAMETER Certificate
+		The target certificate object
+	
+	.PARAMETER Thumbprint
+		The thumbprint of the target certificate
+	
+	.PARAMETER Silent
+		Use this switch to disable any kind of verbose messages
+	
+	.PARAMETER WhatIf
+		Shows what would happen if the command were to run. No actions are actually performed.
+	
+	.PARAMETER Confirm
+		Prompts you for confirmation before executing any changing operations within the command.
+	
+	.EXAMPLE
+		New-DbaComputerCertificate | Set-DbaNetworkCertificate -SqlInstance localhost\SQL2008R2SP2
+		
+		Creates and imports a new certificate signed by an Active Directory CA on localhost then sets the network certificate for the SQL2008R2SP2 to that newly created certificate.
+	
+	.EXAMPLE
+		Set-DbaNetworkCertificate -SqlInstance sql1\SQL2008R2SP2 -Thumbprint 1223FB1ACBCA44D3EE9640F81B6BA14A92F3D6E2
+		
+		Sets the network certificate for the SQL2008R2SP2 instance to the certificate with the thumbprint of 1223FB1ACBCA44D3EE9640F81B6BA14A92F3D6E2 in LocalMachine\My on sql1
+	
+	.NOTES
+		Tags: Certificate
+		
+		Website: https://dbatools.io
+		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 #>
 	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
 	param (
+		[Parameter(ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer", "ComputerName")]
-		[DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
+		[DbaInstanceParameter[]]
+		$SqlInstance = $env:COMPUTERNAME,
+		
+		[PSCredential]
+		[System.Management.Automation.CredentialAttribute()]
+		$Credential,
+		
 		[parameter(Mandatory, ParameterSetName = "Certificate", ValueFromPipeline)]
-		[System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
+		[System.Security.Cryptography.X509Certificates.X509Certificate2]
+		$Certificate,
+		
 		[parameter(Mandatory, ParameterSetName = "Thumbprint")]
-		[string]$Thumbprint,
-		[switch]$Silent
+		[string]
+		$Thumbprint,
+		
+		[switch]
+		$Silent
 	)
 	
 	process {
+		if (Test-FunctionInterrupt) { return }
 		$Certificate
 		if (!$Certificate -and !$Thumbprint) {
 			Stop-Function -Message "You must specify a certificate or thumbprint"
@@ -72,19 +85,20 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 		}
 		
 		if (!$Thumbprint) {
-			Write-Message -Level Output -Message "Getting thumbprint"
+			Write-Message -Level SomewhatVerbose -Message "Getting thumbprint"
 			$Thumbprint = $Certificate.Thumbprint
 		}
 		
 		foreach ($instance in $sqlinstance) {
-			Test-RunAsAdmin -ComputerName $instance.ComputerName
+			Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
+			$null = Test-ElevationRequirement -ComputerName $instance -Continue
 			
-			Write-Message -Level Output -Message "Resolving hostname"
-			$resolved = Resolve-DbaNetworkName -ComputerName $instance
+			Write-Message -Level Verbose -Message "Resolving hostname"
+			$resolved = $null
+			$resolved = Resolve-DbaNetworkName -ComputerName $instance -Turbo
 			
 			if ($null -eq $resolved) {
-				Write-Message -Level Warning -Message "Can't resolve $instance"
-				return
+				Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
 			}
 			
 			$computername = $instance.ComputerName
@@ -92,16 +106,14 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 			Write-Message -Level Output -Message "Connecting to SQL WMI on $computername"
 			
 			try {
-				$sqlwmi = Invoke-ManagedComputerCommand -Server $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instancename)"
+				$sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($instancename)"
 			}
 			catch {
-				Stop-Function -Message $_ -Target $sqlwmi
-				return
+				Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
 			}
 			
-			if (!$sqlwmi) {
-				Write-Message -Level Warning -Message "Cannot find $instancename on $computerName"
-				continue
+			if (-not $sqlwmi) {
+				Stop-Function -Message "Cannot find $instancename on $computerName" -Continue -Category ObjectNotFound -Target $instance
 			}
 			
 			$regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
@@ -118,19 +130,18 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 					$vsname = ($vsname -Split 'Value\=')[1]
 				}
 				else {
-					Write-Message -Level Warning -Message "Can't find instance $vsname on $env:COMPUTERNAME"
-					return
+					Stop-Function -Message "Can't find instance $vsname on $instance" -Continue -Category ObjectNotFound -Target $instance
 				}
 			}
 			
 			if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 			
-			Write-Message -Level Output -Message "Regroot: $regroot"
-			Write-Message -Level Output -Message "ServiceAcct: $serviceaccount"
-			Write-Message -Level Output -Message "InstanceName: $instancename"
-			Write-Message -Level Output -Message "VSNAME: $vsname"
-						
-			$scriptblock = {				
+			Write-Message -Level Output -Message "Regroot: $regroot" -Target $instance
+			Write-Message -Level Output -Message "ServiceAcct: $serviceaccount" -Target $instance
+			Write-Message -Level Output -Message "InstanceName: $instancename" -Target $instance
+			Write-Message -Level Output -Message "VSNAME: $vsname" -Target $instance
+			
+			$scriptblock = {
 				$regroot = $args[0]
 				$serviceaccount = $args[1]
 				$instancename = $args[2]
@@ -177,12 +188,12 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 				$newthumbprint = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
 				
 				[pscustomobject]@{
-					ComputerName = $env:COMPUTERNAME
-					InstanceName = $instancename
-					SqlInstance = $vsname
-					ServiceAccount = $serviceaccount
+					ComputerName		  = $env:COMPUTERNAME
+					InstanceName		  = $instancename
+					SqlInstance		      = $vsname
+					ServiceAccount	      = $serviceaccount
 					CertificateThumbprint = $newthumbprint
-					Notes = $notes
+					Notes				  = $notes
 				}
 			}
 			
@@ -191,7 +202,7 @@ Sets the network certificate for the SQL2008R2SP2 instance to the certificate wi
 					Invoke-Command2 -Raw -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname, $Thumbprint -ScriptBlock $scriptblock -ErrorAction Stop
 				}
 				catch {
-					Stop-Function -Message $_ -ErrorRecord $_ -Target $instanceName -Continue
+					Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
 				}
 			}
 		}
