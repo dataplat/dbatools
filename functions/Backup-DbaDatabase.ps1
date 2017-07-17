@@ -36,9 +36,9 @@ If path does not exist Sql Server will attmept to create it. Folders are created
 
 File Names with be suffixed with x-of-y to enable identifying striped sets, where y is the number of files in the set and x is from 1 to you
 
-.PARAMETER NoCopyOnly
-By default function performs a Copy Only backup. These backups do not intefere with the restore chain of the database, so are safe to take.
-This switch indicates that you wish to take normal backups. Be aware that these WILL break your restore chains, so use at your own risk
+.PARAMETER CopyOnly
+By default function performs a normal backup, these backups  intefere with the restore chain of the database.
+This switch indicates that you wish to take CopyOnly backups. These backups will not intefere with the restore chain of the database.
 
 For more details please refer to this MSDN article - https://msdn.microsoft.com/en-us/library/ms191495.aspx 
 
@@ -128,7 +128,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 		[object[]]$ExcludeDatabase,
 		[string[]]$BackupDirectory,
 		[string]$BackupFileName,
-		[switch]$NoCopyOnly,
+		[switch]$CopyOnly,
 		[ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
 		[string]$Type = "Database",
 		[parameter(ParameterSetName = "NoPipe", Mandatory = $true, ValueFromPipeline = $true)]
@@ -253,7 +253,9 @@ sql credential dbatoolscred registered on the sql2016 instance
 				Write-Message -Level Warning -Message "$failreason"
 			}
 			
-			$copyonly = !$NoCopyOnly
+			if ($CopyOnly -ne $True) {
+				$CopyOnly -eq $false
+			}
 			
 			$server.ConnectionContext.StatementTimeout  = 0
 			$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
