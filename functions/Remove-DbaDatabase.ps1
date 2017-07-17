@@ -83,23 +83,14 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
-
-			$system_dbs = @( "master", "model", "tempdb", "resource", "msdb" )
-			if ($IncludeSystemDbs){
-				$databasecollection += $server.Databases | Where-Object { $_.Name -in $Database }
-			}
-			else {
-				$databasecollection += $server.Databases | Where-Object { $_.Name -in $Database -and $_.Name -notin $system_dbs}
-			}			
+			}							
+			$databasecollection += $server.Databases | Where-Object { $_.Name -in $Database }			
 		}
 
+		$system_dbs = @( "master", "model", "tempdb", "resource", "msdb" )
+		
 		if (-not($IncludeSystemDbs)){
-			if ($DatabaseCollection.Count -gt 0){
-				foreach ($db in $system_dbs){
-					$DatabaseCollection.Remove($db)
-				}			
-			}
+			$databasecollection = $databasecollection | Where-Object { $_.Name -notin $system_dbs}
 		}
 
 		foreach ($db in $databasecollection) {
