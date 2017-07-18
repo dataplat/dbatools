@@ -39,17 +39,32 @@ https://dbatools.io/Get-DbaMaintenanceSolutionLog
 .EXAMPLE 
 Get-DbaMaintenanceSolutionLog -SqlInstance sqlserver2014a
 
-Gets the outcome of the IndexOptimize job on sql instance sqlserver2014a
+Gets the outcome of the IndexOptimize job on sql instance sqlserver2014a.
 
 .EXAMPLE 
 Get-DbaMaintenanceSolutionLog -SqlInstance sqlserver2014a -SqlCredential $credential
 
-Gets the outcome of the IndexOptimize job on sqlserver2014a, using SQL Authentication
+Gets the outcome of the IndexOptimize job on sqlserver2014a, using SQL Authentication.
 		
 .EXAMPLE 
 'sqlserver2014a', 'sqlserver2020test' | Get-DbaMaintenanceSolutionLog
 	
 Gets the outcome of the IndexOptimize job on sqlserver2014a and sqlserver2020test.
+
+.EXAMPLE 
+Get-DbaMaintenanceSolutionLog -SqlInstance sqlserver2014a -Path 'D:\logs\maintenancesolution\'
+
+Gets the outcome of the IndexOptimize job on sqlserver2014a, reading the log files in their custom location.
+
+.EXAMPLE 
+Get-DbaMaintenanceSolutionLog -SqlInstance sqlserver2014a -Since '2017-07-18'
+
+Gets the outcome of the IndexOptimize job on sqlserver2014a, starting from july 18, 2017.
+
+.EXAMPLE 
+Get-DbaMaintenanceSolutionLog -SqlInstance sqlserver2014a -LogType IndexOptimize
+
+Gets the outcome of the IndexOptimize job on sqlserver2014a, the other options are not yet available! sorry
 	
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
