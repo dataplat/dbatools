@@ -22,6 +22,9 @@ The database(s) to process - this list is autopopulated from the server. If unsp
 .PARAMETER DatabaseCollection
 A collection of databases (such as returned by Get-DbaDatabase), to be removed.
 
+.PARAMETER IncludeSystemDb
+Use this switch to disable any kind of verbose messages
+
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -70,7 +73,7 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 		[object[]]$Database,
 		[Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "databases")]
 		[Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
-		$IncludeSystemDbs = $false,
+		[switch]$IncludeSystemDb,
 		[switch]$Silent
 	)
 
@@ -89,7 +92,7 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 
 		$system_dbs = @( "master", "model", "tempdb", "resource", "msdb" )
 		
-		if (-not($IncludeSystemDbs)){
+		if (-not($IncludeSystemDb)){
 			$databasecollection = $databasecollection | Where-Object { $_.Name -notin $system_dbs}
 		}
 

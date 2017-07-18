@@ -8,7 +8,7 @@
 
     # cleanup
     foreach ($instance in $Instances) {
-        Get-DbaDatabase -SqlInstance $instance -NoSystemDb -Database singlerestore | Remove-DbaDatabase -SqlInstance $instance -Confirm:$false
+        Remove-DbaDatabase -SqlInstance $instance -Confirm:$false -Database singlerestore
     }
     
     # Restore and set owner for Single Restore
