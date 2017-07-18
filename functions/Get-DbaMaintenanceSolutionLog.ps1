@@ -14,11 +14,21 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
+.PARAMETER LogType
+Accepts 'IndexOptimize', 'DatabaseBackup', 'DatabaseIntegrityCheck'. ATM only IndexOptimize parsing is available
+
+.PARAMETER Since
+Consider only files generated since this date
+
+.PARAMETER Path
+Where to search for log files. By default it's the SQL instance errorlogpath path
+
 .PARAMETER Silent 
 Use this switch to disable any kind of verbose messages
 
 .NOTES 
 Author: Klaas Vandenberghe ( @powerdbaklaas )
+Author: Simone Bizzotto ( @niphlod )
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -48,11 +58,81 @@ Gets the outcome of the IndexOptimize job on sqlserver2014a and sqlserver2020tes
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential]
+		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
+		[ValidateSet('IndexOptimize', 'DatabaseBackup', 'DatabaseIntegrityCheck')]
+		[string[]]$LogType = 'IndexOptimize',
+		[datetime]$Since,
+		[string]$Path,
 		[switch]$Silent
 	)
-	
+	begin {
+		function process-block ($block) {
+			$fresh = @{
+				'ObjectType' = $null
+				'IndexType' = $null
+				'ImageText' = $null
+				'NewLOB' = $null
+				'FileStream' = $null
+				'ColumnStore' = $null
+				'AllowPageLocks' = $null
+				'PageCount' = $null
+				'Fragmentation' = $null
+                'Error' = $null
+			}
+			foreach($l in $block) {
+				$splitted = $l -split ': ',2
+                if (($splitted.Length -ne 2) -or ($splitted[0].length -gt 20)) {
+                    if ($null -eq $fresh['Error']) {
+                        $fresh['Error'] = New-Object System.Collections.ArrayList
+                    }
+                    $null = $fresh['Error'].Add($l)
+                    continue
+                }
+				$k = $splitted[0]
+				$v = $splitted[1]
+                if ($k -eq 'Date and Time') {
+                    # this is the end date, we already parsed the start date of the block
+                    if ($fresh.ContainsKey($k)) {
+                        continue
+                    }
+                }
+				$fresh[$k] = $v
+			}
+			if($fresh.ContainsKey('Command')) {
+				if ($fresh['Command'] -match '^ALTER INDEX \[(?<index>[^\]]+)\] ON \[(?<database>[^\]]+)\]\.\[(?<schema>[^]]+)\]\.\[(?<table>[^\]]+)\] (?<action>[^\ ]+) WITH \((?<options>[^\)]+)') {
+					$fresh['Index'] = $Matches.index
+					$fresh['Statistics'] = $null
+					$fresh['Schema'] = $Matches.Schema
+					$fresh['Table'] = $Matches.Table
+					$fresh['Action'] = $Matches.action
+					$fresh['Options'] = $Matches.options
+				}
+				elseif ($fresh['Command'] -match '^UPDATE STATISTICS \[(?<database>[^\]]+)\]\.\[(?<schema>[^]]+)\]\.\[(?<table>[^\]]+)\] \[(?<stat>[^\]]+)\]') {
+					$fresh['Index'] = $null
+					$fresh['Statistics'] = $Matches.stat
+					$fresh['Schema'] = $Matches.Schema
+					$fresh['Table'] = $Matches.Table
+					$fresh['Action'] = ''
+					$fresh['Options'] = ''
+				}
+			}
+			if($fresh.ContainsKey('Comment')) {
+				$commentparts = $fresh['Comment'] -split ', '
+				foreach ($part in $commentparts) {
+					$indkey, $indvalue = $part -split ': ', 2
+					if($fresh.ContainsKey($indkey)) {
+						$fresh[$indkey] = $indvalue
+					}
+				}
+			}
+            if ($null -ne $fresh['Error']) {
+                $fresh['Error'] = $fresh['Error'] -join "`n"
+            }
+            
+			return $fresh
+		}
+	}
 	process {
 		foreach ($instance in $sqlinstance) {
 			$logdir = $logfiles = $null
@@ -65,15 +145,41 @@ Gets the outcome of the IndexOptimize job on sqlserver2014a and sqlserver2020tes
 			catch {
 				Stop-Function -Message "Can't connect to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-			
-			$logdir = $server.errorlogpath -replace '^(.):', "\\$computername\`$1$"
+			if ($logtype -ne 'IndexOptimize') {
+				Write-Message -Level Warning -Message "Parsing $logtype is not supported at the moment"
+				Continue
+			}
+			if ($Path) {
+				$logdir = Join-AdminUnc -Servername $server.netname -Filepath $Path
+			} else {
+				$logdir = Join-AdminUnc -Servername $server.netname -Filepath $server.errorlogpath # -replace '^(.):', "\\$computername\`$1$"
+			}
 			if (!$logdir) {
 				Write-Message -Level Warning -Message "No log directory returned from $instance"
 				Continue
 			}
-			Write-Message -Level Verbose -Message "Log directory on $computername is $logdir"
-			$logfiles = Get-ChildItem $logdir -Filter IndexOptimize_* | Select-Object -ExpandProperty fullName
 			
+			Write-Message -Level Verbose -Message "Log directory on $computername is $logdir"
+			if(! (Test-Path $logdir)) {
+				Write-Message -Level Warning -Message "Directory $logdir is not accessible"
+				continue
+			}
+			$logfiles = [System.IO.Directory]::EnumerateFiles("$logdir", "IndexOptimize_*.txt")
+			if ($Since) {
+				$filteredlogs = @()
+				foreach($l in $logfiles) {
+					$base = $($l.Substring($l.Length-15,15))
+					try {
+						$datefile = [DateTime]::ParseExact($base, 'yyyyMMdd_HHmmss', $null)
+					} catch {
+						$datefile = Get-ItemProperty -Path $l | select -ExpandProperty CreationTime
+					}
+					if ($datefile -gt $since) {
+						$filteredlogs += $l
+					}
+				}
+				$logfiles = $filteredlogs
+			}
 			if (! $logfiles.count -ge 1) {
 				Write-Message -Level Warning -Message "No log files returned from $computername"
 				Continue
@@ -86,44 +192,40 @@ Gets the outcome of the IndexOptimize job on sqlserver2014a and sqlserver2020tes
 			foreach ($File in $logfiles) {
 				Write-Message -Level Verbose -Message "Reading $file"
 				$text = New-Object System.IO.StreamReader -ArgumentList "$File"
+				$block = New-Object System.Collections.ArrayList
+				$remember = @{}
 				while ($line = $text.ReadLine()) {
-					if ($line -match '^Database: \[(?<database>[^\]]+)') {
-						$db = $instanceinfo.Clone()
-						# $db['Database'] = $line.Split(': ')[-1]
-						$db['Database'] = $Matches.database
-						Write-Message -Level Verbose -Message "Index Optimizations on Database $($db.Database) on $computername"
-					}
-					if ($line -match '^Status | ^Standby | ^Updateability | ^Useraccess | ^Isaccessible | ^RecoveryModel') {
-						$dbkey = $line.Split(': ')[0]
-						$dbvalue = $line.Split(': ')[-1]
-						$db[$dbkey] = $dbvalue
-					}
-					if ($line -match '^Command: ALTER INDEX \[(?<index>[^\]]+)\] ON \[(?<database>[^\]]+)\]\.\[(?<schema>[^]]+)\]\.\[(?<table>[^\]]+)\] (?<action>[^\ ]+) WITH \((?<options>[^\)]+)') {
-						$index = $db.Clone()
-						$index['Index'] = $Matches.index
-						$index['Schema'] = $Matches.Schema
-						$index['Table'] = $Matches.Table
-						$index['action'] = $Matches.action
-						$index['options'] = $Matches.options
-						Write-Message -Level Verbose -Message "Index $($index.Index) on Table $($index.Table) in Database $($index.Database) on $computername"
-					}
-					if ($line -match "^Comment: ") {
-						$line = $line.Replace('Comment: ', '')
-						$commentparts = $line.Split(',')
-						foreach ($part in $commentparts) {
-							$indkey, $indvalue = $part.trim().split(': ')
-							$index[$indkey] = $indvalue[-1]
+					
+					$real = $line.Trim()
+					if ($real.Length -eq 0) {
+						$processed = process-block $block
+						if('Procedure' -in $processed.Keys) {
+							$block = New-Object System.Collections.ArrayList
+							continue
 						}
-					}
-					if ($line -match "^Outcome: ") { $index['outcome'] = $line.Split(': ')[-1] }
-					if ($durationIndicator -eq $true) {
-						$index['Endtime'] = $line -replace ('Date and Time: ', '')
-						$durationIndicator = $false
-						[PSCustomObject]$index
-					}
-					if ($line -match "^Duration: ") {
-						$durationIndicator = $true
-						$index['Duration'] = $line.Split(': ')[-3 .. -1] -join ':'
+						if('Database' -in $processed.Keys) {
+							Write-Message -Level Verbose -Message "Index and Stats Optimizations on Database $($processed.Database) on $computername"
+							$processed.Remove('Is accessible')
+							$processed.Remove('User access')
+							$processed.Remove('Date and time')
+							$processed.Remove('Standby')
+							$processed.Remove('Recovery Model')
+							$processed.Remove('Updateability')
+							$processed['Database'] = $processed['Database'].Trim('[]')
+							$remember = $processed.Clone()
+						} else {
+							foreach($k in $processed.Keys) {
+								$remember[$k] = $processed[$k]
+							}
+							$remember.Remove('Command')
+							$remember['StartTime'] = [dbadatetime]([DateTime]::ParseExact($remember['Date and time'] , "yyyy-MM-dd HH:mm:ss", $null))
+							$remember.Remove('Date and time')
+							$remember['Duration'] = ($remember['Duration'] -as [timespan])
+							[pscustomobject]$remember
+						}
+						$block = New-Object System.Collections.ArrayList
+					} else {
+						$null = $block.Add($real)
 					}
 				}
 				$text.close()
