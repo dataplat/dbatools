@@ -10,13 +10,13 @@
 
 		.PARAMETER SqlInstance
 			SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-			collection and recieve pipeline input
+			collection and receive pipeline input
 
 		.PARAMETER SqlCredential
 			PSCredential object to connect as. If not specified, current Windows login will be used.
 
 		.PARAMETER ConfigName
-			The name of the configuration to be set -- Configs is autopopulated for tabbing convenience. 
+			The name of the configuration to be set -- Configs is auto-populated for tabbing convenience. 
 			
 		.PARAMETER Value
 			The new value for the configuration

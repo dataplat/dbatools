@@ -17,7 +17,7 @@ Please note that this script uses the DBCC DBINFO() WITH TABLERESULTS. DBCC DBIN
 An empty ($null) LastGoodCheckDb result indicates that a good DBCC CHECKDB has never been performed.
 
 SQL Server 2008R2 has a "bug" that causes each databases to possess two dbi_dbccLastKnownGood fields, instead of the normal one.
-This script will only displaythis function to only display the newest timestamp. If -Verbose is specified, the function will announce every time more than one dbi_dbccLastKnownGood fields is encountered.
+This script will only display this function to only display the newest timestamp. If -Verbose is specified, the function will announce every time more than one dbi_dbccLastKnownGood fields is encountered.
 
 .PARAMETER SqlInstance
 The SQL Server that you're connecting to.
@@ -26,10 +26,10 @@ The SQL Server that you're connecting to.
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is autopopulated from the server
+The database(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
