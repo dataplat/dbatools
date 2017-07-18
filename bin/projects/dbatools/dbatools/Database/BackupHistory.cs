@@ -123,5 +123,10 @@ namespace Sqlcollaborative.Dbatools.Database
         /// Was the backup performed with the CopyOnlyOption
         /// </summary>
         public Boolean IsCopyOnly;
+
+        /// <summary>
+        /// Recovery Fork backup was takeon
+        /// </summary>
+        public Guid LastRecoveryForkGUID;
     }
 }
