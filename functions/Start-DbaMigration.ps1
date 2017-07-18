@@ -247,9 +247,9 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 		[parameter(Position = 14, ParameterSetName = "DbAttachDetach")]
 		[switch]$IncludeSupportDbs,
 		[parameter(Position = 15)]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,
+		[PSCredential]$SourceSqlCredential,
 		[parameter(Position = 16)]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential,
+		[PSCredential]$DestinationSqlCredential,
 		[Alias("SkipDatabases")]
 		[switch]$NoDatabases,
 		[switch]$NoLogins,

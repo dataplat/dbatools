@@ -64,7 +64,7 @@ Tests all logins excluding any that are from the subdomain Domain
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[object[]]$Login,
 		[object[]]$ExcludeLogin,

@@ -57,7 +57,7 @@ Param (
   [parameter(ValueFromPipeline = $true)]
   [Alias("cn","host","Server")]
   [string[]]$ComputerName = $env:COMPUTERNAME,
-  [PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential,
+  [PSCredential] $Credential,
   [ValidateSet("Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS")][string]$Type
 )
 

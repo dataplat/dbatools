@@ -95,7 +95,7 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 		[Alias("ServerInstance", "Instance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,

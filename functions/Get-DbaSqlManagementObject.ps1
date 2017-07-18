@@ -47,7 +47,7 @@
 		[parameter(ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$Credential,
 		[int]$VersionNumber,
 		[switch]$Silent

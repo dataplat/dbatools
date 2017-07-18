@@ -53,7 +53,7 @@ function Remove-DbaNetworkCertificate {
 		$SqlInstance = $env:COMPUTERNAME,
 		
 		[PSCredential]
-		[System.Management.Automation.CredentialAttribute()]
+		
 		$Credential,
 		
 		[switch]

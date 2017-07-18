@@ -57,7 +57,7 @@
 		$ComputerName = $env:COMPUTERNAME,
 		
 		[PSCredential]
-		[System.Management.Automation.CredentialAttribute()]
+		
 		$Credential,
 		
 		[parameter(ParameterSetName = "Certificate", ValueFromPipeline)]

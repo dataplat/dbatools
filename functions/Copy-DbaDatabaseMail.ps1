@@ -98,8 +98,8 @@
 		[Parameter(ParameterSetName = 'SpecifcTypes')]
 		[ValidateSet('ConfigurationValues', 'Profiles', 'Accounts', 'mailServers')]
 		[string[]]$Type,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential,
+		[PSCredential]$SourceSqlCredential,
+		[PSCredential]$DestinationSqlCredential,
 		[switch]$Force,
 		[switch]$Silent
 	)

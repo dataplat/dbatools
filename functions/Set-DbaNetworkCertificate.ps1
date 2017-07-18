@@ -61,7 +61,7 @@ function Set-DbaNetworkCertificate {
 		$SqlInstance = $env:COMPUTERNAME,
 		
 		[PSCredential]
-		[System.Management.Automation.CredentialAttribute()]
+		
 		$Credential,
 		
 		[parameter(Mandatory, ParameterSetName = "Certificate", ValueFromPipeline)]

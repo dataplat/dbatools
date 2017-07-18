@@ -90,7 +90,7 @@
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false,
             Position = 1)]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [object[]]$Job,
 		[object[]]$ExcludeJob
     )

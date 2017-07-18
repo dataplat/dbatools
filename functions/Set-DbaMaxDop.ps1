@@ -84,7 +84,7 @@ Set recommended Max DOP setting for all databases on server sql2016.
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
+        [PSCredential]
         $SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,

@@ -43,7 +43,7 @@ Returns SQL Instance user options on sql2 and sql4
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[switch]$Silent
 	)
 	
