@@ -313,7 +313,7 @@
 		'Get-DbaSsisEnvironmentVariable',
 		'Get-DbaSqlManagementObject',
 		'Test-DbaSqlManagementObject',
-		'Get-DbaMaintenanceSolutionLog',
+		#'Get-DbaMaintenanceSolutionLog',
 		'Invoke-DbaLogShippingRecovery',
 		'Sync-DbaLoginPermission',
 		'Find-DbaTrigger',
