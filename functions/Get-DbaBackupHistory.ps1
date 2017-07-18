@@ -300,7 +300,6 @@ function Get-DbaBackupHistory {
 							continue
 						}
 					}
-					Write-Message -Level Verbose -Message "Tlogstart = $TlogStartLSN"
 					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $TLogstartLSN | Where-Object { 
 						$_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $Fulldb.LastRecoveryForkGuid
 					}
@@ -512,10 +511,7 @@ function Get-DbaBackupHistory {
 				
 				$sql = "$select $from $where ORDER BY backupset.backup_finish_date DESC"
 			}
-			#$sql = "$select $from $where ORDER BY backupset.backup_finish_date DESC"
-			Write-Message -Level SomewhatVerbose -Message "sql - $sql"
-			#Write-Message -Level SomewhatVerbose -Message "from - $from"
-			#Write-Message -Level SomewhatVerbose -Message "where - $where"
+
 			Write-Message -Level Debug -Message $sql
 			Write-Message -Level SomewhatVerbose -Message "Executing sql query"
 			$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
