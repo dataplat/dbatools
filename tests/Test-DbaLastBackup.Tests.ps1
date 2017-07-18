@@ -36,25 +36,5 @@
 		}
 		$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
 	}
-
-	Context "Setup removes, restores and backups on the local drive for Test-DbaLastBackup for multi position tests" {
-		$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
-
-		$null = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WithReplace
-		$db = Get-DbaDatabase -SqlInstance localhost -Database singlerestore
-		$null = $db | Backup-DbaDatabase -Type Full -BackupFileName TestLast.bak
-		$null = $db | Backup-DbaDatabase -Type Full -BackupFileName TestLast.bak
-		$null = $db | Backup-DbaDatabase -Type Differential
-		$null = $db | Backup-DbaDatabase -Type Log
-	}
-
-	Context "Testing that it works with multiple backups in one file"{
-		$results = Test-DbaLastBackup -SqlInstance localhost -Database singlerestore
-		
-        It "Should return success" {
-			$results.RestoreResult | Should Be "Success"
-			$results.DbccResult | Should Be "Success"
-        }
-	}
 	
 }

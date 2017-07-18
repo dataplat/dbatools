@@ -278,34 +278,4 @@
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
     }
-
-    Context "Setup Backup file containing multiple backups for testing" {
-        $results = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -DatabaseName MultiRestore
-        $null = Backup-DbaDatabase -SqlInstance localhost -Database MultiRestore -Full -BackupFile c:\temp\multiple.bak
-        $null = Backup-DbaDatabase -SqlInstance localhost -Database MultiRestore -Full -BackupFile c:\temp\multiple.bak
-        $null = Backup-DbaDatabase -SqlInstance localhost -Database MultiRestore -Log -BackupFile c:\temp\multiple.trn
-        $null = Backup-DbaDatabase -SqlInstance localhost -Database MultiRestore -Log -BackupFile c:\temp\multiple.trn
-    }
-
-    Context "Testing that Restore-DbaDatabase handles positional databases from files" {
-        $results = Get-ChildItem c:\temp -file | Where-Object {$_.name -like '*multiple*'} | Get-DbaBackupHistory -SqlInstance localhost -Database MultiRestore  -WithReplace
-        It "Should restore cleanly" {
-            ($results.RestoreComplete -contains $false) | Should Be $false
-        }      
-        It "Should have restored 3 files" {
-            $results.count | Should be 3
-        }
-    }
-
-    Context "Testing that Restore-DbaDatabase handles positional databases from history" {
-        $results = Get-DbaBackupHistory -SqlInstance localhost -Database MultiRestore -Last| Get-DbaBackupHistory -SqlInstance localhost -Database MultiRestore  -WithReplace -TrustDbBackupHistory
-        It "Should restore cleanly" {
-            ($results.RestoreComplete -contains $false) | Should Be $false
-        }      
-        It "Should have restored 3 files" {
-            $results.count | Should be 3
-        }
-    }
-
-
 }
