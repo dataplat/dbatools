@@ -59,7 +59,7 @@
 			ValueFromPipeline = $true,
 			ValueFromPipelineByPropertyName = $true,
 			ValueFromRemainingArguments = $false)]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[object[]]$Job,
 		[Parameter(Mandatory = $false, HelpMessage = 'The Job Step name',
 			ValueFromPipeline = $true,

@@ -75,7 +75,7 @@ function Get-DbaProcess {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[int[]]$Spid,
 		[int[]]$ExcludeSpid,

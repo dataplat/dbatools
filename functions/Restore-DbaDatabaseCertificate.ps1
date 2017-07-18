@@ -53,7 +53,7 @@ Imports all the certificates in the specified path.
 		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$Path,
 		[object]$Database = "master",

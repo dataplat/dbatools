@@ -55,7 +55,7 @@ function Enable-DbaForceNetworkEncryption {
 		$SqlInstance = $env:COMPUTERNAME,
 		
 		[PSCredential]
-		[System.Management.Automation.CredentialAttribute()]
+		
 		$Credential,
 		
 		[switch]

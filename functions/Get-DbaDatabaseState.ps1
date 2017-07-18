@@ -61,7 +61,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
+        [PSCredential]
         $SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,

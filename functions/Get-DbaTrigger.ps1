@@ -58,7 +58,7 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
 		[Alias("ServerInstance", "SqlServer", "instance")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
