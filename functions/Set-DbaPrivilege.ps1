@@ -17,14 +17,9 @@
 	  .PARAMETER Silent 
 	  Use this switch to disable any kind of verbose messages.
 	
-	  .PARAMETER IFI 
-	  Use this switch to add the SQL Service account to local privileges 'Instant File Initialization'.
-	
-	  .PARAMETER LPIM 
-	  Use this switch to add the SQL Service account to local privileges 'Lock Pages in Memory'.
-	
-	  .PARAMETER BatchLogon 
-	  Use this switch to add the SQL Service account to local privileges 'Logon as Batch'.
+	  .PARAMETER Type 
+	  Use this to choose the privilege(s) to which you want to add the SQL Service account.
+      Accepts 'IFI', 'LPIM' and/or 'BatchLogon' for local privileges 'Instant File Initialization', 'Lock Pages in Memory' and 'Logon as Batch'.
 
       .NOTES
       Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -37,12 +32,12 @@
       https://dbatools.io/Set-DbaPrivilege
 
       .EXAMPLE
-      Set-DbaPrivilege -ComputerName sqlserver2014a -LPIM -IFI
+      Set-DbaPrivilege -ComputerName sqlserver2014a -Type LPIM,IFI
 
       Adds the SQL Service account(s) on computer sqlserver2014a to the local privileges 'SeManageVolumePrivilege' and 'SeLockMemoryPrivilege'.
 
       .EXAMPLE   
-      'sql1','sql2','sql3' | Set-DbaPrivilege -IFI
+      'sql1','sql2','sql3' | Set-DbaPrivilege -Type IFI
 
       Adds the SQL Service account(s) on computers sql1, sql2 and sql3 to the local privilege 'SeManageVolumePrivilege'.
 
@@ -54,18 +49,13 @@
 		[dbainstanceparameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$Credential,
-        [switch]$IFI,
-        [switch]$LPIM,
-        [switch]$BatchLogon,
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('IFI','LPIM','BatchLogon')]
+        [string[]]$Type,
 		[switch]$Silent
 	)
 	
 	begin {
-        if ( !$IFI -and !$LPIM -and !$BatchLogon ) {
-            Stop-Function -Message "Add at least one privilege (IFI | LPIM | BatchLogon)."
-			break
-        }
-
         $ResolveAccountToSID = @"
 function Convert-UserNameToSID ([string] `$Acc ) {
 `$objUser = New-Object System.Security.Principal.NTAccount(`"`$Acc`")
@@ -94,7 +84,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
 					    . ([ScriptBlock]::Create($ResolveAccountToSID))
 					    $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
                         $tempfile = "$temp\secpolByDbatools.cfg"
-                        if ( $BatchLogon -eq $true ) {
+                        if ( 'BatchLogon' -in $Type ) {
 					        $BLline = Get-Content $tempfile | Where-Object { $_ -match "SeBatchLogonRight" }
 					        ForEach ( $acc in $SQLServiceAccounts ) {
                                 $SID = Convert-UserNameToSID -Acc $acc;
@@ -108,7 +98,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                 }
                             }
                         }
-                        if ( $IFI -eq $true ) {
+                        if ( 'IFI' -in $Type ) {
 					        $IFIline = Get-Content $tempfile | Where-Object { $_ -match "SeManageVolumePrivilege" }
 					        ForEach ( $acc in $SQLServiceAccounts ) {
                                 $SID = Convert-UserNameToSID -Acc $acc;
@@ -122,7 +112,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                 }
                             }
                         }
-                        if ( $LPIM -eq $true ) {
+                        if ( 'LPIM' -in $Type ) {
 					        $LPIMline = Get-Content $tempfile | Where-Object { $_ -match "SeLockMemoryPrivilege" }
 					        ForEach ( $acc in $SQLServiceAccounts ) {
                                 $SID = Convert-UserNameToSID -Acc $acc;
