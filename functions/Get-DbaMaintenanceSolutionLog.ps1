@@ -108,7 +108,7 @@ Gets the outcome of the IndexOptimize job on sqlserver2014a and sqlserver2020tes
 					$fresh['Action'] = $Matches.action
 					$fresh['Options'] = $Matches.options
 				}
-				elseif ($fresh['Command'] -match '^UPDATE STATISTICS \[(?<database>[^\]]+)\]\.\[(?<schema>[^]]+)\]\.\[(?<table>[^\]]+)\] \[(?<stat>[^\]]+)\]') {
+				elseif ($fresh['Command'] -match 'UPDATE STATISTICS \[(?<database>[^\]]+)\]\.\[(?<schema>[^]]+)\]\.\[(?<table>[^\]]+)\] \[(?<stat>[^\]]+)\]') {
 					$fresh['Index'] = $null
 					$fresh['Statistics'] = $Matches.stat
 					$fresh['Schema'] = $Matches.Schema
