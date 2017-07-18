@@ -25,7 +25,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command.
 
 .PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+Use this switch to disable any kind of verbose messages.
 
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
@@ -33,7 +33,7 @@ It will also remove the any present schedules with the same name for the specifi
 
 .NOTES 
 Original Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Agent, Job, Job Step
+Tags: Agent, Job, Job Step, Schedule
 	
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -56,7 +56,7 @@ Remove multiple schedule
 
 .EXAMPLE   
 Remove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Schedule daily, weekly
-Remove the schedule on multiple servers for multiple scheukes
+Remove the schedule on multiple servers for multiple schedules
 
 .EXAMPLE   
 sql1, sql2, sql3 | Remove-DbaAgentSchedule -Schedule daily, weekly
@@ -102,7 +102,7 @@ Remove the schedule on multiple servers using pipe line
 					$jobCount = $Server.JobServer.SharedSchedules[$s].JobCount
 
 					# Check if the schedule is shared among other jobs
-					if ($jobCount -gt 1 -and -not $Force) {
+					if ($jobCount -ge 1 -and -not $Force) {
 						Stop-Function -Message "The schedule $s is shared connected to one or more jobs. If removal is neccesary use -Force." -Target $instance -Continue
 					}
 
@@ -111,7 +111,7 @@ Remove the schedule on multiple servers using pipe line
 						# Loop through each of the schedules and drop them
 						Write-Message -Message "Removing schedule $s on $instance" -Level Output
 
-						#Check if multiple jobs use the schedule
+						#Check if jobs use the schedule
 						if ($jobCount -ge 1) {
 							# Get the job object
 							$smoSchedules = $server.JobServer.SharedSchedules | Where-Object {($_.Name -eq $s)}
