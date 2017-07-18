@@ -73,7 +73,7 @@ Removes the job from multiple servers using pipe line
         [object[]]$SqlInstance,
 
         [Parameter(Mandatory = $false)]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential]$SqlCredential,
         
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]

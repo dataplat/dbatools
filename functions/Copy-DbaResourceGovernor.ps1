@@ -6,7 +6,7 @@ function Copy-DbaResourceGovernor {
 		.DESCRIPTION
 			By default, all non-system resource pools are migrated. If the pool already exists on the destination, it will be skipped unless -Force is used.
 
-			The -ResourcePool parameter is autopopulated for command-line completion and can be used to copy only specific objects.
+			The -ResourcePool parameter is auto-populated for command-line completion and can be used to copy only specific objects.
 
 		.PARAMETER Source
 			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
@@ -31,10 +31,10 @@ function Copy-DbaResourceGovernor {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER ResourcePool
-			The resource pool(s) to process - this list is auto populated from the server. If unspecified, all resource pools will be processed.
+			The resource pool(s) to process - this list is auto-populated from the server. If unspecified, all resource pools will be processed.
 
 		.PARAMETER ExcludeResourcePool
-			The resource pool(s) to exclude - this list is auto populated from the server
+			The resource pool(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
@@ -79,11 +79,11 @@ function Copy-DbaResourceGovernor {
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$DestinationSqlCredential,
 		[object[]]$ResourcePool,
 		[object[]]$ExcludeResourcePool,

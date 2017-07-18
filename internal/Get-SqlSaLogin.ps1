@@ -9,7 +9,7 @@ Internal function. Gets the name of the sa login in case someone changed it.
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
+		[PSCredential]$SqlCredential
 	)
 	$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	$sa = $server.Logins | Where-Object { $_.id -eq 1 }

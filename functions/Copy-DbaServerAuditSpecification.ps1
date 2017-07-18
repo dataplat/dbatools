@@ -4,7 +4,7 @@ function Copy-DbaServerAuditSpecification {
 			Copy-DbaServerAuditSpecification migrates server audit specifications from one SQL Server to another.
 
 		.DESCRIPTION
-			By default, all audits are copied. The -AuditSpecification parameter is autopopulated for command-line completion and can be used to copy only specific audits.
+			By default, all audits are copied. The -AuditSpecification parameter is auto-populated for command-line completion and can be used to copy only specific audits.
 
 			If the audit specification already exists on the destination, it will be skipped unless -Force is used.
 
@@ -31,10 +31,10 @@ function Copy-DbaServerAuditSpecification {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER AuditSpecification
-			The Server Audit Specification(s) to process - this list is auto populated from the server. If unspecified, all Server Audit Specifications will be processed.
+			The Server Audit Specification(s) to process - this list is auto-populated from the server. If unspecified, all Server Audit Specifications will be processed.
 
 		.PARAMETER ExcludeAuditSpecification
-			The Server Audit Specification(s) to exclude - this list is auto populated from the server
+			The Server Audit Specification(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
@@ -79,11 +79,11 @@ function Copy-DbaServerAuditSpecification {
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$DestinationSqlCredential,
 		[object[]]$AuditSpecification,
 		[object[]]$ExcludeAuditSpecification,

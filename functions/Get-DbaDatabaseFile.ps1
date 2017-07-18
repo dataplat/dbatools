@@ -13,10 +13,10 @@ function Get-DbaDatabaseFile {
 	Credentials to connect to the SQL Server instance if the calling user doesn't have permission
 
 	.PARAMETER Database
-	The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+	The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 	.PARAMETER ExcludeDatabase
-	The database(s) to exclude - this list is autopopulated from the server
+	The database(s) to exclude - this list is auto-populated from the server
 
 	.PARAMETER DatabaseCollection
 	Internal Variable
@@ -51,7 +51,7 @@ function Get-DbaDatabaseFile {
 	param (
 		[parameter(ParameterSetName = "Pipe", Mandatory, ValueFromPipeline)]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,

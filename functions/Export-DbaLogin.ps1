@@ -17,13 +17,13 @@ function Export-DbaLogin {
 			SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Login
-			The login(s) to process - this list is autopopulated FROM the server. If unspecified, all logins will be processed.
+			The login(s) to process - this list is auto-populated FROM the server. If unspecified, all logins will be processed.
 
 		.PARAMETER ExcludeLogin
-			The login(s) to exclude - this list is autopopulated FROM the server.
+			The login(s) to exclude - this list is auto-populated FROM the server.
 
 		.PARAMETER Database
-			The database(s) to process - this list is autopopulated FROM the server. If unspecified, all databases will be processed.
+			The database(s) to process - this list is auto-populated FROM the server. If unspecified, all databases will be processed.
 
 		.PARAMETER FilePath
 			The file to write to.
@@ -85,7 +85,7 @@ function Export-DbaLogin {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[object[]]$Login,
 		[object[]]$ExcludeLogin,

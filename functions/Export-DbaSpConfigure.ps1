@@ -51,7 +51,7 @@ File to disk, and string path.
 		[Alias("ServerInstance","SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
 		[string]$Path,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
+		[PSCredential]$SqlCredential
 	)
 	
 	BEGIN

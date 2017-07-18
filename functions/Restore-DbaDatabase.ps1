@@ -243,7 +243,7 @@ function Restore-DbaDatabase {
         [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [string]$DatabaseName,
         [String]$DestinationDataDirectory,
         [String]$DestinationLogDirectory,

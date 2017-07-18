@@ -18,7 +18,7 @@ function Test-DbaMigrationConstraint {
 
 		Take into account the new features introduced on SQL Server 2016 SP1 for all versions. More information at https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/
 
-		The -Database parameter is autopopulated for command-line completion.
+		The -Database parameter is auto-populated for command-line completion.
 
 	.PARAMETER Source
 		Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -37,10 +37,10 @@ function Test-DbaMigrationConstraint {
 		Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
 
 	.PARAMETER Database
-		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 	.PARAMETER ExcludeDatabase
-		The database(s) to exclude - this list is autopopulated from the server
+		The database(s) to exclude - this list is auto-populated from the server
 
 	.PARAMETER WhatIf
 		Shows what would happen if the command were to run. No actions are actually performed.
@@ -86,10 +86,10 @@ function Test-DbaMigrationConstraint {
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $True)]
 		[DbaInstanceParameter]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,
+		[PSCredential]$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential,
+		[PSCredential]$DestinationSqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase

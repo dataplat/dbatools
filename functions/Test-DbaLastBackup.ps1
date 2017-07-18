@@ -69,7 +69,7 @@ Do not restore databases larger than MaxMB
 The name of the SQL Server credential on the destination instance that holds the key to the azure storage account
 fied, Copy Options are not allowed.
 
-.PARAMETER IgnoreCopyOnly
+.PARAMETER IncludeCopyOnly
 If set, copy only backups will not be counted as a last backup
 
 .PARAMETER IgnoreLogBackup
@@ -143,7 +143,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
         [Alias("ServerInstance", "SqlServer", "Source")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
+        [PSCredential]
         $SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
@@ -159,7 +159,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
         [switch]$CopyFile,
         [string]$CopyPath,
         [int]$MaxMB,
-        [switch]$IgnoreCopyOnly,
+        [switch]$IncludeCopyOnly,
         [switch]$IgnoreLogBackup,
 		[string]$AzureCredential,
         [switch]$Silent
@@ -271,12 +271,12 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                     $copysuccess = $true
                     $db = $sourceserver.databases[$dbname]
 					
-                    # The db check is needed when the number of databases exceeds 255, then it's no longer autopopulated
+                    # The db check is needed when the number of databases exceeds 255, then it's no longer auto-populated
                     if (!$db) {
                         Stop-Function -Message "$dbname does not exist on $source." -Continue
                     }
 
-                    $lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IgnoreCopyOnly:$ignorecopyonly -raw
+                    $lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly #-raw
                     if ($CopyFile) {
                         try {
                             Write-Message -Level Verbose -Message "Gathering information for file copy"
@@ -285,14 +285,14 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                             if (Test-Bound "IgnoreLogBackup"){
                                 Write-Message -Level Verbose -Message "Skipping Log backups as requested"
                                 $lastbackup = @()
-                                $lastbackup += $full = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IgnoreCopyOnly:$ignorecopyonly -raw	-LastFull
-                                $diff = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IgnoreCopyOnly:$ignorecopyonly -raw -LastDiff
+                                $lastbackup += $full = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastFull #-raw
+                                $diff = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastDiff # -raw 
                                 if ($full.start -le $diff.start){
                                     $lastbackup += $diff
                                 }									
                             }
                             else {
-                                $lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IgnoreCopyOnly:$ignorecopyonly -raw
+                                $lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly #-raw
                             }
                                 
                             foreach ($backup in $lastbackup) {
@@ -334,7 +334,14 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                             $copysuccess = $false
                         }
                     }
-                    #if ($null -eq $lastbackup)
+                    if ($null -eq $lastbackup) {
+                        Write-Message -Level Verbose -Message "No backups exist for this database"
+                        $lastbackup = @{ Path = "No backups exist for this database" }
+                        $fileexists = $false
+                        $restoreresult = "Skipped"
+                        $dbccresult = "Skipped"
+
+                    }
                     if (!$copysuccess) {
                         Write-Message -Level Verbose -Message "Failed to copy backups"
                         $lastbackup = @{ Path = "Failed to copy backups" }
@@ -355,7 +362,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                         $restoreresult = "Restore not located on shared location"
                         $dbccresult = "Skipped"
                     }
-                    elseif ((Test-DbaSqlPath -SqlInstance $destserver -Path $lastbackup[0].Path) -eq $false) {
+                    elseif (($lastbackup[0].Path | Foreach{Test-DbaSqlPath -SqlInstance $destserver -Path $_}) -eq $false) {
                         Write-Message -Level Verbose -Message "SQL Server cannot find backup"
                         $fileexists = $false
                         $restoreresult = "Skipped"
@@ -387,10 +394,10 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                                 Write-Message -Level Verbose -Message "Performing restore"
                                 $startRestore = Get-Date
                                 if ($verifyonly) {
-                                    $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential
+                                    $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
                                 }
                                 else {
-                                    $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential
+                                    $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
                                 }
 								
                                 $endRestore = Get-Date

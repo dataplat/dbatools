@@ -9,7 +9,7 @@
 			provided dynamically. It will not return anything if there is no Output File
 
 		.PARAMETER SqlInstance 
-				The SQL Server that you're connecting to. Or an array of SQL Servers
+			The SQL Server that you're connecting to. Or an array of SQL Servers
 
 		.PARAMETER SQLCredential
 			Credential object used to connect to the SQL Server as a different user be it Windows or SQL Server. Windows users are determiend by 
@@ -17,10 +17,10 @@
 			contains a backslash.
 
 		.PARAMETER Job
-			The job(s) to process - this list is auto populated from the server. If unspecified, all jobs will be processed.
+			The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
 
 		.PARAMETER ExcludeJob
-			The job(s) to exclude - this list is auto populated from the server
+			The job(s) to exclude - this list is auto-populated from the server
 
 		.NOTES
 			Tags: Agent, Job
@@ -90,7 +90,7 @@
             ValueFromPipelineByPropertyName = $true,
             ValueFromRemainingArguments = $false,
             Position = 1)]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [object[]]$Job,
 		[object[]]$ExcludeJob
     )

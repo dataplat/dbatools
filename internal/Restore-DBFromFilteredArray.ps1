@@ -22,7 +22,7 @@ Function Restore-DBFromFilteredArray {
         [switch]$ScriptOnly,
         [switch]$VerifyOnly,
         [object]$filestructure,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [switch]$UseDestinationDefaultDirectories,
         [switch]$ReuseSourceFolderStructure,
         [switch]$Force,

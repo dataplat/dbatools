@@ -36,7 +36,7 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER IncludeOverlapping
 Allows to see indexes partial duplicate. 
@@ -84,12 +84,12 @@ https://dbatools.io/Find-DbaDuplicateIndex
 .EXAMPLE
 Find-DbaDuplicateIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql
 
-Exports SQL for the duplicate indexes in server "sql2005" choosen on grid-view and writes them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
+Exports SQL for the duplicate indexes in server "sql2005" chosen on grid-view and writes them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
 
 .EXAMPLE
 Find-DbaDuplicateIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql -Append
 
-Exports SQL for the duplicate indexes in server "sql2005" choosen on grid-view and writes/appends them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
+Exports SQL for the duplicate indexes in server "sql2005" chosen on grid-view and writes/appends them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
 	
 .EXAMPLE   
 Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -SqlCredential $cred
@@ -112,7 +112,7 @@ Will find exact duplicate or overlapping indexes on all user databases
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
         [Alias("Databases")]
 		[object[]]$Database,
 		[switch]$IncludeOverlapping,

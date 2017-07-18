@@ -42,27 +42,32 @@
 			Returns just the version specified. If the version does not exist then it will return nothing.
 		
 	#>
-	#>
 	[CmdletBinding()]
 	param (
 		[parameter(ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$Credential,
 		[int]$VersionNumber,
 		[switch]$Silent
 	)
 	
-	begin {
+	begin
+	{
+		if (!$VersionNumber)
+		{
+			$VersionNumber = 0	
+		}
 		$scriptblock = {
 			$VersionNumber = [int]$args[0]
 			
 			Write-Verbose "Checking currently loaded SMO version"
 			$loadedversion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
 			
-			if ($loadedversion) {
-				$loadedversion = (($loadedversion.FullName -Split ", ")[1]).TrimStart("Version=")
+			if ($loadedversion)
+			{
+				$loadedversion = $loadedversion | foreach { ((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0] }
 			}
 			
 			Write-Verbose "Looking for SMO in the Global Assembly Cache"
@@ -77,7 +82,7 @@
 					[PSCustomObject]@{
 						ComputerName = $env:COMPUTERNAME
 						Version = $currentversion
-						Loaded = $currentversion -eq $loadedversion
+						Loaded = $loadedversion -contains $currentversion
 						LoadTemplate = "Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=$($array[0]), Culture=neutral, PublicKeyToken=89845dcd8080cc91`""
 					}
 				}
@@ -89,7 +94,7 @@
 						[PSCustomObject]@{
 							ComputerName = $env:COMPUTERNAME
 							Version = $currentversion
-							Loaded = $currentversion -eq $loadedversion
+							Loaded = $loadedversion -contains $currentversion
 							LoadTemplate = "Add-Type -AssemblyName `"Microsoft.SqlServer.Smo, Version=$($array[0]), Culture=neutral, PublicKeyToken=89845dcd8080cc91`""
 						}
 					}
@@ -104,7 +109,7 @@
 				Invoke-Command2 -ComputerName $computer -ScriptBlock $scriptblock -Credential $Credential -ArgumentList $VersionNumber -ErrorAction Stop
 			}
 			catch {
-				Stop-Function -Continue -Message "Faiure" -ErrorRecord $_ -Target $ComputerName
+				Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $ComputerName
 			}
 		}
 	}

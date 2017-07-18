@@ -6,7 +6,7 @@ Rename-DbaLogin will rename login and database mapping for a specified login.
 .DESCRIPTION
 There are times where you might want to rename a login that was copied down, or if the name is not descriptive for what it does. 
 
-It can be a pain to update all of the mappings for a spefic user, this does it for you. 
+It can be a pain to update all of the mappings for a specific user, this does it for you. 
 
 .PARAMETER SqlInstance
 Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -23,7 +23,7 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER Login 
-The current Login on the server - this list is auto populated from the server.
+The current Login on the server - this list is auto-populated from the server.
 
 .PARAMETER NewLogin 
 The new Login that you wish to use. If it is a windows user login, then the SID must match.  
@@ -64,7 +64,7 @@ WhatIf Example
     param (
         [parameter(Mandatory = $true)]
         [DbaInstanceParameter]$SqlInstance,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential]$SqlCredential,
 		[object]$Login,
         [parameter(Mandatory = $true)]
         [String]$NewLogin

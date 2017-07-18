@@ -13,10 +13,10 @@ function Test-DbaDatabaseCollation {
 		Credential object used to connect to the SQL Server as a different user
 
 	.PARAMETER Database
-		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 	.PARAMETER ExcludeDatabase
-		The database(s) to exclude - this list is autopopulated from the server
+		The database(s) to exclude - this list is auto-populated from the server
 
 	.PARAMETER Detailed
 		Shows detailed information about the server and database collations
@@ -55,7 +55,7 @@ function Test-DbaDatabaseCollation {
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$Credential,
 		[Alias("Databases")]
 		[object[]]$Database,

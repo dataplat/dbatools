@@ -65,7 +65,7 @@
 		[DateTime]
 		$End = (Get-Date),
 		
-		[System.Management.Automation.CredentialAttribute()]
+		
 		[System.Management.Automation.PSCredential]
 		$Credential,
 		

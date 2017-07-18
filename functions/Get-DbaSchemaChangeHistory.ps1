@@ -8,17 +8,17 @@ function Get-DbaSchemaChangeHistory {
 	Only works with SQL 2005 and later, as the system trace didn't exist before then
 
 	.PARAMETER SqlInstance
-	SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
+	SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
 	to be executed against multiple SQL Server instances.
 
 	.PARAMETER SqlCredential
 	SqlCredential object to connect as. If not specified, current Windows login will be used.
 
 	.PARAMETER Database
-	The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+	The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 	.PARAMETER ExcludeDatabase
-	The database(s) to exclude - this list is autopopulated from the server
+	The database(s) to exclude - this list is auto-populated from the server
 		
 	.PARAMETER Since
 	A date from which DDL changes should be returned. Default is to start at the beggining of the current trace file
@@ -68,7 +68,7 @@ function Get-DbaSchemaChangeHistory {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,

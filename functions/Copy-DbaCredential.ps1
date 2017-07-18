@@ -48,7 +48,7 @@
 			Prompts you for confirmation before executing any changing operations within the command.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			Use this switch to disable any kind of verbose messages.
 
 		.NOTES
 			Tags: WSMan, Migration
@@ -83,13 +83,13 @@
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SourceSqlCredential,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$Credential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$DestinationSqlCredential,
 		[object[]]$CredentialIdentity,
 		[switch]$Force,
@@ -112,7 +112,7 @@
 			[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 			param (
 				[DbaInstanceParameter]$SqlInstance,
-				[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
+				[PSCredential]$SqlCredential
 			)
 			
 			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
@@ -288,7 +288,7 @@
 			Write-Message -Level Verbose -Message "Collecting Credential logins and passwords on $($sourceServer.Name)"
 			$sourceCredentials = Get-SqlCredential $sourceServer
 			
-			if ($CredentialIdenity -ne $null) {
+			if ($CredentialIdentity -ne $null) {
 				$credentialList = $sourceServer.Credentials | Where-Object { $CredentialIdentity -contains $_.Name }
 			}
 			else {

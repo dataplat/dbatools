@@ -6,12 +6,12 @@
 	.DESCRIPTION
 		By default, all mail configurations for Profiles, Accounts, Mail Servers and Configs are copied.
 
-		The -Profiles parameter is autopopulated for command-line completion and can be used to copy only specific mail profiles.
-		The -Accounts parameter is autopopulated for command-line completion and can be used to copy only specific mail accounts.
-		The -mailServers parameter is autopopulated for command-line completion and can be used to copy only specific mail servers.
+		The -Profiles parameter is auto-populated for command-line completion and can be used to copy only specific mail profiles.
+		The -Accounts parameter is auto-populated for command-line completion and can be used to copy only specific mail accounts.
+		The -mailServers parameter is auto-populated for command-line completion and can be used to copy only specific mail servers.
 
 	.PARAMETER Source
-		Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+		Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 	.PARAMETER Destination
 		Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -37,13 +37,13 @@
 		Specifies the object type to migrate. Valid options are Job, Alert and Operator. When CategoryType is specified, all categories from the selected type will be migrated. For granular migrations, use the three parameters below.
 
 	.PARAMETER Profiles
-		This parameter is autopopulated for command-line completion and can be used to copy only specific mail profiles.
+		This parameter is auto-populated for command-line completion and can be used to copy only specific mail profiles.
 
 	.PARAMETER Accounts
-		This parameter is autopopulated for command-line completion and can be used to copy only specific mail accounts.
+		This parameter is auto-populated for command-line completion and can be used to copy only specific mail accounts.
 
 	.PARAMETER mailServers
-		The parameter is autopopulated for command-line completion and can be used to copy only specific mail servers.
+		The parameter is auto-populated for command-line completion and can be used to copy only specific mail servers.
 
 	.PARAMETER WhatIf
 		Shows what would happen if the command were to run. No actions are actually performed.
@@ -52,10 +52,10 @@
 		Prompts you for confirmation before executing any changing operations within the command.
 
 	.PARAMETER Force
-		Drops and recreates the object if it exists
+		Drops and recreates the object if it exists.
 
 	.PARAMETER Silent
-		Use this switch to disable any kind of verbose messages
+		If this switch is enabled, the internal messaging functions will be silenced.
 
 	.NOTES
 		Tags: Migration, Mail
@@ -85,7 +85,7 @@
 		Shows what would happen if the command were executed.
 	
 	.EXAMPLE
-		Copy-DbaDatabaseMailj -Source sqlserver2014a -Destination sqlcluster -Silent:$true
+		Copy-DbaDatabaseMail -Source sqlserver2014a -Destination sqlcluster -Silent:$true
 
 		Performs execution of function, but disables output of all messages
 	#>
@@ -95,11 +95,11 @@
 		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[Parameter(ParameterSetName = 'SpecifcTypes')]
+		[Parameter(ParameterSetName = 'SpecificTypes')]
 		[ValidateSet('ConfigurationValues', 'Profiles', 'Accounts', 'mailServers')]
 		[string[]]$Type,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential,
+		[PSCredential]$SourceSqlCredential,
+		[PSCredential]$DestinationSqlCredential,
 		[switch]$Force,
 		[switch]$Silent
 	)

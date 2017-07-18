@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .PARAMETER SqlInstance 
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-collection and recieve pipeline input.
+collection and receive pipeline input.
 
 .PARAMETER SqlCredential
 PSCredential object to connect under. If not specified, current Windows login will be used.
@@ -57,7 +57,7 @@ Returns all active directory users within all windows AD groups that have logins
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[string[]]$Login
 	)
 	begin

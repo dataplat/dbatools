@@ -17,19 +17,19 @@ function Test-DbaJobOwner {
 
 		.PARAMETER SqlInstance
 			SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-			collection and recieve pipeline input
+			collection and receive pipeline input
 
 		.PARAMETER SqlCredential
-			PSCredential object to connect under. If not specified, currend Windows login will be used.
+			PSCredential object to connect under. If not specified, current Windows login will be used.
 
 		.PARAMETER Job
-			The job(s) to process - this list is auto populated from the server. If unspecified, all jobs will be processed.
+			The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
 
 		.PARAMETER ExcludeJob
-			The job(s) to exclude - this list is auto populated from the server.
+			The job(s) to exclude - this list is auto-populated from the server.
 
 		.PARAMETER Login
-			Specific login that you wish to check for ownership - this list is auto populated from the server. This defaults to 'sa' or the sysadmin name if sa was renamed.
+			Specific login that you wish to check for ownership - this list is auto-populated from the server. This defaults to 'sa' or the sysadmin name if sa was renamed.
 
 		.PARAMETER Detailed
 			Provides Detailed information
@@ -65,7 +65,7 @@ function Test-DbaJobOwner {
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[object[]]$Job,
 		[object[]]$ExcludeJob,

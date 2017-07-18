@@ -4,7 +4,7 @@
 			Copy-DbaDatabaseAssembly migrates assemblies from one SQL Server to another.
 
 		.DESCRIPTION
-			By default, all assemblies are copied. The -Assemblies parameter is autopopulated for command-line completion and can be used to copy only specific assemblies.
+			By default, all assemblies are copied. The -Assemblies parameter is auto-populated for command-line completion and can be used to copy only specific assemblies.
 
 			If the assembly already exists on the destination, it will be skipped unless -Force is used.
 
@@ -33,10 +33,10 @@
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Assembly
-			The assembly(ies) to process - this list is auto populated from the server. If unspecified, all assemblies will be processed.
+			The assembly(ies) to process - this list is auto-populated from the server. If unspecified, all assemblies will be processed.
 
 		.PARAMETER ExcludeAssembly
-			The assembly(ies) to exclude - this list is auto populated from the server
+			The assembly(ies) to exclude - this list is auto-populated from the server
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
@@ -45,10 +45,10 @@
 			Prompts you for confirmation before executing any changing operations within the command.
 
 		.PARAMETER Force
-			Drops and recreates the XXXXX if it exists
+			Drops and recreates the assembly if it exists
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Migration, Assembly
@@ -83,10 +83,10 @@
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,
+		[PSCredential]$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential,
+		[PSCredential]$DestinationSqlCredential,
 		[object[]]$Assembly,
 		[object[]]$ExcludeAssembly,
 		[switch]$Force,
@@ -135,7 +135,7 @@
 			$dbName = $currentAssembly.Parent.Name
 			$destDb = $destServer.Databases[$dbName]
 
-			$copyDbAssemlbyStatus = [pscustomobject]@{
+			$copyDbAssemblyStatus = [pscustomobject]@{
 				SourceServer        = $sourceServer.Name
 				SourceDatabase      = $dbName
 				DestinationServer   = $destServer.Name
@@ -147,8 +147,8 @@
 
 
 			if (!$destDb) {
-				$copyDbAssemlbyStatus.Status = "Skipped"
-				$copyDbAssemlbyStatus
+				$copyDbAssemblyStatus.Status = "Skipped"
+				$copyDbAssemblyStatus
 
 				Write-Message -Level Warning -Message "Destination database $dbName does not exist. Skipping $assemblyName.";
 				continue
@@ -167,8 +167,8 @@
 						$destServer.Query($sql)
 					}
 					catch {
-                        $copyDbAssemlbyStatus.Status = "Failed"
-                        $copyDbAssemlbyStatus
+                        $copyDbAssemblyStatus.Status = "Failed"
+                        $copyDbAssemblyStatus
 
                         Stop-Function -Message "Issue setting security level" -Target $destDb -InnerErrorRecord $_
 					}
@@ -177,8 +177,8 @@
 
 			if ($destServer.Databases[$dbName].Assemblies.Name -contains $currentAssembly.name) {
 				if ($force -eq $false) {
-                    $copyDbAssemlbyStatus.Status = "Skipped"
-                    $copyDbAssemlbyStatus
+                    $copyDbAssemblyStatus.Status = "Skipped"
+                    $copyDbAssemblyStatus
 
                     Write-Message -Level Warning -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
 					continue
@@ -195,8 +195,8 @@
 							$destServer.Query($sql,$dbName)
                         }
 						catch {
-                            $copyDbAssemlbyStatus.Status = "Failed"
-                            $copyDbAssemlbyStatus
+                            $copyDbAssemblyStatus.Status = "Failed"
+                            $copyDbAssemblyStatus
 
                             Stop-Function -Message "Issue dropping assembly" -Target $assemblyName -InnerErrorRecord $_ -Continue
 						}
@@ -211,13 +211,13 @@
 					Write-Message -Level Debug -Message $sql
 					$destServer.Query($sql,$dbName)
 
-                    $copyDbAssemlbyStatus.Status = "Successful"
-                    $copyDbAssemlbyStatus
+                    $copyDbAssemblyStatus.Status = "Successful"
+                    $copyDbAssemblyStatus
 
                 }
 				catch {
-                    $copyDbAssemlbyStatus.Status = "Failed"
-                    $copyDbAssemlbyStatus
+                    $copyDbAssemblyStatus.Status = "Failed"
+                    $copyDbAssemblyStatus
 
                     Stop-Function -Message "Issue creating assembly" -Target $assemblyName -InnerErrorRecord $_
 				}

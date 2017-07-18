@@ -59,10 +59,10 @@ The Category Name for the Agent Job that gets created defaults to Rationalisatio
 The setting for the backup compression for the backup defaults to the default setting for the server but accepts On or Off to override that setting
 
 .PARAMETER AllDatabases
-Runs the script for every user databases on a server - Useful when decomissioning a server - That would need a DestinationServer set
+Runs the script for every user databases on a server - Useful when decommissioning a server - That would need a DestinationServer set
 
 .PARAMETER ReuseSourceFolderStructure
-Reuse source folder structure on restore instead of using destionation default.
+Reuse source folder structure on restore instead of using destination default.
 
 .PARAMETER Force
 This switch will continue to perform rest of the actions and will create an Agent Job with DBCCERROR in the name and a Backup file with DBCC in the name
@@ -143,13 +143,13 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[parameter(Mandatory = $false)]
 		[DbaInstanceParameter]$Destination = $sqlinstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$DestinationCredential,
 		[parameter(Mandatory = $false)]
 		[Alias("NoCheck")]
@@ -337,7 +337,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				[Parameter(Mandatory = $true)]
 				[object]$filestructure,
 				[switch]$norecovery,
-				[PSCredential][System.Management.Automation.CredentialAttribute()]$sqlCredential,
+				[PSCredential]$sqlCredential,
 				[switch]$TSql = $false
 			)
 
@@ -410,7 +410,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 
 			$db = $sourceserver.databases[$dbname]
 
-			# The db check is needed when the number of databases exceeds 255, then it's no longer autopopulated
+			# The db check is needed when the number of databases exceeds 255, then it's no longer auto-populated
 			if (!$db) {
 				Stop-Function -Message "$dbname does not exist on $source. Aborting routine for this database" -Continue
 			}

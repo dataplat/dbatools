@@ -8,16 +8,16 @@ Shows table information around table row and data sizes and if it has any table 
 
 .PARAMETER SqlInstance
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-collection and recieve pipeline input
+collection and receive pipeline input
 
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, current Windows login will be used.
 
 .PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is autopopulated from the server
+The database(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER IncludeSystemDBs
 Switch parameter that when used will display system database information
@@ -68,7 +68,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
@@ -179,16 +179,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 							}
 						}
 
-						$tables = $db.Tables | Where-Object { $_.Name -eq $fqtn.Table }
-
-						if ($fqtn.Schema) {
-							$tables = $tables | Where-Object { $_.Schema -eq $fqtn.Schema }
-						}
-
-						if ($fqtn.Database) {
-							$tables = $tables | Where-Object { $_.Parent.Name -eq $fqtn.Database }
-						}
-
+						$tables = $db.tables | Where-Object {$fqtn.Table -eq $_.name -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null)}
 						if ($tables.Count -eq 0) {
 							$outSchema = ""
 							if ($fqtn.Schema) {

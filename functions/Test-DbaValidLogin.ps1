@@ -14,10 +14,10 @@ SQL instance to check. You must have sysadmin access and server version must be 
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
 .PARAMETER Login
-Filters the results to only the login you wish - this list is auto populated from the server.
+Filters the results to only the login you wish - this list is auto-populated from the server.
 
 .PARAMETER ExcludeLogin
-Excludes any login you pass into it from the results - this list is auto populated from the server.
+Excludes any login you pass into it from the results - this list is auto-populated from the server.
 
 .PARAMETER FilterBy
 By default the function returns both Logins and Groups. you can use the FilterBy parameter to only return Groups (GroupsOnly) or Logins (LoginsOnly)
@@ -64,7 +64,7 @@ Tests all logins excluding any that are from the subdomain Domain
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[object[]]$Login,
 		[object[]]$ExcludeLogin,

@@ -28,10 +28,10 @@ The SQL Server that you're connecting to.
 SqlCredential object used to connect to the SQL Server as a different user.
 
 .PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is autopopulated from the server
+The database(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER AllUserDatabases
 Run command against all user databases
@@ -81,12 +81,12 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 https://dbatools.io/Invoke-DbaDatabaseShrink
 
 .EXAMPLE
-Invoke-DbaDatabaseShrink -SqlInstance sql2016 -DatabaseNorthwind,pubs,Adventureworks2014
+Invoke-DbaDatabaseShrink -SqlInstance sql2016 -Database Northwind,pubs,Adventureworks2014
 
 Shrinks Northwind, pubs and Adventureworks2014 to have as little free space as possible.
 
 .EXAMPLE
-Invoke-DbaDatabaseShrink -SqlInstance sql2014 -DatabaseAdventureworks2014 -PercentFreeSpace 50
+Invoke-DbaDatabaseShrink -SqlInstance sql2014 -Database Adventureworks2014 -PercentFreeSpace 50
 
 Shrinks Adventureworks2014 to have 50% free space. So let's say Adventureworks2014 was 1GB and it's using 100MB space. The database free space would be reduced to 50MB.
 
@@ -102,7 +102,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,

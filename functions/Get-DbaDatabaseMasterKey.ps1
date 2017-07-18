@@ -16,7 +16,7 @@ Allows you to login to SQL Server using alternative credentials
 Get master key from specific database
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto populated from the server
+The database(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed
@@ -50,7 +50,7 @@ Gets the master key for the db1 database
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[switch]$Silent

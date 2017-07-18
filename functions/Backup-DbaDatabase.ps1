@@ -14,31 +14,30 @@ The SQL Server instance hosting the databases to be backed up
 Credentials to connect to the SQL Server instance if the calling user doesn't have permission
 
 .PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is autopopulated from the server
+The database(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER BackupFileName
-name of the file to backup to. This is only accepted for single database backups
-If no name is specified then the backup files will be named DatabaseName_yyyyMMddHHmm (ie; Database1_201714022131)
-with the appropriate extension.
+The name of the file to backup to. This is only accepted for single database backups.
+If no name is specified then the backup files will be named DatabaseName_yyyyMMddHHmm (i.e. "Database1_201714022131") with the appropriate extension.
 
-If the same name is used repeatedly, SQL Server will add backups to the same file at an incrementing position
+If the same name is used repeatedly, SQL Server will add backups to the same file at an incrementing position.
 
-Sql Server needs permissions to write to the location. Path names are based on the Sql Server (c:\ is the c drive on the SQL Server, not the machine running the script)
+Sql Server needs permissions to write to the specified location. Path names are based on the Sql Server (C:\ is the C drive on the SQL Server, not the machine running the script).
 
 .PARAMETER BackupDirectory
-Path to place the backup files. If not specified the backups will be placed in the default backup location for SQLInstance
-If multiple paths are specified, the backups will be stiped across these locations. This will overwrite the FileCount option
+Path in which to place the backup files. If not specified, the backups will be placed in the default backup location for SQLInstance.
+If multiple paths are specified, the backups will be striped across these locations. This will overwrite the FileCount option.
 
-If path does not exist Sql Server will attmept to create it. Folders are created by the Sql Instance, and checks will be made for write permissions
+If the path does not exist, Sql Server will attempt to create it. Folders are created by the Sql Instance, and checks will be made for write permissions.
 
-File Names with be suffixed with x-of-y to enable identifying striped sets, where y is the number of files in the set and x is from 1 to you
+File Names with be suffixed with x-of-y to enable identifying striped sets, where y is the number of files in the set and x ranges from 1 to y.
 
-.PARAMETER NoCopyOnly
-By default function performs a Copy Only backup. These backups do not intefere with the restore chain of the database, so are safe to take.
-This switch indicates that you wish to take normal backups. Be aware that these WILL break your restore chains, so use at your own risk
+.PARAMETER CopyOnly
+By default function performs a normal backup, these backups  interfere with the restore chain of the database.
+This switch indicates that you wish to take CopyOnly backups. These backups will not interfere with the restore chain of the database.
 
 For more details please refer to this MSDN article - https://msdn.microsoft.com/en-us/library/ms191495.aspx 
 
@@ -47,22 +46,21 @@ The type of SQL Server backup to perform.
 Accepted values are Full, Log, Differential, Diff, Database
 
 .PARAMETER FileCount
-THis is the number of striped copies of the backups you wish to create
+This is the number of striped copies of the backups you wish to create
 This value is overwritten if you specify multiple Backup Directories
 
 .PARAMETER CreateFolder
-If switch enabled then each databases will be backed up into a seperate folder on each of the specified backuppaths
+If this switch is enabled, each database will be backed up into a separate folder on each of the specified backuppaths
 
 .PARAMETER CompressBackup
-If switch enabled, function will try to perform a compressed backup if supported by the version and edition of SQL Server.
-If not set, function will use the Server's default setting for compression
+If this switch is enabled,the function will try to perform a compressed backup if supported by the version and edition of SQL Server.
+If not set, this function will use the server's default setting for compression
 
 .PARAMETER MaxTransferSize
-Parameter to set the unit of transfer. Values must be a multiple by 64kb
+Sets the size of the unit of transfer. Values must be a multiple of 64kb
 
 .PARAMETER Blocksize
-Specifies the block size to use. Must be  one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb or 64kb
-Can be specified in bytes
+Specifies the block size to use. Must be one of 0.5KB, 1KB, 2KB, 4KB, 8KB, 16KB, 32KB or 64KB. This can be specified in bytes.
 Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
 
 .PARAMETER BufferCount
@@ -70,25 +68,24 @@ Number of I/O buffers to use to perform the operation.
 Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
 
 .PARAMETER Checksum
-If switch enabled the backup checksum will be calculated
+If this switch is enabled, the backup checksum will be calculated.
 
 .PARAMETER Verify
-If switch enabled, the backup with be verified by running a RESTORE VERIFYONLY against the Sql Instance
+If this switch is enabled, the backup will be verified by running a RESTORE VERIFYONLY against the SqlInstance
 
 .PARAMETER DatabaseCollection
 Internal parameter
 
 .PARAMETER AzureBaseUrl
-The URL to the basecontainer of an Azure storage account to write backups to
+The URL to the basecontainer of an Azure storage account to write backups to.
 
-If specified, the only other parameters than can be used are:
-NoCopyOnly, Type, CompressBackup, Checksum, Verify, AzureCredential, CreateFolder
+If specified, the only other parameters than can be used are "NoCopyOnly", "Type", "CompressBackup", "Checksum", "Verify", "AzureCredential", "CreateFolder".
 
 .PARAMETER AzureCredential
-The name of the credential on the SQL instance that can write to the AzureBaseUrl
+The name of the credential on the SQL instance that can write to the AzureBaseUrl.
 
 .PARAMETER Silent
-Switch to silence the internal messaing functions
+If this switch is enabled, the internal messaging functions will be silenced.
 
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
@@ -104,31 +101,30 @@ You should have received a copy of the GNU General Public License along with thi
 .EXAMPLE 
 Backup-DbaDatabase -SqlInstance Server1 -Database HR, Finance
 
-This will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1's 
-default backup directory 
+This will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1's default backup directory.
 	
 .EXAMPLE
 Backup-DbaDatabase -SqlInstance sql2016 -BackupDirectory C:\temp -Database AdventureWorks2014 -Type Full
 
-Backs up AdventureWorks2014 to sql2016's C:\temp folder 
+Backs up AdventureWorks2014 to sql2016's C:\temp folder.
 
 .EXAMPLE
 Backup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ -AzureCredential dbatoolscred -Type Full -CreateFolder
 
-Performs a full backup of all databases on the slq2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the 
-sql credential dbatoolscred registered on the sql2016 instance
+Performs a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the 
+sql credential "dbatoolscred" registered on the sql2016 instance
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	param (
 		[parameter(ParameterSetName = "Pipe", Mandatory = $true)]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[string[]]$BackupDirectory,
 		[string]$BackupFileName,
-		[switch]$NoCopyOnly,
+		[switch]$CopyOnly,
 		[ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
 		[string]$Type = "Database",
 		[parameter(ParameterSetName = "NoPipe", Mandatory = $true, ValueFromPipeline = $true)]
@@ -253,7 +249,9 @@ sql credential dbatoolscred registered on the sql2016 instance
 				Write-Message -Level Warning -Message "$failreason"
 			}
 			
-			$copyonly = !$NoCopyOnly
+			if ($CopyOnly -ne $True) {
+				$CopyOnly -eq $false
+			}
 			
 			$server.ConnectionContext.StatementTimeout  = 0
 			$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup

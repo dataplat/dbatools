@@ -19,10 +19,10 @@
 		Credential object used to connect to the destination SQL Server as a different user.
 
 	.PARAMETER Destination
-		The target server where the databases reside on which you want to enfore the copied Query Store configuration from the SourceDatabase.
+		The target server where the databases reside on which you want to enforce the copied Query Store configuration from the SourceDatabase.
 
 	.PARAMETER DestinationDatabase
-		The databases that will recieve a copy of the Query Store configuration of the SourceDatabase.
+		The databases that will receive a copy of the Query Store configuration of the SourceDatabase.
 
 	.PARAMETER Exclude
 		Copy Query Store configuration for all but these specific databases.
@@ -68,12 +68,12 @@
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[DbaInstanceParameter]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,
+		[PSCredential]$SourceSqlCredential,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object]$SourceDatabase,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[DbaInstanceParameter[]]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential,
+		[PSCredential]$DestinationSqlCredential,
 		[object[]]$DestinationDatabase,
 		[object[]]$Exclude,
 		[switch]$AllDatabases,

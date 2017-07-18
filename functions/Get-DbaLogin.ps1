@@ -13,10 +13,10 @@ function Get-DbaLogin {
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
 		.PARAMETER Login
-			The login(s) to process - this list is autopopulated from the server. If unspecified, all logins will be processed.
+			The login(s) to process - this list is auto-populated from the server. If unspecified, all logins will be processed.
 
 		.PARAMETER ExcludeLogin
-			The login(s) to exclude - this list is autopopulated from the server
+			The login(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER Locked
 			Filters on the SMO property to return locked Logins.
@@ -81,7 +81,7 @@ function Get-DbaLogin {
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[object[]]$Login,
 		[object[]]$ExcludeLogin,

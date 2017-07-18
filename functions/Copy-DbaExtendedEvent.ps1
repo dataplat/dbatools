@@ -6,7 +6,7 @@ function Copy-DbaExtendedEvent {
 		.DESCRIPTION
 			By default, all non-system extended events are migrated. If the event already exists on the destination, it will be skipped unless -Force is used.
 
-			The -Session parameter is autopopulated for command-line completion and can be used to copy only specific objects.
+			The -Session parameter is auto-populated for command-line completion and can be used to copy only specific objects.
 
 		.PARAMETER Source
 			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2008 or higher.
@@ -31,10 +31,10 @@ function Copy-DbaExtendedEvent {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER XeSession
-			The Extended Event Session(s) to process - this list is auto populated from the server. If unspecified, all Extended Event  Sessions will be processed.
+			The Extended Event Session(s) to process - this list is auto-populated from the server. If unspecified, all Extended Event  Sessions will be processed.
 
 		.PARAMETER ExcludeXeSession
-			The Extended Event Session(s) to exclude - this list is auto populated from the server
+			The Extended Event Session(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER Force
 			If sessions exists on destination server, it will be dropped and recreated.
@@ -86,9 +86,9 @@ function Copy-DbaExtendedEvent {
 		[DbaInstanceParameter]$Source,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SourceSqlCredential,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$DestinationSqlCredential,
 		[object[]]$XeSession,
 		[object[]]$ExcludeXeSession,
@@ -180,7 +180,7 @@ function Copy-DbaExtendedEvent {
 						$destStore.Sessions.Refresh()
 						$destStore.Sessions[$sessionName].Start()
 					}
-
+# Will correcting the spelling of this status cause downstream problems?
 					$copyXeSessionStatus.Status = "Succesful"
 					$copyXeSessionStatus
 				}

@@ -103,7 +103,7 @@ function Backup-DbaDatabaseCertificate {
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[parameter(ParameterSetName = "instance")]
 		[object[]]$Certificate,
 		[parameter(ParameterSetName = "instance")]
@@ -124,7 +124,7 @@ function Backup-DbaDatabaseCertificate {
 	begin {
 		
 		if ($EncryptionPassword.Length -eq 0 -and $DecryptionPassword.Length -gt 0) {
-			Stop-Function -Message "If you specify an dencryption password, you must also specify an encryption password" -Target $DecryptionPassword
+			Stop-Function -Message "If you specify an decryption password, you must also specify an encryption password" -Target $DecryptionPassword
 		}
 		
 		function export-cert ($cert) {

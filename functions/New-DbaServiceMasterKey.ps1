@@ -42,7 +42,7 @@ You will be prompted to securely enter your Service Key Password twice, then a m
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Security.SecureString]$Password,
 		[switch]$Silent
 	)
