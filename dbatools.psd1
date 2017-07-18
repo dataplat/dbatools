@@ -334,7 +334,8 @@
 		'Get-DbaDbStoredProcedure',
 		'Test-DbaCompression',
 		'Mount-DbaDatabase',
-		'Dismount-DbaDatabase'
+		'Dismount-DbaDatabase',
+		'Set-DbaPrivilege'
 	)
 	
 	# Cmdlets to export from this module

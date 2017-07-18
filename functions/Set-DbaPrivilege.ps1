@@ -47,8 +47,7 @@
 		[parameter(ValueFromPipeline)]
 		[Alias("cn", "host", "Server")]
 		[dbainstanceparameter[]]$ComputerName = $env:COMPUTERNAME,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$Credential,
+		[PSCredential]$Credential,
         [Parameter(Mandatory=$true)]
         [ValidateSet('IFI','LPIM','BatchLogon')]
         [string[]]$Type,
@@ -68,7 +67,7 @@ function Convert-UserNameToSID ([string] `$Acc ) {
 	process {
 		foreach ($computer in $ComputerName) {
 			Write-Message -Level Verbose -Message "Connecting to $computer"
-		    Test-RunAsAdmin
+			$null = Test-ElevationRequirement -ComputerName $Computer -Continue
 			if (Test-PSRemoting -ComputerName $Computer) {
 				Write-Message -Level Verbose -Message "Exporting Privileges on $Computer"
 				Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock {
