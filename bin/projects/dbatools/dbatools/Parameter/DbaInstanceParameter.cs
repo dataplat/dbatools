@@ -400,7 +400,8 @@ namespace Sqlcollaborative.Dbatools.Parameter
                 case "microsoft.sqlserver.management.smo.server":
                     try
                     {
-                        _ComputerName = (string)tempInput.Properties["NetName"].Value;
+                        try { _ComputerName = (string)tempInput.Properties["NetName"].Value; }
+                        catch { _ComputerName = (string)tempInput.Properties["ComputerNamePhysicalNetBIOS"].Value; }
                         _InstanceName = (string)tempInput.Properties["InstanceName"].Value;
                         PSObject tempObject = new PSObject(tempInput.Properties["ConnectionContext"].Value);
 
