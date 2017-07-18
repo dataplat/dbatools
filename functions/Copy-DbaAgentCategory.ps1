@@ -8,14 +8,14 @@
 		.DESCRIPTION
 			By default, all SQL Agent categories for Jobs, Operators and Alerts are copied.
 
-			The -OperatorCategories parameter is autopopulated for command-line completion and can be used to copy only specific operator categories.
-			The -AgentCategories parameter is autopopulated for command-line completion and can be used to copy only specific agent categories.
-			The -JobCategories parameter is autopopulated for command-line completion and can be used to copy only specific job categories.
+			The -OperatorCategories parameter is auto-populated for command-line completion and can be used to copy only specific operator categories.
+			The -AgentCategories parameter is auto-populated for command-line completion and can be used to copy only specific agent categories.
+			The -JobCategories parameter is auto-populated for command-line completion and can be used to copy only specific job categories.
 
 			If the category already exists on the destination, it will be skipped unless -Force is used.
 
 		.PARAMETER Source
-			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -39,16 +39,16 @@
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER CategoryType
-			Specifies the Category Type to migrate. Valid options are Job, Alert and Operator. When CategoryType is specified, all categories from the selected type will be migrated. For granular migrations, use the three parameters below.
+			Specifies the Category Type to migrate. Valid options are "Job", "Alert" and "Operator". When CategoryType is specified, all categories from the selected type will be migrated. For granular migrations, use the three parameters below.
 
 		.PARAMETER OperatorCategory
-			This parameter is autopopulated for command-line completion and can be used to copy only specific operator categories.
+			This parameter is auto-populated for command-line completion and can be used to copy only specific operator categories.
 
 		.PARAMETER AgentCategory
-			This parameter is autopopulated for command-line completion and can be used to copy only specific agent categories.
+			This parameter is auto-populated for command-line completion and can be used to copy only specific agent categories.
 
 		.PARAMETER JobCategory
-			This parameter is autopopulated for command-line completion and can be used to copy only specific job categories.
+			This parameter is auto-populated for command-line completion and can be used to copy only specific job categories.
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
@@ -57,10 +57,10 @@
 			Prompts you for confirmation before executing any changing operations within the command.
 
 		.PARAMETER Force
-			Drops and recreates the XXXXX if it exists
+			Drops and recreates the category if it exists.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Migration, Agent
@@ -99,7 +99,7 @@
 		[DbaInstanceParameter]$Destination,
 		[PSCredential]
 		$DestinationSqlCredential,
-		[Parameter(ParameterSetName = 'SpecifcAlerts')]
+		[Parameter(ParameterSetName = 'SpecificAlerts')]
 		[ValidateSet('Job', 'Alert', 'Operator')]
 		[string[]]$CategoryType,
 		[switch]$Force,
@@ -114,7 +114,7 @@
 					Copy-JobCategory migrates job categories from one SQL Server to another.
 
 				.DESCRIPTION
-					By default, all job categories are copied. The -JobCategories parameter is autopopulated for command-line completion and can be used to copy only specific job categories.
+					By default, all job categories are copied. The -JobCategories parameter is auto-populated for command-line completion and can be used to copy only specific job categories.
 
 					If the associated credential for the category does not exist on the destination, it will be skipped. If the job category already exists on the destination, it will be skipped unless -Force is used.
 			#>
@@ -190,7 +190,7 @@
 					Copy-OperatorCategory migrates operator categories from one SQL Server to another.
 
 				.DESCRIPTION
-					By default, all operator categories are copied. The -OperatorCategories parameter is autopopulated for command-line completion and can be used to copy only specific operator categories.
+					By default, all operator categories are copied. The -OperatorCategories parameter is auto-populated for command-line completion and can be used to copy only specific operator categories.
 
 					If the associated credential for the category does not exist on the destination, it will be skipped. If the operator category already exists on the destination, it will be skipped unless -Force is used.
 			#>
@@ -270,7 +270,7 @@
 					Copy-AlertCategory migrates alert categories from one SQL Server to another.
 
 				.DESCRIPTION
-					By default, all alert categories are copied. The -AlertCategories parameter is autopopulated for command-line completion and can be used to copy only specific alert categories.
+					By default, all alert categories are copied. The -AlertCategories parameter is auto-populated for command-line completion and can be used to copy only specific alert categories.
 
 					If the associated credential for the category does not exist on the destination, it will be skipped. If the alert category already exists on the destination, it will be skipped unless -Force is used.
 			#>

@@ -7,7 +7,7 @@ Gets SQL Instance properties of one or more instance(s) of SQL Server.
  The Get-DbaSqlInstanceProperty command gets SQL Instance properties from the SMO object sqlserver.
 
 .PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
 to be executed against multiple SQL Server instances.
 
 .PARAMETER SqlCredential

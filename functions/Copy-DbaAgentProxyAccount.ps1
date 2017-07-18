@@ -4,7 +4,7 @@
 			Copy-DbaAgentProxyAccount migrates proxy accounts from one SQL Server to another.
 
 		.DESCRIPTION
-			By default, all proxy accounts are copied. The -ProxyAccounts parameter is autopopulated for command-line completion and can be used to copy only specific proxy accounts.
+			By default, all proxy accounts are copied. The -ProxyAccounts parameter is auto-populated for command-line completion and can be used to copy only specific proxy accounts.
 
 			If the associated credential for the account does not exist on the destination, it will be skipped. If the proxy account already exists on the destination, it will be skipped unless -Force is used.
 
@@ -37,10 +37,10 @@
 			Prompts you for confirmation before executing any changing operations within the command.
 
 		.PARAMETER Force
-			Drops and recreates the Proxy Account if it exists
+			Drops and recreates the Proxy Account if it exists.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Migration, Agent
@@ -160,6 +160,7 @@
 					Write-Message -Level Debug -Message $sql
 					$destServer.Query($sql)
 
+# Will fixing this misspelled status cause problems downstream?
 					$copyAgentProxyAccountStatus.Status = "Succesful"
 					$copyAgentProxyAccountStatus
 				}

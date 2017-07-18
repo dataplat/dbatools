@@ -13,10 +13,10 @@ function Find-DbaDatabaseGrowthEvent {
 			SqlCredential object used to connect to the SQL Server as a different user.
 
 		.PARAMETER Database
-			The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+			The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 		.PARAMETER ExcludeDatabase
-			The database(s) to exclude - this list is autopopulated from the server
+			The database(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages

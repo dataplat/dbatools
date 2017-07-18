@@ -33,10 +33,10 @@ function Get-DbaHelpIndex {
 			PSCredential object to connect as. if not specified, current Windows login will be used.
 
 		.PARAMETER Database
-			The database(s) to process - this list is autopopulated from the server. if unspecified, all databases will be processed.
+			The database(s) to process - this list is auto-populated from the server. if unspecified, all databases will be processed.
 
 		.PARAMETER ExcludeDatabase
-			The database(s) to exclude - this list is autopopulated from the server
+			The database(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER ObjectName
 			The name of a table for which you want to obtain the index information. If the two part naming convention for an object is not used it will use the default schema for the executing user. If not passed it will return data on all indexes in a given database.

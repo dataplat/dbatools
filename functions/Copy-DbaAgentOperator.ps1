@@ -4,12 +4,12 @@
 			Copy-DbaAgentOperator migrates operators from one SQL Server to another. 
 
 		.DESCRIPTION
-			By default, all operators are copied. The -Operators parameter is autopopulated for command-line completion and can be used to copy only specific operators.
+			By default, all operators are copied. The -Operators parameter is auto-populated for command-line completion and can be used to copy only specific operators.
 
 			If the associated credentials for the operator do not exist on the destination, it will be skipped. If the operator already exists on the destination, it will be skipped unless -Force is used.  
 
 		.PARAMETER Source
-			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
 		.PARAMETER Destination
 			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -32,10 +32,10 @@
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Operator
-			The operator(s) to process - this list is autopopulated from the server. If unspecified, all operators will be processed.
+			The operator(s) to process - this list is auto-populated from the server. If unspecified, all operators will be processed.
 
 		.PARAMETER ExcludeOperator
-			The operators(s) to exclude - this list is autopopulated from the server.
+			The operators(s) to exclude - this list is auto-populated from the server.
 
 		.PARAMETER WhatIf 
 			Shows what would happen if the command were to run. No actions are actually performed. 
@@ -44,10 +44,10 @@
 			Prompts you for confirmation before executing any changing operations within the command. 
 
 		.PARAMETER Force
-			Drops and recreates the Operator if it exists
+			Drops and recreates the Operator if it exists.
 
 		.PARAMETER Silent 
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Migration, Agent, Operator
