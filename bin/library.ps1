@@ -176,6 +176,8 @@ Remove-Module / Import-Module in order to load the latest version without
 starting a new PowerShell instance.
 
 Please restart the console to apply the library update, or unexpected behavior will likely occur.
+
+If the issues continue to persist, please Remove-Item '$script:PSModuleRoot\bin\dbatools.dll'
 "@
 }
 #endregion Version Warning
