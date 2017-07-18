@@ -180,7 +180,7 @@ function Get-FilteredRestoreFile {
                     break
                 }
                 #This scans for striped full backups to build the results
-                $Results += $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq "Database" -and $_.FirstLSN -eq $FullBackup.FirstLSN}
+                $Results += $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq "Database" -and $_.FirstLSN -eq $FullBackup.FirstLSN -and $_.BackupSetGUID -eq $FullBackup.BackupSetGUID}
             }
             else {
                 Write-Message -Level VeryVerbose -Message "Continuing restore, setting fake fullbackup"
