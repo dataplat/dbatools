@@ -6,7 +6,7 @@ Get all existing triggers on one or more SQL instances.
 .DESCRIPTION
 Get all existing triggers on one or more SQL instances.
 
-Default output includes columns ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastMofied.
+Default output includes columns ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastModified.
 
 .PARAMETER SqlInstance
 The SQL Instance that you're connecting to.
@@ -15,10 +15,10 @@ The SQL Instance that you're connecting to.
 SqlCredential object used to connect to the SQL Server as a different user.
 	
 .PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is autopopulated from the server
+The database(s) to exclude - this list is auto-populated from the server
 
 .NOTES
 Tags: Database, Triggers
@@ -34,22 +34,22 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 .EXAMPLE
 Get-DbaTrigger -SqlInstance ComputerA\sql987
 
-Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastMofied.
+Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastModified.
 
 .EXAMPLE
 Get-DbaTrigger -SqlInstance 'ComputerA\sql987','ComputerB'
 
-Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastMofied from two instances.
+Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastModified from two instances.
 
 .EXAMPLE
 Get-DbaTrigger -SqlInstance ComputerA\sql987 | Out-Gridview
 
-Returns a gridview displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastMofied.
+Returns a gridview displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastModified.
 
 .EXAMPLE
 'ComputerA\sql987','ComputerB' | Get-DbaTrigger | Out-Gridview
 
-Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastMofied from two instances.
+Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastModified from two instances.
 
 #>
 	[CmdletBinding()]

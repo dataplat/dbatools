@@ -33,10 +33,10 @@ function Copy-DbaCustomError {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER CustomError
-			The customer error(s) to process - this list is auto populated from the server. If unspecified, all customer errors will be processed.
+			The customer error(s) to process - this list is auto-populated from the server. If unspecified, all customer errors will be processed.
 
 		.PARAMETER ExcludeCustomError
-			The custom error(s) to exclude - this list is auto populated from the server
+			The custom error(s) to exclude - this list is auto-populated from the server.
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
@@ -45,10 +45,10 @@ function Copy-DbaCustomError {
 			Prompts you for confirmation before executing any changing operations within the command.
 
 		.PARAMETER Force
-			Drops and recreates the XXXXX if it exists
+			Drops and recreates the custom error if it exists.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			Use this switch to disable any kind of verbose messages.
 
 		.NOTES
 			Tags: Migration, CustomError
@@ -73,7 +73,7 @@ function Copy-DbaCustomError {
 			Copies a single custom error, the custom error with ID number 60000 from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
 
 		.EXAMPLE
-			Copy-DbaCustomError -Source slserver2014a -Destination sqlcluster -ExcludeCustomError 60000 -Force
+			Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -ExcludeCustomError 60000 -Force
 
 			Copies all the custom errors found on sqlserver2014a, except the custom error with ID number 60000,to sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
 

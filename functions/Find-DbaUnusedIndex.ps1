@@ -35,10 +35,10 @@ function Find-DbaUnusedIndex {
 			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Database
-			The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+			The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 		.PARAMETER ExcludeDatabase
-			The database(s) to exclude - this list is autopopulated from the server
+			The database(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER FilePath
 			The filepath of the file to write to.
@@ -72,12 +72,12 @@ function Find-DbaUnusedIndex {
 		.EXAMPLE
 			Find-DbaUnusedIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-UnusedIndexes.sql
 
-			Exports SQL for the Unused indexes in server "sql2005" choosen on grid-view and writes them to the file "C:\temp\sql2005-UnusedIndexes.sql"
+			Exports SQL for the Unused indexes in server "sql2005" chosen on grid-view and writes them to the file "C:\temp\sql2005-UnusedIndexes.sql"
 
 		.EXAMPLE
 			Find-DbaUnusedIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-UnusedIndexes.sql -Append
 
-			Exports SQL for the Unused indexes in server "sql2005" choosen on grid-view and writes/appends them to the file "C:\temp\sql2005-UnusedIndexes.sql"
+			Exports SQL for the Unused indexes in server "sql2005" chosen on grid-view and writes/appends them to the file "C:\temp\sql2005-UnusedIndexes.sql"
 
 		.EXAMPLE
 			Find-DbaUnusedIndex -SqlInstance sqlserver2016 -SqlCredential $cred

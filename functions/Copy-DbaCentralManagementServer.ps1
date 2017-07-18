@@ -42,10 +42,10 @@
 			Prompts you for confirmation before executing any changing operations within the command.
 
 		.PARAMETER Force
-			Drops and recreates the CMS if it exists
+			Drops and recreates the CMS if it exists.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Migration
