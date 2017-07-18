@@ -83,7 +83,7 @@ function Test-ElevationRequirement {
 			if ($testResult) { return $testResult }
 			
 			$splatStopFunction = @{
-				Message = "Console not elevated, but elevation is required!"
+				Message = "Console not elevated, but elevation is required to perform all actions within this command"
 			}
 			
 			if (Test-Bound "Continue") { $splatStopFunction["Continue"] = $Continue }
