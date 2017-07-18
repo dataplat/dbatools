@@ -16,6 +16,7 @@ if ((Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools
 
 try {
 	Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" | Unblock-File -ErrorAction SilentlyContinue
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.BatchParser" -ErrorAction Stop
 	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Smo.dll" -ErrorAction Stop
 	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Dmf.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.SqlWmiManagement.dll"
