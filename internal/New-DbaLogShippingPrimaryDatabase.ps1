@@ -95,7 +95,7 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
         [object]$SqlInstance,
 
         [System.Management.Automation.PSCredential]
-        $SqlCredential = [System.Management.Automation.PSCredential]::Empty,
+        $SqlCredential,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]

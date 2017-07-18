@@ -95,7 +95,7 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
 		[object]$SqlInstance,
 
         [System.Management.Automation.PSCredential]
-        $SqlCredential = [System.Management.Automation.PSCredential]::Empty,
+        $SqlCredential,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]

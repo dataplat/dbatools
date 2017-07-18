@@ -78,7 +78,7 @@ Function Test-DbaConnection {
         $SqlInstance,
         
         [System.Management.Automation.PSCredential]
-        $SqlCredential = [System.Management.Automation.PSCredential]::Empty,
+        $SqlCredential,
         
         [switch]
         $Silent

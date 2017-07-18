@@ -37,7 +37,7 @@
 	param (
 		[Parameter(Mandatory = $true)]
 		[Object]$SqlInstance,
-		[object]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
+		[PSCredential]$SqlCredential,
 		[switch]$ParameterConnection,
 		[switch]$RegularUser = $true,
 		# let's see how this goes
