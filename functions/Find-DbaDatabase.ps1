@@ -78,7 +78,7 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 			}
 			catch
 			{
-				Write-Warning "Failed to connect to: $server"
+				Write-Warning "Failed to connect to: $instance"
 				continue
 			}
 			
@@ -128,7 +128,7 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 						Tables = ($db.Tables | Where-Object { $_.IsSystemObject -eq $false }).Count
 						StoredProcedures = ($db.StoredProcedures | Where-Object { $_.IsSystemObject -eq $false }).Count
 						Views = ($db.Views | Where-Object { $_.IsSystemObject -eq $false }).Count
-						ExtendedPropteries = $extendedproperties
+						ExtendedProperties = $extendedproperties
 						Database = $db
 					} | Select-DefaultView -ExcludeProperty Database
 				}
