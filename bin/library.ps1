@@ -9,6 +9,12 @@ Major: Should always be equal to the main version number of the dbatools PowerSh
 Minor: Tracks major features within a major release. Increment on new features or significant structural changes. Reset to 0 when incrementing the major version.
 Build: Tracks lesser functionality upgrades. Increment on all minor upgrades, reset to 0 when introducing a new major feature or major version.
 Revision: Tracks all changes. Every single update to the library - bugfix, feature or redesign - increments the revision counter. It is never reset to 0.
+
+Updating the library version number:
+When changing the library version number, it is necessary to do so in TWO places:
+- At the top of this very library.ps1
+- Within AssemblyInfo.cs
+These two locations MUST have matching version numbers, otherwise it will keep building the library and complaining about version mismatch!
 #>
 
 <#
