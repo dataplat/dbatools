@@ -1,30 +1,60 @@
-Function Invoke-ManagedComputerCommand
-{
-<#
-.SYNOPSIS
-Internal command
-	
-#>	
+Function Invoke-ManagedComputerCommand {
+	<#
+		.SYNOPSIS
+			Runs wmi commands against a target system.
+		
+		.DESCRIPTION
+			Runs wmi commands against a target system.
+			Either directly or over PowerShell remoting.
+		
+		.PARAMETER ComputerName
+			The target to run against. Must be resolvable.
+		
+		.PARAMETER Credential
+			Credentials to use when using PowerShell remoting.
+		
+		.PARAMETER ScriptBlock
+			The scriptblock to execute.
+			Use $wmi to access the smo wmi object.
+			Must not include a param block!
+		
+		.PARAMETER ArgumentList
+			The arguments to pass to your scriptblock.
+			Access them within the scriptblock using the automatic variable $args
+		
+		.PARAMETER Silent
+			Left in for legacy reasons. This command will throw no matter what
+	#>	
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
 		[Alias("Server")]
-		[dbainstanceparameter]$ComputerName,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
+		[dbainstanceparameter]
+		$ComputerName,
+		
+		[PSCredential]
+		[System.Management.Automation.CredentialAttribute()]
+		$Credential,
+		
 		[Parameter(Mandatory = $true)]
-		[scriptblock]$ScriptBlock,
-		[string[]]$ArgumentList,
-		[switch]$Silent # Left in for legacy but this command needs to throw
+		[scriptblock]
+		$ScriptBlock,
+		
+		[string[]]
+		$ArgumentList,
+		
+		[switch]
+		$Silent # Left in for legacy but this command needs to throw
 	)
 	
-	$ComputerName = $ComputerName.ComputerName
+	$computer = $ComputerName.ComputerName
 	
-	Test-RunAsAdmin -ComputerName $ComputerName
+	$null = Test-ElevationRequirement -ComputerName $computer -Silent $true
 	
-	$resolved = Resolve-DbaNetworkName -ComputerName $ComputerName
+	$resolved = Resolve-DbaNetworkName -ComputerName $computer
 	$ipaddr = $resolved.IpAddress
 	$ArgumentList += $ipaddr
-		
+	
 	[scriptblock]$setupScriptBlock = {
 		$ipaddr = $args[$args.GetUpperBound(0)]
 		
@@ -39,16 +69,13 @@ Internal command
 	$postscriptblock = $ScriptBlock.ToString()
 	
 	$scriptblock = [ScriptBlock]::Create("$prescriptblock  $postscriptblock")
-		
-	try
-	{
+	
+	try {
 		Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop
 	}
-	catch
-	{
-		try
-		{
-			Write-Message -Level Verbose -Message "Local connection attempt to $ComputerName failed. Connecting remotely."
+	catch {
+		try {
+			Write-Message -Level Verbose -Message "Local connection attempt to $computer failed. Connecting remotely."
 			
 			# For surely resolve stuff
 			$hostname = $resolved.fqdn
