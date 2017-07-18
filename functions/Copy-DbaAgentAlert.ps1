@@ -196,7 +196,7 @@
 			}
 
 			if ($dest.JobServer.Jobs.Name -NotContains $serverAlert.JobName) {
-				Write-Message -Level Warning -Message "Alert [$alertName] has job [$($serverAlert.JobName)] configured as repsonse. The job does not exist on destination $dest. Skipping."
+				Write-Message -Level Warning -Message "Alert [$alertName] has job [$($serverAlert.JobName)] configured as response. The job does not exist on destination $dest. Skipping."
 
 				$copyAgentAlertStatus.Status = "Skipped"
 				$copyAgentAlertStatus
