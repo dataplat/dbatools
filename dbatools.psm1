@@ -5,52 +5,73 @@ if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\"))
 	Write-Warning "Going to continue loading anyway, but expect issues."
 }
 
+$script:PSModuleRoot = $PSScriptRoot
+
+# Detect whether at some level dotsourcing was enforced
+$script:doDotSource = $false
+if ($dbatools_dotsourcemodule) { $script:doDotSource = $true }
+if ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
+if ((Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
+
+
+try {
+	Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" | Unblock-File -ErrorAction SilentlyContinue
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.BatchParser" -ErrorAction Stop
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Smo.dll" -ErrorAction Stop
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Dmf.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.SqlWmiManagement.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.ConnectionInfo.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.SmoExtended.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.RegisteredServers.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.Sdk.Sfc.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.SqlEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.RegSvrEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.WmiEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.ServiceBrokerEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.Collector.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.CollectorEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.Utility.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.UtilityEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.HadrDMF.dll"
+}
+catch {
 <#
-
 	Attempt to load all versions of SMO from vNext to 2005 - this is why RequiredAssemblies can't be used.
-
 	Attempt to load all assemblies that will be needed in the module. 
-
 	Not all versions support supporting assemblies, so ignore and let the command catch it.
-
 	This takes about 11-50ms on a newer machine.
-
 #>
-
-$smoversions = "13.0.0.0", "12.0.0.0", "11.0.0.0", "10.0.0.0", "14.0.0.0", "9.0.242.0", "9.0.0.0"
-
-foreach ($smoversion in $smoversions)
-{
-	try
-	{
-		Add-Type -AssemblyName "Microsoft.SqlServer.Smo, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
-		$smoadded = $true
-	}
-	catch
-	{
-		$smoadded = $false
+	Write-Verbose "Had to failback"
+	$smoversions = "14.0.0.0", "13.0.0.0", "12.0.0.0", "11.0.0.0", "10.0.0.0", "9.0.242.0", "9.0.0.0"
+	
+	foreach ($smoversion in $smoversions) {
+		try {
+			Add-Type -AssemblyName "Microsoft.SqlServer.Smo, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
+			$smoadded = $true
+		}
+		catch {
+			$smoadded = $false
+		}
+		
+		if ($smoadded -eq $true) { break }
 	}
 	
-	if ($smoadded -eq $true) { break }
-}
-
-if ($smoadded -eq $false) { throw "Can't load SMO assemblies. You must have SQL Server Management Studio installed to proceed." }
-
-$assemblies = "Management.Common", "Dmf", "Instapi", "SqlWmiManagement", "ConnectionInfo", "SmoExtended", "SqlTDiagM", "Management.Utility",
-"SString", "Management.RegisteredServers", "Management.Sdk.Sfc", "SqlEnum", "RegSvrEnum", "WmiEnum", "ServiceBrokerEnum", "Management.XEvent",
-"ConnectionInfoExtended", "Management.Collector", "Management.CollectorEnum", "Management.Dac", "Management.DacEnum", "Management.IntegrationServices"
-
-foreach ($assembly in $assemblies)
-{
-	try
-	{
-		Add-Type -AssemblyName "Microsoft.SqlServer.$assembly, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
-	}
-	catch
-	{
-		Write-Verbose "$assembly not loaded for version $smoversion"
+	if ($smoadded -eq $false) { throw "Can't load SMO assemblies. You must have SQL Server Management Studio installed to proceed." }
+	
+	$assemblies = "Management.Common", "Dmf", "Instapi", "SqlWmiManagement", "ConnectionInfo", "SmoExtended", "SqlTDiagM", "Management.Utility",
+	"SString", "Management.RegisteredServers", "Management.Sdk.Sfc", "SqlEnum", "RegSvrEnum", "WmiEnum", "ServiceBrokerEnum", "Management.XEvent",
+	"ConnectionInfoExtended", "Management.Collector", "Management.CollectorEnum", "Management.Dac", "Management.DacEnum", "Management.IntegrationServices"
+	
+	foreach ($assembly in $assemblies) {
+		try {
+			Add-Type -AssemblyName "Microsoft.SqlServer.$assembly, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
+		}
+		catch {
+			# Don't care
+		}
 	}
 }
+
 
 <# 
 
@@ -63,13 +84,19 @@ foreach ($assembly in $assemblies)
 
 # Load our own custom library
 # Should always come before function imports - 141ms
-$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\bin\library.ps1"))), $null, $null)
-$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\bin\typealiases.ps1"))), $null, $null)
+if ($script:doDotSource) {
+	. "$script:PSModuleRoot\bin\library.ps1"
+	. "$script:PSModuleRoot\bin\typealiases.ps1"
+}
+else {
+	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\bin\library.ps1"))), $null, $null)
+	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\bin\typealiases.ps1"))), $null, $null)
+}
 
 # All internal functions privately available within the toolset - 221ms
-foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\*.ps1"))
-{
-	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null)
+foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\*.ps1")) {
+	if ($script:doDotSource) { . $function.FullName }
+	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null) }
 }
 
 #region Finally register autocompletion - 32ms
@@ -84,42 +111,46 @@ else
 }
 
 # dynamic params - 136ms
-foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1"))
-{
-	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null)
+foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1")) {
+	if ($script:doDotSource) { . $function.FullName }
+	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null) }
 }
 #endregion Finally register autocompletion
 
 # All exported functions - 600ms
-foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1"))
-{
-	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null)
+foreach ($function in (Get-ChildItem "$script:PSModuleRoot\functions\*.ps1")) {
+	if ($script:doDotSource) { . $function.FullName }
+	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null) }
 }
 
 # Run all optional code
 # Note: Each optional file must include a conditional governing whether it's run at all.
 # Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
 # 96ms
-foreach ($function in (Get-ChildItem "$PSScriptRoot\optional\*.ps1"))
-{
-	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null)
+foreach ($function in (Get-ChildItem "$script:PSModuleRoot\optional\*.ps1")) {
+	if ($script:doDotSource) { . $function.FullName }
+	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null) }
 }
 
 # Process TEPP parameters
-$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\scripts\insertTepp.ps1"))), $null, $null)
+if ($script:doDotSource) { . "$script:PSModuleRoot\internal\scripts\insertTepp.ps1" }
+else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\insertTepp.ps1"))), $null, $null) }
 
 # Load configuration system
 # Should always go next to last
-$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\configurations\configuration.ps1"))), $null, $null)
+if ($script:doDotSource) { . "$script:PSModuleRoot\internal\configurations\configuration.ps1" }
+else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\configurations\configuration.ps1"))), $null, $null) }
 
 # Load scripts that must be individually run at the end - 30ms #
 #--------------------------------------------------------------#
 
 # Start the logging system (requires the configuration system up and running)
-$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\scripts\logfilescript.ps1"))), $null, $null)
+if ($script:doDotSource) { . "$script:PSModuleRoot\internal\scripts\logfilescript.ps1" }
+else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\logfilescript.ps1"))), $null, $null) }
 
 # Start the tepp asynchronous update system (requires the configuration system up and running)
-$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\scripts\updateTeppAsync.ps1"))), $null, $null)
+if ($script:doDotSource) { . "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1" }
+else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1"))), $null, $null) }
 
 # I renamed this function to be more accurate - 1ms
 if (-not (Test-Path Alias:Copy-SqlAgentCategory)) { Set-Alias -Scope Global -Name Copy-SqlAgentCategory -Value Copy-DbaAgentCategory }
@@ -187,3 +218,7 @@ if (-not (Test-Path Alias:Test-SqlTempDbConfiguration)) { Set-Alias -Scope Globa
 if (-not (Test-Path Alias:Watch-SqlDbLogin)) { Set-Alias -Scope Global -Name Watch-SqlDbLogin -Value Watch-DbaDbLogin }
 if (-not (Test-Path Alias:Get-DiskSpace)) { Set-Alias -Scope Global -Name Get-DiskSpace -Value Get-DbaDiskSpace }
 if (-not (Test-Path Alias:Restore-HallengrenBackup)) { Set-Alias -Scope Global -Name Restore-HallengrenBackup -Value Restore-SqlBackupFromDirectory }
+
+# Leave forever
+Set-Alias -Scope Global -Name Attach-DbaDatabase -Value Mount-DbaDatabase
+Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase

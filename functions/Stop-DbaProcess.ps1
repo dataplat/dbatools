@@ -95,7 +95,7 @@ function Stop-DbaProcess {
 		
 		[Alias("Credential")]
 		[PSCredential]
-		[System.Management.Automation.CredentialAttribute()]
+		
 		$SqlCredential,
 		
 		[int[]]

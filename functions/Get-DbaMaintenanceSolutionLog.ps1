@@ -48,7 +48,7 @@ Gets the outcome of the IndexOptimize job on sqlserver2014a and sqlserver2020tes
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[switch]$Silent
 	)

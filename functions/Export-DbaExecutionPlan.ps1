@@ -74,7 +74,7 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 		[DbaInstanceParameter[]]$SqlInstance,
 		[parameter(ParameterSetName = 'NotPiped')]
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
@@ -146,7 +146,7 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 			
 			If ($Pscmdlet.ShouldProcess("console", "Showing output object"))
 			{
-				Add-Member -InputObject $object -MemberType NoteProperty -Name OutputFile -Value $filename
+				Add-Member -Force -InputObject $object -MemberType NoteProperty -Name OutputFile -Value $filename
 				Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, DatabaseName, SqlHandle, CreationTime, LastExecutionTime, OutputFile
 			}
 		}

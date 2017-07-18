@@ -243,7 +243,7 @@ function Restore-DbaDatabase {
         [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [string]$DatabaseName,
         [String]$DestinationDataDirectory,
         [String]$DestinationLogDirectory,
@@ -279,29 +279,29 @@ function Restore-DbaDatabase {
         #region Validation
         $useDestinationDefaultDirectories = $true
         $paramCount = 0
-        if (Was-Bound "FileMapping") {
+        if (Test-Bound "FileMapping") {
             $paramCount += 1
         }
-        if (Was-Bound "ReuseSourceFolderStructure") {
+        if (Test-Bound "ReuseSourceFolderStructure") {
             $paramCount += 1
         }
-        if (Was-Bound "DestinationDataDirectory") {
+        if (Test-Bound "DestinationDataDirectory") {
             $paramCount += 1
         }
         if ($paramCount -gt 1) {
             Stop-Function -Category InvalidArgument -Message "You've specified incompatible Location parameters. Please only specify one of FileMapping, ReuseSourceFolderStructure or DestinationDataDirectory"
             return
         }
-        if (($ReplaceDbNameInFile) -and !(Was-Bound "DatabaseName")) {
+        if (($ReplaceDbNameInFile) -and !(Test-Bound "DatabaseName")) {
             Stop-Function -Category InvalidArgument -Message "To use ReplaceDbNameInFile you must specify DatabaseName"
             return
         }
 		
-        if ((Was-Bound "DestinationLogDirectory") -and (Was-Bound "ReuseSourceFolderStructure")) {
+        if ((Test-Bound "DestinationLogDirectory") -and (Test-Bound "ReuseSourceFolderStructure")) {
             Stop-Function -Category InvalidArgument -Message "The parameters DestinationLogDirectory and UseDestinationDefaultDirectories are mutually exclusive"
             return
         }
-        if ((Was-Bound "DestinationLogDirectory") -and -not (Was-Bound "DestinationDataDirectory")) {
+        if ((Test-Bound "DestinationLogDirectory") -and -not (Test-Bound "DestinationDataDirectory")) {
             Stop-Function -Category InvalidArgument -Message "The parameter DestinationLogDirectory can only be specified together with DestinationDataDirectory"
             return
         }

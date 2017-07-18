@@ -149,7 +149,7 @@ Filters only results where LinkServerName = myls and StartTime is greater than '
 		[parameter(Position = 0, Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[string[]]$Path,
 		[string[]]$Database,
 		[string[]]$Login,
@@ -237,7 +237,7 @@ Filters only results where LinkServerName = myls and StartTime is greater than '
 				return
 			}
 			
-			if (Was-Bound -Parameter Path) {
+			if (Test-Bound -Parameter Path) {
 				$currentpath = $path
 			}
 			else {
@@ -259,7 +259,7 @@ Filters only results where LinkServerName = myls and StartTime is greater than '
 								   SERVERPROPERTY('ServerName') AS SqlInstance,
 									* FROM [fn_trace_gettable]('$file', DEFAULT) $Where"
 				try {
-					Invoke-DbaSqlcmd -ServerInstance $server -Query $sql -Silent:$false
+					$server.Query($sql)
 				}
 				catch {
 					Stop-Function -Message "Error returned from SQL Server: $_" -Target $server -InnerErrorRecord $_

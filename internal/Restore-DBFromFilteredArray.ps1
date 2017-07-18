@@ -22,7 +22,7 @@ Function Restore-DBFromFilteredArray {
         [switch]$ScriptOnly,
         [switch]$VerifyOnly,
         [object]$filestructure,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [switch]$UseDestinationDefaultDirectories,
         [switch]$ReuseSourceFolderStructure,
         [switch]$Force,
@@ -93,7 +93,7 @@ Function Restore-DBFromFilteredArray {
                         Write-Message -Level Verbose -Message "Set $DbName single_user to kill processes"
                         Stop-DbaProcess -SqlInstance $Server -Databases $Dbname -WarningAction Silentlycontinue
                         if ($Continue -eq $false) {
-                            Invoke-DbaSqlcmd -ServerInstance:$SqlInstance -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; alter database $DbName set restricted_user; Alter database $DbName set online with rollback immediate" -database master
+                            $server.Query("Alter database $DbName set offline with rollback immediate; alter database $DbName set restricted_user; Alter database $DbName set online with rollback immediate",'master')
                         }
                         $server.ConnectionContext.Connect()
                     }
@@ -123,7 +123,7 @@ Function Restore-DBFromFilteredArray {
             }
             if ($MissingFiles.Length -gt 0) {
                 Write-Message -Level Warning -Message "Files $($MissingFiles -Join ',') are missing, cannot progress"
-                return false
+                return $false
             }
         }
         $RestorePoints = @()
@@ -197,10 +197,10 @@ Function Restore-DBFromFilteredArray {
                     if ($ReplaceDbNameInFile) {
                         $Filename = $filename -replace $OldDatabaseName, $dbname
                     }
-                    if (Was-Bound "DestinationFilePrefix") {
+                    if (Test-Bound "DestinationFilePrefix") {
                         $Filename = $DestinationFilePrefix + $FileName
                     }
-                    if (Was-Bound "DestinationFileSuffix") {
+                    if (Test-Bound "DestinationFileSuffix") {
                         $Filename = $FileName + $DestinationFileSuffix
                     }
                     #Not happy with this, but leaving in in case someone can convince me to make it available

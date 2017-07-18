@@ -85,11 +85,11 @@
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$DestinationSqlCredential,
 		[object[]]$Job,
 		[object[]]$ExcludeJob,
@@ -117,19 +117,18 @@
 
 		foreach ($serverJob in $serverJobs) {
 			$jobName = $serverJob.name
-            $jobId = $serverJob.JobId
+			$jobId = $serverJob.JobId
 
-            $copyJobStatus = [pscustomobject]@{
-                SourceServer        = $sourceServer.Name
-                DestinationServer   = $destServer.Name
-                Name                = $jobName
-                Status              = $null
-                DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
-            }
+			$copyJobStatus = [pscustomobject]@{
+				SourceServer      = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name              = $jobName
+				Status            = $null
+				Notes             = $null
+				DateTime          = [DbaDateTime](Get-Date)
+			}
 
-            if ($Job -and $jobName -notin $Job -or $jobName -in $ExcludeJob) { 
-                $copyJobStatus.Status = "Skipped"
-				$copyJobStatus
+			if ($Job -and $jobName -notin $Job -or $jobName -in $ExcludeJob) { 
 				Write-Message -Level Verbose -Message "Job [$jobName] filtered. Skipping."
 				continue
 			}
@@ -144,10 +143,11 @@
 
 			$MaintenancePlanName = $sourceServer.Query($sql).MaintenancePlanName
 
-            if ($MaintenancePlanName) {
+			if ($MaintenancePlanName) {
 				$copyJobStatus.Status = "Skipped"
+				$copyJobStatus.Notes = "Job is associated with maintenance plan"
 				$copyJobStatus
-                Write-Message -Level Warning -Message "Job [$jobname] is associated with Maintennace Plan: $MaintenancePlanName"
+				Write-Message -Level Warning -Message "Job [$jobName] is associated with Maintenance Plan: $MaintenancePlanName"
 				continue
 			}
 
@@ -155,20 +155,22 @@
 			$missingDb = $dbNames | Where-Object { $destServer.Databases.Name -notcontains $_ }
 
 			if ($missingDb.Count -gt 0 -and $dbNames.Count -gt 0) {
-                $missingDb = ($missingDb | Sort-Object | Get-Unique) -join ", "
-                $copyJobStatus.Status = "Skipped"
+				$missingDb = ($missingDb | Sort-Object | Get-Unique) -join ", "
+				$copyJobStatus.Status = "Skipped"
+				$copyJobStatus.Notes = "Job is dependent on database: $missingDb"
 				$copyJobStatus
-                Write-Message -Level Warning -Message "Database(s) $missingDb doesn't exist on destination. Skipping job [$jobname]."
+				Write-Message -Level Warning -Message "Database(s) $missingDb doesn't exist on destination. Skipping job [$jobName]."
 				continue
 			}
 
 			$missingLogin = $serverJob.OwnerLoginName | Where-Object { $destServer.Logins.Name -notcontains $_ }
 
 			if ($missingLogin.Count -gt 0) {
-                $missingLogin = ($missingLogin | Sort-Object | Get-Unique) -join ", "
-                $copyJobStatus.Status = "Skipped"
+				$missingLogin = ($missingLogin | Sort-Object | Get-Unique) -join ", "
+				$copyJobStatus.Status = "Skipped"
+				$copyJobStatus.Notes = "Job is dependent on login $missingLogin"
 				$copyJobStatus
-                Write-Message -Level Warning -Message "Login(s) $missingLogin doesn't exist on destination. Skipping job [$jobname]."
+				Write-Message -Level Warning -Message "Login(s) $missingLogin doesn't exist on destination. Skipping job [$jobName]."
 				continue
 			}
 
@@ -176,10 +178,11 @@
 			$missingProxy = $proxyNames | Where-Object { $destServer.JobServer.ProxyAccounts.Name -notcontains $_ }
 
 			if ($missingProxy.Count -gt 0 -and $proxyNames.Count -gt 0) {
-                $missingProxy = ($missingProxy | Sort-Object | Get-Unique) -join ", "
-                $copyJobStatus.Status = "Skipped"
+				$missingProxy = ($missingProxy | Sort-Object | Get-Unique) -join ", "
+				$copyJobStatus.Status = "Skipped"
+				$copyJobStatus.Notes = "Job is dependent on proxy $($proxNames[0])"
 				$copyJobStatus
-                Write-Message -Level Warning -Message "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobname]."
+				Write-Message -Level Warning -Message "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobName]."
 				continue
 			}
 
@@ -187,47 +190,51 @@
 			$missingOperators = $operators | Where-Object {$destServer.JobServer.Operators.Name -notcontains $_}
 
 			if ($missingOperators.Count -gt 0 -and $operators.Count -gt 0) {
-                $missingOperator = ($operators | Sort-Object | Get-Unique) -join ", "
-                $copyJobStatus.Status = "Skipped"
+				$missingOperator = ($operators | Sort-Object | Get-Unique) -join ", "
+				$copyJobStatus.Status = "Skipped"
+				$copyJobStatus.Notes = "Job is dependent on operator $missingOperator"
 				$copyJobStatus
-				Write-Message -Level Warning -Message "Operator(s) $($missingOperator) doesn't exist on destination. Skipping job [$jobname]"
+				Write-Message -Level Warning -Message "Operator(s) $($missingOperator) doesn't exist on destination. Skipping job [$jobName]"
 				continue
 			}
 
 			if ($destJobs.name -contains $serverJob.name) {
-                if ($force -eq $false) {
-                    $copyJobStatus.Status = "Skipped"
+				if ($force -eq $false) {
+					$copyJobStatus.Status = "Skipped"
+					$copyJobStatus.Notes = "Job already exist on destination"
 					$copyJobStatus
-                    Write-Message -Level Warning -Message "Job $jobName exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Warning -Message "Job $jobName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
 					if ($Pscmdlet.ShouldProcess($destination, "Dropping job $jobName and recreating")) {
-                        try {
-                            Write-Message -Message "Dropping Job $jobName" -Level Verbose
-                            $destServer.JobServer.Jobs[$jobName].Drop()
-                        }
-                        catch {
-                            $copyJobStatus.Status = "Failed"
+						try {
+							Write-Message -Message "Dropping Job $jobName" -Level Verbose
+							$destServer.JobServer.Jobs[$jobName].Drop()
+						}
+						catch {
+							$copyJobStatus.Status = "Failed"
+							$copyJobStatus.Notes = $_.Exception.Message
 							$copyJobStatus
-                            Stop-Function -Message "Issue dropping job. See error log under $((Get-DbaConfig -Name dbatoolslogpath).Value) for more details." -Target $jobName -InnerErrorRecord $_ -Continue
-                        }
+							Stop-Function -Message "Issue dropping job" -Target $jobName -ErrorRecord $_ -Continue
+						}
 					}
 				}
 			}
 
 			if ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobName")) {
-                try {
-                    Write-Message -Message "Copying Job $jobName" -Level Verbose
-                    $sql = $serverJob.Script() | Out-String
-                    Write-Message -Message $sql -Level Debug
-                    $destServer.Query($sql)
-                }
-                catch {
-                    $copyJobStatus.Status = "Failed"
+				try {
+					Write-Message -Message "Copying Job $jobName" -Level Verbose
+					$sql = $serverJob.Script() | Out-String
+					Write-Message -Message $sql -Level Debug
+					$destServer.Query($sql)
+				}
+				catch {
+					$copyJobStatus.Status = "Failed"
+					$copyJobStatus.Notes = $_.Exception.Message
 					$copyJobStatus
-                    Stop-Function -Message "Issue copying job." -Target $jobName -InnerErrorRecord $_ -Continue
-                }
+					Stop-Function -Message "Issue copying job." -Target $jobName -ErrorRecord $_ -Continue
+				}
 			}
 
 			if ($DisableOnDestination) {
@@ -239,15 +246,15 @@
 				}
 			}
 
-            if ($DisableOnSource) {
-                if ($Pscmdlet.ShouldProcess($source, "Disabling $jobName")) {
-                    Write-Message -Message "Disabling $jobName on $source" -Level Verbose
-                    $job.IsEnabled = $false
-                    $job.Alter()
-                }
-            }
-            $copyJobStatus.Status = "Successful"
-            $copyJobStatus
+			if ($DisableOnSource) {
+				if ($Pscmdlet.ShouldProcess($source, "Disabling $jobName")) {
+					Write-Message -Message "Disabling $jobName on $source" -Level Verbose
+					$job.IsEnabled = $false
+					$job.Alter()
+				}
+			}
+			$copyJobStatus.Status = "Successful"
+			$copyJobStatus
 		}
 	}
 	end {

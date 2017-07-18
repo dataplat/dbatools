@@ -44,7 +44,7 @@ Returns all Security Audit Specifications for the local and sql2016 SQL Server i
 	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[switch]$Silent
 	)
 	
@@ -70,9 +70,9 @@ Returns all Security Audit Specifications for the local and sql2016 SQL Server i
 			
 			foreach ($auditSpecification in $server.ServerAuditSpecifications)
 			{
-				Add-Member -InputObject $auditSpecification -MemberType NoteProperty -Name ComputerName -value $server.NetName
-				Add-Member -InputObject $auditSpecification -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-				Add-Member -InputObject $auditSpecification -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+				Add-Member -Force -InputObject $auditSpecification -MemberType NoteProperty -Name ComputerName -value $server.NetName
+				Add-Member -Force -InputObject $auditSpecification -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+				Add-Member -Force -InputObject $auditSpecification -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 				
 				Select-DefaultView -InputObject $auditSpecification -Property ComputerName, InstanceName, SqlInstance, ID, Name, AuditName, Enabled, CreateDate, DateLastModified, Guid
 			}

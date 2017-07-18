@@ -85,7 +85,7 @@ function Export-DbaLogin {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[object[]]$Login,
 		[object[]]$ExcludeLogin,
@@ -120,7 +120,33 @@ function Export-DbaLogin {
 
 		Write-Message -Level Verbose -Message "Connecting to $sqlinstance"
 		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
-
+		
+		if ($NoDatabases -eq $false) {
+			# if we got a database or a list of databases passed
+			# and we need to enumerate mappings, login.enumdatabasemappings() takes forever
+			# the cool thing though is that database.enumloginmappings() is fast. A lot.
+			# if we get a list of databases passed (or even the default list of all the databases)
+			# we save outself a call to enumloginmappings if there is no map at all
+			$DbMapping = @()
+			$DbsToMap = $server.Databases
+			if ($Database) {
+				$DbsToMap = $DbsToMap | Where-Object Name -in $Database 
+			}
+			foreach($db in $DbsToMap) {
+				if ($db.IsAccessible -eq $false) {
+					continue
+				}
+				$dbmap = $db.EnumLoginMappings()
+				foreach($el in $dbmap) {
+					$DbMapping += [pscustomobject]@{
+						Database = $db.Name
+						UserName = $el.Username
+						LoginName = $el.LoginName
+					}
+				}
+			}
+		}
+		
 		foreach ($sourceLogin in $server.Logins) {
 			$userName = $sourceLogin.name
 
@@ -266,13 +292,14 @@ function Export-DbaLogin {
 			}
 
 			if ($NoDatabases -eq $false) {
+				if ($userName -notin $DbMapping.LoginName) {
+					Write-Message -Level VeryVerbose -Message "Skipping as $userName is not mapped to an user of the databases"
+					continue
+				}
 				$dbs = $sourceLogin.EnumDatabaseMappings()
 				# Adding database mappings and securables
 				foreach ($db in $dbs) {
 					$dbName = $db.dbname
-					if ($database -and $dbName -notin $database) {
-						continue
-					}
 					$sourceDb = $server.Databases[$dbName]
 					$dbUserName = $db.username
 

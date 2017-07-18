@@ -331,7 +331,10 @@
 		'Get-DbaDatabasePartitionScheme',
 		'Get-DbaErrorLog',
 		'Get-DbaDefaultPath',
-		'Get-DbaDbStoredProcedure'
+		'Get-DbaDbStoredProcedure',
+		'Test-DbaCompression',
+		'Mount-DbaDatabase',
+		'Dismount-DbaDatabase'
 	)
 	
 	# Cmdlets to export from this module
@@ -342,7 +345,9 @@
 	
 	# Aliases to export from this module
 	# Aliases are stored in dbatools.psm1
-	AliasesToExport = 'Reset-SqlSaPassword',
+	# KEEP Detach-DbaDatabase, Dismount-DbaDatabase and Start-SqlMigration FOREVER
+	AliasesToExport = 'Detach-DbaDatabase', 'Attach-DbaDatabase',
+	'Reset-SqlSaPassword',
 	'Copy-SqlUserDefinedMessage',
 	'Copy-SqlJobServer',
 	'Restore-HallengrenBackup',

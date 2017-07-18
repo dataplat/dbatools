@@ -95,7 +95,7 @@
 		[parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Server")]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[object[]]$Job,
 		[object[]]$ExcludeJob,
@@ -136,9 +136,9 @@
 				}
 				
 				foreach ($execution in $executions) {
-					Add-Member -InputObject $execution -MemberType NoteProperty -Name ComputerName -value $server.NetName
-					Add-Member -InputObject $execution -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-					Add-Member -InputObject $execution -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+					Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name ComputerName -value $server.NetName
+					Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+					Add-Member -Force -InputObject $execution -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 					
 					Select-DefaultView -InputObject $execution -Property ComputerName, InstanceName, SqlInstance, 'JobName as Job', StepName, RunDate, RunDuration, RunStatus
 				}

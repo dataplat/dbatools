@@ -75,7 +75,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 		[parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[System.IO.FileInfo]$Path,
 		[string[]]$QueryName,
 		[switch]$UseSelectionHelper,
@@ -174,7 +174,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 			}
 			
 			if (!$instanceOnly) {
-				$databases = Invoke-DbaSqlcmd -ServerInstance $server -Database master -Query "Select Name from sys.databases where name not in ('master', 'model', 'msdb', 'tempdb')"
+				$databases = $server.Query("Select Name from sys.databases where name not in ('master', 'model', 'msdb', 'tempdb')")
 			}
 			
 			$parsedscript = $scriptversions | Where-Object -Property Version -eq $version | Select-Object -ExpandProperty Script
@@ -209,7 +209,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 						}
 						
 						try {
-							$result = Invoke-DbaSqlcmd -ServerInstance $server -Database master -Query $scriptpart.Text -ErrorAction Stop
+							$result = $server.Query($scriptpart.Text)
 							Write-Message -Level Output -Message "Processed $($scriptpart.QueryName) on $instance"
 							
 							if (!$result) {
@@ -255,7 +255,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 							if (!$silent) { Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query data from $database on $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100) }
 							Write-Message -Level Output -Message "Collecting diagnostic query data from $database for $($scriptpart.QueryName) on $instance"
 							try {
-								$result = Invoke-DbaSqlcmd -ServerInstance $server -Database $database.Name -Query $scriptpart.Text -ErrorAction Stop
+								$result = $server.Query($scriptpart.Text,$database.Name)
 								if (!$result) {
 									$result = [pscustomobject]@{
 										ComputerName = $server.NetName

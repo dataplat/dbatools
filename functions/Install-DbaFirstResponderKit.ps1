@@ -66,7 +66,7 @@ Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authe
 		[Parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[object]$Database = "master",
 		[switch]$Silent
