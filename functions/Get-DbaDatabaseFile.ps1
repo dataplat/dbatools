@@ -51,7 +51,7 @@ function Get-DbaDatabaseFile {
 	param (
 		[parameter(ParameterSetName = "Pipe", Mandatory, ValueFromPipeline)]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,

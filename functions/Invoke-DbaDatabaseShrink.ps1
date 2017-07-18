@@ -102,7 +102,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,

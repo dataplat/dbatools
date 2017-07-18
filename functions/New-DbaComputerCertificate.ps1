@@ -110,7 +110,7 @@
 		$ComputerName = $env:COMPUTERNAME,
 		
 		[PSCredential]
-		[System.Management.Automation.CredentialAttribute()]
+		
 		$Credential,
 		
 		[string]

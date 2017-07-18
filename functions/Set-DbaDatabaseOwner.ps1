@@ -63,7 +63,7 @@ Sets database owner to 'sa' on the db1 and db2 databases if their current owner 
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,

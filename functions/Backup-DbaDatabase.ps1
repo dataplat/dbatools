@@ -122,7 +122,7 @@ sql credential dbatoolscred registered on the sql2016 instance
 	param (
 		[parameter(ParameterSetName = "Pipe", Mandatory = $true)]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,

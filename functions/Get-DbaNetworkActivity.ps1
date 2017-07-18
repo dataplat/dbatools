@@ -49,7 +49,7 @@
     [parameter(ValueFromPipeline)]
     [Alias("cn","host","Server")]
     [string[]]$ComputerName = $env:COMPUTERNAME,
-    [PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential
+    [PSCredential] $Credential
   )
 
   BEGIN

@@ -51,7 +51,7 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 		[parameter(Position = 0, Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[parameter(Mandatory = $true)]
 		[object]$Database,
 		[Switch]$IgnoreLimit,

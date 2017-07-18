@@ -67,7 +67,7 @@
 		[parameter(Mandatory, ParameterSetName = 'SqlInstance')]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[parameter(Mandatory, ParameterSetName = 'SqlInstance')]
 		[string]$Database,

@@ -81,7 +81,7 @@ function Get-DbaLogin {
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[object[]]$Login,
 		[object[]]$ExcludeLogin,

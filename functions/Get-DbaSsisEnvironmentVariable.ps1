@@ -100,7 +100,7 @@ You should have received a copy of the GNU General Public License along with thi
 		[Alias('SqlServer', 'ServerInstance')]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Parameter(Mandatory = $false)]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[parameter(Mandatory = $false)]
 		[object[]]$Environment,

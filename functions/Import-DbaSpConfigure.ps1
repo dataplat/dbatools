@@ -70,12 +70,12 @@ using the SQL credential stored in the variables
 	param (
 		[DbaInstanceParameter]$Source,
 		[DbaInstanceParameter]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential,
+		[PSCredential]$SourceSqlCredential,
+		[PSCredential]$DestinationSqlCredential,
 		[Alias("ServerInstance","SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
 		[string]$Path,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[switch]$Force
 		
 	)

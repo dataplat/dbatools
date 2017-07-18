@@ -57,12 +57,12 @@ function Copy-DbaSysDbUserObject {
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[DbaInstanceParameter]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SourceSqlCredential,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$DestinationSqlCredential,
 		[switch]$Silent
 	)

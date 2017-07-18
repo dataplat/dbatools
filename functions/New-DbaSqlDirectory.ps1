@@ -66,7 +66,7 @@ If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\
 		[DbaInstanceParameter]$SqlInstance,
 		[Parameter(Mandatory = $true)]
 		[string]$Path,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
+		[PSCredential]$SqlCredential
 	)
 	
 	$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential

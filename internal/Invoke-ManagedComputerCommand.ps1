@@ -33,7 +33,7 @@ Function Invoke-ManagedComputerCommand {
 		$ComputerName,
 		
 		[PSCredential]
-		[System.Management.Automation.CredentialAttribute()]
+		
 		$Credential,
 		
 		[Parameter(Mandatory = $true)]

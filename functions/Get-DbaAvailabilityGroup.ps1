@@ -57,7 +57,7 @@ function Get-DbaAvailabilityGroup {
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[object[]]$AvailabilityGroup,
 		[switch]$IsPrimary,
