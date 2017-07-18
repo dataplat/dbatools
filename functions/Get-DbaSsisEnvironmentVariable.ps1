@@ -101,7 +101,7 @@ You should have received a copy of the GNU General Public License along with thi
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Parameter(Mandatory = $false)]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[parameter(Mandatory = $false)]
 		[object[]]$Environment,
 		[parameter(Mandatory = $false)]

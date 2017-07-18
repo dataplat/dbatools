@@ -63,7 +63,7 @@ Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql201
         $SqlInstance,
         
         [System.Management.Automation.PSCredential]
-        $SqlCredential,
+        $SqlCredential = [System.Management.Automation.PSCredential]::Empty,
         
         [switch]
         $Silent

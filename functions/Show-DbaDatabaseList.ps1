@@ -62,7 +62,7 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
-		[object]$SqlCredential,
+		[object]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[string]$Title = "Select Database",
 		[string]$Header = "Select the database:",
 		[string]$DefaultDb

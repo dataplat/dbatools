@@ -38,7 +38,7 @@ Returns all Database Assembly for the local and sql2016 SQL Server instances
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[DbaInstanceParameter]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[switch]$Silent
 	)
 	

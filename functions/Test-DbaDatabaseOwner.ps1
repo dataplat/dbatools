@@ -60,7 +60,7 @@ function Test-DbaDatabaseOwner {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,

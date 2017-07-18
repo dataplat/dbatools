@@ -136,7 +136,7 @@ function Copy-DbaDatabase {
 		
 		[PSCredential]
 		[System.Management.Automation.CredentialAttribute()]
-		$SourceSqlCredential,
+		$SourceSqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]
@@ -144,7 +144,7 @@ function Copy-DbaDatabase {
 		
 		[PSCredential]
 		[System.Management.Automation.CredentialAttribute()]
-		$DestinationSqlCredential,
+		$DestinationSqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		
 		[Alias("Databases")]
 		[object[]]

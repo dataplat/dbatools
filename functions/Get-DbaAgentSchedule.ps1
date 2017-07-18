@@ -41,7 +41,7 @@ FUNCTION Get-DbaAgentSchedule
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "Instance", "SqlServer")]
 		[object[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[switch]$Silent
 	)
 	

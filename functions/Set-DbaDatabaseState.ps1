@@ -111,7 +111,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,

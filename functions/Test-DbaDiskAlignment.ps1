@@ -95,10 +95,10 @@ Function Test-DbaDiskAlignment
         $Detailed,
         
         [System.Management.Automation.PSCredential]
-        $Credential,
+        $Credential = [System.Management.Automation.PSCredential]::Empty,
         
         [System.Management.Automation.PSCredential]
-        $SqlCredential,
+        $SqlCredential = [System.Management.Automation.PSCredential]::Empty,
         
         [switch]
         $NoSqlCheck,
@@ -128,7 +128,7 @@ Function Test-DbaDiskAlignment
                 $ComputerName,
                 
                 [System.Management.Automation.PSCredential]
-                $SqlCredential,
+                $SqlCredential = [System.Management.Automation.PSCredential]::Empty,
                 
                 [bool]
                 $Silent = $Silent

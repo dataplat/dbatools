@@ -54,7 +54,7 @@
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[DateTime]$Since,
 		[ValidateSet('Error', 'Warning', 'Success', 'Information', 'Internal')]
 		[string[]]$Type,

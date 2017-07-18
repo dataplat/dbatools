@@ -147,7 +147,7 @@ After the work has been completed, we can push the original startup parameters b
         $SqlInstance,
         
         [PSCredential]
-        $Credential,
+        $Credential = [System.Management.Automation.PSCredential]::Empty,
         
         [string]
         $MasterData,

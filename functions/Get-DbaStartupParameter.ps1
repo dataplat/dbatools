@@ -53,7 +53,7 @@ Function Get-DbaStartupParameter {
         
         [Alias("SqlCredential")]
         [PSCredential]
-        $Credential,
+        $Credential = [System.Management.Automation.PSCredential]::Empty,
         
         [switch]
         $Simple,

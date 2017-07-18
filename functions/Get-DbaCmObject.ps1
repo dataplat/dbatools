@@ -82,7 +82,7 @@
         $ComputerName = $env:COMPUTERNAME,
 
         [System.Management.Automation.PSCredential]
-        $Credential,
+        $Credential = [System.Management.Automation.PSCredential]::Empty,
 
         [string]
         $Namespace = "root\cimv2",

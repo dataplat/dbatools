@@ -108,7 +108,7 @@ function Find-DbaAgentJob {
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[string[]]$Name,
 		[string[]]$StepName,
 		[switch]$Exact,

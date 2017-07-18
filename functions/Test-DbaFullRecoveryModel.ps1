@@ -64,7 +64,7 @@ function Test-DbaFullRecoveryModel {
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[switch]$Detailed
 	)
 

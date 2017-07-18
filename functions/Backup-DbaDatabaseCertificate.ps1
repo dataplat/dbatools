@@ -103,7 +103,7 @@ function Backup-DbaDatabaseCertificate {
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[parameter(ParameterSetName = "instance")]
 		[object[]]$Certificate,
 		[parameter(ParameterSetName = "instance")]

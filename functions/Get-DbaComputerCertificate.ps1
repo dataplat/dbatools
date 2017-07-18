@@ -53,7 +53,7 @@ Gets computer certificates on sql2016 that match thumbprints 8123472E32AB412ED42
 		[parameter(ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential = [System.Management.Automation.PSCredential]::Empty,
 		[string]$Store = "LocalMachine",
 		[string]$Folder = "My",
 		[string]$Path,

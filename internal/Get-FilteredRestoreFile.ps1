@@ -68,7 +68,7 @@ function Get-FilteredRestoreFile {
         $RestoreTime = (Get-Date).AddYears(1),
         
         [System.Management.Automation.PSCredential]
-        $SqlCredential,
+        $SqlCredential = [System.Management.Automation.PSCredential]::Empty,
         
         [switch]
         $IgnoreLogBackup,

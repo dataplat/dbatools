@@ -79,7 +79,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
 		[parameter(Mandatory = $false)]
-		[object]$SqlCredential,
+		[object]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[parameter(Mandatory = $false)]
 		[string[]]$Path,
 		[string[]]$FileType,

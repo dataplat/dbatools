@@ -74,7 +74,7 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 		[DbaInstanceParameter[]]$SqlInstance,
 		[parameter(ParameterSetName = 'NotPiped')]
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,

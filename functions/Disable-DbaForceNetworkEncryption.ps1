@@ -56,7 +56,7 @@ function Disable-DbaForceNetworkEncryption {
 		
 		[PSCredential]
 		[System.Management.Automation.CredentialAttribute()]
-		$Credential,
+		$Credential = [System.Management.Automation.PSCredential]::Empty,
 		
 		[switch]
 		$Silent

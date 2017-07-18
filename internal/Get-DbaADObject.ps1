@@ -90,7 +90,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 		[ValidateSet("DistinguishedName","Guid","Name","SamAccountName","Sid","UserPrincipalName")]
 		[string]$IdentityType = "SamAccountName",
 
-		[System.Management.Automation.Credential()]$Credential,
+		[PSCredential]$Credential,
 		[switch]$SearchAllDomains,
 		[switch]$Silent
 	)

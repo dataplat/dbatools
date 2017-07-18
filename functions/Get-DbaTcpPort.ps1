@@ -64,7 +64,7 @@ function Get-DbaTcpPort {
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("SqlCredential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$Credential,
+		$Credential = [System.Management.Automation.PSCredential]::Empty,
 		[switch]$Detailed,
 		[Alias("Ipv4")]
 		[switch]$ExcludeIpv6,

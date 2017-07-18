@@ -67,7 +67,7 @@
 		$SqlInstance,
 		
 		[System.Management.Automation.PSCredential]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		
 		[parameter(Mandatory, ParameterSetName = "instanceExplicit")]
 		[object[]]

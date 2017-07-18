@@ -72,7 +72,7 @@ Remove the schedule on multiple servers using pipe line
 		[object[]]$SqlInstance,
 
 		[System.Management.Automation.PSCredential]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]

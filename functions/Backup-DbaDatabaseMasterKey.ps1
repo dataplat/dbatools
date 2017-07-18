@@ -63,7 +63,7 @@ Logs into sql2016 with windows credentials then backs up db1's keys to the \\nas
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[Security.SecureString]$Password,

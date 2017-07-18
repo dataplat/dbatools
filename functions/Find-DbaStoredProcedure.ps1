@@ -68,7 +68,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,

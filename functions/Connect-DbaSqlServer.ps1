@@ -164,7 +164,7 @@ Connects with ReadOnly ApplicantionIntent.
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [Alias("SqlCredential")]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
+        [PSCredential]$Credential,
 		[object[]]$Database,
         [string]$AccessToken,
         [ValidateSet('ReadOnly', 'ReadWrite')]

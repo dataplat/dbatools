@@ -70,7 +70,7 @@
 		$SqlInstance,
 		
 		[System.Management.Automation.PSCredential]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		
 		[Parameter(Mandatory = $false)]
 		[Alias("NewValue", "NewConfig")]

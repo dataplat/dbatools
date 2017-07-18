@@ -53,7 +53,7 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[object[]]$Database,
 		[parameter(Mandatory, ParameterSetName = "instance")]

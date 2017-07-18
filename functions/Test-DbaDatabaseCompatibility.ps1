@@ -56,7 +56,7 @@ function Test-DbaDatabaseCompatibility {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$Credential,
+		$Credential = [System.Management.Automation.PSCredential]::Empty,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,

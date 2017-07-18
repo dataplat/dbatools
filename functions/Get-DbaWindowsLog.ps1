@@ -67,7 +67,7 @@
 		
 		[System.Management.Automation.CredentialAttribute()]
 		[System.Management.Automation.PSCredential]
-		$Credential,
+		$Credential = [System.Management.Automation.PSCredential]::Empty,
 		
 		[int]
 		$MaxThreads = 0,
@@ -252,7 +252,7 @@
 				$End,
 				
 				[object]
-				$Credential,
+				$Credential = [System.Management.Automation.PSCredential]::Empty,
 				
 				[int]
 				$MaxRemoteThreads,

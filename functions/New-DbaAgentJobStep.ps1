@@ -131,7 +131,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Parameter(Mandatory = $false)]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[string[]]$Job,

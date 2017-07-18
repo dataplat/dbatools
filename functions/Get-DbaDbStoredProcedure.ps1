@@ -63,7 +63,7 @@ Gets the Stored Procedures for the databases on Sql1 and Sql2/sqlexpress
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemSp,

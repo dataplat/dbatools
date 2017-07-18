@@ -97,7 +97,7 @@ Gets the backup header information from the SQL Server backup file stored at htt
         $SqlInstance,
         
         [PsCredential]
-        $SqlCredential,
+        $SqlCredential = [System.Management.Automation.PSCredential]::Empty,
         
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]

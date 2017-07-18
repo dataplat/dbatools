@@ -32,7 +32,7 @@
 	[CmdletBinding()]
 	param (
 		[DbaInstanceParameter]$ComputerName = $env:COMPUTERNAME,
-		[object]$Credential,
+		[object]$Credential = [System.Management.Automation.PSCredential]::Empty,
 		[scriptblock]$ScriptBlock,
 		[object[]]$ArgumentList,
 		[switch]$Raw

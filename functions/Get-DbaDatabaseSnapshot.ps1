@@ -63,7 +63,7 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
         [PSCredential][System.Management.Automation.CredentialAttribute()]
-        $SqlCredential,
+        $SqlCredential = [System.Management.Automation.PSCredential]::Empty,
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,

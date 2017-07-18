@@ -143,7 +143,7 @@ function Get-DbaBackupHistory {
 		
 		[Alias("Credential")]
 		[PsCredential]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		
 		[Alias("Databases")]
 		[object[]]
