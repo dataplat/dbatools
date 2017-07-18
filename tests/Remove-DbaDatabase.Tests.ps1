@@ -1,6 +1,5 @@
 ﻿Describe "Remove-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 	Context "Should not attempt to remove system databases and skip them if provided" {
-        Import-Module dbatools
         $Sql2008 = "localhost\sql2008r2sp2"
         $dbs = @( "master", "model", "tempdb", "msdb" )
         

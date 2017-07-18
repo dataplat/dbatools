@@ -1,5 +1,4 @@
 ﻿Describe "Copy-DbaDatabase Integration Tests" -Tags "Integrationtests" {
-    import-module dbatools
     # constants
     $Sql2008R2SP2 = "localhost\sql2008r2sp2"
     $Sql2016 = "localhost\sql2016"
@@ -8,8 +7,8 @@
     $NetworkPath = "C:\temp"
 
     # cleanup
-    $Instances | foreach { 
-        Get-DbaDatabase -SqlInstance $_ -NoSystemDb -Database SingleRestore | Remove-DbaDatabase -SqlInstance $_ -Database $db.Name -Confirm:$false
+    foreach ($instance in $Instances) {
+        Get-DbaDatabase -SqlInstance $instance -NoSystemDb -Database singlerestore | Remove-DbaDatabase -SqlInstance $instance -Confirm:$false
     }
     
     # Restore and set owner for Single Restore
