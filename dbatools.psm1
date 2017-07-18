@@ -6,7 +6,7 @@ if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\"))
 }
 
 try {
-	
+	Get-ChildItem -Path "$PSScriptRoot\bin\*.dll" | Unblock-File -ErrorAction SilentlyContinue
 	Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.Smo.dll" -ErrorAction Stop
 	Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.Dmf.dll"
 	Add-Type -Path "$PSScriptRoot\bin\Microsoft.SqlServer.SqlWmiManagement.dll"
@@ -37,7 +37,7 @@ catch
 	This takes about 11-50ms on a newer machine.
 
 #>
-	
+	Write-Verbose "Had to failback"
 	$smoversions = "14.0.0.0", "13.0.0.0", "12.0.0.0", "11.0.0.0", "10.0.0.0", "9.0.242.0", "9.0.0.0"
 	
 	foreach ($smoversion in $smoversions) {
