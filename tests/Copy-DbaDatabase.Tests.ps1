@@ -5,7 +5,7 @@
 	$instances = @($sql2008, $sql2016)
 	$backuplocation = "C:\github\appveyor-lab\singlerestore\singlerestore.bak"
 	$networkpath = "C:\temp"
-	
+	<#
 	# cleanup
 	foreach ($instance in $instances) {
 		Remove-DbaDatabase -SqlInstance $instance -Confirm:$false -Database singlerestore
@@ -64,6 +64,7 @@
 			$db1.Status | Should be $db2.Status
 		}
 	}
+	#>
 	Context "Clean up" {
 		foreach ($instance in $instances) {
 			Get-DbaDatabase -SqlInstance $instance -NoSystemDb | Remove-DbaDatabase -Confirm:$false
