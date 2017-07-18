@@ -22,26 +22,17 @@ function Backup-DbaDatabaseCertificate {
 		.PARAMETER ExcludeDatabase
 			Database(s) to skip when exporting encryptors.
 
-<<<<<<< HEAD
-$scred = Get-Credential, this passes $scred object to the param. 
-=======
 		.PARAMETER EncryptionPassword 
 			A string value that specifies the system path to encrypt the private key.
->>>>>>> upstream/development
 
 		.PARAMETER DecryptionPassword 
 			A string value that specifies the system path to decrypt the private key.
 
-<<<<<<< HEAD
-.PARAMETER Path
-The Path to output the files to. The path is relative to the SQL Server itself. If no path is specified, the default data directory will be used.
-=======
 		.PARAMETER Path
 			The path to output the files to. The path is relative to the SQL Server itself. If no path is specified, the default data directory will be used.
 		
 		.PARAMETER Suffix
 			The suffix of the filename of the exported certificate.
->>>>>>> upstream/development
 
 		.PARAMETER CertificateCollection 
 			Internal parameter to support pipeline input.
@@ -52,16 +43,6 @@ The Path to output the files to. The path is relative to the SQL Server itself. 
 		.PARAMETER Silent 
 			Use this switch to disable any kind of verbose messages.
 
-<<<<<<< HEAD
-.PARAMETER Suffix
-The suffix of the filename of the exported certificate.
-
-.PARAMETER EncryptionPassword
-The password used to encrypt the private key.
-
-.PARAMETER DecryptionPassword 
-The password used to decrypt the private key.
-=======
 		.PARAMETER WhatIf 
 			Shows what would happen if the command were to run. No actions are actually performed. 
 
@@ -72,7 +53,6 @@ The password used to decrypt the private key.
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
->>>>>>> upstream/development
 
 		.EXAMPLE
 			Backup-DbaDatabaseCertificate -SqlInstance Server1
@@ -82,19 +62,11 @@ The password used to decrypt the private key.
 			$cred = Get-Credential sqladmin
 			Backup-DbaDatabaseCertificate -SqlInstance Server1 -SqlCredential $cred
 
-<<<<<<< HEAD
-.PARAMETER Silent 
-If this switch is enabled, the internal messaging functions will be silenced.
-
-.PARAMETER CertificateCollection 
-Internal parameter to support pipeline input.
-=======
 			Connects using sqladmin credential and exports all the certificates on the specified SQL Server to the default data path for the instance.
 
 		.EXAMPLE
 			Backup-DbaDatabaseCertificate -SqlInstance Server1 -Certificate Certificate1
 			Exports only the certificate named Certificate1 on the specified SQL Server to the default data path for the instance.
->>>>>>> upstream/development
 
 		.EXAMPLE
 			Backup-DbaDatabaseCertificate -SqlInstance Server1 -Database AdventureWorks
@@ -104,24 +76,6 @@ Internal parameter to support pipeline input.
 			Backup-DbaDatabaseCertificate -SqlInstance Server1 -ExcludeDatabase AdventureWorks
 			Exports all certificates except those for AdventureWorks on the specified SQL Server to the default data path for the instance.
 
-<<<<<<< HEAD
-.EXAMPLE
-Get-DbaDatabaseCertificate -SqlInstance sql2016 | Backup-DbaDatabaseCertificate
-Exports all certificates found on sql2016 to the default data directory. Prompts for encryption and decryption passwords.
-
-.EXAMPLE
-Backup-DbaDatabaseCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
-Exports all the certificates on the specified SQL Server Instance.
-
-.EXAMPLE
-$EncryptionPassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
-Backup-DbaDatabaseCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword $EncryptionPassword -Database Database1
-Exports the certificate that is used as the encryptor for a specific database on the specified SQL Server Instance.
-
-.EXAMPLE
-Backup-DbaDatabaseCertificate -SqlInstance Server1 -Path \\Server1\Certificates -Certificate CertTDE
-Exports all certificates named CertTDE on the specified SQL Server Instance. Because the -EncryptionPassword is not specified, the user will be prompted to enter it.
-=======
 		.EXAMPLE
 			Backup-DbaDatabaseCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
 			Exports all the certificates on the specified SQL Server.
@@ -139,7 +93,6 @@ Exports all certificates named CertTDE on the specified SQL Server Instance. Bec
 		.EXAMPLE
 			Backup-DbaDatabaseCertificate -SqlInstance Server1 -Suffix DbaTools
 			Exports all certificates on the specified SQL Server to the specified path, appends DbaTools to the end of the filenames.
->>>>>>> upstream/development
 
 		.EXAMPLE
 			Get-DbaDatabaseCertificate -SqlInstance sql2016 | Backup-DbaDatabaseCertificate
