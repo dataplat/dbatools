@@ -15,5 +15,10 @@
 		It "Should return that the database is only Database" {
             $results.Database | Should Be "singlerestore"
         }
-    }
+	}
+	
+	Context "Reattaches and deletes" {
+		$null = Attach-DbaDatabase -SqlInstance localhost -Database singlerestore
+		Get-DbaDatabase -SqlInstance localhost -Database singlerestore | Remove-DbaDatabase
+	}
 }
