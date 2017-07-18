@@ -8,7 +8,7 @@ Gets SQL Agent Job Category information for each instance(s) of SQL Server.
  The Get-DbaJobCategory returns connected SMO object for SQL Agent Job Category information for each instance(s) of SQL Server.
 	
 .PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
 to be executed against multiple SQL Server instances.
 
 .PARAMETER SqlCredential
