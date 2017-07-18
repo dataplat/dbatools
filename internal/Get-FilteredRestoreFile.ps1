@@ -169,6 +169,9 @@ function Get-FilteredRestoreFile {
             $ServerName, $databaseName = $Database.Name.split(',').trim()
 
             Write-verbose "dbname = $databasename"
+            foreach ($bk in $AllSQLBackupdetails) {
+                Write-Message -level verbose -Message "Server $serverName = $($_.ServerName) - dbname $databasename = $($_.DatabaseName) - Type = $($_.Type)"
+            }
             $SQLBackupdetails = $AllSQLBackupdetails | Where-Object {$_.ServerName -eq $ServerName -and $_.DatabaseName -eq $DatabaseName.trim()}
             #If we're continuing a restore, then we aren't going to be needing a full backup....
             $TlogStartlsn = 0
