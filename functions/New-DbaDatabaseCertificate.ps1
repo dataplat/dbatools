@@ -64,7 +64,7 @@ Suppresses all prompts to install but prompts to securely enter your password an
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[string[]]$Name,
 		[object[]]$Database = "master",
 		[string[]]$Subject,
@@ -86,13 +86,22 @@ Suppresses all prompts to install but prompts to securely enter your password an
 			}
 			
 			foreach ($db in $Database) {
-				
+
 				$smodb = $server.Databases[$db]
 				
 				if ($null -eq $smodb) {
 					Stop-Function -Message "Database '$db' does not exist on $instance" -Target $server -Continue
 				}
 				
+				if($null -eq $name) {
+					Write-Message -Level Verbose -Message "Name is NULL, setting it to '$db'"
+					$name = $db
+				}
+				if($null -eq $subject) {
+					Write-Message -Level Verbose -Message "Subject is NULL, setting it to '$db Database Certificate'"
+					$subject = "$db Database Certificate"
+				}
+
 				foreach ($cert in $name) {
 					if ($null -ne $smodb.Certificates[$cert]) {
 						Stop-Function -Message "Certificate '$cert' already exists in the $db database on $instance" -Target $smodb -Continue
@@ -114,10 +123,10 @@ Suppresses all prompts to install but prompts to securely enter your password an
 								$smocert.Create()
 							}
 							
-							Add-Member -InputObject $smocert -MemberType NoteProperty -Name ComputerName -value $server.NetName
-							Add-Member -InputObject $smocert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-							Add-Member -InputObject $smocert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-							Add-Member -InputObject $smocert -MemberType NoteProperty -Name Database -value $smodb.Name
+							Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name ComputerName -value $server.NetName
+							Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+							Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+							Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name Database -value $smodb.Name
 							
 							Select-DefaultView -InputObject $smocert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
 						}

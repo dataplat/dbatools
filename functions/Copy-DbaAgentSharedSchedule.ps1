@@ -73,11 +73,11 @@
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$DestinationSqlCredential,
 		[switch]$Force,
 		[switch]$Silent
@@ -122,8 +122,8 @@
                 else {
                     if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
                         $copySharedScheduleStatus.Status = "Skipped"
-                        $copySharedScheduleStatus
-                        Write-Message -Level Warning -Message "Schedule $scheduleName has associated jobs. Skipping."
+						$copySharedScheduleStatus
+						Write-Message -Level Warning -Message "Schedule [$scheduleName] has associated jobs. Skipping."
                         continue
                     }
                     else {

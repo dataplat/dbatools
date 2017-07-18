@@ -107,7 +107,7 @@ function Find-DbaAgentJob {
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[string[]]$Name,
 		[string[]]$StepName,
@@ -244,9 +244,9 @@ function Find-DbaAgentJob {
 			$jobs = $output | Select-Object -Unique
 
 			foreach ($job in $jobs) {
-				Add-Member -InputObject $job -MemberType NoteProperty -Name ComputerName -value $server.NetName
-				Add-Member -InputObject $job -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-				Add-Member -InputObject $job -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name ComputerName -value $server.NetName
+				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 				$job | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Name, LastRunDate, LastRunOutcome, IsEnabled, CreateDate, HasSchedule, OperatorToEmail, Category, OwnerLoginName
 			}
 		}

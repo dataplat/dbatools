@@ -111,7 +111,7 @@ Returns PSObject representing tempdb configuration.
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[int]$DataFileCount,
 		[Parameter(Mandatory = $true)]
 		[int]$DataFileSizeMB,

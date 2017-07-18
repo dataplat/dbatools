@@ -63,7 +63,7 @@ function Test-DbaFullRecoveryModel {
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[switch]$Detailed
 	)

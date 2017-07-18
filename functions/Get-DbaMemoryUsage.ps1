@@ -59,7 +59,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 		[parameter(ValueFromPipeline)]
 		[Alias("Host", "cn", "Server")]
 		[dbainstanceparameter[]]$ComputerName = $env:COMPUTERNAME,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
+		[PSCredential]$Credential,
 		[switch]$Simple,
 		[switch]$Silent
 	)

@@ -108,8 +108,21 @@
         [string]
         $ContinueLabel
     )
-    
-    $records = @()
+	
+	#region Handle Input Objects
+	if ($Target) {
+		$targetType = $Target.GetType().FullName
+		
+		switch ($targetType) {
+			"Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter" { $targetToAdd = $Target.InstanceName }
+			"Microsoft.SqlServer.Management.Smo.Server" { $targetToAdd = ([Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]$Target).InstanceName }
+			default { $targetToAdd = $Target }
+		}
+		if ($targetToAdd.GetType().FullName -like "Microsoft.SqlServer.Management.Smo.*") { $targetToAdd = $targetToAdd.ToString() }
+	}
+	#endregion Handle Input Objects
+	
+	$records = @()
     
     if ($ErrorRecord)
     {
@@ -117,17 +130,17 @@
         {
             $exception = New-Object System.Exception($record.Exception.Message, $record.Exception)
             if ($record.CategoryInfo.Category) { $Category = $record.CategoryInfo.Category }
-            $records += New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $Target)
+            $records += New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $targetToAdd)
         }
     }
     else
     {
         $exception = New-Object System.Exception($Message)
-        $records += New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $Target)
+        $records += New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $targetToAdd)
     }
     
     # Manage Debugging
-    Write-Message -Level Warning -Message $Message -Silent $Silent -FunctionName $FunctionName -Target $Target -ErrorRecord $records
+	Write-Message -Level Warning -Message $Message -Silent $Silent -FunctionName $FunctionName -Target $targetToAdd -ErrorRecord $records
     #[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteErrorEntry($records, $FunctionName, $timestamp, $Message, $Host.InstanceId)
     
     #region Silent Mode
@@ -135,7 +148,7 @@
     {
         if ($SilentlyContinue)
         {
-            foreach ($record in $records) { Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $record.Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
+            foreach ($record in $records) { Write-Error -Message $record -Category $Category -TargetObject $targetToAdd -Exception $record.Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
             if ($ContinueLabel) { continue $ContinueLabel }
             else { Continue }
         }
@@ -158,7 +171,7 @@
         # This ensures that the error is stored in the $error variable AND has its Stacktrace (simply adding the record would lack the stacktrace)
         foreach ($record in $records)
         {
-            $null = Write-Error -Message $record -Category $Category -TargetObject $Target -Exception $record.Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1
+            $null = Write-Error -Message $record -Category $Category -TargetObject $targetToAdd -Exception $record.Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1
         }
         
         if ($Continue)

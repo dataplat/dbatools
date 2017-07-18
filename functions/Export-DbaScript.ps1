@@ -36,11 +36,17 @@
 	.PARAMETER Passthru
 	Output script to console
 	
-	.PARAMETER ScriptingOptionObject 
+	.PARAMETER ScriptingOptionsObject 
 	An SMO Scripting Object that can be used to customize the output - see New-DbaScriptingOption
 
 	.PARAMETER WhatIf 
 	Shows what would happen if the command were to run. No actions are actually performed
+
+	.PARAMETER NoClobber
+	Do not overwrite file
+
+	.PARAMETER Append
+	Append to file
 
 	.PARAMETER Confirm 
 	Prompts you for confirmation before executing any changing operations within the command
@@ -62,9 +68,14 @@
 	Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript
 	
 	Exports all jobs on the SQL Server sql2016 instance using a trusted connection - automatically determines filename as .\sql2016-Job-Export-date.sql
+
+	.EXAMPLE
+	Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -Path C:\temp\export.sql -Append 
+	
+	Exports all jobs on the SQL Server sql2016 instance using a trusted connection - Will append the output to the file C:\temp\export.sql if it already exists
 	
 	.EXAMPLE 
-	Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credetnial sqladmin) | Export-DbaScript -Path C:\temp\export.sql
+	Get-DbaAgentJob -SqlInstance sql2016 -Job syspolicy_purge_history, 'Hourly Log Backups' -SqlCredential (Get-Credential sqladmin) | Export-DbaScript -Path C:\temp\export.sql
 		
 	Exports only syspolicy_purge_history and 'Hourly Log Backups' to C:temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
 	
@@ -77,9 +88,9 @@
 	$options = New-DbaScriptingOption
 	$options.ScriptDrops = $false
 	$options.WithDependencies = $true
-	Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -ScriptingOptionObject $options
+	Get-DbaAgentJob -SqlInstance sql2016 | Export-DbaScript -ScriptingOptionsObject $options
 	
-	Exports Agent Jobs with the Scripting Options ScriptDrops set to $false and WithDependencies set to true.
+	Exports Agent Jobs with the Scripting Options ScriptDrops set to $false and WithDependencies set to $true.
 
 	#>
 	
@@ -87,11 +98,13 @@
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$InputObject,
-		[Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionObject,
+		[Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,
 		[string]$Path,
 		[ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
 		[string]$Encoding = 'UTF8',
 		[switch]$Passthru,
+        	[switch]$NoClobber,
+		[switch]$Append,
 		[switch]$Silent
 	)
 	
@@ -104,7 +117,7 @@
 	
 	process {
 		foreach ($object in $inputobject) {
-			
+
 			$typename = $object.GetType().ToString()
 			
 			if ($typename.StartsWith('Microsoft.SqlServer.')) {
@@ -140,6 +153,11 @@
 			
 			$server = $parent
 			$servername = $server.name.replace('\', '$')
+
+            if ($ScriptingOptionsObject) {
+                $scripter = New-Object Microsoft.SqlServer.Management.Smo.Scripter "$($server.name)" 
+                $scripter.Options = $ScriptingOptionsObject
+            }
 			
 			if (!$passthru) {
 				if ($path) {
@@ -161,17 +179,26 @@
 			}
 			else {
 				if ($prefixarray -notcontains $actualpath) {
-					$prefix | Out-File -FilePath $actualpath -Encoding $encoding -Append
+                    
+                    if ((Test-Path -Path $actualpath) -and $NoClobber){
+                        Stop-Function -Message "File already exists. If you want to overwrite it remove the -NoClobber parameter. If you want to append data, please Use -Append parameter." -Silent $Silent -Continue -Target $actualpath
+                    }
+                    #Only at the first output we use the passed variables Append & NoClobber. For this execution the next ones need to buse -Append
+					$prefix | Out-File -FilePath $actualpath -Encoding $encoding -Append:$Append -NoClobber:$NoClobber
 					$prefixarray += $actualpath
 				}
 			}
 			
 			If ($Pscmdlet.ShouldProcess($env:computername, "Exporting $object from $server to $actualpath")) {
 				Write-Message -Level Verbose -Message "Exporting $object"
-				
+
+			
 				if ($passthru) {
+
 					if ($ScriptingOptionsObject) {
-						$object.Script($ScriptingOptionsObject) | Out-String
+                        foreach ($script in $scripter.EnumScript($object)) {
+                            $script | Out-String
+                        }
 					}
 					else {
 						$object.Script() | Out-String
@@ -179,7 +206,9 @@
 				}
 				else {
 					if ($ScriptingOptionsObject) {
-						$object.Script($ScriptingOptionsObject) | Out-File -FilePath $actualpath -Encoding $encoding -Append
+                        foreach ($script in $scripter.EnumScript($object)) {
+                            $script | Out-File -FilePath $actualpath -Encoding $encoding -Append
+                        }
 					}
 					else {
 						$object.Script() | Out-File -FilePath $actualpath -Encoding $encoding -Append

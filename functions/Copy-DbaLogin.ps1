@@ -123,11 +123,11 @@ function Copy-DbaLogin {
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[DbaInstanceParameter]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$DestinationSqlCredential,
 		[object[]]$Login,
 		[object[]]$ExcludeLogin,
@@ -214,12 +214,12 @@ function Copy-DbaLogin {
 					}
 
 					$copyLoginStatus.Status = "Skipped"
-					$copyLoginStatus.Notes = "Already exist on destination."
+					$copyLoginStatus.Notes = "Already exists on destination."
 					$copyLoginStatus
 					continue
 				}
 
-				if ($Login -ne $null -and $force) {
+				if ($destServer.Logins.Item($userName) -ne $null -and $force) {
 					if ($userName -eq $destServer.ServiceAccount) {
 						Write-Message -Level Warning -Message "$userName is the destination service account. Skipping drop."
 
@@ -251,14 +251,19 @@ function Copy-DbaLogin {
 								$ownedJob.Set_OwnerLoginName('sa')
 								$ownedJob.Alter()
 							}
-
-
-							$destServer.Logins.Item($userName).Disable()
-
+							
 							$activeConnections = $destServer.EnumProcesses() | Where-Object Login -eq $userName
+							
 							if ($activeConnections -and $KillActiveConnection) {
+								if (!$destServer.Logins.Item($userName).IsDisabled){
+									$disabled = $true
+									$destServer.Logins.Item($userName).Disable()
+								}
+								
 								$activeConnections | ForEach-Object { $destServer.KillProcess($_.Spid)}
 								Write-Message -Level Verbose -Message "-KillActiveConnection was provided. There are $($activeConnections.Count) active connections killed."
+								# just in case the kill didn't work, it'll leave behind a disabled account
+								if ($disabled) { $destServer.Logins.Item($userName).Enable() }
 							}
 							elseif ($activeConnections) {
 								Write-Message -Level Warning -Message "There are $($activeConnections.Count) active connections found for the login $userName. Utilize -KillActiveConnection with -Force to kill the connections."
@@ -271,8 +276,8 @@ function Copy-DbaLogin {
 							$copyLoginStatus.Status = "Failed"
 							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
-
-							Stop-Function -Message "Could not drop $userName" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
+							
+							Stop-Function -Message "Could not drop $userName" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
 						}
 					}
 				}
@@ -291,8 +296,18 @@ function Copy-DbaLogin {
 					$destLogin.Language = $sourceLogin.Language
 
 					if ($destServer.databases[$defaultDb] -eq $null) {
-						Write-Message -Level Warning -Message "$defaultDb does not exist on destination. Setting defaultdb to master."
-						$defaultDb = "master"
+						# we end up here when the default database on source doesn't exist on dest
+						# if source login is a sysadmin, then set the default database to master
+						# if not, set it to tempdb (see #303)
+						$OrigdefaultDb = $defaultDb
+						try { $sourcesysadmins = $sourceServer.roles['sysadmin'].EnumMemberNames() }
+						catch { $sourcesysadmins = $sourceServer.roles['sysadmin'].EnumServerRoleMembers() }
+						if ($sourcesysadmins -contains $userName) {
+							$defaultDb = "master"
+						} else {
+							$defaultDb = "tempdb"
+						}
+						Write-Message -Level Warning -Message "$OrigdefaultDb does not exist on destination. Setting defaultdb to $defaultDb."
 					}
 
 					Write-Message -Level Verbose -Message "Set $userName defaultdb to $defaultDb"
@@ -365,8 +380,8 @@ function Copy-DbaLogin {
 								$copyLoginStatus.Status = "Failed"
 								$copyLoginStatus.Notes = $_.Exception.Message
 								$copyLoginStatus
-
-								Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
+								
+								Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
 							}
 						}
 					}
@@ -391,8 +406,8 @@ function Copy-DbaLogin {
 							$copyLoginStatus.Status = "Failed"
 							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
-
-							Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
+							
+							Stop-Function -Message "Failed to add $userName to $destination" -Category InvalidOperation -ErrorRecord $_ -Target $destServer -Continue 3>$null
 						}
 					}
 					# This script does not currently support certificate mapped or asymmetric key users.
@@ -414,8 +429,8 @@ function Copy-DbaLogin {
 							$copyLoginStatus.Status = "Successful - but could not disable on destination"
 							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
-
-							Stop-Function -Message "$userName disabled on source, could not be disabled on $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
+							
+							Stop-Function -Message "$userName disabled on source, could not be disabled on $destination" -Category InvalidOperation -ErrorRecord $_ -Target $destServer  3>$null
 						}
 					}
 					if ($sourceLogin.DenyWindowsLogin) {
@@ -426,8 +441,8 @@ function Copy-DbaLogin {
 							$copyLoginStatus.Status = "Successful - but could not deny login on destination"
 							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
-
-							Stop-Function -Message "$userName denied login on source, could not be denied login on $destination" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
+							
+							Stop-Function -Message "$userName denied login on source, could not be denied login on $destination" -Category InvalidOperation -ErrorRecord $_ -Target $destServer 3>$null
 						}
 					}
 				}
@@ -452,8 +467,8 @@ function Copy-DbaLogin {
 							$copyLoginStatus.Status = "Failed to rename"
 							$copyLoginStatus.Notes = $_.Exception.Message
 							$copyLoginStatus
-
-							Stop-Function -Message "Issue renaming $userName to $NewLogin" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
+							
+							Stop-Function -Message "Issue renaming $userName to $NewLogin" -Category InvalidOperation -ErrorRecord $_ -Target $destServer 3>$null
 						}
 					}
 				}
@@ -471,19 +486,12 @@ function Copy-DbaLogin {
 			$sourceVersionMajor = $sourceServer.VersionMajor
 			$destVersionMajor = $destServer.VersionMajor
 			if ($sourceVersionMajor -gt 10 -and $destVersionMajor -lt 11) {
-				Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Category InvalidOperation -InnerErrorRecord $_ -Target $sourceServer
+				Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Category InvalidOperation -ErrorRecord $_ -Target $sourceServer
 			}
 
 			if ($sourceVersionMajor -lt 8 -or $destVersionMajor -lt 8) {
 				Stop-Function -Message "SQL Server 7 and below are not supported." -Category InvalidOperation -InnerErrorRecord $_ -Target $sourceServer
 			}
-		}
-
-		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-		$started = Get-Date
-
-		if ($Pscmdlet.ShouldProcess("console", "Showing time started message")) {
-			Write-Message -Level Verbose -Message "Migration started: $started"
 		}
 
 		if ($Login) {
@@ -534,12 +542,6 @@ function Copy-DbaLogin {
 		}
 	}
 	end {
-		if ($Pscmdlet.ShouldProcess("console", "Showing time elapsed message")) {
-			Write-Message -Level Verbose -Message "Login migration completed: $(Get-Date)"
-			$totalTime = ($elapsed.Elapsed.toString().Split(".")[0])
-
-			Write-Message -Level Verbose -Message "Total elapsed time: $totalTime"
-		}
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlLogin
 	}
 }

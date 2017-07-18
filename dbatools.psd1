@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.958'
+	ModuleVersion = '0.8.961'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -317,7 +317,24 @@
 		'Invoke-DbaLogShippingRecovery',
 		'Sync-DbaLoginPermission',
 		'Find-DbaTrigger',
-		'Find-DbaView'
+		'Find-DbaView',
+		'Invoke-DbaDatabaseUpgrade',
+		'Get-DbaDatabaseUser',
+		'Get-DbaWindowsLog',
+		'Get-DbaSqlLog',
+		'Get-DbaAgentLog',
+		'Get-DbaDbMailLog',
+		'Get-DbaDbMailHistory',
+		'Get-DbaDatabaseView',
+		'Get-DbaDatabaseUdf',
+		'Get-DbaDatabasePartitionFunction',
+		'Get-DbaDatabasePartitionScheme',
+		'Get-DbaErrorLog',
+		'Get-DbaDefaultPath',
+		'Get-DbaDbStoredProcedure',
+		'Test-DbaCompression',
+		'Mount-DbaDatabase',
+		'Dismount-DbaDatabase'
 	)
 	
 	# Cmdlets to export from this module
@@ -328,7 +345,9 @@
 	
 	# Aliases to export from this module
 	# Aliases are stored in dbatools.psm1
-	AliasesToExport = 'Reset-SqlSaPassword',
+	# KEEP Detach-DbaDatabase, Dismount-DbaDatabase and Start-SqlMigration FOREVER
+	AliasesToExport = 'Detach-DbaDatabase', 'Attach-DbaDatabase',
+	'Reset-SqlSaPassword',
 	'Copy-SqlUserDefinedMessage',
 	'Copy-SqlJobServer',
 	'Restore-HallengrenBackup',

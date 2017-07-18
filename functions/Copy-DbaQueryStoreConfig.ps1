@@ -68,12 +68,12 @@
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[DbaInstanceParameter]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,
+		[PSCredential]$SourceSqlCredential,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object]$SourceDatabase,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[DbaInstanceParameter[]]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential,
+		[PSCredential]$DestinationSqlCredential,
 		[object[]]$DestinationDatabase,
 		[object[]]$Exclude,
 		[switch]$AllDatabases,

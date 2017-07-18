@@ -1,81 +1,88 @@
-﻿function Remove-DbaNetworkCertificate {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+
+function Remove-DbaNetworkCertificate {
 <#
-.SYNOPSIS
-Removes the network certificate for SQL Server instance
-
-.DESCRIPTION
-Removes the network certificate for SQL Server instance. This setting is found in Configuration Manager.
-
-.PARAMETER SqlInstance
-The target SQL Server - defaults to localhost. If target is a cluster, you must also specify InstanceClusterName (see below)
-
-.PARAMETER Credential
-Allows you to login to the computer (not sql instance) using alternative credentials.
-
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
-
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
-
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
-
-.NOTES
-Tags: Certificate
-
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-
-.EXAMPLE
-Remove-DbaNetworkCertificate
-
-Removes the Network Certificate for the default instance (MSSQLSERVER) on localhost
-
-.EXAMPLE
-Remove-DbaNetworkCertificate -SqlInstance sql1\SQL2008R2SP2
-
-Removes the Network Certificate for the SQL2008R2SP2 instance on sql1
-
-.EXAMPLE
-Remove-DbaNetworkCertificate -SqlInstance localhost\SQL2008R2SP2 -WhatIf
-
-Shows what would happen if the command were run
-
+	.SYNOPSIS
+		Removes the network certificate for SQL Server instance
+	
+	.DESCRIPTION
+		Removes the network certificate for SQL Server instance. This setting is found in Configuration Manager.
+	
+	.PARAMETER SqlInstance
+		The target SQL Server - defaults to localhost. If target is a cluster, you must also specify InstanceClusterName (see below)
+	
+	.PARAMETER Credential
+		Allows you to login to the computer (not sql instance) using alternative credentials.
+	
+	.PARAMETER Silent
+		Use this switch to disable any kind of verbose messages
+	
+	.PARAMETER WhatIf
+		Shows what would happen if the command were to run. No actions are actually performed.
+	
+	.PARAMETER Confirm
+		Prompts you for confirmation before executing any changing operations within the command.
+	
+	.EXAMPLE
+		Remove-DbaNetworkCertificate
+		
+		Removes the Network Certificate for the default instance (MSSQLSERVER) on localhost
+	
+	.EXAMPLE
+		Remove-DbaNetworkCertificate -SqlInstance sql1\SQL2008R2SP2
+		
+		Removes the Network Certificate for the SQL2008R2SP2 instance on sql1
+	
+	.EXAMPLE
+		Remove-DbaNetworkCertificate -SqlInstance localhost\SQL2008R2SP2 -WhatIf
+		
+		Shows what would happen if the command were run
+	
+	.NOTES
+		Tags: Certificate
+		
+		Website: https://dbatools.io
+		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 #>
 	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Low", DefaultParameterSetName = 'Default')]
 	param (
+		[Parameter(ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer", "ComputerName")]
-		[DbaInstanceParameter[]]$SqlInstance = $env:COMPUTERNAME,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
-		[switch]$Silent
+		[DbaInstanceParameter[]]
+		$SqlInstance = $env:COMPUTERNAME,
+		
+		[PSCredential]
+		
+		$Credential,
+		
+		[switch]
+		$Silent
 	)
 	process {
 		foreach ($instance in $sqlinstance) {
+			Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
+			$null = Test-ElevationRequirement -ComputerName $instance -Continue
 			
-			Test-RunAsAdmin -ComputerName $instance.ComputerName
-			
-			Write-Message -Level Output -Message "Resolving hostname"
+			Write-Message -Level Verbose -Message "Resolving hostname"
+			$resolved = $null
 			$resolved = Resolve-DbaNetworkName -ComputerName $instance -Turbo
 			
 			if ($null -eq $resolved) {
-				Write-Message -Level Warning -Message "Can't resolve $instance"
-				return
+				Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
 			}
 			
 			Write-Message -Level Output -Message "Connecting to SQL WMI on $($instance.ComputerName)"
 			try {
-				$sqlwmi = Invoke-ManagedComputerCommand -Server $instance.ComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.instancename))"
+				$sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
 			}
 			catch {
-				Stop-Function -Message $_ -Target $sqlwmi
-				return
+				Stop-Function -Message "Failed to access $instance" -Target $instance -Continue -ErrorRecord $_
 			}
 			
 			$regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
 			$vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
-			$instancename = $instance.instancename # $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+			$instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
 			$serviceaccount = $sqlwmi.ServiceAccount
 			
 			if ([System.String]::IsNullOrEmpty($regroot)) {
@@ -87,17 +94,16 @@ Shows what would happen if the command were run
 					$vsname = ($vsname -Split 'Value\=')[1]
 				}
 				else {
-					Write-Message -Level Warning -Message "Can't find instance $vsname on $env:COMPUTERNAME"
-					return
+					Stop-Function -Message "Can't find instance $vsname on $instance" -Continue -Category ObjectNotFound -Target $instance
 				}
 			}
 			
-			if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance.ComputerName }
+			if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 			
-			Write-Message -Level Output -Message "Regroot: $regroot"
-			Write-Message -Level Output -Message "ServiceAcct: $serviceaccount"
-			Write-Message -Level Output -Message "InstanceName: $instancename"
-			Write-Message -Level Output -Message "VSNAME: $vsname"
+			Write-Message -Level Output -Message "Regroot: $regroot" -Target $instance
+			Write-Message -Level Output -Message "ServiceAcct: $serviceaccount" -Target $instance
+			Write-Message -Level Output -Message "InstanceName: $instancename" -Target $instance
+			Write-Message -Level Output -Message "VSNAME: $vsname" -Target $instance
 			
 			$scriptblock = {
 				$regroot = $args[0]
@@ -110,10 +116,10 @@ Shows what would happen if the command were run
 				Set-ItemProperty -Path $regpath -Name Certificate -Value $null
 				
 				[pscustomobject]@{
-					ComputerName = $env:COMPUTERNAME
-					InstanceName = $instancename
-					SqlInstance = $vsname
-					ServiceAccount = $serviceaccount
+					ComputerName	  = $env:COMPUTERNAME
+					InstanceName	  = $instancename
+					SqlInstance	      = $vsname
+					ServiceAccount    = $serviceaccount
 					RemovedThumbprint = $cert.Thumbprint
 				}
 			}
@@ -123,7 +129,7 @@ Shows what would happen if the command were run
 					Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop
 				}
 				catch {
-					Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue
+					Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
 				}
 			}
 		}

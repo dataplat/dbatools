@@ -1,3 +1,4 @@
+function Get-DbaSsisEnvironmentVariable {
 <#
 .SYNOPSIS
 This command gets specified SSIS Environment and all its variables
@@ -93,121 +94,99 @@ This program is free software: you can redistribute it and/or modify it under th
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 #>
-function Get-DbaSsisEnvironmentVariable {
-
-[CmdletBinding()]
+	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias('SqlServer', 'ServerInstance')]
 		[DbaInstanceParameter[]]$SqlInstance,
-        [Parameter(Mandatory=$false)]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
-        [parameter(Mandatory=$false)]
+		[Parameter(Mandatory = $false)]
+		[PSCredential]
+		$SqlCredential,
+		[parameter(Mandatory = $false)]
 		[object[]]$Environment,
-        [parameter(Mandatory=$false)]
-        [object[]]$EnvironmentExclude,
-        [parameter(Mandatory=$false)]
-        [object[]]$Folder,
-        [parameter(Mandatory=$false)]
-        [object[]]$FolderExclude,
+		[parameter(Mandatory = $false)]
+		[object[]]$EnvironmentExclude,
+		[parameter(Mandatory = $false)]
+		[object[]]$Folder,
+		[parameter(Mandatory = $false)]
+		[object[]]$FolderExclude,
 		[switch]$Silent
 	)
-
-    begin {
-
-    }
-
-    process {
-
-        foreach($instance in $SqlInstance)
-        {
-            try
-            {
-                Write-Message -Message "Connecting to $instance" -Level Verbose
-                $connection = Connect-SqlInstance -SqlInstance $instance
-            }
-            catch
-            {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-            
-
-            if ($connection.versionMajor -lt 11)
-            {
-                Stop-Function -Message "SSIS Catalog is only available on Sql Server 2012 and above, skipping server $instance"  -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            try
-            {
-                $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
-
-                Write-Message -Message "Connecting to SSIS Catalog on $instance" -Level Verbose
-                $SSIS = New-Object "$ISNamespace.IntegrationServices" $connection
-            }
-            catch
-            {
-                Stop-Function -Message "Could not connect to SSIS Catalog on $instance"
-                return
-            }
-
-            Write-Message -Message "Fetching SSIS Catalog and its folders" -Level Verbose
-            $catalog = $SSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
-
-            # get all folders names if none provided
-            if($null -eq $Folder) {
-                $searchFolders = $catalog.Folders.Name
-            }
-            else {
-                $searchFolders = $Folder
-            }
-
-            # filter unwanted folders
-            if ($FolderExclude) {
-                $searchFolders = $searchFolders | Where-Object { $_ -notin $FolderExclude }
-            }
-
-            if($null -eq $searchFolders)
-            {
-                Write-Message -Message "Instance: $instance > -Folder and -FolderExclude filters return an empty collection. Skipping" -Level Warning
-            }
-            else
-            {
-                foreach ($f in $searchFolders)
-                {
-                    # get all environments names if none provided
-                    if($null -eq $Environment) {
-                        $searchEnvironments = $catalog.Folders.Environments.Name
-                    }
-                    else {
-                        $searchEnvironments = $Environment
-                    }
-
-                    #filter unwanted environments
-                    if ($EnvironmentExclude) {
-                        $searchEnvironments = $searchEnvironments | Where-Object { $_ -notin $EnvironmentExclude }
-                    }
-
-                    if($null -eq $searchEnvironments)
-                    {
-                        Write-Message -Message "Instance: $instance / Folder: $f > -Environment and -EnvironmentExclude filters return an empty collection. Skipping."  -Level Warning
-                    }
-                    else
-                    {
-                        $Environments = $catalog.Folders[$f].Environments | Where-Object {$_.Name -in $searchEnvironments}
-
-                        foreach($e in $Environments)
-                        {
-                            #encryption handling
-                            $encKey = 'MS_Enckey_Env_' + $e.EnvironmentId
-                            $encCert = 'MS_Cert_Env_' + $e.EnvironmentId
-
+	
+	process {
+		
+		foreach ($instance in $SqlInstance) {
+			try {
+				Write-Message -Message "Connecting to $instance" -Level Verbose
+				$server = Connect-SqlInstance -SqlInstance $instance -MinimumVersion 11
+			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
+			
+			try {
+				$ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
+				
+				Write-Message -Message "Connecting to SSIS Catalog on $instance" -Level Verbose
+				$SSIS = New-Object "$ISNamespace.IntegrationServices" $server
+			}
+			catch {
+				Stop-Function -Message "Could not connect to SSIS Catalog on $instance"
+				return
+			}
+			
+			Write-Message -Message "Fetching SSIS Catalog and its folders" -Level Verbose
+			$catalog = $SSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
+			
+			# get all folders names if none provided
+			if ($null -eq $Folder) {
+				$searchFolders = $catalog.Folders.Name
+			}
+			else {
+				$searchFolders = $Folder
+			}
+			
+			# filter unwanted folders
+			if ($FolderExclude) {
+				$searchFolders = $searchFolders | Where-Object { $_ -notin $FolderExclude }
+			}
+			
+			if ($null -eq $searchFolders) {
+				Write-Message -Message "Instance: $instance > -Folder and -FolderExclude filters return an empty collection. Skipping" -Level Warning
+			}
+			else {
+				foreach ($f in $searchFolders) {
+					# get all environments names if none provided
+					if ($null -eq $Environment) {
+						$searchEnvironments = $catalog.Folders.Environments.Name
+					}
+					else {
+						$searchEnvironments = $Environment
+					}
+					
+					#filter unwanted environments
+					if ($EnvironmentExclude) {
+						$searchEnvironments = $searchEnvironments | Where-Object { $_ -notin $EnvironmentExclude }
+					}
+					
+					if ($null -eq $searchEnvironments) {
+						Write-Message -Message "Instance: $instance / Folder: $f > -Environment and -EnvironmentExclude filters return an empty collection. Skipping." -Level Warning
+					}
+					else {
+						$Environments = $catalog.Folders[$f].Environments | Where-Object { $_.Name -in $searchEnvironments }
+						
+						foreach ($e in $Environments) {
+							#encryption handling
+							$encKey = 'MS_Enckey_Env_' + $e.EnvironmentId
+							$encCert = 'MS_Cert_Env_' + $e.EnvironmentId
+							
                             <#
                             SMO does not return sensitive values (gets data from catalog.environment_variables)
                             We have to manualy query internal.environment_variables instead and use symmetric keys
                             within T-SQL code
                             #>
-
-                            $sql = @"
+							
+							$sql = @"
                                 OPEN SYMMETRIC KEY $encKey DECRYPTION BY CERTIFICATE $encCert;
 
                                 SELECT
@@ -242,44 +221,36 @@ function Get-DbaSsisEnvironmentVariable {
 
                                 CLOSE SYMMETRIC KEY $encKey;
 "@
-
-                            $ssisVariables = Invoke-DbaSqlCmd -ServerInstance $instance -Database SSISDB -Query $sql -As DataTable
-                            
-                            foreach($variable in $ssisVariables)
-                            {
-                                if($variable.sensitive -eq $true)
-                                {
-                                    $value = $variable.decrypted
-                                }
-                                else
-                                {
-                                    $value = $variable.value
-                                }
-
-                                [PSCustomObject]@{
-                                    ComputerName    = $connection.NetName
-                                    InstanceName    = $connection.ServiceName
-                                    SqlInstance     = $connection.DomainInstanceName
-                                    Folder          = $f
-                                    Environment     = $e.Name
-                                    Id              = $variable.variable_id
-                                    Name            = $variable.Name
-                                    Description     = $variable.description
-                                    Type            = $variable.type
-                                    IsSensitive     = $variable.sensitive
-                                    BaseDataType    = $variable.base_data_type
-                                    Value           = $value
-                                }
-                            } # end foreach($ssisVariables)
-                        } # end foreach($Environments)
-                    } # end if($searchEnvironments)
-                } # end foreach($Folder)    
-            } # end if($searchFolders)
-        } # end foreach($SqlInstance)
-    } # end process
-
-    end {
-
-    }
-
+							
+							$ssisVariables = $server.Query($sql, "SSISDB")
+							
+							foreach ($variable in $ssisVariables) {
+								if ($variable.sensitive -eq $true) {
+									$value = $variable.decrypted
+								}
+								else {
+									$value = $variable.value
+								}
+								
+								[PSCustomObject]@{
+									ComputerName = $server.NetName
+									InstanceName = $server.ServiceName
+									SqlInstance = $server.DomainInstanceName
+									Folder = $f
+									Environment = $e.Name
+									Id = $variable.variable_id
+									Name = $variable.Name
+									Description = $variable.description
+									Type = $variable.type
+									IsSensitive = $variable.sensitive
+									BaseDataType = $variable.base_data_type
+									Value = $value
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }

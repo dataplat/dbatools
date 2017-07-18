@@ -90,11 +90,11 @@ function Copy-DbaSqlPolicyManagement {
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$DestinationSqlCredential,
 		[object[]]$Policy,
 		[object[]]$ExcludePolicy,
@@ -177,7 +177,7 @@ function Copy-DbaSqlPolicyManagement {
 					Write-Message -Level Warning -Message "condition '$conditionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 
 					$copyConditionStatus.Status = "Skipped"
-					$copyConditionStatus.Notes = "Already exist on destination."
+					$copyConditionStatus.Notes = "Already exists on destination."
 					$copyConditionStatus
 					continue
 				}
@@ -247,7 +247,7 @@ function Copy-DbaSqlPolicyManagement {
 					Write-Message -Level Warning -Message "Policy '$policyName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 
 					$copyPolicyStatus.Status = "Skipped"
-					$copyPolicyStatus.Notes = "Already exist on destination."
+					$copyPolicyStatus.Notes = "Already exists on destination."
 					$copyPolicyStatus
 					continue
 				}

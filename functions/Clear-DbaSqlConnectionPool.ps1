@@ -49,7 +49,7 @@ Clears all connection pools on workstation27.
 		[Parameter(ValueFromPipeline = $true)]
 		[Alias("cn", "host", "Server")]
 		[string[]]$ComputerName = $env:COMPUTERNAME,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$Credential
 	)
 	

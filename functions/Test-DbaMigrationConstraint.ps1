@@ -86,10 +86,10 @@ function Test-DbaMigrationConstraint {
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $True)]
 		[DbaInstanceParameter]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,
+		[PSCredential]$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential,
+		[PSCredential]$DestinationSqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase

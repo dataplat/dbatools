@@ -68,7 +68,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
@@ -80,7 +80,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
     )
 
     begin {
-        $sql = "SELECT p.name, m.definition as TextBody FROM sys.sql_modules m, sys.procedures p WHERE m.object_id = p.object_id"
+        $sql = "SELECT OBJECT_SCHEMA_NAME(p.object_id) as ProcSchema, p.name, m.definition as TextBody FROM sys.sql_modules m, sys.procedures p WHERE m.object_id = p.object_id"
         if (!$IncludeSystemObjects) { $sql = "$sql AND p.is_ms_shipped = 0" }
         $everyserverspcount = 0
     }
@@ -131,11 +131,12 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
                     foreach ($row in $rows) {
                         $totalcount++; $sproccount++; $everyserverspcount++
 
-                        $proc = $row.name
+                        $procSchema = $row.ProcSchema
+                        $proc = $row.Name
 
-                        Write-Message -Level Verbose -Message "Looking in stored procedure: $proc TextBody for $pattern"
+                        Write-Message -Level Verbose -Message "Looking in stored procedure: $procSchema.$proc textBody for $pattern"
                         if ($row.TextBody -match $Pattern) {
-                            $sp = $db.StoredProcedures | Where-Object name -eq $row.name
+                            $sp = $db.StoredProcedures | Where-Object{$_.Schema -eq $procSchema -and $_.Name -eq $proc}
 
                             $StoredProcedureText = $sp.TextBody.split("`n")
                             $spTextFound = $StoredProcedureText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
@@ -143,7 +144,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
                             [PSCustomObject]@{
                                 ComputerName             = $server.NetName
                                 SqlInstance              = $server.ServiceName
-                                Database                 = $db.name
+                                Database                 = $db.Name
                                 Schema                   = $sp.Schema
                                 Name                     = $sp.Name
                                 Owner                    = $sp.Owner
@@ -162,9 +163,11 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 
                     foreach ($sp in $storedprocedures) {
                         $totalcount++; $sproccount++; $everyserverspcount++
+                        
+                        $procSchema = $sp.Schema
                         $proc = $sp.Name
 
-                        Write-Message -Level Verbose -Message "Looking in stored procedure: $proc TextBody for $pattern"
+                        Write-Message -Level Verbose -Message "Looking in stored procedure $procSchema.$proc textBody for $pattern"
                         if ($sp.TextBody -match $Pattern) {
 
                             $StoredProcedureText = $sp.TextBody.split("`n")
@@ -173,7 +176,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
                             [PSCustomObject]@{
                                 ComputerName             = $server.NetName
                                 SqlInstance              = $server.ServiceName
-                                Database                 = $db.name
+                                Database                 = $db.Name
                                 Schema                   = $sp.Schema
                                 Name                     = $sp.Name
                                 Owner                    = $sp.Owner

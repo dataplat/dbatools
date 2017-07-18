@@ -66,7 +66,7 @@ For most options, this translates to istantly rolling back any open transactions
 that may be stopping the process.
 For -Detached it is required to break mirroring and Availability Groups
 
-.PARAMETER SmoDatabase
+.PARAMETER DatabaseCollection
 Internal parameter for piped objects - this will likely go away once we move to better dynamic parameters
 	
 .NOTES
@@ -110,7 +110,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
@@ -127,7 +127,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 		[switch]$MultiUser,
 		[switch]$Force,
 		[parameter(Mandatory = $true, ValueFromPipeline, ParameterSetName = "Database")]
-		[PsCustomObject[]]$SmoDatabase
+		[PsCustomObject[]]$DatabaseCollection
 	)
 	
 	begin {
@@ -214,12 +214,12 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 	}
 	process {
 		# use PROCESS to gather info, and END to execute on it
-		if (!$database -and !$AllDatabases -and !$smodatabase) {
+		if (!$database -and !$AllDatabases -and !$DatabaseCollection) {
 			throw "You must specify a -AllDatabases or -Database to continue"
 		}
 		
-		if ($smodatabase) {
-			$dbs += $smodatabase.Database
+		if ($DatabaseCollection) {
+			$dbs += $DatabaseCollection.Database
 		}
 		else {
 			foreach ($instance in $SqlInstance) {
@@ -253,6 +253,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 		
 		# need to pick up here
 		foreach ($db in $dbs) {
+			$server = $db.Parent
 			$db_status = Get-DbState $db
 			
 			# normalizing properties returned by SMO to something more "fixed"

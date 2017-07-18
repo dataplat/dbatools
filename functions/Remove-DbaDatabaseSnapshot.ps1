@@ -14,16 +14,13 @@ The SQL Server that you're connecting to
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Database
-Restores from the last snapshot databases with this names only
-NB: you can pass either Databases or Snapshots
+Removes snapshots for only this specific base db
 
 .PARAMETER ExcludeDatabase
-Processes all databases excepting the these 
-NB: you can pass either Databases or Snapshots
+Removes snapshots excluding this specific base dbs
 
 .PARAMETER Snapshot
-Restores databases from snapshots with this names only
-NB: you can pass either Databases or Snapshots
+Restores databases from snapshot with this name only
 
 .PARAMETER AllSnapshots
 Specifies that you want to remove all snapshots from the server
@@ -86,7 +83,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
@@ -125,6 +122,8 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 				}
 
 				[PSCustomObject]@{
+					ComputerName = $PipelineSnapshot.SnapshotDb.Parent.NetName
+					InstanceName = $PipelineSnapshot.SnapshotDb.Parent.ServiceName
 					SqlInstance = $PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName
 					Database    = $PipelineSnapshot.Database
 					SnapshotOf  = $PipelineSnapshot.SnapshotOf
@@ -145,26 +144,29 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 			
 
 			$dbs = $server.Databases
-
 			if ($Database) {
-				$dbs = $dbs | Where-Object { $Databases -contains $_.DatabaseSnapshotBaseName }
+				$dbs = $dbs | Where-Object { $Database -contains $_.DatabaseSnapshotBaseName }
 			}
+			
 			if ($ExcludeDatabase) {
 				$dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.DatabaseSnapshotBaseName }
 			}
+			
 			if ($Snapshot) {
 				$dbs = $dbs | Where-Object { $Snapshot -contains $_.Name }
 			}
+			
 			if (!$Snapshot -and !$Database) {
 				$dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
 			}
+			
 
 			foreach ($db in $dbs) {
 				if ($db.IsAccessible -eq $false) {
 					Write-Message -Level Warning -Message "Database $db is not accessible."
 					continue
 				}
-				If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $db")) {
+				if ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $db")) {
 					try {
 						if ($Force) {
 							# cannot drop the snapshot if someone is using it
@@ -180,7 +182,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance  = $server.DomainInstanceName
-						Database     = $db.Name
+						Database     = $db
 						SnapshotOf   = $db.DatabaseSnapshotBaseName
 						Status       = $status
 					}

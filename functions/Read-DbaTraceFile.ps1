@@ -1,4 +1,4 @@
-﻿function Read-DbaTraceFile {
+function Read-DbaTraceFile {
 	<#
 .SYNOPSIS
 Reads a trace file from specied SQL Server Database
@@ -144,13 +144,12 @@ Reads the tracefile C:\traces\big.trc, stored on the sql2016 sql server.
 Filters only results where LinkServerName = myls and StartTime is greater than '5/30/2017 4:27:52 PM'.
 
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default")]
+	[CmdletBinding()]
 	Param (
-		[parameter(Position = 0, Mandatory = $true)]
+		[parameter(Position = 0, Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
-		[parameter(Mandatory = $true)]
+		[PSCredential]$SqlCredential,
 		[string[]]$Path,
 		[string[]]$Database,
 		[string[]]$Login,
@@ -231,27 +230,36 @@ Filters only results where LinkServerName = myls and StartTime is greater than '
 		
 		foreach ($instance in $sqlinstance) {
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				return
 			}
 			
-			$exists = Test-DbaSqlPath -SqlInstance $server -Path $file
-			
-			if (!$exists) {
-				Write-Message -Level Warning -Message "Path does not exist" -Target $file
-				Continue
+			if (Test-Bound -Parameter Path) {
+				$currentpath = $path
+			}
+			else {
+				$currentpath = $server.ConnectionContext.ExecuteScalar("Select path from sys.traces where is_default = 1")
 			}
 			
-			foreach ($file in $path) {
+			foreach ($file in $currentpath) {
+				Write-Message -Level Verbose -Message "Parsing $file"
+				
+				$exists = Test-DbaSqlPath -SqlInstance $server -Path $file
+				
+				if (!$exists) {
+					Write-Message -Level Warning -Message "Path does not exist" -Target $file
+					Continue
+				}
+				
 				$sql = "select SERVERPROPERTY('MachineName') AS ComputerName, 
 								   ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, 
 								   SERVERPROPERTY('ServerName') AS SqlInstance,
 									* FROM [fn_trace_gettable]('$file', DEFAULT) $Where"
 				try {
-					Invoke-DbaSqlcmd -ServerInstance $server -Query $sql -Silent:$false
+					$server.Query($sql)
 				}
 				catch {
 					Stop-Function -Message "Error returned from SQL Server: $_" -Target $server -InnerErrorRecord $_

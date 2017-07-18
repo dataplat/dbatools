@@ -311,11 +311,7 @@ Function Write-DbaDataTable {
         }
         
         $tablelock = $NoTableLock -eq $false
-        
-        if ($InputObject -eq $null) {
-            Write-Message -Once SlowDataTablePipeline -Level Warning -Message "Using the pipeline can be insanely (5 minutes vs 0.5 seconds) slower for larger batches and doesn't show a progress bar. Consider using -InputObject for large batches."
-        }
-            
+                    
         $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$Database")
         $bulkcopy.DestinationTableName = $fqtn
         $bulkcopy.BatchSize = $batchsize

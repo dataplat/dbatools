@@ -1,4 +1,4 @@
-FUNCTION Get-DbaServerAudit
+function Get-DbaServerAudit
 {
 <#
 .SYNOPSIS
@@ -6,7 +6,7 @@ Gets SQL Security Audit information for each instance(s) of SQL Server.
 
 .DESCRIPTION
  The Get-DbaServerAudit command gets SQL Security Audit information for each instance(s) of SQL Server.
-	
+
 .PARAMETER SqlInstance
 SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
 to be executed against multiple SQL Server instances.
@@ -20,13 +20,9 @@ Use this switch to disable any kind of verbose messages.
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.	
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Get-DbaServerAudit
@@ -42,43 +38,40 @@ Returns all Security Audits for the local and sql2016 SQL Server instances
 #>
 	[CmdletBinding()]
 	Param (
-		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[DbaInstanceParameter]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
+		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$Credential,
 		[switch]$Silent
 	)
 	
-	process
-	{
+	process {
 		foreach ($instance in $SqlInstance)
 		{
-			Write-Verbose "Attempting to connect to $instance"
-			try
-			{
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance"
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
 			}
-			catch
-			{
+			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			if ($server.versionMajor -lt 10)
-			{
+			if ($server.versionMajor -lt 10) {
 				Write-Warning "Server Audits are only supported in SQL Server 2008 and above. Quitting."
 				continue
 			}
-			
-			foreach ($audit in $server.Audits)
-			{
-				Add-Member -InputObject $audit -MemberType NoteProperty -Name ComputerName -value $audit.Parent.NetName
-				Add-Member -InputObject $audit -MemberType NoteProperty -Name InstanceName -value $audit.Parent.ServiceName
-				Add-Member -InputObject $audit -MemberType NoteProperty -Name SqlInstance -value $audit.Parent.DomainInstanceName
+			foreach ($audit in $server.Audits) {
+				Add-Member -Force -InputObject $audit -MemberType NoteProperty -Name ComputerName -value $audit.Parent.NetName
+				Add-Member -Force -InputObject $audit -MemberType NoteProperty -Name InstanceName -value $audit.Parent.ServiceName
+				Add-Member -Force -InputObject $audit -MemberType NoteProperty -Name SqlInstance -value $audit.Parent.DomainInstanceName
 				
 				Select-DefaultView -InputObject $audit -Property ComputerName, InstanceName, SqlInstance, Name, 'Enabled as IsEnabled', FilePath, FileName
 			}
+			if($server.Audits.Count -eq 0) {
+				Write-Message -Level Output -Message "No server audit found on $($server.DomainInstanceName)"
+			}
 		}
 	}
-	end { 
-	     Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlServerAudit
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlServerAudit
 	}
 }

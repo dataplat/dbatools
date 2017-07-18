@@ -78,11 +78,11 @@ function Sync-DbaSqlLoginPermission {
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[object]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$DestinationSqlCredential,
 		[object[]]$Login,
 		[object[]]$ExcludeLogin,

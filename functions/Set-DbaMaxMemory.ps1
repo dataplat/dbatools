@@ -111,14 +111,14 @@ Function Set-DbaMaxMemory
         
         # We ignore errors, because this will error if we pass the same collection items twice.
         # Given that it is an engine internal command, there is no other plausible error it could encounter.
-        $Collection | Add-Member -NotePropertyName OldMaxValue -NotePropertyValue 0 -ErrorAction Ignore
+        $Collection | Add-Member -Force -NotePropertyName OldMaxValue -NotePropertyValue 0 -ErrorAction Ignore
         
         foreach ($row in $Collection)
         {
             if ($row.server -eq $null)
             {
                 $row = Test-DbaMaxMemory -SqlInstance $row
-                $row | Add-Member -NotePropertyName OldMaxValue -NotePropertyValue 0
+                $row | Add-Member -Force -NotePropertyName OldMaxValue -NotePropertyValue 0
             }
             
             Write-Verbose "Attempting to connect to $($row.server)"

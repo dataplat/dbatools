@@ -1,6 +1,6 @@
 
 function Remove-DbaAgentSchedule {
-    <#
+	<#
 .SYNOPSIS 
 Remove-DbaAgentJobSchedule removes a job schedule.
 
@@ -25,7 +25,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command.
 
 .PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+Use this switch to disable any kind of verbose messages.
 
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
@@ -33,7 +33,7 @@ It will also remove the any present schedules with the same name for the specifi
 
 .NOTES 
 Original Author: Sander Stad (@sqlstad, sqlstad.nl)
-Tags: Agent, Job, Job Step
+Tags: Agent, Job, Job Step, Schedule
 	
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -56,7 +56,7 @@ Remove multiple schedule
 
 .EXAMPLE   
 Remove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Schedule daily, weekly
-Remove the schedule on multiple servers for multiple scheukes
+Remove the schedule on multiple servers for multiple schedules
 
 .EXAMPLE   
 sql1, sql2, sql3 | Remove-DbaAgentSchedule -Schedule daily, weekly
@@ -64,118 +64,116 @@ Remove the schedule on multiple servers using pipe line
 
 #>  
 
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     
-    param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
-        [object[]]$SqlInstance,
+	param (
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[Alias("ServerInstance", "SqlServer")]
+		[object[]]$SqlInstance,
 
-        [System.Management.Automation.PSCredential]
-        $SqlCredential,
+		[System.Management.Automation.PSCredential]
+		$SqlCredential,
 
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [object[]]$Schedule,
+		[Parameter(Mandatory = $true)]
+		[ValidateNotNullOrEmpty()]
+		[object[]]$Schedule,
 
-        [switch]$Silent,
+		[switch]$Silent,
 
-        [switch]$Force
-    ) 
+		[switch]$Force
+	) 
 
-    process {
+	process {
 
-        foreach ($instance in $sqlinstance) {
-            # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Output
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -InnerRecord $_ -Continue
-            }
+		foreach ($instance in $sqlinstance) {
+			# Try connecting to the instance
+			Write-Message -Message "Attempting to connect to $instance" -Level Output
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+			}
+			catch {
+				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -InnerErrorRecord $_ -Continue
+			}
 
-            foreach ($s in $Schedule) {
+			foreach ($s in $Schedule) {
 
-                if ($Server.JobServer.SharedSchedules.Name -contains $s) {
-                    # Get job count
-                    $jobCount = $Server.JobServer.SharedSchedules[$s].JobCount -ge 1
+				if ($Server.JobServer.SharedSchedules.Name -contains $s) {
+					# Get job count
+					$jobCount = $Server.JobServer.SharedSchedules[$s].JobCount
 
-                    # Check if the schedule is shared among other jobs
-                    if ($jobCount -gt 1 -and -not $Force) {
-                        Stop-Function -Message "The schedule $s is shared connected to one or more jobs. If removal is neccesary use -Force." -Target $instance -Continue
-                    }
-                    elseif ($jobCount -gt 1 -and $Force) {
-                        # Get the job ids 
-                        $jobGuids = $Server.JobServer.SharedSchedules[$s].EnumJobReferences()
+					# Check if the schedule is shared among other jobs
+					if ($jobCount -ge 1 -and -not $Force) {
+						Stop-Function -Message "The schedule $s is shared connected to one or more jobs. If removal is neccesary use -Force." -Target $instance -Continue
+					}
 
-                        # Loop though each of the jobs
-                        foreach ($guid in $jobGuids) {
-                            # Get the job object
-                            $smoJob = $Server.JobServer.GetJobByID($guid)
+					# Remove the job schedule
+					if ($PSCmdlet.ShouldProcess($instance, "Removing schedule $s on $instance")) {
+						# Loop through each of the schedules and drop them
+						Write-Message -Message "Removing schedule $s on $instance" -Level Output
 
-                            # Get the job schedule
-                            $jobSchedule = $Server.JobServer.Jobs[$smoJob].JobSchedules[$Schedule][0]
+						#Check if jobs use the schedule
+						if ($jobCount -ge 1) {
+							# Get the job object
+							$smoSchedules = $server.JobServer.SharedSchedules | Where-Object {($_.Name -eq $s)}
+                            
+							Write-Message -Message "Schedule $sched is used in one or more jobs. Removing it for each job." -Level Output
 
-                            # Remove the job schedule
-                            if ($PSCmdlet.ShouldProcess($instance, "Removing the schedule $jobSchedule for job $smoJob on $instance")) {
-                                try {
-                                    Write-Message -Message "Removing the schedule $jobSchedule for job $smoJob" -Level Output
+							# Loop through each if the schedules
+							foreach ($smoSchedule in $smoSchedules) {
 
-                                    $jobSchedule.Drop()
-                                }
-                                catch {
-                                    Stop-Function -Message  "Something went wrong removing the job schedule. `n$($_.Exception.Message)" -Target $instance -InnerRecord $_ -Continue
-                                }
-                            }
-                        }
-                    }
-                    elseif ($jobCount -eq 1) {
+								# Get the job ids 
+								$jobGuids = $Server.JobServer.SharedSchedules[$smoSchedule].EnumJobReferences()
 
-                        # Get the job ids 
-                        $job = $Server.JobServer.SharedSchedules[$s].EnumJobReferences()
+								if (($jobCount -gt 1 -and $Force) -or $jobCount -eq 1) {
 
-                        # Get the job object
-                        $smoJob = $Server.JobServer.GetJobByID($job.Guid)
+									# Loop though each of the jobs
+									foreach ($guid in $jobGuids) {
+										# Get the job object
+										$smoJob = $Server.JobServer.GetJobByID($guid)
 
-                        # Get the job schedule
-                        $jobSchedule = $Server.JobServer.Jobs[$smoJob].JobSchedules[$Schedule][0]
+										# Get the job schedule
+										$jobSchedules = $Server.JobServer.Jobs[$smoJob].JobSchedules | Where-Object {$_.Name -eq $smoSchedule}
+                                        
+										foreach ($jobSchedule in $jobSchedules) {
+											try {
+												Write-Message -Message "Removing the schedule $jobSchedule for job $smoJob" -Level Output
 
-                        # Remove the job schedule
-                        if ($PSCmdlet.ShouldProcess($instance, "Removing the schedule $jobSchedule for job $smoJob on $instance")) {
-                            try {
-                                Write-Message -Message "Removing the schedule $jobSchedule for job $smoJob" -Level Output
+												$jobSchedule.Drop()
+											}
+											catch {
+												Stop-Function -Message  "Something went wrong removing the job schedule. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
+											}
+										}
+									} # foreach guid
+								} # if jobcount
 
-                                $jobSchedule.Drop()
-                            }
-                            catch {
-                                Stop-Function -Message  "Something went wrong removing the job schedule. `n$($_.Exception.Message)" -Target $instance -InnerRecord $_ -Continue
-                            }
-                        }
+							} # foreach smoschedule	
+						} # if jobcount ge 1
 
-                    } 
-                    else {
-                        # Remove the job schedule
-                        if ($PSCmdlet.ShouldProcess($instance, "Removing schedule $s on $instance")) {
-                            try {
-                                Write-Message -Message "Removing schedule $s on $instance" -Level Output
+						Write-Message -Message "Removing schedules that are not being used by other jobs." -Level Output
 
-                                $Server.JobServer.SharedSchedules[$s].Drop()
-                            }
-                            catch {
-                                Stop-Function -Message  "Something went wrong removing the job schedule. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
-                            }
-                        }
-                    }
-                } # if contains schedule
-                else {
-                    Stop-Function -Message "Schedule $s is not present on instance $instance" -Target $instance -Continue
-                }
-            } #foreach object schedule
-        } # foreach object instance
-    } # process
+						# Get the schedules
+						$smoSchedules = $server.JobServer.SharedSchedules | Where-Object {($_.Name -eq $s) -and ($_.JobCount -eq 0)}
 
-    end {
-        Write-Message -Message "Finished removing jobs schedule(s)." -Level Output
-    }
+						# Remove the schedules that have no jobs
+						foreach ($smoSchedule in $smoSchedules) {
+							try {
+								$smoSchedule.Drop()
+							}
+							catch {
+								Stop-Function -Message  "Something went wrong removing the schedule. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
+							}
+						} # foreach schedule
+					} # should process
+				} # if contains schedule
+				else {
+					Stop-Function -Message "Schedule $s is not present on instance $instance" -Target $instance -Continue
+				}
+			} #foreach object schedule
+		} # foreach object instance
+	} # process
+
+	end {
+		Write-Message -Message "Finished removing jobs schedule(s)." -Level Output
+	}
 }

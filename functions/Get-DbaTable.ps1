@@ -1,10 +1,10 @@
 ﻿function Get-DbaTable {
-	<#
+<#
 .SYNOPSIS
 Returns a summary of information on the tables
 
 .DESCRIPTION
-Shows table information around table row and data sizes and if it has any table type information. 
+Shows table information around table row and data sizes and if it has any table type information.
 
 .PARAMETER SqlInstance
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a
@@ -23,34 +23,41 @@ The database(s) to exclude - this list is auto-populated from the server
 Switch parameter that when used will display system database information
 
 .PARAMETER Table
-Define a specific table you would like to query
+Define a specific table you would like to query. You can specify up to three-part name like db.sch.tbl.
+If the object has special characters please wrap them in square brackets [ ].
+This dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
+The correct way to find table named 'First.Table' on schema 'dbo' is passing dbo.[First.Table]
 
-.PARAMETER Silent 
+.PARAMETER Silent
 Use this switch to disable any kind of verbose messages
-	
-.NOTES 
+
+.NOTES
 Tags: Database, Tables
 Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-	
+
 .LINK
 https://dbatools.io/Get-DbaTable
-	
+
 .EXAMPLE
 Get-DbaTable -SqlInstance DEV01 -Database Test1
 Return all tables in the Test1 database
-	
+
 .EXAMPLE
 Get-DbaTable -SqlInstance DEV01 -Database MyDB -Table MyTable
 Return only information on the table MyTable from the database MyDB
-	
+
 .EXAMPLE
 Get-DbaTable -SqlInstance DEV01 -Table MyTable
 Returns information on table called MyTable if it exists in any database on the server, under any schema
-	
+
+.EXAMPLE
+Get-DbaTable -SqlInstance DEV01 -Table dbo.[First.Table]
+Returns information on table called First.Table on schema dbo if it exists in any database on the server
+
 .EXAMPLE
 'localhost','localhost\namedinstance' | Get-DbaTable -Database DBA -Table Commandlog
 Returns information on the CommandLog table in the DBA database on both instances localhost and the named instance localhost\namedinstance
@@ -61,7 +68,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
@@ -70,41 +77,61 @@ Returns information on the CommandLog table in the DBA database on both instance
 		[string[]]$Table,
 		[switch]$Silent
 	)
-	
+
 	begin {
 		$fqtns = @()
-		
+
 		if ($Table) {
 			foreach ($t in $Table) {
-				$dotcount = ([regex]::Matches($t, "\.")).count
-				
-				$database = $NULL
+				$splitName = [regex]::Matches($t, "(\[.+?\])|([^\.]+)").Value
+				$dotcount = $splitName.Count
+
+				$splitDb = $NULL
 				$Schema = $NULL
 
-				if ($dotcount -eq 1) {
-					$schema = $t.Split(".")[0]
-					$tbl = $t.Split(".")[1]
+				switch ($dotcount) {
+					1 {
+						$tbl = $t
+					}
+					2 {
+						$schema = $splitName[0]
+						$tbl = $splitName[1]
+					}
+					3 {
+						$splitDb = $splitName[0]
+						$schema = $splitName[1]
+						$tbl = $splitName[2]
+					}
+					default {
+						Write-Message -Level Warning -Message "Please make sure that you are using up to three-part names. If your search value contains '.' character you must use [ ] to wrap the name. The value $t is not a valid name."
+						Continue
+					}
 				}
-				
-				if ($dotcount -eq 2) {
-					$database = $t.Split(".")[0]
-					$schema = $t.Split(".")[1]
-					$tbl = $t.Split(".")[2]
+
+				if ($splitDb -like "[[]*[]]") {
+					$splitDb = $splitDb.Substring(1, ($splitDb.Length - 2))
 				}
-				
+
+				if ($schema -like "[[]*[]]") {
+					$schema = $schema.Substring(1, ($schema.Length - 2))
+				}
+
+				if ($tbl -like "[[]*[]]") {
+					$tbl = $tbl.Substring(1, ($tbl.Length - 2))
+				}
+
 				$fqtn = [PSCustomObject] @{
-					Database = $database
+					Database = $splitDb
 					Schema   = $Schema
 					Table    = $tbl
 				}
 				$fqtns += $fqtn
 			}
 		}
-		#$fqtns
 	}
-	
+
 	process {
-		foreach ($instance in $sqlinstance) {	
+		foreach ($instance in $sqlinstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
@@ -112,20 +139,20 @@ Returns information on the CommandLog table in the DBA database on both instance
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-			
-			#If IncludeSystemDBs is true, include systemdbs
-			#only look at online databases (Status equal normal)
+
 			try {
+				#only look at online databases (Status equal normal)
+				$dbs = $server.Databases | Where-Object { $_.Status -eq 'Normal' }
+
+				#If IncludeSystemDBs is false, exclude systemdbs
+				if (!$IncludeSystemDBs) {
+					$dbs = $dbs | Where-Object { !$_.IsSystemObject }
+				}
+
 				if ($Database) {
-					$dbs = $server.Databases | Where-Object { $Database -contains $_.Name -and $_.status -eq 'Normal' }
+					$dbs = $dbs | Where-Object { $Database -contains $_.Name }
 				}
-				elseif ($IncludeSystemDBs) {
-					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' }
-				}
-				else {
-					$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsSystemObject -eq 0 }
-				}
-				
+
 				if ($ExcludeDatabase) {
 					$dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.Name }
 				}
@@ -133,45 +160,56 @@ Returns information on the CommandLog table in the DBA database on both instance
 			catch {
 				Stop-Function -Message "Unable to gather dbs for $instance" -Target $instance -Continue -InnerErrorRecord $_
 			}
-			
+
 			foreach ($db in $dbs) {
 				Write-Message -Level Verbose -Message "Processing $db"
-				
-				$d = $server.Databases[$db]
-				
+				$skipped = $false
+
 				if ($fqtns.Count -gt 0) {
 					foreach ($fqtn in $fqtns) {
-						if ($fqtn.schema -ne $NULL) {
-							try {
-								$tables = $db.Tables | Where-Object { $_.name -eq $tbl -and $_.Schema -eq $schema }
+						# If the user specified a database in a three-part name, and it's not the
+						# database currently being processed, skip this table.
+						if ($fqtn.Database) {
+							if ($fqtn.Database -ne $db.Name) {
+								$skipped = $true
+								continue
 							}
-							catch {
-								Write-Message -Level Warning -Message "Could not find table name: $($fqtn.tbl) schema: $($fqtn.schema)" -ErrorRecord $_
+							else {
+								$skipped = $false
 							}
 						}
-						else {
-							try {
-								$tables = $db.Tables | Where-Object { $_.name -eq $tbl }
+
+						$tables = $db.tables | Where-Object {$fqtn.Table -eq $_.name -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null)}
+						if ($tables.Count -eq 0) {
+							$outSchema = ""
+							if ($fqtn.Schema) {
+								$outSchema = ", schema: $($fqtn.Schema)"
 							}
-							catch {
-								Write-Message -Level Warning -Message "Could not find table name: $($fqtn.tbl)" -ErrorRecord $_
+
+							$outDatabase = ""
+							if ($fqtn.Database) {
+								$outDatabase = ", database: $($fqtn.Database)"
 							}
+
+							Write-Message -Level Verbose -Message "Could not find table. Instance: $($server.DomainInstanceName)$outDatabase$outSchema, name: $($fqtn.Table)"
 						}
 					}
 				}
 				else {
 					$tables = $db.Tables
 				}
-				
-				$tables | Add-Member -MemberType NoteProperty -Name ComputerName -Value $server.NetName
-				$tables | Add-Member -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-				$tables | Add-Member -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-				
-				$defaultprops = "ComputerName", "InstanceName", "SqlInstance", "Parent as Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
-				
-				Select-DefaultView -InputObject $tables -Property $defaultprops
+
+				if (!$skipped) {
+					$tables | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+					$tables | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+					$tables | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+					$tables | Add-Member -Force -MemberType NoteProperty -Name Database -Value $db.Name
+
+					$defaultprops = "ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
+
+					Select-DefaultView -InputObject $tables -Property $defaultprops
+				}
 			}
 		}
 	}
 }
-

@@ -143,13 +143,13 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[parameter(Mandatory = $false)]
 		[DbaInstanceParameter]$Destination = $sqlinstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$DestinationCredential,
 		[parameter(Mandatory = $false)]
 		[Alias("NoCheck")]
@@ -337,7 +337,7 @@ If there is a DBCC Error it will continue to perform rest of the actions and wil
 				[Parameter(Mandatory = $true)]
 				[object]$filestructure,
 				[switch]$norecovery,
-				[PSCredential][System.Management.Automation.CredentialAttribute()]$sqlCredential,
+				[PSCredential]$sqlCredential,
 				[switch]$TSql = $false
 			)
 

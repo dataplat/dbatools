@@ -24,7 +24,7 @@ Describe 'Test-DbaMaxMemory Unit Tests' -Tag 'Unittests' {
                 # Mocking Get-Service using PSCustomObject does not work. It needs to be mocked as object instead.               
                 $service = New-Object System.ServiceProcess.ServiceController
                 $service.DisplayName = 'SQL Server (ABC)'
-                Add-Member -InputObject $service -MemberType NoteProperty -Name Status -Value 'Running' -Force
+                Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Status -Value 'Running'
                 return $service
             }
             

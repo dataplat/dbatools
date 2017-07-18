@@ -35,9 +35,9 @@ If the path does not exist, Sql Server will attempt to create it. Folders are cr
 
 File Names with be suffixed with x-of-y to enable identifying striped sets, where y is the number of files in the set and x ranges from 1 to y.
 
-.PARAMETER NoCopyOnly
-By default this function performs a Copy Only backup. These backups do not interfere with the restore chain of the database, so they are safe to take at any time.
-This switch indicates that you wish to take normal backups. Be aware that these WILL break your restore chains, so use at your own risk
+.PARAMETER CopyOnly
+By default function performs a normal backup, these backups  interfere with the restore chain of the database.
+This switch indicates that you wish to take CopyOnly backups. These backups will not interfere with the restore chain of the database.
 
 For more details please refer to this MSDN article - https://msdn.microsoft.com/en-us/library/ms191495.aspx 
 
@@ -118,13 +118,13 @@ sql credential "dbatoolscred" registered on the sql2016 instance
 	param (
 		[parameter(ParameterSetName = "Pipe", Mandatory = $true)]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[string[]]$BackupDirectory,
 		[string]$BackupFileName,
-		[switch]$NoCopyOnly,
+		[switch]$CopyOnly,
 		[ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
 		[string]$Type = "Database",
 		[parameter(ParameterSetName = "NoPipe", Mandatory = $true, ValueFromPipeline = $true)]
@@ -233,7 +233,9 @@ sql credential "dbatoolscred" registered on the sql2016 instance
 				Write-Message -Level Verbose -Message "$dbname is in $($Database.RecoveryModel) recovery model"
 			}
 			
-			if ($Database.RecoveryModel -eq 'Simple' -and $Type -eq 'Log') {
+			# Fixes one-off cases of StackOverflowException crashes, see issue 1481 
+			$dbRecovery = $Database.RecoveryModel.ToString()
+ 			if ($dbRecovery -eq 'Simple' -and $Type -eq 'Log') {
 				$failreason = "$database is in simple recovery mode, cannot take log backup"
 				$failures += $failreason
 				Write-Message -Level Warning -Message "$failreason"
@@ -247,7 +249,9 @@ sql credential "dbatoolscred" registered on the sql2016 instance
 				Write-Message -Level Warning -Message "$failreason"
 			}
 			
-			$copyonly = !$NoCopyOnly
+			if ($CopyOnly -ne $True) {
+				$CopyOnly -eq $false
+			}
 			
 			$server.ConnectionContext.StatementTimeout  = 0
 			$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup

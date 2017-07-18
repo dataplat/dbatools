@@ -66,7 +66,7 @@ Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authe
 		[Parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[object]$Database = "master",
 		[switch]$Silent
@@ -132,12 +132,12 @@ Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authe
 			}
 			
 			Write-Message -Level Output -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance"
-			
+			$allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
+			$allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 			# Install/Update each FRK stored procedure
 			foreach ($script in (Get-ChildItem $zipfolder -Filter sp_Blitz*.sql)) {
 				$scriptname = $script.Name
 				if ($scriptname -ne "sp_BlitzRS.sql") {
-					Write-Message -Level Output -Message "Installing/Updating $scriptname"
 					$sql = [IO.File]::ReadAllText($script.FullName)
 					
 					if ($scriptname -eq "sp_BlitzQueryStore.sql") {
@@ -156,6 +156,19 @@ Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authe
 						}
 					}
 				}
+				$baseres = @{
+					ComputerName = $server.NetName
+					InstanceName = $server.ServiceName
+					SqlInstance  = $server.DomainInstanceName
+					Database     = $Database
+					Name         = $scriptname.TrimEnd('.sql')
+				}
+				if($scriptname.TrimEnd('.sql') -in $allprocedures) {
+					$baseres['Status'] = 'Updated'
+				} else {
+					$baseres['Status'] = 'Installed'
+				}
+				[PSCustomObject]$baseres
 			}
 			Write-Message -Level Output -Message "Finished installing/updating the First Responder Kit stored procedures in $database on $instance"
 		}

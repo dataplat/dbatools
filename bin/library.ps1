@@ -1,5 +1,5 @@
 ﻿# Current library Version the module expects
-$currentLibraryVersion = New-Object System.Version(0, 6, 0, 13)
+$currentLibraryVersion = New-Object System.Version(0, 6, 0, 15)
 
 <#
 Library Versioning 101:
@@ -84,13 +84,22 @@ if ($ImportLibrary) {
 				$start = Get-Date
 				$system = [Appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -like "System, *"
 				$msbuild = (Resolve-Path "$(Split-Path $system.Location)\..\..\..\..\Framework$(if ([intptr]::Size -eq 8) { "64" })\$($system.ImageRuntimeVersion)\msbuild.exe").Path
-				
+				$msbuildOptions = ""
+				if($env:APPVEYOR -eq 'True') {
+					# This doesn't seem to work. Keep it here for now
+					$msbuildOptions = '/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"'
+					
+					if (-not (Test-Path "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll")) {
+						throw "msbuild logger not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
+					}
+				}
+
 				if (-not (Test-Path $msbuild)) {
 					throw "msbuild not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
 				}
 				
 				Write-Verbose -Message "Building the library"
-				$null = & $msbuild "$libraryBase\projects\dbatools\dbatools.sln"
+				& $msbuild "$libraryBase\projects\dbatools\dbatools.sln" $msbuildOptions
 				
 				try {
 					Write-Verbose -Message "Found library, trying to copy & import"
@@ -159,7 +168,7 @@ aka "The guy who made most of The Library that Failed to import"
 }
 
 #region Version Warning
-if ($currentLibraryVersion -ne ([Sqlcollaborative.Dbatools.Utility.UtilityHost]::LibraryVersion)) {
+if ($currentLibraryVersion -ne ([version](([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object ManifestModule -like "dbatools.dll").CustomAttributes | Where-Object AttributeType -like "System.Reflection.AssemblyFileVersionAttribute" ).ConstructorArguments.Value)) {
 	Write-Warning @"
 A version missmatch between the dbatools library loaded and the one expected by
 this module. This usually happens when you update the dbatools module and use
@@ -167,6 +176,8 @@ Remove-Module / Import-Module in order to load the latest version without
 starting a new PowerShell instance.
 
 Please restart the console to apply the library update, or unexpected behavior will likely occur.
+
+If the issues continue to persist, please Remove-Item '$script:PSModuleRoot\bin\dbatools.dll'
 "@
 }
 #endregion Version Warning

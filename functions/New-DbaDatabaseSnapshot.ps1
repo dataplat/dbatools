@@ -88,7 +88,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
@@ -269,7 +269,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							Database = $SnapDB.Name
 							SnapshotOf = $SnapDB.DatabaseSnapshotBaseName
 							SizeMB = [Math]::Round($SnapDB.Size, 2) ##FIXME, should use the stats for sparse files
-							DatabaseCreated = $SnapDB.createDate
+							DatabaseCreated = [dbadatetime]$SnapDB.createDate
 							PrimaryFilePath = $SnapDB.PrimaryFilePath
 							Status = 'Created'
 							Notes = $null

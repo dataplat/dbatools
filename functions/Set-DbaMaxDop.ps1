@@ -84,7 +84,7 @@ Set recommended Max DOP setting for all databases on server sql2016.
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
+        [PSCredential]
         $SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
@@ -118,8 +118,8 @@ Set recommended Max DOP setting for all databases on server sql2016.
             $collection = Test-DbaMaxDop -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Verbose:$false
         }
 		
-        $collection | Add-Member -NotePropertyName OldInstanceMaxDopValue -NotePropertyValue 0
-        $collection | Add-Member -NotePropertyName OldDatabaseMaxDopValue -NotePropertyValue 0
+        $collection | Add-Member -Force -NotePropertyName OldInstanceMaxDopValue -NotePropertyValue 0
+        $collection | Add-Member -Force -NotePropertyName OldDatabaseMaxDopValue -NotePropertyValue 0
 		
         $servers = $collection | Select-Object Instance -Unique
 		
