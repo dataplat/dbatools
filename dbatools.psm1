@@ -14,10 +14,9 @@ if ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools
 if ((Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
 
 
-try {
+if (([environment]::OSVersion.Version).Major -gt 6) {
 	Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" | Unblock-File -ErrorAction SilentlyContinue
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.BatchParser" -ErrorAction Stop
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Smo.dll" -ErrorAction Stop
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Smo.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Dmf.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.SqlWmiManagement.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.ConnectionInfo.dll"
@@ -34,7 +33,7 @@ try {
 	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.UtilityEnum.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.HadrDMF.dll"
 }
-catch {
+else {
 <#
 	Attempt to load all versions of SMO from vNext to 2005 - this is why RequiredAssemblies can't be used.
 	Attempt to load all assemblies that will be needed in the module. 
