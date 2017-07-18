@@ -21,7 +21,7 @@
 			
 			$db1 = Get-DbaDatabase -SqlInstance $sql2008 -Database $databasename
 			
-			Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -Database $databasename -BackupRestore -NetworkShare $networkpath
+			Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -Database $databasename -BackupRestore -NetworkShare $networkpath -WithReplace
 			
 			$db2 = Get-DbaDatabase -SqlInstance $sql2016 -Database $databasename
 			$db2 | Should Not BeNullOrEmpty
@@ -46,10 +46,11 @@
 
 	Context "Detach, copies and attaches database with the same properties." {
 		It "Should copy a database and retain its name, recovery model, and status. Should also reattach source" {
-			Get-Service BITS | Start-Service
+			Set-Service BITS -StartupType Automatic
+			Get-Service BITS | Start-Service -ErrorAction SilentlyContinue
 			$db1 = Get-DbaDatabase -SqlInstance $sql2008 -Database $databasename
 			
-			Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -Database $databasename -DetachAttach -Reattach
+			Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -Database $databasename -DetachAttach -Reattach -Force
 			
 			$db2 = Get-DbaDatabase -SqlInstance $sql2016 -Database $databasename
 			$db2 | Should Not BeNullOrEmpty
@@ -61,6 +62,11 @@
 			$db1.Name | Should Be $db2.Name
 			$db1.RecoveryModel | Should Be $db2.RecoveryModel
 			$db1.Status | Should be $db2.Status
+		}
+	}
+	Context "Clean up" {
+		foreach ($instance in $instances) {
+			Get-DbaDatabase -SqlInstance $instance -NoSystemDb | Remove-DbaDatabase -Confirm:$false
 		}
 	}
 }
