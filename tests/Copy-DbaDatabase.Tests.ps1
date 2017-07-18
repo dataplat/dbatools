@@ -46,7 +46,7 @@
 
 	Context "Detach, copies and attaches database with the same properties." {
 		It "Should copy a database and retain its name, recovery model, and status. Should also reattach source" {
-			
+			Get-Service BITS | Start-Service
 			$db1 = Get-DbaDatabase -SqlInstance $sql2008 -Database $databasename
 			
 			Copy-DbaDatabase -Source $sql2008 -Destination $sql2016 -Database $databasename -DetachAttach -Reattach
