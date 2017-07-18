@@ -9,7 +9,7 @@ function Get-DbaSpConfigure {
 
 		.PARAMETER SqlInstance
 			SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-			collection and recieve pipeline input
+			collection and receive pipeline input
 
 		.PARAMETER SqlCredential
 			PSCredential object to connect as. If not specified, current Windows login will be used.
@@ -48,7 +48,7 @@ function Get-DbaSpConfigure {
 		.EXAMPLE
 			Get-DbaSpConfigure -SqlInstance sql2012 -ConfigName MaxServerMemory
 
-			Returns only the system configuration for MaxServerMemory. Configs is autopopulated for tabbing convenience.
+			Returns only the system configuration for MaxServerMemory. Configs is auto-populated for tabbing convenience.
 		#>
 	[CmdletBinding()]
 	Param (

@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .PARAMETER SqlInstance 
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-collection and recieve pipeline input.
+collection and receive pipeline input.
 
 .PARAMETER SqlCredential
 PSCredential object to connect under. If not specified, current Windows login will be used.

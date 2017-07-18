@@ -4,7 +4,7 @@ function Copy-DbaEndpoint {
 			Copy-DbaEndpoint migrates server endpoints from one SQL Server to another.
 
 		.DESCRIPTION
-			By default, all endpoints are copied. The -Endpoints parameter is autopopulated for command-line completion and can be used to copy only specific endpoints.
+			By default, all endpoints are copied. The -Endpoints parameter is auto-populated for command-line completion and can be used to copy only specific endpoints.
 
 			If the endpoint already exists on the destination, it will be skipped unless -Force is used.
 
@@ -31,10 +31,10 @@ function Copy-DbaEndpoint {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Endpoint
-			The endpoint(s) to process - this list is auto populated from the server. If unspecified, all endpoints will be processed.
+			The endpoint(s) to process - this list is auto-populated from the server. If unspecified, all endpoints will be processed.
 
 		.PARAMETER ExcludeEndpoint
-			The endpoint(s) to exclude - this list is auto populated from the server
+			The endpoint(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
