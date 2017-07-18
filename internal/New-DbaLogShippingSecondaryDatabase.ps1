@@ -103,7 +103,7 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
         [object[]]$SqlInstance,
 
         [System.Management.Automation.PSCredential]
-        $SqlCredential,
+        $SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 
         [int]$BufferCount = -1,
         

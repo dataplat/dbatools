@@ -75,7 +75,7 @@ function Set-DbaJobOwner {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[object[]]$Job,
 		[object[]]$ExcludeJob,
 		[Alias("TargetLogin")]

@@ -58,7 +58,7 @@
 		
 		[PSCredential]
 		[System.Management.Automation.CredentialAttribute()]
-		$Credential,
+		$Credential = [System.Management.Automation.PSCredential]::Empty,
 		
 		[parameter(ParameterSetName = "Certificate", ValueFromPipeline)]
 		[System.Security.Cryptography.X509Certificates.X509Certificate2]

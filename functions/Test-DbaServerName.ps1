@@ -63,7 +63,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential = [System.Management.Automation.PSCredential]::Empty,
 		[switch]$Detailed,
 		[switch]$NoWarning
 	)

@@ -65,7 +65,7 @@ Tests all logins excluding any that are from the subdomain Domain
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[object[]]$Login,
 		[object[]]$ExcludeLogin,
 		[ValidateSet("LoginsOnly", "GroupsOnly")]

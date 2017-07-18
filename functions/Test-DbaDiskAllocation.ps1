@@ -73,7 +73,7 @@ To return true or false for ALL disks being formatted to 64k
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
 		[object[]]$ComputerName,
 		[switch]$NoSqlCheck,
-		[object]$SqlCredential,
+		[object]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[switch]$Detailed,
 		[switch]$Silent
 	)

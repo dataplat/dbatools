@@ -73,7 +73,7 @@ function Install-DbaWhoIsActive {
 		$SqlInstance,
 		
 		[PsCredential]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		
 		[object]
 		$Database,

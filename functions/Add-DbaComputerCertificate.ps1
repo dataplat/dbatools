@@ -58,7 +58,7 @@ Adds the local C:\temp\cer.cer to the local computer's LocalMachine\My (Personal
   param (
     [Alias("ServerInstance", "SqlServer", "SqlInstance")]
     [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-    [PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
+    [PSCredential][System.Management.Automation.CredentialAttribute()]$Credential = [System.Management.Automation.PSCredential]::Empty,
     [securestring]$Password,
     [parameter(ValueFromPipeline)]
     [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,

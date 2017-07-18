@@ -94,8 +94,8 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
         [DbaInstanceParameter]$Source,
         [parameter(Mandatory = $true)]
         [DbaInstanceParameter]$Destination,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential = [System.Management.Automation.PSCredential]::Empty,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential = [System.Management.Automation.PSCredential]::Empty,
         [String]$Project,
         [String]$Folder,
         [String]$Environment,

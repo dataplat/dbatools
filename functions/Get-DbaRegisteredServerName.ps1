@@ -72,7 +72,7 @@ Gets a list of server IP addresses in the HR and Accounting groups from the Cent
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [object]$SqlCredential,
+        [object]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
         [switch]$NoCmsServer,
         [parameter(ParameterSetName = "NetBios")]
         [switch]$NetBiosName,

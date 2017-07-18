@@ -49,7 +49,7 @@ function Get-DbaPrivilege {
 		[Alias("cn", "host", "Server")]
 		[dbainstanceparameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$Credential,
+		$Credential = [System.Management.Automation.PSCredential]::Empty,
 		[switch]$Silent
 	)
 	

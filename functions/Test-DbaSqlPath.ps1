@@ -77,7 +77,7 @@ Function Test-DbaSqlPath {
         $Path,
         
         [System.Management.Automation.PSCredential]
-        $SqlCredential,
+        $SqlCredential = [System.Management.Automation.PSCredential]::Empty,
         
         [switch]
         $Silent

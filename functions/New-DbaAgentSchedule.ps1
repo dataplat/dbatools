@@ -147,7 +147,7 @@ function New-DbaAgentSchedule {
 		[Alias("ServerInstance", "SqlServer")]
 		[object[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[object[]]$Job,
 		[object]$Schedule,
 		[switch]$Disabled,

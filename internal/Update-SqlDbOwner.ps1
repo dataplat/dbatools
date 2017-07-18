@@ -13,7 +13,7 @@ Internal function. Updates specified database dbowner.
 		[ValidateNotNullOrEmpty()]
 		[object]$destination,
 		[string]$dbname,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential
 	)
 	

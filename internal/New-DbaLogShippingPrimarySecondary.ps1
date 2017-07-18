@@ -63,7 +63,7 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 		[object]$SqlInstance,
 
         [System.Management.Automation.PSCredential]
-        $SqlCredential,
+        $SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]

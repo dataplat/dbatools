@@ -149,7 +149,7 @@ Filters only results where LinkServerName = myls and StartTime is greater than '
 		[parameter(Position = 0, Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[string[]]$Path,
 		[string[]]$Database,
 		[string[]]$Login,

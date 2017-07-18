@@ -153,7 +153,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance","SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
-		[object]$SqlCredential,
+		[object]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[string]$Table,
         [string]$Schema = "dbo",
 		[switch]$Truncate,

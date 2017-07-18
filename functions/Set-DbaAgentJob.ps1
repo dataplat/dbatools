@@ -142,7 +142,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
         [DbaInstanceParameter[]]$SqlInstance,
 
         [Parameter(Mandatory = $false)]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]

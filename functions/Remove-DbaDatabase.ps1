@@ -64,7 +64,7 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 		[parameter(Mandatory = $false)]
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[Alias("Databases")]
 		[object[]]$Database,

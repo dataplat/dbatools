@@ -56,7 +56,7 @@ Returns a datatable with details
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
-		[object]$SqlCredential,
+		[object]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[switch]$Detailed
 	)
 	

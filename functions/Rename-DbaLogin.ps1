@@ -64,7 +64,7 @@ WhatIf Example
     param (
         [parameter(Mandatory = $true)]
         [DbaInstanceParameter]$SqlInstance,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[object]$Login,
         [parameter(Mandatory = $true)]
         [String]$NewLogin

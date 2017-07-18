@@ -68,7 +68,7 @@
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[parameter(Mandatory, ParameterSetName = 'SqlInstance')]
 		[string]$Database,
 		[parameter(Mandatory, ParameterSetName = 'Pineline', ValueFromPipeline)]

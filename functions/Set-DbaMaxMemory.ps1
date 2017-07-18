@@ -86,7 +86,7 @@ Function Set-DbaMaxMemory
         
         [Alias('Credential')]
         [System.Management.Automation.PSCredential]
-        $SqlCredential,
+        $SqlCredential = [System.Management.Automation.PSCredential]::Empty,
         
         [switch]
         $Silent

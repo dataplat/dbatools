@@ -59,7 +59,7 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[ValidateSet('Name', 'ServiceBrokerGuid', 'Owner')]
 		[string]$Property = 'Name',
 		[parameter(Mandatory = $true)]

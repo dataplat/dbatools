@@ -34,7 +34,7 @@ Function Invoke-ManagedComputerCommand {
 		
 		[PSCredential]
 		[System.Management.Automation.CredentialAttribute()]
-		$Credential,
+		$Credential = [System.Management.Automation.PSCredential]::Empty,
 		
 		[Parameter(Mandatory = $true)]
 		[scriptblock]

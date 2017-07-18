@@ -15,7 +15,7 @@ source and destination servers.
 		[object]$destination,
 		[Parameter(Mandatory = $false, Position = 2)]
 		[bool]$ReuseSourceFolderStructure,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SourceSqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]$DestinationSqlCredential
 	)
 	

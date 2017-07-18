@@ -207,7 +207,7 @@ function Invoke-DbaSqlCmd
 				   Mandatory = $false,
 				   ValueFromPipelineByPropertyName = $true,
 				   ValueFromRemainingArguments = $false)]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential = [System.Management.Automation.PSCredential]::Empty,
 		[Parameter(ParameterSetName = 'Ins-Que',
 				   Position = 4,
 				   Mandatory = $false,

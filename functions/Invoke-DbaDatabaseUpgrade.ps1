@@ -95,7 +95,7 @@
 		[parameter(Position = 0)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[System.Management.Automation.PSCredential]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[switch]$NoCheckDb,

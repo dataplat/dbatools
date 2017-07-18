@@ -367,7 +367,7 @@ The script will show a message that the copy destination has not been supplied a
 
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]
-        $SourceSqlCredential,
+        $SourceSqlCredential = [System.Management.Automation.PSCredential]::Empty,
 
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]
@@ -375,7 +375,7 @@ The script will show a message that the copy destination has not been supplied a
 
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]
-        $DestinationSqlCredential,
+        $DestinationSqlCredential = [System.Management.Automation.PSCredential]::Empty,
 
         [Parameter(Mandatory = $false)]
         [System.Management.Automation.PSCredential]

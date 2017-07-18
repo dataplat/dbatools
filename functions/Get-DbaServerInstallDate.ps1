@@ -66,9 +66,9 @@ Returns an object with SQL Instance install date as a string for every server li
 		[Alias("ServerInstance", "SqlServer", "ComputerName")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$Credential,
+		$Credential = [System.Management.Automation.PSCredential]::Empty,
 		[Switch]$IncludeWindows,
 		[switch]$Silent
 	)

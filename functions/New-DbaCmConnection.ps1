@@ -103,7 +103,7 @@
         $ComputerName = $env:COMPUTERNAME,
         [Parameter(ParameterSetName = "Credential")]
         [PSCredential]
-        $Credential,
+        $Credential = [System.Management.Automation.PSCredential]::Empty,
         [Parameter(ParameterSetName = "Windows")]
         [switch]
         $UseWindowsCredentials,

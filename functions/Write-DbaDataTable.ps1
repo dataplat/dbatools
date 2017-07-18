@@ -145,7 +145,7 @@ Function Write-DbaDataTable {
         [ValidateNotNull()]
         [Alias("Credential")]
         [System.Management.Automation.PSCredential]
-        $SqlCredential,
+        $SqlCredential = [System.Management.Automation.PSCredential]::Empty,
         
         [Parameter(Position = 2)]
         [string]

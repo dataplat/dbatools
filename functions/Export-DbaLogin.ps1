@@ -86,7 +86,7 @@ function Export-DbaLogin {
 		[DbaInstanceParameter]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[object[]]$Login,
 		[object[]]$ExcludeLogin,
 		[Alias("Databases")]

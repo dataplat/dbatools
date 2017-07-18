@@ -104,7 +104,7 @@
 		[Parameter(Mandatory = $false, Position = 2, ValueFromPipeline = $true)]
 		[object[]]$Database,
 		[Parameter(Mandatory = $false, Position = 3)]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[Parameter(Mandatory = $false, Position = 4)]
 		[switch]$NoRecovery,
 		[Parameter(Mandatory = $false, Position = 5)]

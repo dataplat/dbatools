@@ -69,7 +69,7 @@ Function Get-DbaSqlBuildReference {
 		
 		[Alias("Credential")]
 		[PsCredential]
-		$SqlCredential,
+		$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		
 		[switch]
 		$Update,

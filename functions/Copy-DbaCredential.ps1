@@ -84,13 +84,12 @@
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$SourceSqlCredential,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$Credential,
+		$SourceSqlCredential = [System.Management.Automation.PSCredential]::Empty,
+		[string[]]$Credential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
-		$DestinationSqlCredential,
+		$DestinationSqlCredential = [System.Management.Automation.PSCredential]::Empty,
 		[object[]]$CredentialIdentity,
 		[switch]$Force,
 		[switch]$Silent
