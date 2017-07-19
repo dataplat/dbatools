@@ -102,21 +102,11 @@ function Copy-DbaSqlDataCollector {
 
 	begin {
 
-		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.Collector") -eq $null) {
-			Stop-Function -Message "SMO version is too old. To migrate collection sets, you must have SQL Server Management Studio 2008 R2 or higher installed."
-			return
-		}
-
-		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential -MinimumVersion 10
 
 		$source = $sourceServer.DomainInstanceName
 		$destination = $destServer.DomainInstanceName
-
-		if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
-			Stop-Function -Message "Collection Sets are only supported in SQL Server 2008 and above. Quitting."
-			return
-		}
 
 	}
 	process {
