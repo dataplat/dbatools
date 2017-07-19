@@ -1,4 +1,4 @@
-﻿Function Backup-DbaDatabaseMasterKey {
+Function Backup-DbaDatabaseMasterKey {
 	<#
 .SYNOPSIS
 Backs up specified database master key.
@@ -95,13 +95,8 @@ Logs into sql2016 with Windows credentials then backs up db1's keys to the \\nas
 				$Path = $server.BackupDirectory
 			}
 			
-<<<<<<< HEAD
-			if (!$backupdirectory) {
-				Stop-Function -Message "Backup directory discovery failed. Please explicitly specify -BackupDirectory" -Target $server -Continue
-=======
 			if (!$Path) {
-				Stop-Function -Message "Path discovery failed. Please expliticly specify -Path" -Target $server -Continue
->>>>>>> upstream/development
+				Stop-Function -Message "Path discovery failed. Please explicitly specify -Path" -Target $server -Continue
 			}
 			
 			if (!(Test-DbaSqlPath -SqlInstance $server -Path $Path)) {

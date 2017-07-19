@@ -1,3 +1,4 @@
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe 'Test-DbaMaxMemory Unit Tests' -Tag 'Unittests' {
     InModuleScope dbatools {
         Context 'Validate input arguments' {

@@ -1,4 +1,5 @@
-﻿. $PSScriptRoot\..\internal\Stop-Function.ps1
+﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+. $PSScriptRoot\..\internal\Stop-Function.ps1
 
 ## needs some proper tests for the function here
 Describe "Stop-Function Unit-Tests" -Tag 'Unittests' {

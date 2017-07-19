@@ -1,5 +1,5 @@
 ﻿# Current library Version the module expects
-$currentLibraryVersion = New-Object System.Version(0, 6, 0, 16)
+$currentLibraryVersion = New-Object System.Version(0, 6, 0, 17)
 
 <#
 Library Versioning 101:

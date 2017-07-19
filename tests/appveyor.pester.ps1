@@ -68,6 +68,7 @@ else {
 		
 		(New-Object System.Net.WebClient).UploadFile($Address, $Source)
 		
+		Write-Output "You can download it from https://ci.appveyor.com/api/buildjobs/$($env:APPVEYOR_JOB_ID)/tests"
 	}
 	#>
 	

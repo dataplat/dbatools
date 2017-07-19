@@ -1,3 +1,4 @@
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "Test-DbaLsnChain Unit Tests" -Tag 'Unittests' {
 	InModuleScope dbatools {
 		Context "General Diff restore" {

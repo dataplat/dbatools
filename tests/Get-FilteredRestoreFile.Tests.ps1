@@ -1,3 +1,4 @@
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "Get-FilteredRestoreFile Unit Tests" -Tag 'Unittests' {
 	InModuleScope dbatools {
 		Context "Empty TLog Backup Issues" {

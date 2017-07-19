@@ -313,7 +313,7 @@
 		'Get-DbaSsisEnvironmentVariable',
 		'Get-DbaSqlManagementObject',
 		'Test-DbaSqlManagementObject',
-		'Get-DbaMaintenanceSolutionLog',
+		#'Get-DbaMaintenanceSolutionLog',
 		'Invoke-DbaLogShippingRecovery',
 		'Sync-DbaLoginPermission',
 		'Find-DbaTrigger',
@@ -334,7 +334,8 @@
 		'Get-DbaDbStoredProcedure',
 		'Test-DbaCompression',
 		'Mount-DbaDatabase',
-		'Dismount-DbaDatabase'
+		'Dismount-DbaDatabase',
+		'Set-DbaPrivilege'
 	)
 	
 	# Cmdlets to export from this module

@@ -7,8 +7,7 @@ function Backup-DbaDatabaseCertificate {
 			Exports database certificates from SQL Server using SMO and outputs the .cer and .pvk files.
 
 		.PARAMETER SqlInstance
-			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
-			to be executed against multiple SQL Server instances.
+			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 		
 		.PARAMETER SqlCredential
 			SqlCredential object to connect as. If not specified, current Windows login will be used.
@@ -37,14 +36,14 @@ function Backup-DbaDatabaseCertificate {
 		.PARAMETER CertificateCollection 
 			Internal parameter to support pipeline input.
 
-		.PARAMETER Confirm 
-			Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent 
-			Use this switch to disable any kind of verbose messages.
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
 
-		.PARAMETER WhatIf 
-			Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.NOTES
 			Original Author: Jess Pomfret (@jpomfret)
@@ -78,7 +77,7 @@ function Backup-DbaDatabaseCertificate {
 
 		.EXAMPLE
 			Backup-DbaDatabaseCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
-			Exports all the certificates on the specified SQL Server.
+			Exports all the certificates and private keys on the specified SQL Server.
 
 		.EXAMPLE
 			$EncryptionPassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
@@ -96,7 +95,7 @@ function Backup-DbaDatabaseCertificate {
 
 		.EXAMPLE
 			Get-DbaDatabaseCertificate -SqlInstance sql2016 | Backup-DbaDatabaseCertificate
-			Exports all certificates found on sql2016 to the default data directory. Prompts for encryption and decryption passwords.
+			Exports all certificates found on sql2016 to the default data directory.
 	#>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
@@ -111,9 +110,9 @@ function Backup-DbaDatabaseCertificate {
 		[parameter(ParameterSetName = "instance")]
 		[object[]]$ExcludeDatabase,
 		[parameter(Mandatory = $false)]
-		[Security.SecureString]$EncryptionPassword = (Read-Host "EncryptionPassword (recommended, not required)" -AsSecureString),
+		[Security.SecureString]$EncryptionPassword,
 		[parameter(Mandatory = $false)]
-		[Security.SecureString]$DecryptionPassword = (Read-Host "DecryptionPassword (required if encryption password is specified)" -AsSecureString),
+		[Security.SecureString]$DecryptionPassword,
 		[System.IO.FileInfo]$Path,
 		[string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
 		[parameter(ValueFromPipeline, ParameterSetName = "collection")]
@@ -232,13 +231,12 @@ function Backup-DbaDatabaseCertificate {
 			if ($ExcludeDatabase) {
 				$databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
 			}
-			
 			foreach ($db in $databases.Name) {
-                $CertificateCollection = Get-DbaDatabaseCertificate -SqlInstance $server -Database $db
+                $DBCertificateCollection = Get-DbaDatabaseCertificate -SqlInstance $server -Database $db
                 if ($Certificate) {
-					$CertificateCollection = $CertificateCollection | Where-Object Name -In $Certificate
+					$CertificateCollection += $DBCertificateCollection | Where-Object Name -In $Certificate
 				}
-				$CertificateCollection = $CertificateCollection | Where-Object Name -NotLike "##*"
+				$CertificateCollection += $DBCertificateCollection | Where-Object Name -NotLike "##*"
 				if (!$CertificateCollection) {
 					Write-Message -Level Output -Message "No certificates found to export in $db."
 					continue
@@ -246,7 +244,7 @@ function Backup-DbaDatabaseCertificate {
 			}
 			
 		}
-		
+				
         foreach ($cert in $CertificateCollection) {
 			if ($cert.Name.StartsWith("##")) {
 				Write-Message -Level Output -Message "Skipping system cert $cert"

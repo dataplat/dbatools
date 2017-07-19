@@ -196,7 +196,7 @@
 		}
 	}
 		
-	if ((Get-DbaSqlManagementObject | Where-Object Loaded).Version -gt 10) {
+	if ((Get-DbaSqlManagementObject | Where-Object Loaded).Version -ge 11) {
 		if (-not $ParameterConnection -or ($Server.ServerType -ne 'SqlAzureDatabase')) {
 			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Trigger], 'IsSystemObject')
 			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Schema], 'IsSystemObject')
