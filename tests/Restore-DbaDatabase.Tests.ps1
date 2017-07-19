@@ -278,5 +278,4 @@
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
     }
-
 }
