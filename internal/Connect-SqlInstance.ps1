@@ -111,12 +111,6 @@
 			return $paramserver
 		}
 		
-		if ($MinimumVersion -and $server.versionMajor) {
-			if ($server.versionMajor -lt $MinimumVersion) {
-				throw "SQL Server version $MinimumVersion required - $server not supported."
-			}
-		}
-		
 		if ($server.ConnectionContext.IsOpen -eq $false) {
 			$server.ConnectionContext.Connect()
 		}
@@ -145,8 +139,8 @@
 	# This seems a little complex but is required because some connections do TCP,SqlInstance
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $ConvertedSqlInstance.FullSmoName
 	$server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
-	
-	if ($MinimumVersion) {
+
+	if ($MinimumVersion -and $server.VersionMajor) {
 		if ($server.versionMajor -lt $MinimumVersion) {
 			throw "SQL Server version $MinimumVersion required - $server not supported."
 		}
