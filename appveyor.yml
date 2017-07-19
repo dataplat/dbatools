@@ -31,7 +31,7 @@ test_script:
   #- ps: Import-PackageProvider NuGet -MinimumVersion '2.8.5.201' -Force | Out-Null
   - ps: Install-Module -Name PSScriptAnalyzer -RequiredVersion 1.6.0 -Repository PSGallery -Force | Out-Null
   - vstest.console /logger:Appveyor bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.Tests.dll
-   
+    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1')
   # "Test with native PS version"
   - ps: .\Tests\appveyor.pester.ps1
   
@@ -42,4 +42,3 @@ test_script:
   - ps: .\Tests\appveyor.pester.ps1 -Finalize
 
 #on_finish:
- - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1')
