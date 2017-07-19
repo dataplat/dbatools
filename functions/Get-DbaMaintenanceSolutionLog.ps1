@@ -115,15 +115,17 @@ Gets the outcome of the IndexOptimize job on sqlserver2014a, the other options a
 				$fresh[$k] = $v
 			}
 			if($fresh.ContainsKey('Command')) {
-				if ($fresh['Command'] -match '^ALTER INDEX \[(?<index>[^\]]+)\] ON \[(?<database>[^\]]+)\]\.\[(?<schema>[^]]+)\]\.\[(?<table>[^\]]+)\] (?<action>[^\ ]+) WITH \((?<options>[^\)]+)') {
+				if ($fresh['Command'] -match '(SET LOCK_TIMEOUT (?<timeout>\d+); )?ALTER INDEX \[(?<index>[^\]]+)\] ON \[(?<database>[^\]]+)\]\.\[(?<schema>[^]]+)\]\.\[(?<table>[^\]]+)\] (?<action>[^\ ]+)( PARTITION = (?<partition>\d+))? WITH \((?<options>[^\)]+)') {
 					$fresh['Index'] = $Matches.index
 					$fresh['Statistics'] = $null
 					$fresh['Schema'] = $Matches.Schema
 					$fresh['Table'] = $Matches.Table
 					$fresh['Action'] = $Matches.action
 					$fresh['Options'] = $Matches.options
+					$fresh['Timeout'] = $Matches.timeout
+					$fresh['Partition'] = $Matches.partition
 				}
-				elseif ($fresh['Command'] -match 'UPDATE STATISTICS \[(?<database>[^\]]+)\]\.\[(?<schema>[^]]+)\]\.\[(?<table>[^\]]+)\] \[(?<stat>[^\]]+)\]') {
+				elseif ($fresh['Command'] -match '(?<timeout>SET LOCK_TIMEOUT \d+; )?UPDATE STATISTICS \[(?<database>[^\]]+)\]\.\[(?<schema>[^]]+)\]\.\[(?<table>[^\]]+)\] \[(?<stat>[^\]]+)\]') {
 					$fresh['Index'] = $null
 					$fresh['Statistics'] = $Matches.stat
 					$fresh['Schema'] = $Matches.Schema
