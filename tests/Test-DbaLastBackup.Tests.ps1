@@ -29,6 +29,8 @@ Describe "Test-DbaLastBackup Integration Tests" -Tags "Integrationtests" {
             $results.count | Should BeGreaterThan 3
         }
 	}
+	# Try to avoid rando deadlock
+	Start-Sleep 3
 	
 	Context "Testing that it restores to a specific path" {
 		$null = Test-DbaLastBackup -SqlInstance localhost -Database singlerestore -DataDirectory C:\temp -LogDirectory C:\temp -NoDrop
@@ -37,6 +39,8 @@ Describe "Test-DbaLastBackup Integration Tests" -Tags "Integrationtests" {
 			('C:\temp\dbatools-testrestore-singlerestore.mdf' -in $results.PhysicalName) | Should Be $true
 			('C:\temp\dbatools-testrestore-singlerestore_log.ldf' -in $results.PhysicalName) | Should Be $true
 		}
+		
+		$null = Get-DbaProcess -SqlInstance localhost -Database dbatools-testrestore-singlerestore | Stop-DbaProcess
 		$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
 	}
 }
