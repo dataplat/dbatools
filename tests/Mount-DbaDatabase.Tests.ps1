@@ -1,4 +1,5 @@
-﻿Describe "Mount-DbaDatabase Integration Tests" -Tags "Integrationtests" {
+﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Describe "Mount-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 
     Context "Setup removes, restores and backups on the local drive for Mount-DbaDatabase" {
         $null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
@@ -21,5 +22,7 @@
 		It "Should return that the AttachOption default is None" {
             $results.AttachOption | Should Be "None"
         }
-    }
+	}
+	
+	$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
 }
