@@ -32,5 +32,5 @@ test_script:
   # "Collecting and uploading results"
   - ps: .\Tests\appveyor.pester.ps1 -Finalize
 
-on_finish:
- - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+#on_finish: this is for RDPing into the box when all else fails.
+# - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
