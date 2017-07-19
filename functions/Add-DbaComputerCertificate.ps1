@@ -13,22 +13,22 @@
       Allows you to login to $ComputerName using alternative credentials.
 
     .PARAMETER Password
-      The password for the certificate, if it is password protected
+      The password for the certificate, if it is password protected.
 
     .PARAMETER Certificate
       The target certificate object.
 
     .PARAMETER Path
-      The local path to the target certificate object
+      The local path to the target certificate object.
 
     .PARAMETER Store
-      Certificate store - defaults to LocalMachine
+      Certificate store. Default is LocalMachine.
 
     .PARAMETER Folder
-      Certificate folder - defaults to My (Personal)
+      Certificate folder. Default is My (Personal).
     
 		.PARAMETER WhatIf
-			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+		  If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
