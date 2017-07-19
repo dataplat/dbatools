@@ -61,7 +61,6 @@ Describe "Copy-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 			$db1.Name | Should Be $db2.Name
 			$db1.Tables.Count | Should Be $db2.Tables.Count
 			$db1.Status | Should be $db2.Status
-			$db1.RecoveryModel | Should be $db2.RecoveryModel
 		}
 	}
 	
