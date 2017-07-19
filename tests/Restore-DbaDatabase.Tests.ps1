@@ -2,11 +2,10 @@
     #Setup variable for multuple contexts
     $DataFolder = 'c:\temp\datafiles'
     $LogFolder = 'C:\temp\logfiles'
-    New-Item -Type Directory $DataFolder -ErrorAction SilentlyContinue
-	New-Item -ItemType Directory $LogFolder -ErrorAction SilentlyContinue
-	$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
-	
+    New-Item -Type Directory $DataFolder
+    new-Item -Type Directory $LogFolder
     Context "Properly restores a database on the local drive using Path" {
+        $null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
         $results = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
         It "Should Return the proper backup file location" {
             $results.BackupFile | Should Be "C:\github\appveyor-lab\singlerestore\singlerestore.bak"
@@ -161,12 +160,10 @@
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
         }
-	}
-	
-	# Sometimes gets a deadlocking thing *shrug*
-	Start-Sleep 3
+    }
+
     Context "Properly restores an instance using ola-style backups" {
-        $results = Get-ChildItem C:\github\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlInstance localhost -WithReplace
+        $results = Get-ChildItem C:\github\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlInstance localhost
         It "Restored files count should be right" {
             $results.databasename.count | Should Be 30
         }
