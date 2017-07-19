@@ -4,37 +4,7 @@
     $LogFolder = 'C:\temp\logfiles'
     New-Item -Type Directory $DataFolder -ErrorAction SilentlyContinue
 	New-Item -ItemType Directory $LogFolder -ErrorAction SilentlyContinue
-	
-	# Give the server a moment or 10
-	
-	Start-Sleep 10
-    Context "Properly restores a database on the local drive using Path" {
-        $null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
-        $results = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
-        It "Should Return the proper backup file location" {
-            $results.BackupFile | Should Be "C:\github\appveyor-lab\singlerestore\singlerestore.bak"
-        }
-        It "Should return successful restore" {
-            $results.RestoreComplete | Should Be $true
-        }
-    }
-	
-    Context "Ensuring warning is thrown if database already exists" {
-        $results = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WarningVariable warning
-        It "Should warn" {
-            $warning | Should Match "exists and WithReplace not specified, stopping"
-        }
-        It "Should not return object" {
-            $results | Should Be $null
-        }
-    }
-	
-    Context "Database is properly removed again after withreplace test" {
-        $results = Remove-DbaDatabase -SqlInstance localhost -Database singlerestore
-        It "Should say the status was dropped" {
-            $results.Status | Should Be "Dropped"
-        }
-    }
+	$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
 
     Context "Properly restores a database on the local drive using piped Get-ChildItem results" {
         $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance localhost
@@ -164,10 +134,12 @@
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
         }
-    }
-
+	}
+	
+	# Sometimes gets a deadlocking thing *shrug*
+	Start-Sleep 3
     Context "Properly restores an instance using ola-style backups" {
-        $results = Get-ChildItem C:\github\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlInstance localhost
+        $results = Get-ChildItem C:\github\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlInstance localhost -WithReplace
         It "Restored files count should be right" {
             $results.databasename.count | Should Be 30
         }
@@ -281,5 +253,33 @@
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
-    }
+	}
+	
+	
+	Context "Properly restores a database on the local drive using Path" {
+		$results = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
+		It "Should Return the proper backup file location" {
+			$results.BackupFile | Should Be "C:\github\appveyor-lab\singlerestore\singlerestore.bak"
+		}
+		It "Should return successful restore" {
+			$results.RestoreComplete | Should Be $true
+		}
+	}
+	
+	Context "Ensuring warning is thrown if database already exists" {
+		$results = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WarningVariable warning
+		It "Should warn" {
+			$warning | Should Match "exists and WithReplace not specified, stopping"
+		}
+		It "Should not return object" {
+			$results | Should Be $null
+		}
+	}
+	
+	Context "Database is properly removed again after withreplace test" {
+		$results = Remove-DbaDatabase -SqlInstance localhost -Database singlerestore
+		It "Should say the status was dropped" {
+			$results.Status | Should Be "Dropped"
+		}
+	}
 }
