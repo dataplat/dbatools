@@ -13,7 +13,7 @@ Describe "Test-DbaLastBackup Integration Tests" -Tags "Integrationtests" {
 		$null = Get-DbaDatabase -SqlInstance localhost -Database testlastbackup | Backup-DbaDatabase -Type Log
 	}
 	
-
+	<#
     Context "Test a single database" {
         $results = Test-DbaLastBackup -SqlInstance localhost -Database testlastbackup
 		
@@ -25,7 +25,7 @@ Describe "Test-DbaLastBackup Integration Tests" -Tags "Integrationtests" {
 	
 	$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
 	
-	<#
+	
 	Context "Testing the whole instance" {
 		$results = Test-DbaLastBackup -SqlInstance localhost -ExcludeDatabase tempdb
         It "Should be more than 3 databases" {
