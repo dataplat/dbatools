@@ -59,4 +59,5 @@
 		foreach ($instance in $instances) {
 			Get-DbaDatabase -SqlInstance $instance -NoSystemDb | Remove-DbaDatabase -Confirm:$false
 		}
-	}
+    }
+}
