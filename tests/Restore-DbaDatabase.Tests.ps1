@@ -4,8 +4,10 @@
     $LogFolder = 'C:\temp\logfiles'
     New-Item -Type Directory $DataFolder -ErrorAction SilentlyContinue
 	New-Item -ItemType Directory $LogFolder -ErrorAction SilentlyContinue
-	Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 	
+	# Give the server a moment or 10
+	
+	Start-Sleep 10
     Context "Properly restores a database on the local drive using Path" {
         $null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
         $results = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
