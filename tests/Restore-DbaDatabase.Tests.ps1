@@ -2,8 +2,10 @@
     #Setup variable for multuple contexts
     $DataFolder = 'c:\temp\datafiles'
     $LogFolder = 'C:\temp\logfiles'
-    New-Item -Type Directory $DataFolder
-    new-Item -Type Directory $LogFolder
+    New-Item -Type Directory $DataFolder -ErrorAction SilentlyContinue
+	New-Item -ItemType Directory $LogFolder -ErrorAction SilentlyContinue
+	Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+	
     Context "Properly restores a database on the local drive using Path" {
         $null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
         $results = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
