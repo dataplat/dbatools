@@ -5,9 +5,6 @@ Describe "Mount-DbaDatabase Integration Tests" -Tags "Integrationtests" {
         $null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
         $null = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\detachattach\detachattach.bak -WithReplace
 		$null = Get-DbaDatabase -SqlInstance localhost -Database detachattach | Backup-DbaDatabase -Type Full
-		$null = Get-DbaDatabase -SqlInstance localhost -Database detachattach | Backup-DbaDatabase -Type Differential
-		$null = Get-DbaDatabase -SqlInstance localhost -Database detachattach | Backup-DbaDatabase -Type Log
-		$null = Get-DbaDatabase -SqlInstance localhost -Database detachattach | Backup-DbaDatabase -Type Full
 		$null = Detach-DbaDatabase -SqlInstance localhost -Database detachattach -Force
     }
 	

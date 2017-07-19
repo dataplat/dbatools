@@ -1,4 +1,5 @@
-﻿Describe "Copy-DbaDatabase Integration Tests" -Tags "Integrationtests" {
+﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Describe "Copy-DbaDatabase Integration Tests" -Tags "Integrationtests" {
     # constants
     $Sql2008R2SP2 = "localhost\sql2008r2sp2"
     $Sql2016 = "localhost\sql2016"

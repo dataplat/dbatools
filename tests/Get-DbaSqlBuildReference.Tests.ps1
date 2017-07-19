@@ -1,3 +1,4 @@
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "Get-DbaSqlBuildReference Unit Test" -Tags Unittest {
 	$ModuleBase = (Get-Module -Name dbatools).ModuleBase
 	$idxfile = "$ModuleBase\bin\dbatools-buildref-index.json"

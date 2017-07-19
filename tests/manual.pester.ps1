@@ -1,4 +1,5 @@
-﻿<#
+﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+<#
     .SYNOPSIS
         Runs dbatools tests.
 
