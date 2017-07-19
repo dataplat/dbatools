@@ -14,11 +14,11 @@ LastLSN and FirstLSN in sequential files
 This is just an object consisting of the output from Read-DbaBackupHeader. Normally this will have been filtered down to a restorable chain 
 before arriving here. (ie; only 1 anchoring Full backup)
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 Sql Server Instance against which the restore is going to be performed
 
 .PARAMETER SqlCredential
-Credential for connectin to SqlServer
+Credential for connectin to SqlInstance
 
 .PARAMETER SystemDatabaseRestore
 Switch when restoring system databases
@@ -36,7 +36,7 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .EXAMPLE
-Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlServer server1\instance1 
+Test-DbaRestoreVersion -FilteredRestoreFiles $FilteredFiles -SqlInstance server1\instance1 
 
 Checks that the Restore chain in $FilteredFiles is compatiable with the SQL Server version of server1\instance1 
 
@@ -44,11 +44,11 @@ Checks that the Restore chain in $FilteredFiles is compatiable with the SQL Serv
 	[CmdletBinding()]
 	Param (
         [parameter(Mandatory = $true)]
-        [Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+        [Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
         [parameter(Mandatory = $true)]
         [object[]]$FilteredRestoreFiles,
-        [System.Management.Automation.PSCredential]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [switch]$SystemDatabaseRestore
         
 	)
@@ -65,19 +65,19 @@ Checks that the Restore chain in $FilteredFiles is compatiable with the SQL Serv
     #Can't restore backwards
     try 
     {
-        if ($sqlServer -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
+        if ($SqlInstance -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
         {
             $Newconnection  = $true
-            $Server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential	
+            $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential	
         }
         else
         {
-            $server = $sqlServer
+            $server = $SqlInstance
         }
     }
     catch 
     {
-        Write-Warning "$FunctionName - Cannot connect to $SqlServer" 
+        Write-Warning "$FunctionName - Cannot connect to $SqlInstance" 
         break
     } 
 

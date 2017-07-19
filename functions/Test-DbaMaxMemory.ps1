@@ -10,7 +10,7 @@ total memory, currently configured SQL max memory, and the calculated recommenda
 
 Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment. 
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 Allows you to specify a comma separated list of servers to query.
 
 .PARAMETER SqlCredential
@@ -35,12 +35,12 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Test-DbaMaxMemory
 
 .EXAMPLE   
-Test-DbaMaxMemory -SqlServer sqlcluster,sqlserver2012
+Test-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012
 
 Calculate the 'Max Server Memory' settings for all servers within the SQL Server Central Management Server "sqlcluster"
 
 .EXAMPLE 
-Test-DbaMaxMemory -SqlServer sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory 
+Test-DbaMaxMemory -SqlInstance sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory 
 
 Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647) and set it to recommended value. 
 
@@ -49,21 +49,21 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[Alias("ServerInstance", "SqlServer", "SqlServers")]
+		[DbaInstanceParameter]$SqlInstance,
+		[PSCredential]$SqlCredential
 	)
 	
 	PROCESS
 	{
-		foreach ($servername in $sqlserver)
+		foreach ($servername in $SqlInstance)
 		{
 			Write-Verbose "Counting the running SQL Server instances on $servername"
 
 			try
 			{
 				# Get number of instances running
-				$ipaddr = Resolve-SqlIpAddress -SqlServer $servername
+				$ipaddr = Resolve-SqlIpAddress -SqlInstance $servername
 				$sqls = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' -and $_.Status -eq 'Running' }
 				$sqlcount = $sqls.count
 			}
@@ -74,7 +74,7 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 			}
 			
 
-            $server = Get-DbaMaxMemory -SqlServer $servername -SqlCredential $SqlCredential
+            $server = Get-DbaMaxMemory -SqlInstance $servername -SqlCredential $SqlCredential
 			
 			if($null -eq $server)
             {

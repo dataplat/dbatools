@@ -1,4 +1,4 @@
-function Get-DbaDependency
+﻿function Get-DbaDependency
 {
     <#
         .SYNOPSIS
@@ -125,9 +125,9 @@ function Get-DbaDependency
                 $EnumParents
             )
             
-            Add-Member -InputObject $InputObject -Name Parent -Value $Parent -MemberType NoteProperty
-            if ($EnumParents) { Add-Member -InputObject $InputObject -Name Tier -Value ($Tier * -1) -MemberType NoteProperty -PassThru }
-            else { Add-Member -InputObject $InputObject -Name Tier -Value $Tier -MemberType NoteProperty -PassThru }
+            Add-Member -Force -InputObject $InputObject -Name Parent -Value $Parent -MemberType NoteProperty
+            if ($EnumParents) { Add-Member -Force -InputObject $InputObject -Name Tier -Value ($Tier * -1) -MemberType NoteProperty -PassThru }
+            else { Add-Member -Force -InputObject $InputObject -Name Tier -Value $Tier -MemberType NoteProperty -PassThru }
             
             if ($InputObject.HasChildNodes) { Read-DependencyTree -InputObject $InputObject.FirstChild -Tier ($Tier + 1) -Parent $InputObject -EnumParents $EnumParents }
             if ($InputObject.NextSibling) { Read-DependencyTree -InputObject $InputObject.NextSibling -Tier $Tier -Parent $Parent -EnumParents $EnumParents }
@@ -166,7 +166,7 @@ function Get-DbaDependency
                     $richobject = $Server.GetSmoObject($Item.urn)
                     $parent = $Server.GetSmoObject($Item.Parent.Urn)
                     
-                    $NewObject = New-Object sqlcollective.dbatools.Database.Dependency
+                    $NewObject = New-Object Sqlcollaborative.Dbatools.Database.Dependency
                     $NewObject.ComputerName = $server.NetName
                     $NewObject.ServiceName = $server.ServiceName
                     $NewObject.SqlInstance = $server.DomainInstanceName

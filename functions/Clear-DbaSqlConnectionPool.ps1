@@ -8,15 +8,15 @@ Resets (or empties) the connection pool.
 
 This command resets (or empties) the connection pool. 
 	
-If there are connections in use at the time of the call, they are marked appropriately and will be discarded (instead of being returned to the pool) when Close is called on them.
+If there are connections in use at the time of the call, they are marked appropriately and will be discarded (instead of being returned to the pool) when Close() is called on them.
 
 Ref: https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.clearallpools(v=vs.110).aspx
 
 .PARAMETER ComputerName
-A remote workstation or server name
+A remote workstation or server name.
 
 .PARAMETER Credential
-Credential for running the command remotely
+Credential for running the command remotely.
 
 .NOTES
 Tags: WSMan
@@ -35,12 +35,12 @@ https://dbatools.io/Clear-DbaSqlConnectionPool
 .EXAMPLE
 Clear-DbaSqlConnectionPool
 
-Clears all local connection pools
+Clears all local connection pools.
 
 .EXAMPLE
 Clear-DbaSqlConnectionPool -ComputerName workstation27
 
-Clears all connection pools on workstation27
+Clears all connection pools on workstation27.
 
 #>
 	
@@ -49,7 +49,7 @@ Clears all connection pools on workstation27
 		[Parameter(ValueFromPipeline = $true)]
 		[Alias("cn", "host", "Server")]
 		[string[]]$ComputerName = $env:COMPUTERNAME,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$Credential
 	)
 	
@@ -64,11 +64,11 @@ Clears all connection pools on workstation27
 				Write-Verbose "Clearing all pools on remote computer $Computer"
 				if ($credential)
 				{
-					Invoke-Command -ComputerName $computer -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}
 				else
 				{
-					Invoke-Command -ComputerName $computer -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+					Invoke-Command2 -ComputerName $computer -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}
 			}
 			else
@@ -76,11 +76,11 @@ Clears all connection pools on workstation27
 				Write-Verbose "Clearing all local pools"
 				if ($credential)
 				{
-					Invoke-Command -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+					Invoke-Command2 -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}
 				else
 				{
-					Invoke-Command -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+					Invoke-Command2 -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}
 			}
 		}

@@ -8,7 +8,7 @@ Creates new path as specified by the path variable
 Uses master.dbo.xp_create_subdir to create the path
 Returns $true if the path can be created, $false otherwise
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server you want to run the test on.
 
 .PARAMETER Path
@@ -26,7 +26,7 @@ credentials being passed as credentials. To connect as a different Windows user,
 .NOTES
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: Admin access to server (not SQL Services),
-Remoting must be enabled and accessible if $sqlserver is not local
+Remoting must be enabled and accessible if $SqlInstance is not local
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -48,13 +48,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/New-DbaSqlDirectory
 
 .EXAMPLE
-New-DbaSqlDirectory -SqlServer sqlcluster -Path L:\MSAS12.MSSQLSERVER\OLAP
+New-DbaSqlDirectory -SqlInstance sqlcluster -Path L:\MSAS12.MSSQLSERVER\OLAP
 
 If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\OLAP it will do and return $true, if not it will return $false. 
 
 .EXAMPLE
 $credential = Get-Credential
-New-DbaSqlDirectory -SqlServer sqlcluster -SqlCredential $credential -Path L:\MSAS12.MSSQLSERVER\OLAP
+New-DbaSqlDirectory -SqlInstance sqlcluster -SqlCredential $credential -Path L:\MSAS12.MSSQLSERVER\OLAP
 
 If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\OLAP it will do and return $true, if not it will return $false. Uses a SqlCredential to connect
 #>
@@ -62,18 +62,18 @@ If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\
     [OutputType([bool])]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter]$SqlInstance,
 		[Parameter(Mandatory = $true)]
 		[string]$Path,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[PSCredential]$SqlCredential
 	)
 	
-	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	
 	$Path = $Path.Replace("'", "''")
 	
-	$exists = Test-SqlPath -SqlServer $SqlServer -SqlCredential $SqlCredential -Path $Path
+	$exists = Test-DbaSqlPath -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Path $Path
 	
 	if ($exists)
 	{
@@ -95,7 +95,7 @@ If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\
 	}
 	
 	[pscustomobject]@{
-		Server = $SqlServer
+		Server = $SqlInstance
 		Path = $Path
 		Created = $Created
 	}   

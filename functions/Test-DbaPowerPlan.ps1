@@ -14,7 +14,7 @@ https://support.microsoft.com/en-us/kb/2207548
 http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/
 
 .PARAMETER ComputerName
-The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works.
+The SQL Server (or server in general) that you're connecting to. The -SqlInstance parameter also works.
 
 .PARAMETER Credential
 Credential object used to connect to the server as a different user
@@ -61,9 +61,9 @@ To return detailed information Power Plans
 #>
 	param (
 		[parameter(ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
+		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
 		[string[]]$ComputerName = $env:COMPUTERNAME,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
+		[PSCredential]$Credential,
 		[string]$CustomPowerPlan,
 		[switch]$Detailed,
 		[switch]$Silent

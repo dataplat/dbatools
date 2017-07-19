@@ -49,7 +49,7 @@
     [parameter(ValueFromPipeline)]
     [Alias("cn","host","Server")]
     [string[]]$ComputerName = $env:COMPUTERNAME,
-    [PSCredential] [System.Management.Automation.CredentialAttribute()]$Credential
+    [PSCredential] $Credential
   )
 
   BEGIN
@@ -78,8 +78,8 @@
         {
           Write-Verbose "$FunctionName - Getting properties for Network Interfaces on $computer"
           $NICs = Get-CimInstance -CimSession $CIMSession -ClassName Win32_PerfFormattedData_Tcpip_NetworkInterface
-        $NICs | Add-Member -MemberType ScriptProperty -Name ComputerName -Value { $computer }
-          $NICs | Add-Member -MemberType ScriptProperty -Name Bandwith -Value { switch  ( $this.CurrentBandWidth ) { 10000000000 { '10Gb' } 1000000000 { '1Gb' } 100000000 { '100Mb' } 10000000 { '10Mb' } 1000000 { '1Mb' } 100000 { '100Kb' } default { 'Low' } } }
+        $NICs | Add-Member -Force -MemberType ScriptProperty -Name ComputerName -Value { $computer }
+          $NICs | Add-Member -Force -MemberType ScriptProperty -Name Bandwith -Value { switch  ( $this.CurrentBandWidth ) { 10000000000 { '10Gb' } 1000000000 { '1Gb' } 100000000 { '100Mb' } 10000000 { '10Mb' } 1000000 { '1Mb' } 100000 { '100Kb' } default { 'Low' } } }
           foreach ( $NIC in $NICs ) { Select-DefaultView -InputObject $NIC -Property 'ComputerName', 'Name as NIC', 'BytesReceivedPersec', 'BytesSentPersec', 'BytesTotalPersec', 'Bandwith'}
         } #if CIMSession
         else

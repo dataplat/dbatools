@@ -1,7 +1,16 @@
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $Path = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ModulePath = (get-item $Path ).parent.FullName
 $ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1"
 $ManifestPath   = "$ModulePath\$ModuleName.psd1"
+
+Describe 'dbatools module test' -Tag 'Compliance' {
+	Context 'Doing something awesome' {
+		It 'It should have tests' {
+			$true | Should be $true
+		}
+	}
+}
 
 
 # test the module manifest - exports the right functions, processes the right formats, and is generally correct

@@ -125,16 +125,16 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 
 .EXAMPLE   
 sql1, sql2, sql3 | Set-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb
-Changes the database of the step in "Job1" with the name Step1 to msdb for multiple servers using pipe line
+Changes the database of the step in "Job1" with the name Step1 to msdb for multiple servers using pipeline
 
 #>	
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Parameter(Mandatory = $false)]
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[object[]]$Job,
@@ -178,7 +178,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 		[Parameter(Mandatory = $false)]
 		[switch]$Silent,
 		[Parameter(Mandatory = $false)]
-		[bool]$Force
+		[switch]$Force
 	)
 	
 	begin {
@@ -204,10 +204,10 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 			# Try connecting to the instance
 			Write-Message -Message "Attempting to connect to $instance" -Level Output
 			try {
-				$Server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			foreach ($j in $Job) {

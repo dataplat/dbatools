@@ -87,7 +87,7 @@ Function Test-DbaDiskAlignment
 #>    
     Param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlInstance", "SqlServer")]
+        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
         [object[]]
         $ComputerName,
         
@@ -134,7 +134,7 @@ Function Test-DbaDiskAlignment
                 $Silent = $Silent
             )
             
-            $sqlservers = @()
+            $SqlInstances = @()
             $offsets = @()
             
             #region Retrieving partition/disk Information
@@ -164,13 +164,13 @@ Function Test-DbaDiskAlignment
                 $disks = @()
                 $disks += $($partitions | ForEach-Object {
                         Get-CimInstance -CimSession $CimSession -Query "ASSOCIATORS OF {Win32_DiskPartition.DeviceID=""$($_.DeviceID.Replace("\", "\\"))""} WHERE AssocClass = Win32_LogicalDiskToPartition" |
-                        Add-Member -MemberType noteproperty -Name BlockSize -Value $_.BlockSize -PassThru -Force |
-                        Add-Member -MemberType noteproperty -Name BootPartition -Value $_.BootPartition -PassThru |
-                        Add-Member -MemberType noteproperty -Name DiskIndex -Value $_.DiskIndex -PassThru |
-                        Add-Member -MemberType noteproperty -Name Index -Value $_.Index -PassThru |
-                        Add-Member -MemberType noteproperty -Name NumberOfBlocks -Value $_.NumberOfBlocks -PassThru -Force |
-                        Add-Member -MemberType noteproperty -Name StartingOffset -Value $_.StartingOffset -PassThru |
-                        Add-Member -MemberType noteproperty -Name Type -Value $_.Type -PassThru
+                        Add-Member -Force -MemberType noteproperty -Name BlockSize -Value $_.BlockSize -PassThru |
+                        Add-Member -Force -MemberType noteproperty -Name BootPartition -Value $_.BootPartition -PassThru |
+                        Add-Member -Force -MemberType noteproperty -Name DiskIndex -Value $_.DiskIndex -PassThru |
+                        Add-Member -Force -MemberType noteproperty -Name Index -Value $_.Index -PassThru |
+                        Add-Member -Force -MemberType noteproperty -Name NumberOfBlocks -Value $_.NumberOfBlocks -PassThru |
+                        Add-Member -Force -MemberType noteproperty -Name StartingOffset -Value $_.StartingOffset -PassThru |
+                        Add-Member -Force -MemberType noteproperty -Name Type -Value $_.Type -PassThru
                     } |
                     Select-Object BlockSize, BootPartition, Description, DiskIndex, Index, Name, NumberOfBlocks, Size, StartingOffset, Type
                 )
@@ -197,14 +197,14 @@ Function Test-DbaDiskAlignment
                     Write-Message -Level Verbose -Message "Found instance $instancename" -FunctionName $FunctionName
                     if ($instance -eq 'MSSQLSERVER')
                     {
-                        $sqlservers += $ComputerName
+                        $SqlInstances += $ComputerName
                     }
                     else
                     {
-                        $sqlservers += "$ComputerName\$instance"
+                        $SqlInstances += "$ComputerName\$instance"
                     }
                 }
-                $sqlcount = $sqlservers.Count
+                $sqlcount = $SqlInstances.Count
                 Write-Message -Level Verbose -Message "$sqlcount instance(s) found" -FunctionName $FunctionName
             }
             #endregion Retrieving Instances
@@ -219,22 +219,22 @@ Function Test-DbaDiskAlignment
                     {
                         $sqldisk = $false
                         
-                        foreach ($sqlserver in $sqlservers)
+                        foreach ($SqlInstance in $SqlInstances)
                         {
-                            Write-Message -Level Verbose -Message "Connecting to SQL instance ($sqlserver)" -FunctionName $FunctionName
+                            Write-Message -Level Verbose -Message "Connecting to SQL instance ($SqlInstance)" -FunctionName $FunctionName
                             try
                             {
                                 if ($SqlCredential -ne $null)
                                 {
-                                    $smoserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
+                                    $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
                                 }
                                 else
                                 {
-                                    $smoserver = Connect-SqlServer -SqlServer $sqlserver # win auth
+                                    $smoserver = Connect-SqlInstance -SqlInstance $SqlInstance # win auth
                                 }
                                 $sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
                                 Write-Message -Level Verbose -Message "Query is: $sql" -FunctionName $FunctionName
-                                Write-Message -Level Verbose -Message "SQL Server is: $SqlServer" -FunctionName $FunctionName
+                                Write-Message -Level Verbose -Message "SQL Server is: $SqlInstance" -FunctionName $FunctionName
                                 $sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
                                 if ($sqlcount -gt 0)
                                 {
@@ -244,7 +244,7 @@ Function Test-DbaDiskAlignment
                             }
                             catch
                             {
-                                Stop-Function -Message "Can't connect to $ComputerName ($sqlserver)" -FunctionName $FunctionName -InnerErrorRecord $_
+                                Stop-Function -Message "Can't connect to $ComputerName ($SqlInstance)" -FunctionName $FunctionName -InnerErrorRecord $_
                                 return
                             }
                         }

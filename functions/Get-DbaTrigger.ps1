@@ -1,28 +1,32 @@
-Function Get-DbaTrigger
-{
-<#
+function Get-DbaTrigger {
+	<#
 .SYNOPSIS
 Get all existing triggers on one or more SQL instances.
 
 .DESCRIPTION
 Get all existing triggers on one or more SQL instances.
 
-Default output includes columns ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastMofied.
+Default output includes columns ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastModified.
 
 .PARAMETER SqlInstance
 The SQL Instance that you're connecting to.
 
-.PARAMETER Credential
-Credential object used to connect to the SQL Server as a different user.
+.PARAMETER SqlCredential
+SqlCredential object used to connect to the SQL Server as a different user.
+	
+.PARAMETER Database
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+
+.PARAMETER ExcludeDatabase
+The database(s) to exclude - this list is auto-populated from the server
 
 .NOTES
+Tags: Database, Triggers
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
  https://dbatools.io/Get-DbaTrigger
@@ -30,88 +34,91 @@ You should have received a copy of the GNU General Public License along with thi
 .EXAMPLE
 Get-DbaTrigger -SqlInstance ComputerA\sql987
 
-Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastMofied.
+Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastModified.
 
 .EXAMPLE
 Get-DbaTrigger -SqlInstance 'ComputerA\sql987','ComputerB'
 
-Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastMofied from two instances.
+Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastModified from two instances.
 
 .EXAMPLE
 Get-DbaTrigger -SqlInstance ComputerA\sql987 | Out-Gridview
 
-Returns a gridview displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastMofied.
+Returns a gridview displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastModified.
 
 .EXAMPLE
 'ComputerA\sql987','ComputerB' | Get-DbaTrigger | Out-Gridview
 
-Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastMofied from two instances.
+Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerName, IsEnabled and DateLastModified from two instances.
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer","instance")]
-		[string[]]$SqlInstance,
-		[Alias("SqlCredential")]
-		[PsCredential]$Credential
+		[Alias("ServerInstance", "SqlServer", "instance")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[Alias("Credential")]
+		[PSCredential]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase
 	)
-
-	DynamicParam {
-		if ($SqlInstance) {
-			return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential
+	
+	process {
+		foreach ($Instance in $SqlInstance) {
+			Write-Verbose "Connecting to $Instance"
+			try {
+				$server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential -Erroraction SilentlyContinue
+			}
+			catch {
+				Write-Warning "Can't connect to $Instance"
+				continue
+			}
+			
+			Write-Verbose "Getting Server Level Triggers on $Instance"
+			$server.Triggers |
+				ForEach-Object {
+				[PSCustomObject]@{
+					ComputerName     = $server.NetName
+					InstanceName     = $server.ServiceName
+					SqlInstance      = $server.DomainInstanceName
+					TriggerLevel     = "Server"
+					Database         = $null
+					TriggerName      = $_.Name
+					Status           = switch ($_.IsEnabled) { $true { "Enabled" } $false { "Disabled" } }
+					DateLastModified = $_.DateLastModified
+				}
+			}
+			
+			Write-Verbose "Getting Database Level Triggers on $Instance"
+			$dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' }
+			
+			if ($Database) {
+				$dbs = $dbs | Where-Object Name -in $Database
+			}
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -notin $ExcludeDatabase
+			}
+			
+			$dbs |
+				ForEach-Object {
+				$DatabaseName = $_.Name
+				Write-Verbose "Getting Database Level Triggers on Database $DatabaseName on $Instance"
+				$_.Triggers |
+					ForEach-Object {
+					[PSCustomObject]@{
+						ComputerName     = $server.NetName
+						InstanceName     = $server.ServiceName
+						SqlInstance      = $server.DomainInstanceName
+						TriggerLevel     = "Database"
+						Database         = $DatabaseName
+						TriggerName      = $_.Name
+						Status           = switch ($_.IsEnabled) { $true { "Enabled" } $false { "Disabled" } }
+						DateLastModified = $_.DateLastModified
+					}
+				}
+			}
 		}
 	}
-
-	BEGIN {}
-
-    PROCESS {
-        foreach ($Instance in $SqlInstance)
-            {
-            Write-Verbose "Connecting to $Instance"
-		    try
-		        {
-			    $server = Connect-SqlServer -SqlServer $Instance -SqlCredential $Credential -Erroraction SilentlyContinue
-			    }
-		    catch
-		        {
-			    Write-Warning "Can't connect to $Instance"
-			    continue
-		        }
-
-            Write-Verbose "Getting Server Level Triggers on $Instance"
-            $server.Triggers | 
-            ForEach-Object {
-                    [PSCustomObject]@{
-                            ComputerName     = $server.NetName
-                            SqlInstance      = $server.ServiceName
-                            TriggerLevel     = "Server"
-                            Database         = $null
-                            TriggerName      = $_.Name
-                            Status           = switch ( $_.IsEnabled ) { $true {"Enabled"} $false {"Disabled"} }
-                            DateLastModified = $_.DateLastModified
-                            }
-            }
-
-            Write-Verbose "Getting Database Level Triggers on $Instance"
-            $server.Databases | Where-Object { $_.status -eq 'Normal'} |
-                ForEach-Object {
-                    $DatabaseName = $_.Name
-                    Write-Verbose "Getting Database Level Triggers on Database $DatabaseName on $Instance"
-                    $_.Triggers | 
-                        ForEach-Object {
-                                [PSCustomObject]@{
-                                    ComputerName     = $server.NetName
-                                    SqlInstance      = $server.ServiceName
-                                    TriggerLevel     = "Database"
-                                    Database         = $DatabaseName
-                                    TriggerName      = $_.Name
-                                    Status           = switch ( $_.IsEnabled ) { $true {"Enabled"} $false {"Disabled"} }
-                                    DateLastModified = $_.DateLastModified
-                                    }
-                        }
-                }
-        }
-    }
-    END {}
 }
