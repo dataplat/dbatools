@@ -2,11 +2,11 @@
 
     Context "Setup removes, restores and backups on the local drive for Mount-DbaDatabase" {
         $null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
-        $null = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WithReplace
-		$null = Get-DbaDatabase -SqlInstance localhost -Database singlerestore | Backup-DbaDatabase -Type Full
-		$null = Detach-DbaDatabase -SqlInstance localhost -Database singlerestore -Force
+        #$null = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WithReplace
+		#$null = Get-DbaDatabase -SqlInstance localhost -Database singlerestore | Backup-DbaDatabase -Type Full
+		#$null = Detach-DbaDatabase -SqlInstance localhost -Database singlerestore -Force
     }
-	
+	<#
     Context "Attaches a single database and tests to ensure the alias still exists" {
         $results = Attach-DbaDatabase -SqlInstance localhost -Database singlerestore
 		
@@ -22,4 +22,5 @@
             $results.AttachOption | Should Be "None"
         }
     }
+	#>
 }
