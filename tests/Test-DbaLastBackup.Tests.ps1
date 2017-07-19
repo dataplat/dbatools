@@ -5,10 +5,12 @@ Describe "Test-DbaLastBackup Integration Tests" -Tags "Integrationtests" {
 		$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
 
 		$null = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WithReplace
-		$db = Get-DbaDatabase -SqlInstance localhost -Database singlerestore
-		$null = $db | Backup-DbaDatabase -Type Full
-		$null = $db | Backup-DbaDatabase -Type Differential
-		$null = $db | Backup-DbaDatabase -Type Log
+		$null = Get-DbaDatabase -SqlInstance localhost -Database singlerestore | Backup-DbaDatabase -Type Full
+		$null = Get-DbaDatabase -SqlInstance localhost -Database singlerestore | Backup-DbaDatabase -Type Full
+		$null = Get-DbaDatabase -SqlInstance localhost -Database singlerestore | Backup-DbaDatabase -Type Differential
+		$null = Get-DbaDatabase -SqlInstance localhost -Database singlerestore | Backup-DbaDatabase -Type Log
+		$null = Get-DbaDatabase -SqlInstance localhost -Database singlerestore | Backup-DbaDatabase -Type Log
+		$null = Get-DbaDatabase -SqlInstance localhost -Database singlerestore | Backup-DbaDatabase -Type Log
 	}
 	
 
@@ -37,5 +39,4 @@ Describe "Test-DbaLastBackup Integration Tests" -Tags "Integrationtests" {
 		}
 		$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
 	}
-	
 }
