@@ -7,8 +7,7 @@ function Backup-DbaDatabaseCertificate {
 			Exports database certificates from SQL Server using SMO and outputs the .cer and .pvk files.
 
 		.PARAMETER SqlInstance
-			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
-			to be executed against multiple SQL Server instances.
+			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 		
 		.PARAMETER SqlCredential
 			SqlCredential object to connect as. If not specified, current Windows login will be used.
@@ -37,14 +36,14 @@ function Backup-DbaDatabaseCertificate {
 		.PARAMETER CertificateCollection 
 			Internal parameter to support pipeline input.
 
-		.PARAMETER Confirm 
-			Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent 
-			Use this switch to disable any kind of verbose messages.
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
 
-		.PARAMETER WhatIf 
-			Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.NOTES
 			Original Author: Jess Pomfret (@jpomfret)
