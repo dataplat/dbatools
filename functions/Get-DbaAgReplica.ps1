@@ -30,27 +30,22 @@ function Get-DbaAgReplica {
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 		.LINK
-			https://dbatools.io/Get-DbaAvailabilityGroup
+			https://dbatools.io/Get-DbaAgReplica
 
 		.EXAMPLE
-			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a
+			Get-DbaAgReplica -SqlInstance sqlserver2014a
 
-			Returns basic information on all the Availability Group(s) found on sqlserver2014a
-
-		.EXAMPLE
-			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
-
-			Shows basic information on the Availability Group AG-a on sqlserver2014a
+			Returns basic information on all the Availability Group(s) replica(s) found on sqlserver2014a
 
 		.EXAMPLE
-			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a | Select *
+			Get-DbaAgReplica -SqlInstance sqlserver2014a -AvailabilityGroup AG-a
 
-			Returns full object properties on all Availability Group(s) on sqlserver2014a
+			Shows basic information on the replica(s) found on Availability Group AG-a on sqlserver2014a
 
 		.EXAMPLE
-			Get-DbaAvailabilityGroup -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -IsPrimary
+			Get-DbaAgReplica -SqlInstance sqlserver2014a | Select *
 
-			Returns true/false if the server, sqlserver2014a, is the primary replica for AG-a Availability Group
+			Returns full object properties on all Availability Group(s) replica(s) on sqlserver2014a
 	#>
 	[CmdletBinding()]
 	param (
@@ -62,7 +57,6 @@ function Get-DbaAgReplica {
 		[parameter(ValueFromPipeline = $true)]
 		[object[]]$AvailabilityGroup,
 		[object[]]$Replica,
-		[switch]$IsPrimary,
 		[switch]$Silent
 	)
 
