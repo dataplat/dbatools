@@ -1,6 +1,6 @@
 ﻿Describe "Copy-DbaDatabase Integration Tests" -Tags "Integrationtests" {
     # constants
-    $sql2008 = "localhost\sql2008"
+    $sql2008 = "localhost"
     $sql2016 = "localhost\sql2016"
     $Instances = @( $sql2008, $sql2016 )        
     $BackupLocation = "C:\github\appveyor-lab\singlerestore\singlerestore.bak"    
