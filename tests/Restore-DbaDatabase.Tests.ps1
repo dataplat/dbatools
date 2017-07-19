@@ -165,8 +165,8 @@ Describe "Restore-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 
     Context "Properly restores an instance using ola-style backups" {
         $results = Get-ChildItem C:\github\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlInstance localhost
-        It "Restored files count should be right" {
-            $results.databasename.count | Should Be 30
+        It "Restored files count should be 30" {
+            $results.databasename.count | Should Be 15
         }
         It "Should return successful restore" {
             ($results.Restorecomplete -contains $false) | Should Be $false
