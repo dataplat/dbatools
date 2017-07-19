@@ -7,7 +7,7 @@
 	Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 	
     Context "Properly restores a database on the local drive using Path" {
-        $null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
+        $null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase -Confirm:$false
         $results = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
         It "Should Return the proper backup file location" {
             $results.BackupFile | Should Be "C:\github\appveyor-lab\singlerestore\singlerestore.bak"
