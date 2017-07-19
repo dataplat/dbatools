@@ -1,6 +1,6 @@
 ﻿Describe "Remove-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 	Context "Should not munge system databases unless explicitly told to." {
-        $sql2008 = "localhost"
+        $sql2008 = "localhost\sql2008r2sp2"
         $dbs = @( "master", "model", "tempdb", "msdb" )
         
 		It "Should not attempt to remove system databases." {                        
@@ -24,7 +24,7 @@
     }
     Context "Should remove user databases and return useful errors if it cannot." {
         It "Should remove a non system database." {
-            $null = Remove-DbaDatabase -SqlInstance $sql2008 -Database singlerestore
+            Remove-DbaDatabase -SqlInstance $sql2008 -Database singlerestore
             Restore-DbaDatabase -SqlInstance $sql2008 -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
             $db = Get-DbaDatabase -SqlInstance $sql2008 -Database SingleRestore
             $db | Should Exist
