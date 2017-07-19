@@ -1,11 +1,11 @@
 ﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "Dismount-DbaDatabase Integration Tests" -Tags "Integrationtests" {
-	$dbname = "singlerestore"
+	$dbname = "detachattach"
 	$null = Get-DbaDatabase -SqlInstance localhost -Database $dbname | Remove-DbaDatabase
 	
 	Context "Setup removes, restores and backups on the local drive for Dismount-DbaDatabase" {
 		$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
-		$null = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -DatabaseName $dbname -DestinationFilePrefix $dbname -WithReplace
+		$null = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\detachattach\detachattach.bak -DatabaseName $dbname -DestinationFilePrefix $dbname -WithReplace
 		$null = Get-DbaDatabase -SqlInstance localhost -Database $dbname | Backup-DbaDatabase
 	}
 	
