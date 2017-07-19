@@ -49,7 +49,7 @@ Describe "Copy-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 	}
 	
 	Context "Database with the same properties." {
-		It "Name, recovery model, and status should match" {
+		It "should not be null" {
 			
 			$db1 = (Connect-DbaSqlServer -SqlInstance localhost).Databases['detachattach']
 			$db2 = (Connect-DbaSqlServer -SqlInstance localhost\sql2016).Databases['detachattach']
@@ -57,10 +57,16 @@ Describe "Copy-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 			$db1 | Should Not Be $null
 			$db2 | Should Not Be $null
 			
-			# Compare its value.
-			$db1.Name | Should Be $db2.Name
-			$db1.Tables.Count | Should Be $db2.Tables.Count
-			$db1.Status | Should be $db2.Status
+			$db1.Name | Should Be "detachattach"
+			$db2.Name | Should Be "detachattach"
+		}
+		
+		It "Name, recovery model, and status should match" {
+			# This is crazy
+			(Connect-DbaSqlServer -SqlInstance localhost).Databases['detachattach'].Name | Should Be (Connect-DbaSqlServer -SqlInstance localhost\sql2016).Databases['detachattach'].Name
+			(Connect-DbaSqlServer -SqlInstance localhost).Databases['detachattach'].Tables.Count | Should Be (Connect-DbaSqlServer -SqlInstance localhost\sql2016).Databases['detachattach'].Tables.Count
+			(Connect-DbaSqlServer -SqlInstance localhost).Databases['detachattach'].Status | Should Be (Connect-DbaSqlServer -SqlInstance localhost\sql2016).Databases['detachattach'].Status
+			
 		}
 	}
 	
