@@ -1,3 +1,4 @@
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 <#	
 	.NOTES
 		===========================================================================

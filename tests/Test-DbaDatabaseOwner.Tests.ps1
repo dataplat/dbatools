@@ -1,3 +1,4 @@
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$Name Tests"{
     InModuleScope 'dbatools' {
         Context "Connects to SQL Server" {

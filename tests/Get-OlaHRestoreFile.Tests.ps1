@@ -1,3 +1,4 @@
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "Get-OlaHRestoreFile Unit Tests" -Tag 'Unittests'{
     #Mock Test-Path {$true}
 	<#
