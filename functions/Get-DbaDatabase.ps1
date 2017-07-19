@@ -1,229 +1,261 @@
-function Get-DbaDatabase {
-    <#
-.SYNOPSIS
-Gets SQL Database information for each database that is present in the target instance(s) of SQL Server.
+﻿function Get-DbaDatabase {
+	<#
+		.SYNOPSIS
+			Gets SQL Database information for each database that is present in the target instance(s) of SQL Server.
 
-.DESCRIPTION
- The Get-DbaDatabase command gets SQL database information for each database that is present in the target instance(s) of
- SQL Server. If the name of the database is provided, the command will return only the specific database information.
+		.DESCRIPTION
+			The Get-DbaDatabase command gets SQL database information for each database that is present in the target instance(s) of
+			SQL Server. If the name of the database is provided, the command will return only the specific database information.
 
-.PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
-to be executed against multiple SQL Server instances.
+		.PARAMETER SqlInstance
+			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
+			to be executed against multiple SQL Server instances.
 
-.PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, current Windows login will be used.
+		.PARAMETER SqlCredential
+			PSCredential object to connect as. If not specified, current Windows login will be used.
 
-.PARAMETER NoUserDb
-Returns all SQL Server System databases from the SQL Server instance(s) executed against.
+		.PARAMETER Database
+			The database(s) to process. If unspecified, all databases will be processed.
 
-.PARAMETER NoSystemDb
-Returns SQL Server user databases from the SQL Server instance(s) executed against.
+		.PARAMETER ExcludeDatabase
+			The database(s) to exclude.
 
-.PARAMETER Status
-Returns SQL Server databases in the status passed to the function.  Could include Emergency, Online, Offline, Recovering, Restoring, Standby or Suspect
-statuses of databases from the SQL Server instance(s) executed against.
+		.PARAMETER NoUserDb
+			Returns only databases that are not User Databases.
+            This parameter cannot be used together with -NoSystemDb.
 
-.PARAMETER Access
-Returns SQL Server databases that are Read Only or all other Online databases from the SQL Server intance(s) executed against.
+		.PARAMETER NoSystemDb
+			Returns only databases that are not System Databases.
+            This parameter cannot be used together with -NoUserDb.
 
-.PARAMETER Owner
-Returns list of SQL Server databases owned by the specified logins
+		.PARAMETER Status
+			Returns SQL Server databases in the status(es) listed.
+            Could include Emergency, Online, Offline, Recovering, Restoring, Standby or Suspect.
+			
 
-.PARAMETER Encrypted
-Returns list of SQL Server databases that have TDE enabled from the SQL Server instance(s) executed against.
+		.PARAMETER Access
+			Returns SQL Server databases that are Read Only or Read/Write.
+            To collect both, don't use this parameter.
 
-.PARAMETER RecoveryModel
-Returns list of SQL Server databases in Full, Simple or Bulk Logged recovery models from the SQL Server instance(s) executed against.
+		.PARAMETER Owner
+			Returns list of databases owned by the specified logins.
 
-.PARAMETER NoFullBackup
-Returns databases without a full backup recorded by SQL Server. Will indicate those which only have CopyOnly full backups
+		.PARAMETER Encrypted
+			Returns list of databases that have TDE enabled from the SQL Server instance(s) executed against.
 
-.PARAMETER NoFullBackupSince
-DateTime value. Returns list of SQL Server databases that haven't had a full backup since the passed iin DateTime
+		.PARAMETER RecoveryModel
+			Returns list of databases in listed recovery models (Full, Simple or Bulk Logged).
 
-.PARAMETER NoLogBackup
-Returns databases without a Log backup recorded by SQL Server. Will indicate those which only have CopyOnly Log backups
+		.PARAMETER NoFullBackup
+			Returns databases without a full backup recorded by SQL Server. Will indicate those which only have CopyOnly full backups.
 
-.PARAMETER NoLogBackupSince
-DateTime value. Returns list of SQL Server databases that haven't had a Log backup since the passed iin DateTime
+		.PARAMETER NoFullBackupSince
+			DateTime value. Returns list of databases that haven't had a full backup since the passed in DateTime.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+		.PARAMETER NoLogBackup
+			Returns databases without a Log backup recorded by SQL Server. Will indicate those which only have CopyOnly Log backups.
 
-.NOTES
-Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
+		.PARAMETER NoLogBackupSince
+			DateTime value. Returns list of databases that haven't had a Log backup since the passed in DateTime.
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.PARAMETER WhatIf
+			Shows what would happen if the command were to run. No actions are actually performed.
 
-.LINK
-https://dbatools.io/Get-DbaDatabase
+		.PARAMETER Confirm
+			Prompts you for confirmation before executing any changing operations within the command.
 
-.EXAMPLE
-Get-DbaDatabase -SqlServer localhost
-Returns all databases on the local default SQL Server instance
+		.PARAMETER Silent
+			Use this switch to disable any kind of verbose messages
 
-.EXAMPLE
-Get-DbaDatabase -SqlServer localhost -NoUserDb
-Returns only the system databases on the local default SQL Server instance
+		.NOTES
+			Tags: Database
+			Original Author: Garry Bargsley (@gbargsley | http://blog.garrybargsley.com)
+            Author: Klaas Vandenberghe ( @PowerDbaKlaas )
+            Author: Simone Bizzotto ( @niphlod )
 
-.EXAMPLE
-Get-DbaDatabase -SqlServer localhost -NoSystemDb
-Returns only the user databases on the local default SQL Server instance
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.EXAMPLE
-'localhost','sql2016' | Get-DbaDatabase
-Returns databases on multiple instances piped into the function
+		.LINK
+			https://dbatools.io/Get-DbaDatabase
 
-#>
-    [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "SqlServer")]
-        [object[]]$SqlInstance,
-        [System.Management.Automation.PSCredential]$SqlCredential,
-        [Alias("SystemDbOnly")]
-        [parameter(ParameterSetName = "NoUserDb")]
-        [switch]$NoUserDb,
-        [Alias("UserDbOnly")]
-        [parameter(ParameterSetName = "NoSystemDb")]
-        [switch]$NoSystemDb,
-        [parameter(ParameterSetName = "DbBackuOwner")]
-        [string[]]$Owner,
-        [parameter(ParameterSetName = "Encrypted")]
-        [switch]$Encrypted,
-        [parameter(ParameterSetName = "Status")]
-        [ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
-        [string]$Status,
-        [parameter(ParameterSetName = "Access")]
-        [ValidateSet('ReadOnly', 'ReadWrite')]
-        [string]$Access,
-        [parameter(ParameterSetName = "RecoveryModel")]
-        [ValidateSet('Full', 'Simple', 'BulkLogged')]
-        [string]$RecoveryModel,
-        [switch]$NoFullBackup,
-        [datetime]$NoFullBackupSince,
-        [switch]$NoLogBackup,
-        [datetime]$NoLogBackupSince,
-        [switch]$Silent
-    )
+		.EXAMPLE
+			Get-DbaDatabase -SqlInstance localhost
 
-    DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
+			Returns all databases on the local default SQL Server instance
 
-    BEGIN {
-        $databases = $psboundparameters.Databases
-        $exclude = $psboundparameters.Exclude
+		.EXAMPLE
+			Get-DbaDatabase -SqlInstance localhost -NoUserDb
 
-        if ($NoUserDb -and $NoSystemDb) {
-            Stop-Function -Message "You cannot specify both NoUserDb and NoSystemDb" -Continue -Silent $Silent
-        }
-    }
+			Returns only the system databases on the local default SQL Server instance
 
-    PROCESS {
-        if (Test-FunctionInterrupt) { return }
+		.EXAMPLE
+			Get-DbaDatabase -SqlInstance localhost -NoSystemDb
 
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+			Returns only the user databases on the local default SQL Server instance
+
+		.EXAMPLE
+			'localhost','sql2016' | Get-DbaDatabase
+
+			Returns databases on multiple instances piped into the function
+
+		.EXAMPLE
+			Get-DbaDatabase -SqlInstance SQL1\SQLExpress -RecoveryModel full,Simple
+
+			Returns only the user databases in Full or Simple recovery model from SQL1\SQLExpress
+
+		.EXAMPLE
+			Get-DbaDatabase -SqlInstance SQL1\SQLExpress -Status Normal
+
+			Returns only the user databases with status 'normal' from sql instance SQL1\SQLExpress
+
+		.EXAMPLE
+			Get-DbaDatabase -SqlInstance SQL1\SQLExpress,SQL2 -ExcludeDatabase model,master
+
+			Returns all databases except master and model from sql instances SQL1\SQLExpress and SQL2
+
+		.EXAMPLE
+			Get-DbaDatabase -SqlInstance SQL1\SQLExpress,SQL2 -Encrypted
+
+			Returns only encrypted databases from sql instances SQL1\SQLExpress and SQL2
+
+		.EXAMPLE
+			Get-DbaDatabase -SqlInstance SQL1\SQLExpress,SQL2 -Access ReadOnly
+
+			Returns only read only databases from sql instances SQL1\SQLExpress and SQL2
+
+		.EXAMPLE
+			Get-DbaDatabase -SqlInstance SQL2,SQL3 -Database OneDB,OtherDB
+
+			Returns databases 'OneDb' and 'OtherDB' from sql instances SQL2 and SQL3 if the databases exist on those instances
+	#>
+	[CmdletBinding(DefaultParameterSetName = "Default")]
+    [OutputType([Microsoft.SqlServer.Management.Smo.Database[]])]
+	Param (
+		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
+		[Alias("SystemDbOnly")]
+		[switch]$NoUserDb,
+		[Alias("UserDbOnly")]
+		[switch]$NoSystemDb,
+		[string[]]$Owner,
+		[switch]$Encrypted,
+		[ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
+		[string[]]$Status = @('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect'),
+		[ValidateSet('ReadOnly', 'ReadWrite')]
+		[string]$Access,
+		[ValidateSet('Full', 'Simple', 'BulkLogged')]
+		[string[]]$RecoveryModel = @('Full', 'Simple', 'BulkLogged'),
+		[switch]$NoFullBackup,
+		[datetime]$NoFullBackupSince,
+		[switch]$NoLogBackup,
+		[datetime]$NoLogBackupSince,
+		[switch]$Silent
+	)
+
+	begin {
+
+		if ($NoUserDb -and $NoSystemDb) {
+			Stop-Function -Message "You cannot specify both NoUserDb and NoSystemDb" -Continue -Silent $Silent
+		}
+
+	}
+	process {
+		if (Test-FunctionInterrupt) { return }
+
+		foreach ($instance in $SqlInstance) {
+			try {
+			    Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
+
+			if ($NoUserDb) {
+                $DBType = @($true)
+			}
+			elseif ($NoSystemDb) {
+                $DBType = @($false)
+			}
+            else {
+                $DBType = @($false,$true)
             }
-            catch {
-                Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
-            }
 
-            if ($NoUserDb) {
-                $inputobject = $server.Databases | Where-Object IsSystemObject
-            }
+            $Readonly = switch ( $Access ) { 'Readonly' { @($true) } 'ReadWrite' { @($false) } default { @($true,$false)} }
+			$Encrypt = switch ( Test-Bound $Encrypted) { $true { @($true) } default { @($true,$false)} }
 
-            if ($NoSystemDb) {
-                $inputobject = $server.Databases | Where-Object IsSystemObject -eq $false
-            }
-
-            if ($databases) {
-                $inputobject = $server.Databases | Where-Object Name -in $databases
-            }
-
-            if ($status) {
-                $inputobject = $server.Databases | Where-Object Status -eq $status
-            }
-
-            if ($Owner) {
-                $inputobject = $server.Databases | Where-Object Owner -in $Owner
-            }
-
-            switch ($Access) {
-                "ReadOnly" { $inputobject = $server.Databases | Where-Object ReadOnly }
-                "ReadWrite" { $inputobject = $server.Databases | Where-Object ReadOnly -eq $false }
-            }
-
-            if ($Encrypted) {
-                $inputobject = $server.Databases | Where-Object EncryptionEnabled
-            }
-
-            if ($RecoveryModel) {
-                $inputobject = $server.Databases | Where-Object RecoveryModel -eq $RecoveryModel
-            }
-
-            # I forgot the pretty way to do this
-            if (!$NoUserDb -and !$NoSystemDb -and !$databases -and !$status -and !$Owner -and !$Access -and !$Encrypted -and !$RecoveryModel) {
-                $inputobject = $server.Databases
-            }
-
-            if ($exclude) {
-                $inputobject = $inputobject | Where-Object Name -notin $exclude
-            }
-
-            if ($NoFullBackup -or $NoFullBackupSince) {
-                if ($NoFullBackup) {
-                    $dabs = (Get-DbaBackuphistory -SqlServer $server -LastFull -IgnoreCopyOnly).Database
+			$inputobject = $server.Databases |
+                Where-Object {
+                    ($_.Name -in $Database -or !$Database) -and 
+                    ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and 
+                    ($_.Owner -in $Owner -or !$Owner) -and 
+                    $_.ReadOnly -in $Readonly -and 
+                    $_.IsSystemObject -in $DBType -and 
+                    $_.Status -in $Status -and 
+                    $_.RecoveryModel -in $RecoveryModel -and 
+                    $_.EncryptionEnabled -in $Encrypt
                 }
-                else {
-                    $dabs = (Get-DbaBackuphistory -SqlServer $server -LastFull -IgnoreCopyOnly -Since $NoFullBackupSince).Database
-                }
-                $inputobject = $inputObject  | where-object {$_.name -notin $dabs -and $_.name -ne 'tempdb'}
-            }
-            if ($NoLogBackup -or $NoLogBackupSince) {
-                if ($NoLogBackup) {
-                    $dabs = (Get-DbaBackuphistory -SqlServer $server -LastLog -IgnoreCopyOnly).Database
-                }
-                else {
-                    $dabs = (Get-DbaBackuphistory -SqlServer $server -LastLog -IgnoreCopyOnly -Since $NoLogBackupSince).Database
-                }
-                $inputobject = $inputObject  | where-object {$_.name -notin $dabs -and $_.name -ne 'tempdb' -and $_.RecoveryModel -ne 'simple'}
-            }
 
-            if ($null -ne $NoFullBackupSince) {
-                $inputobject = $inputobject | Where-Object LastBackupdate -lt $NoFullBackupSince
-            }
-            elseif ($null -ne $NoLogBackupSince) {
-                $inputobject = $inputobject | Where-Object LastBackupdate -lt $NoLogBackupSince
-            }
-            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'RecoveryModel', 'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
+			if ($NoFullBackup -or $NoFullBackupSince) {
+				$dabs = (Get-DbaBackupHistory -SqlInstance $server -LastFull -IgnoreCopyOnly)
+				if ($null -ne $NoFullBackupSince) {
+					$dabsWithinScope = ($dabs | Where-Object End -lt $NoFullBackupSince)
+					
+					$inputobject = $inputobject | Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' }
+				} else {
+					$inputObject = $inputObject | Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' }
+				}
+				
+			}
+			if ($NoLogBackup -or $NoLogBackupSince) {
+				$dabs = (Get-DbaBackupHistory -SqlInstance $server -LastLog -IgnoreCopyOnly)
+				if ($null -ne $NoLogBackupSince) {
+					$dabsWithinScope = ($dabs | Where-Object End -lt $NoLogBackupSince)
+					$inputobject = $inputobject |
+                        Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
+				} else {
+					$inputobject = $inputObject |
+                        Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
+				}
+			}
 
-            if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
-                $defaults += ('Notes')
-            }
-            foreach ($db in $inputobject) {
+			$defaults =  'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
+                         'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner',
+                         'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
+                         'LastLogBackupDate as LastLogBackup'
 
-                $Notes = $null
-                if ($NoFullBackup -or $NoFullBackupSince) {
-                    if	(@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | Where-Object {$_.IsCopyOnly}).count -and (@($db.EnumBackupSets()).count -gt 0) ) {
-                        $Notes = "Only CopyOnly backups"
-                    }
-                }
-                Add-Member -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
-
-                Add-Member -InputObject $db -MemberType NoteProperty ComputerName -value $server.NetName
-                Add-Member -InputObject $db -MemberType NoteProperty InstanceName -value $server.ServiceName
-                Add-Member -InputObject $db -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
-                Select-DefaultView -InputObject $db -Property $defaults
-
-            }
-        }
-    }
+			if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
+				$defaults += ('Notes')
+			}
+			
+			try {
+				foreach ($db in $inputobject) {
+					
+					$Notes = $null
+					if ($NoFullBackup -or $NoFullBackupSince) {
+						if (@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | Where-Object { $_.IsCopyOnly }).count -and (@($db.EnumBackupSets()).count -gt 0)) {
+							$Notes = "Only CopyOnly backups"
+						}
+					}
+					Add-Member -Force -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
+					
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+					Select-DefaultView -InputObject $db -Property $defaults
+				}
+			}
+			catch {
+				Stop-Message -ErrorRecord $_ -Target $instance -Message "Failure. Collection may have been modified. If so, please use parens (Get-DbaDatabase ....) | when working with commands that modify the collection such as Remove-DbaDatabase" -Continue
+			}
+		}
+	}
 }

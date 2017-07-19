@@ -12,7 +12,7 @@ http://www.sqlservercentral.com/blogs/glennberry/2011/02/25/some-suggested-sql-s
 
 These are just general recommendations for SQL Server and are a good starting point for setting the "optimize for adhoc workloads" option.
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 Allows you to specify a comma separated list of servers to query.
 
 .PARAMETER SqlCredential
@@ -34,16 +34,16 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Test-DbaOptimizeAdHoc
 
 .EXAMPLE   
-Test-DbaOptimizeAdHoc -SqlServer sql2008, sqlserver2012
+Test-DbaOptimizeAdHoc -SqlInstance sql2008, sqlserver2012
 Get Optimize for AdHoc Workloads setting for servers sql2008 and sqlserver2012 and also the recommended one.
 
 #>
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[Alias("ServerInstance", "SqlServer", "SqlServers")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential
 	)
 	
 	BEGIN
@@ -55,12 +55,12 @@ Get Optimize for AdHoc Workloads setting for servers sql2008 and sqlserver2012 a
 	PROCESS
 	{
 		
-		foreach ($servername in $sqlserver)
+		foreach ($servername in $SqlInstance)
 		{
 			Write-Verbose "Attempting to connect to $servername"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
 			}
 			catch
 			{

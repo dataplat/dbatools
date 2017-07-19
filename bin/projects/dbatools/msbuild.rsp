@@ -1,0 +1,9 @@
+#Appveyor msbuild response file
+
+# No Banner
+/nologo
+# We just want errors displayed
+/ConsoleLoggerParameters:NoSummary;Verbosity=quiet
+# Log to a file and set options
+/filelogger
+/fileloggerparameters:Verbosity=detailed

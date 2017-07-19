@@ -2,7 +2,7 @@ Function Get-SqlFileStructure
 {
 <#
 .SYNOPSIS
-Internal function. Returns custom object that contains file structures on destination paths (\\sqlserver\m$\mssql\etc\etc\file.mdf) for
+Internal function. Returns custom object that contains file structures on destination paths (\\SqlInstance\m$\mssql\etc\etc\file.mdf) for
 source and destination servers.
 #>
 	[CmdletBinding()]
@@ -15,13 +15,13 @@ source and destination servers.
 		[object]$destination,
 		[Parameter(Mandatory = $false, Position = 2)]
 		[bool]$ReuseSourceFolderStructure,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential
+		[PSCredential]$SourceSqlCredential,
+		[PSCredential]$DestinationSqlCredential
 	)
 	
-	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+	$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 	$source = $sourceserver.DomainInstanceName
-	$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+	$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 	$destination = $destserver.DomainInstanceName
 	
 	$sourcenetbios = Resolve-NetBiosName $sourceserver

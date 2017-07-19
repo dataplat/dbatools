@@ -1,40 +1,8 @@
-#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
-
-if (-not $PSScriptRoot)
-{
-    $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
-}
-$Verbose = @{ }
-if ($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notlike "master")
-{
-    $Verbose.add("Verbose", $True)
-}
-
-
-
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
-. $PSScriptRoot\..\internal\$sut
-. $PSScriptRoot\..\internal\Write-Message.ps1
-. $PSScriptRoot\..\internal\Test-DbaDeprecation.ps1
-Import-Module PSScriptAnalyzer
-## Added PSAvoidUsingPlainTextForPassword as credential is an object and therefore fails. We can ignore any rules here under special circumstances agreed by admins :-)
-$Rules = (Get-ScriptAnalyzerRule).Where{ $_.RuleName -notin ('PSAvoidUsingPlainTextForPassword') }
-$Name = $sut.Split('.')[0]
-
-Describe 'Script Analyzer Tests' {
-    Context "Testing $Name for Standard Processing" {
-        foreach ($rule in $rules)
-        {
-            $i = $rules.IndexOf($rule)
-            It "passes the PSScriptAnalyzer Rule number $i - $rule  " {
-                (Invoke-ScriptAnalyzer -Path "$PSScriptRoot\..\internal\$sut" -IncludeRule $rule.RuleName).Count | Should Be 0
-            }
-        }
-    }
-}
+﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+. $PSScriptRoot\..\internal\Stop-Function.ps1
 
 ## needs some proper tests for the function here
-Describe "$Name Tests"{
+Describe "Stop-Function Unit-Tests" -Tag 'Unittests' {
     Context "Testing non-silent: Explicit call" {
         try
         {
@@ -97,15 +65,15 @@ Describe "$Name Tests"{
             $failed | Should Be $false
         }
         
-        It "Should have written the test warning 'Nonsilent Foo'" {
-            $warning[0] | Should BeLike "*Nonsilent Foo"
+        It "Should have written the test warning 'Nonsilent Foo | '" {
+            $warning[0] | Should BeLike "*Nonsilent Foo | *"
         }
         
         It "Should have created an error record with the correct exception" {
-            $record.Exception.Message | Should Be "Nonsilent Foo"
+            $record.Exception.InnerException.GetType().FullName | Should Be "System.Management.Automation.RuntimeException"
         }
         
-        It "Should have created an error record with the caegory 'InvalidOperation'" {
+        It "Should have created an error record with the category 'InvalidOperation'" {
             $record.CategoryInfo.Category | Should BeLike "InvalidOperation"
         }
         
@@ -232,7 +200,7 @@ Describe "$Name Tests"{
             $record.TargetObject | Should Be "Bar"
         }
         
-        It "Should have created an error record with the ErrorID 'dbatools_Invoke-Pester'" {
+        It "Should have created an error record with the ErrorID 'dbatools_Invoke-Pester,Stop-Function'" {
             $record.FullyQualifiedErrorId | Should Be "dbatools_Invoke-Pester"
         }
     }
@@ -262,7 +230,7 @@ Describe "$Name Tests"{
         }
         
         It "Should have created an error record with the correct exception" {
-            $record.Exception.Message | Should Be "Nonsilent Foo"
+            $record.Exception.InnerException.GetType().FullName | Should Be "System.Management.Automation.RuntimeException"
         }
         
         It "Should have created an error record with the caegory 'InvalidOperation'" {
@@ -275,19 +243,6 @@ Describe "$Name Tests"{
         
         It "Should have created an error record with the ErrorID 'dbatools_Invoke-Pester'" {
             $record.FullyQualifiedErrorId | Should Be "dbatools_Invoke-Pester"
-        }
-        
-        It "Should have created an error record with the an inner NULL-invocation exception" {
-            try
-            {
-                $ExceptionName = $record.Exception.InnerException.GetType().FullName
-            }
-            catch
-            {
-                $ExceptionName = "Meeep!"
-            }
-            
-            $ExceptionName | Should Be "System.Management.Automation.RuntimeException"
         }
     }
     

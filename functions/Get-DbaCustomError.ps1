@@ -8,11 +8,14 @@ Gets SQL Custom Error Message information for each instance(s) of SQL Server.
  The Get-DbaCustomError command gets SQL Custom Error Message information for each instance(s) of SQL Server.
 	
 .PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
 to be executed against multiple SQL Server instances.
 
 .PARAMETER SqlCredential
 SqlCredential object to connect as. If not specified, current Windows login will be used.
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages.
 
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
@@ -40,8 +43,9 @@ Returns all Custom Error Message(s) for the local and sql2016 SQL Server instanc
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[object]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[DbaInstanceParameter]$SqlInstance,
+		[PSCredential]$SqlCredential,
+		[switch]$Silent
 	)
 	
 	PROCESS
@@ -51,20 +55,19 @@ Returns all Custom Error Message(s) for the local and sql2016 SQL Server instanc
 			Write-Verbose "Attempting to connect to $instance"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch
 			{
-				Write-Warning "Can't connect to $instance or access denied. Skipping."
-				continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			
 			foreach ($customError in $server.UserDefinedMessages)
 			{
-				Add-Member -InputObject $customError -MemberType NoteProperty ComputerName -value $customError.Parent.NetName
-				Add-Member -InputObject $customError -MemberType NoteProperty InstanceName -value $customError.Parent.ServiceName
-				Add-Member -InputObject $customError -MemberType NoteProperty SqlInstance -value $customError.Parent.DomainInstanceName
+				Add-Member -Force -InputObject $customError -MemberType NoteProperty -Name ComputerName -value $customError.Parent.NetName
+				Add-Member -Force -InputObject $customError -MemberType NoteProperty -Name InstanceName -value $customError.Parent.ServiceName
+				Add-Member -Force -InputObject $customError -MemberType NoteProperty -Name SqlInstance -value $customError.Parent.DomainInstanceName
 				
 				Select-DefaultView -InputObject $customError -Property ComputerName, InstanceName, SqlInstance, ID, Text, LanguageID, Language
 			}

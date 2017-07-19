@@ -13,17 +13,17 @@ Internal function. Updates specified database dbowner.
 		[ValidateNotNullOrEmpty()]
 		[object]$destination,
 		[string]$dbname,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential
+		[PSCredential]$SourceSqlCredential,
+		[PSCredential]$DestinationSqlCredential
 	)
 	
-	$sourceserver = Connect-SqlServer -SqlServer $Source -SqlCredential $SourceSqlCredential
+	$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
     try 
     {
         if ($Destination -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
         {
             $Newconnection  = $true
-            $destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $SqlCredential	
+            $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $SqlCredential	
         }
         else
         {
@@ -32,10 +32,10 @@ Internal function. Updates specified database dbowner.
     }
     catch 
     {
-        Write-Warning "$FunctionName - Cannot connect to $SqlServer" 
+        Write-Warning "$FunctionName - Cannot connect to $SqlInstance" 
         break
     }
-	#$destserver = Connect-SqlServer -SqlServer $Destination -SqlCredential $DestinationSqlCredential
+	#$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 	
 	$source = $sourceserver.DomainInstanceName
 	$destination = $destserver.DomainInstanceName

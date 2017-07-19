@@ -73,6 +73,16 @@ Converts output from Invoke-DbaDiagnosticQuery to Excel worksheet(s) in the Docu
 				return
 			}
 		}
+
+		if(!$(Test-Path $Path)) {
+			try 
+			{				
+				New-Item $Path -ItemType Directory -ErrorAction Stop | Out-Null
+				Write-Message -Level Output -Message "Created directory $Path"
+			} catch {
+				Stop-Function -Message "Failed to create directory $Path" -Continue
+			}
+		}
 		
 		Function Remove-InvalidFileNameChars {
 			[CmdletBinding()]
@@ -96,7 +106,7 @@ Converts output from Invoke-DbaDiagnosticQuery to Excel worksheet(s) in the Docu
 		foreach ($row in $InputObject) {
 			$results = $row.Result
 			$name = $row.Name
-			$sqlserver = $row.SqlInstance.Replace("\", "$")
+			$SqlInstance = $row.SqlInstance.Replace("\", "$")
 			$dbname = $row.DatabaseName
 			$number = $row.Number
 			
@@ -111,10 +121,10 @@ Converts output from Invoke-DbaDiagnosticQuery to Excel worksheet(s) in the Docu
 				}
 				
 				$queryname = Remove-InvalidFileNameChars -Name $Name
-				$excelfilename = "$Path\$sqlserver-DQ-$Suffix.xlsx"
-				$exceldbfilename = "$Path\$sqlserver-DQ-$dbname-$Suffix.xlsx"
-				$csvdbname = "$Path\$sqlserver-$dbname-DQ-$number-$queryname-$Suffix.csv"
-				$csvfilename = "$Path\$sqlserver-DQ-$number-$queryname-$Suffix.csv"
+				$excelfilename = "$Path\$SqlInstance-DQ-$Suffix.xlsx"
+				$exceldbfilename = "$Path\$SqlInstance-DQ-$dbname-$Suffix.xlsx"
+				$csvdbname = "$Path\$SqlInstance-$dbname-DQ-$number-$queryname-$Suffix.csv"
+				$csvfilename = "$Path\$SqlInstance-DQ-$number-$queryname-$Suffix.csv"
 				
 				switch ($ConvertTo) {
 					"Excel"
