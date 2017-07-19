@@ -1,3 +1,4 @@
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "Get-DirectoryRestoreFile Unit Tests" -Tag 'Unittests'{
     Context "Test Path handling" {
         It "Should throw on an invalid Path" {

@@ -32,6 +32,12 @@ if (([environment]::OSVersion.Version).Major -gt 6) {
 	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.Utility.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.UtilityEnum.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.HadrDMF.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.XEvent.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.XEventEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.XEventDbScoped.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.XEventDbScopedEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.XEventEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.Collector.dll"
 }
 else {
 <#

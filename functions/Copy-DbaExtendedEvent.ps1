@@ -95,21 +95,13 @@ function Copy-DbaExtendedEvent {
 		[switch]$Force,
 		[switch]$Silent
 	)
-	begin {
-
-		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null) {
-			throw "SMO version is too old. To migrate Extended Events, you must have SQL Server Management Studio 2008 R2 or higher installed."
-		}
-
-		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+	begin {	
+	
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential -MinimumVersion 10
 
 		$source = $sourceServer.DomainInstanceName
 		$destination = $destServer.DomainInstanceName
-
-		if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
-			throw "Extended Events are only supported in SQL Server 2008 and above. Quitting."
-		}
 	}
 	process {
 
