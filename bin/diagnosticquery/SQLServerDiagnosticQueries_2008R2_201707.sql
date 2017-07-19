@@ -2,7 +2,7 @@
 -- SQL Server 2008 R2 Diagnostic Information Queries
 -- Glenn Berry 
 -- CY 2017
--- Last Modified: April 25, 2017
+-- Last Modified: June 19, 2017
 -- https://www.sqlserverperformance.wordpress.com/
 -- https://www.sqlskills.com/blogs/glenn/
 -- Twitter: GlennAlanBerry
@@ -325,17 +325,14 @@ ORDER BY creation_time DESC OPTION (RECOMPILE);
 -- not had any memory dumps (which is a good thing)
 
 
--- File Names and Paths for TempDB and all user databases in instance  (Query 16) (Database Filenames and Paths)
+-- File names and paths for all user and system databases on instance   (Query 16) (Database Filenames and Paths)
 SELECT DB_NAME([database_id]) AS [Database Name], 
-       [file_id], name, physical_name, type_desc, state_desc,
+       [file_id], [name], physical_name, [type_desc], state_desc,
 	   is_percent_growth, growth,
 	   CONVERT(bigint, growth/128.0) AS [Growth in MB], 
        CONVERT(bigint, size/128.0) AS [Total Size in MB]
 FROM sys.master_files WITH (NOLOCK)
-WHERE [database_id] > 4 
-AND [database_id] <> 32767
-OR [database_id] = 2
-ORDER BY DB_NAME([database_id]) OPTION (RECOMPILE);
+ORDER BY DB_NAME([database_id]), [file_id] OPTION (RECOMPILE);
 ------
 
 -- Things to look at:
@@ -1340,7 +1337,7 @@ SELECT TOP (30) bs.machine_name, bs.server_name, bs.database_name AS [Database N
 CONVERT (BIGINT, bs.backup_size / 1048576 ) AS [Uncompressed Backup Size (MB)],
 CONVERT (BIGINT, bs.compressed_backup_size / 1048576 ) AS [Compressed Backup Size (MB)],
 CONVERT (NUMERIC (20,2), (CONVERT (FLOAT, bs.backup_size) /
-CONVERT (FLOAT, bs.compressed_backup_size))) AS [Compression Ratio], 
+CONVERT (FLOAT, bs.compressed_backup_size))) AS [Compression Ratio], bs.has_backup_checksums, bs.is_copy_only,
 DATEDIFF (SECOND, bs.backup_start_date, bs.backup_finish_date) AS [Backup Elapsed Time (sec)],
 bs.backup_finish_date AS [Backup Finish Date], bmf.physical_device_name AS [Backup Location], bmf.physical_block_size
 FROM msdb.dbo.backupset AS bs WITH (NOLOCK)
