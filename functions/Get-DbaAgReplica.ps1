@@ -80,10 +80,10 @@ function Get-DbaAgReplica {
 
 			foreach ($ag in $ags) {
 				$replicas = $ag.AvailabilityReplicas
-				if ($Replica -and $replicas.Name -notin $Replica) {
-					continue
-				}
 				foreach ($currentReplica in $replicas) {
+					if ($Replica -and $currentReplica.Name -notmatch $Replica) {
+						continue
+					}
 
 					Add-Member -Force -InputObject $currentReplica -MemberType NoteProperty -Name ComputerName -value $server.NetName
 					Add-Member -Force -InputObject $currentReplica -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
