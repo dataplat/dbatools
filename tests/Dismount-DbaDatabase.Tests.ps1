@@ -6,7 +6,7 @@ Describe "Dismount-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 	Context "Setup removes, restores and backups on the local drive for Dismount-DbaDatabase" {
 		$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
 		$null = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\detachattach\detachattach.bak -DatabaseName $dbname -DestinationFilePrefix $dbname -WithReplace
-		$null = Get-DbaDatabase -SqlInstance localhost -Database $dbname | Backup-DbaDatabase
+		$null = Get-DbaDatabase -SqlInstance localhost -Database $dbname | Backup-DbaDatabase -Type Full
 	}
 	
 	Context "Detaches a single database and tests to ensure the alias still exists" {
