@@ -111,7 +111,7 @@
 			return $paramserver
 		}
 		
-		if ($MinimumVersion) {
+		if ($MinimumVersion -and $server.versionMajor) {
 			if ($server.versionMajor -lt $MinimumVersion) {
 				throw "SQL Server version $MinimumVersion required - $server not supported."
 			}
