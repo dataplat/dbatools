@@ -125,13 +125,15 @@ Gets the outcome of the IndexOptimize job on sqlserver2014a, the other options a
 					$fresh['Timeout'] = $Matches.timeout
 					$fresh['Partition'] = $Matches.partition
 				}
-				elseif ($fresh['Command'] -match '(?<timeout>SET LOCK_TIMEOUT \d+; )?UPDATE STATISTICS \[(?<database>[^\]]+)\]\.\[(?<schema>[^]]+)\]\.\[(?<table>[^\]]+)\] \[(?<stat>[^\]]+)\]') {
+				elseif ($fresh['Command'] -match '(SET LOCK_TIMEOUT (?<timeout>\d+); )?UPDATE STATISTICS \[(?<database>[^\]]+)\]\.\[(?<schema>[^]]+)\]\.\[(?<table>[^\]]+)\] \[(?<stat>[^\]]+)\]') {
 					$fresh['Index'] = $null
 					$fresh['Statistics'] = $Matches.stat
 					$fresh['Schema'] = $Matches.Schema
 					$fresh['Table'] = $Matches.Table
-					$fresh['Action'] = ''
-					$fresh['Options'] = ''
+					$fresh['Action'] = $null
+					$fresh['Options'] = $null
+					$fresh['Timeout'] = $Matches.timeout
+					$fresh['Partition'] = $null
 				}
 			}
 			if($fresh.ContainsKey('Comment')) {
