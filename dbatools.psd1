@@ -335,7 +335,8 @@
 		'Test-DbaCompression',
 		'Mount-DbaDatabase',
 		'Dismount-DbaDatabase',
-		'Set-DbaPrivilege'
+		'Set-DbaPrivilege',
+		'Get-DbaAgReplica'
 	)
 	
 	# Cmdlets to export from this module
