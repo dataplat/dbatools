@@ -74,6 +74,7 @@ Describe "Copy-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 		foreach ($instance in $instances) {
 			Get-DbaDatabase -SqlInstance $instance -NoSystemDb | Remove-DbaDatabase -Confirm:$false
 		}
+		#>
 	}
-	#>
+	
 }
