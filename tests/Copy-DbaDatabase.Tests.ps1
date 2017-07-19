@@ -33,28 +33,40 @@ Describe "Copy-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 		}
 	}
 	
-	Remove-DbaDatabase -SqlInstance $script:sql2016 -Confirm:$false -Database singlerestore
+	foreach ($instance in $Instances) {
+		Remove-DbaDatabase -SqlInstance $instance -Confirm:$false -Database singlerestore
+	}
 	
-	Context "Detach, copies and attaches database with the same properties." {
-		It "Should copy a database and retain its name, recovery model, and status. Should also reattach source" {
+	Context "Detach, copies and attaches database successfully." {
+		It "Should be success" {
 			Set-Service BITS -StartupType Automatic
 			Get-Service BITS | Start-Service -ErrorAction SilentlyContinue
+			$null = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\detachattach\detachattach.bak -WithReplace
 			
-			$copy = Copy-DbaDatabase -Source $script:sql2008 -Destination $script:sql2016 -Database singlerestore -DetachAttach -Reattach -Force
-			$copy.Status | Should Be "Successful"
+			$results = Copy-DbaDatabase -Source $script:sql2008 -Destination $script:sql2016 -Database detachattach -DetachAttach -Reattach -Force
+			$results.Status | Should Be "Successful"
+		}
+	}
+	
+	Context "Database with the same properties." {
+		It "should not be null" {
 			
-			# Get it again cuz it was reattached
-			$db1 = Get-DbaDatabase -SqlInstance $script:sql2008 -Database singlerestore
+			$db1 = (Connect-DbaSqlServer -SqlInstance localhost).Databases['detachattach']
+			$db2 = (Connect-DbaSqlServer -SqlInstance localhost\sql2016).Databases['detachattach']
+			
 			$db1 | Should Not Be $null
-			
-			$db2 = Get-DbaDatabase -SqlInstance $script:sql2016 -Database singlerestore
 			$db2 | Should Not Be $null
-						
-			# Compare its value.
-			$db1.Name | Should Be $db2.Name
-			$db1.Tables.Count | Should Be $db2.Tables.Count
-			$db1.Status | Should be $db2.Status
-			$db1.RecoveryModel | Should be $db2.RecoveryModel
+			
+			$db1.Name | Should Be "detachattach"
+			$db2.Name | Should Be "detachattach"
+		}
+		
+		It "Name, recovery model, and status should match" {
+			# This is crazy
+			(Connect-DbaSqlServer -SqlInstance localhost).Databases['detachattach'].Name | Should Be (Connect-DbaSqlServer -SqlInstance localhost\sql2016).Databases['detachattach'].Name
+			(Connect-DbaSqlServer -SqlInstance localhost).Databases['detachattach'].Tables.Count | Should Be (Connect-DbaSqlServer -SqlInstance localhost\sql2016).Databases['detachattach'].Tables.Count
+			(Connect-DbaSqlServer -SqlInstance localhost).Databases['detachattach'].Status | Should Be (Connect-DbaSqlServer -SqlInstance localhost\sql2016).Databases['detachattach'].Status
+			
 		}
 	}
 	
