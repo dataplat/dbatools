@@ -205,7 +205,7 @@ function Get-FilteredRestoreFile {
                 if ($null -ne $Diffbackups) {
                     Write-Message -Level Verbose -Message "we have at least one diff so look for tlogs after the last one"
                     #If we have a Diff backup, we only need T-log backups post that point
-                    $TlogStartLSN = ($DiffBackups | select-object -Property FirstLSN -first 1).FirstLSN
+                    $TlogStartLSN = ($DiffBackups | select-object -Property LastLsn -first 1).LastLsn
                     $Results += $Diffbackups
                 }
             }
