@@ -98,6 +98,7 @@
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$InputObject,
+		[Alias("ScriptingOptionObject")]
 		[Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,
 		[string]$Path,
 		[ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]

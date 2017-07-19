@@ -414,7 +414,8 @@
 	'Test-SqlPath',
 	'Test-SqlTempDbConfiguration',
 	'Watch-SqlDbLogin',
-	'Invoke-Sqlcmd2'
+	'Invoke-Sqlcmd2',
+	'Get-DbaDatabaseFreeSpace'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()
