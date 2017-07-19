@@ -27,13 +27,13 @@
     .PARAMETER Folder
       Certificate folder. Default is My (Personal).
     
-		.PARAMETER WhatIf
-		  If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-		.PARAMETER Confirm
-			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+    .PARAMETER Silent
       If this switch is enabled, the internal messaging functions will be silenced.
         
     .NOTES
