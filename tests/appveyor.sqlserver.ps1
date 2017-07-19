@@ -1,3 +1,4 @@
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 # Imports some assemblies
 Write-Output "Importing dbatools"
 Import-Module C:\github\dbatools\dbatools.psd1

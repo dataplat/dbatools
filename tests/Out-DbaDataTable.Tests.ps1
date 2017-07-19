@@ -1,4 +1,5 @@
-﻿Describe "Testing data table output when using a complex object" {
+﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Describe "Testing data table output when using a complex object" {
     $obj = New-Object -TypeName psobject -Property @{
         guid = [system.guid]'32ccd4c4-282a-4c0d-997c-7b5deb97f9e0'
         timespan = New-TimeSpan -Start 2016-10-30 -End 2017-04-30

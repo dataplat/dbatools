@@ -1,4 +1,5 @@
-﻿Describe "Remove-DbaDatabase Integration Tests" -Tags "Integrationtests" {
+﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Describe "Remove-DbaDatabase Integration Tests" -Tags "Integrationtests" {
 	Context "Should not attempt to remove system databases and skip them if provided" {
         $Sql2008 = "localhost\sql2008r2sp2"
         $dbs = @( "master", "model", "tempdb", "msdb" )
