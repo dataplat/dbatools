@@ -149,7 +149,7 @@ function Backup-DbaDatabase {
 				$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $Database }
 			}
 			else {
-				$DatabaseCollection = $server.Databases | Where-object { $_.Name -ne 'TempDb' }
+				$DatabaseCollection = $server.Databases | Where-object { $_.Name -ne 'tempdb' }
 			}
 			
 			if ($ExcludeDatabase) {
