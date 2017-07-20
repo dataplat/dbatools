@@ -336,7 +336,8 @@
 		'Mount-DbaDatabase',
 		'Dismount-DbaDatabase',
 		'Set-DbaPrivilege',
-		'Get-DbaAgReplica'
+		'Get-DbaAgReplica',
+		'Get-DbaAgDatabase'
 	)
 	
 	# Cmdlets to export from this module
