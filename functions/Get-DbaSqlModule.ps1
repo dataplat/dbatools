@@ -18,13 +18,15 @@
 	.PARAMETER ModifiedSince
 	DateTime value to use as minimum modified date of module.
 	
+	.PARAMETER Type
+	Limit by specific type of module. Valid choices include: View, TableValuedFunction, DefaultConstraint, StoredProcedure, Rule, InlineTableValuedFunction, Trigger, ScalarFunction
+	
 	.PARAMETER NoSystemDb
 	Allows you to suppress output on system databases
 	
 	.PARAMETER NoSystemObjects
 	Allows you to suppress output on system objects
 	
-
 	.PARAMETER Silent
 	Use this switch to disable any kind of verbose messages
 	
@@ -45,8 +47,16 @@
 	Return all modules for servers sql2008 and sqlserver2012 sorted by Database, Modify_Date ASC
 	
 	.EXAMPLE   
+	Get-DbaModule -SqlServer sql2008, sqlserver2012 | Select *
+	Shows hidden definition column (informative wall of text)
+	
+	.EXAMPLE   
 	Get-DbaModule -SqlServer sql2008 -Database TestDB -ModifiedSince "01/01/2017 10:00:00 AM"
 	Return all modules on server sql2008 for only the TestDB database with a modified date after 01/01/2017 10:00:00 AM
+	
+	.EXAMPLE   
+	Get-DbaModule -SqlServer sql2008 -Type View, Trigger, ScalarFunction
+	Return all modules on server sql2008 for all databases that are triggers, views or scalar functions
 #>
 	[CmdletBinding()]
 	Param (
@@ -59,13 +69,29 @@
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[datetime]$ModifiedSince = "01/01/1900",
+		[ValidateSet("View", "TableValuedFunction", "DefaultConstraint", "StoredProcedure", "Rule", "InlineTableValuedFunction", "Trigger", "ScalarFunction")]
+		[string[]]$Type,
 		[switch]$NoSystemDb,
 		[switch]$NoSystemObjects,
 		[switch]$Silent
 	)
 	
 	begin {
-			
+		
+		$types = @()
+		
+		foreach ($t in $type) {
+			if ($t -eq "View") { $types += "VIEW" }
+			if ($t -eq "TableValuedFunction") { $types += "SQL_TABLE_VALUED_FUNCTION" }
+			if ($t -eq "DefaultConstraint") { $types += "DEFAULT_CONSTRAINT" }
+			if ($t -eq "StoredProcedure") { $types += "SQL_STORED_PROCEDURE" }
+			if ($t -eq "Rule") { $types += "RULE" }
+			if ($t -eq "InlineTableValuedFunction") { $types += "SQL_INLINE_TABLE_VALUED_FUNCTION" }
+			if ($t -eq "Trigger") { $types += "SQL_TRIGGER" }
+			if ($t -eq "ScalarFunction") { $types += "SQL_SCALAR_FUNCTION" }
+		}
+		
+		
 		$sql = "SELECT  DB_NAME() AS DatabaseName,
         so.name AS ModuleName,
         so.object_id ,
@@ -83,15 +109,18 @@
 		if ($NoSystemObjects) {
 			$sql += "`n AND so.is_ms_shipped = 0"
 		}
+		if ($Type) {
+			$sqltypes = $types -join "','"
+			$sql += " AND type_desc in ('$sqltypes')"
+		}
 		$sql += "`n ORDER BY so.modify_date"
 	}
 	
-	PROCESS {
-		
+	process {
 		foreach ($instance in $SqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -113,13 +142,13 @@
 			
 			foreach ($db in $dbs) {
 				
-				Write-Verbose "Processing $db on $instance"
+				Write-Message -Level Verbose -Message "Processing $db on $instance"
 				
 				if ($db.IsAccessible -eq $false) {
 					Stop-Function -Message "The database $db is not accessible. Skipping database." -Target $db -Continue
 				}
 				
-				foreach ($row in $db.ExecuteWithResults($sql).Tables[0]) {
+				foreach ($row in $server.Query($sql,$db.name)) {
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
