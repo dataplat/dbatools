@@ -62,7 +62,7 @@
 		$scriptblock = {
 			$VersionNumber = [int]$args[0]
 			
-			Write-Verbose "Checking currently loaded SMO version"
+			Write-Message -Level Verbose -Message "Checking currently loaded SMO version"
 			$loadedversion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
 			
 			if ($loadedversion)
@@ -70,14 +70,16 @@
 				$loadedversion = $loadedversion | foreach { ((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0] }
 			}
 			
-			Write-Verbose "Looking for SMO in the Global Assembly Cache"
+			Write-Message -Level Verbose -Message "Looking for included smo library"
+			$localversion = [version](Get-ChildItem -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Smo.dll").VersionInfo.ProductVersion
 			
+			Write-Message -Level Verbose -Message "Looking for SMO in the Global Assembly Cache"
 			$smolist = (Get-ChildItem -Path "$env:SystemRoot\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" | Sort-Object Name -Descending).Name
 			
 			foreach ($version in $smolist) {
 				$array = $version.Split("__")
 				if ($VersionNumber -eq 0) {
-					Write-Verbose "Did not pass a version, looking for all versions"
+					Write-Message -Level Verbose -Message "Did not pass a version, looking for all versions"
 					$currentversion = $array[0]
 					[PSCustomObject]@{
 						ComputerName = $env:COMPUTERNAME
@@ -87,9 +89,9 @@
 					}
 				}
 				else {
-					Write-Verbose "Passed version $VersionNumber, looking for that specific version"
+					Write-Message -Level Verbose -Message "Passed version $VersionNumber, looking for that specific version"
 					if ($array[0].StartsWith("$VersionNumber.")) {
-						Write-Verbose "Found the Version $VersionNumber"
+						Write-Message -Level Verbose -Message "Found the Version $VersionNumber"
 						$currentversion = $array[0]
 						[PSCustomObject]@{
 							ComputerName = $env:COMPUTERNAME
