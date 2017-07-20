@@ -1,46 +1,42 @@
 Function Clear-DbaSqlConnectionPool
 {
 <#
-.SYNOPSIS
-Resets (or empties) the connection pool.
+	.SYNOPSIS
+		Resets (or empties) the connection pool.
 
-.DESCRIPTION
+	.DESCRIPTION
 
-This command resets (or empties) the connection pool. 
-	
-If there are connections in use at the time of the call, they are marked appropriately and will be discarded (instead of being returned to the pool) when Close() is called on them.
+		This command resets (or empties) the connection pool. 
+		
+		If there are connections in use at the time of the call, they are marked appropriately and will be discarded (instead of being returned to the pool) when Close() is called on them.
 
-Ref: https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.clearallpools(v=vs.110).aspx
+		Ref: https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.clearallpools(v=vs.110).aspx
 
-.PARAMETER ComputerName
-A remote workstation or server name.
+	.PARAMETER ComputerName
+		Target computer(s). If no computer name is specified, the local computer is targeted
 
-.PARAMETER Credential
-Credential for running the command remotely.
+	.PARAMETER Credential
+		Alternate credential object to use for accessing the target computer(s).
 
-.NOTES
-Tags: WSMan
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+	.NOTES
+		Tags: WSMan
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		Website: https://dbatools.io
+		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+	.LINK
+		https://dbatools.io/Clear-DbaSqlConnectionPool
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	.EXAMPLE
+		Clear-DbaSqlConnectionPool
 
-.LINK
-https://dbatools.io/Clear-DbaSqlConnectionPool
+		Clears all local connection pools.
 
-.EXAMPLE
-Clear-DbaSqlConnectionPool
+	.EXAMPLE
+		Clear-DbaSqlConnectionPool -ComputerName workstation27
 
-Clears all local connection pools.
-
-.EXAMPLE
-Clear-DbaSqlConnectionPool -ComputerName workstation27
-
-Clears all connection pools on workstation27.
+		Clears all connection pools on workstation27.
 
 #>
 	
