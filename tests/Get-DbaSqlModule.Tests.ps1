@@ -8,11 +8,11 @@ Describe "Get-DbaSqlModule Integration Tests" -Tags "Integrationtests" {
 		}
 		
 		$results = Get-DbaSqlModule -SqlInstance localhost -Type View -Database msdb
-		It "Should only one type of object" {
+		It "Should only have one type of object" {
 			($results | Select -Unique Database | Measure-Object).Count | Should Be 1
 		}
 		
-		It "Should only one database" {
+		It "Should only have one database" {
 			($results | Select -Unique Type | Measure-Object).Count | Should Be 1
 		}
 	}
