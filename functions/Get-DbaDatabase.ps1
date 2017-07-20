@@ -190,7 +190,7 @@
             }
 
             $Readonly = switch ( $Access ) { 'Readonly' { @($true) } 'ReadWrite' { @($false) } default { @($true,$false)} }
-			$Encrypt = switch ( Test-Bound $Encrypted) { $true { @($true) } default { @($true,$false)} }
+			$Encrypt = switch ( Test-Bound $Encrypted) { $true { @($true) } default { @($true,$false,$null)} }
 
 			$inputobject = $server.Databases |
                 Where-Object {
