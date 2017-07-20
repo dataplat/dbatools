@@ -1,5 +1,5 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Get-DbaSqlModule Integration Tests" -Tags "Integrationtests" {
+Describe "Get-DbaSqlModule Integration Tests" -Tags "IntegrationTests" {
 	Context "Modules are properly retreived" {
 		
 		It "Should have a high count" {
