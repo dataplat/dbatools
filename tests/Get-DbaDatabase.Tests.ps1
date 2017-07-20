@@ -1,5 +1,5 @@
 ﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Get-DbaDatabase Integration Tests" -Tags "Integrationtests" {
+Describe "Get-DbaDatabase Integration Tests" -Tags "IntegrationTests" {
 
 	Context "Count system databases on localhost" {
 		$results = Get-DbaDatabase -SqlInstance localhost -NoUserDb 

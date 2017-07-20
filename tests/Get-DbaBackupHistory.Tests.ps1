@@ -1,5 +1,5 @@
 ﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Get-DbaBackupHistory Integration Tests" -Tags "Integrationtests" {
+Describe "Get-DbaBackupHistory Integration Tests" -Tags "IntegrationTests" {
 	
 	Context "Setup removes, restores and backups on the local drive for Get-DbaBackupHistory" {
 		$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase

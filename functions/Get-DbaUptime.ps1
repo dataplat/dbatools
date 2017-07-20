@@ -105,8 +105,8 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 				}
 								
 				Write-Verbose "Getting Start times for $servername"
-				#Get TempDB creation date
-				$SQLStartTime = $server.Databases["TempDB"].CreateDate
+				#Get tempdb creation date
+				$SQLStartTime = $server.Databases["tempdb"].CreateDate
 				$SQLUptime = New-TimeSpan -Start $SQLStartTime -End (Get-Date)
 				$SQLUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($SQLUptime.Days), $($SQLUptime.Hours), $($SQLUptime.Minutes), $($SQLUptime.Seconds)
 			}

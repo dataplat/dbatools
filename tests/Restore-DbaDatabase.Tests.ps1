@@ -1,5 +1,5 @@
 ﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Restore-DbaDatabase Integration Tests" -Tags "Integrationtests" {
+Describe "Restore-DbaDatabase Integration Tests" -Tags "IntegrationTests" {
     #Setup variable for multuple contexts
     $DataFolder = 'c:\temp\datafiles'
     $LogFolder = 'C:\temp\logfiles'

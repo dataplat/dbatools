@@ -282,7 +282,20 @@ Function Connect-DbaSqlServer {
 			
         }
 		
-		if ((Get-DbaSqlManagementObject | Where-Object Loaded).Version -ge 11) {
+		$loadedsmoversion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
+		
+		if ($loadedsmoversion) {
+			$loadedsmoversion = $loadedsmoversion | ForEach-Object {
+				if ($_.Location -match "__") {
+					((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0]
+				}
+				else {
+					((Get-ChildItem -Path $_.Location).VersionInfo.ProductVersion)
+				}
+			}
+		}
+		
+		if ($loadedsmoversion -ge 11) {
 			if ($server.VersionMajor -eq 8) {
 				# 2000
 				$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Version')
