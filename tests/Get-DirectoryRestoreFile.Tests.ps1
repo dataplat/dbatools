@@ -1,5 +1,5 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Get-DirectoryRestoreFile Unit Tests" -Tag 'Unittests'{
+Describe "Get-DirectoryRestoreFile Unit Tests" -Tag 'UnitTests'{
     Context "Test Path handling" {
         It "Should throw on an invalid Path" {
             { Get-DirectoryRestoreFile -Path TestDrive:\foo\bar\does\not\exist\ -Silent } | Should Throw

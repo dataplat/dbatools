@@ -76,7 +76,7 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 				Continue
 			}
 
-			$dbs = $server.Databases | Where-Object { $_.name -ne 'TempDb' }
+			$dbs = $server.Databases | Where-Object { $_.name -ne 'tempdb' }
 
 			if ($Database) {
 				$dbs = $dbs | Where-Object Name -In $Database

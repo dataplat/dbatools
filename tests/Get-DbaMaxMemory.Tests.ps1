@@ -1,5 +1,5 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Get-DbaMaxMemory Unit Tests" -Tag 'Unittests' {
+Describe "Get-DbaMaxMemory Unit Tests" -Tag 'UnitTests' {
     InModuleScope dbatools {
         Context 'Validate input arguments' {
             It 'SqlServer parameter is empty' {

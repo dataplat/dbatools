@@ -136,7 +136,7 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
     # Try connecting to the instance
     Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
     try {
-        $ServerSecondary = Connect-SqlServer -SqlServer $SqlInstance -SqlCredential $SqlCredential
+        $ServerSecondary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     }
     catch {
         Stop-Function -Message "Could not connect to Sql Server instance" -Target $SqlInstance -Continue
@@ -145,7 +145,7 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
     # Try connecting to the instance
     Write-Message -Message "Attempting to connect to $PrimaryServer" -Level Verbose
     try {
-        $ServerPrimary = Connect-SqlServer -SqlServer $PrimaryServer -SqlCredential $PrimarySqlCredential
+        $ServerPrimary = Connect-SqlInstance -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
     }
     catch {
         Stop-Function -Message "Could not connect to Sql Server instance" -Target $PrimaryServer -Continue

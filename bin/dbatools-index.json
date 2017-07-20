@@ -1484,7 +1484,7 @@
         "Synopsis":  "Displays all objects in sys.sys_modules after specified modification date.  Works on SQL Server 2008 and above.",
         "Name":  "Get-DbaSqlModule",
         "Links":  "https://dbatools.io/Get-DbaModule",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaModule -SqlServer sql2008, sqlserver2012\r\n\r\nReturn all modules for servers sql2008 and sqlserver2012 sorted by Database, Modify_Date ASC\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaModule -SqlServer sql2008 -Database TestDB -ModifiedSince \"01/01/2017 10:00:00 AM\"\r\n\r\nReturn all modules on server sql2008 for only the TestDB database with a modified date after 01/01/2017 10:00:00 AM\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaModule -SqlServer sql2008, sqlserver2012\r\n\r\nReturn all modules for servers sql2008 and sqlserver2012 sorted by Database, Modify_Date ASC\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaModule -SqlServer sql2008, sqlserver2012 | Select *\r\n\r\nShows hidden definition column (informative wall of text)\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaModule -SqlServer sql2008 -Database TestDB -ModifiedSince \"01/01/2017 10:00:00 AM\"\r\n\r\nReturn all modules on server sql2008 for only the TestDB database with a modified date after 01/01/2017 10:00:00 AM\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaModule -SqlServer sql2008 -Type View, Trigger, ScalarFunction\r\n\r\nReturn all modules on server sql2008 for all databases that are triggers, views or scalar functions\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaSqlProductKey",
@@ -2639,12 +2639,12 @@
     },
     {
         "CommandName":  "Test-DbaOptimizeForAdHoc",
-        "Description":  "When this option is set, plan cache size is further reduced for single-use adhoc OLTP workload.\n\nMore info: https://msdn.microsoft.com/en-us/library/cc645587.aspx\nhttp://www.sqlservercentral.com/blogs/glennberry/2011/02/25/some-suggested-sql-server-2008-r2-instance-configuration-settings/\n\nThese are just general recommendations for SQL Server and are a good starting point for setting the \"optimize for adhoc workloads\" option.",
+        "Description":  "When this option is set, plan cache size is further reduced for single-use ad hoc OLTP workload.\n\nMore info: https://msdn.microsoft.com/en-us/library/cc645587.aspx\nhttp://www.sqlservercentral.com/blogs/glennberry/2011/02/25/some-suggested-sql-server-2008-r2-instance-configuration-settings/\n\nThese are just general recommendations for SQL Server and are a good starting point for setting the \"optimize for adhoc workloads\" option.",
         "Author":  "Brandon Abshire, netnerds.net",
         "Synopsis":  "Displays information relating to SQL Server Optimize for AdHoc Workloads setting.  Works on SQL Server 2008-2016.",
         "Name":  "Test-DbaOptimizeForAdHoc",
-        "Links":  "https://dbatools.io/Test-DbaOptimizeAdHoc",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaOptimizeAdHoc -SqlInstance sql2008, sqlserver2012\r\n\r\nGet Optimize for AdHoc Workloads setting for servers sql2008 and sqlserver2012 and also the recommended one.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Links":  "https://dbatools.io/Test-DbaOptimizeForAdHoc",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaOptimizeForAdHoc -SqlInstance sql2008, sqlserver2012\r\n\r\nGet Optimize for AdHoc Workloads setting for servers sql2008 and sqlserver2012 and also the recommended one.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaPowerPlan",
