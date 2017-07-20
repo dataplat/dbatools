@@ -15,6 +15,12 @@
 	$cred = Get-Credential, this pass this $cred to the param. 
 	Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.  
 	
+	.PARAMETER Database
+	The database(s) to process. If unspecified, all databases will be processed.
+
+	.PARAMETER ExcludeDatabase
+	The database(s) to exclude.
+	
 	.PARAMETER ModifiedSince
 	DateTime value to use as minimum modified date of module.
 	
