@@ -132,21 +132,17 @@
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$dbs = $server.Databases
+			$databases = Get-DbaDatabase -SqlInstance $server
 			
-			if ($databases.count -gt 0) {
-				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
+			if ($Database) {
+				$databases = $databases | Where-Object Name -In $Database
+			}
+			if ($ExcludeDatabase) {
+				$databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
 			}
 			
-			if ($NoSystemDb) {
-				$dbs = $dbs | Where-Object { $_.IsSystemObject -eq $false }
-			}
 			
-			if ($exclude.count -gt 0) {
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
-			}
-			
-			foreach ($db in $dbs) {
+			foreach ($db in $databases) {
 				
 				Write-Message -Level Verbose -Message "Processing $db on $instance"
 				
@@ -163,10 +159,10 @@
 						ModuleName = $row.ModuleName
 						ObjectID = $row.object_id
 						SchemaName = $row.SchemaName
-						Type_Desc = $row.type_desc
-						Create_Date = $row.create_date
-						Modify_Date = $row.modify_date
-						is_ms_shipped = $row.is_ms_shipped
+						Type = $row.type_desc
+						CreateDate = $row.create_date
+						ModifyDate = $row.modify_date
+						IsMsShipped = $row.is_ms_shipped
 						Definition = $row.definition
 					} | Select-DefaultView -ExcludeProperty Definition
 				}
