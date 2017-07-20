@@ -9,21 +9,22 @@
 			If the job already exists on the destination, it will be skipped unless -Force is used.
 
 		.PARAMETER Source
-			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or newer.
 
 		.PARAMETER SourceSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or newer.
 
 		.PARAMETER DestinationSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
@@ -32,25 +33,25 @@
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Job
-			The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
+			The job(s) to process. This list is auto-populated from the server. If unspecified, all jobs will be processed.
 
 		.PARAMETER ExcludeJob
-			The job(s) to exclude - this list is auto-populated from the server
+			The job(s) to exclude. This list is auto-populated from the server.
 
 		.PARAMETER DisableOnSource
-			If this switch is enabled, the job will be disabled on the source server
+			If this switch is enabled, the job will be disabled on the source server.
 
 		.PARAMETER DisableOnDestination
-			If this switch is enabled, the newly migrated job will be disabled on the destination server
+			If this switch is enabled, the newly migrated job will be disabled on the destination server.
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Force
-			Drops and recreates the Job if it exists.
+			If this switch is enabled, the Job will be dropped and recreated on Destination.
 
 		.PARAMETER Silent
 			If this switch is enabled, the internal messaging functions will be silenced.
