@@ -137,6 +137,19 @@
 	
 	#region Input Object was anything else
 	# This seems a little complex but is required because some connections do TCP,SqlInstance
+	$loadedsmoversion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
+	
+	if ($loadedsmoversion) {
+		$loadedsmoversion = $loadedsmoversion | ForEach-Object {
+			if ($_.Location -match "__") {
+				((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0]
+			}
+			else {
+				((Get-ChildItem -Path $_.Location).VersionInfo.ProductVersion)
+			}
+		}
+	}
+	
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $ConvertedSqlInstance.FullSmoName
 	$server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
 
@@ -189,8 +202,8 @@
 			throw "Not a sysadmin on $ConvertedSqlInstance. Quitting."
 		}
 	}
-		
-	if ((Get-DbaSqlManagementObject | Where-Object Loaded).Version -ge 11) {
+	
+	if ($loadedsmoversion -ge 11) {
 		if (-not $ParameterConnection -or ($Server.ServerType -ne 'SqlAzureDatabase')) {
 			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Trigger], 'IsSystemObject')
 			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Schema], 'IsSystemObject')
