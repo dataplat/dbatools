@@ -1,4 +1,4 @@
-﻿Function Get-DbaModule {
+﻿Function Get-DbaSqlModule {
 <# 
 	.SYNOPSIS 
 	Displays all objects in sys.sys_modules after specified modification date.  Works on SQL Server 2008 and above.
@@ -23,6 +23,10 @@
 	
 	.PARAMETER NoSystemObjects
 	Allows you to suppress output on system objects
+	
+
+	.PARAMETER Silent
+	Use this switch to disable any kind of verbose messages
 	
 	.NOTES 
 	Author: Brandon Abshire, netnerds.net
@@ -56,7 +60,8 @@
 		[object[]]$ExcludeDatabase,
 		[datetime]$ModifiedSince = "01/01/1900",
 		[switch]$NoSystemDb,
-		[switch]$NoSystemObjects
+		[switch]$NoSystemObjects,
+		[switch]$Silent
 	)
 	
 	begin {
@@ -84,21 +89,13 @@
 	PROCESS {
 		
 		foreach ($instance in $SqlInstance) {
-			Write-Verbose "Attempting to connect to $instance"
 			try {
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Write-Warning "Can't connect to $instance or access denied. Skipping."
-				continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-			
-			if ($server.versionMajor -lt 10) {
-				Write-Warning "This function does not support versions lower than SQL Server 2008 (v10). Skipping server $instance."
-				
-				Continue
-			}
-			
 			
 			$dbs = $server.Databases
 			
@@ -115,11 +112,11 @@
 			}
 			
 			foreach ($db in $dbs) {
+				
 				Write-Verbose "Processing $db on $instance"
 				
 				if ($db.IsAccessible -eq $false) {
-					Write-Warning "The database $db is not accessible. Skipping database."
-					Continue
+					Stop-Function -Message "The database $db is not accessible. Skipping database." -Target $db -Continue
 				}
 				
 				foreach ($row in $db.ExecuteWithResults($sql).Tables[0]) {
