@@ -199,7 +199,7 @@
                     ($_.Owner -in $Owner -or !$Owner) -and 
                     $_.ReadOnly -in $Readonly -and 
                     $_.IsSystemObject -in $DBType -and 
-                    ((Compare-Object @($_.Status.tostring().split(', ')) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and 
+                    ((Compare-Object @($_.Status.tostring().split(',').trim()) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and 
                     $_.RecoveryModel -in $RecoveryModel -and 
                     $_.EncryptionEnabled -in $Encrypt
                 }
