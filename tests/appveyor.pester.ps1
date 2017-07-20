@@ -52,6 +52,7 @@ if (-not $Finalize) {
 }
 else {
 	# Unsure why we're uploading so I removed it for now
+	<#
 	#If finalize is specified, check for failures and  show status
 	$allfiles = Get-ChildItem -Path $ModuleBase\*Results*.xml | Select-Object -ExpandProperty FullName
 	Write-Output "Finalizing results and collating the following files:"
@@ -67,7 +68,9 @@ else {
 		
 		(New-Object System.Net.WebClient).UploadFile($Address, $Source)
 		
+		Write-Output "You can download it from https://ci.appveyor.com/api/buildjobs/$($env:APPVEYOR_JOB_ID)/tests"
 	}
+	#>
 	
 	#What failed?
 	$results = @(Get-ChildItem -Path "$ModuleBase\PesterResults*.xml" | Import-Clixml)

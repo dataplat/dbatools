@@ -1,3 +1,4 @@
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe 'Get-DbaAgentAlert Unit Tests' -Tag 'Unittests' {
 	Context 'Doing something awesome' {
 		It 'It should have tests' {

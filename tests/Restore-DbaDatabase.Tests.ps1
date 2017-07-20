@@ -1,11 +1,10 @@
-﻿Describe "Restore-DbaDatabase Integration Tests" -Tags "Integrationtests" {
+﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Describe "Restore-DbaDatabase Integration Tests" -Tags "Integrationtests" {
     #Setup variable for multuple contexts
     $DataFolder = 'c:\temp\datafiles'
     $LogFolder = 'C:\temp\logfiles'
     New-Item -Type Directory $DataFolder -ErrorAction SilentlyContinue
-	New-Item -ItemType Directory $LogFolder -ErrorAction SilentlyContinue
-	Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-	
+    new-Item -Type Directory $LogFolder -ErrorAction SilentlyContinue
     Context "Properly restores a database on the local drive using Path" {
         $null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
         $results = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
@@ -166,8 +165,8 @@
 
     Context "Properly restores an instance using ola-style backups" {
         $results = Get-ChildItem C:\github\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlInstance localhost
-        It "Restored files count should be right" {
-            $results.databasename.count | Should Be 30
+        It "Restored files count should be 30" {
+            $results.databasename.count | Should Be 15
         }
         It "Should return successful restore" {
             ($results.Restorecomplete -contains $false) | Should Be $false

@@ -1,3 +1,4 @@
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 ## needs some proper tests for the function here
 Describe "Get-DbaAgentJobOutputFile Unit Tests" -Tag 'Unittests' {
     Context "Input Validation" {
