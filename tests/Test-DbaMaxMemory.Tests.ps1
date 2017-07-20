@@ -1,5 +1,5 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe 'Test-DbaMaxMemory Unit Tests' -Tag 'Unittests' {
+Describe 'Test-DbaMaxMemory Unit Tests' -Tag 'UnitTests' {
     InModuleScope dbatools {
         Context 'Validate input arguments' {
             It 'No "SQL Server" Windows service is running on the host' {

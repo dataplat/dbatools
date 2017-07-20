@@ -1,5 +1,5 @@
 ﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Mount-DbaDatabase Integration Tests" -Tags "Integrationtests" {
+Describe "Mount-DbaDatabase Integration Tests" -Tags "IntegrationTests" {
 
     Context "Setup removes, restores and backups on the local drive for Mount-DbaDatabase" {
         $null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase

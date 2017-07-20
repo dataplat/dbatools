@@ -1,5 +1,5 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Add-DbaComputerCertificate Integration Tests" -Tags "Integrationtests" {
+Describe "Add-DbaComputerCertificate Integration Tests" -Tags "IntegrationTests" {
     Context "Certificate is added properly" {
         $results = Add-DbaComputerCertificate -Path C:\github\appveyor-lab\certificates\localhost.crt -Confirm:$false
         

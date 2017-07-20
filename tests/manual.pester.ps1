@@ -43,12 +43,12 @@ if ($Path)
     foreach ($item in $Path)
     {
 		if ($testInt) { Invoke-Pester $item }
-        else { Invoke-Pester $item -ExcludeTag "Integrationtests" -Show $Show }
+        else { Invoke-Pester $item -ExcludeTag "IntegrationTests" -Show $Show }
     }
 }
 
 else
 {
     if ($testInt) { Invoke-Pester }
-	else { Invoke-Pester -ExcludeTag "Integrationtests" -Show $Show }
+	else { Invoke-Pester -ExcludeTag "IntegrationTests" -Show $Show }
 }

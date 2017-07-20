@@ -1,5 +1,5 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "New-DbaSqlConnectionStringBuilder Unit Tests" -Tag 'Unittests' {
+Describe "New-DbaSqlConnectionStringBuilder Unit Tests" -Tag 'UnitTests' {
     Context "Get a ConnectionStringBuilder and assert its values" {
         $results = New-DbaSqlConnectionStringBuilder "Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Column Encryption Setting=enabled" 
         It "Should be a connection string builder" {
