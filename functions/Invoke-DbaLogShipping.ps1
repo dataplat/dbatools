@@ -609,7 +609,7 @@ The script will show a message that the copy destination has not been supplied a
         # Try connecting to the instance
         Write-Message -Message "Attempting to connect to source Sql Server $SourceSqlInstance.." -Level Output
         try {
-            $SourceServer = Connect-SqlServer -SqlServer $SourceSqlInstance -SqlCredential $SourceSqlCredential
+            $SourceServer = Connect-SqlInstance -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential
         }
         catch {
             Stop-Function -Message "Could not connect to Sql Server instance $SourceSqlInstance" -InnerErrorRecord $_ -Target $SourceSqlInstance 
@@ -619,7 +619,7 @@ The script will show a message that the copy destination has not been supplied a
         # Try connecting to the instance
         Write-Message -Message "Attempting to connect to destination Sql Server $DestinationSqlInstance.." -Level Output
         try {
-            $DestinationServer = Connect-SqlServer -SqlServer $DestinationSqlInstance -SqlCredential $DestinationSqlCredential
+            $DestinationServer = Connect-SqlInstance -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential
         }
         catch {
             Stop-Function -Message "Could not connect to Sql Server instance $DestinationSqlInstance" -InnerErrorRecord $_ -Target $DestinationSqlInstance 

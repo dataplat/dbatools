@@ -151,7 +151,7 @@
 			Write-Message -Message "Attempting to connect to Sql Server" -Level 2
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $sqlinstance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $sqlinstance -SqlCredential $SqlCredential
 			}
 			catch
 			{
