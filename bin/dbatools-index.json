@@ -6,20 +6,20 @@
         "Synopsis":  "Adds a computer certificate - useful for older systems.",
         "Name":  "Add-DbaComputerCertificate",
         "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaComputerCertificate -ComputerName Server1 -Path C:\\temp\\cert.cer\r\n\r\nAdds the local C:\\temp\\cer.cer to the remote server Server1 in LocalMachine\\My (Personal)\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaComputerCertificate -Path C:\\temp\\cert.cer\r\n\r\nAdds the local C:\\temp\\cer.cer to the local computer\u0027s LocalMachine\\My (Personal) certificate store\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaComputerCertificate -ComputerName Server1 -Path C:\\temp\\cert.cer\r\n\r\nAdds the local C:\\temp\\cer.cer to the remote server Server1 in LocalMachine\\My (Personal).\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaComputerCertificate -Path C:\\temp\\cert.cer\r\n\r\nAdds the local C:\\temp\\cer.cer to the local computer\u0027s LocalMachine\\My (Personal) certificate store.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Backup-DbaDatabase",
-        "Description":  "Performs a backup of a specified type of 1 or more databases on a SQL Server Instance.\nThese backups may be Full, Differential or Transaction log backups",
+        "Description":  "Performs a backup of a specified type of 1 or more databases on a SQL Server Instance. These backups may be Full, Differential or Transaction log backups.",
         "Tags":  [
                      "DisasterRecovery",
                      "Backup",
                      "Restore"
                  ],
-        "Synopsis":  "Backup one or more SQL Sever databases from a SQL Server SqlInstance",
+        "Synopsis":  "Backup one or more SQL Sever databases from a SQL Server SqlInstance.",
         "Name":  "Backup-DbaDatabase",
         "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1 -Database HR, Finance\r\n\r\nThis will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1\u0027s \r\ndefault backup directory.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -BackupDirectory C:\\temp -Database AdventureWorks2014 -Type Full\r\n\r\nBacks up AdventureWorks2014 to sql2016\u0027s C:\\temp folder.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ \r\n-AzureCredential dbatoolscred -Type Full -CreateFolder\r\n\r\nPerforms a full backup of all databases on the sql2016 instance to their own containers under the \r\nhttps://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the \r\nsql credential \"dbatoolscred\" registered on the sql2016 instance\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1 -Database HR, Finance\r\n\r\nThis will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1\u0027s \r\ndefault backup directory.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -BackupDirectory C:\\temp -Database AdventureWorks2014 -Type Full\r\n\r\nBacks up AdventureWorks2014 to sql2016\u0027s C:\\temp folder.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ \r\n-AzureCredential dbatoolscred -Type Full -CreateFolder\r\n\r\nPerforms a full backup of all databases on the sql2016 instance to their own containers under the \r\nhttps://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql credential \r\n\"dbatoolscred\" registered on the sql2016 instance.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Backup-DbaDatabaseCertificate",
@@ -47,7 +47,7 @@
     },
     {
         "CommandName":  "Clear-DbaSqlConnectionPool",
-        "Description":  "This command resets (or empties) the connection pool. \n\t\nIf there are connections in use at the time of the call, they are marked appropriately and will be discarded (instead of being returned to the pool) when Close() is called on them.\n\nRef: https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.clearallpools(v=vs.110).aspx",
+        "Description":  "This command resets (or empties) the connection pool. \n\nIf there are connections in use at the time of the call, they are marked appropriately and will be discarded (instead of being returned to the pool) when Close() is called on them.\n\nRef: https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.clearallpools(v=vs.110).aspx",
         "Tags":  "WSMan",
         "Synopsis":  "Resets (or empties) the connection pool.",
         "Name":  "Clear-DbaSqlConnectionPool",
@@ -56,11 +56,11 @@
     },
     {
         "CommandName":  "Connect-DbaSqlServer",
-        "Description":  "This command is efficient because it initializes properties that do not cause enumeration by default. It also supports both Windows and SQL Server authentication methods and detects which to use based upon the provided credentials. \n\nBy default, this command also sets the connection\u0027s ApplicationName property  to \"dbatools PowerShell module - dbatools.io - custom connection\". If you\u0027re doing anything that requires profiling, you can look for this client name.\n\nAlternatively, you can pass in whichever client name you\u0027d like using the -ClientName parameter. There are a ton of other parameters for you to explore as well.\n\t\nSee https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.aspx\n\nTo execute SQL commands, you can use $server.ConnectionContext.ExecuteReader($sql) or $server.Databases[\u0027master\u0027].ExecuteNonQuery($sql)",
+        "Description":  "This command is efficient because it initializes properties that do not cause enumeration by default. It also supports both Windows and SQL Server authentication methods, and detects which to use based upon the provided credentials. \n\nBy default, this command also sets the connection\u0027s ApplicationName property  to \"dbatools PowerShell module - dbatools.io - custom connection\". If you\u0027re doing anything that requires profiling, you can look for this client name.\n\nAlternatively, you can pass in whichever client name you\u0027d like using the -ClientName parameter. There are a ton of other parameters for you to explore as well.\n    \nSee https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx,\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.aspx\n\nTo execute SQL commands, you can use $server.ConnectionContext.ExecuteReader($sql) or $server.Databases[\u0027master\u0027].ExecuteNonQuery($sql)",
         "Synopsis":  "Creates an efficient SMO SQL Server object.",
         "Name":  "Connect-DbaSqlServer",
         "Links":  "https://dbatools.io/Connect-DbaSqlServer",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eConnect-DbaSqlServer -SqlInstance sql2014\r\n\r\nCreates an SMO Server object that connects using Windows Authentication\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\r\n\r\nConnect-DbaSqlServer -SqlInstance sql2014 -Credential $wincred\r\n\r\nCreates an SMO Server object that connects using alternative Windows credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$sqlcred = Get-Credential sqladmin\r\n\r\n$server = Connect-DbaSqlServer -SqlInstance sql2014 -Credential $sqlcred\r\n\r\nLogin to sql2014 as SQL login sqladmin.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaSqlServer -SqlInstance sql2014 -ClientName \"mah connection\"\r\n\r\nCreates an SMO Server object that connects using Windows Authentication and uses the client name \"mah connection\". So \r\nwhen you open up profiler or use extended events, you can search for \"mah connection\".\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaSqlServer -SqlInstance sql2014 -AppendConnectionString \"Packet \r\nSize=4096;AttachDbFilename=C:\\MyFolder\\MyDataFile.mdf;User Instance=true;\"\r\n\r\nCreates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this \r\ncan also be done via -PacketSize) and other connection attributes.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaSqlServer -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover\r\n\r\nCreates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover \r\nenabled.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaSqlServer sql2016 -ApplicationIntent ReadOnly\r\n\r\nConnects with ReadOnly ApplicationIntent.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eConnect-DbaSqlServer -SqlInstance sql2014\r\n\r\nCreates an SMO Server object that connects using Windows Authentication\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\r\n\r\nConnect-DbaSqlServer -SqlInstance sql2014 -Credential $wincred\r\n\r\nCreates an SMO Server object that connects using alternative Windows credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$sqlcred = Get-Credential sqladmin\r\n\r\n$server = Connect-DbaSqlServer -SqlInstance sql2014 -Credential $sqlcred\r\n\r\nLogin to sql2014 as SQL login sqladmin.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaSqlServer -SqlInstance sql2014 -ClientName \"my connection\"\r\n\r\nCreates an SMO Server object that connects using Windows Authentication and uses the client name \"my connection\". So \r\nwhen you open up profiler or use extended events, you can search for \"my connection\".\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaSqlServer -SqlInstance sql2014 -AppendConnectionString \"Packet \r\nSize=4096;AttachDbFilename=C:\\MyFolder\\MyDataFile.mdf;User Instance=true;\"\r\n\r\nCreates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this \r\ncan also be done via -PacketSize) and other connection attributes.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaSqlServer -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover\r\n\r\nCreates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover \r\nenabled.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaSqlServer sql2016 -ApplicationIntent ReadOnly\r\n\r\nConnects with ReadOnly ApplicationIntent.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Copy-DbaAgentAlert",
@@ -643,6 +643,20 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaView -SqlInstance DEV01 -Pattern whatever\r\n\r\nSearches all user databases views for \"whatever\" in the textbody\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaView -SqlInstance sql2016 -Pattern \u0027\\w+@\\w+\\.\\w+\u0027\r\n\r\nSearches all databases for all views that contain a valid email pattern in the textbody\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaView -SqlInstance DEV01 -Database MyDB -Pattern \u0027some string\u0027 -Verbose\r\n\r\nSearches in \"mydb\" database views for \"some string\" in the textbody\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaView -SqlInstance sql2016 -Database MyDB -Pattern RUNTIME -IncludeSystemObjects\r\n\r\nSearches in \"mydb\" database views for \"runtime\" in the textbody\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaAgDatabase",
+        "Description":  "Default view provides most common set of properties for information on the database in an Availability Group(s).\n\n**Information returned on the database will be specifc to that replica, whether it is\nprimary or a secondary.**\n\n**This command will return an SMO object, but it is the AvailabilityDatabases object\nand not the Server.Databases object.",
+        "Tags":  [
+                     "DisasterRecovery",
+                     "AG",
+                     "AvailabilityGroup",
+                     "Replica"
+                 ],
+        "Synopsis":  "Outputs the databases involved in the Availability Group(s) found on the server.",
+        "Name":  "Get-DbaAgDatabase",
+        "Links":  "https://dbatools.io/Get-DbaAgDatabase",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgDatabase -SqlInstance sqlserver2014a\r\n\r\nReturns basic information on all the databases in each Availability Group found on sqlserver2014a\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgDatabase -SqlInstance sqlserver2014a -AvailabilityGroup AG-a\r\n\r\nReturns basic information on all the databases in the Availability Group AG-a on sqlserver2014a\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgDatabase -SqlInstance sqlserver2014a -AvailabilityGroup AG-a -Database AG-Database\r\n\r\nReturns basic information on the database AG-Database found in the Availability Group AG-a on server sqlserver2014a\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaAgentAlert",
         "Description":  "This function returns SQL Agent alerts.",
         "Tags":  [
@@ -726,6 +740,20 @@
         "Name":  "Get-DbaAgentSchedule",
         "Links":  "https://dbatools.io/Get-DbaAgentSchedule",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost\r\n\r\nReturns all SQL Agent Shared Schedules on the local default SQL Server instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance localhost, sql2016\r\n\r\nReturns all SQL Agent Shared Schedules for the local and sql2016 SQL Server instances\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaAgReplica",
+        "Description":  "Default view provides most common set of properties for information on the Availability Group(s)\u0027 Replica.",
+        "Tags":  [
+                     "DisasterRecovery",
+                     "AG",
+                     "AvailabilityGroup",
+                     "Replica"
+                 ],
+        "Synopsis":  "Outputs the Availability Group(s)\u0027 Replica object found on the server.",
+        "Name":  "Get-DbaAgReplica",
+        "Links":  "https://dbatools.io/Get-DbaAgReplica",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgReplica -SqlInstance sqlserver2014a\r\n\r\nReturns basic information on all the Availability Group(s) replica(s) found on sqlserver2014a\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgReplica -SqlInstance sqlserver2014a -AvailabilityGroup AG-a\r\n\r\nShows basic information on the replica(s) found on Availability Group AG-a on sqlserver2014a\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgReplica -SqlInstance sqlserver2014a | Select *\r\n\r\nReturns full object properties on all Availability Group(s) replica(s) on sqlserver2014a\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaAvailabilityGroup",
@@ -1164,6 +1192,15 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016\r\n\r\nGets all the logins from server sql2016 using NT authentication and returns the SMO login objects\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -SqlCredential $sqlcred\r\n\r\nGets all the logins for a given SQL Server using a passed credential object and returns the SMO login objects\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -SqlCredential $sqlcred -Login dbatoolsuser,TheCaptain\r\n\r\nGet specific logins from server sql2016 returned as SMO login objects.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql2016 -ExcludeLogin dbatoolsuser\r\n\r\nGet all user objects from server sql2016 except the login dbatoolsuser, returned as SMO login objects.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred\r\n\r\nUsing Get-DbaLogin on the pipeline, you can also specify which names you would like with -Login.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred -Locked\r\n\r\nUsing Get-DbaLogin on the pipeline to get all locked logins on servers sql2016 and sql2014.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql2016\u0027, \u0027sql2014\u0027 | Get-DbaLogin -SqlCredential $sqlcred -HasAccess -Disabled\r\n\r\nUsing Get-DbaLogin on the pipeline to get all Disabled logins that have access on servers sql2016 or sql2014.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaMaintenanceSolutionLog",
+        "Description":  "Ola wrote a .sql script to get the content from the commandLog table. However, if LogToTable=\u0027N\u0027, there will be no logging in that table. This function reads the text files that are written in the SQL Instance\u0027s Log directory.",
+        "Author":  "Klaas Vandenberghe ( @powerdbaklaas )",
+        "Synopsis":  "Reads the log files generated by the IndexOptimize Agent Job from Ola Hallengren\u0027s MaintenanceSolution.",
+        "Name":  "Get-DbaMaintenanceSolutionLog",
+        "Links":  "https://dbatools.io/Get-DbaMaintenanceSolutionLog",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMaintenanceSolutionLog -SqlInstance sqlserver2014a\r\n\r\nGets the outcome of the IndexOptimize job on sql instance sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMaintenanceSolutionLog -SqlInstance sqlserver2014a -SqlCredential $credential\r\n\r\nGets the outcome of the IndexOptimize job on sqlserver2014a, using SQL Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e\u0027sqlserver2014a\u0027, \u0027sqlserver2020test\u0027 | Get-DbaMaintenanceSolutionLog\r\n\r\nGets the outcome of the IndexOptimize job on sqlserver2014a and sqlserver2020test.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMaintenanceSolutionLog -SqlInstance sqlserver2014a -Path \u0027D:\\logs\\maintenancesolution\\\u0027\r\n\r\nGets the outcome of the IndexOptimize job on sqlserver2014a, reading the log files in their custom location.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMaintenanceSolutionLog -SqlInstance sqlserver2014a -Since \u00272017-07-18\u0027\r\n\r\nGets the outcome of the IndexOptimize job on sqlserver2014a, starting from july 18, 2017.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaMaintenanceSolutionLog -SqlInstance sqlserver2014a -LogType IndexOptimize\r\n\r\nGets the outcome of the IndexOptimize job on sqlserver2014a, the other options are not yet available! sorry\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaMaxMemory",
         "Description":  "This command retrieves the SQL Server \u0027Max Server Memory\u0027 configuration setting as well as the total  physical installed on the server.",
         "Tags":  "Memory",
@@ -1435,6 +1472,19 @@
         "Name":  "Get-DbaSqlManagementObject",
         "Links":  "https://dbatools.io/Get-DbaSqlManagementObject",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlManagementObject\r\n\r\nReturns all versions of SMO on the computer\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSqlManagementObject -VersionNumber 13\r\n\r\nReturns just the version specified. If the version does not exist then it will return nothing.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaSqlModule",
+        "Description":  "Quickly find modules (Stored Procs, Functions, Views, Constraints, Rules, Triggers, etc) that have been modified in a database, or across all databases.\nResults will exclude the module definition, but can be queried explicitly.",
+        "Tags":  [
+                     "StoredProcedure",
+                     "Trigger"
+                 ],
+        "Author":  "Brandon Abshire, netnerds.net",
+        "Synopsis":  "Displays all objects in sys.sys_modules after specified modification date.  Works on SQL Server 2008 and above.",
+        "Name":  "Get-DbaSqlModule",
+        "Links":  "https://dbatools.io/Get-DbaModule",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaModule -SqlServer sql2008, sqlserver2012\r\n\r\nReturn all modules for servers sql2008 and sqlserver2012 sorted by Database, Modify_Date ASC\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaModule -SqlServer sql2008 -Database TestDB -ModifiedSince \"01/01/2017 10:00:00 AM\"\r\n\r\nReturn all modules on server sql2008 for only the TestDB database with a modified date after 01/01/2017 10:00:00 AM\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaSqlProductKey",
