@@ -1,5 +1,5 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Get-OlaHRestoreFile Unit Tests" -Tag 'Unittests'{
+Describe "Get-OlaHRestoreFile Unit Tests" -Tag 'UnitTests'{
     #Mock Test-Path {$true}
 	<#
     Context "Test Path handling" {

@@ -1,5 +1,5 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Test-DbaLsnChain Unit Tests" -Tag 'Unittests' {
+Describe "Test-DbaLsnChain Unit Tests" -Tag 'UnitTests' {
 	InModuleScope dbatools {
 		Context "General Diff restore" {
 			$Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)

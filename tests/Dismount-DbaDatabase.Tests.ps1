@@ -1,5 +1,5 @@
 ﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Dismount-DbaDatabase Integration Tests" -Tags "Integrationtests" {
+Describe "Dismount-DbaDatabase Integration Tests" -Tags "IntegrationTests" {
 	$dbname = "detachattach"
 	$null = Get-DbaDatabase -SqlInstance localhost -Database $dbname | Remove-DbaDatabase
 	

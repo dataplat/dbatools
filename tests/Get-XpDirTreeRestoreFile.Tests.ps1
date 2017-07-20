@@ -1,7 +1,7 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\..\internal\Connect-SqlInstance.ps1"
 
-Describe "Get-XpDirTreeRestoreFile Unit Tests" -Tag 'Unittests'{
+Describe "Get-XpDirTreeRestoreFile Unit Tests" -Tag 'UnitTests'{
 	InModuleScope dbatools {
 		#mock Connect-SqlInstance { $true }
 		mock Test-DbaSqlPath { $true }

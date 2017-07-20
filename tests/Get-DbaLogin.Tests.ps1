@@ -1,5 +1,5 @@
 ﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Get-DbaLogin Integration Tests" -Tags "Integrationtests" {
+Describe "Get-DbaLogin Integration Tests" -Tags "IntegrationTests" {
 
     Context "Does sql instance have a SA account" {
         $results = Get-DbaLogin -SqlInstance localhost -Login sa 
