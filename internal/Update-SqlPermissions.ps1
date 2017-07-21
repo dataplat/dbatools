@@ -151,7 +151,7 @@ function Update-SqlPermissions {
 		$sourcedb = $sourceserver.databases[$dbname]
 		$dbusername = $db.username; $dblogin = $db.loginName
 
-		if ($sourcedb -ne $null) {
+		if ($sourcedb -ne $null -and $sourcedb.IsAccessible) {
 			if ($sourcedb.users[$dbusername] -eq $null -and $destdb.users[$dbusername] -ne $null) {
 				If ($Pscmdlet.ShouldProcess($destination, "Dropping $dbusername from $dbname on destination.")) {
 					try {
