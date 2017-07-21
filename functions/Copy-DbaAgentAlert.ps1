@@ -126,7 +126,7 @@
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$Destination'"
 
 					Write-Message -Message $sql -Level Debug
-					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $destServer.Query($sql)
 
 					$copyAgentAlertStatus.Status = "Successful"
 				}
@@ -168,7 +168,7 @@
 
 						$sql = "EXEC msdb.dbo.sp_delete_alert @name = N'$($alertname)';"
 						Write-Message -Message $sql -Level Debug
-						$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+						$null = $destServer.Query($sql)
 					}
 					catch {
 						$copyAgentAlertStatus.Status = "Failed"
@@ -210,7 +210,7 @@
 					$sql = $sql -replace "@job_id=N'........-....-....-....-............", "@job_id=N'00000000-0000-0000-0000-000000000000"
 
 					Write-Message -Message $sql -Level Debug
-					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $destServer.Query($sql)
 
 					$copyAgentAlertStatus.Status = "Successful"
 					$copyAgentAlertStatus
@@ -249,7 +249,7 @@
 						$sql = $sql -replace 'sp_add_alert', 'sp_update_alert'
 
 						Write-Message -Message $sql -Level Debug
-						$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+						$null = $destServer.Query($sql)
 
 						$copyAgentAlertStatus.Status = "Successful"
 						$copyAgentAlertStatus

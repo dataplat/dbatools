@@ -284,7 +284,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							$server.Databases.Refresh()
 							if ($SnapName -notin $server.Databases.Name) {
 								# previous creation failed completely, snapshot is not there already
-								$null = $server.ConnectionContext.ExecuteNonQuery($sql[0])
+								$null = $server.Query($sql[0])
 								$server.Databases.Refresh()
 								$SnapDB = $server.Databases[$Snapname]
 							}
