@@ -367,7 +367,7 @@ function Copy-DbaLogin {
 												DEFAULT_DATABASE = [$defaultDb], CHECK_POLICY = $checkpolicy,
 												CHECK_EXPIRATION = $checkexpiration, DEFAULT_LANGUAGE = [$($sourceLogin.Language)]"
 
-								$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+								$null = $destServer.Query($sql)
 
 								$destLogin = $destServer.logins[$userName]
 								Write-Message -Level Verbose -Message "Successfully added $userName to $destination"
