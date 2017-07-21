@@ -13,11 +13,40 @@ if ($dbatools_dotsourcemodule) { $script:doDotSource = $true }
 if ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
 if ((Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
 
-$osmajor = ([environment]::OSVersion.Version).Major
-$osminor = ([environment]::OSVersion.Version).Minor
+if ($env:PROCESSOR_ARCHITECTURE -eq "x86") {
+	$smoversions = "14.0.0.0", "13.0.0.0", "12.0.0.0", "11.0.0.0", "10.0.0.0", "9.0.242.0", "9.0.0.0"
+	
+	foreach ($smoversion in $smoversions) {
+		try {
+			Add-Type -AssemblyName "Microsoft.SqlServer.Smo, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
+			$smoadded = $true
+		}
+		catch {
+			$smoadded = $false
+		}
+		
+		if ($smoadded -eq $true) { break }
+	}
+	
+	if ($smoadded -eq $true) {
+		
+		$assemblies = "Management.Common", "Dmf", "Instapi", "SqlWmiManagement", "ConnectionInfo", "SmoExtended", "SqlTDiagM", "Management.Utility",
+		"SString", "Management.RegisteredServers", "Management.Sdk.Sfc", "SqlEnum", "RegSvrEnum", "WmiEnum", "ServiceBrokerEnum", "Management.XEvent",
+		"ConnectionInfoExtended", "Management.Collector", "Management.CollectorEnum", "Management.Dac", "Management.DacEnum", "Management.IntegrationServices"
+		
+		foreach ($assembly in $assemblies) {
+			try {
+				Add-Type -AssemblyName "Microsoft.SqlServer.$assembly, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
+			}
+			catch {
+				# Don't care
+			}
+		}
+	}
+}
 
-if ($osmajor -gt 6 -or ($osmajor -eq 6 -and $osminor -gt 1)) {
-	Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" | Unblock-File -ErrorAction SilentlyContinue
+if (-not $smoadded) {
+	Get-ChildItem -Path "$script:PSModuleRoot\bin\smo\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dmf.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SqlWmiManagement.dll"
@@ -41,44 +70,6 @@ if ($osmajor -gt 6 -or ($osmajor -eq 6 -and $osminor -gt 1)) {
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventEnum.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Collector.dll"
 }
-else {
-<#
-	Attempt to load all versions of SMO from vNext to 2005 - this is why RequiredAssemblies can't be used.
-	Attempt to load all assemblies that will be needed in the module. 
-	Not all versions support supporting assemblies, so ignore and let the command catch it.
-	This takes about 11-50ms on a newer machine.
-#>
-	Write-Verbose "Had to failback"
-	$smoversions = "14.0.0.0", "13.0.0.0", "12.0.0.0", "11.0.0.0", "10.0.0.0", "9.0.242.0", "9.0.0.0"
-	
-	foreach ($smoversion in $smoversions) {
-		try {
-			Add-Type -AssemblyName "Microsoft.SqlServer.Smo, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
-			$smoadded = $true
-		}
-		catch {
-			$smoadded = $false
-		}
-		
-		if ($smoadded -eq $true) { break }
-	}
-	
-	if ($smoadded -eq $false) { throw "Can't load SMO assemblies. You must have SQL Server Management Studio installed to proceed." }
-	
-	$assemblies = "Management.Common", "Dmf", "Instapi", "SqlWmiManagement", "ConnectionInfo", "SmoExtended", "SqlTDiagM", "Management.Utility",
-	"SString", "Management.RegisteredServers", "Management.Sdk.Sfc", "SqlEnum", "RegSvrEnum", "WmiEnum", "ServiceBrokerEnum", "Management.XEvent",
-	"ConnectionInfoExtended", "Management.Collector", "Management.CollectorEnum", "Management.Dac", "Management.DacEnum", "Management.IntegrationServices"
-	
-	foreach ($assembly in $assemblies) {
-		try {
-			Add-Type -AssemblyName "Microsoft.SqlServer.$assembly, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
-		}
-		catch {
-			# Don't care
-		}
-	}
-}
-
 
 <# 
 
@@ -233,8 +224,8 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUo5LMwZVWIBTwFPkpYqEHitRs
-# DvSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU6OjwX5GVl+Mswp3dM99cvgjD
+# zxaggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -365,22 +356,22 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUjw3GChR6QZ3p7yenQHZkfLbgfvIwDQYJKoZIhvcNAQEBBQAE
-# ggEAHgM0LlgkVVc8t7KRNSZKQzavqaWyGRHFGaCST9WnE5vq6yZYU30wFBCjlIF6
-# jSzoVxjbwf6IYq3U6zGDB32omBKyHw7EyubqlKuLfgiPZklaP+v3YFsyh3zVHvto
-# +OL1exQIn0EgY/MzZeH8XXBNzfW2BzExA/RrBsHJCHxUgNd8x2yZHSxjGGmAUb7J
-# 4Cm7xkdpVS3r6Gs8J/lfPK3bH3yBILyNpbZvTu45K7RYiXksq4e/dOMU/5uvfKmp
-# rHVRWR1IbqlDUQPEWHZ9DjChmek0SZFKo+NpWJt2r7JTsewg6lvxMyP8kO/Pbwu8
-# EDqXm7i27B/hWWoDhzbNxX1u0KGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUcThf5156l2TltZfhLvmAOw+yMgowDQYJKoZIhvcNAQEBBQAE
+# ggEAA3oJSWJZEUcMU/n8UDMuWpcZP/D98gm9FrhlktPYX5c31sSDADyJTql77BvW
+# mKR43l68iC0BoFzJLtQyqksrBxlh3D3hkp9snFZA13DTjGvWIQO2Sx9GTGAcLpXX
+# RsNrtFbN3yuCVph1B2aJ0mYmQmpmoYjBmudqaMIYVqK1rKQipMqVoi86YG+4Pz/S
+# aT1ZOaxubSkmMeSarF3D6iXuqOtihwVOQ01O1qAS46iFsohV1o7/XXpkVk2lULa1
+# w9ljXu+ZbzOTIOj5Qb8pf6kszYWO4NrvZcrTV7qtvSzHrkjbKQi9yRlwGiSPbTss
+# 7pTAPYjCy2YBfoxi4lF7AybVK6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIxMTg0MDE3WjAj
-# BgkqhkiG9w0BCQQxFgQUTgbPc8H0QxrEttTRhFRvZZucQqwwDQYJKoZIhvcNAQEB
-# BQAEggEAiBoR5pjUGw50ppFK1hHOj5tCV653jufLaJHv+8FWzO0zYcRzCKgLHBqP
-# Bud77CYtaPuPOenBQIr3LLHmg5Gebx9Y3nL4lcSsFRxwxi0j+ThymWbnTapjY/KX
-# zK1A1rQ0LUeNoakzNaSa9SZtsab35JTO3mFZyZ+TN8mVNKrX58wHUZuHnY2mnyQ9
-# gYQsOcRjrnLxZ26LD+UCopskLt8GMMilDZuDe5mDnWqJ1XwqvGDQTM7eSW0ENtkT
-# jv+tW1jnQKul8zLJpKc9G42XK5sVKOB/3nBwprk8KYBj12ydmINWttuhYF4a4A0K
-# z+NOcuSQBG/HTQj0Et4ufGRFsCYwqQ==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIxMjEwOTUwWjAj
+# BgkqhkiG9w0BCQQxFgQU+etfPnLdQhRG/nEa2wXyTyOuqw8wDQYJKoZIhvcNAQEB
+# BQAEggEAbfdlVA9dzkgxTvWhRgYUQmVf3tKqk66c5/DtF5Ev5S7MoSo1CdBgWu4T
+# 5xJp9K+rNTL5v1fjKN36Q1v7VlV68zFhp52MpIM5tzV7KyEw0lA6CsI+8Y1hgZqe
+# DT9TMNaVbfUED4dg7LoUECAoU4s0prOP9cfnX8TdQYHtY9DoX7oE9nUF43BS6ZDR
+# w1xkHKAkqfEV5NxAtxsoismjNxSJcdCqhNus6Q8IPzlI0HUvRdD6FKAepBdxi+ch
+# SvnhzKCUGONyspiPg6UOMmH/dPNn4vNn9Uzgo35DS0sbgT/GekoHioAqu8YD/oWm
+# WrAW4PqAmovDRpB4iRjMU+izS8fgLA==
 # SIG # End signature block
