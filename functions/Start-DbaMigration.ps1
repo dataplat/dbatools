@@ -641,6 +641,5 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
             Write-Output "Total Elapsed time: $totaltime"
             Stop-Transcript
         }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Start-SqlMigration
 	}
 }
