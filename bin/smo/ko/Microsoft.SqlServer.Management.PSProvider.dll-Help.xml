@@ -1,0 +1,863 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<helpItems schema="maml">
+
+<!-- v 1.3.0.36 -->
+<command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+	<command:details>
+		<command:name>
+                   Decode-SqlName
+		</command:name>
+		<maml:description>
+			<maml:para>PowerShell 경로에서 사용 가능한 형식으로 인코딩된 식별자가 제공되는 경우 원래 SQL Server 식별자를 반환합니다.</maml:para>
+		</maml:description>
+		<maml:copyright>
+			<maml:para></maml:para>
+		</maml:copyright>
+		<command:verb>Decode</command:verb>
+		<command:noun>SqlName</command:noun>
+		<dev:version></dev:version>
+	</command:details>
+	<maml:description>
+		<maml:para>PowerShell 경로에서 사용 가능한 형식으로 인코딩된 식별자가 제공되는 경우 인코딩되지 않은 SQL Server 식별자를 반환합니다. SQL Server 구분 식별자에는 PowerShell 개체 이름에서 일반적으로 지원되지 않는 특수 문자를 포함할 수 있습니다. 이러한 확장 문자는 16진수 표현으로 인코딩되거나 ` 문자를 사용하여 이스케이프 처리되어야 합니다. 콜론 문자(:)와 같은 일부 문자는 이스케이프 처리되지 않습니다. 16진수 인코딩 형식은 %nn입니다. Decode-SqlName은 다음 인코딩을 해당 문자로 변환합니다.    %5C-\    %3A-:    %2E-.    %2F-/   %25-%    %3C-&lt;    %3E-&gt;    %2A-*    %3F-?    %5B-[    %5D-]    %7C-|</maml:para>
+	</maml:description>
+	<!-- Cmdlet syntax section-->
+	<command:syntax>
+		<command:syntaxItem>
+			<maml:name>Decode-SqlName</maml:name>
+			<command:parameter required="true" variableLength="false" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="2">
+				<maml:name>SqlName</maml:name>
+				<maml:description>
+					<maml:para>재구성해야 하는 SQL Server 식별자입니다.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+			</command:parameter>
+		</command:syntaxItem>
+	</command:syntax>
+	<!-- Cmdlet parameter section  -->
+	<command:parameters>
+		<command:parameter required="true" variableLength="false" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="2">
+			<maml:name>SqlName</maml:name>
+			<maml:description>
+				<maml:para>재구성해야 하는 SQL Server 식별자입니다.</maml:para>
+								
+			</maml:description>
+			<command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+			<dev:type>
+				<maml:name>string</maml:name>
+				<maml:uri/>
+			</dev:type>
+			<dev:defaultValue></dev:defaultValue>
+		</command:parameter>
+	</command:parameters>
+	<!-- Input - Output section-->
+	<command:inputTypes>
+		<command:inputType>
+			<dev:type>
+				<maml:name>String</maml:name>
+				<maml:uri/>
+				<maml:description />
+			</dev:type>
+			<maml:description>
+				<maml:para>
+					<!-- description  -->
+					
+				</maml:para>
+			</maml:description>
+		</command:inputType>
+	</command:inputTypes>
+	<command:returnValues>
+		<command:returnValue>
+			<dev:type>
+				<maml:name>String</maml:name>
+				<maml:uri />
+				<maml:description />
+			</dev:type>   
+			<maml:description>
+				<maml:para>
+					<!-- description  -->
+					
+				</maml:para>
+			</maml:description> 
+		</command:returnValue>
+	</command:returnValues>
+	<!-- Error section-->
+	<command:terminatingErrors />
+	<command:nonTerminatingErrors />
+		<!-- Notes section  -->
+	<maml:alertSet>
+		<maml:title></maml:title>
+		<maml:alert>
+			<maml:para>
+                          
+                        </maml:para>
+		</maml:alert>
+		<maml:alert>
+			<maml:para></maml:para>
+		</maml:alert>
+	</maml:alertSet>
+	 <!-- Example section  -->
+	<command:examples>
+
+		<command:example>
+			<maml:title>
+				-------------------------- EXAMPLE 1 --------------------------
+			</maml:title> 
+			<maml:introduction>
+				<maml:para>C:\PS&gt;</maml:para>
+			</maml:introduction> 
+  			<dev:code>
+Decode-SqlName -SqlName "My%3ATable`/"
+
+My:Table/                        </dev:code>
+       			<dev:remarks>
+                                <maml:para>설명</maml:para>
+                                <maml:para>-----------</maml:para>
+  			        <maml:para>: 문자의 16진수 표현으로 인코딩된 SQL Server 식별자를 디코딩합니다. PowerShell에서는 또한 이스케이프 처리된 / 문자에서 이스케이프 처리하는 역따옴표 문자(`)를 제거합니다.</maml:para>
+	                        <maml:para></maml:para>
+	                        <maml:para></maml:para>
+	                        <maml:para></maml:para>
+	                        <maml:para></maml:para>
+  			</dev:remarks>
+			<command:commandLines>
+				<command:commandLine>
+					<command:commandText></command:commandText>
+				</command:commandLine>
+			</command:commandLines>
+		</command:example>
+	</command:examples>
+	<!-- Link section  -->
+	<maml:relatedLinks>
+		<maml:navigationLink>
+			<maml:linkText>SQL Server Books Online: Using SQL Server Identifiers in PowerShell</maml:linkText>
+			<maml:uri/>
+		</maml:navigationLink>
+		<maml:navigationLink>
+			<maml:linkText>Encode-SqlName</maml:linkText>
+			<maml:uri/>
+		</maml:navigationLink>
+	</maml:relatedLinks>
+</command:command>
+
+<!-- v 1.3.0.36 -->
+<command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+	<command:details>
+		<command:name>
+                   Encode-SqlName
+		</command:name>
+		<maml:description>
+			<maml:para>SQL Server 이름의 확장 문자를 PowerShell 경로에서 사용 가능한 형식으로 인코딩합니다.</maml:para>
+		</maml:description>
+		<maml:copyright>
+			<maml:para></maml:para>
+		</maml:copyright>
+		<command:verb>Encode</command:verb>
+		<command:noun>SqlName</command:noun>
+		<dev:version></dev:version>
+	</command:details>
+	<maml:description>
+		<maml:para>SQL Server 이름의 특수 문자를 PowerShell 경로에서 사용 가능한 형식으로 인코딩합니다. SQL Server 구분 식별자에는 PowerShell 개체 이름에서 일반적으로 지원되지 않는 문자를 포함할 수 있습니다. SQL Server 공급자 경로에서 구분 식별자를 사용하는 경우 이러한 확장 문자는 16진수 표현으로 인코딩되거나 ` 문자를 사용하여 이스케이프 처리되어야 합니다. 콜론 문자(:)와 같은 일부 문자는 이스케이프 처리되지 않습니다. 문자의 16진수 인코딩 형식은 %nn입니다. Encode-SqlName에서 인코딩된 문자는 다음과 같습니다. \:./%&lt;&gt;*?[]|</maml:para>
+	</maml:description>
+	<!-- Cmdlet syntax section-->
+	<command:syntax>
+		<command:syntaxItem>
+			<maml:name>Encode-SqlName</maml:name>
+			<command:parameter required="true" variableLength="false" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="2">
+				<maml:name>SqlName</maml:name>
+				<maml:description>
+					<maml:para>인코딩할 SQL Server 식별자입니다.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+			</command:parameter>
+		</command:syntaxItem>
+	</command:syntax>
+	<!-- Cmdlet parameter section  -->
+	<command:parameters>
+		<command:parameter required="true" variableLength="false" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="2">
+			<maml:name>SqlName</maml:name>
+			<maml:description>
+				<maml:para>인코딩할 SQL Server 식별자입니다.</maml:para>
+								
+			</maml:description>
+			<command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+			<dev:type>
+				<maml:name>string</maml:name>
+				<maml:uri/>
+			</dev:type>
+			<dev:defaultValue></dev:defaultValue>
+		</command:parameter>
+	</command:parameters>
+	<!-- Input - Output section-->
+	<command:inputTypes>
+		<command:inputType>
+			<dev:type>
+				<maml:name>String</maml:name>
+				<maml:uri/>
+				<maml:description />
+			</dev:type>
+			<maml:description>
+				<maml:para>
+					<!-- description  -->
+					
+				</maml:para>
+			</maml:description>
+		</command:inputType>
+	</command:inputTypes>
+	<command:returnValues>
+		<command:returnValue>
+			<dev:type>
+				<maml:name>String</maml:name>
+				<maml:uri />
+				<maml:description />
+			</dev:type>   
+			<maml:description>
+				<maml:para>
+					<!-- description  -->
+					
+				</maml:para>
+			</maml:description> 
+		</command:returnValue>
+	</command:returnValues>
+	<!-- Error section-->
+	<command:terminatingErrors />
+	<command:nonTerminatingErrors />
+		<!-- Notes section  -->
+	<maml:alertSet>
+		<maml:title></maml:title>
+		<maml:alert>
+			<maml:para>
+                          
+                        </maml:para>
+		</maml:alert>
+		<maml:alert>
+			<maml:para></maml:para>
+		</maml:alert>
+	</maml:alertSet>
+	 <!-- Example section  -->
+	<command:examples>
+
+		<command:example>
+			<maml:title>
+				-------------------------- EXAMPLE 1 --------------------------
+			</maml:title> 
+			<maml:introduction>
+				<maml:para>C:\PS&gt;</maml:para>
+			</maml:introduction> 
+  			<dev:code>
+Encode-SqlName -SqlName "My:Table/"
+
+My%3ATable%2F                        </dev:code>
+       			<dev:remarks>
+                                <maml:para>설명</maml:para>
+                                <maml:para>-----------</maml:para>
+  			        <maml:para>: 및 / 문자를 포함하는 SQL Server 테이블 이름을 인코딩합니다.</maml:para>
+	                        <maml:para></maml:para>
+	                        <maml:para></maml:para>
+	                        <maml:para></maml:para>
+	                        <maml:para></maml:para>
+  			</dev:remarks>
+			<command:commandLines>
+				<command:commandLine>
+					<command:commandText></command:commandText>
+				</command:commandLine>
+			</command:commandLines>
+		</command:example>
+	</command:examples>
+	<!-- Link section  -->
+	<maml:relatedLinks>
+		<maml:navigationLink>
+			<maml:linkText>SQL Server Books Online: Using SQL Server Identifiers in PowerShell</maml:linkText>
+			<maml:uri/>
+		</maml:navigationLink>
+		<maml:navigationLink>
+			<maml:linkText>Decode-SqlName</maml:linkText>
+			<maml:uri/>
+		</maml:navigationLink>
+	</maml:relatedLinks>
+</command:command>
+
+<!-- v 1.3.0.36 -->
+<command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+	<command:details>
+		<command:name>
+                   Convert-UrnToPath
+		</command:name>
+		<maml:description>
+			<maml:para>SQL Server 관리 개체 URN을 SQL Server PowerShell 공급자 경로로 변환합니다.</maml:para>
+		</maml:description>
+		<maml:copyright>
+			<maml:para></maml:para>
+		</maml:copyright>
+		<command:verb>Convert</command:verb>
+		<command:noun>UrnToPath</command:noun>
+		<dev:version></dev:version>
+	</command:details>
+	<maml:description>
+		<maml:para>SQL Server 관리 개체 URN(Uniform Resource Name)을 SQL Server 공급자 경로로 변환합니다. SQL Server 관리 개체의 Urn 속성에서는 SQL Server 개체 계층의 위치를 나타내는 문자열을 반환합니다.  Urn의 노드가 PowerShell 경로 노드에서 지원되지 않는 확장 문자를 포함하는 SQL Server 구분 식별자인 경우 확장 문자는 16진수 표현으로 인코딩됩니다. 예를 들어 테이블 이름이 "My:Table"이면 "My%3ATable"로 인코딩됩니다.</maml:para>
+	</maml:description>
+	<!-- Cmdlet syntax section-->
+	<command:syntax>
+		<command:syntaxItem>
+			<maml:name>Convert-UrnToPath</maml:name>
+			<command:parameter required="true" variableLength="false" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="named">
+				<maml:name>Urn</maml:name>
+				<maml:description>
+					<maml:para>SQL Server URN(Unique Resource Name)을 포함하는 문자열입니다.   SQL Server URN은 SQL Server 계층에서 개체 위치를 식별하는 문자열입니다. URN에는 SQL Server PowerShell 경로와 동일한 정보가 다른 형식으로 들어 있습니다. SQL Server 관리 개체에는 Urn 속성이 있습니다.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+			</command:parameter>
+		</command:syntaxItem>
+	</command:syntax>
+	<!-- Cmdlet parameter section  -->
+	<command:parameters>
+		<command:parameter required="true" variableLength="false" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="named">
+			<maml:name>Urn</maml:name>
+			<maml:description>
+				<maml:para>SQL Server URN(Unique Resource Name)을 포함하는 문자열입니다.   SQL Server URN은 SQL Server 계층에서 개체 위치를 식별하는 문자열입니다. URN에는 SQL Server PowerShell 경로와 동일한 정보가 다른 형식으로 들어 있습니다. SQL Server 관리 개체에는 Urn 속성이 있습니다.</maml:para>
+								
+			</maml:description>
+			<command:parameterValue required="true" variableLength="false">string</command:parameterValue>
+			<dev:type>
+				<maml:name>string</maml:name>
+				<maml:uri/>
+			</dev:type>
+			<dev:defaultValue></dev:defaultValue>
+		</command:parameter>
+	</command:parameters>
+	<!-- Input - Output section-->
+	<command:inputTypes>
+		<command:inputType>
+			<dev:type>
+				<maml:name>String</maml:name>
+				<maml:uri/>
+				<maml:description />
+			</dev:type>
+			<maml:description>
+				<maml:para>
+					<!-- description  -->
+					SQL Server 관리 개체 URN을 포함하는 문자열입니다.
+				</maml:para>
+			</maml:description>
+		</command:inputType>
+	</command:inputTypes>
+	<command:returnValues>
+		<command:returnValue>
+			<dev:type>
+				<maml:name>String</maml:name>
+				<maml:uri />
+				<maml:description />
+			</dev:type>   
+			<maml:description>
+				<maml:para>
+					<!-- description  -->
+					SQL Server PowerShell 공급자 경로를 포함하는 문자열입니다.
+				</maml:para>
+			</maml:description> 
+		</command:returnValue>
+	</command:returnValues>
+	<!-- Error section-->
+	<command:terminatingErrors />
+	<command:nonTerminatingErrors />
+		<!-- Notes section  -->
+	<maml:alertSet>
+		<maml:title></maml:title>
+		<maml:alert>
+			<maml:para>
+                          
+                        </maml:para>
+		</maml:alert>
+		<maml:alert>
+			<maml:para></maml:para>
+		</maml:alert>
+	</maml:alertSet>
+	 <!-- Example section  -->
+	<command:examples>
+
+		<command:example>
+			<maml:title>
+				-------------------------- EXAMPLE 1 --------------------------
+			</maml:title> 
+			<maml:introduction>
+				<maml:para>C:\PS&gt;</maml:para>
+			</maml:introduction> 
+  			<dev:code>
+Set-Location SQLSERVER:\SQL\MyComputer\MyInstance\Databases\AdventureWorks2012
+Convert-UrnToPath -Urn (Get-Item .).Urn.ToString()
+
+SQLSERVER:\SQL\MyComputer\MyInstance\Databases\AdventureWorks2012                        </dev:code>
+       			<dev:remarks>
+                                <maml:para>설명</maml:para>
+                                <maml:para>-----------</maml:para>
+  			        <maml:para>현재 경로를 포함하는 문자열을 반환합니다. 예제에서는 SMO Urn 속성의 ToString() 함수를 사용하여 Urn을 문자열로 반환합니다.</maml:para>
+	                        <maml:para></maml:para>
+	                        <maml:para></maml:para>
+	                        <maml:para></maml:para>
+	                        <maml:para></maml:para>
+  			</dev:remarks>
+			<command:commandLines>
+				<command:commandLine>
+					<command:commandText></command:commandText>
+				</command:commandLine>
+			</command:commandLines>
+		</command:example>
+
+		<command:example>
+			<maml:title>
+				-------------------------- EXAMPLE 2 --------------------------
+			</maml:title> 
+			<maml:introduction>
+				<maml:para>C:\PS&gt;</maml:para>
+			</maml:introduction> 
+  			<dev:code>
+Set-Location ( Convert-UrnToPath -Urn "Server[@Name='MyComputer']/Database[@Name='AdventureWorks']/Table[@Name='Address' and @Schema = 'Person']" )                        </dev:code>
+       			<dev:remarks>
+                                <maml:para>설명</maml:para>
+                                <maml:para>-----------</maml:para>
+  			        <maml:para>경로를 SQL Server 관리 개체 URN에 지정된 위치로 설정합니다.</maml:para>
+	                        <maml:para></maml:para>
+	                        <maml:para></maml:para>
+	                        <maml:para></maml:para>
+	                        <maml:para></maml:para>
+  			</dev:remarks>
+			<command:commandLines>
+				<command:commandLine>
+					<command:commandText></command:commandText>
+				</command:commandLine>
+			</command:commandLines>
+		</command:example>
+
+		<command:example>
+			<maml:title>
+				-------------------------- EXAMPLE 3 --------------------------
+			</maml:title> 
+			<maml:introduction>
+				<maml:para>C:\PS&gt;</maml:para>
+			</maml:introduction> 
+  			<dev:code>
+Set-Location SQLSERVER:\SQL\MyComputer\DEFAULT\Databases
+foreach ($Item in Get-ChildItem) { $Item.Urn.ToString() | Convert-UrnToPath}
+
+SQLSERVER:\SQL\MyComputer\DEFAULT\Databases\AdventureWorks2012                        </dev:code>
+       			<dev:remarks>
+                                <maml:para>설명</maml:para>
+                                <maml:para>-----------</maml:para>
+  			        <maml:para>각각 기본 인스턴스의 데이터베이스 경로를 포함하는 문자열 집합을 반환합니다. 파이프라인을 사용하여 현재 노드 URN을 Convert-UrnToPath로 전달합니다.</maml:para>
+	                        <maml:para></maml:para>
+	                        <maml:para></maml:para>
+	                        <maml:para></maml:para>
+	                        <maml:para></maml:para>
+  			</dev:remarks>
+			<command:commandLines>
+				<command:commandLine>
+					<command:commandText></command:commandText>
+				</command:commandLine>
+			</command:commandLines>
+		</command:example>
+	</command:examples>
+	<!-- Link section  -->
+	<maml:relatedLinks>
+		<maml:navigationLink>
+			<maml:linkText>Decode-SqlName</maml:linkText>
+			<maml:uri/>
+		</maml:navigationLink>
+		<maml:navigationLink>
+			<maml:linkText>Encode-SqlName</maml:linkText>
+			<maml:uri/>
+		</maml:navigationLink>
+	</maml:relatedLinks>
+</command:command>
+
+<!-- v 1.3.0.34 -->
+<providerHelp>
+
+<Name>
+	SQLServer
+</Name>
+
+<Drives>
+	<Para>SQLSERVER</Para>
+</Drives>
+<Synopsis>
+	Access SQL Server instances and their databases.
+</Synopsis>
+
+<DetailedDescription>
+	<para>The Microsoft SQL Server PowerShell provider lets you manage the configuration of instances of the SQL Server Database Engine and the objects in those instances. The SQL Server PowerShell provider implements separate path hierarchies for different classes of objects that are supported by the SQL Server management object models.
+
+The SQL Server PowerShell provider implements one virtual drive named SQLSERVER:. The SQLSERVER: drive has several folders: \SQL, \SQLPolicy, \SQLRegistration, \Utility, \DAC, \DataCollection, \IntegrationServices, and SQLAS.
+
+The SQLServer:\SQL folder lets you navigate to instances of the SQL Server Database Engine and manage the objects in the instances, such as logins, tables, functions, jobs, queues, and mail agents. The SQL folder operates using the objects in these namespaces:
+
+  Microsoft.SqlServer.Management.SMO
+  Microsoft.SqlServer.Management.SMO.Agent
+  Microsoft.SqlServer.Management.SMO.Broker
+  Microsoft.SqlServer.Management.SMO.Mail
+
+The SQLSERVER:\SQLPolicy folder lets you navigate to instances of the Database Engine that contains a Policy-Based Management policy store and manage objects such as policies and facets. The SQLPolicy folder operates using the objects in the Microsoft.SqlServer.Management.Dmf and Microsoft.SqlServer.Management.Facets namespaces.
+
+The SQLSERVER:\SQLRegistration folder lets you navigate to instances of the Database Engine and manage Registered Server objects such as server groups and registered servers. The SQLRegistration folder operates using the objects in the Microsoft.SqlServer.Management.RegisteredServers and Microsoft.SqlServer.Management.RegSvrEnum namespace.
+
+The SQLSERVER:\Utility folder lets you navigate to the managed instances and data-tier applications registered in the SQL Server Utility. The Utility folder operates using the objects in the Microsoft.SqlServer.Management.Utility namespace.
+
+The SQLServer:\DAC folder lets you navigage through data-tier applications objects such as DAC package files. The DAC folder operates using the objects in the Microsoft.SqlServer.Management.DAC namespace.
+
+The SQLServer:\DataCollection folder lets you navigate to instances of the Database Engine and manage Data Collector objects such as collection sets and configuration stores. The DataCollection folder operates using the objects in the Microsoft.SqlServer.Management.Collector namespace.
+
+The SQLServer:\IntegrationServices folder lets you manage SQL Server Integration Services objects such as projects, packages, and environments. The IntegrationServices folder operates using the Microsoft.SqlServer.Management.IntegrationServices namespace.
+
+The SQLServer:\SQLAS folders lets you manage SQL Server Analysis Services objects such as aggregations, dimensions, and cubes. The SQLAS folder operates using the Microsoft.AnalysisServices namespace.
+
+You can navigate the SQLSERVER: paths by using PowerShell path cmdlets such as Get-Location, Set-Location, and Get-ChildItem.
+
+The leading part of a SQLSERVER:\SQL path has the form SQLSERVER:\SQL\ComputerName\InstanceName. You must always specify an instance name, even for default instances. Specify DEFAULT for default instance names. The path nodes following the InstanceName alternate between object classes and object names. Schemas are not represented as an object class. When you specify a path node for top level objects in schemas, such as tables or views, the node name must be in the format SchemaName.ObjectName. For example, this is the path to the AddressID column in the Address table of the Person schema:
+
+SQLSERVER:\SQL\MyComputer\DEFAULT\Databases\AdventureWorks\Tables\Person.Address\Columns\AddressID
+
+To save typing, you can create your own PowerShell drives that map over the first several nodes of an SQL path.
+
+The information that is returned by Get-ChildItem depends on which part of the path the cmdlet is executed from:
+
+Returns the local computer name and the list of computers to which you have opened Database Engine connections by using WMI:
+PS SQLSERVER:\SQL&gt; Get-ChildItem
+
+Returns the list of instances on the specified computer:
+PS SQLSERVER:\SQL\ComputerName&gt; Get-ChildItem
+
+Returns the list of top-level object types from the instance, such as Logins and Databases:
+PS SQLSERVER:\SQL\ComputerName\InstanceName&gt; Get-ChildItem.
+
+With the SQL Server PowerShell provider, you manage the objects that are exposed in SQL Server paths by using the SQL Server management object model methods and properties for that class of object. For example, you can use the methods of the Microsoft.SQLServer.Management.SMO.Database class to perform actions such as creating, altering, and dropping databases. You can also use the class properties to query the current state of the objects. Use the Get-Member cmdlet to get a list of the methods and properties that are supported for the various objects. For information about the classes, see the namespace reference sections in the SQL Server Books Online.
+
+You cannot select, insert, update, or delete data in tables and views by using the SQL Server PowerShell provider. For example, there is no Select() or Insert() method for tables. Use the Invoke-Sqlcmd cmdlet to access and change the data in tables and views.
+
+By default, the SQL Server PowerShell provider opens Windows Authentication connections by using the credentials of the Windows account that is running the PowerShell session. See SQL Server Books Online for information about opening a SQL Server Authentication connection using the provider.
+
+In complex databases, the lists returned by Get-ChildItem and the PowerShell tab-completion lists can be very large. You can use three system variables created by the SQL Server PowerShell provider to control the size of these lists:
+
+$SqlServerMaximumTabCompletion = n
+n is an integer that specifies the maximum number of objects in a tab completion list. The default is 0, which means all objects are returned.
+
+$SqlServerMaximumChildItems = n
+n is an integer that specifies the maximum number of objects returned when you run Get-ChildItem on SQL Server path nodes. The default is 0, which means all objects are returned.
+
+$SQLServerIncludeSystemObjects = { $True | $False }
+Specifies whether SQL Server system objects are returned by Get-ChildItem or included in tab-completion lists. The default is $True</para>
+</DetailedDescription>
+
+<Capabilities>
+	<para></para>
+</Capabilities>
+<Filters>
+	<para></para>
+</Filters>
+<Notes>
+	SQL Server delimited identifiers are object names that are enclosed in brackets ([Table:Name]) or quotation marks ("View&gt;Name"). Delimited identifiers can contain any Unicode character. The special characters in these names must be either encoded to their hexadecimal representation or escaped for use in PowerShell paths. The hexadecimal encoding for characters uses the format %nn. An example of encoding the colon (:)character in the name "Table:Name" is:
+Set-Location "Table%3AName".
+
+The PowerShell escape character is the back tick (`) character that is typically on the key at the top left of the keyboard. An example of escaping an extended character is as follows:
+Set-Location "View`&gt;Name"
+
+Certain characters, such as the colon character (:), cannot be escaped. They must be encoded. The SQL Server PowerShell provider snapin implements two cmdlets to help encode and decode delimited identifiers: Encode-SqlName and Decode-SqlName.
+
+You must supply a registry or directory object for the -Type parameter when using these core cmdlets with a SQLRegistration: drive: Copy-Object, Move-Object, New-Object, Remove-Object, and Rename-Object.
+</Notes>
+<Tasks>
+	<Task>
+  		<Title>
+			Navigating SQLSERVER:\SQL paths
+		</Title>
+
+   		<Description>
+			<para></para>		
+		</Description>
+
+		<Examples>
+                        <Example>
+                        	<Title>
+					-------------------------- EXAMPLE 1 --------------------------
+				</Title> 
+				<Introduction>
+					<para>This example uses the Set-Location cmdlet to change the path to the SQL folder.</para>
+				</Introduction> 
+	  			<Code>
+					Set-Location SQLSERVER:\SQL
+				</Code>
+				<Remarks>
+					<para></para>
+	  			</Remarks>
+			</Example>
+                        <Example>
+                        	<Title>
+					-------------------------- EXAMPLE 2 --------------------------
+				</Title> 
+				<Introduction>
+					<para>This example uses Set-Location to change the path to a default instance of the Database Engine</para>
+				</Introduction> 
+	  			<Code>
+					Set-Location SQLSERVER:\SQL\MyComputer\DEFAULT
+				</Code>
+				<Remarks>
+					<para></para>
+	  			</Remarks>
+			</Example>
+                        <Example>
+                        	<Title>
+					-------------------------- EXAMPLE 3 --------------------------
+				</Title> 
+				<Introduction>
+					<para>This example uses Set-Location to change the path to the AdventureWorks sample database.</para>
+				</Introduction> 
+	  			<Code>
+					Set-Location SQLSERVER:\SQL\MyComputer\MyInstance\Databases\AdventureWorks
+				</Code>
+				<Remarks>
+					<para></para>
+	  			</Remarks>
+			</Example>
+		</Examples>
+	</Task>
+	<Task>
+  		<Title>
+			Build a New PowerShell Drive
+		</Title>
+
+   		<Description>
+			<para></para>		
+		</Description>
+
+		<Examples>
+                        <Example>
+                        	<Title>
+					-------------------------- EXAMPLE 1 --------------------------
+				</Title> 
+				<Introduction>
+					<para>If you are going to do a lot of work in the AdventureWorks database, create a new AWDB: drive to save typing.</para>
+				</Introduction> 
+	  			<Code>
+					New-PSDrive -Name AWDB -Root SQLSERVER:\SQL\MyComputer\DEFAULT\Databases\AdventureWorks -PSProvider SQLServer
+				</Code>
+				<Remarks>
+					<para></para>
+	  			</Remarks>
+			</Example>
+		</Examples>
+	</Task>
+	<Task>
+  		<Title>
+			Get the Methods and Properties of a SQL Server Object
+		</Title>
+
+   		<Description>
+			<para></para>		
+		</Description>
+
+		<Examples>
+                        <Example>
+                        	<Title>
+					-------------------------- EXAMPLE 1 --------------------------
+				</Title> 
+				<Introduction>
+					<para>This command sets a variable to the SMO Database class and then gets a list of the methods and properties supported by the class.</para>
+				</Introduction> 
+	  			<Code>
+					$MyVar = New-Object Microsoft.SqlServer.Management.SMO.Database
+$MyVar | Get-Member -Type Methods
+$MyVar | Get-Member -Type Properties
+				</Code>
+				<Remarks>
+					<para></para>
+	  			</Remarks>
+			</Example>
+                        <Example>
+                        	<Title>
+					-------------------------- EXAMPLE 2 --------------------------
+				</Title> 
+				<Introduction>
+					<para>This command navigates to the database node in an SQL-based path and get s a list of the properties that are supported for databases.</para>
+				</Introduction> 
+	  			<Code>
+					Set-Location SQLSERVER:\SQL\MyComputer\DEFAULT\Databases
+Get-Item . | Get-Member -Type Properties
+				</Code>
+				<Remarks>
+					<para></para>
+	  			</Remarks>
+			</Example>
+		</Examples>
+	</Task>
+	<Task>
+  		<Title>
+			Filter SQL Server Objects by Using SMO Properties
+		</Title>
+
+   		<Description>
+			<para></para>		
+		</Description>
+
+		<Examples>
+                        <Example>
+                        	<Title>
+					-------------------------- EXAMPLE 1 --------------------------
+				</Title> 
+				<Introduction>
+					<para>This command lists only the tables that are in the AdventureWorks Sales schema.</para>
+				</Introduction> 
+	  			<Code>
+					Set-Location SQLSERVER:\SQL\MyComputer\DEFAULT\Databases\AdventureWorks\Tables
+Get-ChildItem | WHERE {$_.Schema -eq "Sales"}
+				</Code>
+				<Remarks>
+					<para></para>
+	  			</Remarks>
+			</Example>
+		</Examples>
+	</Task>
+	<Task>
+  		<Title>
+			Generate Scripts That Create SQL Server Objects
+		</Title>
+
+   		<Description>
+			<para></para>		
+		</Description>
+
+		<Examples>
+                        <Example>
+                        	<Title>
+					-------------------------- EXAMPLE 1 --------------------------
+				</Title> 
+				<Introduction>
+					<para>This script creates a Views.sql file that contains the CREATE VIEW statements that are required to recreate all of the views that are defined in AdventureWorks.</para>
+				</Introduction> 
+	  			<Code>
+					Remove_Item c:\PowerShell\Views.sql
+Set-Location SQLSERVER:\SQL\MyComputer\DEFAULT\Databases\AdventureWorks\Views
+foreach ($Item in Get-ChildItem) {$Item.Script() | Out-File -Filepath c:\PowerShell\Views.sql -append }
+				</Code>
+				<Remarks>
+					<para></para>
+	  			</Remarks>
+			</Example>
+		</Examples>
+	</Task>
+	<Task>
+  		<Title>
+			Use SMO to Manage SQL Server Objects
+		</Title>
+
+   		<Description>
+			<para></para>		
+		</Description>
+
+		<Examples>
+                        <Example>
+                        	<Title>
+					-------------------------- EXAMPLE 1 --------------------------
+				</Title> 
+				<Introduction>
+					<para>This script uses SMO to create a database and then query its state.</para>
+				</Introduction> 
+	  			<Code>
+					Set-Location SQLSERVER:\SQL\MyComputer\DEFAULT\Databases
+$MyVar = New-Object Microsoft.SqlServer.Management.SMO.Database
+$MyVar.Parent = (Get-Item ..)
+$MyVar.Name = "NewDB"
+$MyVar.Create()
+$MyVar.State
+				</Code>
+				<Remarks>
+					<para></para>
+	  			</Remarks>
+			</Example>
+		</Examples>
+	</Task>
+	<Task>
+  		<Title>
+			Controlling SQL Server Objects in Tab-completion and Get-ChildItem
+		</Title>
+
+   		<Description>
+			<para></para>		
+		</Description>
+
+		<Examples>
+                        <Example>
+                        	<Title>
+					-------------------------- EXAMPLE 1 --------------------------
+				</Title> 
+				<Introduction>
+					<para>This script sets the values for the system variables that control the number of SQL Server objects included in tab-completion lists or returned by Get-ChildItem.</para>
+				</Introduction> 
+	  			<Code>
+					$SqlServerMaximumTabCompletion = 20
+$SqlServerMaximumChildItems = 10
+$SqlServerIncludeSystemObjects = $False
+dir variable:sqlserver*
+				</Code>
+				<Remarks>
+					<para></para>
+	  			</Remarks>
+			</Example>
+		</Examples>
+	</Task>
+</Tasks>
+<DynamicParameters>
+	<DynamicParameter>
+		<Name></Name>
+
+		<CmdletSupported></CmdletSupported>
+
+		<Type>
+            		<Name></Name>
+      		</Type>
+
+      		<Description></Description>
+
+		<PossibleValues>
+			<PossibleValue>
+				<Value></Value>
+
+				<Description>
+					<para></para>
+				</Description>
+
+			</PossibleValue>
+		</PossibleValues>
+	</DynamicParameter>
+</DynamicParameters>
+<RelatedLinks>
+    <navigationLink>
+        <linkText>about_provider</linkText>
+        <uri/>
+    </navigationLink>
+    <navigationLink>
+        <linkText>Encode-SqlName</linkText>
+        <uri/>
+    </navigationLink>
+    <navigationLink>
+        <linkText>Decode-SqlName</linkText>
+        <uri/>
+    </navigationLink>
+    <navigationLink>
+        <linkText>Invoke-Sqlcmd</linkText>
+        <uri/>
+    </navigationLink>
+    <navigationLink>
+        <linkText>New-PSDrive</linkText>
+        <uri/>
+    </navigationLink>
+    <navigationLink>
+        <linkText>Get-Member</linkText>
+        <uri/>
+    </navigationLink>
+    <navigationLink>
+        <linkText>Invoke-PolicyEvaluation</linkText>
+        <uri/>
+    </navigationLink>
+</RelatedLinks>
+
+</providerHelp>
+
+
+
+</helpItems>
