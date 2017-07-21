@@ -86,7 +86,7 @@ If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\
 	
 	try
 	{
-        $query = $server.ConnectionContext.ExecuteNonQuery($sql)
+        $query = $server.Query($sql)
         $Created = $true
     }
     catch

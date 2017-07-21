@@ -124,7 +124,7 @@
 					$sql = $mail.ConfigurationValues.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 					Write-Message -Message $sql -Level Debug
-					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					$destServer.Query($sql) | Out-Null
 					$mail.ConfigurationValues.Refresh()
 					$copyMailConfigStatus.Status = "Successful"
 				}
@@ -185,7 +185,7 @@
 						$sql = $account.Script() | Out-String
 						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 						Write-Message -Message $sql -Level Debug
-						$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+						$destServer.Query($sql) | Out-Null
 						$copyMailAccountStatus.Status = "Successful"
 					}
 					catch {
@@ -248,7 +248,7 @@
 						$sql = $profile.Script() | Out-String
 						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 						Write-Message -Message $sql -Level Debug
-						$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+						$destServer.Query($sql) | Out-Null
 						$destServer.Mail.Profiles.Refresh()
 						$copyMailProfileStatus.Status = "Successful"
 					}
@@ -308,7 +308,7 @@
 						$sql = $mailServer.Script() | Out-String
 						$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 						Write-Message -Message $sql -Level Debug
-						$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+						$destServer.Query($sql) | Out-Null
 						$copyMailServerStatus.Status = "Successful"
 					}
 					catch {

@@ -30,7 +30,7 @@ Internal function. Updates specified database to read-only or read-write. Necess
 	try
 	{
 		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-		$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+		$null = $server.Query($sql)
 		Write-Output "Changed ReadOnly status to $readonly for $dbname on $($server.name)"
 		return $true
 	}
