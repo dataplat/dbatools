@@ -247,7 +247,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 			
 			# Create the job object
 			try {
-				$smoJob = New-Object Microsoft.SqlServer.Management.Smo.Agent.Job($server.JobServer, $Job)
+				$currentjob = New-Object Microsoft.SqlServer.Management.Smo.Agent.Job($server.JobServer, $Job)
 			}
 			catch {
 				Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Target $Job -Continue -InnerErrorRecord $_
@@ -257,38 +257,38 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 			# Settings the options for the job
 			if ($Disabled) {
 				Write-Message -Message "Setting job to disabled" -Level Verbose
-				$smoJob.IsEnabled = $false
+				$currentjob.IsEnabled = $false
 			}
 			else {
 				Write-Message -Message "Setting job to enabled" -Level Verbose
-				$smoJob.IsEnabled = $true
+				$currentjob.IsEnabled = $true
 			}
 			
 			if ($Description.Length -ge 1) {
 				Write-Message -Message "Setting job description" -Level Verbose
-				$smoJob.Description = $Description
+				$currentjob.Description = $Description
 			}
 			
 			if ($StartStepId -ge 1) {
 				Write-Message -Message "Setting job start step id" -Level Verbose
-				$smoJob.StartStepID = $StartStepId
+				$currentjob.StartStepID = $StartStepId
 			}
 			
 			if ($Category.Length -ge 1) {
 				Write-Message -Message "Setting job category" -Level Verbose
-				$smoJob.Category = $Category
+				$currentjob.Category = $Category
 			}
 			
 			if ($CategoryId -ge 1) {
 				Write-Message -Message "Setting job category id" -Level Verbose
-				$smoJob.CategoryID = $CategoryId
+				$currentjob.CategoryID = $CategoryId
 			}
 			
 			if ($OwnerLogin.Length -ge 1) {
 				# Check if the login name is present on the instance
 				if ($server.Logins.Name -contains $OwnerLogin) {
 					Write-Message -Message "Setting job owner login name to $OwnerLogin" -Level Verbose
-					$smoJob.OwnerLoginName = $OwnerLogin
+					$currentjob.OwnerLoginName = $OwnerLogin
 				}
 				else {
 					Stop-Function -Message "The owner $OwnerLogin does not exist on instance $instance" -Target $Job -Continue
@@ -297,7 +297,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 			
 			if ($EventLogLevel -ge 0) {
 				Write-Message -Message "Setting job event log level" -Level Verbose
-				$smoJob.EventLogLevel = $EventLogLevel
+				$currentjob.EventLogLevel = $EventLogLevel
 			}
 			
 			if ($EmailOperator) {
@@ -305,10 +305,10 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 					# Check if the operator name is present
 					if ($server.JobServer.Operators.Name -contains $EmailOperator) {
 						Write-Message -Message "Setting job e-mail level" -Level Verbose
-						$smoJob.EmailLevel = $EmailLevel
+						$currentjob.EmailLevel = $EmailLevel
 						
 						Write-Message -Message "Setting job e-mail operator" -Level Verbose
-						$smoJob.OperatorToEmail = $EmailOperator
+						$currentjob.OperatorToEmail = $EmailOperator
 					}
 					else {
 						Stop-Function -Message "The e-mail operator name $EmailOperator does not exist on instance $instance. Exiting.." -Target $Job -Continue
@@ -324,10 +324,10 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 					# Check if the operator name is present
 					if ($server.JobServer.Operators.Name -contains $NetsendOperator) {
 						Write-Message -Message "Setting job netsend level" -Level Verbose
-						$smoJob.NetSendLevel = $NetsendLevel
+						$currentjob.NetSendLevel = $NetsendLevel
 						
 						Write-Message -Message "Setting job netsend operator" -Level Verbose
-						$smoJob.OperatorToNetSend = $NetsendOperator
+						$currentjob.OperatorToNetSend = $NetsendOperator
 					}
 					else {
 						Stop-Function -Message "The netsend operator name $NetsendOperator does not exist on instance $instance. Exiting.." -Target $Job -Continue
@@ -343,10 +343,10 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 					# Check if the operator name is present
 					if ($server.JobServer.Operators.Name -contains $PageOperator) {
 						Write-Message -Message "Setting job pager level" -Level Verbose
-						$smoJob.PageLevel = $PageLevel
+						$currentjob.PageLevel = $PageLevel
 						
 						Write-Message -Message "Setting job pager operator" -Level Verbose
-						$smoJob.OperatorToPage = $PageOperator
+						$currentjob.OperatorToPage = $PageOperator
 					}
 					else {
 						Stop-Function -Message "The page operator name $PageOperator does not exist on instance $instance. Exiting.." -Target $Job -Continue
@@ -359,7 +359,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 			
 			if ($DeleteLevel -ge 0) {
 				Write-Message -Message "Setting job delete level" -Level Verbose
-				$smoJob.DeleteLevel = $DeleteLevel
+				$currentjob.DeleteLevel = $DeleteLevel
 			}
 			#endregion job options
 			
@@ -369,21 +369,21 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 					Write-Message -Message "Creating the job" -Level Verbose
 					
 					# Create the job
-					$smoJob.Create()
+					$currentjob.Create()
 					
-					Write-Message -Message "Job created with UID $($smoJob.JobID)" -Level Verbose
+					Write-Message -Message "Job created with UID $($currentjob.JobID)" -Level Verbose
 					
 					# Make sure the target is set for the job
 					Write-Message -Message "Applying the target (local) to job $Job" -Level Verbose
-					$smoJob.ApplyToTargetServer("(local)")
+					$currentjob.ApplyToTargetServer("(local)")
 					
 					# If a schedule needs to be attached
 					if ($Schedule) {
-						Set-DbaAgentJob -SqlInstance $instance -Job $smoJob -Schedule $Schedule -SqlCredential $SqlCredential
+						Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -Schedule $Schedule -SqlCredential $SqlCredential
 					}
 					
 					if ($ScheduleId) {
-						Set-DbaAgentJob -SqlInstance $instance -Job $smoJob -ScheduleId $ScheduleId -SqlCredential $SqlCredential
+						Set-DbaAgentJob -SqlInstance $instance -Job $currentjob -ScheduleId $ScheduleId -SqlCredential $SqlCredential
 					}
 				}
 				catch {
@@ -392,7 +392,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 			}
 			
 			# Return the job
-			$smoJob
+			$currentjob
 		}
 	}
 	
