@@ -197,7 +197,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 		
 		foreach ($instance in $sqlinstance) {
 			# Try connecting to the instance
-			Write-Message -Message "Attempting to connect to $instance" -Level Output
+			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
 			try {
 				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
@@ -351,7 +351,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 					# Execute
 					if ($PSCmdlet.ShouldProcess($instance, "Creating the job step $StepName")) {
 						try {
-							Write-Message -Message "Creating the job step" -Level Output
+							Write-Message -Message "Creating the job step" -Level Verbose
 							
 							# Create the job step
 							$JobStep.Create()
@@ -363,14 +363,14 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 					}
 					
 					# Return the job step
-					return $JobStep
+					$JobStep
 				}
 			} # foreach object job
 		} # foreach object instance
 	} # process
 	
 	end {
-		Write-Message -Message "Finished creating job step(s)." -Level Output
+		Write-Message -Message "Finished creating job step(s)." -Level Verbose
 	}
 }
 

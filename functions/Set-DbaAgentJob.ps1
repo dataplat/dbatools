@@ -259,7 +259,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
         foreach ($instance in $sqlinstance) {
 			
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Output
+            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
@@ -490,7 +490,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     # Execute 
                     if ($PSCmdlet.ShouldProcess($SqlInstance, "Changing the job $j")) {
                         try {
-                            Write-Message -Message ("Changing the job") -Level Output
+                            Write-Message -Message ("Changing the job") -Level Verbose
 							
                             # Change the job
                             $smojob.Alter()
@@ -506,6 +506,6 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
     } # Process
 	
     end {
-        Write-Message -Message "Finished changing job(s)." -Level Output
+        Write-Message -Message "Finished changing job(s)." -Level Verbose
     }
 }
