@@ -114,7 +114,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 					if ($Force) {
 						$server.KillAllProcesses($PipelineSnapshot.SnapshotDb.Name)
 					}
-					$null = $server.ConnectionContext.ExecuteNonQuery("drop database [$($PipelineSnapshot.SnapshotDb.Name)]")
+					$null = $server.Query("drop database [$($PipelineSnapshot.SnapshotDb.Name)]")
 					$status = "Dropped"
 				} catch {
 					Write-Message -Level Warning -Message $_
@@ -172,7 +172,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 							# cannot drop the snapshot if someone is using it
 							$server.KillAllProcesses($db)
 						}
-						$null = $server.ConnectionContext.ExecuteNonQuery("drop database $db")
+						$null = $server.Query("drop database $db")
 						$status = "Dropped"
 					} catch {
 						Write-Message -Level Warning -Message $_
