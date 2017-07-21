@@ -13,63 +13,29 @@ if ($dbatools_dotsourcemodule) { $script:doDotSource = $true }
 if ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
 if ((Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
 
-if ($env:PROCESSOR_ARCHITECTURE -eq "x86") {
-	$smoversions = "14.0.0.0", "13.0.0.0", "12.0.0.0", "11.0.0.0", "10.0.0.0", "9.0.242.0", "9.0.0.0"
-	
-	foreach ($smoversion in $smoversions) {
-		try {
-			Add-Type -AssemblyName "Microsoft.SqlServer.Smo, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
-			$smoadded = $true
-		}
-		catch {
-			$smoadded = $false
-		}
-		
-		if ($smoadded -eq $true) { break }
-	}
-	
-	if ($smoadded -eq $true) {
-		
-		$assemblies = "Management.Common", "Dmf", "Instapi", "SqlWmiManagement", "ConnectionInfo", "SmoExtended", "SqlTDiagM", "Management.Utility",
-		"SString", "Management.RegisteredServers", "Management.Sdk.Sfc", "SqlEnum", "RegSvrEnum", "WmiEnum", "ServiceBrokerEnum", "Management.XEvent",
-		"ConnectionInfoExtended", "Management.Collector", "Management.CollectorEnum", "Management.Dac", "Management.DacEnum", "Management.IntegrationServices"
-		
-		foreach ($assembly in $assemblies) {
-			try {
-				Add-Type -AssemblyName "Microsoft.SqlServer.$assembly, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
-			}
-			catch {
-				# Don't care
-			}
-		}
-	}
-}
-
-if (-not $smoadded) {
-	Get-ChildItem -Path "$script:PSModuleRoot\bin\smo\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dmf.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SqlWmiManagement.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ConnectionInfo.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SmoExtended.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.RegisteredServers.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Sdk.Sfc.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SqlEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.RegSvrEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WmiEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ServiceBrokerEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Collector.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.CollectorEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Utility.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.UtilityEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.HadrDMF.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEvent.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventDbScoped.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventDbScopedEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Collector.dll"
-}
+Get-ChildItem -Path "$script:PSModuleRoot\bin\smo\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dmf.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SqlWmiManagement.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ConnectionInfo.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SmoExtended.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.RegisteredServers.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Sdk.Sfc.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SqlEnum.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.RegSvrEnum.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WmiEnum.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ServiceBrokerEnum.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Collector.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.CollectorEnum.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Utility.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.UtilityEnum.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.HadrDMF.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEvent.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventEnum.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventDbScoped.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventDbScopedEnum.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventEnum.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Collector.dll"
 
 <# 
 
@@ -224,8 +190,8 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU6OjwX5GVl+Mswp3dM99cvgjD
-# zxaggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUCa81Bgp+lxfdm6bZ79Z0jwCO
+# isGggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -356,22 +322,22 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUcThf5156l2TltZfhLvmAOw+yMgowDQYJKoZIhvcNAQEBBQAE
-# ggEAA3oJSWJZEUcMU/n8UDMuWpcZP/D98gm9FrhlktPYX5c31sSDADyJTql77BvW
-# mKR43l68iC0BoFzJLtQyqksrBxlh3D3hkp9snFZA13DTjGvWIQO2Sx9GTGAcLpXX
-# RsNrtFbN3yuCVph1B2aJ0mYmQmpmoYjBmudqaMIYVqK1rKQipMqVoi86YG+4Pz/S
-# aT1ZOaxubSkmMeSarF3D6iXuqOtihwVOQ01O1qAS46iFsohV1o7/XXpkVk2lULa1
-# w9ljXu+ZbzOTIOj5Qb8pf6kszYWO4NrvZcrTV7qtvSzHrkjbKQi9yRlwGiSPbTss
-# 7pTAPYjCy2YBfoxi4lF7AybVK6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUv1TRUZ2EV9PYIlZmpA+zRxiG/WswDQYJKoZIhvcNAQEBBQAE
+# ggEAHtXAPlzwt4GOGjm21sHGp9kFFQCcfbTwTaFZUA4D7Sg1Vj/B1w8clqfC48js
+# FLxfWGHS5YJhbOjA8X28uVuPNya6ju8shjzNiHtJliTr9yyQxuo64wlhyW1tDBcJ
+# 7HTRNvKu1SUegcr56vdYaqperM3hHyp2KK668HLOo2tXOPJFIZ5QP1SG8Wq3a1Yo
+# ATDIbswM70iFoJ/o3PmqtUJq47TdrXwxb94QtFXYGxplvC8RtWAnXgC+ELvJtLYS
+# jVC220oXZ+BEIwjX0+MIh9fNeFyvxSLHujhMWy19rpusazGG1epPrMXs5pRCr3ZX
+# KRTQ5SJPQ7T2Zzxdoy3EFtD1x6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIxMjEwOTUwWjAj
-# BgkqhkiG9w0BCQQxFgQU+etfPnLdQhRG/nEa2wXyTyOuqw8wDQYJKoZIhvcNAQEB
-# BQAEggEAbfdlVA9dzkgxTvWhRgYUQmVf3tKqk66c5/DtF5Ev5S7MoSo1CdBgWu4T
-# 5xJp9K+rNTL5v1fjKN36Q1v7VlV68zFhp52MpIM5tzV7KyEw0lA6CsI+8Y1hgZqe
-# DT9TMNaVbfUED4dg7LoUECAoU4s0prOP9cfnX8TdQYHtY9DoX7oE9nUF43BS6ZDR
-# w1xkHKAkqfEV5NxAtxsoismjNxSJcdCqhNus6Q8IPzlI0HUvRdD6FKAepBdxi+ch
-# SvnhzKCUGONyspiPg6UOMmH/dPNn4vNn9Uzgo35DS0sbgT/GekoHioAqu8YD/oWm
-# WrAW4PqAmovDRpB4iRjMU+izS8fgLA==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIxMjEyNjQzWjAj
+# BgkqhkiG9w0BCQQxFgQUoawaq7vsKP+n0kwnKhNc8i1hvz0wDQYJKoZIhvcNAQEB
+# BQAEggEAZHdMlQ14GQOD18oozl++E/mZWFrloDono5KzIUbPWz5poN43xG21jsAZ
+# GZpVBHTIQtPFLfx/kTk8o7MPcnq9lyEeLLe00QbkddcoH6RdGBMr9Q4+BoQFBY6D
+# DXIW1kPrMR5PezM77Pih4ZcanMjetfDgQzl9FFZDnNepE7XqEKLpof+Drn4CuFXX
+# FVb+CaHD+xYUL8y5ex5idZ7UXfI0mhGCBT9idsXqj3XWtvjbgv6WLaXKcA/vxZCh
+# 5BuvMJYyc8HIninXMdrBsRCjAFa5jc4J6cG/EqR6v7EEaXMn9G9KzbY66uMqRgBQ
+# bM7bp3qJkdIA4g7JioQRkNUV2eG/IA==
 # SIG # End signature block
