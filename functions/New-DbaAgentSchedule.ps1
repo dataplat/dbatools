@@ -420,7 +420,7 @@ function New-DbaAgentSchedule {
 
 		foreach ($instance in $sqlinstance) {
 			# Try connecting to the instance
-			Write-Message -Message "Attempting to connect to $instance" -Level Output
+			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
@@ -533,7 +533,7 @@ function New-DbaAgentSchedule {
 						# Create the schedule
 						if ($PSCmdlet.ShouldProcess($SqlInstance, "Adding the schedule $Schedule to job $j on $instance")) {
 							try {
-								Write-Message -Message "Adding the schedule $Schedule to job $j" -Level Output
+								Write-Message -Message "Adding the schedule $Schedule to job $j" -Level Verbose
 
 								$JobSchedule.Create()
 
@@ -620,7 +620,7 @@ function New-DbaAgentSchedule {
 				# Create the schedule
 				if ($PSCmdlet.ShouldProcess($SqlInstance, "Adding the schedule $schedule on $instance")) {
 					try {
-						Write-Message -Message "Adding the schedule $schedule on instance $instance" -Level Output
+						Write-Message -Message "Adding the schedule $schedule on instance $instance" -Level Verbose
 
 						$schedule.Create()
 
@@ -631,7 +631,7 @@ function New-DbaAgentSchedule {
 					}
 
 					# Output the job schedule
-					return $JobSchedule
+					$JobSchedule
 				}
 			}
 		} # foreach object instance
