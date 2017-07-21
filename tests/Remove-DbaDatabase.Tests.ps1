@@ -24,9 +24,10 @@ Describe "Remove-DbaDatabase Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Should remove user databases and return useful errors if it cannot." {
-        It "Should remove a non system database." {
+		It "Should remove a non system database." {
 			Remove-DbaDatabase -SqlInstance $script:sql2008 -Database singlerestore
-            Restore-DbaDatabase -SqlInstance $script:sql2008 -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
+			Get-DbaProcess -SqlInstance $script:sql2008 -Database singlerestore | Stop-DbaProcess
+			Restore-DbaDatabase -SqlInstance $script:sql2008 -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WithReplace
             (Get-DbaDatabase -SqlInstance $script:sql2008 -Database singlerestore).IsAccessible | Should Be $true
             Remove-DbaDatabase -SqlInstance $script:sql2008 -Database singlerestore
             Get-DbaDatabase -SqlInstance $script:sql2008 -Database singlerestore | Should Be $null
