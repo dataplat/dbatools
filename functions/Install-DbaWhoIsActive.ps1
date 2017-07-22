@@ -69,20 +69,11 @@ function Install-DbaWhoIsActive {
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]
-		$SqlInstance,
-		
-		[PsCredential]
-		$SqlCredential,
-		
-		[object]
-		$Database,
-		
-		[switch]
-		$Update,
-		
-		[switch]
-		$Silent
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PsCredential]$SqlCredential,
+		[object]$Database,
+		[switch]$Update,
+		[switch]$Silent
 	)
 	
 	begin {
@@ -91,7 +82,7 @@ function Install-DbaWhoIsActive {
 		$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 		$sqlfile = (Get-ChildItem "$temp\$version.sql" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
 		
-		if ($sqlfile -and (-not($Update))) {
+		if ($sqlfile -and (-not ($Update))) {
 			Write-Message -Level Verbose -Message "Found local $sqlfile"
 		}
 		else {
@@ -158,7 +149,7 @@ function Install-DbaWhoIsActive {
 			
 			if (-not $Database) {
 				if ($PSCmdlet.ShouldProcess($instance, "Prompting with GUI list of databases")) {
-					$Database = Show-DbaDatabaseList -SqlServer $server -Title "Install sp_WhoisActive" -Header "To deploy sp_WhoisActive, select a database or hit cancel to quit." -DefaultDb "master"
+					$Database = Show-DbaDatabaseList -SqlInstance $server -Title "Install sp_WhoisActive" -Header "To deploy sp_WhoisActive, select a database or hit cancel to quit." -DefaultDb "master"
 					
 					if (-not $Database) {
 						Stop-Function -Message "You must select a database to install the procedure" -Target $Database
@@ -189,22 +180,23 @@ function Install-DbaWhoIsActive {
 				$baseres = @{
 					ComputerName = $server.NetName
 					InstanceName = $server.ServiceName
-					SqlInstance  = $server.DomainInstanceName
-					Database     = $Database
-					Name         = 'sp_WhoisActive'
+					SqlInstance = $server.DomainInstanceName
+					Database = $Database
+					Name = 'sp_WhoisActive'
 				}
-				if('sp_WhoisActive' -in $allprocedures) {
+				if ('sp_WhoisActive' -in $allprocedures) {
 					$status = 'Updated'
-				} else {
+				}
+				else {
 					$status = 'Installed'
 				}
 				[PSCustomObject]@{
 					ComputerName = $server.NetName
 					InstanceName = $server.ServiceName
-					SqlInstance  = $server.DomainInstanceName
-					Database     = $Database
-					Name         = 'sp_WhoisActive'
-					Status       = $status
+					SqlInstance = $server.DomainInstanceName
+					Database = $Database
+					Name = 'sp_WhoisActive'
+					Status = $status
 				}
 			}
 		}
