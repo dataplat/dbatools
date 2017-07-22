@@ -84,7 +84,14 @@ foreach ($function in $functions) {
 	if ($function.Parameters.Keys -contains "ExcludeCredential") {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeCredential -Name Credential
 	}
-
+	
+	if ($function.Parameters.Keys -contains "CredentialIdentity") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter CredentialIdentity -Name Credential
+	}
+	if ($function.Parameters.Keys -contains "ExcludeCredentialIdentity") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeCredentialIdentity -Name Credential
+	}
+	
 	if ($function.Parameters.Keys -contains "CustomError") {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter CustomError -Name CustomError
 	}
