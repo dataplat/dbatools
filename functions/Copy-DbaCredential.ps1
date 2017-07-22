@@ -38,6 +38,9 @@
 			Auto-populated list of Credentials from Source. If no Credential is specified, all Credentials will be migrated.
 			Note: if spaces exist in the credential name, you will have to type "" or '' around it. I couldn't figure out a way around this.
 
+			.PARAMETER ExcludeCredentialIdentity
+			Auto-populated list of Credentials from Source to be excluded from the migration
+	
 		.PARAMETER Force
 			By default, if a Credential exists on the source and destination, the Credential is not copied over. Specifying -force will drop and recreate the Credential on the Destination server.
 
@@ -92,11 +95,14 @@
 		[PSCredential]
 		$DestinationSqlCredential,
 		[object[]]$CredentialIdentity,
+		[object[]]$ExcludeCredentialIdentity,
 		[switch]$Force,
 		[switch]$Silent
 	)
 	
 	begin {
+		$null = Test-ElevationRequirement -ComputerName $Source.ComputerName
+		
 		function Get-SqlCredential {
 			<#
 				.SYNOPSIS
@@ -287,12 +293,14 @@
 			
 			Write-Message -Level Verbose -Message "Collecting Credential logins and passwords on $($sourceServer.Name)"
 			$sourceCredentials = Get-SqlCredential $sourceServer
+			$credentialList = $sourceServer.Credentials
 			
-			if ($CredentialIdentity -ne $null) {
-				$credentialList = $sourceServer.Credentials | Where-Object { $CredentialIdentity -contains $_.Name }
+			if ($CredentialIdentity) {
+				$credentialList = $credentialList | Where-Object { $CredentialIdentity -contains $_.Name }
 			}
-			else {
-				$credentialList = $sourceServer.Credentials
+			
+			if ($ExcludeCredentialIdentity) {
+				$credentialList = $credentialList | Where-Object { $CredentialIdentity -notcontains $_.Name }
 			}
 			
 			Write-Message -Level Verbose -Message "Starting migration"
@@ -367,21 +375,18 @@
 		Invoke-SmoCheck -SqlInstance $destServer
 	}
 	process {
+		if (Test-FunctionInterrupt) { return }
 		Write-Message -Level Verbose -Message "Getting NetBios name for $source"
 		$sourceNetBios = Resolve-NetBiosName $sourceServer
 		
-		Write-Message -Level Verbose -Message "Checking if remote access is enabled on $source"
-		winrm id -r:$sourceNetBios 2>$null | Out-Null
-		
-		if ($LastExitCode -ne 0) {
-			Write-Message -Level Warning -Message "Having trouble with accessing PowerShell remotely on $source. Do you have Windows admin access and is PowerShell Remoting enabled? Anyway, good luck! This may work."
-		}
-		
 		# This output is wrong. Will fix later.
 		Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
-		try { Invoke-Command2 -ComputerName $sourceNetBios -Credential $credential -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } }
+		try {
+			Invoke-Command2 -ComputerName $sourceNetBios -Credential $credential -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
+		}
 		catch {
-			throw "Can't connect to registry on $source. Quitting."
+			Stop-Function -Message "Can't connect to registry on $source." -Target $sourceNetBios -ErrorRecord $_
+			return
 		}
 		
 		# Magic happens here
