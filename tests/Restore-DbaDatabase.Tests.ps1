@@ -28,14 +28,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results | Should Be $null
         }
     }
-	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess
+	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again after withreplace test" {
         $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
         }
     }
-	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess
+	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Properly restores a database on the local drive using piped Get-ChildItem results" {
         $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance localhost
         It "Should Return the proper backup file location" {
@@ -45,14 +45,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.RestoreComplete | Should Be $true
         }
     }
-	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess
+	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again after gci tests" {
         $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
         }
     }
-	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess
+	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is restored with correct renamings" {
         $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationFilePrefix prefix
         It "Should return successful restore with prefix" {
@@ -76,7 +76,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             (($Results.RestoredFile -split ',') -match "^prefix.*suffix\.").count | Should be 2
         }
     }
-	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess
+	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again post prefix and suffix tests" {
         $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
         It "Should say the status was dropped" {
