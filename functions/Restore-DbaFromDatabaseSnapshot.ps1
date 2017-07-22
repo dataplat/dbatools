@@ -199,7 +199,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 									# snapshot with open transactions cannot be dropped
 									$server.KillAllProcesses($drop)
 								}
-								$null = $server.ConnectionContext.ExecuteNonQuery("drop database [$drop]")
+								$null = $server.Query("drop database [$drop]")
 								$status = "Dropped"
 							} catch {
 								Write-Message -Level Warning -Message $_
