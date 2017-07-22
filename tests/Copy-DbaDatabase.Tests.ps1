@@ -1,12 +1,8 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-	# constants
-	
-	
-	
 	$BackupLocation = "C:\github\appveyor-lab\singlerestore\singlerestore.bak"
 	$NetworkPath = "C:\temp"
 	
@@ -22,10 +18,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Restores database with the same properties." {
 		It "Should copy a database and retain its name, recovery model, and status." {
 			
-			$db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
-			
 			Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database singlerestore -BackupRestore -NetworkShare $NetworkPath
 			
+			$db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
+			$db1 | Should Not BeNullOrEmpty
 			$db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database singlerestore
 			$db2 | Should Not BeNullOrEmpty
 			
@@ -36,16 +32,20 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 	}
 	
+	Context "Doesn't write over existing databases" {
+		It "Should just warn" {
+			$result = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database singlerestore -BackupRestore -NetworkShare $NetworkPath -WarningVariable warning  3>&1
+			$warning | Should Match "exists at destination"
+		}
+	}
+	
 	foreach ($instance in $Instances) {
 		Remove-DbaDatabase -SqlInstance $instance -Confirm:$false -Database singlerestore
 	}
 	
 	Context "Detach, copies and attaches database successfully." {
 		It "Should be success" {
-			Set-Service BITS -StartupType Automatic
-			Get-Service BITS | Start-Service -ErrorAction SilentlyContinue
 			$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path C:\github\appveyor-lab\detachattach\detachattach.bak -WithReplace
-			
 			$results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database detachattach -DetachAttach -Reattach -Force -WarningAction SilentlyContinue
 			$results.Status | Should Be "Successful"
 		}
