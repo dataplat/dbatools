@@ -86,6 +86,7 @@ function Copy-DbaLinkedServer {
 		[switch]$Silent
 	)
 	begin {
+		$null = Test-ElevationRequirement -ComputerName $Source.ComputerName
 		function Get-LinkedServerLogins {
 			<#
 			.SYNOPSIS
@@ -126,7 +127,7 @@ function Copy-DbaLinkedServer {
 				}
 			}
 			catch {
-				Stop-Function -Message "Can't access registry keys on $sourceName. Quitting." -Target $server -InnerErrorRecord $_
+				Stop-Function -Message "Can't access registry keys on $sourceName. Quitting." -Target $server ErrorRecord $_
 				return
 			}
 
@@ -149,7 +150,9 @@ function Copy-DbaLinkedServer {
 			# Choose IV length based on the algorithm
 			if (($serviceKey.Length -ne 16) -and ($serviceKey.Length -ne 32)) {
 				Write-Message -Level Verbose -Message "ServiceKey found: $serviceKey.Length"
-				throw "Unknown key size. Cannot continue. Quitting."
+				Stop-Function -Message "Unknown key size. Cannot continue" -Target $source
+				return 
+				
 			}
 
 			if ($serviceKey.Length -eq 16) {
@@ -377,7 +380,7 @@ function Copy-DbaLinkedServer {
 		}
 	}
 	process {
-
+		if (Test-FunctionInterrupt) { return }
 		if ($SourceSqlCredential.username -ne $null) {
 			Write-Message -Level Warning -Message "You are using a SQL Credential. Note that this script requires Windows Administrator access on the source server. Attempting with $($SourceSqlCredential.Username)."
 		}
@@ -403,19 +406,12 @@ function Copy-DbaLinkedServer {
 		Write-Message -Level Verbose -Message "Getting NetBios name for $source"
 		$sourceNetBios = Resolve-NetBiosName $sourceserver
 
-		Write-Message -Level Verbose -Message "Checking if remote access is enabled on $source"
-		winrm id -r:$sourceNetBios 2>$null | Out-Null
-
-		if ($LastExitCode -ne 0) {
-			Write-Message -Level Warning -Message "Having trouble accessing PowerShell remotely on $source. Windows admin access and PowerShell Remoting are required."
-		}
-
 		Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
 		try {
 			Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
 		}
 		catch {
-			Stop-Function -Message "Can't connect to registry on $source. Quitting." -Target $sourceNetBios
+			Stop-Function -Message "Can't connect to registry on $source" -Target $sourceNetBios -ErrorRecord $_
 			return
 		}
 

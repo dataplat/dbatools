@@ -1,5 +1,8 @@
+$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Add-DbaComputerCertificate Integration Tests" -Tags "IntegrationTests" {
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Certificate is added properly" {
         $results = Add-DbaComputerCertificate -Path C:\github\appveyor-lab\certificates\localhost.crt -Confirm:$false
         
