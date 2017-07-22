@@ -1,5 +1,8 @@
+$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Get-DbaSqlModule Integration Tests" -Tags "IntegrationTests" {
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Modules are properly retreived" {
 		
 		# SQL2008R2SP2 returns around 600 of these in freshly installed instance. 100 is a good enough number.

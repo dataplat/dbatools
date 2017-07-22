@@ -1,5 +1,8 @@
-﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Remove-DbaDatabase Integration Tests" -Tags "IntegrationTests" {
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Should not munge system databases unless explicitly told to." {
         $script:sql2008 = "localhost\sql2008r2sp2"
         $dbs = @( "master", "model", "tempdb", "msdb" )
