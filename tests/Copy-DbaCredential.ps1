@@ -3,10 +3,8 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-	. .\tests\constants.ps1
-	return
 	$Credentials = "claudio", "port", "tester"
-	New-LocalUser -Name "User02" -Description "Description of this account." -NoPassword
+	#New-LocalUser -Name "User02" -Description "Description of this account." -NoPassword
 	
 	foreach ($instance in $instances) {
 		foreach ($Credential in $Credentials) {
@@ -17,18 +15,18 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 	}
 	
-	$null = Invoke-Sqlcmd2 -ServerInstance $script:sql2008 -InputFile C:\github\appveyor-lab\sql2008-scripts\Credentials.sql
+	$null = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -InputFile C:\github\appveyor-lab\sql2008-scripts\Credentials.sql
 	
 	Context "Copy Credential with the same properties." {
 		It "Should copy successfully" {
-			$results = Copy-DbaCredential -Source $script:sql2008 -Destination $script:sql2016 -Credential Tester
+			$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -Credential Tester
 			$results.Status | Should Be "Successful"
 		}
 		
 		It "Should retain its same properties" {
 			
-			$Credential1 = Get-DbaCredential -SqlInstance $script:sql2008 -Credential Tester
-			$Credential2 = Get-DbaCredential -SqlInstance $script:sql2016 -Credential Tester
+			$Credential1 = Get-DbaCredential -SqlInstance $script:instance1 -Credential Tester
+			$Credential2 = Get-DbaCredential -SqlInstance $script:instance2 -Credential Tester
 			
 			$Credential2 | Should Not BeNullOrEmpty
 			
@@ -49,13 +47,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		It "Should Credential with newly created Sql Credential (also tests credential Credential) and gets name" {
 			$password = ConvertTo-SecureString -Force -AsPlainText tester1
 			$cred = New-Object System.Management.Automation.PSCredential ("tester", $password)
-			$s = Connect-DbaSqlServer -SqlInstance $script:sql2008 -Credential $cred
-			$s.Name | Should Be $script:sql2008
+			$s = Connect-DbaSqlServer -SqlInstance $script:instance1 -Credential $cred
+			$s.Name | Should Be $script:instance1
 		}
 	}
 	
 	Context "No overwrite" {
-		$results = Copy-DbaCredential -Source $script:sql2008 -Destination $script:sql2016 -Credential tester -WarningVariable warning  3>&1
+		$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -Credential tester -WarningVariable warning  3>&1
 		It "Should not attempt overwrite" {
 			$warning | Should Match "already exists in destination"
 		}

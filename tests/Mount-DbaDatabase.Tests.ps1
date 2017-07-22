@@ -5,14 +5,14 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Setup removes, restores and backups on the local drive for Mount-DbaDatabase" {
-        $null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
-        $null = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\detachattach\detachattach.bak -WithReplace
-		$null = Get-DbaDatabase -SqlInstance localhost -Database detachattach | Backup-DbaDatabase -Type Full
-		$null = Detach-DbaDatabase -SqlInstance localhost -Database detachattach -Force
+        $null = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase
+        $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path C:\github\appveyor-lab\detachattach\detachattach.bak -WithReplace
+		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database detachattach | Backup-DbaDatabase -Type Full
+		$null = Detach-DbaDatabase -SqlInstance $script:instance1 -Database detachattach -Force
     }
 	
     Context "Attaches a single database and tests to ensure the alias still exists" {
-        $results = Attach-DbaDatabase -SqlInstance localhost -Database detachattach
+        $results = Attach-DbaDatabase -SqlInstance $script:instance1 -Database detachattach
 		
         It "Should return success" {
             $results.AttachResult | Should Be "Success"
@@ -27,5 +27,5 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 	}
 	
-	$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
+	$null = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase
 }

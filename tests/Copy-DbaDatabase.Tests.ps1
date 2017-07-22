@@ -4,9 +4,9 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	# constants
-	$script:sql2008 = "localhost\sql2008r2sp2"
-	$script:sql2016 = "localhost\sql2016"
-	$Instances = @($script:sql2008, $script:sql2016)
+	
+	
+	
 	$BackupLocation = "C:\github\appveyor-lab\singlerestore\singlerestore.bak"
 	$NetworkPath = "C:\temp"
 	
@@ -16,17 +16,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	# Restore and set owner for Single Restore
-	$null = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WithReplace
-	Set-DbaDatabaseOwner -SqlInstance $script:sql2008 -Database singlerestore -TargetLogin sa
+	$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WithReplace
+	Set-DbaDatabaseOwner -SqlInstance $script:instance1 -Database singlerestore -TargetLogin sa
 	
 	Context "Restores database with the same properties." {
 		It "Should copy a database and retain its name, recovery model, and status." {
 			
-			$db1 = Get-DbaDatabase -SqlInstance $script:sql2008 -Database singlerestore
+			$db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
 			
-			Copy-DbaDatabase -Source $script:sql2008 -Destination $script:sql2016 -Database singlerestore -BackupRestore -NetworkShare $NetworkPath
+			Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database singlerestore -BackupRestore -NetworkShare $NetworkPath
 			
-			$db2 = Get-DbaDatabase -SqlInstance $script:sql2016 -Database singlerestore
+			$db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database singlerestore
 			$db2 | Should Not BeNullOrEmpty
 			
 			# Compare its valuable.
@@ -44,9 +44,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		It "Should be success" {
 			Set-Service BITS -StartupType Automatic
 			Get-Service BITS | Start-Service -ErrorAction SilentlyContinue
-			$null = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\detachattach\detachattach.bak -WithReplace
+			$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path C:\github\appveyor-lab\detachattach\detachattach.bak -WithReplace
 			
-			$results = Copy-DbaDatabase -Source $script:sql2008 -Destination $script:sql2016 -Database detachattach -DetachAttach -Reattach -Force
+			$results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database detachattach -DetachAttach -Reattach -Force
 			$results.Status | Should Be "Successful"
 		}
 	}
