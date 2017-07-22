@@ -4,7 +4,6 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . $PSScriptRoot\..\internal\Stop-Function.ps1
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
-Describe "Stop-Function Unit-Tests" -Tag 'UnitTests' {
     Context "Testing non-silent: Explicit call" {
         try
         {
