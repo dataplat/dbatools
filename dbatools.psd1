@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.9.12'
+	ModuleVersion = '0.9.14'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -103,7 +103,6 @@
 		'Copy-DbaAgentCategory',
 		'Update-Dbatools',
 		'Test-DbaSqlPath',
-		'Sync-DbaLoginPermissions',
 		'Export-DbaLogin',
 		'Reset-DbaAdmin',
 		'Watch-DbaDbLogin',
@@ -311,7 +310,6 @@
 		'Test-DbaSqlManagementObject',
 		'Get-DbaMaintenanceSolutionLog',
 		#'Invoke-DbaLogShippingRecovery',
-		'Sync-DbaLoginPermission',
 		'Find-DbaTrigger',
 		'Find-DbaView',
 		'Invoke-DbaDatabaseUpgrade',
