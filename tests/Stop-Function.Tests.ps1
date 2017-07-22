@@ -7,7 +7,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     Context "Testing non-silent: Explicit call" {
         try
         {
-            $warning = Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
+            $warning = Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -WarningAction SilentlyContinue -ErrorAction Stop 3>&1
             $record = $Error[0]
             $failed = $false
         }
@@ -51,7 +51,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             }
             catch
             {
-                $warning = Stop-Function -Message "Nonsilent Foo" -Silent $false -InnerErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
+                $warning = Stop-Function -Message "Nonsilent Foo" -Silent $false -ErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -WarningAction SilentlyContinue -ErrorAction Stop 3>&1
                 $record = $Error[0]
                 $failed = $false
             }
@@ -112,7 +112,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             foreach ($number in (1 .. 3))
             {
                 $a++
-                Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidOperation -Continue -ErrorAction Stop
+				Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidOperation -Continue -ErrorAction Stop -WarningAction SilentlyContinue
                 $b++
             }
         }
@@ -135,7 +135,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 foreach ($Counter in (1 .. 3))
                 {
                     $d++
-                    Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidOperation -Continue -ContinueLabel "main" -ErrorAction Stop
+                    Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidOperation -Continue -ContinueLabel "main" -ErrorAction Stop -WarningAction SilentlyContinue
                     $e++
                 }
                 $f++
@@ -175,7 +175,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     Context "Testing silent: Explicit call" {
         try
         {
-            Stop-Function -Message "Nonsilent Foo" -Silent $true -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
+			Stop-Function -Message "Nonsilent Foo" -Silent $true -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -WarningAction SilentlyContinue -ErrorAction Stop
             $record = $null
             $failed = $false
         }
@@ -215,7 +215,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             }
             catch
             {
-                Stop-Function -Message "Nonsilent Foo" -Silent $true -InnerErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
+				Stop-Function -Message "Nonsilent Foo" -Silent $true -ErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop -WarningAction SilentlyContinue
                 $record = $null
                 $failed = $false
             }
@@ -259,7 +259,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             foreach ($number in (1 .. 3))
             {
                 $a++
-                Stop-Function -Message "Nonsilent Foo" -Silent $true -Category InvalidOperation -SilentlyContinue -ErrorAction Stop
+                Stop-Function -Message "Nonsilent Foo" -Silent $true -Category InvalidOperation -SilentlyContinue -ErrorAction Stop -WarningAction SilentlyContinue
                 $b++
             }
         }
@@ -282,7 +282,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 foreach ($Counter in (1 .. 3))
                 {
                     $d++
-                    Stop-Function -Message "Nonsilent Foo" -Silent $true -Category InvalidOperation -SilentlyContinue -ContinueLabel "main" -ErrorAction Stop
+					Stop-Function -Message "Nonsilent Foo" -Silent $true -Category InvalidOperation -SilentlyContinue -ContinueLabel "main" -ErrorAction Stop -WarningAction SilentlyContinue
                     $e++
                 }
                 $f++
