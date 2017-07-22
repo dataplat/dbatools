@@ -46,7 +46,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			Get-Service BITS | Start-Service -ErrorAction SilentlyContinue
 			$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path C:\github\appveyor-lab\detachattach\detachattach.bak -WithReplace
 			
-			$results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database detachattach -DetachAttach -Reattach -Force
+			$results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database detachattach -DetachAttach -Reattach -Force -WarningAction SilentlyContinue
 			$results.Status | Should Be "Successful"
 		}
 	}
