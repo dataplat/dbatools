@@ -1318,6 +1318,10 @@
     {
         "CommandName":  "Get-DbaRegisteredServerName",
         "Description":  "Returns a simple array of server names. Be aware of the dynamic parameter \u0027Group\u0027, which can be used to limit results to one or more groups you have created on the CMS. See get-help for examples.",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
         "Synopsis":  "Gets list of SQL Server names stored in SQL Server Central Management Server.",
         "Name":  "Get-DbaRegisteredServerName",
         "Links":  "https://dbatools.io/Get-DbaRegisteredServerName",
@@ -1326,7 +1330,10 @@
     {
         "CommandName":  "Get-DbaRegisteredServersStore",
         "Description":  "Returns a SQL Server Registered Server Store object - useful for working with Central Management Store",
-        "Tags":  "RegisteredServer",
+        "Tags":  [
+                     "RegisteredServer",
+                     "CMS"
+                 ],
         "Synopsis":  "Returns a SQL Server Registered Server Store Object",
         "Name":  "Get-DbaRegisteredServersStore",
         "Links":  "https://dbatools.io/Get-DbaRegisteredServersStore",
@@ -2441,6 +2448,18 @@
         "Name":  "Stop-DbaProcess",
         "Links":  "https://dbatools.io/Stop-DbaProcess",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaProcess -SqlInstance sqlserver2014a -Login base\\ctrlb, sa\r\n\r\nFinds all processes for base\\ctrlb and sa on sqlserver2014a, then kills them. Uses Windows Authentication to login to \r\nsqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaProcess -SqlInstance sqlserver2014a -SqlCredential $credential -Spids 56, 77\r\n\r\nFinds processes for spid 56 and 57, then kills them. Uses alternative (SQL or Windows) credentials to login to \r\nsqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaProcess -SqlInstance sqlserver2014a -Programs \u0027Microsoft SQL Server Management Studio\u0027\r\n\r\nFinds processes that were created in Microsoft SQL Server Management Studio, then kills them.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaProcess -SqlInstance sqlserver2014a -Hosts workstationx, server100\r\n\r\nFinds processes that were initiated by hosts (computers/clients) workstationx and server 1000, then kills them.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaProcess -SqlInstance sqlserver2014  -Database tempdb -WhatIf\r\n\r\nShows what would happen if the command were executed.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaProcess -SqlInstance sql2016 -Programs \u0027dbatools PowerShell module - dbatools.io\u0027 | Stop-DbaProcess\r\n\r\nFinds processes that were created with dbatools, then kills them.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Sync-DbaSqlLoginPermission",
+        "Description":  "Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins. If a matching login does not exist on the destination, the login will be skipped.\nCredential removal not currently supported for Syncs. TODO: Application role sync",
+        "Tags":  [
+                     "Migration",
+                     "Login"
+                 ],
+        "Synopsis":  "Copies SQL login permission from one server to another.",
+        "Name":  "Sync-DbaSqlLoginPermission",
+        "Links":  "https://dbatools.io/Sync-DbaSqlLoginPermission",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSync-DbaSqlLoginPermission -Source sqlserver2014a -Destination sqlcluster\r\n\r\nSyncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. To copy logins and their \r\npermissions, use Copy-SqlLogin.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSync-DbaSqlLoginPermission -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun \r\n-SourceSqlCredential $scred -DestinationSqlCredential $dcred\r\n\r\nAuthenticates to SQL Servers using SQL Authentication.\r\n\r\nCopies all login permissions except for realcajun. If a login already exists on the destination, the permissions will \r\nnot be migrated.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSync-DbaSqlLoginPermission -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds\r\n\r\nCopies permissions ONLY for logins netnerds and realcajun.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaCmConnection",
