@@ -2,6 +2,7 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
+<#
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	$Credentials = "claudio", "port", "tester"
 	#New-LocalUser -Name "User02" -Description "Description of this account." -NoPassword
@@ -59,3 +60,4 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 	}
 }
+#>
