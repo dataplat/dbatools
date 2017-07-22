@@ -165,7 +165,7 @@ function Copy-DbaServerTrigger {
 					$sql = $sql -replace "CREATE TRIGGER", "`nGO`nCREATE TRIGGER"
 					$sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
 					Write-Message -Level Debug -Message $sql
-					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+					$destServer.Query($sql) | Out-Null
 
 					$copyTriggerStatus.Status = "Successful"
 					$copyTriggerStatus
