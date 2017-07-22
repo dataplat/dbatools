@@ -158,7 +158,7 @@ if (-not (Test-Path Alias:Get-SqlRegisteredServerName)) { Set-Alias -Scope Globa
 if (-not (Test-Path Alias:Get-SqlServerKey)) { Set-Alias -Scope Global -Name Get-SqlServerKey -Value Get-DbaSqlProductKey }
 if (-not (Test-Path Alias:Import-SqlSpConfigure)) { Set-Alias -Scope Global -Name Import-SqlSpConfigure -Value Import-DbaSpConfigure }
 if (-not (Test-Path Alias:Install-SqlWhoIsActive)) { Set-Alias -Scope Global -Name Install-SqlWhoIsActive -Value Install-DbaWhoIsActive }
-if (-not (Test-Path Alias:Invoke-Sqlcmd2)) { Set-Alias -Scope Global -Name Invoke-Sqlcmd2 -Value Invoke-DbaSqlcmd }
+if (-not (Test-Path Alias:Invoke-DbaSqlcmd)) { Set-Alias -Scope Global -Name Invoke-DbaSqlcmd -Value Invoke-Sqlcmd2 }
 if (-not (Test-Path Alias:Remove-SqlDatabaseSafely)) { Set-Alias -Scope Global -Name Remove-SqlDatabaseSafely -Value Remove-DbaDatabaseSafely }
 if (-not (Test-Path Alias:Remove-SqlOrphanUser)) { Set-Alias -Scope Global -Name Remove-SqlOrphanUser -Value Remove-DbaOrphanUser }
 if (-not (Test-Path Alias:Repair-SqlOrphanUser)) { Set-Alias -Scope Global -Name Repair-SqlOrphanUser -Value Repair-DbaOrphanUser }
@@ -190,8 +190,8 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUCa81Bgp+lxfdm6bZ79Z0jwCO
-# isGggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUpFZKuW+uOogGZj3kxIDppy1g
+# JJSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -322,22 +322,22 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUv1TRUZ2EV9PYIlZmpA+zRxiG/WswDQYJKoZIhvcNAQEBBQAE
-# ggEAHtXAPlzwt4GOGjm21sHGp9kFFQCcfbTwTaFZUA4D7Sg1Vj/B1w8clqfC48js
-# FLxfWGHS5YJhbOjA8X28uVuPNya6ju8shjzNiHtJliTr9yyQxuo64wlhyW1tDBcJ
-# 7HTRNvKu1SUegcr56vdYaqperM3hHyp2KK668HLOo2tXOPJFIZ5QP1SG8Wq3a1Yo
-# ATDIbswM70iFoJ/o3PmqtUJq47TdrXwxb94QtFXYGxplvC8RtWAnXgC+ELvJtLYS
-# jVC220oXZ+BEIwjX0+MIh9fNeFyvxSLHujhMWy19rpusazGG1epPrMXs5pRCr3ZX
-# KRTQ5SJPQ7T2Zzxdoy3EFtD1x6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUOJ+2V45Bw3htt1gFmVlmTyxwH84wDQYJKoZIhvcNAQEBBQAE
+# ggEAPT1SIWDUE2VV3HZb3yHqmEKY3UOpJzVeGKghwLjtBPvldsZzFzyCGJpFTVZL
+# O5Vvt4XYpz4LWZsN2l8fp2WNWx09NujxVrMeyob3exeGnmCZ0fSZncKINIMxFtbX
+# DxJVZH6tObjGU6AEoHHd0+favejZ2Ka0JZ16NlhuIR3XoofluXHkcHrKITt2Wzox
+# kpjCxVMErNcOlxg0RB+5yw5+pzja3PPqz1HxFrT5DTT3SYKb2SiSzAeN7Y5gHoRh
+# cTYgQ6+xrNsa6TlZtW9O9mNLVv9J9Tyx0cd+jzrOPtNsfJCTtPFY1Tg7c3hDh1Rp
+# GDAYyw9gg0P5/05tQZgr3YJCh6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIyMDIzNjMxWjAj
-# BgkqhkiG9w0BCQQxFgQUoawaq7vsKP+n0kwnKhNc8i1hvz0wDQYJKoZIhvcNAQEB
-# BQAEggEAU1CeUb9CU9D2yraidZNmgSdChjx64u1gJpB7gqAha7UnJWopS00ubPpX
-# 7yW3rluse44E4PnjdxztB/AFbO36P5YHlN/Z8uD6LaNPu30YxBASXTB45bMpFNlx
-# E5nMMJ5hMvTnpom8aBYQwcwb2pW2d0DgXKeo7tLmFG0O4g6kxK/kyHRmeVkCRJ9s
-# a2odPxo34lAZxFOF70QGVyFUiqhIF6XAPpBGegqNQpz1mUa6YbmnmephUrJRF5zm
-# jT4MoJnCIsiktezhwW7yPuiizsZHk/1ZXJdepa5rwB/++kwvwtN26eNV4iVN7sbd
-# l6N3l0s89n5vRto4Hk8jedS5EbsTUg==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIyMTc1ODQ0WjAj
+# BgkqhkiG9w0BCQQxFgQUw67W+d1dyFtihh3unct1yTRPeXIwDQYJKoZIhvcNAQEB
+# BQAEggEAgBXpreO7l0gcUdqqNjh/wgI4R9uAKFMFdDeLfnZyoFlT/g8LczOGGtG8
+# BxN4sL4h6EX1oNuJrQyu61Pgh5W8TszJ2JAot/4ALeFyUu/BKyDr+LQRL5cggTTx
+# 8C+F1Erd6AdZ0wFOOInQpfSn1deklcbVzStRuuVlECzjFWRjGb5KuhxJlQYy6HE0
+# bOx4zrza9j8AEhAh5vR5sd830U2dEO6yM+tja6f1CIpiGfdSa4xJHXpJ+OtI1+Z+
+# m+GG5nM1te5cBinOdHJZmchSqXtpRpy4ezHidil0EpPiI2SPQ9AJL4vspJHyFWxr
+# 7VhtwjynF8ibd9Ikph4iu2XwtJSuoA==
 # SIG # End signature block
