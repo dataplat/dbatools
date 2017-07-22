@@ -27,14 +27,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should not return object" {
             $results | Should Be $null
         }
-    }
+	}
+	Start-Sleep -Seconds 2
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again after withreplace test" {
         $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
         }
-    }
+	}
+	Start-Sleep -Seconds 2
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Properly restores a database on the local drive using piped Get-ChildItem results" {
         $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance localhost
@@ -44,14 +46,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should return successful restore" {
             $results.RestoreComplete | Should Be $true
         }
-    }
+	}
+	Start-Sleep -Seconds 2
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again after gci tests" {
         $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
         }
-    }
+	}
+	Start-Sleep -Seconds 2
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is restored with correct renamings" {
         $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationFilePrefix prefix
@@ -75,7 +79,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should return the 2 prefixed and suffixed files" {
             (($Results.RestoredFile -split ',') -match "^prefix.*suffix\.").count | Should be 2
         }
-    }
+	}
+	Start-Sleep -Seconds 2
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again post prefix and suffix tests" {
         $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
@@ -96,7 +101,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
     }
-
+	
+	Start-Sleep -Seconds 2
     Context "Database is properly removed (name change)" {
         $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database pestering
         It "Should say the status was dropped" {
