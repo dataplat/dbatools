@@ -1,5 +1,8 @@
-﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Dismount-DbaDatabase Integration Tests" -Tags "IntegrationTests" {
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	$dbname = "detachattach"
 	$null = Get-DbaDatabase -SqlInstance localhost -Database $dbname | Remove-DbaDatabase
 	

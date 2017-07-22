@@ -1,5 +1,8 @@
+$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Test-DbaLsnChain Unit Tests" -Tag 'UnitTests' {
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 	InModuleScope dbatools {
 		Context "General Diff restore" {
 			$Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)

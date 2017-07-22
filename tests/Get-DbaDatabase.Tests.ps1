@@ -1,5 +1,8 @@
-﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Get-DbaDatabase Integration Tests" -Tags "IntegrationTests" {
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
 	Context "Count system databases on localhost" {
 		$results = Get-DbaDatabase -SqlInstance localhost -NoUserDb 

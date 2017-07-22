@@ -1,5 +1,8 @@
-﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Copy-DbaDatabase Integration Tests" -Tags "IntegrationTests" {
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	# constants
 	$script:sql2008 = "localhost\sql2008r2sp2"
 	$script:sql2016 = "localhost\sql2016"
