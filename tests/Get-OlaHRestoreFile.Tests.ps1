@@ -1,6 +1,6 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$script:PSModuleRoot\tests\constants.ps1"
+. "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests'{
     #Mock Test-Path {$true}

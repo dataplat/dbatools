@@ -1,7 +1,7 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$script:PSModuleRoot\tests\constants.ps1"
-. "$script:PSModuleRoot\internal\Connect-SqlInstance.ps1"
+. "$PSScriptRoot\constants.ps1"
+. "$PSScriptRoot\..\internal\Connect-SqlInstance.ps1"
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests'{
 	InModuleScope dbatools {
