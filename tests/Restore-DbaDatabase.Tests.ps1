@@ -20,7 +20,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 	
     Context "Ensuring warning is thrown if database already exists" {
-        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WarningVariable warning
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WarningVariable warning -WarningAction SilentlyContinue
         It "Should warn" {
             $warning | Should Match "exists and WithReplace not specified, stopping"
         }
