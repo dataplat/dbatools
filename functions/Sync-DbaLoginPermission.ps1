@@ -112,7 +112,7 @@ function Sync-DbaSqlLoginPermission {
 				$username = $sourceLogin.Name
 				$currentLogin = $sourceServer.ConnectionContext.TrueLogin
 
-				if ($currentLogin -eq $username) {
+				if (!$Login -and $currentLogin -eq $username) {
 					Write-Message -Level Warning -Message "Sync does not modify the permissions of the current user. Skipping."
 					continue
 				}
@@ -156,11 +156,6 @@ function Sync-DbaSqlLoginPermission {
 	}
 	process {
 		if (Test-FunctionInterrupt) { return }
-
-		if ($pipelinevariable.Length -gt 0) {
-			$Source = $pipelinevariable[0].Parent.Name
-			$logins = $pipelinevariable.Name
-		}
 
 		if (!$Login) {
 			$logins = $sourceServer.Logins.Name
