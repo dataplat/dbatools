@@ -7,7 +7,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 		Context "General Diff restore" {
 			$Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
 			Mock Read-DbaBackupHeader { $Header }
-			$RawFilteredFiles = Get-FilteredRestoreFile -SqlServer 'TestSQL' -Files "c:\dummy.txt"
+			$RawFilteredFiles = Get-FilteredRestoreFile -SqlServer 'TestSQL' -Files "c:\dummy.txt" -WarningAction SilentlyContinue
 			$FilteredFiles = $RawFilteredFiles[0].values
 			It "Should Return 7" {
 				$FilteredFiles.count | should be 7
