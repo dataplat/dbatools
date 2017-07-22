@@ -158,7 +158,7 @@ if (-not (Test-Path Alias:Get-SqlRegisteredServerName)) { Set-Alias -Scope Globa
 if (-not (Test-Path Alias:Get-SqlServerKey)) { Set-Alias -Scope Global -Name Get-SqlServerKey -Value Get-DbaSqlProductKey }
 if (-not (Test-Path Alias:Import-SqlSpConfigure)) { Set-Alias -Scope Global -Name Import-SqlSpConfigure -Value Import-DbaSpConfigure }
 if (-not (Test-Path Alias:Install-SqlWhoIsActive)) { Set-Alias -Scope Global -Name Install-SqlWhoIsActive -Value Install-DbaWhoIsActive }
-if (-not (Test-Path Alias:Invoke-DbaSqlcmd)) { Set-Alias -Scope Global -Name Invoke-Sqlcmd2 -Value Invoke-Sqlcmd2 }
+if (-not (Test-Path Alias:Invoke-DbaSqlcmd)) { Set-Alias -Scope Global -Name Invoke-DbaSqlcmd -Value Invoke-Sqlcmd2 }
 if (-not (Test-Path Alias:Remove-SqlDatabaseSafely)) { Set-Alias -Scope Global -Name Remove-SqlDatabaseSafely -Value Remove-DbaDatabaseSafely }
 if (-not (Test-Path Alias:Remove-SqlOrphanUser)) { Set-Alias -Scope Global -Name Remove-SqlOrphanUser -Value Remove-DbaOrphanUser }
 if (-not (Test-Path Alias:Repair-SqlOrphanUser)) { Set-Alias -Scope Global -Name Repair-SqlOrphanUser -Value Repair-DbaOrphanUser }
