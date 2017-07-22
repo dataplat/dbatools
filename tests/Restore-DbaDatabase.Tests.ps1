@@ -182,7 +182,7 @@ Describe "Restore-DbaDatabase Integration Tests" -Tags "IntegrationTests" {
 
     Context "RestoreTime setup checks" {
         $results = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean
-        $sqlresults = Invoke-DbaSqlCmd -ServerInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        $sqlresults = Invoke-Sqlcmd2 -ServerInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should restore cleanly" {
             ($results.RestoreComplete -contains $false) | Should Be $false
         }      
@@ -206,7 +206,7 @@ Describe "Restore-DbaDatabase Integration Tests" -Tags "IntegrationTests" {
 
     Context "RestoreTime point in time" {
         $results = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44")
-        $sqlresults = Invoke-DbaSqlCmd -ServerInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        $sqlresults = Invoke-Sqlcmd2 -ServerInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 4 files" {
             $results.count | Should be 4
         }
@@ -227,7 +227,7 @@ Describe "Restore-DbaDatabase Integration Tests" -Tags "IntegrationTests" {
 
     Context "RestoreTime point in time and continue" {
         $results = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean -RestoreTime (get-date "2017-06-01 13:22:44") -StandbyDirectory c:\temp
-        $sqlresults = Invoke-DbaSqlCmd -ServerInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        $sqlresults = Invoke-Sqlcmd2 -ServerInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 4 files" {
             $results.count | Should be 4
         }
@@ -238,7 +238,7 @@ Describe "Restore-DbaDatabase Integration Tests" -Tags "IntegrationTests" {
             $sqlresults.maxdt | Should be (get-date "2017-06-01 13:22:43")
         }
         $results2 = Restore-DbaDatabase -SqlInstance localhost -path c:\github\appveyor-lab\RestoreTimeClean -Continue
-        $sqlresults2 = Invoke-DbaSqlCmd -ServerInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
+        $sqlresults2 = Invoke-Sqlcmd2 -ServerInstance localhost -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should have restored 2 files" {
             $results2.count | Should be 2
         }

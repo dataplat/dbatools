@@ -203,7 +203,7 @@ function Restore-DbaDatabase {
 					-NoRecovery -WithReplace -StandbyDirectory C:\dbatools\standby 
 
 		#It's in standby so we can peek at it
-		Invoke-DbaSqlCmd -ServerInstance server\instance1 -Query "select top 1 * from Restored.dbo.steps order by dt desc"
+		Invoke-Sqlcmd2 -ServerInstance server\instance1 -Query "select top 1 * from Restored.dbo.steps order by dt desc"
 
 		#Not quite there so let's roll on a bit:
 		$files | Restore-DbaDatabase -SqlServer server\instance1 `
@@ -211,7 +211,7 @@ function Restore-DbaDatabase {
 					-continue -WithReplace -RestoreTime (get-date "15:09:30 22/05/2017") `
 					-StandbyDirectory C:\dbatools\standby
 
-		Invoke-DbaSqlCmd -ServerInstance server\instance1 -Query "select top 1 * from restored.dbo.steps order by dt desc"
+		Invoke-Sqlcmd2 -ServerInstance server\instance1 -Query "select top 1 * from restored.dbo.steps order by dt desc"
 
 		Restore-DbaDatabase -SqlServer server\instance1 `
 					-DestinationFilePrefix prefix -DatabaseName Restored `
