@@ -1,21 +1,24 @@
-﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Dismount-DbaDatabase Integration Tests" -Tags "IntegrationTests" {
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	$dbname = "detachattach"
-	$null = Get-DbaDatabase -SqlInstance localhost -Database $dbname | Remove-DbaDatabase
+	$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase
 	
 	Context "Setup removes, restores and backups and preps reattach" {
-		$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
-		$null = Restore-DbaDatabase -SqlInstance localhost -Path C:\github\appveyor-lab\detachattach\detachattach.bak -WithReplace
+		$null = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase
+		$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path C:\github\appveyor-lab\detachattach\detachattach.bak -WithReplace
 		
 		$script:fileStructure = New-Object System.Collections.Specialized.StringCollection
 		
-		foreach ($file in (Get-DbaDatabaseFile -SqlInstance localhost -Database $dbname).PhysicalName) {
+		foreach ($file in (Get-DbaDatabaseFile -SqlInstance $script:instance1 -Database $dbname).PhysicalName) {
 			$null = $script:fileStructure.Add($file)
 		}
 	}
 	
 	Context "Detaches a single database and tests to ensure the alias still exists" {
-		$results = Detach-DbaDatabase -SqlInstance localhost -Database $dbname -Force
+		$results = Detach-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Force
 		
 		It "Should return success" {
 			$results.DetachResult | Should Be "Success"
@@ -27,7 +30,7 @@ Describe "Dismount-DbaDatabase Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	Context "Reattaches and deletes" {
-		$null = Attach-DbaDatabase -SqlInstance localhost -Database $dbname -FileStructure $script:fileStructure
-		$null = Get-DbaDatabase -SqlInstance localhost -NoSystemDb | Remove-DbaDatabase
+		$null = Attach-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -FileStructure $script:fileStructure
+		$null = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase
 	}
 }

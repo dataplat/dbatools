@@ -1,8 +1,9 @@
-﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+. "$PSScriptRoot\constants.ps1"
 . $PSScriptRoot\..\internal\Stop-Function.ps1
 
-## needs some proper tests for the function here
-Describe "Stop-Function Unit-Tests" -Tag 'UnitTests' {
+Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     Context "Testing non-silent: Explicit call" {
         try
         {

@@ -1,5 +1,8 @@
+$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Get-DbaSqlBuildReference Unit Test" -Tags Unittest {
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Unit Test" -Tags Unittest {
 	$ModuleBase = (Get-Module -Name dbatools).ModuleBase
 	$idxfile = "$ModuleBase\bin\dbatools-buildref-index.json"
 	Context 'Validate data in json is correct' {

@@ -1,5 +1,8 @@
+$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Get-FilteredRestoreFile Unit Tests" -Tag 'UnitTests' {
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 	InModuleScope dbatools {
 		Context "Empty TLog Backup Issues" {
 			$Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\EmptyTlogData.json -raw)
