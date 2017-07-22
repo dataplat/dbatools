@@ -48,7 +48,7 @@ function Get-XpDirTreeRestoreFile {
 	}
 	
 	$query = "EXEC master.sys.xp_dirtree '$Path',1,1;"
-	$queryResult = Invoke-DbaSqlcmd -ServerInstance $server -Database tempdb -Query $query
+	$queryResult = $Server.Query($query, 'tempdb')
 	
 	$dirs = $queryResult | where-object file -eq 0
 	$Results = @()
