@@ -38,6 +38,9 @@
 			Auto-populated list of Credentials from Source. If no Credential is specified, all Credentials will be migrated.
 			Note: if spaces exist in the credential name, you will have to type "" or '' around it. I couldn't figure out a way around this.
 
+			.PARAMETER ExcludeCredentialIdentity
+			Auto-populated list of Credentials from Source to be excluded from the migration
+	
 		.PARAMETER Force
 			By default, if a Credential exists on the source and destination, the Credential is not copied over. Specifying -force will drop and recreate the Credential on the Destination server.
 
