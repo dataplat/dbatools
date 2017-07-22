@@ -158,7 +158,7 @@ if (-not (Test-Path Alias:Get-SqlRegisteredServerName)) { Set-Alias -Scope Globa
 if (-not (Test-Path Alias:Get-SqlServerKey)) { Set-Alias -Scope Global -Name Get-SqlServerKey -Value Get-DbaSqlProductKey }
 if (-not (Test-Path Alias:Import-SqlSpConfigure)) { Set-Alias -Scope Global -Name Import-SqlSpConfigure -Value Import-DbaSpConfigure }
 if (-not (Test-Path Alias:Install-SqlWhoIsActive)) { Set-Alias -Scope Global -Name Install-SqlWhoIsActive -Value Install-DbaWhoIsActive }
-if (-not (Test-Path Alias:Invoke-Sqlcmd2)) { Set-Alias -Scope Global -Name Invoke-Sqlcmd2 -Value Invoke-DbaSqlcmd }
+if (-not (Test-Path Alias:Invoke-DbaSqlcmd)) { Set-Alias -Scope Global -Name Invoke-Sqlcmd2 -Value Invoke-Sqlcmd2 }
 if (-not (Test-Path Alias:Remove-SqlDatabaseSafely)) { Set-Alias -Scope Global -Name Remove-SqlDatabaseSafely -Value Remove-DbaDatabaseSafely }
 if (-not (Test-Path Alias:Remove-SqlOrphanUser)) { Set-Alias -Scope Global -Name Remove-SqlOrphanUser -Value Remove-DbaOrphanUser }
 if (-not (Test-Path Alias:Repair-SqlOrphanUser)) { Set-Alias -Scope Global -Name Repair-SqlOrphanUser -Value Repair-DbaOrphanUser }
@@ -332,12 +332,12 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIxMjE1MjQxWjAj
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIyMDIzNjMxWjAj
 # BgkqhkiG9w0BCQQxFgQUoawaq7vsKP+n0kwnKhNc8i1hvz0wDQYJKoZIhvcNAQEB
-# BQAEggEAeKOPWvb0rvw8RlDB/HDu/CcAq5tfEWXbxPdIjBFIjGQd2lWva2Brgvz6
-# mRODJd37Xw+fOV0amZN+QCByDJQeYmT5R6HkU7sw0kBlzmFI7XbJOokPyzSUi4Dj
-# tmrFkIwFBh3WoK5+QBV1h2ggB+SpO8UxvkiNQFdxDQgRYbnmXhXnSMQAXYojvyOU
-# XcCeop4j3zhE7bXGE2i0FbfwsHneHW5KFxynPTlXAYWYJ3jJSX4viKGCBngMaRuQ
-# IIz5KFIQxItS4T9fbpb3uyUPRH5HJJdB5LLNV2vm3YD+0DZfCkF9/D/L1UGmV0j/
-# qCm/vnxLaYOmmAG5jULxVbJtVRlX5Q==
+# BQAEggEAU1CeUb9CU9D2yraidZNmgSdChjx64u1gJpB7gqAha7UnJWopS00ubPpX
+# 7yW3rluse44E4PnjdxztB/AFbO36P5YHlN/Z8uD6LaNPu30YxBASXTB45bMpFNlx
+# E5nMMJ5hMvTnpom8aBYQwcwb2pW2d0DgXKeo7tLmFG0O4g6kxK/kyHRmeVkCRJ9s
+# a2odPxo34lAZxFOF70QGVyFUiqhIF6XAPpBGegqNQpz1mUa6YbmnmephUrJRF5zm
+# jT4MoJnCIsiktezhwW7yPuiizsZHk/1ZXJdepa5rwB/++kwvwtN26eNV4iVN7sbd
+# l6N3l0s89n5vRto4Hk8jedS5EbsTUg==
 # SIG # End signature block

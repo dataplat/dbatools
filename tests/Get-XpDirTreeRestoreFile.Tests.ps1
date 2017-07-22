@@ -22,7 +22,7 @@ Describe "Get-XpDirTreeRestoreFile Unit Tests" -Tag 'UnitTests'{
 			Mock Connect-SqlInstance { [DbaInstanceParameter]"Foo\Bar" }
 			$array = (@{ subdirectory = 'full.bak'; depth = 1; file = 1 },
 				@{ subdirectory = 'full2.bak'; depth = 1; file = 1 })
-			Mock Invoke-DbaSqlcmd { $array } -ParameterFilter { $Query -and $Query -eq "EXEC master.sys.xp_dirtree 'c:\temp\',1,1;" }
+			Mock Invoke-Sqlcmd2 { $array } -ParameterFilter { $Query -and $Query -eq "EXEC master.sys.xp_dirtree 'c:\temp\',1,1;" }
 			$results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -Silent $true
 			It "Should return an array of 2 files" {
 				$results.count | Should Be 2
@@ -39,10 +39,10 @@ Describe "Get-XpDirTreeRestoreFile Unit Tests" -Tag 'UnitTests'{
 			$array = (@{ subdirectory = 'full.bak'; depth = 1; file = 1 },
 				@{ subdirectory = 'full2.bak'; depth = 1; file = 1 },
 				@{ subdirectory = 'recurse'; depth = 1; file = 0 })
-			Mock Invoke-DbaSqlcmd { $array } -ParameterFilter { $query -and $query -eq "EXEC master.sys.xp_dirtree 'c:\temp\',1,1;" }
+			Mock Invoke-Sqlcmd2 { $array } -ParameterFilter { $query -and $query -eq "EXEC master.sys.xp_dirtree 'c:\temp\',1,1;" }
 			$array2 = (@{ subdirectory = 'fulllow.bak'; depth = 1; file = 1 },
 				@{ subdirectory = 'full2low.bak'; depth = 1; file = 1 })
-			Mock Invoke-DbaSqlcmd { $array2 } -ParameterFilter { $query -and $query -eq "EXEC master.sys.xp_dirtree 'c:\temp\recurse\',1,1;" }
+			Mock Invoke-Sqlcmd2 { $array2 } -ParameterFilter { $query -and $query -eq "EXEC master.sys.xp_dirtree 'c:\temp\recurse\',1,1;" }
 			$results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -Silent $true
 			It "Should return array of 4 files - recursion" {
 				$results.count | Should Be 4
