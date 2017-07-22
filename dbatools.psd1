@@ -171,7 +171,6 @@
 		'New-DbaDatabaseSnapshot',
 		'Restore-DbaFromDatabaseSnapshot',
 		'Get-DbaTrigger',
-		'Invoke-DbaSqlcmd',
 		'Export-DbaUser',
 		'Get-DbaDatabaseState',
 		'Set-DbaDatabaseState',
@@ -334,7 +333,8 @@
 		'Get-DbaAgDatabase',
 		'Get-DbaSqlModule',
 		'Get-DbaRegisteredServersStore',
-		'Sync-DbaSqlLoginPermission'
+		'Sync-DbaSqlLoginPermission',
+		'Invoke-Sqlcmd2'
 	)
 	
 	# Cmdlets to export from this module
@@ -412,8 +412,8 @@
 	'Test-SqlPath',
 	'Test-SqlTempDbConfiguration',
 	'Watch-SqlDbLogin',
-	'Invoke-Sqlcmd2',
-	'Get-DbaDatabaseFreeSpace'
+	'Get-DbaDatabaseFreeSpace',
+	'Invoke-DbaSqlcmd'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()
