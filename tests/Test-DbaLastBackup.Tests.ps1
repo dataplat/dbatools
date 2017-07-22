@@ -11,9 +11,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database testlastbackup | Backup-DbaDatabase -Type Full
 		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database testlastbackup | Backup-DbaDatabase -Type Full
 		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database testlastbackup | Backup-DbaDatabase -Type Differential
-		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database testlastbackup | Backup-DbaDatabase -Type Log
-		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database testlastbackup | Backup-DbaDatabase -Type Log
-		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database testlastbackup | Backup-DbaDatabase -Type Log
+		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database testlastbackup -RecoveryModel Full | Backup-DbaDatabase -Type Log
+		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database testlastbackup -RecoveryModel Full | Backup-DbaDatabase -Type Log
+		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database testlastbackup -RecoveryModel Full | Backup-DbaDatabase -Type Log
 	}
 	
 	<#
