@@ -87,8 +87,9 @@ function Install-DbaWhoIsActive {
 	
 	begin {
 		
+		$version = "who_is_active_v11_17"
 		$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-		$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select-Object -First 1).FullName
+		$sqlfile = (Get-ChildItem "$temp\$version.sql" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
 		
 		if ($sqlfile -and (-not($Update))) {
 			Write-Message -Level Verbose -Message "Found local $sqlfile"
@@ -98,7 +99,7 @@ function Install-DbaWhoIsActive {
 				try {
 					Write-Message -Level Verbose -Message "Downloading sp_WhoisActive zip file, unzipping and installing."
 					
-					$url = 'http://whoisactive.com/who_is_active_v11_17.zip'
+					$url = "http://whoisactive.com/downloads/$version.zip"
 					$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 					$zipfile = "$temp\spwhoisactive.zip"
 					
