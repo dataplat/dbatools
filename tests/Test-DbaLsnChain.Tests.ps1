@@ -13,7 +13,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 				$FilteredFiles.count | should be 7
 			}
 			It "Should return True" {
-				$Output = Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles
+				$Output = Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles -WarningAction SilentlyContinue
 				$Output | Should be True
 			}
 			$Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
@@ -21,14 +21,14 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 			$RawFilteredFiles = Get-FilteredRestoreFile -SqlServer 'TestSQL' -Files "c:\dummy.txt"
 			$FilteredFiles = $RawFilteredFiles[0].values
 			It "Should return true if we remove diff backup" {
-				$Output = Test-DbaLsnChain -FilteredRestoreFiles ($FilteredFiles | Where-Object { $_.BackupTypeDescription -ne 'Database Differential' })
+				$Output = Test-DbaLsnChain -WarningAction SilentlyContinue -FilteredRestoreFiles ($FilteredFiles | Where-Object { $_.BackupTypeDescription -ne 'Database Differential' })
 				$Output | Should be True
 			}
 			
 			It "Should return False (faked lsn)" {
 				$FilteredFiles[4].FirstLsn = 2
 				$FilteredFiles[4].LastLsn = 1
-				$Output = $FilteredFiles | Test-DbaLsnChain
+				$Output = $FilteredFiles | Test-DbaLsnChain -WarningAction SilentlyContinue
 				$Output | Should be $False
 			}
 		}
