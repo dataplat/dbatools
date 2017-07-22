@@ -166,7 +166,6 @@ function Sync-DbaSqlLoginPermission {
 			$logins = $sourceServer.Logins.Name
 		}
 
-
 		Sync-Only -SourceServer $sourceServer -DestServer $destServer -Logins $logins -Exclude $ExcludeLogin
 	}
 	end {
