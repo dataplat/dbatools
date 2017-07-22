@@ -149,10 +149,6 @@ function Sync-DbaSqlLoginPermission {
 
 		$source = $sourceServer.DomainInstanceName
 		$destination = $destServer.DomainInstanceName
-
-		if ($Pscmdlet.ShouldProcess("console", "Showing sync start message")) {
-			Write-Message -Level Verbose -Message "Syncing Login Permissions"
-		}
 	}
 	process {
 		if (Test-FunctionInterrupt) { return }
