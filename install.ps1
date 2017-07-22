@@ -13,7 +13,7 @@ catch {
 	Write-Output "dbatools was not installed by the PowerShell Gallery, continuing with web install."
 }
 
-$module = Import-Module -Name dbatools -ErrorAction SilentlyContinue -Force
+$module = Import-Module -Name dbatools -ErrorAction SilentlyContinue
 $localpath = $module.ModuleBase
 
 if ($null -eq $localpath) {
@@ -73,7 +73,7 @@ if (!(Test-Path -Path $path)) {
 else {
 	try {
 		Write-Output "Deleting previously installed module"
-		Remove-Item -Path "$path\*" -Force -Recurse
+		Remove-Item -Path "$path\*" -Force -Recurse -ErrorAction SilentlyContinue *>&1 | Out-Null
 	}
 	catch {
 		throw "Can't delete $Path. You may need to Run as Administrator"
@@ -82,14 +82,15 @@ else {
 
 Write-Output "Downloading archive from github"
 try {
-	Invoke-WebRequest $url -OutFile $zipfile
+	(New-Object System.Net.WebClient).DownloadFile($url, $zipfile)
 }
 catch {
 	#try with default proxy and usersettings
 	Write-Output "Probably using a proxy for internet access, trying default proxy settings"
-	(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-	Invoke-WebRequest $url -OutFile $zipfile
+	$wc = (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+	$wc.DownloadFile($url, $zipfile)
 }
+
 
 # Unblock if there's a block
 Unblock-File $zipfile -ErrorAction SilentlyContinue
@@ -97,15 +98,16 @@ Unblock-File $zipfile -ErrorAction SilentlyContinue
 Write-Output "Unzipping"
 
 # Keep it backwards compatible
+Remove-Item -ErrorAction SilentlyContinue "$temp\dbatools-$branch" -Recurse -Force
 $shell = New-Object -ComObject Shell.Application
 $zipPackage = $shell.NameSpace($zipfile)
 $destinationFolder = $shell.NameSpace($temp)
 $destinationFolder.CopyHere($zipPackage.Items())
 
 Write-Output "Cleaning up"
-Move-Item -Path "$temp\dbatools-$branch\*" $path
-Remove-Item -Path "$temp\dbatools-$branch"
-Remove-Item -Path $zipfile
+Move-Item -Path "$temp\dbatools-$branch\*" $path -ErrorAction SilentlyContinue
+Remove-Item -Path "$temp\dbatools-$branch" -Recurse -Force
+Remove-Item -Path $zipfile -Recurse -Force
 
 Write-Output "Done! Please report any bugs to dbatools.io/issues or clemaire@gmail.com."
 if ((Get-Command -Module dbatools).count -eq 0) { Import-Module "$path\dbatools.psd1" -Force }
