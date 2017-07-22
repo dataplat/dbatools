@@ -1,7 +1,9 @@
+$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-. "$PSScriptRoot\..\internal\Connect-SqlInstance.ps1"
+. "$script:PSModuleRoot\tests\constants.ps1"
+. "$script:PSModuleRoot\internal\Connect-SqlInstance.ps1"
 
-Describe "Get-XpDirTreeRestoreFile Unit Tests" -Tag 'UnitTests'{
+Describe "$commandname Unit Tests" -Tag 'UnitTests'{
 	InModuleScope dbatools {
 		#mock Connect-SqlInstance { $true }
 		mock Test-DbaSqlPath { $true }
