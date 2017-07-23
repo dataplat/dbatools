@@ -79,11 +79,27 @@ function Get-DbaTcpPort {
 						$serverName = $args[0]
 
 						Add-Type -AssemblyName Microsoft.VisualBasic
-						$wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $serverName
-
+						
 						foreach ($instance in $wmi.ServerInstances) {
 							$instanceName = $instance.Name
-
+							$wmiinstance = $wmi.Services | Where-Object { $_.DisplayName -eq "SQL Server ($instanceName)" }
+							
+							try {
+								$regroot = ($wmiinstance.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }).Value
+								$dacport = (Get-ItemProperty "HKLM:\$regroot\MSSQLServer\SuperSocketNetLib\AdminConnection\Tcp").TcpDynamicPorts
+								
+								[PsCustomObject]@{
+									ComputerName   = $serverName
+									InstanceName   = $instanceName
+									IPAddress	   = "0.0.0.0"
+									Port		   = $dacport
+									Static		   = $false
+									Type		   = "DAC"
+								}
+							} catch {
+								# it's just not our day
+							}
+							
 							$tcp = $instance.ServerProtocols | Where-Object Name -eq Tcp
 							$ips = $tcp.IPAddresses
 							
@@ -110,7 +126,8 @@ function Get-DbaTcpPort {
 									InstanceName = $instanceName
 									IPAddress    = $ip.IPAddress.IPAddressToString
 									Port         = $port
-									Static       = $static
+									Static	     = $static
+									Type = "Normal"
 								}
 							}
 						}
