@@ -70,15 +70,6 @@ if (!(Test-Path -Path $path)) {
 		throw "Can't create $Path. You may need to Run as Administrator"
 	}
 }
-else {
-	try {
-		Write-Output "Deleting previously installed module"
-		Remove-Item -Path "$path\*" -Force -Recurse -ErrorAction SilentlyContinue *>&1 | Out-Null
-	}
-	catch {
-		throw "Can't delete $Path. You may need to Run as Administrator"
-	}
-}
 
 Write-Output "Downloading archive from github"
 try {
@@ -105,7 +96,7 @@ $destinationFolder = $shell.NameSpace($temp)
 $destinationFolder.CopyHere($zipPackage.Items())
 
 Write-Output "Cleaning up"
-Move-Item -Path "$temp\dbatools-$branch\*" $path -ErrorAction SilentlyContinue
+Move-Item -Path "$temp\dbatools-$branch\*" $path -ErrorAction SilentlyContinue -Force
 Remove-Item -Path "$temp\dbatools-$branch" -Recurse -Force
 Remove-Item -Path $zipfile -Recurse -Force
 
