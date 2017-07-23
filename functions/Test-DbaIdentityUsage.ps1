@@ -144,15 +144,11 @@ function Test-DbaIdentityUsage {
 			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-			
-			if ($server.versionMajor -lt 10) {
-				Stop-Function -Message "This function does not support versions lower than SQL Server 2008 (v10). Skipping server $instance." -Continue
-			}			
 			
 			$dbs = $server.Databases
 			
