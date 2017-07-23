@@ -27,6 +27,9 @@
         .PARAMETER MinimumVersion
            The minimum version that the calling command will support
 	
+		.PARAMETER Silent
+           Use this switch to disable any kind of verbose messages
+	
         .EXAMPLE
             Connect-SqlInstance -SqlInstance sql2014
     
@@ -40,9 +43,8 @@
 		[object]$SqlCredential,
 		[switch]$ParameterConnection,
 		[switch]$RegularUser = $true,
-		# let's see how this goes
-
-		[int]$MinimumVersion
+		[int]$MinimumVersion,
+		[switch]$Silent
 	)
 	
 	
@@ -55,7 +57,8 @@
     #>
 	if ($SqlCredential) {
 		if ($SqlCredential.GetType() -ne [System.Management.Automation.PSCredential]) {
-			throw "The credential parameter was of a non-supported type! Only specify PSCredentials such as generated from Get-Credential. Input was of type $($SqlCredential.GetType().FullName)"
+			Stop-Function -Target $SqlCredential -Message "The credential parameter was of a non-supported type! Only specify PSCredentials such as generated from Get-Credential. Input was of type $($SqlCredential.GetType().FullName)"
+			return
 		}
 	}
 	#endregion Ensure Credential integrity
@@ -155,7 +158,8 @@
 
 	if ($MinimumVersion -and $server.VersionMajor) {
 		if ($server.versionMajor -lt $MinimumVersion) {
-			throw "SQL Server version $MinimumVersion required - $server not supported."
+			Stop-Function -Target $SqlCredential -Message "SQL Server version $MinimumVersion required - $server not supported."
+			return
 		}
 	}
 	
@@ -194,12 +198,14 @@
 		$message = ($message -Split '-->')[0]
 		$message = ($message -Split 'at System.Data.SqlClient')[0]
 		$message = ($message -Split 'at System.Data.ProviderBase')[0]
-		throw "Can't connect to $ConvertedSqlInstance`: $message "
+		Stop-Function -Target $SqlCredential -Message "Can't connect to $ConvertedSqlInstance`: $message "
+		return	
 	}
 	
 	if (-not $RegularUser) {
 		if ($server.ConnectionContext.FixedServerRoles -notmatch "SysAdmin") {
-			throw "Not a sysadmin on $ConvertedSqlInstance. Quitting."
+			Stop-Function -Target $SqlCredential -Message "Not a sysadmin on $ConvertedSqlInstance. Quitting."
+			return	
 		}
 	}
 	
