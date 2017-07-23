@@ -103,7 +103,7 @@ Authenticates with SQL Server using alternative credentials.
 				Write-Message -Level Verbose -Message "Processing $db on $instances"
 
 				if ($db.IsAccessible -eq $false) {
-					Stop-Function "The database $db is not accessible. Skipping database." -Continue -Target $db
+					Stop-Function -Message "The database $db is not accessible. Skipping database." -Continue -Target $db
 				}
 
 				$sql = "DBCC DBINFO ([$($db.name)]) WITH TABLERESULTS"
