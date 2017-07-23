@@ -25,5 +25,5 @@
 	Include:
 	 - blog post that may have assisted in writing the code
 	 - blog post that were initial source
-	 - special or unique approach made to solve teh problem
+	 - special or unique approach made to solve the problem
 -->

@@ -12,18 +12,6 @@ function Find-DbaUnusedIndex {
 
 			You can select the indexes you want to drop on the gridview and by click OK the drop statement will be generated.
 
-			Output:
-				TableName
-				IndexName
-				KeyCols
-				IncludedCols
-				IndexSizeMB
-				IndexType
-				CompressionDesc (When 2008+)
-				NumberRows
-				IsDisabled
-				IsFiltered (When 2008+)
-
 		.PARAMETER SqlInstance
 			The SQL Server instance.
 
