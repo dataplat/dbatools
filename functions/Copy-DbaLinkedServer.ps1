@@ -36,6 +36,9 @@ function Copy-DbaLinkedServer {
 
 		.PARAMETER ExcludeLinkedServer
 			The linked server(s) to exclude - this list is auto-populated from the server
+	
+		.PARAMETER UpgradeSqlClient
+			Upgrade any SqlClient Linked Server to the current Version
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
@@ -82,6 +85,7 @@ function Copy-DbaLinkedServer {
 		[PSCredential]$DestinationSqlCredential,
 		[object[]]$LinkedServer,
 		[object[]]$ExcludeLinkedServer,
+		[switch]$UpgradeSqlClient,
 		[switch]$Force,
 		[switch]$Silent
 	)
@@ -331,7 +335,13 @@ function Copy-DbaLinkedServer {
 					try {
 						$sql = $currentLinkedServer.Script() | Out-String
 						Write-Message -Level Debug -Message $sql
-
+						
+						if ($UpgradeSqlClient -and $sql -match "sqlncli") {
+							$newstring = "sqlncli$($destServer.VersionMajor)"
+							Write-Message -Level Verbose "Changing sqlncli to $newstring"
+							$sql = $sql -replace ("sqlncli[0-9]+", $newstring)
+						}
+						
 						$destServer.Query($sql)
 						$destServer.LinkedServers.Refresh()
 						Write-Message -Level Verbose -Message "$linkedServerName successfully copied"
