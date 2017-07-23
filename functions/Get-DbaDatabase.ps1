@@ -228,7 +228,7 @@
 			}
 
 			$defaults =  'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
-                         'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner',
+                         'LogReuseWaitStatus','Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner',
                          'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
                          'LastLogBackupDate as LastLogBackup'
 
