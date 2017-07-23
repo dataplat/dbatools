@@ -338,7 +338,7 @@ function Copy-DbaLinkedServer {
 						
 						if ($UpgradeSqlClient -and $sql -match "sqlncli") {
 							$newstring = "sqlncli$($destServer.VersionMajor)"
-							Write-Message -Level Verbose "Changing sqlncli to $newstring"
+							Write-Message -Level Verbose -Message "Changing sqlncli to $newstring"
 							$sql = $sql -replace ("sqlncli[0-9]+", $newstring)
 						}
 						
