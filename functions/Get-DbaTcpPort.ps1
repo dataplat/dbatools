@@ -86,8 +86,9 @@ function Get-DbaTcpPort {
 
 							$tcp = $instance.ServerProtocols | Where-Object Name -eq Tcp
 							$ips = $tcp.IPAddresses
-
-							Write-Message -Level Verbose -Message "Parsing information for $($ips.count) IP addresses"
+							
+							# This is a remote command so do not use Write-message
+							Write-Verbose "Parsing information for $($ips.count) IP addresses"
 							foreach ($ip in $ips) {
 								$props = $ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpPort" -or $_.Name -eq "TcpDynamicPorts" }
 
