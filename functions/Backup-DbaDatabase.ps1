@@ -241,7 +241,7 @@ function Backup-DbaDatabase {
 			}
 			
 			if ($CopyOnly -ne $True) {
-				$CopyOnly -eq $false
+				$CopyOnly = $false
 			}
 			
 			$server.ConnectionContext.StatementTimeout  = 0
