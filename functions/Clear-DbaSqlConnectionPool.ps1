@@ -59,11 +59,11 @@ function Clear-DbaSqlConnectionPool {
 				Write-Message -Level Verbose -Message "Clearing all pools on remote computer $Computer"
 				if (Test-Bound 'Credential')
 				{
-					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+					Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}
 				else
 				{
-					Invoke-Command2 -ComputerName $computer -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+					Invoke-Command2 -ComputerName $Computer -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}
 			}
 			else
