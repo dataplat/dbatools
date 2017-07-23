@@ -58,6 +58,10 @@
 		.PARAMETER NoLogBackupSince
 			DateTime value. Returns list of databases that haven't had a Log backup since the passed in DateTime.
 
+		.PARAMETER LastUsed
+			Returns the Last used read and write Times for the Database using the sys.dm_db_index_usage_stats DMV which will show
+			the information since the last restart of SQL
+
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -109,6 +113,11 @@
 			Get-DbaDatabase -SqlInstance SQL1\SQLExpress -Status Normal
 
 			Returns only the user databases with status 'normal' from sql instance SQL1\SQLExpress
+		.EXAMPLE
+			Get-DbaDatabase -SqlInstance SQL1\SQLExpress -LastUsed
+
+			Returns the databases from sql instance SQL1\SQLExpress including the last used information 
+			from the sys.dm_db_index_usage_stats DMV
 
 		.EXAMPLE
 			Get-DbaDatabase -SqlInstance SQL1\SQLExpress,SQL2 -ExcludeDatabase model,master
@@ -157,7 +166,8 @@
 		[datetime]$NoFullBackupSince,
 		[switch]$NoLogBackup,
 		[datetime]$NoLogBackupSince,
-		[switch]$Silent
+		[switch]$Silent,
+		[switch]$LastUsed
 	)
 
 	begin {
@@ -177,6 +187,42 @@
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
+
+			if($LastUsed){
+				## Get last used information from the DMV
+                $querylastused = "WITH agg AS
+				(
+				  SELECT 
+				       max(last_user_seek) last_user_seek,
+				       max(last_user_scan) last_user_scan,
+				       max(last_user_lookup) last_user_lookup,
+				       max(last_user_update) last_user_update,
+				       sd.name dbname
+				   FROM
+				       sys.dm_db_index_usage_stats, master..sysdatabases sd
+				   WHERE
+				     database_id = sd.dbid AND database_id > 4
+					  group by sd.name 
+				)
+				SELECT 
+				   dbname,
+				   last_read = MAX(last_read),
+				   last_write = MAX(last_write)
+				FROM
+				(
+				   SELECT dbname, last_user_seek, NULL FROM agg
+				   UNION ALL
+				   SELECT dbname, last_user_scan, NULL FROM agg
+				   UNION ALL
+				   SELECT dbname, last_user_lookup, NULL FROM agg
+				   UNION ALL
+				   SELECT dbname, NULL, last_user_update FROM agg
+				) AS x (dbname, last_read, last_write)
+				GROUP BY
+				   dbname
+				ORDER BY 1;"
+                $dblastused = $server.ConnectionContext.ExecuteWithResults($querylastused).Tables[0]
 			}
 
 			if ($NoUserDb) {
@@ -235,6 +281,11 @@
 			if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
 				$defaults += ('Notes')
 			}
+			if($LastUsed)
+			{
+                # Add Last Used to the default view
+				$defaults += ('LastRead as Last Index Read', 'LastWrite as Last Index Write')
+			}
 			
 			try {
 				foreach ($db in $inputobject) {
@@ -245,6 +296,12 @@
 							$Notes = "Only CopyOnly backups"
 						}
 					}
+                    if ($LastUsed) {
+                        ## Add last used information to the input object
+                        $lastusedinfo = $dblastused | Where-Object { $_.dbname -eq $db.name }
+                        Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastRead -value $lastusedinfo.last_read
+                        Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastWrite -value $lastusedinfo.last_write
+                    }
 					Add-Member -Force -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
 					
 					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
