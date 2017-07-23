@@ -506,6 +506,7 @@ function Copy-DbaLogin {
 
 		return $serverParms
 	}
+	
 	process {
 		if ($PipeLogin.Length -gt 0) {
 			$Source = $PipeLogin[0].Parent.Name
@@ -513,12 +514,12 @@ function Copy-DbaLogin {
 		}
 
 		if ($SyncOnly) {
-			Sync-DbaSqlLoginPermission -Source $Source -Destination $Destination $loginparms
+			Sync-DbaSqlLoginPermission -Source $sourceServer -Destination $destServer $loginparms
 			return
 		}
 
 		if ($OutFile) {
-			Export-SqlLogin -SqlInstance $source -FilePath $OutFile $loginparms
+			Export-SqlLogin -SqlInstance $sourceServer -FilePath $OutFile $loginparms
 			return
 		}
 
