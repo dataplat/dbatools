@@ -86,8 +86,8 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
                     last_write = (Get-Date).AddHours(-1)
                 }
             } -ModuleName dbatools 
-            (Get-DbaDatabase -SqlInstance SQLServerName -LastUsed).LastRead -ne $null | Should Be $true
-            (Get-DbaDatabase -SqlInstance SQLServerName -LastUsed).LastWrite -ne $null | Should Be $true
+            (Get-DbaDatabase -SqlInstance SQLServerName).LastRead -ne $null | Should Be $true
+            (Get-DbaDatabase -SqlInstance SQLServerName).LastWrite -ne $null | Should Be $true
         } 
         It "Validates that Connect-SqlInstance Mock has been called" {
             $assertMockParams = @{
