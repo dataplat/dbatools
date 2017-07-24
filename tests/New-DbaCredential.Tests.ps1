@@ -9,7 +9,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	
 	# Add user
 	foreach ($login in $logins) {
-		$null = net user $login $plaintext /add
+		$null = net user $login $plaintext /add *>&1
 	}
 	
 	# remove old credentials
@@ -38,6 +38,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	foreach ($login in $logins) {
-		$null = net user $login /delete
+		$null = net user $login /delete *>&1
 	}
 }
