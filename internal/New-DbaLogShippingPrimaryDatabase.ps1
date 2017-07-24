@@ -120,8 +120,6 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 
 		[int]$HistoryRetention = 14420,
 
-		[int]$BackupCompression = 0,
-
 		[switch]$CompressBackup,
 
 		[string]$MonitorServer,
@@ -142,7 +140,7 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 	# Try connecting to the instance
 	Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
 	try {
-		$Server = Connect-DbaSqlServer -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+		$server = Connect-DbaSqlServer -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
 	catch {
 		Stop-Function -Message "Could not connect to Sql Server instance" -Target $SqlInstance -Continue
@@ -199,14 +197,14 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 		$MonitorPassword = $MonitorCredential.GetNetworkCredential().Password
 
 		# Check if the user is in the database
-		if ($Server.Databases['master'].Users.Name -notcontains $MonitorLogin) {
+		if ($server.Databases['master'].Users.Name -notcontains $MonitorLogin) {
 			Stop-Function -Message "User $MonitorLogin for monitor login must be in the master database." -InnerErrorRecord $_ -Target $SqlInstance 
 			return
 		}
 	}
 
 	# Check if the database is present on the source sql server
-	if ($Server.Databases.Name -notcontains $Database) {
+	if ($server.Databases.Name -notcontains $Database) {
 		Stop-Function -Message "Database $Database is not available on instance $SqlInstance" -InnerErrorRecord $_ -Target $SqlInstance 
 		return
 	}
@@ -252,7 +250,8 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 	if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for primary database $Database on $SqlInstance"))) {
 		try {
 			Write-Message -Message "Configuring logshipping for primary database $Database." -Level Output
-			Invoke-DbaSqlCmd -ServerInstance $SqlInstance -Credential $SqlCredential -Database 'master' -Query $Query
+			Write-Message -Message "Executing query:`n$Query" -Level Verbose
+			$server.Query($Query)
 		}
 		catch {
 			Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$($Query)" -InnerErrorRecord $_ -Target $SqlInstance
