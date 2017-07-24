@@ -1,21 +1,31 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-<#
+# Add user
+net user thor "BigOlPassword!" /add
+net user thorsmomma "BigOlPassword!" /add
+
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-	$Credentials = "claudio", "port", "tester"
-	#New-LocalUser -Name "User02" -Description "Description of this account." -NoPassword
+	$Credentials = "thor", "thorsmomma"
 	
 	foreach ($instance in $instances) {
-		foreach ($Credential in $Credentials) {
-			if ($l = Get-DbaCredential -SqlInstance $instance -Credential $Credential) {
-				Get-DbaProcess -SqlInstance $instance -Credential $Credential | Stop-DbaProcess
-				$l.Drop()
-			}
+		foreach ($Credential in (Get-DbaCredential -SqlInstance $instance)) {
+			$Credential.Drop()
 		}
 	}
-	
+}
+
+foreach ($instance in $instances) {
+	foreach ($Credential in (Get-DbaCredential -SqlInstance $instance)) {
+		$Credential.Drop()
+	}
+}
+
+# Remove user
+net user thor /delete
+net user thorsmomma /delete
+	<#
 	$null = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -InputFile C:\github\appveyor-lab\sql2008-scripts\Credentials.sql
 	
 	Context "Copy Credential with the same properties." {
