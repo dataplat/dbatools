@@ -42,8 +42,14 @@ foreach ($instance in $instances) {
 	}
 }
 
-Set-DbaStartupParameter -SqlInstance localhost\SQL2008R2SP2 -TraceFlags 7806 -Confirm:$false
+$server = Connect-DbaSqlServer -SqlInstance localhost\SQL2008R2SP2
+$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
+$server.Configuration.Alter()
+$null = Set-DbaStartupParameter -SqlInstance localhost\SQL2008R2SP2 -TraceFlags 7806 -Confirm:$false
 Restart-Service "MSSQL`$SQL2008R2SP2"
+$server = Connect-DbaSqlServer -SqlInstance localhost\SQL2008R2SP2
+$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
+$server.Configuration.Alter()
  
 do {
 	Start-Sleep 1
