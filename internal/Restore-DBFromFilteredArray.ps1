@@ -163,8 +163,8 @@ Function Restore-DBFromFilteredArray {
                 }
                 else {
                     Write-Message -Level Veryverbose -Message "Bombing out created on $sqlinstance"
-                    #Stop-Function -message "Destination File $File  exists on $SqlInstance" -TargetObject $file -Category 'DeviceError' -silent:$false
-                    throw "Destination File $File  exists on $SqlInstance"
+                    Stop-Function -message "Destination File $File  exists on $SqlInstance" -Target $file -Category 'DeviceError' -silent $true
+                    #throw "Destination File $File  exists on $SqlInstance"
                     return   
                 }    
                 Write-Message -Level Veryverbose -Message "past resuse tests"
