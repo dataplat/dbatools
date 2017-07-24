@@ -128,16 +128,11 @@ function Set-DbaDbQueryStoreOptions {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance" -Silent $Silent
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 13
 
             }
             catch {
                 Stop-Function -Message "Can't connect to $instance. Moving on." -Category InvalidOperation -InnerErrorRecord $_ -Target $instance -Continue
-            }
-
-            if ($server.VersionMajor -lt 13) {
-                Stop-Function -Message "The SQL Server Instance ($instance) has a lower SQL Server version than SQL Server 2016. Skipping server."
-                continue
             }
 
             # We have to exclude all the system databases since they cannot have the Query Store feature enabled
@@ -197,7 +192,8 @@ function Set-DbaDbQueryStoreOptions {
                 # Alter the Query Store Configuration
                 if ($Pscmdlet.ShouldProcess("$db on $instance", "Altering Query Store configuration on database")) {
                     try {
-                        $db.QueryStoreOptions.Alter()
+						$db.QueryStoreOptions.Alter()
+						$db.Alter()
                         $db.Refresh()
                     }
                     catch {
