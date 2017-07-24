@@ -163,8 +163,7 @@
 		[datetime]$NoFullBackupSince,
 		[switch]$NoLogBackup,
 		[datetime]$NoLogBackupSince,
-		[switch]$Silent,
-		[switch]$LastUsed
+		[switch]$Silent
 	)
 	
 	begin {
