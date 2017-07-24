@@ -120,8 +120,6 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 
 		[int]$HistoryRetention = 14420,
 
-		[int]$BackupCompression = 0,
-
 		[switch]$CompressBackup,
 
 		[string]$MonitorServer,
