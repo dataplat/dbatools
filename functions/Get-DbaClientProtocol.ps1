@@ -59,11 +59,8 @@ function Get-DbaClientProtocol {
 		[switch]$Silent
 	)
 
-	begin {
-		$ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
-	}
 	process {
-		foreach ( $computer in $ComputerName ) {
+		foreach ( $computer in $ComputerName.ComputerName ) {
 			$server = Resolve-DbaNetworkName -ComputerName $computer -Credential $credential
 			if ( $server.ComputerName ) {
 				$computer = $server.ComputerName
@@ -117,7 +114,7 @@ function Get-DbaClientProtocol {
 							$prot | Add-Member -Force -MemberType ScriptMethod -Name Disable -Value {Invoke-CimMethod -MethodName SetDisable -InputObject $this }
 							
 							foreach ( $protocol in $prot ) {
-								Select-DefaultView -InputObject $protocol -Property 'PSComputerName as ComputerName', 'ProtocolDisplayName as DisplayName', 'ProtocolDll as DLL', 'ProtocolOrder as Order', 'IsEnabled'
+								Select-DefaultView -InputObject $protocol -Property 'PSComputerName as ComputerName', 'ProtocolDisplayName as DisplayName', 'ProtocolDll as DLL', 'ProtocolOrder as Order', 'IsEnabled' -ExcludeProperty PSComputerName
 							}
 						}
 						catch {
