@@ -21,6 +21,15 @@ The Credential Identity
 .PARAMETER Password
 Secure string used to authenticate the Credential Identity
 
+.PARAMETER MappedClassType
+Sets the class associated with the credential.
+	
+.PARAMETER ProviderName
+Sets the name of the provider
+
+.PARAMETER Force
+If credential exists, drop and recreate 
+	
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed 
 
@@ -59,8 +68,19 @@ Suppresses all prompts to install but prompts to securely enter your password an
 		[parameter(Mandatory)]
 		[object[]]$CredentialIdentity,
 		[Security.SecureString]$Password,
+		[ValidateSet('CryptographicProvider', 'None')]
+		[string]$MappedClassType = "None",
+		[string]$ProviderName,
+		[switch]$Force,
 		[switch]$Silent
 	)
+	
+	begin {
+		$mappedclass = switch ($MappedClassType) {
+			"CryptographicProvider" { 1 }
+			"None" { 0 }
+		}
+	}
 	
 	process {
 		if (!$Password) {
@@ -93,14 +113,15 @@ Suppresses all prompts to install but prompts to securely enter your password an
 				if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating credential for database '$cred' on $instance")) {
 					try {
 						$credential = New-Object Microsoft.SqlServer.Management.Smo.Credential -ArgumentList $server, $name
+						$credential.MappedClassType = $mappedclass
+						$credential.ProviderName = $ProviderName
 						$credential.Create($CredentialIdentity, $Password)
 						
 						Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name ComputerName -value $server.NetName
 						Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
 						Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-						Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name Database -value $smodb
-						$credential
-						#Select-DefaultView -InputObject $credential -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
+						
+						Select-DefaultView -InputObject $credential -Property ComputerName, InstanceName, SqlInstance, Name, Identity, CreateDate, MappedClassType, ProviderName
 					}
 					catch {
 						Stop-Function -Message "Failed to create credential in $cred on $instance. Exception: $($_.Exception.InnerException)" -Target $credential -InnerErrorRecord $_ -Continue
