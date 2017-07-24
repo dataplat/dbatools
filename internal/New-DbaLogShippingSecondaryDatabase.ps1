@@ -248,6 +248,7 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 	if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance"))) {
 		try {
 			Write-Message -Message "Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance." -Level Output 
+			Write-Message -Message "Executing query:`n$Query" -Level Verbose
 			$ServerSecondary.Query($Query)
 		}
 		catch {

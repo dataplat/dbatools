@@ -250,6 +250,7 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 	if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for primary database $Database on $SqlInstance"))) {
 		try {
 			Write-Message -Message "Configuring logshipping for primary database $Database." -Level Output
+			Write-Message -Message "Executing query:`n$Query" -Level Verbose
 			$server.Query($Query)
 		}
 		catch {
