@@ -233,7 +233,8 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
 	if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping making settings for the primary database to secondary database on $SqlInstance"))) {
 		try {
 			Write-Message -Message "Configuring logshipping making settings for the primary database." -Level Output 
-			Invoke-DbaSqlCmd -ServerInstance $SqlInstance -Credential $SqlCredential -Database 'master' -Query $Query
+			Write-Message -Message "Executing query:`n$Query" -Level Verbose
+			$ServerSecondary.Query($Query)
 		}
 		catch {
 			Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)"  -InnerErrorRecord $_ -Target $SqlInstance -Continue
