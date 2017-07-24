@@ -7,9 +7,6 @@
 			The Get-DbaDatabase command gets SQL database information for each database that is present in the target instance(s) of
 			SQL Server. If the name of the database is provided, the command will return only the specific database information.
 
-			We also added a number of useful columns by default such as the Last used read and write Times for the Database using 
-			the sys.dm_db_index_usage_stats DMV which will show the information since the last restart of SQL
-	
 		.PARAMETER SqlInstance
 			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
 			to be executed against multiple SQL Server instances.
@@ -33,7 +30,7 @@
 
 		.PARAMETER Status
 			Returns SQL Server databases in the status(es) listed.
-            Could include Emergency, Online, Offline, Recovering, Restoring, Standby or Suspect.
+            Could include Emergency, Online, Offline, Recovering, Restoring, Standby or Suspect.	
 
 		.PARAMETER Access
 			Returns SQL Server databases that are Read Only or Read/Write.
@@ -59,6 +56,10 @@
 
 		.PARAMETER NoLogBackupSince
 			DateTime value. Returns list of databases that haven't had a Log backup since the passed in DateTime.
+
+		.PARAMETER LastUsed
+			Returns the Last used read and write Times for the Database using the sys.dm_db_index_usage_stats DMV which will show
+			the information since the last restart of SQL
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
@@ -163,7 +164,8 @@
 		[datetime]$NoFullBackupSince,
 		[switch]$NoLogBackup,
 		[datetime]$NoLogBackupSince,
-		[switch]$Silent
+		[switch]$Silent,
+		[switch]$LastUsed
 	)
 	
 	begin {
@@ -185,8 +187,12 @@
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			## Get last used information from the DMV
-			$querylastused = "WITH agg AS
+			if (!$LastUsed) {
+				$dblastused = $null
+			}
+			else {
+				## Get last used information from the DMV
+				$querylastused = "WITH agg AS
 				(
 				  SELECT 
 				       max(last_user_seek) last_user_seek,
@@ -217,16 +223,12 @@
 				GROUP BY
 				   dbname
 				ORDER BY 1;"
-			# put a function around this to enable Pester Testing and also to ease any future changes
-			function Invoke-QueryDBlastUsed {
-				try {
+				# put a function around this to enable Pester Testing and also to ease any future changes
+				function Invoke-QueryDBlastUsed {
 					$server.Query($querylastused)
 				}
-				catch {
-					$null
-				}
+				$dblastused = Invoke-QueryDBlastUsed
 			}
-			$dblastused = Invoke-QueryDBlastUsed
 			
 			if ($ExcludeAllUserDb) {
 				$DBType = @($true)
@@ -283,17 +285,20 @@
 			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
 			'LogReuseWaitStatus', 'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner',
 			'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
-			'LastLogBackupDate as LastLogBackup', 'LastRead as LastIndexRead', 'LastWrite as LastIndexWrite'
+			'LastLogBackupDate as LastLogBackup'
 			
 			if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
 				$defaults += ('Notes')
+			}
+			if ($LastUsed) {
+				# Add Last Used to the default view
+				$defaults += ('LastRead as LastIndexRead', 'LastWrite as LastIndexWrite')
 			}
 			
 			try {
 				foreach ($db in $inputobject) {
 					
 					$Notes = $null
-					
 					if ($NoFullBackup -or $NoFullBackupSince) {
 						if (@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | Where-Object { $_.IsCopyOnly }).count -and (@($db.EnumBackupSets()).count -gt 0)) {
 							$Notes = "Only CopyOnly backups"
@@ -301,14 +306,12 @@
 					}
 					
 					$lastusedinfo = $dblastused | Where-Object { $_.dbname -eq $db.name }
-					
+					Add-Member -Force -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
 					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
 					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
 					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastRead -value $lastusedinfo.last_read
 					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastWrite -value $lastusedinfo.last_write
-					Add-Member -Force -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
-					
 					Select-DefaultView -InputObject $db -Property $defaults
 				}
 			}
