@@ -57,7 +57,7 @@
 		.PARAMETER NoLogBackupSince
 			DateTime value. Returns list of databases that haven't had a Log backup since the passed in DateTime.
 
-		.PARAMETER LastUsed
+		.PARAMETER IncludeLastUsed
 			Returns the Last used read and write Times for the Database using the sys.dm_db_index_usage_stats DMV which will show
 			the information since the last restart of SQL
 
@@ -113,7 +113,7 @@
 
 			Returns only the user databases with status 'normal' from sql instance SQL1\SQLExpress
 		.EXAMPLE
-			Get-DbaDatabase -SqlInstance SQL1\SQLExpress -LastUsed
+			Get-DbaDatabase -SqlInstance SQL1\SQLExpress -IncludeLastUsed
 
 			Returns the databases from sql instance SQL1\SQLExpress including the last used information 
 			from the sys.dm_db_index_usage_stats DMV
@@ -165,7 +165,7 @@
 		[switch]$NoLogBackup,
 		[datetime]$NoLogBackupSince,
 		[switch]$Silent,
-		[switch]$LastUsed
+		[switch]$IncludeLastUsed
 	)
 	
 	begin {
@@ -187,7 +187,7 @@
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			if (!$LastUsed) {
+			if (!$IncludeLastUsed) {
 				$dblastused = $null
 			}
 			else {
@@ -290,7 +290,7 @@
 			if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
 				$defaults += ('Notes')
 			}
-			if ($LastUsed) {
+			if ($IncludeLastUsed) {
 				# Add Last Used to the default view
 				$defaults += ('LastRead as LastIndexRead', 'LastWrite as LastIndexWrite')
 			}

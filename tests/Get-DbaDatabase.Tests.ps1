@@ -62,7 +62,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
 		}
 	}
 	Context "Output" {
-		It "Should have Last Read and Last Write Property when LastUsed switch is added" {
+		It "Should have Last Read and Last Write Property when IncludeLastUsed switch is added" {
 			Mock Connect-SQLInstance -MockWith {
 				[object]@{
 					Name	   = 'SQLServerName';
@@ -87,8 +87,8 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
 					last_write  = (Get-Date).AddHours(-1)
 				}
 			} -ModuleName dbatools
-			(Get-DbaDatabase -SqlInstance SQLServerName -LastUsed).LastRead -ne $null | Should Be $true
-			(Get-DbaDatabase -SqlInstance SQLServerName -LastUsed).LastWrite -ne $null | Should Be $true
+			(Get-DbaDatabase -SqlInstance SQLServerName -IncludeLastUsed).LastRead -ne $null | Should Be $true
+			(Get-DbaDatabase -SqlInstance SQLServerName -IncludeLastUsed).LastWrite -ne $null | Should Be $true
 		}
 		It "Validates that Connect-SqlInstance Mock has been called" {
 			$assertMockParams = @{
