@@ -14,6 +14,14 @@ to be executed against multiple SQL Server instances.
 .PARAMETER SqlCredential
 SqlCredential object to connect as. If not specified, current Windows login will be used.
 
+.PARAMETER CredentialIdentity
+Auto-populated list of Credentials from Source. If no Credential is specified, all Credentials will be migrated.
+Note: if spaces exist in the credential name, you will have to type "" or '' around it. I couldn't figure out a way around this.
+
+.PARAMETER ExcludeCredentialIdentity
+Auto-populated list of Credentials from Source to be excluded from the migration
+
+	
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages.
 
@@ -45,6 +53,8 @@ Returns all SQL Credentials for the local and sql2016 SQL Server instances
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[DbaInstanceParameter]$SqlInstance,
 		[PSCredential]$SqlCredential,
+		[object[]]$CredentialIdentity,
+		[object[]]$ExcludeCredentialIdentity,
 		[switch]$Silent
 	)
 	
@@ -62,14 +72,23 @@ Returns all SQL Credentials for the local and sql2016 SQL Server instances
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
+			$credential = $server.Credentials
 			
-			foreach ($credential in $server.Credentials)
+			if ($CredentialIdentity) {
+				$credential = $credential | Where-Object { $CredentialIdentity -contains $_.Name }
+			}
+			
+			if ($ExcludeCredentialIdentity) {
+				$credential = $credential | Where-Object { $CredentialIdentity -notcontains $_.Name }
+			}
+			
+			foreach ($currentcredential in $credential)
 			{
-				Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name ComputerName -value $credential.Parent.NetName
-				Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name InstanceName -value $credential.Parent.ServiceName
-				Add-Member -Force -InputObject $credential -MemberType NoteProperty -Name SqlInstance -value $credential.Parent.DomainInstanceName
+				Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name ComputerName -value $currentcredential.Parent.NetName
+				Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name InstanceName -value $currentcredential.Parent.ServiceName
+				Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name SqlInstance -value $currentcredential.Parent.DomainInstanceName
 				
-				Select-DefaultView -InputObject $credential -Property ComputerName, InstanceName, SqlInstance, ID, Name, Identity, MappedClassType, ProviderName
+				Select-DefaultView -InputObject $currentcredential -Property ComputerName, InstanceName, SqlInstance, ID, Name, Identity, MappedClassType, ProviderName
 			}
 		}
 	}
