@@ -244,14 +244,14 @@
 
             $inputobject = $server.Databases  |
                 Where-Object {
-                ($_.Name -in $Database -or !$Database)  -and 
-               ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase)  -and 
+                ($_.Name -in $Database -or !$Database) -and 
+                ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and 
                 ($_.Owner -in $Owner -or !$Owner) -and 
-               $_.ReadOnly -in $Readonly  -and 
+                $_.ReadOnly -in $Readonly -and 
                 $_.IsSystemObject -in $DBType -and 
                 ((Compare-Object @($_.Status.tostring().split(',').trim()) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and 
-                $_.RecoveryModel -in $RecoveryModel  -and 
-               $_.EncryptionEnabled -in $Encrypt
+                $_.RecoveryModel -in $RecoveryModel -and 
+                $_.EncryptionEnabled -in $Encrypt
             }
 
             if ($NoFullBackup -or $NoFullBackupSince) {
