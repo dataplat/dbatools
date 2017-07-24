@@ -45,9 +45,9 @@ function Get-DbaClientProtocol {
 			Gets the SQL Server related client protocols on computers sql1 and sql2, and shows them in a grid view.
 
 		.EXAMPLE
-			(Get-DbaClientProtocol -ComputerName sql1 | Where { $_.DisplayName = 'via' }).Disable()
+			(Get-DbaClientProtocol -ComputerName sql2 | Where { $_.DisplayName = 'via' }).Disable()
 
-			Disables the VIA ClientNetworkProtocol on computer sql1.
+			Disables the VIA ClientNetworkProtocol on computer sql2.
 			If succesfull, returncode 0 is shown.
 #>
 	[CmdletBinding()]
