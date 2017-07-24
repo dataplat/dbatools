@@ -26,14 +26,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 }
 
-
-
 Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
     BeforeAll {
-        ## Ensure it is the module that is being coded that is in the session
-        # Remove-Module dbatools -Force -ErrorAction SilentlyContinue
-        # $Base = Split-Path -parent $PSCommandPath
-        # Import-Module $Base\..\dbatools.psd1
+        ## Ensure it is the module that is being coded that is in the session when running just this Pester test
+        #  Remove-Module dbatools -Force -ErrorAction SilentlyContinue
+        #  $Base = Split-Path -parent $PSCommandPath
+        #  Import-Module $Base\..\dbatools.psd1
     }
     Context "Input validation" {
         BeforeAll {
@@ -41,7 +39,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
             Mock Test-FunctionInterrupt {} -ModuleName dbatools
         }
         It "Should Call Stop-Function if NoUserDbs and NoSystemDbs are specified" {
-            Get-DbaDatabase -SqlInstance Dummy -NoSystemDb -NoUserDb | Should Be 
+            Get-DbaDatabase -SqlInstance Dummy -NoSystemDb -NoUserDb -ErrorAction SilentlyContinue | Should Be 
         }
         It "Validates that Stop Function Mock has been called" {
             ## Nope I have no idea why it's two either - RMS
@@ -63,4 +61,52 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Get-DBADatabase {
             Assert-MockCalled @assertMockParams 
         }
     }
+    Context "Output" {
+        It "Should have Last Read and Last Write Property when LastUsed switch is added" {
+            Mock Connect-SQLInstance -MockWith {
+                [object]@{
+                    Name      = 'SQLServerName';
+                    Databases = [object]@(
+                        @{
+                            Name           = 'db1';
+                            Status         = 'Normal';
+                            ReadOnly       = 'false';
+                            IsSystemObject = 'false';
+                            RecoveryModel  = 'Full';
+                            Owner          = 'sa'
+                        }
+                    ); #databases
+                } #object
+            } -ModuleName dbatools #mock connect-sqlserver
+            function Invoke-QueryDBlastUsed {}
+            Mock Invoke-QueryDBlastUsed -MockWith { [object]
+                @{
+                    dbname     = 'db1';
+                    last_read  = (Get-Date).AddHours(-1);
+                    last_write = (Get-Date).AddHours(-1)
+                }
+            } -ModuleName dbatools 
+            (Get-DbaDatabase -SqlInstance SQLServerName -LastUsed).LastRead -ne $null | Should Be $true
+            (Get-DbaDatabase -SqlInstance SQLServerName -LastUsed).LastWrite -ne $null | Should Be $true
+        } 
+        It "Validates that Connect-SqlInstance Mock has been called" {
+            $assertMockParams = @{
+                'CommandName' = 'Connect-SqlInstance'
+                'Times'       = 2
+                'Exactly'     = $true
+                'Module'      = 'dbatools'
+            }
+            Assert-MockCalled @assertMockParams 
+        }
+        It "Validates that Invoke-QueryDBlastUsed Mock has been called" {
+            $assertMockParams = @{
+                'CommandName' = 'Invoke-QueryDBlastUsed'
+                'Times'       = 2
+                'Exactly'     = $true
+                'Module'      = 'dbatools'
+            }
+            Assert-MockCalled @assertMockParams 
+        }
+    }
 }
+         
