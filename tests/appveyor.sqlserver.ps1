@@ -14,6 +14,8 @@ New-Item -Path C:\temp\backups -ItemType Directory -ErrorAction SilentlyContinue
 
 Write-Output "Setting sql2016 Agent to Automatic"
 Set-Service -Name 'SQLAgent$sql2016' -StartupType Automatic
+Set-Service -Name SQLBrowser -StartupType Automatic
+Start-Service SQLBrowser -ErrorAction SilentlyContinue
 
 $instances = "sql2016", "sql2008r2sp2"
 
@@ -42,6 +44,15 @@ foreach ($instance in $instances) {
 	}
 }
 
+$server = Connect-DbaSqlServer -SqlInstance localhost\SQL2008R2SP2
+$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
+$server.Configuration.Alter()
+$null = Set-DbaStartupParameter -SqlInstance localhost\SQL2008R2SP2 -TraceFlags 7806 -Confirm:$false -ErrorAction SilentlyContinue
+Restart-Service "MSSQL`$SQL2008R2SP2"
+$server = Connect-DbaSqlServer -SqlInstance localhost\SQL2008R2SP2
+$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
+$server.Configuration.Alter()
+ 
 do {
 	Start-Sleep 1
 	$null = (& sqlcmd -S localhost -b -Q "select 1" -d master)
