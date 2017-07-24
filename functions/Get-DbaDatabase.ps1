@@ -23,13 +23,13 @@
 		.PARAMETER ExcludeDatabase
 			The database(s) to exclude.
 
-		.PARAMETER ExcludeUserDb
+		.PARAMETER ExcludeAllUserDb
 			Returns only databases that are not User Databases.
-            This parameter cannot be used together with -ExcludeSystemDb.
+            This parameter cannot be used together with -ExcludeAllSystemDb.
 
-		.PARAMETER ExcludeSystemDb
+		.PARAMETER ExcludeAllSystemDb
 			Returns only databases that are not System Databases.
-            This parameter cannot be used together with -ExcludeUserDb.
+            This parameter cannot be used together with -ExcludeAllUserDb.
 
 		.PARAMETER Status
 			Returns SQL Server databases in the status(es) listed.
@@ -88,12 +88,12 @@
 			Returns all databases on the local default SQL Server instance
 
 		.EXAMPLE
-			Get-DbaDatabase -SqlInstance localhost -ExcludeUserDb
+			Get-DbaDatabase -SqlInstance localhost -ExcludeAllUserDb
 
 			Returns only the system databases on the local default SQL Server instance
 
 		.EXAMPLE
-			Get-DbaDatabase -SqlInstance localhost -ExcludeSystemDb
+			Get-DbaDatabase -SqlInstance localhost -ExcludeAllSystemDb
 
 			Returns only the user databases on the local default SQL Server instance
 
@@ -148,9 +148,9 @@
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[Alias("SystemDbOnly", "NoUserDb")]
-		[switch]$ExcludeUserDb,
+		[switch]$ExcludeAllUserDb,
 		[Alias("UserDbOnly", "NoSystemDb")]
-		[switch]$ExcludeSystemDb,
+		[switch]$ExcludeAllSystemDb,
 		[string[]]$Owner,
 		[switch]$Encrypted,
 		[ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
@@ -168,8 +168,8 @@
 	
 	begin {
 		
-		if ($ExcludeUserDb -and $ExcludeSystemDb) {
-			Stop-Function -Message "You cannot specify both ExcludeUserDb and ExcludeSystemDb" -Continue -Silent $Silent
+		if ($ExcludeAllUserDb -and $ExcludeAllSystemDb) {
+			Stop-Function -Message "You cannot specify both ExcludeAllUserDb and ExcludeAllSystemDb" -Continue -Silent $Silent
 		}
 		
 	}
@@ -228,10 +228,10 @@
 			}
 			$dblastused = Invoke-QueryDBlastUsed
 			
-			if ($ExcludeUserDb) {
+			if ($ExcludeAllUserDb) {
 				$DBType = @($true)
 			}
-			elseif ($ExcludeSystemDb) {
+			elseif ($ExcludeAllSystemDb) {
 				$DBType = @($false)
 			}
 			else {
