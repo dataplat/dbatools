@@ -65,15 +65,15 @@ function Get-DbaClientProtocol {
 			if ( $server.ComputerName ) {
 				$computer = $server.ComputerName
 				
-				Write-Message -Level Verbose -Message "Getting SQL Server namespace on $computer via CIM (WSMan)"
-				$namespace = Get-CimInstance -ComputerName $computer -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
-					Where-Object {(Get-CimInstance -ComputerName $computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ClientNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0} |
+				Write-Message -Level Verbose -Message "Getting SQL Server namespace on $computer" -Silent $Silent
+                $namespace = Get-DbaCmObject -ComputerName $computer -Namespace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name LIke 'ComputerManagement%'" -ErrorAction SilentlyContinue |
+					Where-Object {(Get-DbaCmObject -ComputerName $computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ClientNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0} |
 					Sort-Object Name -Descending | Select-Object -First 1
 
 				if ( $namespace.Name ) {
-					Write-Message -Level Verbose -Message "Getting Cim class ClientNetworkProtocol in Namespace $($namespace.Name) on $computer via CIM (WSMan)"
+					Write-Message -Level Verbose -Message "Getting Cim class ClientNetworkProtocol in Namespace $($namespace.Name) on $computer" -Silent $Silent
 					try {
-						$prot = Get-CimInstance -ComputerName $computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -ClassName ClientNetworkProtocol -ErrorAction SilentlyContinue
+						$prot = Get-DbaCmObject -ComputerName $computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -ClassName ClientNetworkProtocol -ErrorAction SilentlyContinue
 
 						$prot | Add-Member -Force -MemberType ScriptProperty -Name IsEnabled -Value { switch ( $this.ProtocolOrder ) { 0 { $false } default { $true } } }
 						$prot | Add-Member -Force -MemberType ScriptMethod -Name Enable -Value {Invoke-CimMethod -MethodName SetEnable -InputObject $this }
@@ -84,48 +84,12 @@ function Get-DbaClientProtocol {
 						}
 					}
 					catch {
-						Write-Message -Level Warning -Message "No Sql ClientNetworkProtocol found on $computer via CIM (WSMan)"
+						Write-Message -Level Warning -Message "No Sql ClientNetworkProtocol found on $computer" -Silent $Silent
 					}
-				} #if namespace WSMan
-				else {
-					Write-Message -Level Verbose -Message "Getting computer information from $computer via CIMsession (DCOM)"
-					
-					$sessionOption = New-CimSessionOption -Protocol DCOM
-					$CIMsession = New-CimSession -ComputerName $computer -SessionOption $sessionOption -ErrorAction SilentlyContinue -Credential $Credential
-					
-					if ( $CIMSession ) {
-						Write-Message -Level Verbose -Message "Get ComputerManagement Namespace in CIMsession on $computer with protocol DCom."
-						
-						$namespace = Get-CimInstance -CimSession $CIMsession -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
-							Where-Object {(Get-CimInstance -CimSession $CIMsession -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ClientNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0} |
-							Sort-Object Name -Descending | Select-Object -First 1
-					} #if CIMsession DCom
+				} #if namespace
 					else {
-						Write-Message -Level Warning -Message "Can't create CIMsession via DCom on $computer"
-						continue
-					} #else no CIMsession DCom
-					if ( $namespace.Name ) {
-						Write-Message -Level Verbose -Message "Getting Cim class ClientNetworkProtocol in Namespace $($namespace.Name) on $computer via CIM (DCOM)"
-						try {
-							$prot = Get-CimInstance -CimSession $CIMsession -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -ClassName ClientNetworkProtocol -ErrorAction SilentlyContinue
-							
-							$prot | Add-Member -Force -MemberType ScriptProperty -Name IsEnabled -Value { switch ( $this.ProtocolOrder ) { 0 { $false } default { $true } } }
-							$prot | Add-Member -Force -MemberType ScriptMethod -Name Enable -Value {Invoke-CimMethod -MethodName SetEnable -InputObject $this }
-							$prot | Add-Member -Force -MemberType ScriptMethod -Name Disable -Value {Invoke-CimMethod -MethodName SetDisable -InputObject $this }
-							
-							foreach ( $protocol in $prot ) {
-								Select-DefaultView -InputObject $protocol -Property 'PSComputerName as ComputerName', 'ProtocolDisplayName as DisplayName', 'ProtocolDll as DLL', 'ProtocolOrder as Order', 'IsEnabled' -ExcludeProperty PSComputerName
-							}
-						}
-						catch {
-							Write-Message -Level Warning -Message "No Sql ClientNetworkProtocol found on $computer via CIM (DCOM)"
-						}
-						if ( $CIMsession ) { Remove-CimSession $CIMsession }
-					} #if namespace DCom
-					else {
-						Write-Message -Level Warning -Message "No ComputerManagement Namespace on $computer. Please note that this function is available from SQL 2005 up."
-					} #else no namespace DCom
-				} #else no namespace WSMan
+						Write-Message -Level Warning -Message "No ComputerManagement Namespace on $computer. Please note that this function is available from SQL 2005 up." -Silent $Silent
+				} #else no namespace
 			} #if computername
 			else {
 				Write-Message -Level Warning -Message "Failed to connect to $computer"
