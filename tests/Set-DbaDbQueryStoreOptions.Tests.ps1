@@ -1,0 +1,33 @@
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+	Context "Get some client protocols" {
+		foreach ($instance in ($script:instance1, $script:instance2)) {
+			$server = Connect-DbaSqlServer -SqlInstance $instance
+			$results = Get-DbaDbQueryStoreOptions -SqlInstance $instance -WarningVariable warning  3>&1
+			
+			if ($server.VersionMajor -lt 13) {
+				It "should warn" {
+					$warning | Should Not Be $null
+				}
+			}
+			else {
+				It "should return a default" {
+					$result = $results | Where-Object Database -eq msdb
+					$oldnumber = $result.DataFlushIntervalInSeconds
+					$oldnumber | Should BeGreaterThan 1
+				}
+				
+				$newnumber = $oldnumber + 1
+				<#
+				It "should change the specified param to the new value" {
+					$results = Set-DbaDbQueryStoreOptions -SqlInstance $instance -Database msdb -FlushInterval $newnumber
+					$results.DataFlushIntervalInSeconds | Should Be $newnumber
+				}
+				#>
+			}
+		}
+	}
+}
