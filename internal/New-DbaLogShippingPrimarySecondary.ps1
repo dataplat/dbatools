@@ -113,6 +113,7 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 	$Query = "SELECT primary_database FROM msdb.dbo.log_shipping_primary_databases WHERE primary_database = '$PrimaryDatabase'"
 
 	try {
+		Write-Message -Message "Executing query:`n$Query" -Level Verbose
 		$Result = $ServerPrimary.Query($Query)
 		if ($Result.Count -eq 0 -or $Result[0] -ne $PrimaryDatabase) {
 			Stop-Function -Message "Database $PrimaryDatabase does not exist as log shipping primary.`nPlease run New-DbaLogShippingPrimaryDatabase first."  -InnerErrorRecord $_ -Target $SqlInstance -Continue
@@ -133,6 +134,7 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 	if ($PSCmdlet.ShouldProcess($SqlInstance, ("Configuring logshipping connecting the primary database $PrimaryDatabase to secondary database $SecondaryDatabase on $SqlInstance"))) {
 		try {
 			Write-Message -Message "Configuring logshipping connecting the primary database $PrimaryDatabase to secondary database $SecondaryDatabase on $SqlInstance." -Level Output
+			Write-Message -Message "Executing query:`n$Query" -Level Verbose
 			$ServerPrimary.Query($Query)
 		}
 		catch {
