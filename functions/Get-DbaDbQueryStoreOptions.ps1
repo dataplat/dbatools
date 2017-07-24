@@ -6,6 +6,9 @@ Get the Query Store configuration for Query Store enabled databases.
 .DESCRIPTION
 Retrieves and returns the Query Store configuration for every database that has the Query Store feature enabled.
 
+.OUTPUTS
+Microsoft.SqlServer.Management.Smo.QueryStoreOptions
+
 .PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
@@ -50,6 +53,7 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 
 #>
 	[CmdletBinding()]
+    [OutputType([Microsoft.SqlServer.Management.Smo.QueryStoreOptions[]])]
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
