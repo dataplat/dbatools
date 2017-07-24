@@ -401,7 +401,7 @@ function Restore-DbaDatabase {
                                     $backupFiles += $p
                                 }
                                 else {
-                                    Write-Warning "$FunctionName - $p cannot be accessed by $SqlInstance"
+                                    Write-Message -Level Warning -Message "$FunctionName - $p cannot be accessed by $SqlInstance" 
                                 }
                             }
                             else {
@@ -426,7 +426,7 @@ function Restore-DbaDatabase {
                                     $backupFiles += $p
                                 }
                                 else {
-                                    Write-Warning "$FunctionName - $p cannot be accessed by $SqlInstance"
+                                    Write-Message -Level Warning -Message "$FunctionName - $p cannot be accessed by $SqlInstance" 
                                     continue
                                 }
                             }
@@ -459,7 +459,7 @@ function Restore-DbaDatabase {
                                     $backupFiles += $FileTmp
                                 }
                                 else {
-                                    Write-Warning "$FunctionName - $($FileTmp.FullName) cannot be access by $SqlInstance"
+                                    Write-Message -Level Warning -Message "$FunctionName - $($FileTmp.FullName) cannot be access by $SqlInstance" 
                                 }
 							
                             }
@@ -469,7 +469,7 @@ function Restore-DbaDatabase {
                             if ($FileTmp.PSobject.Properties.name -match "Server") {
                                 #Most likely incoming from Get-DbaBackupHistory
                                 if ($Filetmp.Server -ne $SqlInstance -and $FileTmp.FullName -notlike '\\*') {
-                                    Write-Warning "$FunctionName - Backups from a different server and on a local drive, can't access"
+                                    Write-Message -Level Warning -Message "$FunctionName - Backups from a different server and on a local drive, can't access" 
                                     return
 									
                                 }
@@ -489,7 +489,7 @@ function Restore-DbaDatabase {
                                         $backupFiles += $ft
                                     }
                                     else {
-                                        Write-Warning "$FunctionName - $($ft) cannot be accessed by $SqlInstance"
+                                        Write-Message -Level Warning -Message "$FunctionName - $($ft) cannot be accessed by $SqlInstance" 
                                     }
                                 }
 								
@@ -509,7 +509,7 @@ function Restore-DbaDatabase {
 		
         if ($null -ne $DatabaseName) {
             If (($DatabaseName -in ($server.Databases.name)) -and ($WithReplace -eq $false)) {
-                Write-Warning "$FunctionName - $DatabaseName exists on Sql Instance $SqlInstance , must specify WithReplace to continue"
+                Write-Message -Level Warning -Message "$FunctionName - $DatabaseName exists on Sql Instance $SqlInstance , must specify WithReplace to continue" 
                 break
             }
         }
@@ -519,7 +519,7 @@ function Restore-DbaDatabase {
             if ($DestinationDataDirectory -ne '') {
                 if ((Test-DbaSqlPath -Path $DestinationDataDirectory -SqlInstance $SqlInstance -SqlCredential $SqlCredential) -ne $true) {
                     if ((New-DbaSqlDirectory -Path $DestinationDataDirectory -SqlInstance $SqlInstance -SqlCredential $SqlCredential).Created -ne $true) {
-                        Write-Warning "$FunctionName - DestinationDataDirectory $DestinationDataDirectory does not exist, and could not be created on $SqlInstance"
+                        Write-Message -Level Warning -Message "$FunctionName - DestinationDataDirectory $DestinationDataDirectory does not exist, and could not be created on $SqlInstance" 
                         break
                     }
                     else {
@@ -533,7 +533,7 @@ function Restore-DbaDatabase {
             if ($DestinationLogDirectory -ne '') {
                 if ((Test-DbaSqlPath -Path $DestinationLogDirectory -SqlInstance $SqlInstance -SqlCredential $SqlCredential) -ne $true) {
                     if ((New-DbaSqlDirectory -Path $DestinationLogDirectory -SqlInstance $SqlInstance -SqlCredential $SqlCredential).Created -ne $true) {
-                        Write-Warning "$FunctionName - DestinationLogDirectory $DestinationLogDirectory does not exist, and could not be created on $SqlInstance"
+                        Write-Message -Level Warning -Message "$FunctionName - DestinationLogDirectory $DestinationLogDirectory does not exist, and could not be created on $SqlInstance" 
                         break
                     }
                     else {
@@ -557,7 +557,7 @@ function Restore-DbaDatabase {
 		
 		
         if ($AllFilteredFiles.count -gt 1 -and $DatabaseName -ne '') {
-            Write-Warning "$FunctionName -  DatabaseName parameter and multiple database restores is not compatible "
+            Write-Message -Level Warning -Message "$FunctionName -  DatabaseName parameter and multiple database restores is not compatible " 
             break
         }
 		
@@ -583,7 +583,12 @@ function Restore-DbaDatabase {
                     $Completed = 'successfully'
                 }
                 catch {
-                    Write-Exception $_
+                    if ($_.FullyQualifiedErrorId -like 'Destination File*' ) {
+                     Stop-Function -Message "Restore of $databasename failed, $($_.FullyQualifiedErrorId) " -InnerErrorRecord $_.Exception.InnerException -silent:$silent    
+                    }
+                    else {
+                        Stop-Function -Message "Restore of $databasename failed" -InnerErrorRecord $_.Exception.InnerException -silent:$silent
+                    }
                     $Completed = 'unsuccessfully'
                     return
                 }

@@ -141,22 +141,33 @@ Function Restore-DBFromFilteredArray {
         }
         $SortedRestorePoints = $RestorePoints | Sort-Object -property order
         if ($ReuseSourceFolderStructure) {
-            Write-Message -Level Verbose -Message "Checking for folders for Reusing old structure"
+            Write-Message -Level Verbose -Message "Checking for files folders for Reusing old structure"
             foreach ($File in ($RestorePoints.Files.filelist.PhysicalName | Sort-Object -Unique)) {
                 Write-Message -Level VeryVerbose -Message "File = $file"
-                if ((Test-DbaSqlPath -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential) -ne $true) {
-                    if ((New-DbaSqlDirectory -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential).Created -ne $true) {
-                        Write-Message -Level Warning -Message "Destination File $File does not exist, and could not be created on $SqlInstance"
-
-                        return
+                if ((Test-DbaSqlPath -Path $File -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential) -ne $true) {
+                    Write-Message -Level VeryVerbose "File doesn't exist, check for parent folder"
+                    if ((Test-DbaSqlPath -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential) -ne $true) {
+                        Write-Message -Level debug -Message "$(Split-Path -Path $File -Parent) does not exist on $sqlinstance"
+                        if ((New-DbaSqlDirectory -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential).Created -ne $true) {
+                            Stop-Function -message "Destination folder $(Split-Path -Path $File -Parent) does not exist, and could not be created on $SqlInstance" -TargetObject $file -Category 'DeviceError'
+                            return
+                        } 
+                        else {
+                            Write-Message -Level Veryverbose -Message "Folder $(Split-Path -Path $File -Parent) created on $sqlinstance"
+                        }   
                     }
                     else {
-                        Write-Message -Level Verbose -Message "Destination File $File  created on $SqlInstance"
+                        Write-Message -Level Veryverbose -Message "Folder $(Split-Path -Path $File -Parent) exists on $sqlinstance"
                     }
+
                 }
                 else {
-                    Write-Message -Level Verbose -Message "Destination File $File  exists on $SqlInstance"
-                }
+                    Write-Message -Level Veryverbose -Message "Bombing out created on $sqlinstance"
+                    #Stop-Function -message "Destination File $File  exists on $SqlInstance" -TargetObject $file -Category 'DeviceError' -silent:$false
+                    throw "Destination File $File  exists on $SqlInstance"
+                    return   
+                }    
+                Write-Message -Level Veryverbose -Message "past resuse tests"
             }
         }
         $RestoreCount = 0
@@ -351,7 +362,7 @@ Function Restore-DBFromFilteredArray {
                     Write-Message -Level Verbose -Message "Failed, Closing Server connection"
                     $RestoreComplete = $False
                     $ExitError = $_.Exception.InnerException
-                    Write-Warning "$FunctionName - $ExitError" -WarningAction stop
+                    Stop-Function -Message  "Failed to restore db $DbName, stopping" -InnerErrorRecord $ExitError 
                     #Exit as once one restore has failed there's no point continuing
                     break
                 }
