@@ -3,7 +3,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-	Context "Get some client protocols" {
+	Context "Set some options" {
 		foreach ($instance in ($script:instance1, $script:instance2)) {
 			$server = Connect-DbaSqlServer -SqlInstance $instance
 			$results = Get-DbaDbQueryStoreOptions -SqlInstance $instance -WarningVariable warning  3>&1
@@ -16,12 +16,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			else {
 				It "should return a default" {
 					$result = $results | Where-Object Database -eq msdb
-					$oldnumber = $result.DataFlushIntervalInSeconds
-					$oldnumber | Should BeGreaterThan 1
+					$result.MaxStorageSizeInMB | Should BeGreaterThan 1
 				}
 				
 				$newnumber = $oldnumber + 1
-				
 				$null = Set-DbaDbQueryStoreOptions -SqlInstance $instance -Database msdb -State Off
 								
 				It "should warn that state is off" {
