@@ -14,6 +14,14 @@ to be executed against multiple SQL Server instances.
 .PARAMETER SqlCredential
 SqlCredential object to connect as. If not specified, current Windows login will be used.
 
+.PARAMETER CredentialIdentity
+Auto-populated list of Credentials from Source. If no Credential is specified, all Credentials will be migrated.
+Note: if spaces exist in the credential name, you will have to type "" or '' around it. I couldn't figure out a way around this.
+
+.PARAMETER ExcludeCredentialIdentity
+Auto-populated list of Credentials from Source to be excluded from the migration
+
+	
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages.
 
