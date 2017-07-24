@@ -29,8 +29,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 	}
 	
-	Clear-DbaSqlConnectionPool
-	Start-Sleep -Seconds 1
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again after withreplace test" {
         $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
@@ -39,8 +37,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 	}
 	
-	Clear-DbaSqlConnectionPool
-	Start-Sleep -Seconds 1
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Properly restores a database on the local drive using piped Get-ChildItem results" {
         $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance localhost
@@ -52,8 +48,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 	}
 	
-	Clear-DbaSqlConnectionPool
-	Start-Sleep -Seconds 1
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again after gci tests" {
         $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
@@ -62,9 +56,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 	}
 	
-	Clear-DbaSqlConnectionPool
-	Start-Sleep -Seconds 1
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+	Clear-DbaSqlConnectionPool
+	Start-Sleep -Seconds 2
+	
     Context "Database is restored with correct renamings" {
         $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationFilePrefix prefix
         It "Should return successful restore with prefix" {
@@ -89,8 +84,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 	}
 	
-	Clear-DbaSqlConnectionPool
-	Start-Sleep -Seconds 1
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again post prefix and suffix tests" {
         $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
@@ -100,8 +93,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     }
 	
-	Clear-DbaSqlConnectionPool
-	Start-Sleep -Seconds 1
 	Context "Replace databasename in Restored File" {
         $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1 -DatabaseName Pestering -replaceDbNameInFile -WithReplace
         It "Should return the 2 files swapping singlerestore for pestering (output)" {
@@ -114,8 +105,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 	
-	Clear-DbaSqlConnectionPool
-	Start-Sleep -Seconds 1
     Context "Database is properly removed (name change)" {
         $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database pestering
         It "Should say the status was dropped" {
@@ -123,8 +112,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 	
+	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
 	Clear-DbaSqlConnectionPool
-	Start-Sleep -Seconds 1
+	Start-Sleep -Seconds 2
+	
     Context "Folder restore options" {
         $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationDataDirectory $DataFolder
         It "Should return successful restore with DestinationDataDirectory" {
@@ -139,8 +130,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
 		}
 		
-		Clear-DbaSqlConnectionPool
-		Start-Sleep -Seconds 1
 		$results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationDataDirectory $DataFolder -DestinationLogDirectory $LogFolder -WithReplace
         It "Should have moved data file to $DataFolder" {
             (($results.restoredfilefull -split ',') -like "$DataFolder*").count | Should be 1
@@ -155,8 +144,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 	
-	Clear-DbaSqlConnectionPool
-	Start-Sleep -Seconds 1
     Context "Database is properly removed again after folder options tests" {
         $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
         It "Should say the status was dropped" {
@@ -165,7 +152,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 	
 	Clear-DbaSqlConnectionPool
-	Start-Sleep -Seconds 1
+	Start-Sleep -Seconds 2
     Context "Putting all restore file modification options together" {
         $results = Get-ChildItem C:\github\appveyor-lab\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationDataDirectory $DataFolder -DestinationLogDirectory $LogFolder -DestinationFileSuffix Suffix -DestinationFilePrefix prefix
         It "Should return successful restore with all file mod options" {
@@ -196,8 +183,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 	
+	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
 	Clear-DbaSqlConnectionPool
-	Start-Sleep -Seconds 1
+	Start-Sleep -Seconds 2
+	
     Context "Properly restores an instance using ola-style backups" {
         $results = Get-ChildItem C:\github\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlInstance localhost
         It "Restored files count should be 30" {
@@ -206,8 +195,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should return successful restore" {
             ($results.Restorecomplete -contains $false) | Should Be $false
         }
-    }
-
+	}
+	
+	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+	
     Context "All user databases are removed post ola-style test" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase
         It "Should say the status was dropped" {
@@ -215,8 +206,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 	
+	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
 	Clear-DbaSqlConnectionPool
-	Start-Sleep -Seconds 1
+	Start-Sleep -Seconds 2
 	
     Context "RestoreTime setup checks" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -path c:\github\appveyor-lab\RestoreTimeClean
