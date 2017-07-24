@@ -44,7 +44,7 @@ foreach ($instance in $instances) {
 
 Set-DbaStartupParameter -SqlInstance localhost\SQL2008R2SP2 -TraceFlags 7806 -Confirm:$false
 Restart-Service "MSSQL`$SQL2008R2SP2"
-
+ 
 do {
 	Start-Sleep 1
 	$null = (& sqlcmd -S localhost -b -Q "select 1" -d master)
