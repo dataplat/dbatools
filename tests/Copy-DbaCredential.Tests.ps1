@@ -15,7 +15,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		# Add user
 		foreach ($login in $logins) {
-			$null = net user $login $plaintext /add
+			$null = net user $login $plaintext /add *>&1
 		}
 		
 		It "Should create new credentials with the proper properties" {
@@ -47,7 +47,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	Context "No overwrite and cleanup" {
-		$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -CredentialIdentity thorcred -WarningVariable warning  3>&1
+		$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -CredentialIdentity thorcred -WarningVariable warning 3>&1
 		It "Should not attempt overwrite" {
 			$warning | Should Match "exists"
 			
@@ -59,7 +59,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		
 		foreach ($login in $logins) {
-			$null = net user $login /delete
+			$null = net user $login /delete *>&1
 		}
 	}
 }
