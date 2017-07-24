@@ -73,20 +73,20 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 	{
 		foreach ($instance in $SqlInstance)
 		{
-			Write-Message -Level Verbose -Message "Connecting to $instance" -Silent $Silent
+			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try
 			{
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch
 			{
-				Write-Message -Level Warning -Message "Can't connect to $instance. Moving on." -Silent $Silent
+				Write-Message -Level Warning -Message "Can't connect to $instance. Moving on."
 				continue
 			}
 
 			if ($server.VersionMajor -lt 13)
 			{
-				Write-Message -Level Warning -Message "The SQL Server Instance ($instance) has a lower SQL Server version than SQL Server 2016. Skipping server." -Silent $Silent
+				Write-Message -Level Warning -Message "The SQL Server Instance ($instance) has a lower SQL Server version than SQL Server 2016. Skipping server."
 				continue
 			}
 
@@ -96,11 +96,11 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 
 			foreach ($db in $dbs)
 			{
-				Write-Message -Level Verbose -Message "Processing $($db.Name) on $instance" -Silent $Silent
+				Write-Message -Level Verbose -Message "Processing $($db.Name) on $instance"
 
 				if ($db.IsAccessible -eq $false)
 				{
-					Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database." -Silent $Silent
+					Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database."
 					Continue
 				}
                 $QSO = $db.QueryStoreOptions
