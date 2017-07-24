@@ -7,6 +7,9 @@
 			The Get-DbaDatabase command gets SQL database information for each database that is present in the target instance(s) of
 			SQL Server. If the name of the database is provided, the command will return only the specific database information.
 
+			We also added a number of useful columns by default such as the Last used read and write Times for the Database using 
+			the sys.dm_db_index_usage_stats DMV which will show the information since the last restart of SQL
+	
 		.PARAMETER SqlInstance
 			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
 			to be executed against multiple SQL Server instances.
@@ -20,18 +23,17 @@
 		.PARAMETER ExcludeDatabase
 			The database(s) to exclude.
 
-		.PARAMETER NoUserDb
+		.PARAMETER ExcludeUserDb
 			Returns only databases that are not User Databases.
-            This parameter cannot be used together with -NoSystemDb.
+            This parameter cannot be used together with -ExcludeSystemDb.
 
-		.PARAMETER NoSystemDb
+		.PARAMETER ExcludeSystemDb
 			Returns only databases that are not System Databases.
-            This parameter cannot be used together with -NoUserDb.
+            This parameter cannot be used together with -ExcludeUserDb.
 
 		.PARAMETER Status
 			Returns SQL Server databases in the status(es) listed.
             Could include Emergency, Online, Offline, Recovering, Restoring, Standby or Suspect.
-			
 
 		.PARAMETER Access
 			Returns SQL Server databases that are Read Only or Read/Write.
@@ -57,10 +59,6 @@
 
 		.PARAMETER NoLogBackupSince
 			DateTime value. Returns list of databases that haven't had a Log backup since the passed in DateTime.
-
-		.PARAMETER LastUsed
-			Returns the Last used read and write Times for the Database using the sys.dm_db_index_usage_stats DMV which will show
-			the information since the last restart of SQL
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
@@ -90,12 +88,12 @@
 			Returns all databases on the local default SQL Server instance
 
 		.EXAMPLE
-			Get-DbaDatabase -SqlInstance localhost -NoUserDb
+			Get-DbaDatabase -SqlInstance localhost -ExcludeUserDb
 
 			Returns only the system databases on the local default SQL Server instance
 
 		.EXAMPLE
-			Get-DbaDatabase -SqlInstance localhost -NoSystemDb
+			Get-DbaDatabase -SqlInstance localhost -ExcludeSystemDb
 
 			Returns only the user databases on the local default SQL Server instance
 
@@ -139,59 +137,57 @@
 
 			Returns databases 'OneDb' and 'OtherDB' from sql instances SQL2 and SQL3 if the databases exist on those instances
 	#>
-    [CmdletBinding(DefaultParameterSetName = "Default")]
-    [OutputType([Microsoft.SqlServer.Management.Smo.Database[]])]
-    Param (
-        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential]
-        $SqlCredential,
-        [Alias("Databases")]
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
-        [Alias("SystemDbOnly")]
-        [switch]$NoUserDb,
-        [Alias("UserDbOnly")]
-        [switch]$NoSystemDb,
-        [string[]]$Owner,
-        [switch]$Encrypted,
-        [ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
-        [string[]]$Status = @('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect'),
-        [ValidateSet('ReadOnly', 'ReadWrite')]
-        [string]$Access,
-        [ValidateSet('Full', 'Simple', 'BulkLogged')]
-        [string[]]$RecoveryModel = @('Full', 'Simple', 'BulkLogged'),
-        [switch]$NoFullBackup,
-        [datetime]$NoFullBackupSince,
-        [switch]$NoLogBackup,
-        [datetime]$NoLogBackupSince,
-        [switch]$Silent,
-        [switch]$LastUsed
-    )
-
-    begin {
-
-        if ($NoUserDb -and $NoSystemDb) {
-            Stop-Function -Message "You cannot specify both NoUserDb and NoSystemDb" -Continue -Silent $Silent
-        }
-
-    }
-    process {
-        if (Test-FunctionInterrupt) { return }
-
-        foreach ($instance in $SqlInstance) {
-            try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-            if ($LastUsed) {
-                ## Get last used information from the DMV
-                $querylastused = "WITH agg AS
+	[CmdletBinding(DefaultParameterSetName = "Default")]
+	[OutputType([Microsoft.SqlServer.Management.Smo.Database[]])]
+	Param (
+		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
+		[Alias("SystemDbOnly", "NoUserDb")]
+		[switch]$ExcludeUserDb,
+		[Alias("UserDbOnly", "NoSystemDb")]
+		[switch]$ExcludeSystemDb,
+		[string[]]$Owner,
+		[switch]$Encrypted,
+		[ValidateSet('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect')]
+		[string[]]$Status = @('EmergencyMode', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', 'Suspect'),
+		[ValidateSet('ReadOnly', 'ReadWrite')]
+		[string]$Access,
+		[ValidateSet('Full', 'Simple', 'BulkLogged')]
+		[string[]]$RecoveryModel = @('Full', 'Simple', 'BulkLogged'),
+		[switch]$NoFullBackup,
+		[datetime]$NoFullBackupSince,
+		[switch]$NoLogBackup,
+		[datetime]$NoLogBackupSince,
+		[switch]$Silent,
+		[switch]$LastUsed
+	)
+	
+	begin {
+		
+		if ($ExcludeUserDb -and $ExcludeSystemDb) {
+			Stop-Function -Message "You cannot specify both ExcludeUserDb and ExcludeSystemDb" -Continue -Silent $Silent
+		}
+		
+	}
+	process {
+		if (Test-FunctionInterrupt) { return }
+		
+		foreach ($instance in $SqlInstance) {
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
+			
+			## Get last used information from the DMV
+			$querylastused = "WITH agg AS
 				(
 				  SELECT 
 				       max(last_user_seek) last_user_seek,
@@ -222,102 +218,104 @@
 				GROUP BY
 				   dbname
 				ORDER BY 1;"
-                # put a function around this to enable Pester Testing and also to ease any future changes
-                function Invoke-QueryDBlastUsed {
-                    $server.ConnectionContext.ExecuteWithResults($querylastused).Tables[0]
-                }
-                $dblastused = Invoke-QueryDBlastUsed
-            }
-
-            if ($NoUserDb) {
-                $DBType = @($true)
-            }
-            elseif ($NoSystemDb) {
-                $DBType = @($false)
-            }
-            else {
-                $DBType = @($false, $true)
-            }
-
-            $Readonly = switch ( $Access ) { 'Readonly' { @($true) } 'ReadWrite' { @($false) } default { @($true, $false)} }
-            $Encrypt = switch ( Test-Bound $Encrypted) { $true { @($true) } default { @($true, $false, $null)} }
-
-            $inputobject = $server.Databases  |
-                Where-Object {
-                ($_.Name -in $Database -or !$Database) -and 
-                ($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and 
-                ($_.Owner -in $Owner -or !$Owner) -and 
-                $_.ReadOnly -in $Readonly -and 
-                $_.IsSystemObject -in $DBType -and 
-                ((Compare-Object @($_.Status.tostring().split(',').trim()) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and 
-                $_.RecoveryModel -in $RecoveryModel -and 
-                $_.EncryptionEnabled -in $Encrypt
-            }
-
-            if ($NoFullBackup -or $NoFullBackupSince) {
-                $dabs = (Get-DbaBackupHistory -SqlInstance $server -LastFull -IgnoreCopyOnly)
-                if ($null -ne $NoFullBackupSince) {
-                    $dabsWithinScope = ($dabs | Where-Object End -lt $NoFullBackupSince)
-					
-                    $inputobject = $inputobject | Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' }
-                }
-                else {
-                    $inputObject = $inputObject | Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' }
-                }
-				
-            }
-            if ($NoLogBackup -or $NoLogBackupSince) {
-                $dabs = (Get-DbaBackupHistory -SqlInstance $server -LastLog -IgnoreCopyOnly)
-                if ($null -ne $NoLogBackupSince) {
-                    $dabsWithinScope = ($dabs | Where-Object End -lt $NoLogBackupSince)
-                    $inputobject = $inputobject |
-                        Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
-                }
-                else {
-                    $inputobject = $inputObject |
-                        Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
-                }
-            }
-
-            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
-            'LogReuseWaitStatus', 'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner',
-            'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
-            'LastLogBackupDate as LastLogBackup'
-
-            if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
-                $defaults += ('Notes')
-            }
-            if ($LastUsed) {
-                # Add Last Used to the default view
-                $defaults += ('LastRead as Last Index Read', 'LastWrite as Last Index Write')
-            }
+			# put a function around this to enable Pester Testing and also to ease any future changes
+			function Invoke-QueryDBlastUsed {
+				try {
+					$server.Query($querylastused)
+				}
+				catch {
+					$null
+				}
+			}
+			$dblastused = Invoke-QueryDBlastUsed
 			
-            try {
-                foreach ($db in $inputobject) {
+			if ($ExcludeUserDb) {
+				$DBType = @($true)
+			}
+			elseif ($ExcludeSystemDb) {
+				$DBType = @($false)
+			}
+			else {
+				$DBType = @($false, $true)
+			}
+			
+			$Readonly = switch ($Access) { 'Readonly' { @($true) } 'ReadWrite' { @($false) }
+				default { @($true, $false) } }
+			$Encrypt = switch (Test-Bound $Encrypted) { $true { @($true) }
+				default { @($true, $false, $null) } }
+			
+			$inputobject = $server.Databases |
+			Where-Object {
+				($_.Name -in $Database -or !$Database) -and
+				($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and
+				($_.Owner -in $Owner -or !$Owner) -and
+				$_.ReadOnly -in $Readonly -and
+				$_.IsSystemObject -in $DBType -and
+				((Compare-Object @($_.Status.tostring().split(',').trim()) $Status -ExcludeDifferent -IncludeEqual).inputobject.count -ge 1 -or !$status) -and
+				$_.RecoveryModel -in $RecoveryModel -and
+				$_.EncryptionEnabled -in $Encrypt
+			}
+			
+			if ($NoFullBackup -or $NoFullBackupSince) {
+				$dabs = (Get-DbaBackupHistory -SqlInstance $server -LastFull -IgnoreCopyOnly)
+				if ($null -ne $NoFullBackupSince) {
+					$dabsWithinScope = ($dabs | Where-Object End -lt $NoFullBackupSince)
 					
-                    $Notes = $null
-                    if ($NoFullBackup -or $NoFullBackupSince) {
-                        if (@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | Where-Object { $_.IsCopyOnly }).count -and (@($db.EnumBackupSets()).count -gt 0)) {
-                            $Notes = "Only CopyOnly backups"
-                        }
-                    }
-                    if ($LastUsed) {
-                        ## Add last used information to the input object
-                        $lastusedinfo = $dblastused | Where-Object { $_.dbname -eq $db.name }
-                        Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastRead -value $lastusedinfo.last_read
-                        Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastWrite -value $lastusedinfo.last_write
-                    }
-                    Add-Member -Force -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
+					$inputobject = $inputobject | Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' }
+				}
+				else {
+					$inputObject = $inputObject | Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' }
+				}
+				
+			}
+			if ($NoLogBackup -or $NoLogBackupSince) {
+				$dabs = (Get-DbaBackupHistory -SqlInstance $server -LastLog -IgnoreCopyOnly)
+				if ($null -ne $NoLogBackupSince) {
+					$dabsWithinScope = ($dabs | Where-Object End -lt $NoLogBackupSince)
+					$inputobject = $inputobject |
+					Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
+				}
+				else {
+					$inputobject = $inputObject |
+					Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
+				}
+			}
+			
+			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
+			'LogReuseWaitStatus', 'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner',
+			'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
+			'LastLogBackupDate as LastLogBackup', 'LastRead as LastIndexRead', 'LastWrite as LastIndexWrite'
+			
+			if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
+				$defaults += ('Notes')
+			}
+			
+			try {
+				foreach ($db in $inputobject) {
 					
-                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
-                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-                    Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                    Select-DefaultView -InputObject $db -Property $defaults
-                }
-            }
-            catch {
-                Stop-Message -ErrorRecord $_ -Target $instance -Message "Failure. Collection may have been modified. If so, please use parens (Get-DbaDatabase ....) | when working with commands that modify the collection such as Remove-DbaDatabase" -Continue
-            }
-        }
-    }
+					$Notes = $null
+					
+					if ($NoFullBackup -or $NoFullBackupSince) {
+						if (@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | Where-Object { $_.IsCopyOnly }).count -and (@($db.EnumBackupSets()).count -gt 0)) {
+							$Notes = "Only CopyOnly backups"
+						}
+					}
+					
+					$lastusedinfo = $dblastused | Where-Object { $_.dbname -eq $db.name }
+					
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastRead -value $lastusedinfo.last_read
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastWrite -value $lastusedinfo.last_write
+					Add-Member -Force -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
+					
+					Select-DefaultView -InputObject $db -Property $defaults
+				}
+			}
+			catch {
+				Stop-Message -ErrorRecord $_ -Target $instance -Message "Failure. Collection may have been modified. If so, please use parens (Get-DbaDatabase ....) | when working with commands that modify the collection such as Remove-DbaDatabase" -Continue
+			}
+		}
+	}
 }
