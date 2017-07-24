@@ -334,7 +334,8 @@
 		'Get-DbaSqlModule',
 		'Get-DbaRegisteredServersStore',
 		'Sync-DbaSqlLoginPermission',
-		'Invoke-Sqlcmd2'
+		'Invoke-Sqlcmd2',
+		'New-DbaCredential'
 	)
 	
 	# Cmdlets to export from this module
