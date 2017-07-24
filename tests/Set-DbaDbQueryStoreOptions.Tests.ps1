@@ -21,12 +21,18 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 				}
 				
 				$newnumber = $oldnumber + 1
-				<#
+				
+				$null = Set-DbaDbQueryStoreOptions -SqlInstance $instance -Database msdb -State Off
+								
+				It "should warn that state is off" {
+					$results = Set-DbaDbQueryStoreOptions -SqlInstance $instance -Database msdb -FlushInterval $newnumber -WarningVariable warning  3>&1
+					$warning | Should Not Be $null
+				}
+				
 				It "should change the specified param to the new value" {
-					$results = Set-DbaDbQueryStoreOptions -SqlInstance $instance -Database msdb -FlushInterval $newnumber
+					$results = Set-DbaDbQueryStoreOptions -SqlInstance $instance -Database msdb -FlushInterval $newnumber -State ReadWrite
 					$results.DataFlushIntervalInSeconds | Should Be $newnumber
 				}
-				#>
 			}
 		}
 	}

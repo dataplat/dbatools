@@ -126,7 +126,7 @@ function Set-DbaDbQueryStoreOptions {
         }
 
         foreach ($instance in $SqlInstance) {
-            Write-Message -Level Verbose -Message "Connecting to $instance" -Silent $Silent
+            Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 13
 
@@ -140,20 +140,27 @@ function Set-DbaDbQueryStoreOptions {
                 Where-Object { ($_.Name -in $Database -or !$Database) }
 
 			foreach ($db in $dbs) {
-                Write-Message -Level Verbose -Message "Processing $($db.name) on $instance" -Silent $Silent
+                Write-Message -Level Verbose -Message "Processing $($db.name) on $instance"
 
                 if ($db.IsAccessible -eq $false) {
-                    Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database." -Silent $Silent
+                    Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database."
                     Continue
-                }
-
-                if ($State) {
+				}
+								
+				if ($State) {
                     if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing DesiredState to $state")) {
-                        $db.QueryStoreOptions.DesiredState = $State
+						$db.QueryStoreOptions.DesiredState = $State
+						$db.QueryStoreOptions.Alter()
+						$db.QueryStoreOptions.Refresh()
                     }
                 }
-
-                if ($FlushInterval) {
+				
+				if ($db.QueryStoreOptions.DesiredState -eq "Off" -and (Test-Bound -Parameter State -Not)) {
+					Write-Message -Level Warning -Message "State is set to Off; cannot change values. Please update State to ReadOnly or ReadWrite."
+					Continue
+				}
+				
+				if ($FlushInterval) {
                     if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing DataFlushIntervalInSeconds to $FlushInterval")) {
                         $db.QueryStoreOptions.DataFlushIntervalInSeconds = $FlushInterval
                     }
