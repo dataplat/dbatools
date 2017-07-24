@@ -14,6 +14,8 @@ New-Item -Path C:\temp\backups -ItemType Directory -ErrorAction SilentlyContinue
 
 Write-Output "Setting sql2016 Agent to Automatic"
 Set-Service -Name 'SQLAgent$sql2016' -StartupType Automatic
+Set-Service -Name SQLBrowser -StartupType Automatic
+Start-Service SQLBrowser -ErrorAction SilentlyContinue
 
 $instances = "sql2016", "sql2008r2sp2"
 
