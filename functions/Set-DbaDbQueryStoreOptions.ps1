@@ -110,6 +110,9 @@ function Set-DbaDbQueryStoreOptions {
         [int64]$StaleQueryThreshold,
 		[switch]$Silent
     )
+    begin {
+        $ExcludeDatabase += 'master','tempdb'
+    }
 
     process {
         if (!$Database -and !$ExcludeDatabase -and !$AllDatabases) {
