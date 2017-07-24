@@ -224,11 +224,13 @@
 					}
 					catch {
 						Stop-Function -Message "Can't establish local DAC connection to $sourceName from $sourceName or other error. Quitting." -ErrorRecord $_
+						return
 					}
 				} -Raw
 			}
 			catch {
 				Stop-Function -Message "Can't establish local DAC connection to $sourceName from $sourceName or other error. Quitting." -ErrorRecord $_
+				return
 			}
 			
 			if ($server.IsClustered -and $dacEnabled -eq $false) {
