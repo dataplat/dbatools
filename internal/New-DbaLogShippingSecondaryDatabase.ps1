@@ -248,7 +248,7 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 	if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance"))) {
 		try {
 			Write-Message -Message "Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance." -Level Output 
-			Invoke-DbaSqlCmd -ServerInstance $SqlInstance -Credential $SqlCredential -Database 'master' -Query $Query
+			$ServerSecondary.Query($Query)
 		}
 		catch {
 			Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query"  -InnerErrorRecord $_ -Target $SqlInstance -Continue

@@ -896,12 +896,6 @@ The script will show a message that the copy destination has not been supplied a
 			}
 		}
 
-		<#  # Check if the interval is valid
-        if (($BackupScheduleFrequencyType -in 4, "Daily") -and ($BackupScheduleFrequencyInterval -lt 1 -or $BackupScheduleFrequencyInterval -ge 365)) {
-            Stop-Function -Message "The backup interval $BackupScheduleFrequencyInterval needs to be higher than 1 and lower than 365 when using a daily frequency the interval." -Target $SourceSqlInstance 
-            return
-        } #>
-
 		# Check the subday interval
 		if (($BackupScheduleFrequencySubdayType -in 2, "Seconds", 4, "Minutes") -and (-not ($BackupScheduleFrequencySubdayInterval -ge 1 -or $BackupScheduleFrequencySubdayInterval -le 59))) {
 			Stop-Function -Message "Backup subday interval $BackupScheduleFrequencySubdayInterval must be between 1 and 59 when subday type is 2, 'Seconds', 4 or 'Minutes'" -Target $SourceSqlInstance 
@@ -912,12 +906,6 @@ The script will show a message that the copy destination has not been supplied a
 			return
 		}
 
-		<# # Check if the interval is valid
-        if (($CopyScheduleFrequencyType -in 4, "Daily") -and ($CopyScheduleFrequencyInterval -lt 1 -or $CopyScheduleFrequencyInterval -ge 365)) {
-            Stop-Function -Message "The copy interval $CopyScheduleFrequencyInterval needs to be higher than 1 and lower than 365 when using a daily frequency the interval." -Target $DestinationSqlInstance 
-            return
-        } #>
-
 		# Check the subday interval
 		if (($CopyScheduleFrequencySubdayType -in 2, "Seconds", 4, "Minutes") -and (-not ($CopyScheduleFrequencySubdayInterval -ge 1 -or $CopyScheduleFrequencySubdayInterval -le 59))) {
 			Stop-Function -Message "Copy subday interval $CopyScheduleFrequencySubdayInterval must be between 1 and 59 when subday type is 2, 'Seconds', 4 or 'Minutes'" -Target $DestinationSqlInstance 
@@ -927,12 +915,6 @@ The script will show a message that the copy destination has not been supplied a
 			Stop-Function -Message "Copy subday interval $CopyScheduleFrequencySubdayInterval must be between 1 and 23 when subday type is 8 or 'Hours" -Target $DestinationSqlInstance 
 			return
 		}
-
-		<# # Check if the interval is valid
-        if (($RestoreScheduleFrequencyType -in 4, "Daily") -and ($RestoreScheduleFrequencyInterval -lt 1 -or $RestoreScheduleFrequencyInterval -ge 365)) {
-            Stop-Function -Message "The restore interval $RestoreScheduleFrequencyInterval needs to be higher than 1 and lower than 365 when using a daily frequency the interval." -Target $DestinationSqlInstance 
-            return
-        } #>
 
 		# Check the subday interval
 		if (($RestoreScheduleFrequencySubdayType -in 2, "Seconds", 4, "Minutes") -and (-not ($RestoreScheduleFrequencySubdayInterval -ge 1 -or $RestoreScheduleFrequencySubdayInterval -le 59))) {
@@ -1079,13 +1061,7 @@ The script will show a message that the copy destination has not been supplied a
 				Write-Message -Message "Database $db is not available on instance $SourceSqlInstance" -Warning
 			}
 			else {
-				Write-Message -Message "Start configuring log shipping for database $db on instance $SourceSqlInstance" -Level Output
-
-				# Setting the backup local path for the database
-				<# if(-not $BackupLocalPath -and -not $Force){
-					Stop-Function -Message "Please enter a local path $DestinationSqlInstance." -InnerErrorRecord $_ -Target $DestinationSqlInstance -Continue
-				}
- #>				
+				Write-Message -Message "Start configuring log shipping for database $db on instance $SourceSqlInstance" -Level Output	
  				
 				if ($BackupLocalPath) {
 					if ($BackupLocalPath.EndsWith("\")) {
