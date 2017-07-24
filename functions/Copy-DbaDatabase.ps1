@@ -1027,7 +1027,7 @@ function Copy-DbaDatabase {
 				if ($SetSourceReadOnly) {
 					If ($Pscmdlet.ShouldProcess($source, "Set $dbName to read-only")) {
 						Write-Message -Level Verbose -Message "Setting database to read-only"
-						$result = Update-SqldbReadOnly -SqlInstance $sourceServer -dbname $dbName -readonly $true
+						$result = Update-SqldbReadOnly -SqlInstance $sourceServer -dbname $dbName -readonly:$true
 						
 						if ($result -eq $false) {
 							Write-Message -Level Warning -Message "Couldn't set database to read-only. Aborting routine for this database"

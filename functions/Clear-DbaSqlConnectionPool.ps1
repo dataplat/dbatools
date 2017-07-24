@@ -1,80 +1,75 @@
-Function Clear-DbaSqlConnectionPool
-{
+function Clear-DbaSqlConnectionPool {
 <#
-.SYNOPSIS
-Resets (or empties) the connection pool.
+	.SYNOPSIS
+		Resets (or empties) the connection pool.
 
-.DESCRIPTION
+	.DESCRIPTION
+		This command resets (or empties) the connection pool.
 
-This command resets (or empties) the connection pool. 
-	
-If there are connections in use at the time of the call, they are marked appropriately and will be discarded (instead of being returned to the pool) when Close() is called on them.
+		If there are connections in use at the time of the call, they are marked appropriately and will be discarded (instead of being returned to the pool) when Close() is called on them.
 
-Ref: https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.clearallpools(v=vs.110).aspx
+		Ref: https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.clearallpools(v=vs.110).aspx
 
-.PARAMETER ComputerName
-A remote workstation or server name.
+	.PARAMETER ComputerName
+		Target computer(s). If no computer name is specified, the local computer is targeted
 
-.PARAMETER Credential
-Credential for running the command remotely.
+	.PARAMETER Credential
+		Alternate credential object to use for accessing the target computer(s).
 
-.NOTES
-Tags: WSMan
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+	.PARAMETER Silent
+		Use this switch to disable any kind of verbose messages
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+	.NOTES
+		Tags: Connection
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+		Website: https://dbatools.io
+		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	.LINK
+		https://dbatools.io/Clear-DbaSqlConnectionPool
 
-.LINK
-https://dbatools.io/Clear-DbaSqlConnectionPool
+	.EXAMPLE
+		Clear-DbaSqlConnectionPool
 
-.EXAMPLE
-Clear-DbaSqlConnectionPool
+		Clears all local connection pools.
 
-Clears all local connection pools.
+	.EXAMPLE
+		Clear-DbaSqlConnectionPool -ComputerName workstation27
 
-.EXAMPLE
-Clear-DbaSqlConnectionPool -ComputerName workstation27
-
-Clears all connection pools on workstation27.
-
+		Clears all connection pools on workstation27.
 #>
-	
 	[CmdletBinding()]
-	Param (
+	param (
 		[Parameter(ValueFromPipeline = $true)]
 		[Alias("cn", "host", "Server")]
-		[string[]]$ComputerName = $env:COMPUTERNAME,
-		[PSCredential]
-		$Credential
+		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+		[PSCredential]$Credential,
+		[switch]$Silent
 	)
-	
+
 	process
 	{
 		# TODO: https://jamessdixon.wordpress.com/2013/01/22/ado-net-and-connection-pooling
-		
-		ForEach ($Computer in $Computername)
+
+		foreach ($Computer in $ComputerName)
 		{
-			If ($Computer -ne $env:COMPUTERNAME -and $Computer -ne "localhost" -and $Computer -ne "." -and $Computer -ne "127.0.0.1")
+			if ($Computer -ne $env:COMPUTERNAME -and $Computer -ne "localhost" -and $Computer -ne "." -and $Computer -ne "127.0.0.1")
 			{
-				Write-Verbose "Clearing all pools on remote computer $Computer"
-				if ($credential)
+				Write-Message -Level Verbose -Message "Clearing all pools on remote computer $Computer"
+				if (Test-Bound 'Credential')
 				{
-					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+					Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}
 				else
 				{
-					Invoke-Command2 -ComputerName $computer -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+					Invoke-Command2 -ComputerName $Computer -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}
 			}
 			else
 			{
 				Write-Verbose "Clearing all local pools"
-				if ($credential)
+				if (Test-Bound 'Credential')
 				{
 					Invoke-Command2 -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}

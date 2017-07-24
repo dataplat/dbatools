@@ -4,42 +4,44 @@
 			Copy-DbaAgentSharedSchedule migrates shared job schedules from one SQL Server to another.
 
 		.DESCRIPTION
-			By default, all shared job schedules are copied. The -SharedSchedules parameter is auto-populated for command-line completion and can be used to copy only specific shared job schedules.
-
+			All shared job schedules are copied.
+			
 			If the associated credential for the account does not exist on the destination, it will be skipped. If the shared job schedule already exists on the destination, it will be skipped unless -Force is used.
 
 		.PARAMETER Source
-			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or newer.
 
 		.PARAMETER SourceSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or newer.
 
 		.PARAMETER DestinationSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
 			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
-
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+		
 		.PARAMETER Force
-			Drops and recreates the schedule if it exists.
+			If this switch is enabled, the Operator will be dropped and recreated on Destination.
 
-		.PARAMETER Silent
+		.PARAMETER Silent 
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -57,12 +59,7 @@
 		.EXAMPLE
 			Copy-DbaAgentSharedSchedule -Source sqlserver2014a -Destination sqlcluster
 
-			Copies all shared job schedules from sqlserver2014a to sqlcluster, using Windows credentials. If shared job schedules with the same name exist on sqlcluster, they will be skipped.
-
-		.EXAMPLE
-			Copy-DbaAgentSharedSchedule -Source sqlserver2014a -Destination sqlcluster -SharedSchedule Weekly -SourceSqlCredential $cred -Force
-
-			Copies a single shared job schedule, the Weekly shared job schedule from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a shared job schedule with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+			Copies all shared job schedules from sqlserver2014a to sqlcluster using Windows credentials. If shared job schedules with the same name exist on sqlcluster, they will be skipped.
 
 		.EXAMPLE
 			Copy-DbaAgentSharedSchedule -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force

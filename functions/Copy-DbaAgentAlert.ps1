@@ -9,22 +9,22 @@
 			If the alert already exists on the destination, it will be skipped unless -Force is used.
 
 		.PARAMETER Source
-			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or newer.
 
 		.PARAMETER SourceSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or newer.
 
 		.PARAMETER DestinationSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
@@ -33,22 +33,22 @@
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Alert
-			The alert(s) to process - this list is auto-populated from the server. If unspecified, all alerts will be processed.
+			The alert(s) to process. This list is auto-populated from the server. If unspecified, all alerts will be processed.
 
 		.PARAMETER ExcludeAlert
-			The alert(s) to exclude - this list is auto-populated from the server
+			The alert(s) to exclude. This list is auto-populated from the server.
 
 		.PARAMETER IncludeDefaults
 			Copy SQL Agent defaults such as FailSafeEmailAddress, ForwardingServer, and PagerSubjectTemplate.
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Force
-			Drops and recreates the Alert if it exists.
+			If this switch is enabled, the Alert will be dropped and recreated on Destination.
 
 		.PARAMETER Silent
 			If this switch is enabled, the internal messaging functions will be silenced.
@@ -126,7 +126,7 @@
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$Destination'"
 
 					Write-Message -Message $sql -Level Debug
-					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $destServer.Query($sql)
 
 					$copyAgentAlertStatus.Status = "Successful"
 				}
@@ -168,7 +168,7 @@
 
 						$sql = "EXEC msdb.dbo.sp_delete_alert @name = N'$($alertname)';"
 						Write-Message -Message $sql -Level Debug
-						$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+						$null = $destServer.Query($sql)
 					}
 					catch {
 						$copyAgentAlertStatus.Status = "Failed"
@@ -210,7 +210,7 @@
 					$sql = $sql -replace "@job_id=N'........-....-....-....-............", "@job_id=N'00000000-0000-0000-0000-000000000000"
 
 					Write-Message -Message $sql -Level Debug
-					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $destServer.Query($sql)
 
 					$copyAgentAlertStatus.Status = "Successful"
 					$copyAgentAlertStatus
@@ -249,7 +249,7 @@
 						$sql = $sql -replace 'sp_add_alert', 'sp_update_alert'
 
 						Write-Message -Message $sql -Level Debug
-						$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+						$null = $destServer.Query($sql)
 
 						$copyAgentAlertStatus.Status = "Successful"
 						$copyAgentAlertStatus

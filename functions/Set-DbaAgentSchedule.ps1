@@ -323,7 +323,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
             foreach ($j in $Job) {
 
                 # Try connecting to the instance
-                Write-Message -Message "Attempting to connect to $instance" -Level Output
+                Write-Message -Message "Attempting to connect to $instance" -Level Verbose
                 try {
                     $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 }
@@ -421,7 +421,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
                         if ($PSCmdlet.ShouldProcess($instance, "Changing the schedule $ScheduleName for job $j on $instance")) {
                             try {
                                 # Excute the query and save the result
-                                Write-Message -Message "Changing the schedule $ScheduleName for job $j" -Level Output
+                                Write-Message -Message "Changing the schedule $ScheduleName for job $j" -Level Verbose
                         
                                 $JobSchedule.Alter()
                         
@@ -438,6 +438,6 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
     } # process
 
     end {
-        Write-Message -Message "Finished changing the job schedule(s)."-Level Output
+        Write-Message -Message "Finished changing the job schedule(s)."-Level Verbose
     }
 }

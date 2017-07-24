@@ -1,5 +1,8 @@
+$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe 'Test-DbaMaxMemory Unit Tests' -Tag 'Unittests' {
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     InModuleScope dbatools {
         Context 'Validate input arguments' {
             It 'No "SQL Server" Windows service is running on the host' {

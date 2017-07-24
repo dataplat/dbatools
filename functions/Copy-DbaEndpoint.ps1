@@ -150,7 +150,7 @@ function Copy-DbaEndpoint {
 			if ($Pscmdlet.ShouldProcess($destination, "Creating server endpoint $endpointName")) {
 				try {
 					Write-Message -Level Verbose -Message "Copying server endpoint $endpointName"
-					$destServer.ConnectionContext.ExecuteNonQuery($currentEndpoint.Script()) | Out-Null
+					$destServer.Query($currentEndpoint.Script()) | Out-Null
 
 					$copyEndpointStatus.Status = "Successful"
 					$copyEndpointStatus

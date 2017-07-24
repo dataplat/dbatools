@@ -14,7 +14,7 @@ Automatically outputs a transcript to disk.
 
 Start-DbaMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you're looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:
 
-All user databases. Use -NoDatabases to skip.
+All user databases to exclude support databases such as ReportServerTempDB (Use -IncludeSupportDbs for this). Use -NoDatabases to skip.
 All logins. Use -NoLogins to skip.
 All database mail objects. Use -NoDatabaseMail
 All credentials. Use -NoCredentials to skip.
@@ -161,7 +161,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Leaves the databases in No Recovery state to enable further backups to be added
 
 .PARAMETER IncludeSupportDbs
-Appears to not be used
+Migration of ReportServer, ReportServerTempDb, SSIDb, and distribution databases if they exist. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
 
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
@@ -456,11 +456,11 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			{
 				if ($BackupRestore)
 				{
-					Copy-DbaDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace
+					Copy-DbaDatabase -Source $sourceserver -Destination $destserver -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:IncludeSupportDbs
 				}
 				else
 				{
-					Copy-DbaDatabase -Source $sourceserver -Destination $destserver -All -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force
+					Copy-DbaDatabase -Source $sourceserver -Destination $destserver -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -IncludeSupportDbs:IncludeSupportDbs
 				}
 			}
 			catch { Write-Error "Database migration reported the following error $($_.Exception.Message)" }
@@ -641,6 +641,5 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
             Write-Output "Total Elapsed time: $totaltime"
             Stop-Transcript
         }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Start-SqlMigration
 	}
 }

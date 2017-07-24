@@ -149,7 +149,7 @@ function Backup-DbaDatabase {
 				$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $Database }
 			}
 			else {
-				$DatabaseCollection = $server.Databases | Where-object { $_.Name -ne 'TempDb' }
+				$DatabaseCollection = $server.Databases | Where-object { $_.Name -ne 'tempdb' }
 			}
 			
 			if ($ExcludeDatabase) {
@@ -241,7 +241,7 @@ function Backup-DbaDatabase {
 			}
 			
 			if ($CopyOnly -ne $True) {
-				$CopyOnly -eq $false
+				$CopyOnly = $false
 			}
 			
 			$server.ConnectionContext.StatementTimeout  = 0

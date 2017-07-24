@@ -1,5 +1,8 @@
+$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Get-OlaHRestoreFile Unit Tests" -Tag 'Unittests'{
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Unit Tests" -Tag 'UnitTests'{
     #Mock Test-Path {$true}
 	<#
     Context "Test Path handling" {

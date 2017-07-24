@@ -1,5 +1,8 @@
+$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Get-DirectoryRestoreFile Unit Tests" -Tag 'Unittests'{
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     Context "Test Path handling" {
         It "Should throw on an invalid Path" {
             { Get-DirectoryRestoreFile -Path TestDrive:\foo\bar\does\not\exist\ -Silent } | Should Throw
