@@ -1082,8 +1082,12 @@ The script will show a message that the copy destination has not been supplied a
 				Write-Message -Message "Start configuring log shipping for database $db on instance $SourceSqlInstance" -Level Output
 
 				# Setting the backup local path for the database
-				$DatabaseBackupLocalPath = $null
-				if (BackupLocalPath) {
+				<# if(-not $BackupLocalPath -and -not $Force){
+					Stop-Function -Message "Please enter a local path $DestinationSqlInstance." -InnerErrorRecord $_ -Target $DestinationSqlInstance -Continue
+				}
+ #>				
+ 				
+				if ($BackupLocalPath) {
 					if ($BackupLocalPath.EndsWith("\")) {
 						$DatabaseBackupLocalPath = "$BackupLocalPath$db"
 					}
@@ -1091,7 +1095,17 @@ The script will show a message that the copy destination has not been supplied a
 						$DatabaseBackupLocalPath = "$BackupLocalPath\$db"
 					}
 				}
-				Write-Message -Message "Backup network path set to $DatabaseBackupLocalPath." -Level Verbose
+				else{
+					$BackupLocalPath = $BackupNetworkPath
+
+					if ($BackupLocalPath.EndsWith("\")) {
+						$DatabaseBackupLocalPath = "$BackupLocalPath$db"
+					}
+					else {
+						$DatabaseBackupLocalPath = "$BackupLocalPath\$db"
+					}
+				}
+				Write-Message -Message "Backup local path set to $DatabaseBackupLocalPath." -Level Verbose
 
 				# Setting the backup network path for the database
 				if ($BackupNetworkPath.EndsWith("\")) {
@@ -1498,7 +1512,7 @@ The script will show a message that the copy destination has not been supplied a
 							-BackupRetention $BackupRetention `
 							-BackupShare $DatabaseBackupNetworkPath `
 							-BackupThreshold $BackupThreshold `
-							-BackupCompression $BackupCompression `
+							-CompressBackup:$CompressBackup `
 							-HistoryRetention $HistoryRetention `
 							-MonitorServer $PrimaryMonitorServer `
 							-MonitorServerSecurityMode $PrimaryMonitorServerSecurityMode `
