@@ -14,7 +14,7 @@ New-Item -Path C:\temp\backups -ItemType Directory -ErrorAction SilentlyContinue
 
 Write-Output "Setting sql2016 Agent to Automatic"
 Set-Service -Name 'SQLAgent$sql2016' -StartupType Automatic
-$null = Set-DbaStartupParameter -SqlInstance localhost\SQL2008R2SP2 -TraceFlags 7806 -Confirm:$false
+Set-DbaStartupParameter -SqlInstance localhost\SQL2008R2SP2 -TraceFlags 7806 -Confirm:$false
 
 $instances = "sql2016", "sql2008r2sp2"
 
