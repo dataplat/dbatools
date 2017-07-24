@@ -1,4 +1,4 @@
-function Set-DbaQueryStoreConfig {
+function Set-DbaDbQueryStoreOptions {
     <#
 		.SYNOPSIS
 			Configure Query Store settings for a specific or multiple databases.
@@ -64,25 +64,25 @@ function Set-DbaQueryStoreConfig {
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 		.LINK
-			https://dbatools.io/Set-QueryStoreConfig
+			https://dbatools.io/Set-DbaQueryStoreOptions
 
 		.EXAMPLE
-			Set-DbaQueryStoreConfig -SqlInstance ServerA\SQL -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode All -CleanupMode Auto -StaleQueryThreshold 100 -AllDatabases
+			Set-DbaDbQueryStoreOptions -SqlInstance ServerA\SQL -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode All -CleanupMode Auto -StaleQueryThreshold 100 -AllDatabases
 
 			Configure the Query Store settings for all user databases in the ServerA\SQL Instance.
 
 		.EXAMPLE
-			Set-DbaQueryStoreConfig -SqlInstance ServerA\SQL -FlushInterval 600
+			Set-DbaDbQueryStoreOptions -SqlInstance ServerA\SQL -FlushInterval 600
 
 			Only configure the FlushInterval setting for all Query Store databases in the ServerA\SQL Instance.
 
 		.EXAMPLE
-			Set-DbaQueryStoreConfig -SqlInstance ServerA\SQL -Database AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
+			Set-DbaDbQueryStoreOptions -SqlInstance ServerA\SQL -Database AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
 
 			Configure the Query Store settings for the AdventureWorks database in the ServerA\SQL Instance.
 
 		.EXAMPLE
-			Set-DbaQueryStoreConfig -SqlInstance ServerA\SQL -Exclude AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
+			Set-DbaDbQueryStoreOptions -SqlInstance ServerA\SQL -Exclude AdventureWorks -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode all -CleanupMode Auto -StaleQueryThreshold 100
 
 			Configure the Query Store settings for all user databases except the AdventureWorks database in the ServerA\SQL Instance.
 	#>
@@ -110,6 +110,9 @@ function Set-DbaQueryStoreConfig {
         [int64]$StaleQueryThreshold,
 		[switch]$Silent
     )
+    begin {
+        $ExcludeDatabase += 'master','tempdb'
+    }
 
     process {
         if (!$Database -and !$ExcludeDatabase -and !$AllDatabases) {
@@ -125,44 +128,39 @@ function Set-DbaQueryStoreConfig {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 13
 
             }
             catch {
                 Stop-Function -Message "Can't connect to $instance. Moving on." -Category InvalidOperation -InnerErrorRecord $_ -Target $instance -Continue
             }
 
-            if ($server.VersionMajor -lt 13) {
-                Stop-Function -Message "The SQL Server Instance ($instance) has a lower SQL Server version than SQL Server 2016. Skipping server."
-                continue
-            }
-
             # We have to exclude all the system databases since they cannot have the Query Store feature enabled
-            $dbs = Get-DbaDatabase -SqlInstance $instance -NoSystemDb
+			$dbs = Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -ExcludeDatabase $ExcludeDatabase |
+                Where-Object { ($_.Name -in $Database -or !$Database) }
 
-            if ($Database) {
-                $dbs = $dbs | Where-Object Name -In $Database
-            }
-
-            if ($ExcludeDatabase) {
-                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabas
-            }
-
-            foreach ($db in $dbs) {
-                Write-Message -Level Verbose -Message "Processing $db on $instance"
+			foreach ($db in $dbs) {
+                Write-Message -Level Verbose -Message "Processing $($db.name) on $instance"
 
                 if ($db.IsAccessible -eq $false) {
                     Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database."
                     Continue
-                }
-
-                if ($State) {
+				}
+								
+				if ($State) {
                     if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing DesiredState to $state")) {
-                        $db.QueryStoreOptions.DesiredState = $State
+						$db.QueryStoreOptions.DesiredState = $State
+						$db.QueryStoreOptions.Alter()
+						$db.QueryStoreOptions.Refresh()
                     }
                 }
-
-                if ($FlushInterval) {
+				
+				if ($db.QueryStoreOptions.DesiredState -eq "Off" -and (Test-Bound -Parameter State -Not)) {
+					Write-Message -Level Warning -Message "State is set to Off; cannot change values. Please update State to ReadOnly or ReadWrite."
+					Continue
+				}
+				
+				if ($FlushInterval) {
                     if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing DataFlushIntervalInSeconds to $FlushInterval")) {
                         $db.QueryStoreOptions.DataFlushIntervalInSeconds = $FlushInterval
                     }
@@ -201,7 +199,8 @@ function Set-DbaQueryStoreConfig {
                 # Alter the Query Store Configuration
                 if ($Pscmdlet.ShouldProcess("$db on $instance", "Altering Query Store configuration on database")) {
                     try {
-                        $db.QueryStoreOptions.Alter()
+						$db.QueryStoreOptions.Alter()
+						$db.Alter()
                         $db.Refresh()
                     }
                     catch {
@@ -209,9 +208,9 @@ function Set-DbaQueryStoreConfig {
                     }
                 }
 
-                if ($Pscmdlet.ShouldProcess("$db on $instance", "Getting results from Get-DbaQueryStoreConfig")) {
+                if ($Pscmdlet.ShouldProcess("$db on $instance", "Getting results from Get-DbaDbQueryStoreOptions")) {
                     # Display resulting changes
-                    Get-DbaQueryStoreConfig -SqlInstance $server -Database $db.name -Verbose:$false
+                    Get-DbaDbQueryStoreOptions -SqlInstance $server -Database $db.name -Verbose:$false
                 }
             }
         }
