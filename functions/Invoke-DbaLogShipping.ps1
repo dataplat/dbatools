@@ -1082,11 +1082,14 @@ The script will show a message that the copy destination has not been supplied a
 				Write-Message -Message "Start configuring log shipping for database $db on instance $SourceSqlInstance" -Level Output
 
 				# Setting the backup local path for the database
-				if ($BackupLocalPath.EndsWith("\")) {
-					$DatabaseBackupLocalPath = "$BackupLocalPath$db"
-				}
-				else {
-					$DatabaseBackupLocalPath = "$BackupLocalPath\$db"
+				$DatabaseBackupLocalPath = $null
+				if (BackupLocalPath) {
+					if ($BackupLocalPath.EndsWith("\")) {
+						$DatabaseBackupLocalPath = "$BackupLocalPath$db"
+					}
+					else {
+						$DatabaseBackupLocalPath = "$BackupLocalPath\$db"
+					}
 				}
 				Write-Message -Message "Backup network path set to $DatabaseBackupLocalPath." -Level Verbose
 
