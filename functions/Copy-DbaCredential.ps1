@@ -30,6 +30,9 @@
 
 			To connect as a different Windows user, run PowerShell as that user.
 
+		.PARAMETER Credential
+ 			This command requires access to the Windows OS via PowerShell remoting. Use this credential to connect to Windows using alternative credentials.
+
 		.PARAMETER CredentialIdentity
 			Auto-populated list of Credentials from Source. If no Credential is specified, all Credentials will be migrated. If spaces exist in the credential name, it must be wrapped with quotes.
 
