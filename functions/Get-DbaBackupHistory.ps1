@@ -358,7 +358,7 @@ function Get-DbaBackupHistory {
 									a.is_copy_only,
 									a.last_recovery_fork_guid
 								FROM (SELECT
-								  RANK() OVER (ORDER BY backupset.backup_start_date DESC) AS 'BackupSetRank',
+								  RANK() OVER (ORDER BY backupset.last_lsn DESC) AS 'BackupSetRank',
 								  backupset.database_name AS [Database],
 								  backupset.user_name AS Username,
 								  backupset.backup_start_date AS Start,
@@ -484,7 +484,7 @@ function Get-DbaBackupHistory {
 				
 				if ($Last -or $LastFull -or $LastLog -or $LastDiff) {
 					$tempwhere = $wherearray -join " AND "
-					$wherearray += "type = 'Full' AND mediaset.media_set_id = (select top 1 mediaset.media_set_id $from $tempwhere order by backupset.backup_finish_date DESC)"
+					$wherearray += "type = 'Full' AND mediaset.media_set_id = (select top 1 mediaset.media_set_id $from $tempwhere order by backupset.last_lsn DESC)"
 				}
 				
 				if ($Since -ne $null) {
@@ -509,7 +509,7 @@ function Get-DbaBackupHistory {
 					$where = "$where $wherearray"
 				}
 				
-				$sql = "$select $from $where ORDER BY backupset.backup_finish_date DESC"
+				$sql = "$select $from $where ORDER BY backupset.last_lsn DESC"
 			}
 
 			Write-Message -Level Debug -Message $sql
