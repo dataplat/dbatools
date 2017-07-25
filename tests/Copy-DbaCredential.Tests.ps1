@@ -8,25 +8,15 @@ try {
 	$server.ConnectionContext.ConnectionString = $connstring
 	$server.ConnectionContext.Connect()
 	$server.ConnectionContext.Disconnect()
-	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $null
+	Clear-DbaSqlConnectionPool
 }
 catch {
 	Write-Warning "DAC not working this round, likely due to Appveyor resources"
 	return
 }
 
-try {
-	$connstring = "Server=ADMIN:$script:instance1;Trusted_Connection=True"
-	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $script:instance1
-	$server.ConnectionContext.ConnectionString = $connstring
-	$server.ConnectionContext.Connect()
-	$server.ConnectionContext.Disconnect()
-	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $null
-}
-catch {
-	Write-Warning "DAC not working this round, likely due to Appveyor resources"
-	return
-}
+# One more for the road - clearing the connection pool is important for DAC since only one is allowed
+Clear-DbaSqlConnectionPool
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Create new credential" {
@@ -54,7 +44,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$results.Identity | Should Be "thorsmomma"
 		}
 	}
-	
+	Clear-DbaSqlConnectionPool
 	Context "Copy Credential with the same properties." {
 		It "Should copy successfully" {
 			$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -CredentialIdentity thorcred
@@ -71,7 +61,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$Credential1.CredentialIdentity | Should Be $Credential2.CredentialIdentity
 		}
 	}
-	
+	Clear-DbaSqlConnectionPool
 	Context "No overwrite and cleanup" {
 		$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -CredentialIdentity thorcred -WarningVariable warning 3>&1
 		It "Should not attempt overwrite" {
@@ -88,4 +78,5 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$null = net user $login /delete *>&1
 		}
 	}
+	Clear-DbaSqlConnectionPool
 }
