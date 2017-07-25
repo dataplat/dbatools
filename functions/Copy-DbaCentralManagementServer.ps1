@@ -7,46 +7,51 @@
 			Copy-DbaCentralManagementServer copies all groups, subgroups, and server instances from one SQL Server to another.
 
 		.PARAMETER Source
-			The SQL Server Central Management Server you are migrating from.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or newer.
 
 		.PARAMETER SourceSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			The SQL Server Central Management Server you are migrating to.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or newer.
 
 		.PARAMETER DestinationSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
 			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER CMSGroup
-			This is an auto-populated array that contains your Central Management Server top-level groups on $Source. You can specify one, many or none.
-			If -CMSGroup is not specified, the Copy-DbaCentralManagementServer script will migrate all groups in your Central Management Server. Note this variable is only populated by top level groups.
-
+			This is an auto-populated array that contains your Central Management Server top-level groups on Source. You can specify one, many or none.
+			
+			If CMSGroup is not specified, all groups in your Central Management Server will be copied.
+			
 		.PARAMETER SwitchServerName
-			Central Management Server does not allow you to add a shared registered server with the same name as the Configuration Server. If you wish to change all migrating instance names of $Destination to $Source, use this switch.
-
-		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
-
-		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
+			If this switch is enabled, all instance names will be changed from Source to Destination.
+			
+			Central Management Server does not allow you to add a shared registered server with the same name as the Configuration Server.
 
 		.PARAMETER Force
-			Drops and recreates the CMS if it exists.
+			If this switch is enabled, group(s) will be dropped and recreated if they already exist on Destination.
+
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Silent
 			If this switch is enabled, the internal messaging functions will be silenced.
-
+			
 		.NOTES
 			Tags: Migration
 			Author: Chrissy LeMaire (@cl), netnerds.net
@@ -62,17 +67,19 @@
 		.EXAMPLE
 			Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster
 
-			In the above example, all groups, subgroups, and server instances are copied from sqlserver's Central Management Server to sqlcluster's Central Management Server.
+			All groups, subgroups, and server instances are copied from sqlserver's Central Management Server to sqlcluster's Central Management Server.
 
 		.EXAMPLE
 			Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -ServerGroup Group1,Group3
 
-			In the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from sqlserver to sqlcluster.
+			Top-level groups Group1 and Group3 along with their subgroups and server instances are copied from sqlserver to sqlcluster.
 
 		.EXAMPLE
 			Copy-DbaCentralManagementServer -Source sqlserver2014a -Destination sqlcluster -ServerGroup Group1,Group3 -SwitchServerName -SourceSqlCredential $SourceSqlCredential -DestinationSqlCredential $DestinationSqlCredential
 
-			In the above example, top level Group1 and Group3, along with its subgroups and server instances are copied from sqlserver to sqlcluster. When adding sql instances to sqlcluster, if the server name of the migrating instance is "sqlcluster", it will be switched to "sqlserver". If SwitchServerName is not specified, "sqlcluster" will be skipped.
+			Top-level groups Group1 and Group3 along with their subgroups and server instances are copied from sqlserver to sqlcluster. When adding sql instances to sqlcluster, if the server name of the migrating instance is "sqlcluster", it will be switched to "sqlserver".
+			
+			If SwitchServerName is not specified, "sqlcluster" will be skipped.
 	#>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	Param (
@@ -281,7 +288,7 @@
 		$destination = $destServer.DomainInstanceName
 
 		if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
-			throw "Central Management Server is only supported in SQL Server 2008 and above. Quitting."
+			throw "Central Management Server is only supported in SQL Server 2008 and newer. Quitting."
 		}
 	}
 
