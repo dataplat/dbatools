@@ -119,7 +119,7 @@
                 DROP TABLE ##tmpEstimatePage
 
                 DECLARE @MaxRunTimeInMinutes INT = $MaxRunTime
-				DECLARE @PercentCompressed INT = $PercentCompressed
+				DECLARE @PercentCompressed INT = $PercentCompression
 				DECLARE @CompressedCount INT;
 				SET @CompressedCount = 0;
 
@@ -282,7 +282,7 @@
 				                  WHEN [PercentScan] >= 60 
 				                       AND [PercentUpdate] <= 5 THEN 'PAGE' 
 				                  WHEN [PercentScan] <= 35 
-				                       AND [PercentUpdate] <= 5 THEN '?' 
+				                       AND [PercentUpdate] <= 5 THEN 'NONE' 
 				                  ELSE 'ROW' 
 				                END 
 				         FROM   ##setdbacompression) 
