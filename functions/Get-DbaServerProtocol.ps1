@@ -60,7 +60,6 @@ Param (
 
 BEGIN
   {
-    $FunctionName = (Get-PSCallstack)[0].Command
     $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
   }
 PROCESS
@@ -71,13 +70,13 @@ PROCESS
           if ( $Server.ComputerName )
           {
               $Computer = $server.ComputerName
-              Write-Verbose "$FunctionName - Getting SQL Server namespace on $Computer"
+				Write-Message -Level Verbose -Message "Getting SQL Server namespace on $computer" -Silent $Silent
               $namespace = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
                           Where-Object {(Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ServerNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0} |
                           Sort-Object Name -Descending | Select-Object -First 1
               if ( $namespace.Name )
               {
-                  Write-Verbose "$FunctionName - Getting Cim class ServerNetworkProtocol in Namespace $($namespace.Name) on $Computer"
+                  Write-Message -Level Verbose -Message "Getting Cim class ServerNetworkProtocol in Namespace $($namespace.Name) on $Computer" -Silent $Silent
                   try
                   {
                     $prot = Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -ClassName ServerNetworkProtocol -ErrorAction SilentlyContinue
@@ -87,17 +86,17 @@ PROCESS
                   }
                   catch
                   {
-                    Write-Warning "$FunctionName - No Sql ServerNetworkProtocol found on $Computer"
+                    Write-Message -Level Warning -Message "No Sql ServerNetworkProtocol found on $Computer" -Silent $Silent
                   }
               } #if namespace
                 else
                 {
-                Write-Warning "$FunctionName - No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
+                Write-Message -Level Warning -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up." -Silent $Silent
                 } #else no namespace
           } #if computername
           else
           {
-              Write-Warning "$FunctionName - Failed to connect to $Computer"
+              Write-Message -Level Warning -Message "Failed to connect to $Computer" -Silent $Silent
           }
       } #foreach computer
     } #PROCESS
