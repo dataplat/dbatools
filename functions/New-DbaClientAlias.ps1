@@ -8,9 +8,18 @@ Gets SQL Server Client aliases - mimics cliconfg.exe which is stored in HKLM:\SO
 
 .PARAMETER ComputerName
 The target computer - defaults to localhost
-
+		
 .PARAMETER Credential
 Allows you to login to remote computers using alternative credentials
+
+.PARAMETER ServerAlias
+The SqlServer that the alias will point to
+
+.PARAMETER Alias
+The new alias
+
+.PARAMETER Protocol
+Defaults to TCPIP but can be NamedPipes
 	
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
@@ -37,13 +46,21 @@ Does this
 		[DbaInstanceParameter[]]$ServerAlias,
 		[parameter(Mandatory)]
 		[string]$Alias,
+		[ValidateSet("TCPIP", "NamedPipes")]
+		[string]$Protcol = "TCPIP",
 		[switch]$Silent
 	)
 	
 	process {
+		if ($protocol -eq "TCPIP") {
+			$serverstring = "DBMSSOCN,$ServerAlias"
+		}
+		else {
+			$serverstring = "DBNMPNTW,\\$ServerAlias\pipe\sql\query"
+		}
+		
 		foreach ($computer in $ComputerName) {
 			$null = Test-ElevationRequirement -ComputerName $computer -Continue
-			
 			$scriptblock = {
 				$basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
 				
@@ -78,7 +95,7 @@ Does this
 					}
 					
 					Write-Message -Level Verbose -Message "Creating/updating alias for $ComputerName for $architecture"
-					$null = New-ItemProperty -Path $connect -Name $Alias -Value "DBMSSOCN,$ComputerName" -PropertyType String -Force
+					$null = New-ItemProperty -Path $connect -Name $Alias -Value $serverstring -PropertyType String -Force
 				}
 			}
 			
