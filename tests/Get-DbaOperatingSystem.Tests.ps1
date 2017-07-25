@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Get-DbaOperatingSystem Unit Tests" -Tag "UnitTests" {
 	InModuleScope dbatools {
 		Context "Validate parameters" {
-			$params = (Get-ChildItem function:\Get-DbaServerOperatingSystem).Parameters	
+			$params = (Get-ChildItem function:\Get-DbaOperatingSystem).Parameters	
 			it "should have a parameter named ComputerName" {
 				$params.ContainsKey("ComputerName") | Should Be $true
 			}
@@ -18,13 +18,13 @@ Describe "Get-DbaOperatingSystem Unit Tests" -Tag "UnitTests" {
 		Context "Validate input" {
 			it "Cannot resolve hostname of computer" {
 				mock Resolve-DbaNetworkName {$null}
-				{Get-DbaServerOperatingSystem -ComputerName 'DoesNotExist142' -WarningAction Stop 3> $null} | Should Throw
+				{Get-DbaOperatingSystem -ComputerName 'DoesNotExist142' -WarningAction Stop 3> $null} | Should Throw
 			}
 		}
 	}
 }
-Describe "Get-DbaServerOperatingSystem Integration Test" -Tag "IntegrationTests" {
-	$result = Get-DbaServerOperatingSystem -ComputerName $script:instance1
+Describe "Get-DbaOperatingSystem Integration Test" -Tag "IntegrationTests" {
+	$result = Get-DbaOperatingSystem -ComputerName $script:instance1
 
 	$props = 'ComputerName','Server','SqlInstance','Manufacturer','OSArchitecture',
 		'BuildNumber','Version','InstallDate','LastBootUpTime','LocalDateTime','BootDevice',
@@ -40,11 +40,11 @@ Describe "Get-DbaServerOperatingSystem Integration Test" -Tag "IntegrationTests"
 		foreach ($prop in $props) {
 			$p = $result.PSObject.Properties[$prop]
 			it "Should return property: $prop" {
-				$p.Name | Should Not Be $prop
+				$p.Name | Should Be $prop
 			}
 		}
 		it "Should return nothing if unable to connect to server" {
-			$result = Get-DbaServerOperatingSystem -ComputerName 'Melton5312'
+			$result = Get-DbaOperatingSystem -ComputerName 'Melton5312' -WarningAction SilentlyContinue
 			$result | Should Be $null
 		}
 	}
