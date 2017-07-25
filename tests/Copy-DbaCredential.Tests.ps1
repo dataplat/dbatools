@@ -70,6 +70,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -CredentialIdentity thorcred -WarningVariable warning 3>&1
 		}
 		catch {
+			Write-Warning "Appveyor tripped on DAC for Copy-DbaCredential. Moving on."
 			return
 		}
 		It "Should not attempt overwrite" {
