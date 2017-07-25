@@ -120,7 +120,7 @@ function Install-DbaWhoIsActive {
 					$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select-Object -First 1).FullName
 				}
 				catch {
-					Stop-Function -Message "Couldn't download sp_WhoisActive. Please download and install manually from http://whoisactive.com/who_is_active_v11_17.zip." -ErrorRecord $_
+					Stop-Function -Message "Couldn't download sp_WhoisActive. Please download and install manually from $url" -ErrorRecord $_
 					return
 				}
 			}
