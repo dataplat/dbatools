@@ -16,6 +16,9 @@ Function Get-DbaServerProtocol
     .PARAMETER Credential
     Credential object used to connect to the computer as a different user.
 
+	.PARAMETER Silent
+		Use this switch to disable any kind of verbose messages
+
     .NOTES
     Author: Klaas Vandenberghe ( @PowerDBAKlaas )
     Tags: Protocol
@@ -55,7 +58,8 @@ Param (
   [parameter(ValueFromPipeline)]
   [Alias("cn","host","Server")]
   [string[]]$ComputerName = $env:COMPUTERNAME,
-  [PSCredential] $Credential
+  [PSCredential] $Credential,
+  [switch]$Silent
 )
 
 BEGIN
@@ -70,13 +74,13 @@ PROCESS
           if ( $Server.ComputerName )
           {
               $Computer = $server.ComputerName
-				Write-Message -Level Verbose -Message "Getting SQL Server namespace on $computer" -Silent $Silent
+				Write-Message -Level Verbose -Message "Getting SQL Server namespace on $computer"
               $namespace = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
                           Where-Object {(Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ServerNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0} |
                           Sort-Object Name -Descending | Select-Object -First 1
               if ( $namespace.Name )
               {
-                  Write-Message -Level Verbose -Message "Getting Cim class ServerNetworkProtocol in Namespace $($namespace.Name) on $Computer" -Silent $Silent
+                  Write-Message -Level Verbose -Message "Getting Cim class ServerNetworkProtocol in Namespace $($namespace.Name) on $Computer"
                   try
                   {
                     $prot = Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -ClassName ServerNetworkProtocol -ErrorAction SilentlyContinue
@@ -86,17 +90,17 @@ PROCESS
                   }
                   catch
                   {
-                    Write-Message -Level Warning -Message "No Sql ServerNetworkProtocol found on $Computer" -Silent $Silent
+                    Write-Message -Level Warning -Message "No Sql ServerNetworkProtocol found on $Computer"
                   }
               } #if namespace
                 else
                 {
-                Write-Message -Level Warning -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up." -Silent $Silent
+                Write-Message -Level Warning -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
                 } #else no namespace
           } #if computername
           else
           {
-              Write-Message -Level Warning -Message "Failed to connect to $Computer" -Silent $Silent
+              Write-Message -Level Warning -Message "Failed to connect to $Computer"
           }
       } #foreach computer
     } #PROCESS
