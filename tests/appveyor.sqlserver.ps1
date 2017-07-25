@@ -13,9 +13,9 @@ New-Item -Path C:\temp\migration -ItemType Directory -ErrorAction SilentlyContin
 New-Item -Path C:\temp\backups -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 
 Write-Output "Setting sql2016 Agent to Automatic"
-Set-Service -Name 'SQLAgent$sql2016' -StartupType Automatic
-Set-Service -Name SQLBrowser -StartupType Automatic
-Start-Service SQLBrowser -ErrorAction SilentlyContinue
+Set-Service -Name 'SQLAgent$sql2016' -StartupType Automatic -WarningAction SilentlyContinue
+Set-Service -Name SQLBrowser -StartupType Automatic -WarningAction SilentlyContinue
+Start-Service SQLBrowser -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 
 $instances = "sql2016", "sql2008r2sp2"
 
@@ -36,11 +36,11 @@ foreach ($instance in $instances) {
 	$Tcp.Alter()
 	 
 	Write-Output "Starting $instance"
-	Restart-Service "MSSQL`$$instance"
+	Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue
 	
 	if ($instance -eq "sql2016") {
 		Write-Output "Starting Agent for $instance"
-		Restart-Service 'SQLAgent$sql2016'
+		Restart-Service 'SQLAgent$sql2016' -WarningAction SilentlyContinue
 	}
 }
 
@@ -48,7 +48,7 @@ $server = Connect-DbaSqlServer -SqlInstance localhost\SQL2008R2SP2
 $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 $server.Configuration.Alter()
 $null = Set-DbaStartupParameter -SqlInstance localhost\SQL2008R2SP2 -TraceFlags 7806 -Confirm:$false -ErrorAction SilentlyContinue
-Restart-Service "MSSQL`$SQL2008R2SP2"
+Restart-Service "MSSQL`$SQL2008R2SP2" -WarningAction SilentlyContinue
 $server = Connect-DbaSqlServer -SqlInstance localhost\SQL2008R2SP2
 $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 $server.Configuration.Alter()
@@ -67,7 +67,7 @@ while ($lastexitcode -ne 0 -and $s++ -lt 10)
 
 # Agent sometimes takes a moment to start 
 do {
-	Write-Warning "Waiting for SQL Agent to start"
+	Write-Output "Waiting for SQL Agent to start"
 	Start-Sleep 1
 }
 while ((Get-Service 'SQLAgent$sql2016').Status -ne 'Running' -and $z++ -lt 10)
