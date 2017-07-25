@@ -80,13 +80,13 @@ PROCESS
             if ( $Server.ComputerName )
             {
                 $Computer = $server.ComputerName
-                Write-Verbose "$FunctionName - Getting SQL Server namespace on $Computer via CIM (WSMan)"
+                Write-Message -Level Verbose -Message "Getting SQL Server namespace on $Computer"
                 $namespace = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
                             Where-Object {(Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue).count -gt 0} |
                             Sort-Object Name -Descending | Select-Object -First 1
                 if ( $namespace.Name )
                 {
-                    Write-Verbose "$FunctionName - Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer via CIM (WSMan)"
+                    Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer"
                     try
                     {
                         Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE SQLServiceType $TypeClause" -ErrorAction SilentlyContinue |
@@ -104,17 +104,17 @@ PROCESS
                      }
                      catch
                      {
-                        Write-Warning "$FunctionName - No Sql Services found on $Computer via CIM (WSMan)"
+                        Write-Message -Level Warning -Message "No Sql Services found on $Computer"
                      }
                 }
                   else
                   {
-                  Write-Warning "$FunctionName - No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
+                    Write-Message -Level Warning -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
                   }
             }
             else
             {
-                Write-Warning "$FunctionName - Failed to connect to $Computer"
+                Write-Message -Level Warning -Message "Failed to connect to $Computer"
             }
         }
     }
