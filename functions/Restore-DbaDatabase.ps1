@@ -584,7 +584,7 @@ function Restore-DbaDatabase {
                 }
                 catch {
                     if ($_.FullyQualifiedErrorId -like 'Destination File*' ) {
-                     Stop-Function -Message "Restore of $databasename failed, $($_.FullyQualifiedErrorId) " -InnerErrorRecord $_.Exception.InnerException -silent:$silent    
+                        Stop-Function -Message "Restore of $databasename failed, $($_.FullyQualifiedErrorId) " -InnerErrorRecord $_.Exception.InnerException -silent:$silent    
                     }
                     else {
                         Stop-Function -Message "Restore of $databasename failed" -InnerErrorRecord $_.Exception.InnerException -silent:$silent
