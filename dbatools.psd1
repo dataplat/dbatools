@@ -336,7 +336,8 @@
 		'Sync-DbaSqlLoginPermission',
 		'Invoke-Sqlcmd2',
 		'New-DbaCredential',
-		'Get-DbaFile'
+		'Get-DbaFile',
+		'Set-DbaCompression'
 	)
 	
 	# Cmdlets to export from this module
