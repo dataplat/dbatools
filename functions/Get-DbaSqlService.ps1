@@ -92,7 +92,6 @@ PROCESS
                         $services = Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE SQLServiceType $TypeClause" -ErrorAction SilentlyContinue
                         ForEach ( $service in $services ) {
                             Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $service.HostName
-                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceName -Value $service.HostName
                             Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceTypeDescr -Value $(switch($service.SQLServiceType){1 {'Database Engine'} 2 {'SQL Agent'} 3 {'Full Text Search'} 4 {'SSIS'} 5 {'SSAS'} 6 {'SSRS'} 7 {'SQL Browser'} 8 {'Unknown'} 9 {'FullTextFilter Daemon Launcher'}})
                             Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StateDescr -Value $(switch($service.State){ 1 {'Stopped'} 2 {'Start Pending'}  3 {'Stop Pending' } 4 {'Running'}})
                             Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartModeDescr -Value $(switch($service.StartMode){ 1 {'Unknown'} 2 {'Automatic'}  3 {'Manual' } 4 {'Disabled'}})
