@@ -185,7 +185,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
 	Clear-DbaSqlConnectionPool
-	Start-Sleep -Seconds 2
+	Start-Sleep -Seconds 5
+	Clear-DbaSqlConnectionPool
 	
     Context "Properly restores an instance using ola-style backups" {
         $results = Get-ChildItem C:\github\appveyor-lab\sql2008-backups | Restore-DbaDatabase -SqlInstance localhost
