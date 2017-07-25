@@ -47,7 +47,7 @@ foreach ($instance in $instances) {
 $server = Connect-DbaSqlServer -SqlInstance localhost\SQL2008R2SP2
 $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 $server.Configuration.Alter()
-$null = Set-DbaStartupParameter -SqlInstance localhost\SQL2008R2SP2 -TraceFlags 7806 -Confirm:$false -ErrorAction SilentlyContinue
+$null = Set-DbaStartupParameter -SqlInstance localhost\SQL2008R2SP2 -TraceFlagsOverride -TraceFlags 7806 -Confirm:$false -ErrorAction SilentlyContinue
 Restart-Service "MSSQL`$SQL2008R2SP2" -WarningAction SilentlyContinue
 $server = Connect-DbaSqlServer -SqlInstance localhost\SQL2008R2SP2
 $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
