@@ -2,6 +2,32 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
+try {
+	$connstring = "Server=ADMIN:$script:instance1;Trusted_Connection=True"
+	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $script:instance1
+	$server.ConnectionContext.ConnectionString = $connstring
+	$server.ConnectionContext.Connect()
+	$server.ConnectionContext.Disconnect()
+	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $null
+}
+catch {
+	Write-Warning "DAC not working this round, likely due to Appveyor resources"
+	return
+}
+
+try {
+	$connstring = "Server=ADMIN:$script:instance1;Trusted_Connection=True"
+	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $script:instance1
+	$server.ConnectionContext.ConnectionString = $connstring
+	$server.ConnectionContext.Connect()
+	$server.ConnectionContext.Disconnect()
+	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $null
+}
+catch {
+	Write-Warning "DAC not working this round, likely due to Appveyor resources"
+	return
+}
+
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Create new credential" {
 		$credentials = $script:Instances | Get-DbaCredential
@@ -19,40 +45,22 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		
 		It "Should create new credentials with the proper properties" {
-			try {
-				$results = New-DbaCredential -SqlInstance $script:instance1 -Name thorcred -CredentialIdentity thor -Password $password
-				$results.Name | Should Be "thorcred"
-				$results.Identity | Should Be "thor"
-				
-				$results = New-DbaCredential -SqlInstance $script:instance1 -CredentialIdentity thorsmomma -Password $password
-				$results.Name | Should Be "thorsmomma"
-				$results.Identity | Should Be "thorsmomma"
-			}
-			catch {
-				$moveon = $true
-				Write-Warning "Appveyor tripped on creating credential for Copy-DbaCredential. Moving on."
-				return
-			}
+			$results = New-DbaCredential -SqlInstance $script:instance1 -Name thorcred -CredentialIdentity thor -Password $password
+			$results.Name | Should Be "thorcred"
+			$results.Identity | Should Be "thor"
+			
+			$results = New-DbaCredential -SqlInstance $script:instance1 -CredentialIdentity thorsmomma -Password $password
+			$results.Name | Should Be "thorsmomma"
+			$results.Identity | Should Be "thorsmomma"
 		}
 	}
 	
-	if ($moveon) { return }
-	
 	Context "Copy Credential with the same properties." {
 		It "Should copy successfully" {
-			try {
-				$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -CredentialIdentity thorcred
-				$results.Status | Should Be "Successful"
-			}
-			catch {
-				# Appveyor tripped - just move on
-				$moveon = $true
-				Write-Warning "Appveyor tripped on DAC for Copy-DbaCredential. Moving on."
-				return
-			}
+			$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -CredentialIdentity thorcred
+			$results.Status | Should Be "Successful"
 		}
 		
-		if ($moveon) { return }
 		It "Should retain its same properties" {
 			
 			$Credential1 = Get-DbaCredential -SqlInstance $script:instance1 -CredentialIdentity thor
@@ -64,15 +72,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 	}
 	
-	if ($moveon) { return }
 	Context "No overwrite and cleanup" {
-		try {
-			$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -CredentialIdentity thorcred -WarningVariable warning 3>&1
-		}
-		catch {
-			Write-Warning "Appveyor tripped on DAC for Copy-DbaCredential. Moving on."
-			return
-		}
+		$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -CredentialIdentity thorcred -WarningVariable warning 3>&1
 		It "Should not attempt overwrite" {
 			$warning | Should Match "exists"
 			
