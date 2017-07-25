@@ -76,15 +76,15 @@ PROCESS
             {
                 $Computer = $server.ComputerName
                 Write-Verbose "$FunctionName - Getting SQL Server namespace on $Computer via CIM (WSMan)"
-                $namespace = Get-CimInstance -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
-                            Where-Object {(Get-CimInstance -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue).count -gt 0} |
+                $namespace = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
+                            Where-Object {(Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue).count -gt 0} |
                             Sort-Object Name -Descending | Select-Object -First 1
                 if ( $namespace.Name )
                 {
                     Write-Verbose "$FunctionName - Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer via CIM (WSMan)"
                     try
                     {
-                        Get-CimInstance -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE SQLServiceType $TypeClause" -ErrorAction SilentlyContinue |
+                        Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE SQLServiceType $TypeClause" -ErrorAction SilentlyContinue |
                         ForEach-Object {
                             [PSCustomObject]@{
                                 ComputerName = $_.HostName
@@ -102,52 +102,10 @@ PROCESS
                         Write-Warning "$FunctionName - No Sql Services found on $Computer via CIM (WSMan)"
                      }
                 }
-                else
-                {
-                  Write-Verbose "$FunctionName - Getting computer information from $Computer via CIMsession (DCOM)"
-                  $sessionoption = New-CimSessionOption -Protocol DCOM
-                  $CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
-                  if ( $CIMSession )
-                  {
-                    Write-Verbose "$FunctionName - Get ComputerManagement Namespace in CIMsession on $Computer with protocol DCom."
-                    $namespace = Get-CimInstance -CimSession $CIMsession -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
-                    Where-Object {(Get-CimInstance -CimSession $CIMsession -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue).count -gt 0} |
-                    Sort-Object Name -Descending | Select-Object -First 1
-                  }
-                  else
-                  {
-                    Write-Warning "$FunctionName - can't create CIMsession via DCom on $Computer"
-                    continue
-                  }
-                  if ( $namespace.Name )
-                  {
-                      Write-Verbose "$FunctionName - Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer via CIM (DCOM)"
-                      try
-                      {
-                          Get-CimInstance -CimSession $CIMsession -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE SQLServiceType $TypeClause" -ErrorAction SilentlyContinue |
-                          ForEach-Object {
-                              [PSCustomObject]@{
-                                  ComputerName = $_.HostName
-                                  ServiceName = $_.ServiceName
-                                  DisplayName = $_.DisplayName
-                                  StartName = $_.StartName
-                                  ServiceType = switch($_.SQLServiceType){1 {'Database Engine'} 2 {'SQL Agent'} 3 {'Full Text Search'} 4 {'SSIS'} 5 {'SSAS'} 6 {'SSRS'} 7 {'SQL Browser'} 8 {'Unknown'} 9 {'FullTextFilter Daemon Launcher'}}
-                                  State = switch($_.State){ 1 {'Stopped'} 2 {'Start Pending'}  3 {'Stop Pending' } 4 {'Running'}}
-                                  StartMode = switch($_.StartMode){ 1 {'Unknown'} 2 {'Automatic'}  3 {'Manual' } 4 {'Disabled'}}
-                                  }
-                           }
-                        }
-                        catch
-                        {
-                          Write-Warning "$FunctionName - No Sql Services found on $Computer via CIM (DCOM)"
-                        }
-                    if ( $CIMsession ) { Remove-CimSession $CIMsession }
-                  }
                   else
                   {
                   Write-Warning "$FunctionName - No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
                   }
-                }
             }
             else
             {
