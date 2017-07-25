@@ -19,6 +19,9 @@ Function Get-DbaSqlService
     Use -Type to collect only services of the desired SqlServiceType.
     Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
 
+	.PARAMETER Silent
+		Use this switch to disable any kind of verbose messages
+
     .NOTES
     Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
@@ -58,7 +61,9 @@ Param (
   [Alias("cn","host","Server")]
   [string[]]$ComputerName = $env:COMPUTERNAME,
   [PSCredential] $Credential,
-  [ValidateSet("Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS")][string]$Type
+  [ValidateSet("Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS")]
+  [string]$Type,
+  [switch]$Silent
 )
 
 BEGIN
