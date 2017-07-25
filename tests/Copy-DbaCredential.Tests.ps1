@@ -29,11 +29,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 				$results.Identity | Should Be "thorsmomma"
 			}
 			catch {
+				$moveon = $true
 				Write-Warning "Appveyor tripped on creating credential for Copy-DbaCredential. Moving on."
 				return
 			}
 		}
 	}
+	
+	if ($moveon) { return }
 	
 	Context "Copy Credential with the same properties." {
 		It "Should copy successfully" {
@@ -43,11 +46,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			}
 			catch {
 				# Appveyor tripped - just move on
+				$moveon = $true
 				Write-Warning "Appveyor tripped on DAC for Copy-DbaCredential. Moving on."
 				return
 			}
 		}
 		
+		if ($moveon) { return }
 		It "Should retain its same properties" {
 			
 			$Credential1 = Get-DbaCredential -SqlInstance $script:instance1 -CredentialIdentity thor
@@ -59,8 +64,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 	}
 	
+	if ($moveon) { return }
 	Context "No overwrite and cleanup" {
-		$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -CredentialIdentity thorcred -WarningVariable warning 3>&1
+		try {
+			$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -CredentialIdentity thorcred -WarningVariable warning 3>&1
+		}
+		catch {
+			return
+		}
 		It "Should not attempt overwrite" {
 			$warning | Should Match "exists"
 			
