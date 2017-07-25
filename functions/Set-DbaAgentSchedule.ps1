@@ -126,7 +126,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Parameter(Mandatory = $false)]
-        [PSCredential]$SqlCredential,
+        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateNotNullOrEmpty()]
         [object[]]$Job,
@@ -149,7 +149,8 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
         [Parameter(Mandatory = $false)]
         [int]$FrequencySubdayInterval,
         [Parameter(Mandatory = $false)]
-        [int]$FrequencyRelativeInterval,
+        [ValidateSet('Unused','First','Second','Third','Fourth','Last')]
+		[object]$FrequencyRelativeInterval,
         [Parameter(Mandatory = $false)]
         [int]$FrequencyRecurrenceFactor,
         [Parameter(Mandatory = $false)]
@@ -272,7 +273,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
 
         # Check of the relative FrequencyInterval value is of type string and set the integer value
         if (($FrequencyRelativeInterval -notin 1, 2, 4, 8, 16) -and $FrequencyRelativeInterval -ne $null) {
-            [int]$FrequencyRelativeInterval = switch ($FrequencyRelativeInterval) { "First" { 1 } "Second" { 2 } "Third" { 4 } "Fourth" { 8 } "Last" { 16 } }
+            [int]$FrequencyRelativeInterval = switch ($FrequencyRelativeInterval) { "First" { 1 } "Second" { 2 } "Third" { 4 } "Fourth" { 8 } "Last" { 16 } "Unused" { 0 } default { 0 }}
         }
 
         # Check if the interval is valid
@@ -323,7 +324,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
             foreach ($j in $Job) {
 
                 # Try connecting to the instance
-                Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+                Write-Message -Message "Attempting to connect to $instance" -Level Output
                 try {
                     $Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
                 }
@@ -421,7 +422,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
                         if ($PSCmdlet.ShouldProcess($instance, "Changing the schedule $ScheduleName for job $j on $instance")) {
                             try {
                                 # Excute the query and save the result
-                                Write-Message -Message "Changing the schedule $ScheduleName for job $j" -Level Verbose
+                                Write-Message -Message "Changing the schedule $ScheduleName for job $j" -Level Output
                         
                                 $JobSchedule.Alter()
                         
@@ -438,6 +439,6 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
     } # process
 
     end {
-        Write-Message -Message "Finished changing the job schedule(s)."-Level Verbose
+        Write-Message -Message "Finished changing the job schedule(s)."-Level Output
     }
 }

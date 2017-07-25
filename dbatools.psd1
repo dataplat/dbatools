@@ -288,7 +288,7 @@
 		'Get-DbaSqlInstanceUserOption',
 		'New-DbaSqlConnectionString',
 		'Get-DbaAgentSchedule',
-		#'Invoke-DbaLogShipping',
+		'Invoke-DbaLogShipping',
 		'Read-DbaTraceFile',
 		'New-DbaComputerCertificate',
 		'Get-DbaComputerCertificate',
@@ -308,7 +308,7 @@
 		'Get-DbaSqlManagementObject',
 		'Test-DbaSqlManagementObject',
 		'Get-DbaMaintenanceSolutionLog',
-		#'Invoke-DbaLogShippingRecovery',
+		'Invoke-DbaLogShippingRecovery',
 		'Find-DbaTrigger',
 		'Find-DbaView',
 		'Invoke-DbaDatabaseUpgrade',
@@ -334,7 +334,8 @@
 		'Get-DbaSqlModule',
 		'Get-DbaRegisteredServersStore',
 		'Sync-DbaSqlLoginPermission',
-		'Invoke-Sqlcmd2'
+		'Invoke-Sqlcmd2',
+		'New-DbaCredential'
 	)
 	
 	# Cmdlets to export from this module
