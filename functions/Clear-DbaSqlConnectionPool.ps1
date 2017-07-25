@@ -44,37 +44,29 @@ function Clear-DbaSqlConnectionPool {
 		[Parameter(ValueFromPipeline = $true)]
 		[Alias("cn", "host", "Server")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-		[PSCredential][System.Management.Automation.Credential()]$Credential = [System.Management.Automation.PSCredential]::Empty,
+		[PSCredential]$Credential,
 		[switch]$Silent
 	)
-
-	process
-	{
+	
+	process {
 		# TODO: https://jamessdixon.wordpress.com/2013/01/22/ado-net-and-connection-pooling
-
-		foreach ($computer in $ComputerName)
-		{
-			if ($computer -ne $env:COMPUTERNAME -and $Computer -ne "localhost" -and $computer -ne "." -and $computer -ne "127.0.0.1")
-			{
+		
+		foreach ($computer in $ComputerName) {
+			if (-not $computer.IsLocalhost) {
 				Write-Message -Level Verbose -Message "Clearing all pools on remote computer $computer"
-				if (Test-Bound 'Credential')
-				{
+				if (Test-Bound 'Credential') {
 					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}
-				else
-				{
+				else {
 					Invoke-Command2 -ComputerName $computer -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}
 			}
-			else
-			{
+			else {
 				Write-Message -Level Verbose -Message "Clearing all local pools"
-				if (Test-Bound 'Credential')
-				{
+				if (Test-Bound 'Credential') {
 					Invoke-Command2 -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}
-				else
-				{
+				else {
 					Invoke-Command2 -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
 				}
 			}
