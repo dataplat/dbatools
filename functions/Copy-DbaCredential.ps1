@@ -223,13 +223,13 @@
 						return $dt
 					}
 					catch {
-						Stop-Function -Message "Can't establish local DAC connection to $sourceName from $sourceName or other error. Quitting." -ErrorRecord $_
+						Stop-Function -Message "Can't establish local DAC connection to $sourceName or other error. Quitting." -ErrorRecord $_
 						return
 					}
 				} -Raw
 			}
 			catch {
-				Stop-Function -Message "Can't establish local DAC connection to $sourceName from $sourceName or other error. Quitting." -ErrorRecord $_
+				Stop-Function -Message "Can't establish local DAC connection to $sourceName or other error. Quitting." -ErrorRecord $_
 				return
 			}
 			
