@@ -1,57 +1,52 @@
 ﻿function Copy-DbaCredential {
 	<#
 		.SYNOPSIS
-			Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another, while maintaining Credential passwords.
+			Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another while maintaining Credential passwords.
 
 		.DESCRIPTION
-			By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another, while maintaining username and password.
-
-			Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
-			License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
+			By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another while maintaining username and password.
 
 		.PARAMETER Source
-			Source SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or newer.
 
 		.PARAMETER SourceSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
-	
-		.PARAMETER Credential
-			This command requires access to the Windows OS via PowerShell remoting. Use this credential to connect to Windows using alternative credentials.
 
 		.PARAMETER Destination
-			Destination SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or newer.
 
 		.PARAMETER DestinationSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
 			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER CredentialIdentity
-			Auto-populated list of Credentials from Source. If no Credential is specified, all Credentials will be migrated.
-			Note: if spaces exist in the credential name, you will have to type "" or '' around it. I couldn't figure out a way around this.
+			Auto-populated list of Credentials from Source. If no Credential is specified, all Credentials will be migrated. If spaces exist in the credential name, it must be wrapped with quotes.
 
-			.PARAMETER ExcludeCredentialIdentity
-			Auto-populated list of Credentials from Source to be excluded from the migration
+		.PARAMETER ExcludeCredentialIdentity
+			Auto-populated list of Credentials from Source to be excluded from the migration.
 	
 		.PARAMETER Force
-			By default, if a Credential exists on the source and destination, the Credential is not copied over. Specifying -force will drop and recreate the Credential on the Destination server.
+			If this switch is enabled, the Credential will be dropped and recreated if it already exists on Destination.
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages.
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: WSMan, Migration
@@ -73,14 +68,12 @@
 		.EXAMPLE
 			Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster
 
-			Description
-			Copies all SQL Server Credentials on sqlserver2014a to sqlcluster. If credentials exist on destination, they will be skipped.
+			Copies all SQL Server Credentials on sqlserver2014a to sqlcluster. If Credentials exist on destination, they will be skipped.
 
 		.EXAMPLE
 			Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster -CredentialIdentity "PowerShell Proxy Account" -Force
 
-			Description
-			Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped and recreated.
+			Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the Credential already exists on the destination, it will be dropped and recreated.
 	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
