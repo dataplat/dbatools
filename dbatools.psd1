@@ -337,7 +337,9 @@
 		'Invoke-Sqlcmd2',
 		'New-DbaCredential',
 		'Get-DbaFile',
-		'Set-DbaCompression'
+		'Set-DbaCompression',
+		'New-DbaClientAlias',
+		'Get-DbaClientAlias'
 	)
 	
 	# Cmdlets to export from this module
