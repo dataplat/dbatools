@@ -68,7 +68,7 @@ function Get-DbaOperatingSystem {
 			}
 
 			$activePowerPlan = ($powerPlan | Where-Object IsActive).ElementName -join ','
-			$language = Get-Language $os.OSLanguage
+			$language = Get-Culture | Where-Object LCID -eq $os.OSLanguage
 			
 			[PSCustomObject]@{
 				ComputerName   = $computer.ComputerName
@@ -89,15 +89,13 @@ function Get-DbaOperatingSystem {
 				TotalVirtualMemory = [DbaSize]($os.TotalVirtualMemorySize * 1024)
 				FreeVirtualMemory = [DbaSize]($os.FreeVirtualMemory * 1024)
 				ActivePowerPlan = $activePowerPlan
-				Language	   = $language.Name
-				LanguageAlias  = $language.Alias
-				LanguageId	   = $language.LanguageID
+				Language	    = $language.Name
+				LanguageId	    = $language.LCID
+				LanguageAlias  = $language.DisplayName
 				CodeSet	       = $os.CodeSet
 				CountryCode    = $os.CountryCode
 				Locale		   = $os.Locale
-			} | Select-DefaultView -ExcludeProperty Codeset, CountryCode, Locale, LanguageID, LanguageAlias
-			
-			#$defaults = 'ComputerName','InstanceName','SqlInstance','Manufacturer','Architecture','Build','Version','InstallDate','LastBootTime','LocalDateTime'
+			} | Select-DefaultView -ExcludeProperty Codeset, CountryCode, Locale, LanguageAlias
 		}
 	}
 }
