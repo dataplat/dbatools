@@ -71,31 +71,36 @@ function Get-DbaOperatingSystem {
 			$language = Get-Language $os.OSLanguage
 			
 			[PSCustomObject]@{
-				ComputerName   = $computer.ComputerName
-				Manufacturer   = $os.Manufacturer
-				Organization   = $os.Organization
-				Architecture   = $os.OSArchitecture
-				Version	       = $os.Version
-				Build		   = $os.BuildNumber
-				InstallDate    = [DbaDateTime]$os.InstallDate
-				LastBootTime   = [DbaDateTime]$os.LastBootUpTime
-				LocalDateTime  = [DbaDateTime]$os.LocalDateTime
-				TimeZone	   = $tz.Caption
-				TimeZoneStandard = $tz.StandardName
-				TimeZoneDaylight = $tz.DaylightName
-				BootDevice	   = $os.BootDevice
-				TotalVisibleMemory = [DbaSize]($os.TotalVisibleMemorySize * 1024)
-				FreePhysicalMemory = [DbaSize]($os.FreePhysicalMemory * 1024)
-				TotalVirtualMemory = [DbaSize]($os.TotalVirtualMemorySize * 1024)
-				FreeVirtualMemory = [DbaSize]($os.FreeVirtualMemory * 1024)
-				ActivePowerPlan = $activePowerPlan
-				Language	    = $language.Name
-				LanguageId	    = $language.LCID
-				LanguageAlias  = $language.DisplayName
-				CodeSet	       = $os.CodeSet
-				CountryCode    = $os.CountryCode
-				Locale		   = $os.Locale
-			} | Select-DefaultView -ExcludeProperty Codeset, CountryCode, Locale, LanguageAlias
+				ComputerName             = $computer.ComputerName
+				Manufacturer             = $os.Manufacturer
+				Organization             = $os.Organization
+				Architecture             = $os.OSArchitecture
+				Version                  = $os.Version
+				Build                    = $os.BuildNumber
+				InstallDate              = [DbaDateTime]$os.InstallDate
+				LastBootTime             = [DbaDateTime]$os.LastBootUpTime
+				LocalDateTime            = [DbaDateTime]$os.LocalDateTime
+				TimeZone                 = $tz.Caption
+				TimeZoneStandard         = $tz.StandardName
+				TimeZoneDaylight         = $tz.DaylightName
+				BootDevice               = $os.BootDevice
+				TotalVisibleMemory       = [DbaSize]($os.TotalVisibleMemorySize * 1024)
+				FreePhysicalMemory       = [DbaSize]($os.FreePhysicalMemory * 1024)
+				TotalVirtualMemory       = [DbaSize]($os.TotalVirtualMemorySize * 1024)
+				FreeVirtualMemory        = [DbaSize]($os.FreeVirtualMemory * 1024)
+				ActivePowerPlan          = $activePowerPlan
+				Language                 = $language.Name
+				LanguageId               = $language.LCID
+				LanguageKeyboardLayoutId = $language.KeyboardLayoutId
+				LanguageTwoLetter        = $language.TwoLetterISOLanguageName
+				LanguageThreeLetter      = $language.ThreeLetterISOLanguageName
+				LanguageAlias            = $language.DisplayName
+				LanguageNative           = $language.NativeName
+
+				CodeSet                  = $os.CodeSet
+				CountryCode              = $os.CountryCode
+				Locale                   = $os.Locale
+		} | Select-DefaultView -ExcludeProperty CodeSet, CountryCode, Locale, LanguageAlias
 		}
 	}
 }
