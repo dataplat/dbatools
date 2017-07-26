@@ -339,7 +339,8 @@
 		'Get-DbaFile',
 		'Set-DbaCompression',
 		'New-DbaClientAlias',
-		'Get-DbaClientAlias'
+		'Get-DbaClientAlias',
+		'Get-DbaOperatingSystem'
 	)
 	
 	# Cmdlets to export from this module
