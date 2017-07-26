@@ -13,6 +13,9 @@ For full details of what each parameter does, please refer to this MSDN article 
 .PARAMETER SqlInstance
 The SQL Server instance to be modified
 
+.PARAMETER SqlCredential
+Windows or Sql Login Credential with permission to log into the SQL instance
+
 .PARAMETER Credential
 Windows Credential with permission to log on to the server running the SQL instance
 
@@ -140,68 +143,34 @@ We then change the startup parameters ahead of some work
 After the work has been completed, we can push the original startup parameters back to server1\instance1 and resume normal operation
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
-    param ([parameter(Mandatory = $true)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter]
-        $SqlInstance,
-        
-        [PSCredential]
-        $Credential,
-        
-        [string]
-        $MasterData,
-        
-        [string]
-        $MasterLog,
-        
-        [string]
-        $ErrorLog,
-        
-        [string[]]
-        $TraceFlags,
-        
-        [switch]
-        $CommandPromptStart,
-        
-        [switch]
-        $MinimalStart,
-        
-        [int]
-        $MemoryToReserve,
-        
-        [switch]
-        $SingleUser,
-        
-        [string]
-        $SingleUserDetails,
-        
-        [switch]
-        $NoLoggingToWinEvents,
-        
-        [switch]
-        $StartAsNamedInstance,
-        
-        [switch]
-        $DisableMonitoring,
-        
-        [switch]
-        $IncreasedExtents,
-        
-        [switch]
-        $TraceFlagsOverride,
-        
-        [object]
-        $StartUpConfig,
-        
-        [switch]
-        $Silent
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
+	param ([parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter]$SqlInstance,
+		[PSCredential]$SqlCredential,
+		[PSCredential]$Credential,
+		[string]$MasterData,
+		[string]$MasterLog,
+		[string]$ErrorLog,
+		[string[]]$TraceFlags,
+		[switch]$CommandPromptStart,
+		[switch]$MinimalStart,
+		[int]$MemoryToReserve,
+		[switch]$SingleUser,
+		[string]$SingleUserDetails,
+		[switch]$NoLoggingToWinEvents,
+		[switch]$StartAsNamedInstance,
+		[switch]$DisableMonitoring,
+		[switch]$IncreasedExtents,
+		[switch]$TraceFlagsOverride,
+		[object]$StartUpConfig,
+		[switch]$Silent
         
     )
     process {
         try {
             Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance" -Target $SqlInstance
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $Credential
+            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
         catch {
             Stop-Function -Message "Failed to process Instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
@@ -232,7 +201,7 @@ After the work has been completed, we can push the original startup parameters b
         if (!($currentstartup.SingleUser)) {
             
             if ($newstartup.Masterdata.length -gt 0) {
-                if (Test-DbaSqlPath -SqlInstance $server -SqlCredential $Credential -Path (Split-Path $newstartup.MasterData -Parent)) {
+                if (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterData -Parent)) {
                     $ParameterString += "-d$($newstartup.MasterData);"
                 }
                 else {
@@ -246,7 +215,7 @@ After the work has been completed, we can push the original startup parameters b
             }
             
             if ($newstartup.ErrorLog.length -gt 0) {
-                if (Test-DbaSqlPath -SqlInstance $server -SqlCredential $Credential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
+                if (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
                     $ParameterString += "-e$($newstartup.ErrorLog);"
                 }
                 else {
@@ -260,7 +229,7 @@ After the work has been completed, we can push the original startup parameters b
             }
             
             if ($newstartup.MasterLog.Length -gt 0) {
-                if (Test-DbaSqlPath -SqlInstance $server -SqlCredential $Credential -Path (Split-Path $newstartup.MasterLog -Parent)) {
+                if (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterLog -Parent)) {
                     $ParameterString += "-l$($newstartup.MasterLog);"
                 }
                 else {

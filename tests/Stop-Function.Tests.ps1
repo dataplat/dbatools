@@ -112,7 +112,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             foreach ($number in (1 .. 3))
             {
                 $a++
-                Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidOperation -Continue -ErrorAction Stop
+				Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidOperation -Continue -ErrorAction Stop 3>&1
                 $b++
             }
         }
@@ -135,7 +135,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 foreach ($Counter in (1 .. 3))
                 {
                     $d++
-                    Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidOperation -Continue -ContinueLabel "main" -ErrorAction Stop
+					Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidOperation -Continue -ContinueLabel "main" -ErrorAction Stop 3>&1
                     $e++
                 }
                 $f++

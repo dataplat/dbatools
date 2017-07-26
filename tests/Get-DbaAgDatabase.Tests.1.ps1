@@ -30,6 +30,3 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 		}
 	}
 }
-Describe "Get-DbaAgDatabase Integration Test" -Tag "IntegrationTests" {
-	Write-Host "[Get-DbaAgDatabase] - No integration test can be performed for this command"
-} 
