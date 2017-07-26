@@ -22,10 +22,8 @@
 		
 		$culture = [System.Globalization.CultureInfo]::GetCultureInfo($id)
 		
-		[pscustomobject]@{
-			LCID	   = $culture.LCID
-			Name		   = $culture.Name
-			DisplayName		   = $culture.DisplayName
-		}
+		$excludeProps = 'Parent','IetfLanguageTag','CompareInfo','TextInfo','IsNeutralCulture','NumberFormat','DateTimeFormat','Calendar'
+			,'OptionalCalendars','UseUserOverride','IsReadOnly'
+		Select-DefaultView -InputObject $culture -ExcludeProperty $excludeProps
 	}
 }
