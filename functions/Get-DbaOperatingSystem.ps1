@@ -47,7 +47,7 @@ function Get-DbaOperatingSystem {
 	process {
 		foreach ($computer in $ComputerName) {
 			Write-Message -Level Verbose -Message "Attempting to connect to $computer"
-			$server = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
+			$server = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential
 
 			$computerResolved = $server.ComputerName
 
@@ -68,37 +68,36 @@ function Get-DbaOperatingSystem {
 			}
 
 			$activePowerPlan = ($powerPlan | Where-Object IsActive).ElementName -join ','
-
-			$inputObject = [PSCustomObject]@{
-				ComputerName = $computerResolved
-				InstanceName = $computer.InstanceName
-				SqlInstance = $computer.SqlInstanceName
-				Manufacturer = $os.Manufacturer
-				Organization = $os.Organization
-				Architecture = $os.OSArchitecture
-				Version = $os.Version
-				Build = $os.BuildNumber
-				InstallDate = [DbaDateTime]$os.InstallDate
-				LastBootTime = [DbaDateTime]$os.LastBootUpTime
-				LocalDateTime = [DbaDateTime]$os.LocalDateTime
-				TimeZone = $tz.Caption
+			$language = Get-Language $os.OSLanguage
+			
+			[PSCustomObject]@{
+				ComputerName   = $computer.ComputerName
+				Manufacturer   = $os.Manufacturer
+				Organization   = $os.Organization
+				Architecture   = $os.OSArchitecture
+				Version	       = $os.Version
+				Build		   = $os.BuildNumber
+				InstallDate    = [DbaDateTime]$os.InstallDate
+				LastBootTime   = [DbaDateTime]$os.LastBootUpTime
+				LocalDateTime  = [DbaDateTime]$os.LocalDateTime
+				TimeZone	   = $tz.Caption
 				TimeZoneStandard = $tz.StandardName
 				TimeZoneDaylight = $tz.DaylightName
-				BootDevice = $os.BootDevice
-				TotalVisibleMemory = [DbaSize]$os.TotalVisibleMemorySize
-				FreePhysicalMemory = [DbaSize]$os.FreePhysicalMemory
-				TotalVirtualMemory = [DbaSize]$os.TotalVirtualMemorySize
-				FreeVirtualMemory = [DbaSize]$os.FreeVirtualMemory
+				BootDevice	   = $os.BootDevice
+				TotalVisibleMemory = [DbaSize]($os.TotalVisibleMemorySize * 1024)
+				FreePhysicalMemory = [DbaSize]($os.FreePhysicalMemory * 1024)
+				TotalVirtualMemory = [DbaSize]($os.TotalVirtualMemorySize * 1024)
+				FreeVirtualMemory = [DbaSize]($os.FreeVirtualMemory * 1024)
 				ActivePowerPlan = $activePowerPlan
-				Language = $os.OSLanguage
-				CodeSet = $os.CodeSet
-				CountryCode = $os.CountryCode
-				Locale = $os.Locale
-			}
-
-			$defaults = 'ComputerName','InstanceName','SqlInstance','Manufacturer','Architecture','Build','Version','InstallDate','LastBootTime','LocalDateTime'
-
-			Select-DefaultView -InputObject $inputObject -Property $defaults
-		} #end foreach instance
+				Language	   = $language.Name
+				LanguageAlias  = $language.Alias
+				LanguageId	   = $language.ID
+				CodeSet	       = $os.CodeSet
+				CountryCode    = $os.CountryCode
+				Locale		   = $os.Locale
+			} | Select-DefaultView -ExcludeProperty Codeset, CountryCode, Locale, LanguageID, LanguageAlias
+			
+			#$defaults = 'ComputerName','InstanceName','SqlInstance','Manufacturer','Architecture','Build','Version','InstallDate','LastBootTime','LocalDateTime'
+		}
 	}
 }
