@@ -205,7 +205,7 @@ function Install-DbaMaintenanceSolution {
 				# Remove Ola's Jobs                     
 				Write-Message -Level Output -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution"
 				$jobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
-				if ($jobs) {
+				if (-not $jobs) {
 					$jobs | Remove-DbaAgentJob
 				}
 			}
@@ -229,14 +229,10 @@ function Install-DbaMaintenanceSolution {
 				Stop-Function -Message "Could not execute $file in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
 			}
 		}
-	}
-	
-	end {
 		$path = "$temp\sql-server-maintenance-solution-master"
 		if ((Test-Path $path)) {
 			Remove-Item -Path $temp\sql-server-maintenance-solution-master -Recurse -Force -ErrorAction SilentlyContinue
 		}
 		Write-Message -Level Output -Message "Installation complete"
-		
 	}
 }
