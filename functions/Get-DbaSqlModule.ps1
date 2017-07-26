@@ -157,7 +157,7 @@
 						InstanceName = $server.ServiceName
 						SqlInstance = $server.DomainInstanceName
 						Database = $row.DatabaseName
-						ModuleName = $row.ModuleName
+						Name = $row.ModuleName
 						ObjectID = $row.object_id
 						SchemaName = $row.SchemaName
 						Type = $row.type_desc
