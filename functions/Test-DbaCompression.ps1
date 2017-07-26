@@ -112,12 +112,12 @@
 					,[IndexType] VARCHAR(12)
 					,[PercentScan] smallint
 					,[PercentUpdate] smallint
-					,[ROWestimatePctoforig] bigint
-					,[PAGEestimatePctoforig] bigint
+					,[RowEstimatePercentOriginal] bigint
+					,[PageEstimatePercentOriginal] bigint
 					,[CompressionTypeRecommendation] VARCHAR(7)
-					,sizecur bigint
-					,sizereq bigint
-					,percentcompression numeric(10,2)
+					,SizeCurrent bigint
+					,SizeRequested bigint
+					,PercentCompression numeric(10,2)
 				);
 
 				CREATE TABLE ##tmpEstimateRow (
@@ -125,10 +125,10 @@
 					,schname sysname
 					,indid int
 					,partnr int
-					,sizecur bigint
-					,sizereq bigint
-					,samplecur bigint
-					,samplereq bigint
+					,SizeCurrent bigint
+					,SizeRequested bigint
+					,SampleCurrent bigint
+					,SampleRequested bigint
 				);
 
 				CREATE TABLE ##tmpEstimatePage (
@@ -136,10 +136,10 @@
 					,schname sysname
 					,indid int
 					,partnr int
-					,sizecur bigint
-					,sizereq bigint
-					,samplecur bigint
-					,samplereq bigint
+					,SizeCurrent bigint
+					,SizeRequested bigint
+					,SampleCurrent bigint
+					,SampleRequested bigint
 				);
 
 				INSERT INTO ##testdbacompression 
@@ -178,10 +178,10 @@
 					,schname 
 					,indid 
 					,partnr 
-					,sizecur 
-					,sizereq 
-					,samplecur 
-					,samplereq 
+					,SizeCurrent 
+					,SizeRequested 
+					,SampleCurrent 
+					,SampleRequested 
 					)
                     EXECUTE sp_executesql @sqlcmd
                     
@@ -191,10 +191,10 @@
 					,schname 
 					,indid 
 					,partnr 
-					,sizecur 
-					,sizereq 
-					,samplecur 
-					,samplereq 
+					,SizeCurrent 
+					,SizeRequested 
+					,SampleCurrent 
+					,SampleRequested 
 					)
                     EXECUTE sp_executesql @sqlcmd
 
@@ -204,20 +204,20 @@
 				CLOSE cur
 				DEALLOCATE cur;
 
-				WITH tmp_cte (objname, schname, indid, pct_of_orig_row, pct_of_orig_page, sizecur,sizereq) 
+				WITH tmp_cte (objname, schname, indid, pct_of_orig_row, pct_of_orig_page, SizeCurrent,SizeRequested) 
 				     AS (SELECT tr.objname, 
 				                tr.schname, 
 				                tr.indid, 
-				                ( tr.samplereq * 100 ) / CASE 
-				                                            WHEN tr.samplecur = 0 THEN 1 
-				                                            ELSE tr.samplecur 
+				                ( tr.SampleRequested * 100 ) / CASE 
+				                                            WHEN tr.SampleCurrent = 0 THEN 1 
+				                                            ELSE tr.SampleCurrent 
 				                                          END AS pct_of_orig_row, 
-				                ( tp.samplereq * 100 ) / CASE 
-				                                            WHEN tp.samplecur = 0 THEN 1 
-				                                            ELSE tp.samplecur 
+				                ( tp.SampleRequested * 100 ) / CASE 
+				                                            WHEN tp.SampleCurrent = 0 THEN 1 
+				                                            ELSE tp.SampleCurrent 
 				                                          END AS pct_of_orig_page,
-								tr.sizecur,
-								tr.sizereq
+								tr.SizeCurrent,
+								tr.SizeRequested
 				         FROM   ##tmpestimaterow tr 
 				                INNER JOIN ##tmpestimatepage tp 
 				                        ON tr.objname = tp.objname 
@@ -225,10 +225,10 @@
 				                           AND tr.indid = tp.indid 
 				                           AND tr.partnr = tp.partnr) 
 				UPDATE ##testdbacompression 
-				SET    [ROWestimatePctoforig] = tcte.pct_of_orig_row, 
-				       [PAGEestimatePctoforig] = tcte.pct_of_orig_page,
-					   sizecur=tcte.sizecur,
-					   sizereq=tcte.sizereq
+				SET    [RowEstimatePercentOriginal] = tcte.pct_of_orig_row, 
+				       [PageEstimatePercentOriginal] = tcte.pct_of_orig_page,
+					   SizeCurrent=tcte.SizeCurrent,
+					   SizeRequested=tcte.SizeRequested
 				FROM   tmp_cte tcte, 
 				       ##testdbacompression tcomp 
 				WHERE  tcte.objname = tcomp.TableName 
@@ -241,19 +241,19 @@
 				                [schema], 
 				                IndexID, 
 				                CASE 
-				                  WHEN [ROWestimatePctoforig] >= 100 
-				                       AND [PAGEestimatePctoforig] >= 100 THEN 'NO_GAIN' 
+				                  WHEN [RowEstimatePercentOriginal] >= 100 
+				                       AND [PageEstimatePercentOriginal] >= 100 THEN 'NO_GAIN' 
 				                  WHEN [PercentUpdate] >= 10 THEN 'ROW' 
 				                  WHEN [PercentScan] <= 1 
 				                       AND [PercentUpdate] <= 1 
-				                       AND [ROWestimatePctoforig] < 
-				                           [PAGEestimatePctoforig] 
+				                       AND [RowEstimatePercentOriginal] < 
+				                           [PageEstimatePercentOriginal] 
 				                THEN 
 				                  'ROW' 
 				                  WHEN [PercentScan] <= 1 
 				                       AND [PercentUpdate] <= 1 
-				                       AND [ROWestimatePctoforig] > 
-				                           [PAGEestimatePctoforig] 
+				                       AND [RowEstimatePercentOriginal] > 
+				                           [PageEstimatePercentOriginal] 
 				                THEN 
 				                  'PAGE' 
 				                  WHEN [PercentScan] >= 60 
@@ -274,7 +274,7 @@
 				       AND tcte2.IndexID = tcomp2.IndexID; 
 				
 				UPDATE ##testdbacompression
-				set percentcompression = 100 -(cast([sizereq] as numeric(10,2)) * 100/([sizecur]-ABS(SIGN([sizecur]))+1)) 
+				set PercentCompression = 100 -(cast([SizeRequested] as numeric(10,2)) * 100/([SizeCurrent]-ABS(SIGN([SizeCurrent]))+1)) 
 				from ##testdbacompression 
 
 				SET NOCOUNT ON;
@@ -304,12 +304,12 @@
 				,[IndexType] 
 				,[PercentScan] 
 				,[PercentUpdate] 
-				,[ROWestimatePctoforig] 
-				,[PAGEestimatePctoforig]
+				,[RowEstimatePercentOriginal] 
+				,[PageEstimatePercentOriginal]
 				,[CompressionTypeRecommendation] 
-				,sizecurKB = [sizecur]
-				,sizereqKB = [sizereq]
-                ,percentcompression
+				,SizeCurrentKB = [SizeCurrent]
+				,SizeRequestedKB = [SizeRequested]
+                ,PercentCompression
 				FROM ##testdbacompression;
 
 				IF OBJECT_ID('tempdb..##setdbacompression' , 'U') IS NOT NULL
@@ -359,13 +359,17 @@
 
 			foreach ($db in $dbs) {
 				try {
-					Write-Message -Level Verbose -Message "Querying $instance - $db"
-					If ($db.status -ne 'Normal' -or $db.IsAccessible -eq $false) 
+                    Write-Message -Level Verbose -Message "Querying $instance - $db"
+                    If ($db.status -ne 'Normal' -or $db.IsAccessible -eq $false) 
                         {
 						Write-Message -Level Warning -Message "$db is not accessible." -Target $db
                          
 						continue
 					    }
+                    If ($db.CompatibilityLevel -lt 'Version100')
+                        { 
+                          Stop-Function -Message "$db has a compatibility level lower than Version100 and will be skipped." -Target $db -ErrorRecord $_ -Continue 
+                        }
                     #Execute query against individual database and add to output
                     foreach ($row in ($server.Query($sql, $db.Name)))
                         {
@@ -382,12 +386,12 @@
 							IndexType = $row.IndexType
 							PercentScan = $row.PercentScan
 							PercentUpdate = $row.PercentUpdate
-							ROWestimatePctoforig = $row.ROWestimatePctoforig
-							PAGEestimatePctoforig = $row.PAGEestimatePctoforig
+							RowEstimatePercentOriginal = $row.RowEstimatePercentOriginal
+							PageEstimatePercentOriginal = $row.PageEstimatePercentOriginal
 							CompressionTypeRecommendation = $row.CompressionTypeRecommendation
-							sizecurKB = $row.sizecurKB
-							sizereqKB = $row.sizereqKB
-                            percentcompression = $row.percentcompression
+							SizeCurrentKB = $row.SizeCurrentKB
+							SizeRequestedKB = $row.SizeRequestedKB
+                            PercentCompression = $row.PercentCompression
 						                  }
 				        }
 				    }
