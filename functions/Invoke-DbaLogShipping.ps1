@@ -1071,7 +1071,7 @@ The script will show a message that the copy destination has not been supplied a
 						$DatabaseBackupLocalPath = "$BackupLocalPath\$db"
 					}
 				}
-				else{
+				else {
 					$BackupLocalPath = $BackupNetworkPath
 
 					if ($BackupLocalPath.EndsWith("\")) {
@@ -1134,6 +1134,43 @@ The script will show a message that the copy destination has not been supplied a
 				# Check if secondary database is present on secondary instance
 				if (-not $Force -and ($DestinationServer.Databases.Name -contains $SecondaryDatabase)) {
 					Stop-Function -Message "Secondary database already exists on instance $DestinationSqlInstance." -InnerErrorRecord $_ -Target $DestinationSqlInstance -Continue
+				}
+
+				# Check if the secondary database exists on the secondary instance
+				if ($DestiationServer.Databases.Name -notcontains $SecondaryDatabase) {
+					# Check if force is being used and no option to generate the full backup is set
+					if ($Force -and -not $GenerateFullBackup) {
+						# Set the option to generate a full backup
+						Write-Message -Message "Set option to initialize secondary database with full backup." -Level Verbose
+						$GenerateFullBackup = $true
+					}
+					# Else give the user the option to generate the full backup
+					else {
+						# Set up the confirm part
+						$message = "The database $SecondaryDatabase does not exist on instance $DestinationSqlInstance. `nDo you want to initialize it by generating a full backup?"
+						$choiceYes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Answer Yes."
+						$choiceNo = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Answer No."
+						$options = [System.Management.Automation.Host.ChoiceDescription[]]($choiceYes, $choiceNo)
+						$result = $host.ui.PromptForChoice($title, $message, $options, 0)
+				
+						# Check the result from the confirm
+						switch ($result) {
+							# If yes
+							0 {
+								# Set the option to generate a full backup
+								Write-Message -Message "Set option to initialize secondary database with full backup." -Level Verbose
+								$GenerateFullBackup = $true
+							}
+							1 {
+								Stop-Function -Message "The database is not initialized on the secondary instance. `nPlease initialize the database on the secondary instance, use -GenerateFullbackup or use -Force." -Target $DestinationSqlInstance 
+								return
+							} 
+						} # switch
+					}
+				}
+				elseif (-not $Force -and ($DestiationServer.Databases.Name -notcontains $SecondaryDatabase)) {
+					Stop-Function -Message "The database is not initialized on the secondary instance. `nPlease initialize the database on the secondary instance, use -GenerateFullbackup or use -Force." -Target $DestinationSqlInstance 
+					return
 				}
 
 				# Check the parameters for initialization of the secondary database
