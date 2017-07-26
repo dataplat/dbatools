@@ -68,7 +68,7 @@ function Get-DbaOperatingSystem {
 			}
 
 			$activePowerPlan = ($powerPlan | Where-Object IsActive).ElementName -join ','
-			$language = Get-Culture | Where-Object LCID -eq $os.OSLanguage
+			$language = Get-Language $os.OSLanguage
 			
 			[PSCustomObject]@{
 				ComputerName   = $computer.ComputerName
