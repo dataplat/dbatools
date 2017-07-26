@@ -434,7 +434,7 @@
 			
             $Server.ConnectionContext.StatementTimeout = 0
                 
-                if ($Server.Edition -eq 'Standard Edition (64-bit)' -or $Server.Edition -eq 'Standard Edition (32-bit)' -and $Server.VersionMajor -lt '13')
+                if ($Server.EngineEdition -eq 'Standard' -and $Server.VersionMajor -lt '13')
                     {
                     Stop-Function -Message "Only SQL Server Enterprise Edition supports compression on $Server" -Target $Server -ErrorRecord $_ -Continue
                     }
