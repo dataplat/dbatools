@@ -47,6 +47,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	Context "Testing that it restores to a specific path" {
+		$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database singlerestore | Backup-DbaDatabase
 		$null = Test-DbaLastBackup -SqlInstance $script:instance2 -Database singlerestore -DataDirectory C:\temp -LogDirectory C:\temp -NoDrop
 		$results = Get-DbaDatabaseFile -SqlInstance $script:instance2 -Database dbatools-testrestore-singlerestore
 		It "Should match C:\temp" {
