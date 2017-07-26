@@ -44,12 +44,21 @@ function Install-DbaMaintenanceSolution {
         http://dbatools.io/Install-DbaMaintenanceSolution
 	
 	.EXAMPLE
-        This will create the Ola Hallengren's Solution objects. Existing objects are not affected in any way.
-        Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72
+		Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72
     
+		Installs Ola Hallengren's Solution objects on RES14224 in the master database. 
+		Backups will default to the default Backup Directory. 
+		If the Maintenance Solution already exists, the script will be halted.
+   
 	.EXAMPLE
+		Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72
+    
+		This will create the Ola Hallengren's Solution objects. Existing objects are not affected in any way.
+       
+	.EXAMPLE
+	 Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72 -ReplaceExisting 1
+       
         This will drop and then recreate the Ola Hallengren's Solution objects
-        Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72 -ReplaceExisting 1
         The cleanup script will drop and recreate:
             - TABLE [dbo].[CommandLog]
             - STORED PROCEDURE [dbo].[CommandExecute]
@@ -98,6 +107,16 @@ function Install-DbaMaintenanceSolution {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
+			if ((Test-Bound -Parameter ReplaceExisting -Not)) {
+				$procs = Get-DbaSqlModule -SqlInstance $server | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
+				$table = Get-DbaTable -SqlInstance $server -Database $Database -Table CommandLog
+				
+				if ($null -ne $procs -or $null -ne $table) {
+					Stop-Function -Message "The Maintenance Solution alredy exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."
+					return
+				}
+			}
+			
 			if ((Test-Bound -Parameter BackupLocation -Not)) {
 				$BackupLocation = (Get-DbaDefaultPath -SqlInstance $server).Backup
 			}
@@ -107,7 +126,7 @@ function Install-DbaMaintenanceSolution {
 			$db = $server.Databases[$Database]
 			
 			if ($ReplaceExisting) {
-				Write-Message -Level Output -Message "If Ola Hallengren's scripts are found, we will drop and recreate them!"
+				Write-Message -Level Verbose -Message "If Ola Hallengren's scripts are found, we will drop and recreate them!"
 			}
 			
 			$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
@@ -194,14 +213,6 @@ function Install-DbaMaintenanceSolution {
 			try {
 				Write-Message -Level Output -Message "Installing on server $SqlInstance, database $Database"
 				
-				$procs = Get-DbaSqlModule -SqlInstance $server | where Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
-				$table = Get-DbaTable -SqlInstance $server -Database $Database -Table CommandLog
-				
-				if ($null -ne $procs -or $null -ne $table) {
-					Stop-Function -Message "The Maintenance Solution alredy exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."
-					return	
-				}
-				
 				foreach ($file in $listOfFiles) {
 					$sql = [IO.File]::ReadAllText($file)
 					try {
@@ -210,12 +221,12 @@ function Install-DbaMaintenanceSolution {
 						}
 					}
 					catch {
-						Stop-Function -Message "Could not execute $file" -ErrorRecord $_ -Target $db
+						Stop-Function -Message "Could not execute $file in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
 					}
 				}
 			}
 			catch {
-				Write-Message -Level Warning -Message "Could not execute $file in $Database on $instance" -ErrorRecord $_
+				Stop-Function -Message "Could not execute $file in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
 			}
 		}
 	}
@@ -225,5 +236,7 @@ function Install-DbaMaintenanceSolution {
 		if ((Test-Path $path)) {
 			Remove-Item -Path $temp\sql-server-maintenance-solution-master -Recurse -Force -ErrorAction SilentlyContinue
 		}
+		Write-Message -Level Output -Message "Installation complete"
+		
 	}
 }
