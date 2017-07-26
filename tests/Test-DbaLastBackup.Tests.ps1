@@ -17,18 +17,17 @@ foreach ($db in $dbs) {
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-	
 	Context "Setup restores and backups on the local drive for Test-DbaLastBackup" {
 		Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeDatabase tempdb | Backup-DbaDatabase -Type Database
 		$server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample')")
 		Get-DbaDatabase -SqlInstance $script:instance2 -Database $testlastbackup | Backup-DbaDatabase -Type Differential
-		$server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample')")
+		$server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample1')")
 		Get-DbaDatabase -SqlInstance $script:instance2 -Database $testlastbackup | Backup-DbaDatabase -Type Differential
-		$server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample')")
+		$server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample2')")
 		Get-DbaDatabase -SqlInstance $script:instance2 -Database $testlastbackup | Backup-DbaDatabase -Type Log
-		$server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample')")
+		$server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample3')")
 		Get-DbaDatabase -SqlInstance $script:instance2 -Database $testlastbackup | Backup-DbaDatabase -Type Log
-		$server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample')")
+		$server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample4')")
 	}
 	
 	Context "Test a single database" {
