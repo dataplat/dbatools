@@ -91,7 +91,7 @@ function Get-DbaOperatingSystem {
 				ActivePowerPlan = $activePowerPlan
 				Language	   = $language.Name
 				LanguageAlias  = $language.Alias
-				LanguageId	   = $language.ID
+				LanguageId	   = $language.LanguageID
 				CodeSet	       = $os.CodeSet
 				CountryCode    = $os.CountryCode
 				Locale		   = $os.Locale
