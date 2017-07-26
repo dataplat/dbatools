@@ -26,9 +26,9 @@ Describe "Get-DbaOperatingSystem Unit Tests" -Tag "UnitTests" {
 Describe "Get-DbaOperatingSystem Integration Test" -Tag "IntegrationTests" {
 	$result = Get-DbaOperatingSystem -ComputerName $script:instance1
 
-	$props = 'ComputerName','Server','SqlInstance','Manufacturer','OSArchitecture',
-		'BuildNumber','Version','InstallDate','LastBootUpTime','LocalDateTime','BootDevice',
-		'TimeZone','TimeZoneDaylight','TimeZoneStandard','TotalVisibleMemorySize'
+	$props = 'ComputerName','InstanceName','SqlInstance','Manufacturer','Organization',
+		'Architecture','Build','Version','InstallDate','LastBootTime','LocalDateTime',
+		'BootDevice','TimeZone','TimeZoneDaylight','TimeZoneStandard','TotalVisibleMemorySize'
 	<#
 		FreePhysicalMemory: units = KB
 		FreeVirtualMemory: units = KB
