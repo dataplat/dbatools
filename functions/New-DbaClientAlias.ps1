@@ -51,6 +51,47 @@ Does this
 		[switch]$Silent
 	)
 	
+	begin {
+		# This is a script block so cannot use messaging system
+		$scriptblock = {
+			$basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
+			
+			if ($env:PROCESSOR_ARCHITECTURE -like "*64*") { $64bit = $true }
+			
+			foreach ($basekey in $basekeys) {
+				if ($64bit -ne $true -and $basekey -like "*WOW64*") { continue }
+				
+				if ((Test-Path $basekey) -eq $false) {
+					throw "Base key ($basekey) does not exist. Quitting."
+				}
+				
+				$client = "$basekey\Client"
+				
+				if ((Test-Path $client) -eq $false) {
+					Write-Verbose "Creating $client key"
+					$null = New-Item -Path $client -Force
+				}
+				
+				$connect = "$client\ConnectTo"
+				
+				if ((Test-Path $connect) -eq $false) {
+					Write-Verbose "Creating $connect key"
+					$null = New-Item -Path $connect -Force
+				}
+				
+				if ($basekey -like "*WOW64*") {
+					$architecture = "32-bit"
+				}
+				else {
+					$architecture = "64-bit"
+				}
+				
+				Write-Verbose "Creating/updating alias for $ComputerName for $architecture"
+				$null = New-ItemProperty -Path $connect -Name $Alias -Value $serverstring -PropertyType String -Force
+			}
+		}
+	}
+	
 	process {
 		if ($protocol -eq "TCPIP") {
 			$serverstring = "DBMSSOCN,$ServerAlias"
@@ -59,49 +100,15 @@ Does this
 			$serverstring = "DBNMPNTW,\\$ServerAlias\pipe\sql\query"
 		}
 		
-		foreach ($computer in $ComputerName) {
-			$null = Test-ElevationRequirement -ComputerName $computer -Continue
-			$scriptblock = {
-				$basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
-				
-				if ($env:PROCESSOR_ARCHITECTURE -like "*64*") { $64bit = $true }
-				
-				foreach ($basekey in $basekeys) {
-					if ($64bit -ne $true -and $basekey -like "*WOW64*") { continue }
-					
-					if ((Test-Path $basekey) -eq $false) {
-						Stop-Function -Message "Base key ($basekey) does not exist. Quitting." -Target $basekey
-					}
-					
-					$client = "$basekey\Client"
-					
-					if ((Test-Path $client) -eq $false) {
-						Write-Message -Level Verbose -Message "Creating $client key"
-						$null = New-Item -Path $client -Force
-					}
-					
-					$connect = "$client\ConnectTo"
-					
-					if ((Test-Path $connect) -eq $false) {
-						Write-Message -Level Verbose -Message "Creating $connect key"
-						$null = New-Item -Path $connect -Force
-					}
-					
-					if ($basekey -like "*WOW64*") {
-						$architecture = "32-bit"
-					}
-					else {
-						$architecture = "64-bit"
-					}
-					
-					Write-Message -Level Verbose -Message "Creating/updating alias for $ComputerName for $architecture"
-					$null = New-ItemProperty -Path $connect -Name $Alias -Value $serverstring -PropertyType String -Force
-				}
+		foreach ($computer in $ComputerName.ComputerName) {
+			
+			if ((Test-ElevationRequirement -ComputerName $computer)) {
+				continue
 			}
 			
 			if ($PScmdlet.ShouldProcess($computer, "Adding $alias")) {
 				try {
-					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -ArgumentList $alias, $Password, $Store, $Folder |
+					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -ArgumentList $alias, $Password, $Store, $Folder -Verbose:$verbose |
 					Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
 				}
 				catch {
