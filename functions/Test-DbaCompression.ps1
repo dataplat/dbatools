@@ -337,7 +337,7 @@
                 
                 if ($Server.EngineEdition -eq 'Standard' -and $Server.VersionMajor -lt '13')
                     {
-                    Stop-Function -Message "Only SQL Server Enterprise Edition supports compression on $Server" -Target $Server -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Only SQL Server Enterprise Edition supports compression on $Server" -Target $Server -Continue
                     }
 			#If IncludeSystemDBs is true, include systemdbs
 			#look at all databases, online/offline/accessible/inaccessible and tell user if a db can't be queried.
@@ -372,7 +372,7 @@
 					    }
                     If ($db.CompatibilityLevel -lt 'Version100')
                         { 
-                          Stop-Function -Message "$db has a compatibility level lower than Version100 and will be skipped." -Target $db -ErrorRecord $_ -Continue 
+                          Stop-Function -Message "$db has a compatibility level lower than Version100 and will be skipped." -Target $db -Continue 
                         }
                     #Execute query against individual database and add to output
                     foreach ($row in ($server.Query($sql, $db.Name)))
