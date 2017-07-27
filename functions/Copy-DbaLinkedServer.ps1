@@ -55,10 +55,10 @@ function Copy-DbaLinkedServer {
 		.NOTES
 			Tags: WSMan, Migration, LinkedServer
 			Author: Chrissy LeMaire (@cl), netnerds.net
-			Requires: sysadmin access on SQL Servers, Remote Registry & Remote Adminsitration enabled and accessible on source server.
+			Requires: sysadmin access on SQL Servers, Remote Registry & Remote Administration enabled and accessible on source server.
 
 			Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
-			This just copies the SQL portion. It does not copy files (ie. a local SQLITE database, or Access Db), nor does it configure ODBC entries.
+			This just copies the SQL portion. It does not copy files (ie. a local SQLite database, or Microsoft Access DB), nor does it configure ODBC entries.
 
 		.LINK
 			https://dbatools.io/Copy-DbaLinkedServer
