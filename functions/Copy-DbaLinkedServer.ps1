@@ -114,7 +114,7 @@ function Copy-DbaLinkedServer {
 				$smkbytes = $server.Query($sql).smk
 			}
 			catch {
-				Stop-Function -Message "Can't run query" -Target $server -InnerErrorRecord $_
+				Stop-Function -Message "Can't run query." -Target $server -InnerErrorRecord $_
 				return
 			}
 
@@ -154,7 +154,7 @@ function Copy-DbaLinkedServer {
 			# Choose IV length based on the algorithm
 			if (($serviceKey.Length -ne 16) -and ($serviceKey.Length -ne 32)) {
 				Write-Message -Level Verbose -Message "ServiceKey found: $serviceKey.Length"
-				Stop-Function -Message "Unknown key size. Cannot continue" -Target $source
+				Stop-Function -Message "Unknown key size. Cannot continue." -Target $source
 				return 
 				
 			}
@@ -180,7 +180,7 @@ function Copy-DbaLinkedServer {
 				$dacEnabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
 
 				if ($dacEnabled -eq $false) {
-					If ($Pscmdlet.ShouldProcess($server.Name, "Enabling DAC on clustered instance")) {
+					If ($Pscmdlet.ShouldProcess($server.Name, "Enabling DAC on clustered instance.")) {
 						Write-Message -Level Verbose -Message "DAC must be enabled for clusters, even when accessed from active node. Enabling."
 						$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 						$server.Configuration.Alter()
@@ -218,13 +218,13 @@ function Copy-DbaLinkedServer {
 				}
 			}
 			catch {
-				Stop-Function -Message "Can't establish local DAC connection" -Target $server -InnerErrorRecord $_
+				Stop-Function -Message "Can't establish local DAC connection." -Target $server -InnerErrorRecord $_
 				return
 			}
 
 			if ($server.IsClustered -and $dacEnabled -eq $false) {
-				If ($Pscmdlet.ShouldProcess($server.Name, "Disabling DAC on clustered instance")) {
-					Write-Message -Level Verbose -Message "Setting DAC config back to 0"
+				If ($Pscmdlet.ShouldProcess($server.Name, "Disabling DAC on clustered instance.")) {
+					Write-Message -Level Verbose -Message "Setting DAC config back to 0."
 					$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $false
 					$server.Configuration.Alter()
 				}
@@ -267,7 +267,7 @@ function Copy-DbaLinkedServer {
 				[bool]$force
 			)
 
-			Write-Message -Level Verbose -Message "Collecting Linked Server logins and passwords on $($sourceServer.Name)"
+			Write-Message -Level Verbose -Message "Collecting Linked Server logins and passwords on $($sourceServer.Name)."
 			$sourcelogins = Get-LinkedServerLogins $sourceServer
 
 			$serverlist = $sourceServer.LinkedServers
@@ -330,7 +330,7 @@ function Copy-DbaLinkedServer {
 					}
 				}
 
-				Write-Message -Level Verbose -Message "Attempting to migrate: $linkedServerName"
+				Write-Message -Level Verbose -Message "Attempting to migrate: $linkedServerName."
 				If ($Pscmdlet.ShouldProcess($destination, "Migrating $linkedServerName")) {
 					try {
 						$sql = $currentLinkedServer.Script() | Out-String
@@ -344,7 +344,7 @@ function Copy-DbaLinkedServer {
 						
 						$destServer.Query($sql)
 						$destServer.LinkedServers.Refresh()
-						Write-Message -Level Verbose -Message "$linkedServerName successfully copied"
+						Write-Message -Level Verbose -Message "$linkedServerName successfully copied."
 
 						$copyLinkedServer.Status = "Successful"
 						$copyLinkedServer
@@ -353,7 +353,7 @@ function Copy-DbaLinkedServer {
 						$copyLinkedServer.Status = "Failed"
 						$copyLinkedServer
 
-						Stop-Function -Message "Issue adding linked server $destServer" -Target $linkedServerName -InnerErrorRecord $_
+						Stop-Function -Message "Issue adding linked server $destServer." -Target $linkedServerName -InnerErrorRecord $_
 						$skiplogins = $true
 					}
 				}
@@ -380,7 +380,7 @@ function Copy-DbaLinkedServer {
 									$copyLinkedServer.Status = "Failed"
 									$copyLinkedServer
 
-									Stop-Function -Message "Failed to copy login" -Target $login -InnerErrorRecord $_
+									Stop-Function -Message "Failed to copy login." -Target $login -InnerErrorRecord $_
 								}
 							}
 						}
@@ -413,15 +413,15 @@ function Copy-DbaLinkedServer {
 			return
 		}
 
-		Write-Message -Level Verbose -Message "Getting NetBios name for $source"
+		Write-Message -Level Verbose -Message "Getting NetBios name for $source."
 		$sourceNetBios = Resolve-NetBiosName $sourceserver
 
-		Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
+		Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source."
 		try {
 			Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
 		}
 		catch {
-			Stop-Function -Message "Can't connect to registry on $source" -Target $sourceNetBios -ErrorRecord $_
+			Stop-Function -Message "Can't connect to registry on $source." -Target $sourceNetBios -ErrorRecord $_
 			return
 		}
 
