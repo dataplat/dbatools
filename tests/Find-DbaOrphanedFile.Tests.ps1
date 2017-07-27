@@ -17,7 +17,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		$results.FileName | Remove-Item
 		
-		$results = Find-DbaOrphanedFile -SqlInstance $script:instance1 *>&1
+		$results = Find-DbaOrphanedFile -SqlInstance $script:instance1
 		It "Should find zero files" {
 			$results.Count | Should Be 0
 		}
