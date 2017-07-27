@@ -420,8 +420,8 @@
 			
 			$Server.ConnectionContext.StatementTimeout = 0
 			
-			#The reason why we do this is beause of SQL 2016 and they now allow for compression on standard edition.
-			if ($Server.EngineEdition -eq 'Standard' -and $Server.VersionMajor -lt '13') {
+			#The reason why we do this is because of SQL 2016 and they now allow for compression on standard edition.
+			if ($Server.EngineEdition -notmatch 'Enterprise' -and $Server.VersionMajor -lt '13') {
 				Stop-Function -Message "Only SQL Server Enterprise Edition supports compression on $Server" -Target $Server -Continue
 			}
 			#If IncludeSystemDBs is true, include systemdbs
