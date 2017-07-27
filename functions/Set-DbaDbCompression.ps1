@@ -2,6 +2,10 @@
 <#
 	.SYNOPSIS
 		Sets tables and indexes with preferred compression setting.
+<<<<<<< HEAD:functions/Set-DbaDbCompression.ps1
+=======
+
+>>>>>>> ec04a552d3b171a626098a2df924421230e87bbc:functions/Set-DbaCompression.ps1
      .DESCRIPTION
 		This function set the appropriate compression recommendation.
         Remember Uptime is critical, the longer uptime, the more accurate the analysis is.
@@ -24,6 +28,10 @@
 	
     .PARAMETER MaxRunTime
 		    Will continue to Alter tables and indexes for the given amount of minutes.
+<<<<<<< HEAD:functions/Set-DbaDbCompression.ps1
+=======
+
+>>>>>>> ec04a552d3b171a626098a2df924421230e87bbc:functions/Set-DbaCompression.ps1
     .PARAMETER PercentCompression
 		    Will only work on the tables/indexes that have the calculated savings at and higher for the given number provided.	
     
