@@ -2,16 +2,13 @@
 <#
 	.SYNOPSIS
 		Sets tables and indexes with preferred compression setting.
-<<<<<<< HEAD:functions/Set-DbaDbCompression.ps1
-=======
 
->>>>>>> ec04a552d3b171a626098a2df924421230e87bbc:functions/Set-DbaCompression.ps1
      .DESCRIPTION
 		This function set the appropriate compression recommendation.
         Remember Uptime is critical, the longer uptime, the more accurate the analysis is.
         You would probably be best if you utilized Get-DbaUptime first, before running this command.
 		
-		Set-DbaCompression script derived from GitHub and the tigertoolbox 
+		Set-DbaDbCompression script derived from GitHub and the tigertoolbox 
         (https://github.com/Microsoft/tigertoolbox/tree/master/Evaluate-Compression-Gains)
 	
 	.PARAMETER SqlInstance
@@ -28,10 +25,7 @@
 	
     .PARAMETER MaxRunTime
 		    Will continue to Alter tables and indexes for the given amount of minutes.
-<<<<<<< HEAD:functions/Set-DbaDbCompression.ps1
-=======
 
->>>>>>> ec04a552d3b171a626098a2df924421230e87bbc:functions/Set-DbaCompression.ps1
     .PARAMETER PercentCompression
 		    Will only work on the tables/indexes that have the calculated savings at and higher for the given number provided.	
     
@@ -47,21 +41,21 @@
 		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 	
 	.LINK
-		https://dbatools.io/Set-DbaCompression
+		https://dbatools.io/Set-DbaDbCompression
 	
 	.EXAMPLE
-		Set-DbaCompression -SqlInstance localhost -MaxRunTime 60 -PercentCompression 25
+		Set-DbaDbCompression -SqlInstance localhost -MaxRunTime 60 -PercentCompression 25
 		Set the compression run time to 60 minutes and will start the compression of tables/indexes
         that have a difference of 25% or higher between current and recommended.
 	
 	.EXAMPLE
-		Set-DbaCompression -SqlInstance ServerA -Database DBName -MaxRunTime 60 -PercentCompression 25 | Out-GridView
+		Set-DbaDbCompression -SqlInstance ServerA -Database DBName -MaxRunTime 60 -PercentCompression 25 | Out-GridView
 		Set the compression run time to 60 minutes and will start the compression of tables/indexes
         that have a difference of 25% or higher between current and recommended and the results into a nicely formated GridView.
 	
     .EXAMPLE
 		$cred = Get-Credential sqladmin		
-        Set-DbaCompression -SqlInstance ServerA -ExcludeDatabase Database -SqlCredential $cred -MaxRunTime 60 -PercentCompression 25
+        Set-DbaDbCompression -SqlInstance ServerA -ExcludeDatabase Database -SqlCredential $cred -MaxRunTime 60 -PercentCompression 25
 		Returns results of all potential compression options for all databases
         with the recommendation of either Page or Row
 	
@@ -69,7 +63,7 @@
         $servers = 'Server1','Server2'
         foreach ($svr in $servers)
         {
-			Set-DbaCompression -SqlInstance $svr -MaxRunTime 60 -PercentCompression 25 | Export-Csv -Path C:\temp\CompressionAnalysisPAC.csv -Append
+			Set-DbaDbCompression -SqlInstance $svr -MaxRunTime 60 -PercentCompression 25 | Export-Csv -Path C:\temp\CompressionAnalysisPAC.csv -Append
         }
 	
 	    This produces a full list of all your servers listed and is pushed to a csv for you to analyize.
