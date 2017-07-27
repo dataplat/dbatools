@@ -6,26 +6,24 @@ function Get-DbaAgDatabase {
 		.DESCRIPTION
 			Default view provides most common set of properties for information on the database in an Availability Group(s).
 
-			**Information returned on the database will be specifc to that replica, whether it is
-			primary or a secondary.**
+			Information returned on the database will be specific to that replica, whether it is primary or a secondary.
 
-			**This command will return an SMO object, but it is the AvailabilityDatabases object
-			and not the Server.Databases object.
+			This command will return an SMO object, but it is the AvailabilityDatabases object	and not the Server.Databases object.
 
 		.PARAMETER SqlInstance
 			The SQL Server instance. Server version must be SQL Server version 2012 or higher.
 
 		.PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted).
 
 		.PARAMETER AvailabilityGroup
 			Specify the Availability Group name that you want to get information on.
 
 		.PARAMETER Database
-			Specify the database to pull information on, this will be auto-populated for tab completion. Multiple databases can be provided.
+			Specify the database(s) to pull information for. This list is auto-populated from the server for tab completion. Multiple databases can be specified. If none are specified all databases will be processed.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: DisasterRecovery, AG, AvailabilityGroup, Replica
@@ -76,7 +74,7 @@ function Get-DbaAgDatabase {
 			}
 
 			if ($server.IsHadrEnabled -eq $false) {
-				Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $serverName" -Target $serverName -Continue
+				Stop-Function -Message "Availability Group (HADR) is not configured for the instance: $serverName." -Target $serverName -Continue
 			}
 
 			$ags = $server.AvailabilityGroups
