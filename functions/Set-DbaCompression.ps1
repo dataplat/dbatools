@@ -12,10 +12,10 @@
         (https://github.com/Microsoft/tigertoolbox/tree/master/Evaluate-Compression-Gains)
 	
 	.PARAMETER SqlInstance
-		SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input
+		SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 	
 	.PARAMETER SqlCredential
-		PSCredential object to connect under. If not specified, current Windows login will be used.
+		SqlCredential object to connect as. If not specified, current Windows login will be used.
 	
 	.PARAMETER Database
 		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
@@ -23,19 +23,16 @@
 	.PARAMETER ExcludeDatabase
 		The database(s) to exclude - this list is autopopulated from the server
 	
-	.PARAMETER IncludeSystemDBs
-		Switch parameter that when used will display system database information
-	
-	.PARAMETER Silent
-		Replaces user friendly yellow warnings with bloody red exceptions of doom!
-		Use this if you want the function to throw terminating errors you want to catch.
-    
     .PARAMETER MaxRunTime
-		Will continue to Alter tables and indexes for the give amount of minutes.
+		    Will continue to Alter tables and indexes for the give amount of minutes.
 
     .PARAMETER PercentCompression
-		Will only work on the tables/indexes that have the calulated savings at and higer for the given number provided.
-	
+		    Will only work on the tables/indexes that have the calulated savings at and higer for the given number provided.	
+    
+    .PARAMETER Silent
+		    Replaces user friendly yellow warnings with bloody red exceptions of doom!
+		    Use this if you want the function to throw terminating errors you want to catch.
+    
 	.NOTES
 		Author: Jason Squires (@js_0505, jstexasdba@gmail.com)
 		Tags: Compression, Table, Database
@@ -60,6 +57,12 @@
 		Set-DbaCompression -SqlInstance ServerA -MaxRunTime 60 -PercentCompression 25
 		Set the compression run time to 60 minutes and will start the compression of of tables/indexes; across all databases;
         that have a difference of 25% or higher between current and recommended.
+
+    .EXAMPLE
+		$cred = Get-Credential sqladmin		
+        Set-DbaCompression -SqlInstance ServerA -ExcludeDatabase Database -SqlCredential $cred -MaxRunTime 60 -PercentCompression 25
+		Returns results of all potential compression options for all databases
+        with the recommendation of either Page or Row
 	
     .EXAMPLE
         $servers = 'Server1','Server2'
@@ -80,29 +83,25 @@
 		[DbaInstanceParameter[]]
 		$SqlInstance,
 		
-		[System.Management.Automation.PSCredential]
+		[PSCredential]
 		$SqlCredential,
 		
-		[Alias("Databases")]
-		[object[]]
-		$Database,
+        [object[]]
+        $Database,
 		
 		[object[]]
 		$ExcludeDatabase,
 		
-		[switch]
-		$IncludeSystemDBs,
-		
-		[switch]
-		$Silent,
-
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [int]
         $MaxRunTime,
 
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [int]
-        $PercentCompression
+        $PercentCompression,
+        
+        [switch]
+		$Silent
 	)
 	
 	begin {
@@ -434,6 +433,7 @@
 			
             $Server.ConnectionContext.StatementTimeout = 0
                 
+                #The reason why we do this is beause of SQL 2016 and they now allow for compression on standard edition.
                 if ($Server.EngineEdition -eq 'Standard' -and $Server.VersionMajor -lt '13')
                     {
                     Stop-Function -Message "Only SQL Server Enterprise Edition supports compression on $Server" -Target $Server -Continue
@@ -441,14 +441,13 @@
 			#If IncludeSystemDBs is true, include systemdbs
 			#look at all databases, online/offline/accessible/inaccessible and tell user if a db can't be queried.
 			try {
-				if ($Database) {
-					$dbs = $server.Databases | Where-Object Name -In $Database
+				$dbs = $server.Databases
+                if ($Database) {
+					$dbs = $dbs | Where-Object { $Database -contains $_.Name -and $_.IsAccessible -and $_.IsSystemObject -EQ 0 }
 				}
-				elseif ($IncludeSystemDBs) {
-					$dbs = $server.Databases | Where-Object Status -eq 'Normal'
-				}
+				
 				else {
-					$dbs = $server.Databases | Where-Object { $_.IsAccessible -and $_.IsSystemObject -eq 0 }
+					$dbs = $dbs | Where-Object { $_.IsAccessible -and $_.IsSystemObject -EQ 0 }
 				}
 				
 				if (Test-Bound "ExcludeDatabase") {
@@ -463,13 +462,13 @@
 			foreach ($db in $dbs) {
 				try {
 					Write-Message -Level Verbose -Message "Querying $instance - $db"
-					If ($db.status -ne 'Normal' -or $db.IsAccessible -eq $false) 
+					if ($db.status -ne 'Normal' -or $db.IsAccessible -eq $false) 
                         {
 						Write-Message -Level Warning -Message "$db is not accessible." -Target $db
                          
 						continue
 					    }
-                    If ($db.CompatibilityLevel -lt 'Version100')
+                    if ($db.CompatibilityLevel -lt 'Version100')
                         { 
                           Stop-Function -Message "$db has a compatibility level lower than Version100 and will be skipped." -Target $db -Continue 
                         }
