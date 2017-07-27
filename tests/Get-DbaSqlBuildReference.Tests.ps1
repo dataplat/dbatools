@@ -122,3 +122,14 @@ Describe "$commandname Unit Test" -Tags Unittest {
 		}
 	}
 }
+
+Describe "$commandname Integration Tests" -Tags IntegrationTests {
+	Context "Test retrieving version from instances" {
+		$results = Get-DbaSqlBuildReference -SqlInstance $script:instance1,$script:instance2
+		It "Should return an exact match" {
+			foreach($r in $results) {
+				$r.MatchType | Should Be "Exact"
+			}
+		}
+	}
+}
