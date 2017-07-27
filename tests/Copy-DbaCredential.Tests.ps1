@@ -11,7 +11,7 @@ try {
 	Clear-DbaSqlConnectionPool
 }
 catch {
-	Write-Output "DAC not working this round, likely due to Appveyor resources"
+	Write-Host "DAC not working this round, likely due to Appveyor resources"
 	return
 }
 
