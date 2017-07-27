@@ -1,7 +1,7 @@
 ﻿function Set-DbaCompression {
 <#
 	.SYNOPSIS
-		Returns tables and indexes with preferred compression setting.
+		Sets tables and indexes with preferred compression setting.
 
      .DESCRIPTION
 		This function set the appropriate compression recommendation.
@@ -24,10 +24,10 @@
 		The database(s) to exclude - this list is autopopulated from the server
 	
     .PARAMETER MaxRunTime
-		    Will continue to Alter tables and indexes for the give amount of minutes.
+		    Will continue to Alter tables and indexes for the given amount of minutes.
 
     .PARAMETER PercentCompression
-		    Will only work on the tables/indexes that have the calulated savings at and higer for the given number provided.	
+		    Will only work on the tables/indexes that have the calculated savings at and higher for the given number provided.	
     
     .PARAMETER Silent
 		    Replaces user friendly yellow warnings with bloody red exceptions of doom!
@@ -45,19 +45,14 @@
 	
 	.EXAMPLE
 		Set-DbaCompression -SqlInstance localhost -MaxRunTime 60 -PercentCompression 25
-		Set the compression run time to 60 minutes and will start the compression of of tables/indexes
+		Set the compression run time to 60 minutes and will start the compression of tables/indexes
         that have a difference of 25% or higher between current and recommended.
 	
 	.EXAMPLE
 		Set-DbaCompression -SqlInstance ServerA -Database DBName -MaxRunTime 60 -PercentCompression 25 | Out-GridView
-		Set the compression run time to 60 minutes and will start the compression of of tables/indexes
-        that have a difference of 25% or higher between current and recommended and the results into and nicely formated GridView.
+		Set the compression run time to 60 minutes and will start the compression of tables/indexes
+        that have a difference of 25% or higher between current and recommended and the results into a nicely formated GridView.
 	
-	.EXAMPLE
-		Set-DbaCompression -SqlInstance ServerA -MaxRunTime 60 -PercentCompression 25
-		Set the compression run time to 60 minutes and will start the compression of of tables/indexes; across all databases;
-        that have a difference of 25% or higher between current and recommended.
-
     .EXAMPLE
 		$cred = Get-Credential sqladmin		
         Set-DbaCompression -SqlInstance ServerA -ExcludeDatabase Database -SqlCredential $cred -MaxRunTime 60 -PercentCompression 25
@@ -72,7 +67,7 @@
         }
 	
 	    This produces a full list of all your servers listed and is pushed to a csv for you to analyize.
-        Set the compression run time to 60 minutes and will start the compression of of tables/indexes; across all listed servers;
+        Set the compression run time to 60 minutes and will start the compression of tables/indexes; across all listed servers;
         that have a difference of 25% or higher between current and recommended.
 
 #>
