@@ -3,7 +3,6 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 
-
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	
 	# Setting up the environment we need to test the cmdlet
