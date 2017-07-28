@@ -181,6 +181,9 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 				elseif ($db.name -in $NoSupportForSnap) {
 					Write-Message -Level Warning -Message "$($db.name) snapshots are prohibited"
 				}
+				elseif ($db.IsAccessible -ne $true) {
+					Write-Message -Level Verbose -Message "$($db.name) is not accessible, skipping"
+				}
 				else {
 					$sourcedbs += $db
 				}
