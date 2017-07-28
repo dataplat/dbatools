@@ -164,8 +164,8 @@ Function Restore-DBFromFilteredArray {
                 else {
                     Write-Message -Level Veryverbose -Message "Bombing out created on $sqlinstance"
                     #Stop-Function -message "Destination File $File  exists on $SqlInstance" -Target $file -Category 'DeviceError' -silent $true
-                    Throw "Destination File $File  exists on $SqlInstance"
-                    return   
+					Stop-Function -message "Destination File $File  exists on $SqlInstance" -Target $file -Category 'DeviceError' -silent $true
+					return
                 }    
                 Write-Message -Level Veryverbose -Message "past resuse tests"
             }
@@ -362,9 +362,8 @@ Function Restore-DBFromFilteredArray {
                     Write-Message -Level Verbose -Message "Failed, Closing Server connection"
                     $RestoreComplete = $False
                     $ExitError = $_.Exception.InnerException
-                    Stop-Function -Message  "Failed to restore db $DbName, stopping" -InnerErrorRecord $ExitError 
-                    #Exit as once one restore has failed there's no point continuing
-                    break
+					Stop-Function -Message "Failed to restore db $DbName, stopping" -ErrorRecord $_
+					return
                 }
                 finally {
                     if ($ReuseSourceFolderStructure) {
