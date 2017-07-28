@@ -184,17 +184,17 @@ function Get-DbaRegisteredServerName {
                     }
                 }
             }
-
-            if ($NetBiosName) {
-                return $netBiosCollection
-            }
-            else {
-                return $ipCollection
-            }
-        }
-        else {
-            return $servers
-        }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlRegisteredServerName
-    }
+			
+			if ($NetBiosName) {
+				$netBiosCollection | Select-Object -Unique
+			}
+			else {
+				$ipCollections | Select-Object -Unique
+			}
+		}
+		else {
+			$servers | Select-Object -Unique
+		}
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlRegisteredServerName
+	}
 }
