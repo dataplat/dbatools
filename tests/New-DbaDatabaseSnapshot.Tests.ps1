@@ -23,9 +23,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Operations on databases" {
 		BeforeAll {
 			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
-			$db1 = "dbatools_SnapMe"
-			$db2 = "dbatools_SnapMe2"
-			$db3 = "dbatools_SnapMe3_Offline"
+			$db1 = "dbatoolsci_SnapMe"
+			$db2 = "dbatoolsci_SnapMe2"
+			$db3 = "dbatoolsci_SnapMe3_Offline"
 			$server.Query("CREATE DATABASE $db1")
 			$server.Query("CREATE DATABASE $db2")
 			$server.Query("CREATE DATABASE $db3")
