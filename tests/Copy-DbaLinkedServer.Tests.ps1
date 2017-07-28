@@ -14,7 +14,7 @@ catch {
 	Write-Host "DAC not working this round, likely due to Appveyor resources"
 	return
 }
-
+<#
 $dropsql = "EXEC master.dbo.sp_dropserver @server=N'dbatools-localhost', @droplogins='droplogins';
 			EXEC master.dbo.sp_dropserver @server=N'dbatools-localhost2', @droplogins='droplogins'"
 
@@ -77,3 +77,4 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	Clear-DbaSqlConnectionPool
 }
+#>
