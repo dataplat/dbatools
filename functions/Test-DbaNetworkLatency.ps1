@@ -94,7 +94,8 @@ Function Test-DbaNetworkLatency {
 					if (++$currentcount -eq 1) {
 						$first = [System.Diagnostics.Stopwatch]::StartNew()
 					}
-					$server.ConnectionContext.ExecuteWithResults($query) | Out-Null
+					
+					$null = $server.Query($query)
 					if ($currentcount -eq $count) {
 						$last = $first.elapsed
 					}
@@ -107,7 +108,13 @@ Function Test-DbaNetworkLatency {
 				$avg = $totaltime / $count
 				
 				$totalwarm = $last.TotalMilliseconds
-				$avgwarm = $totalwarm / ($count - 1)
+				if ($Count -eq 1) {
+					$avgwarm = $totalwarm
+				}
+				else {
+					$avgwarm = $totalwarm / ($count - 1)
+				}
+				
 				
 				[PSCustomObject]@{
 					ComputerName = $server.NetName
