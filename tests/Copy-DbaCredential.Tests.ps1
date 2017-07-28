@@ -1,63 +1,82 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-<#
+try {
+	$connstring = "Server=ADMIN:$script:instance1;Trusted_Connection=True"
+	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $script:instance1
+	$server.ConnectionContext.ConnectionString = $connstring
+	$server.ConnectionContext.Connect()
+	$server.ConnectionContext.Disconnect()
+	Clear-DbaSqlConnectionPool
+}
+catch {
+	Write-Host "DAC not working this round, likely due to Appveyor resources"
+	return
+}
+
+# One more for the road - clearing the connection pool is important for DAC since only one is allowed
+Clear-DbaSqlConnectionPool
+
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-	$Credentials = "claudio", "port", "tester"
-	#New-LocalUser -Name "User02" -Description "Description of this account." -NoPassword
-	
-	foreach ($instance in $instances) {
-		foreach ($Credential in $Credentials) {
-			if ($l = Get-DbaCredential -SqlInstance $instance -Credential $Credential) {
-				Get-DbaProcess -SqlInstance $instance -Credential $Credential | Stop-DbaProcess
-				$l.Drop()
-			}
+	Context "Create new credential" {
+		$credentials = $script:Instances | Get-DbaCredential
+		foreach ($Credential in $credentials) {
+			$Credential.Drop()
+		}
+		
+		$logins = "thor", "thorsmomma"
+		$plaintext = "BigOlPassword!"
+		$password = ConvertTo-SecureString $plaintext -AsPlainText -Force
+		
+		# Add user
+		foreach ($login in $logins) {
+			$null = net user $login $plaintext /add *>&1
+		}
+		
+		It "Should create new credentials with the proper properties" {
+			$results = New-DbaCredential -SqlInstance $script:instance1 -Name thorcred -CredentialIdentity thor -Password $password
+			$results.Name | Should Be "thorcred"
+			$results.Identity | Should Be "thor"
+			
+			$results = New-DbaCredential -SqlInstance $script:instance1 -CredentialIdentity thorsmomma -Password $password
+			$results.Name | Should Be "thorsmomma"
+			$results.Identity | Should Be "thorsmomma"
 		}
 	}
-	
-	$null = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -InputFile C:\github\appveyor-lab\sql2008-scripts\Credentials.sql
-	
+	Clear-DbaSqlConnectionPool
 	Context "Copy Credential with the same properties." {
 		It "Should copy successfully" {
-			$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -Credential Tester
+			$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -CredentialIdentity thorcred
 			$results.Status | Should Be "Successful"
 		}
 		
 		It "Should retain its same properties" {
 			
-			$Credential1 = Get-DbaCredential -SqlInstance $script:instance1 -Credential Tester
-			$Credential2 = Get-DbaCredential -SqlInstance $script:instance2 -Credential Tester
-			
-			$Credential2 | Should Not BeNullOrEmpty
+			$Credential1 = Get-DbaCredential -SqlInstance $script:instance1 -CredentialIdentity thor
+			$Credential2 = Get-DbaCredential -SqlInstance $script:instance2 -CredentialIdentity thor
 			
 			# Compare its value
 			$Credential1.Name | Should Be $Credential2.Name
-			$Credential1.Language | Should Be $Credential2.Language
-			$Credential1.Credential | Should be $Credential2.Credential
-			$Credential1.DefaultDatabase | Should be $Credential2.DefaultDatabase
-			$Credential1.IsDisabled | Should be $Credential2.IsDisabled
-			$Credential1.IsLocked | Should be $Credential2.IsLocked
-			$Credential1.IsPasswordExpired | Should be $Credential2.IsPasswordExpired
-			$Credential1.PasswordExpirationEnabled | Should be $Credential2.PasswordExpirationEnabled
-			$Credential1.PasswordPolicyEnforced | Should be $Credential2.PasswordPolicyEnforced
-			$Credential1.Sid | Should be $Credential2.Sid
-			$Credential1.Status | Should be $Credential2.Status
+			$Credential1.CredentialIdentity | Should Be $Credential2.CredentialIdentity
+		}
+	}
+	Clear-DbaSqlConnectionPool
+	Context "No overwrite and cleanup" {
+		$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -CredentialIdentity thorcred -WarningVariable warning 3>&1
+		It "Should not attempt overwrite" {
+			$warning | Should Match "exists"
+			
+		}
+		# Finish up
+		$credentials = $script:Instances | Get-DbaCredential
+		foreach ($Credential in $credentials) {
+			$Credential.Drop()
 		}
 		
-		It "Should Credential with newly created Sql Credential (also tests credential Credential) and gets name" {
-			$password = ConvertTo-SecureString -Force -AsPlainText tester1
-			$cred = New-Object System.Management.Automation.PSCredential ("tester", $password)
-			$s = Connect-DbaSqlServer -SqlInstance $script:instance1 -Credential $cred
-			$s.Name | Should Be $script:instance1
+		foreach ($login in $logins) {
+			$null = net user $login /delete *>&1
 		}
 	}
-	
-	Context "No overwrite" {
-		$results = Copy-DbaCredential -Source $script:instance1 -Destination $script:instance2 -Credential tester -WarningVariable warning  3>&1
-		It "Should not attempt overwrite" {
-			$warning | Should Match "already exists in destination"
-		}
-	}
+	Clear-DbaSqlConnectionPool
 }
-#>

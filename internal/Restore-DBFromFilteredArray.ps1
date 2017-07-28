@@ -137,7 +137,7 @@ Function Restore-DBFromFilteredArray {
 
         foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object BackupSetGuid)) {
             #$RestorePoints  += [PSCustomObject]@{order=[Decimal]($if.Name); 'Files' = $if.group}
-            $RestorePoints += [PSCustomObject]@{order = [Decimal](($if.Group.backupstartdate | Sort-Object -Unique).ticks); 'Files' = $if.group}
+            $RestorePoints += [PSCustomObject]@{order = [Decimal](($if.Group.LastLsn | Sort-Object -Unique)); 'Files' = $if.group}
         }
         $SortedRestorePoints = $RestorePoints | Sort-Object -property order
         if ($ReuseSourceFolderStructure) {

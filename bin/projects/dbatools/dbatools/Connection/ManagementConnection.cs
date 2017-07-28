@@ -577,7 +577,7 @@ namespace Sqlcollaborative.Dbatools.Connection
 
             // Do not try to use disabled protocols
 
-            throw new PSInvalidOperationException("No connectiontypes left to try!");
+            throw new PSInvalidOperationException("No connectiontypes left to try.");
         }
 
         /// <summary>
