@@ -173,7 +173,7 @@
 		$newMessage = "[$FunctionName][$($timestamp.ToString("HH:mm:ss"))] $baseMessage"
 		$newColoredMessage = "[$FunctionName][$($timestamp.ToString("HH:mm:ss"))] $baseMessage"
 	}
-	if ($ErrorRecord -and ($Message -notlike "*$($ErrorRecord[0].Exception.Message)*")) {
+	if ($ErrorRecord -and ($Message -notmatch ([regex]::Escape("$($ErrorRecord[0].Exception.Message)")))) {
 		$baseMessage += " | $($ErrorRecord[0].Exception.Message)"
 		$newMessage += " | $($ErrorRecord[0].Exception.Message)"
 		$newColoredMessage += " | $($ErrorRecord[0].Exception.Message)"

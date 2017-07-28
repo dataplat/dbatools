@@ -13,11 +13,12 @@ if ($dbatools_dotsourcemodule) { $script:doDotSource = $true }
 if ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
 if ((Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
 
-Get-ChildItem -Path "$script:PSModuleRoot\bin\smo\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
+Get-ChildItem -Path "$script:PSModuleRoot\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dmf.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SqlWmiManagement.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ConnectionInfo.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ConnectionInfoExtended.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SmoExtended.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.RegisteredServers.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Sdk.Sfc.dll"
@@ -183,15 +184,18 @@ if (-not (Test-Path Alias:Watch-SqlDbLogin)) { Set-Alias -Scope Global -Name Wat
 if (-not (Test-Path Alias:Get-DiskSpace)) { Set-Alias -Scope Global -Name Get-DiskSpace -Value Get-DbaDiskSpace }
 if (-not (Test-Path Alias:Restore-HallengrenBackup)) { Set-Alias -Scope Global -Name Restore-HallengrenBackup -Value Restore-SqlBackupFromDirectory }
 if (-not (Test-Path Alias:Get-DbaDatabaseFreeSpace)) { Set-Alias -Scope Global -Name Get-DbaDatabaseFreeSpace -Value Get-DbaDatabaseSpace }
+if (-not (Test-Path Alias:Set-DbaQueryStoreConfig)) { Set-Alias -Scope Global -Name Set-DbaQueryStoreConfig -Value Set-DbaDbQueryStoreOptions }
+if (-not (Test-Path Alias:Get-DbaQueryStoreConfig)) { Set-Alias -Scope Global -Name Get-DbaQueryStoreConfig -Value Get-DbaDbQueryStoreOptions }
 
 # Leave forever
 Set-Alias -Scope Global -Name Attach-DbaDatabase -Value Mount-DbaDatabase
 Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
+
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUpFZKuW+uOogGZj3kxIDppy1g
-# JJSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUaM8Xc5cO3gkCCI2bn4VO5C4w
+# /OuggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -322,22 +326,22 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUOJ+2V45Bw3htt1gFmVlmTyxwH84wDQYJKoZIhvcNAQEBBQAE
-# ggEAPT1SIWDUE2VV3HZb3yHqmEKY3UOpJzVeGKghwLjtBPvldsZzFzyCGJpFTVZL
-# O5Vvt4XYpz4LWZsN2l8fp2WNWx09NujxVrMeyob3exeGnmCZ0fSZncKINIMxFtbX
-# DxJVZH6tObjGU6AEoHHd0+favejZ2Ka0JZ16NlhuIR3XoofluXHkcHrKITt2Wzox
-# kpjCxVMErNcOlxg0RB+5yw5+pzja3PPqz1HxFrT5DTT3SYKb2SiSzAeN7Y5gHoRh
-# cTYgQ6+xrNsa6TlZtW9O9mNLVv9J9Tyx0cd+jzrOPtNsfJCTtPFY1Tg7c3hDh1Rp
-# GDAYyw9gg0P5/05tQZgr3YJCh6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUzEAmuPZePSNJiNb+Gc39KuldBAMwDQYJKoZIhvcNAQEBBQAE
+# ggEAAsGWXwebFD0ynrhhi0MR0HlSZbXyCqwGp3FikqLAM9FOY40n595pUCbGCJVQ
+# b/1rCVHBPEkUzcUmrpKJ8CAsqKu3t8CDDEUpcYaaUW2w89yENA9UuS8c9/81NOfj
+# O7jLpbWo8yjJSZqv9aNPSTFOIed9/F1aWNNDxo+SCoLDDZNArT3xqSnaItwF3sL6
+# r/nUyZx6+yDwoeqWuQzUOUwIfmlloT7l0vRDz+sPh7uoImqTQhoq4nk8lyiHGPhg
+# T3bPHA4QLwR9lfkxBiu+qZYHP8EEiexHCfOGrXvZeUs0RRpKPzynqQTgMzhN975E
+# QJVwYxE68zcRJTxfA3INFslSfqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIzMjEzNzM1WjAj
-# BgkqhkiG9w0BCQQxFgQUw67W+d1dyFtihh3unct1yTRPeXIwDQYJKoZIhvcNAQEB
-# BQAEggEALgZgK8aABGpzi/z8TQbnC3aGRL+oA3DLz9WJsmCQDiFJKDGL8U3NU4aP
-# h+pJK0IDc9Fvr29WsvRT1e/UtOrOPSmsb1L+jXmj2tIxW9rxKAnmIWogqpfmPnVj
-# mmzbodw2VLkfSxieSSATy9acu9Fz0loyqx8ygBBpkFYnnjOtKeL9bTSLcizQOolP
-# VH2pj85ZcKTqPWi92yYK6FIvEPzLEfgcLESbXzmiMu2biRAQqs9UYqExNsW+VSuL
-# ba5lciMQeFqbdq1UtcotYOVelydSxuUrsC/KeicGJTCyO32i7Ku5pN8TwZw/cx7v
-# Kxjmv0zWgtAS5BHxitpbBzP+OjcB4Q==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzI3MTUyNTUxWjAj
+# BgkqhkiG9w0BCQQxFgQUtHCmzpDiCnkN3SakvAG/kM8HwW8wDQYJKoZIhvcNAQEB
+# BQAEggEAXTAVvbTH/ifKGnnkDsSV87A/iNqwfGsI1qYyFqwQ+5bCaGQQ9/TYbM/X
+# GfO4zfcSNHFWpNmo2hz0ihhZHDXYWL8RdZ5dOb0Hm38rJoq9T0CNjuPJU7MPVhlX
+# hnmmCLJMi+tly6QhYZwLfga79sL+9a/vDfSZKM7AvXGb5u5gMt0JpNrqumN8FejW
+# 3y5hztHcxs4kjqZJZxeYeL5j63ln9Baf53deAsjHiXHDboKuVy2BkG7aBHVxvkpg
+# G4Vy29IFQ1FnCNr25psEI8BCp8w2KMcJXn41nBh9QZAX+Aaw6cLxDpG5C9ylgKds
+# KU9ZmqHjF6X7RoPpKJ8Z+oj9ufK0sw==
 # SIG # End signature block

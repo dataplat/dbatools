@@ -548,7 +548,7 @@ function Restore-DbaDatabase {
         #$BackupFiles 
         #return
         Write-Message -Level Verbose -Message "sorting uniquely"
-        $AllFilteredFiles = $backupFiles | sort-object -property fullname -unique | Get-FilteredRestoreFile -SqlInstance $SqlInstance -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory -continue:$continue -ContinuePoints:$ContinuePoints -DatabaseName $DatabaseName -AzureCredential $AzureCredential
+        $AllFilteredFiles = $backupFiles | sort-object -property fullname,position -unique | Get-FilteredRestoreFile -SqlInstance $SqlInstance -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory -continue:$continue -ContinuePoints:$ContinuePoints -DatabaseName $DatabaseName -AzureCredential $AzureCredential
 		
         Write-Message -Level Verbose -Message "$($AllFilteredFiles.count) dbs to restore"
 		
