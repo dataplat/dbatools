@@ -198,6 +198,8 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 						#no interpolation, just append
 						$SnapName = '{0}{1}' -f $db.Name, $NameSuffix
 					}
+				} elseif ($Name.Length -gt 0) {
+					$SnapName = $Name
 				}
 				else {
 					$SnapName = "{0}_{1}" -f $db.Name, $DefaultSuffix
