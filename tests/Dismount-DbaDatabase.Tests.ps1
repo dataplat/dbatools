@@ -30,7 +30,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	AfterAll {
 		# this gets executed always (think "finally" in try/catch/finally) and it's the best place for final cleanups
 		$null = Attach-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -FileStructure $script:fileStructure
-		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $script:dbname | Remove-DbaDatabase
+		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase
 	}
 	
 	# Actual tests
