@@ -160,17 +160,14 @@ INSERT INTO ##testdbacompression (
 SELECT s.NAME AS [Schema]
 	,o.NAME AS [TableName]
 	,x.NAME AS [IndexName]
-	,NULL AS [Partition]
+	,p.partition_number AS [Partition]
 	,x.Index_ID AS [IndexID]
 	,x.type_desc AS [IndexType]
 	,NULL AS [PercentScan]
 	,NULL AS [PercentUpdate]
-FROM
-	--sys.dm_db_index_operational_stats (db_id(), NULL, NULL, NULL) i
-	-- INNER JOIN 
-	sys.objects o --ON o.object_id = i.object_id
+FROM sys.objects o 
 INNER JOIN sys.schemas s ON o.schema_id = s.schema_id
-INNER JOIN sys.indexes x ON x.object_id = o.object_id --AND x.Index_ID = o.Index_ID
+INNER JOIN sys.indexes x ON x.object_id = o.object_id 
 INNER JOIN sys.partitions p ON x.object_id = p.object_id
 	AND x.Index_ID = p.Index_ID
 WHERE objectproperty(o.object_id, 'IsUserTable') = 1
@@ -178,7 +175,6 @@ WHERE objectproperty(o.object_id, 'IsUserTable') = 1
 	AND p.rows > 0
 ORDER BY [TableName] ASC;
 
---SELECT * FROM ##testdbacompression;
 DECLARE @schema SYSNAME
 	,@tbname SYSNAME
 	,@ixid INT
@@ -243,14 +239,11 @@ DEALLOCATE cur;
 
 --Update usage and partition_number - If database was restore the sys.dm_db_index_operational_stats will be empty until tables have accesses. Executing the sp_estimate_data_compression_savings first will make those entries appear
 UPDATE ##testdbacompression
-SET [Partition] = i.partition_number
-	,[PercentScan] = i.range_scan_count * 100.0 / NULLIF((i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count), 0)
+SET  [PercentScan] = i.range_scan_count * 100.0 / NULLIF((i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count), 0)
 	,[PercentUpdate] = i.leaf_update_count * 100.0 / NULLIF((i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count), 0)
 FROM sys.dm_db_index_operational_stats(db_id(), NULL, NULL, NULL) i
 INNER JOIN ##testdbacompression tmp ON OBJECT_ID(tmp.TableName) = i.[object_id]
-	AND tmp.IndexID = i.index_id
-INNER JOIN sys.partitions p ON i.[object_id] = p.[object_id]
-	AND i.Index_ID = p.Index_ID;
+	AND tmp.IndexID = i.index_id;
 
 WITH tmp_cte (
 	objname
@@ -366,8 +359,7 @@ IF OBJECT_ID('tempdb..##tmpEstimateRow', 'U') IS NOT NULL
 	DROP TABLE ##tmpEstimateRow
 
 IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
-	DROP TABLE ##tmpEstimatePage;
-"
+	DROP TABLE ##tmpEstimatePage;"
 	}
 	
 	process {
@@ -427,23 +419,23 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
 					#Execute query against individual database and add to output
 					foreach ($row in ($server.Query($sql, $db.Name))) {
 						[pscustomobject]@{
-							ComputerName  = $server.NetName
-							InstanceName  = $server.ServiceName
-							SqlInstance   = $server.DomainInstanceName
-							Database	  = $row.DBName
-							Schema	      = $row.Schema
-							TableName	  = $row.TableName
-							IndexName	  = $row.IndexName
-							Partition	  = $row.Partition
-							IndexID	      = $row.IndexID
-							IndexType	  = $row.IndexType
-							PercentScan   = $row.PercentScan
-							PercentUpdate = $row.PercentUpdate
+							ComputerName    = $server.NetName
+							InstanceName    = $server.ServiceName
+							SqlInstance	    = $server.DomainInstanceName
+							Database	    = $row.DBName
+							Schema		    = $row.Schema
+							TableName	    = $row.TableName
+							IndexName	    = $row.IndexName
+							Partition	    = $row.Partition
+							IndexID		    = $row.IndexID
+							IndexType	    = $row.IndexType
+							PercentScan	    = $row.PercentScan
+							PercentUpdate   = $row.PercentUpdate
 							RowEstimatePercentOriginal = $row.RowEstimatePercentOriginal
 							PageEstimatePercentOriginal = $row.PageEstimatePercentOriginal
 							CompressionTypeRecommendation = $row.CompressionTypeRecommendation
-							SizeCurrent = [dbasize]($row.SizeCurrentKB * 1024)
-							SizeRequested = [dbasize]($row.SizeRequestedKB * 1024)
+							SizeCurrent	    = [dbasize]($row.SizeCurrentKB * 1024)
+							SizeRequested   = [dbasize]($row.SizeRequestedKB * 1024)
 							PercentCompression = $row.PercentCompression
 						}
 					}
