@@ -67,9 +67,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$result.Database | Should Be ("dbatools_SnapMe_{0}_funny" -f $db2)
 		}
 		It "Has the correct properties" {
+			$null = Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Force
 			$result = New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Silent -Database $db2
-			($result.PsObject.Properties.Name | Sort-Object) | Should Be 'ComputerName,Database,DatabaseCreated,InstanceName,Notes,PrimaryFilePath,SizeMB,SnapshotDb,SnapshotOf,SqlInstance,Status'.Split(',')
-			($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be 'ComputerName,InstanceName,SqlInstance,Database,SnapshotOf,SizeMB,DatabaseCreated,PrimaryFilePath,Status'.Split(',')
+			$ExpectedProps = 'ComputerName,Database,DatabaseCreated,InstanceName,Notes,PrimaryFilePath,SizeMB,SnapshotDb,SnapshotOf,SqlInstance,Status'.Split(',')
+			($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+			$ExpectedPropsDefault = 'ComputerName,InstanceName,SqlInstance,Database,SnapshotOf,SizeMB,DatabaseCreated,PrimaryFilePath,Status'.Split(',')
+			($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
 		}
 	}
 }
