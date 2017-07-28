@@ -263,7 +263,7 @@ function Copy-DbaLinkedServer {
 
 		function Copy-DbaLinkedServers {
 			param (
-				[string[]]$LinkedServers,
+				[string[]]$LinkedServer,
 				[bool]$force
 			)
 
@@ -272,8 +272,8 @@ function Copy-DbaLinkedServer {
 
 			$serverlist = $sourceServer.LinkedServers
 
-			if ($LinkedServers) {
-				$serverlist = $serverlist | Where-Object Name -In $LinkedServers
+			if ($LinkedServer) {
+				$serverlist = $serverlist | Where-Object Name -In $LinkedServer
 			}
 			if ($ExcludeLinkedServer) {
 				$serverList = $serverlist | Where-Object Name -NotIn $ExcludeLinkedServer
@@ -401,9 +401,6 @@ function Copy-DbaLinkedServer {
 		$source = $sourceServer.Name
 		$destination = $destServer.Name
 
-		Invoke-SmoCheck -SqlInstance $sourceServer
-		Invoke-SmoCheck -SqlInstance $destServer
-
 		if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
 			Stop-Function -Message "Not a sysadmin on $source. Quitting." -Target $sourceServer
 			return
@@ -426,7 +423,7 @@ function Copy-DbaLinkedServer {
 		}
 
 		# Magic happens here
-		Copy-DbaLinkedServers $linkedservers -Force:$force
+		Copy-DbaLinkedServers $LinkedServer -Force:$force
 	}
 	end {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlLinkedServer
