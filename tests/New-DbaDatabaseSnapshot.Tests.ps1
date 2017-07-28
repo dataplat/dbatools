@@ -1,5 +1,4 @@
 ﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
-$sw = [system.diagnostics.stopwatch]::startNew()
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
