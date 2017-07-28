@@ -139,7 +139,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		}
 	}
 	process {
-		if (!$Database -and $AllDatabases -eq $false -and !$smodatabase) {
+		if (!$Database -and $AllDatabases -eq $false) {
 			Stop-Function -Message "You must specify a -AllDatabases or -Database to continue" -Silent $Silent
 			return
 		}
@@ -147,7 +147,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential -MinimumVersion 9
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue

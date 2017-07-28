@@ -34,7 +34,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		AfterAll {
 			$null = Set-DbaDatabaseState -Sqlinstance $script:instance2 -Database $db3 -Online -Force
-			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2,$db3
+			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2,$db3 -Force
 			Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2,$db3
 		}
 		It "Skips over offline databases nicely" {
@@ -66,5 +66,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$result.SnapshotOf | Should Be $db2
 			$result.Database | Should Be ("dbatools_SnapMe_{0}_funny" -f $db2)
 		}
+		It "Has the correct properties" {
+			$result = New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Silent -Database $db2
+			($result.PsObject.Properties.Name | Sort-Object) | Should Be 'ComputerName,Database,DatabaseCreated,InstanceName,Notes,PrimaryFilePath,SizeMB,SnapshotDb,SnapshotOf,SqlInstance,Status'.Split(',')
+			($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be 'ComputerName,InstanceName,SqlInstance,Database,SnapshotOf,SizeMB,DatabaseCreated,PrimaryFilePath,Status'.Split(',')
+		}
 	}
 }
+
