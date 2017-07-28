@@ -18,9 +18,9 @@
         operations on that object. The higher the value of Scan (that is, the table, index, or partition is mostly scanned), 
         the better candidate it is for page compression.
         Column Compression_Type_Recommendation can have four possible outputs indicating where there is most gain, 
-        if any: ‘PAGE’, ‘ROW’, ‘NO_GAIN’ or ‘?’. When the output is ‘?’ this approach could not give a recommendation, 
+        if any: 'PAGE', 'ROW', 'NO_GAIN' or '?'. When the output is '?' this approach could not give a recommendation, 
         so as a rule of thumb I would lean to ROW if the object suffers mainly UPDATES, or PAGE if mainly INSERTS, 
-        but this is where knowing your workload is essential. When the output is ‘NO_GAIN’ well, that means that according 
+        but this is where knowing your workload is essential. When the output is 'NO_GAIN' well, that means that according 
         to sp_estimate_data_compression_savings no space gains will be attained when compressing, as in the above output example, 
         where compressing would grow the affected object.
         
@@ -86,22 +86,13 @@
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]
-		$SqlInstance,
-		
-		[PSCredential]
-		$SqlCredential,
-		
-        [object[]]
-        $Database,
-		
-		[object[]]
-		$ExcludeDatabase,
-		
-		[switch]
-		$Silent
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential,
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
+		[switch]$Silent
 	)
 	
 	begin {
@@ -162,15 +153,16 @@
 				)
 				SELECT s.name AS [Schema], o.name AS [TableName], x.name AS [IndexName],
 				       i.partition_number AS [Partition], i.Index_ID AS [IndexID], x.type_desc AS [IndexType],
-				       i.range_scan_count * 100.0 / (i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count) AS [PercentScan],
-				       i.leaf_update_count * 100.0 / (i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count) AS [PercentUpdate]
+				       i.range_scan_count * 100.0 / NULLIF((i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count), 0) AS [PercentScan],
+				       i.leaf_update_count * 100.0 / NULLIF((i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + i.leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count), 0) AS [PercentUpdate]
 				FROM sys.dm_db_index_operational_stats (db_id(), NULL, NULL, NULL) i
 					INNER JOIN sys.objects o ON o.object_id = i.object_id
 					INNER JOIN sys.schemas s ON o.schema_id = s.schema_id
 					INNER JOIN sys.indexes x ON x.object_id = i.object_id AND x.Index_ID = i.Index_ID
-					INNER JOIN sys.partitions p on x.object_id = p.object_id and x.Index_ID = p.Index_ID
-				WHERE (i.range_scan_count + i.leaf_insert_count + i.leaf_delete_count + leaf_update_count + i.leaf_page_merge_count + i.singleton_lookup_count) <> 0
-					AND objectproperty(i.object_id,'IsUserTable') = 1 and p.data_compression_desc = 'NONE' and p.rows>0
+					INNER JOIN sys.partitions p on x.object_id = p.object_id AND x.Index_ID = p.Index_ID
+                WHERE objectproperty(i.object_id,'IsUserTable') = 1 
+                  AND p.data_compression_desc = 'NONE' 
+                  AND p.rows>0
 				ORDER BY [TableName] ASC;
 				DECLARE @schema sysname, @tbname sysname, @ixid int
 				DECLARE cur CURSOR FAST_FORWARD FOR SELECT [Schema], [TableName], [IndexID] FROM ##testdbacompression
@@ -329,18 +321,20 @@
 				Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-            $Server.ConnectionContext.StatementTimeout = 0
-                
-            #The reason why we do this is beause of SQL 2016 and they now allow for compression on standard edition.
-                if ($Server.EngineEdition -eq 'Standard' -and $Server.VersionMajor -lt '13')
-                    {
-                    Stop-Function -Message "Only SQL Server Enterprise Edition supports compression on $Server" -Target $Server -Continue
-                    }
+			$Server.ConnectionContext.StatementTimeout = 0
+			
+			[long]$instanceVersionNumber = $($server.VersionString).Replace(".", "")
+			
+			
+			#If SQL Server 2016 SP1 (13.0.4001.0) or higher every version supports compression.
+			if ($Server.EngineEdition -ne "EnterpriseOrDeveloper" -and $instanceVersionNumber -lt 13040010) {
+				Stop-Function -Message "Compresison before SQLServer 2016 SP1 (13.0.4001.0) is only supported by enterprise, developer or evaluation edition. $Server has version $($server.VersionString) and edition is $($Server.EngineEdition)." -Target $db -Continue
+			}
 			#If IncludeSystemDBs is true, include systemdbs
 			#look at all databases, online/offline/accessible/inaccessible and tell user if a db can't be queried.
 			try {
 				$dbs = $server.Databases
-                if ($Database) {
+				if ($Database) {
 					$dbs = $dbs | Where-Object { $Database -contains $_.Name -and $_.IsAccessible -and $_.IsSystemObject -EQ 0 }
 				}
 				
@@ -356,45 +350,46 @@
 				Stop-Function -Message "Unable to gather list of databases for $instance" -Target $instance -ErrorRecord $_ -Continue
 			}
 			
-
 			foreach ($db in $dbs) {
 				try {
-                    Write-Message -Level Verbose -Message "Querying $instance - $db"
-                    if ($db.status -ne 'Normal' -or $db.IsAccessible -eq $false) 
-                        {
+					$dbCompatibilityLevel = [int]($db.CompatibilityLevel.ToString().Replace('Version', ''))
+					
+					Write-Message -Level Verbose -Message "Querying $instance - $db"
+					if ($db.status -ne 'Normal' -or $db.IsAccessible -eq $false) {
 						Write-Message -Level Warning -Message "$db is not accessible." -Target $db
-                         
-						continue
-					    }
-                    if ($db.CompatibilityLevel -lt 'Version100')
-                        { 
-                          Stop-Function -Message "$db has a compatibility level lower than Version100 and will be skipped." -Target $db -Continue 
-                        }
-                    #Execute query against individual database and add to output
-                    foreach ($row in ($server.Query($sql, $db.Name)))
-                        {
+						
+						Continue
+					}
+					
+					if ($dbCompatibilityLevel -lt 100) {
+						Stop-Function -Message "$db has a compatibility level lower than Version100 and will be skipped." -Target $db -Continue
+						Continue
+					}
+					
+					#Execute query against individual database and add to output
+					foreach ($row in ($server.Query($sql, $db.Name))) {
 						[pscustomobject]@{
-							ComputerName = $server.NetName
-							InstanceName = $server.ServiceName
-							SqlInstance = $server.DomainInstanceName
-							Database = $row.DBName
-							Schema = $row.Schema
-							TableName = $row.TableName
-							IndexName = $row.IndexName
-							Partition = $row.Partition
-							IndexID = $row.IndexID
-							IndexType = $row.IndexType
-							PercentScan = $row.PercentScan
+							ComputerName  = $server.NetName
+							InstanceName  = $server.ServiceName
+							SqlInstance   = $server.DomainInstanceName
+							Database	  = $row.DBName
+							Schema	      = $row.Schema
+							TableName	  = $row.TableName
+							IndexName	  = $row.IndexName
+							Partition	  = $row.Partition
+							IndexID	      = $row.IndexID
+							IndexType	  = $row.IndexType
+							PercentScan   = $row.PercentScan
 							PercentUpdate = $row.PercentUpdate
 							RowEstimatePercentOriginal = $row.RowEstimatePercentOriginal
 							PageEstimatePercentOriginal = $row.PageEstimatePercentOriginal
 							CompressionTypeRecommendation = $row.CompressionTypeRecommendation
 							SizeCurrentKB = $row.SizeCurrentKB
 							SizeRequestedKB = $row.SizeRequestedKB
-                            PercentCompression = $row.PercentCompression
-						                  }
-				        }
-				    }
+							PercentCompression = $row.PercentCompression
+						}
+					}
+				}
 				catch {
 					Stop-Function -Message "Unable to query $instance - $db" -Target $db -ErrorRecord $_ -Continue
 				}
