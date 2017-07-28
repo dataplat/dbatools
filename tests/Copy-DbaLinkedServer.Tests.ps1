@@ -43,7 +43,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Copy Credential with the same properties." {
 		It "Should copy successfully" {
 			$results = Copy-DbaLinkedServer -Source $script:instance1 -Destination $script:instance2 -LinkedServer dbatools-localhost
-			$results.Status | Should Be "Successful"
+			foreach ($result in $results) {
+				$result.Name | Should Be "dbatools-localhost"
+				$result.Status | Should Be "Successful"
+			}
 		}
 		
 		It "Should retain its same properties" {
