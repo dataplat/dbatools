@@ -42,14 +42,24 @@ Remove-Module dbatools -ErrorAction Ignore
 Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
 $ScriptAnalyzerRules = Get-ScriptAnalyzerRule
 
+
+# Inspect special words
+$TestsToRunMessage = "$($env:APPVEYOR_REPO_COMMIT_MESSAGE) $($env:APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED)"
+$TestsToRunRegex = [regex] '(?smi)\(do (?<do>[^)]+)\)'
+$TestsToRunMatch = $TestsToRunRegex.Match($TestsToRunMessage).Groups['do'].Value
+if ($TestsToRunMatch.Length -gt 0) {
+	$TestsToRun = "*$TestsToRunMatch*"
+} else {
+	$TestsToRun = "*.Tests.*"
+}
+
 #Run a test with the current version of PowerShell
 #Make things faster by removing most output
 if (-not $Finalize) {
 	Write-Output "Testing with PowerShell $PSVersion"
 	Import-Module Pester
 	Set-Variable ProgressPreference -Value SilentlyContinue
-	write-host -foregroundcolor yellow -inputobject (gci env: | where name -like 'APPVEYOR*' | select name, value | convertto-json)
-	Invoke-Pester -Script "$ModuleBase\Tests" -Show None -OutputFormat NUnitXml -OutputFile "$ModuleBase\$TestFile" -PassThru | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion.xml"
+	Invoke-Pester -Script "$ModuleBase\Tests\$TestsToRun" -Show None -OutputFormat NUnitXml -OutputFile "$ModuleBase\$TestFile" -PassThru | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion.xml"
 }
 else {
 	# Unsure why we're uploading so I removed it for now
@@ -72,10 +82,25 @@ else {
 		Write-Output "You can download it from https://ci.appveyor.com/api/buildjobs/$($env:APPVEYOR_JOB_ID)/tests"
 	}
 	#>
-	
-	#What failed?
+	#What failed? How many tests did we run ?
 	$results = @(Get-ChildItem -Path "$ModuleBase\PesterResults*.xml" | Import-Clixml)
+	
+	$totalcount = $results | Select-Object -ExpandProperty TotalCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
 	$failedcount = $results | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+	
+	if ($TestsToRun -eq "*.Tests.*") {
+		# normal run without skipping
+		if ($totalcount -lt 10) {
+			Write-Warning "Something did not run properly"
+			throw "$totalcount tests ran, which is too little"
+		}
+	} else {
+		if ($totalcount -lt 1) {
+			Write-Warning "Glad you saved some CPU puppies, but no tests at all actually ran ($TestsToRun)"
+			throw "$totalcount tests ran, which is too little"
+		}
+	}
+	
 	
 	if ($failedcount -gt 0) {
 		$faileditems = $results | Select-Object -ExpandProperty TestResult | Where-Object { $_.Passed -notlike $True }
