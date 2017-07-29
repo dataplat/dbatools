@@ -277,7 +277,7 @@ function Backup-DbaDatabase {
 			}
 			
 			if ($type -in 'Full', 'Database') {
-				Write-Message -Level VeryVerbose "Creating full backup"
+				Write-Message -Level VeryVerbose -Message "Creating full backup"
 				$type = "Database"
 				$OutputType='Full'
 			}
