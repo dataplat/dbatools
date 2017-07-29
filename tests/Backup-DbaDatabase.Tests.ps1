@@ -55,7 +55,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	Context "Backup can pipe to restore" {
-		$null = Restore-DbaDatabase -SqlServer $script:instance1 -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -DatabaseName "dbatoolsci_singlerestore"
+		$null = Restore-DbaDatabase -SqlServer $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -DatabaseName "dbatoolsci_singlerestore"
 		$results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database "dbatoolsci_singlerestore" | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName $DestDbRandom
 		It "Should return successful restore" {
 			$results.RestoreComplete | Should Be $true
