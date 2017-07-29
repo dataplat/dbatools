@@ -90,7 +90,7 @@ function Get-DbaAvailabilityGroup {
 				if ($IsPrimary) {
 					$defaults = 'ComputerName','InstanceName','SqlInstance','Name as AvailabilityGroup','IsPrimary'
 					$value = $false
-					if ($serverName -eq $ag.PrimaryReplicaServerName) {
+					if ($ag.PrimaryReplicaServerName -eq $serverName) {
 						$value = $true
 					}
 					Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name IsPrimary -Value $value
