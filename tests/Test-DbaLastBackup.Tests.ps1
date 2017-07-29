@@ -2,23 +2,34 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-# prep
-$null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase
-$server = Connect-DbaSqlServer -SqlInstance $script:instance2
-$random = Get-Random
-$testlastbackup = "testlastbackup$random"
-$dbs = $testlastbackup, "lildb", "testrestore", "singlerestore"
-
-foreach ($db in $dbs) {
-	$server.Query("CREATE DATABASE $db")
-	$server.Query("ALTER DATABASE $db SET RECOVERY FULL WITH NO_WAIT")
-	$server.Query("CREATE TABLE [$db].[dbo].[Example] (id int identity, name nvarchar(max))")
-	$server.Query("INSERT INTO [$db].[dbo].[Example] values ('sample')")
-}
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+	BeforeAll {
+		$dbs = $testlastbackup, "dbatoolsci_lildb", "dbatoolsci_testrestore", "dbatoolsci_singlerestore"
+		$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbs | Remove-DbaDatabase
+		$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+		$random = Get-Random
+		$testlastbackup = "dbatoolsci_testlastbackup$random"
+		$dbs = $testlastbackup, "dbatoolsci_lildb", "dbatoolsci_testrestore", "dbatoolsci_singlerestore"
+
+		foreach ($db in $dbs) {
+			$server.Query("CREATE DATABASE $db")
+			$server.Query("ALTER DATABASE $db SET RECOVERY FULL WITH NO_WAIT")
+			$server.Query("CREATE TABLE [$db].[dbo].[Example] (id int identity, name nvarchar(max))")
+			$server.Query("INSERT INTO [$db].[dbo].[Example] values ('sample')")
+		}
+	
+	}
+	AfterAll {
+		# these for sure
+		Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbs | Remove-DbaDatabase
+		# those just in case test-dbalastbackup didn't cooperate
+		Get-DbaDatabase -SqlInstance $script:instance2 | Where-Object Name -like 'dbatools-testrestore-dbatoolsci_*' | Remove-DbaDatabase
+		# see "Restores using a specific path"
+		Get-ChildItem -Path C:\Temp\dbatools-testrestore-dbatoolsci_singlerestore* | Remove-Item
+	}
 	Context "Setup restores and backups on the local drive for Test-DbaLastBackup" {
-		Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeDatabase tempdb | Backup-DbaDatabase -Type Database
+		Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbs | Backup-DbaDatabase -Type Database
 		$server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample')")
 		Get-DbaDatabase -SqlInstance $script:instance2 -Database $testlastbackup | Backup-DbaDatabase -Type Differential
 		$server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample1')")
@@ -46,16 +57,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 	}
 	
-	Context "Testing that it restores to a specific path" {
-		$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database singlerestore | Backup-DbaDatabase
-		$null = Test-DbaLastBackup -SqlInstance $script:instance2 -Database singlerestore -DataDirectory C:\temp -LogDirectory C:\temp -NoDrop
-		$results = Get-DbaDatabaseFile -SqlInstance $script:instance2 -Database dbatools-testrestore-singlerestore
-		It "Should match C:\temp" {
-			('C:\temp\dbatools-testrestore-singlerestore.mdf' -in $results.PhysicalName) | Should Be $true
-			('C:\temp\dbatools-testrestore-singlerestore_log.ldf' -in $results.PhysicalName) | Should Be $true
+	Context "Restores using a specific path" {
+		$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_singlerestore" | Backup-DbaDatabase
+		$null = Test-DbaLastBackup -SqlInstance $script:instance2 -Database "dbatoolsci_singlerestore" -DataDirectory C:\Temp -LogDirectory C:\Temp -NoDrop
+		$results = Get-DbaDatabaseFile -SqlInstance $script:instance2 -Database "dbatools-testrestore-dbatoolsci_singlerestore"
+		It "Should match C:\Temp" {
+			('C:\Temp\dbatools-testrestore-dbatoolsci_singlerestore.mdf' -in $results.PhysicalName) | Should Be $true
+			('C:\Temp\dbatools-testrestore-dbatoolsci_singlerestore_log.ldf' -in $results.PhysicalName) | Should Be $true
 		}
-		
-		$null = Get-DbaProcess -SqlInstance $script:instance2 -Database dbatools-testrestore-singlerestore | Stop-DbaProcess
-		$null = Get-DbaDatabase -SqlInstance $script:instance2 -ExcludeAllSystemDb | Remove-DbaDatabase
 	}
 }

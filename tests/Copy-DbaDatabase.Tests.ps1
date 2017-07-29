@@ -3,7 +3,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-	$BackupLocation = "C:\github\appveyor-lab\singlerestore\singlerestore.bak"
+	$BackupLocation = "$script:appeyorlabrepo\singlerestore\singlerestore.bak"
 	$NetworkPath = "C:\temp"
 	
 	# cleanup
@@ -12,7 +12,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	# Restore and set owner for Single Restore
-	$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WithReplace
+	$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -WithReplace
 	Set-DbaDatabaseOwner -SqlInstance $script:instance1 -Database singlerestore -TargetLogin sa
 	
 	Context "Restores database with the same properties." {
@@ -45,7 +45,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	
 	Context "Detach, copies and attaches database successfully." {
 		It "Should be success" {
-			$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path C:\github\appveyor-lab\detachattach\detachattach.bak -WithReplace
+			$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\detachattach\detachattach.bak -WithReplace
 			$results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database detachattach -DetachAttach -Reattach -Force -WarningAction SilentlyContinue
 			$results.Status | Should Be "Successful"
 		}
