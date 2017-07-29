@@ -2,6 +2,7 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
+
 # Targets only instance2 because it's the only one where Snapshots can happen
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Operations on snapshots" {
@@ -12,18 +13,29 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$db1_snap2 = "dbatoolsci_GetSnap_snapshotted2"
 			$db2 = "dbatoolsci_GetSnap2"
 			$db2_snap1 = "dbatoolsci_GetSnap2_snapshotted"
-			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2 -Force -Silent
-			Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2 | Remove-DbaDatabase -Silent
+			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2 -Force
+			Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2 | Remove-DbaDatabase
 			$server.Query("CREATE DATABASE $db1")
 			$server.Query("CREATE DATABASE $db2")
-			New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Name $db1_snap1 -Silent
-			New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Name $db1_snap2 -Silent
-			New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Name $db2_snap1 -Silent
+			$setupright = $true
+			$needed = @()
+			$needed += New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Name $db1_snap1
+			$needed += New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Name $db1_snap2
+			$needed += New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Name $db2_snap1
+			if ($needed.Count -ne 3) {
+				$setupright = $false
+				it "has failed setup" {
+					set-testinconclusive -message "setup failed"
+				}
+				throw
+			}
 		}
 		AfterAll {
 			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2 -Force
 			Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2
 		}
+		
+		
 		It "Gets all snapshots by default" {
 			$results = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2
 			($results | Where-Object Database -Like 'dbatoolsci_GetSnap*').Count | Should Be 3
@@ -57,4 +69,5 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 	}
 }
+
 
