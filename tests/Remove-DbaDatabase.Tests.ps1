@@ -30,7 +30,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		It "Should remove a non system database." {
 			Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
 			Get-DbaProcess -SqlInstance $script:instance1 -Database singlerestore | Stop-DbaProcess
-			Restore-DbaDatabase -SqlInstance $script:instance1 -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WithReplace
+			Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -WithReplace
             (Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore).IsAccessible | Should Be $true
             Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
             Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore | Should Be $null
