@@ -13,7 +13,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		$results = Test-DbaNetworkLatency -SqlInstance $instances
 		
 		It "executes 3 times by default" {
-			$results.ExecutionCount | Should Be 3
+			$results.ExecutionCount | Should Be 3, 3
 		}
 		
 		It "has the correct properties" {
