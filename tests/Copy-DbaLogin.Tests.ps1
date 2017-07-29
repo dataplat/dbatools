@@ -14,7 +14,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 	}
 	
-	$null = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -InputFile C:\github\appveyor-lab\sql2008-scripts\logins.sql
+	$null = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -InputFile $script:appeyorlabrepo\sql2008-scripts\logins.sql
 	
 	Context "Copy login with the same properties." {
 		It "Should copy successfully" {
