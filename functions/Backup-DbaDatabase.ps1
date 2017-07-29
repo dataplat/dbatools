@@ -226,7 +226,7 @@ function Backup-DbaDatabase {
 			
 			# Fixes one-off cases of StackOverflowException crashes, see issue 1481 
 			$dbRecovery = $Database.RecoveryModel.ToString()
- 			if ($dbRecovery -eq 'Simple' -and $Type -eq 'Log') {
+			if ($dbRecovery -eq 'Simple' -and $Type -eq 'Log') {
 				$failreason = "$database is in simple recovery mode, cannot take log backup"
 				$failures += $failreason
 				Write-Message -Level Warning -Message "$failreason"
@@ -244,7 +244,7 @@ function Backup-DbaDatabase {
 				$CopyOnly = $false
 			}
 			
-			$server.ConnectionContext.StatementTimeout  = 0
+			$server.ConnectionContext.StatementTimeout = 0
 			$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
 			$backup.Database = $Database.Name
 			$Suffix = "bak"
@@ -264,22 +264,22 @@ function Backup-DbaDatabase {
 			}
 			
 			if ($type -in 'diff', 'differential') {
-				Write-Message -Level VeryVerbose -Message "Creating differential backup"
+				Write-Message -Level Verbose -Message "Creating differential backup"
 				$type = "Database"
 				$backup.Incremental = $true
 				$outputType = 'Differential'
 			}
 			
 			if ($Type -eq "Log") {
-				Write-Message -Level VeryVerbose -Message "Creating log backup"
+				Write-Message -Level Verbose -Message "Creating log backup"
 				$Suffix = "trn"
 				$OutputType = 'Log'
 			}
 			
 			if ($type -in 'Full', 'Database') {
-				Write-Message -Level VeryVerbose -Message "Creating full backup"
+				Write-verbose "Setting type"
 				$type = "Database"
-				$OutputType='Full'
+				$OutputType = 'Full'
 			}
 			
 			$backup.CopyOnly = $copyonly
@@ -288,7 +288,7 @@ function Backup-DbaDatabase {
 				$backup.CredentialName = $AzureCredential
 			}
 			
-			Write-Message -Level VeryVerbose -Message "Sorting Paths"
+			Write-Message -Level Verbose -Message "Sorting Paths"
 			
 			#If a backupfilename has made it this far, use it
 			$FinalBackupPath = @()
@@ -318,11 +318,11 @@ function Backup-DbaDatabase {
 					$BackupDirectory += $server.BackupDirectory
 				}
 				
-				$timestamp = (Get-Date -Format yyyyMMddHHmm)
-				Write-Message -Level VeryVerbose -Message "Setting filename"
+				$timestamp = (Get-date -Format yyyyMMddHHmm)
+				Write-Message -Level Verbose -Message "Setting filename"
 				$BackupFileName = "$($dbname)_$timestamp"
 				if ('' -ne $AzureBaseUrl) {
-					Write-Message -Level VeryVerbose -Message "Azure div"
+					write-verbose "Azure div"
 					$PathDivider = "/"
 				}
 				else {
@@ -432,19 +432,19 @@ function Backup-DbaDatabase {
 					$Verified = $false
 					if ($Verify) {
 						$verifiedresult = [PSCustomObject]@{
-							SqlInstance = $server.name
-							DatabaseName = $dbname
+							SqlInstance   = $server.name
+							DatabaseName  = $dbname
 							BackupComplete = $BackupComplete
 							BackupFilesCount = $FinalBackupPath.count
-							BackupFile = (Split-Path $FinalBackupPath -leaf)
-							BackupFolder = (Split-Path $FinalBackupPath | Sort-Object -Unique)
-							BackupPath = ($FinalBackupPath | Sort-Object -Unique)
-							Script = $script
-							Notes = $failures -join (',')
-							FullName = ($FinalBackupPath | Sort-Object -Unique)
-							FileList = $FileList
+							BackupFile    = (split-path $FinalBackupPath -leaf)
+							BackupFolder  = (split-path $FinalBackupPath | Sort-Object -Unique)
+							BackupPath    = ($FinalBackupPath | Sort-Object -Unique)
+							Script	      = $script
+							Notes		  = $failures -join (',')
+							FullName	  = ($FinalBackupPath | Sort-Object -Unique)
+							FileList	  = $FileList
 							SoftwareVersionMajor = $server.VersionMajor
-							Type = $outputType
+							Type		  = $outputType
 						} | Restore-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
 						if ($verifiedResult[0] -eq "Verify successful") {
 							$failures += $verifiedResult[0]
@@ -467,20 +467,20 @@ function Backup-DbaDatabase {
 				$OutputExclude += ('Notes')
 			}
 			[PSCustomObject]@{
-				SqlInstance = $server.name
-				DatabaseName = $dbname
+				SqlInstance   = $server.name
+				DatabaseName  = $dbname
 				BackupComplete = $BackupComplete
 				BackupFilesCount = $FinalBackupPath.count
-				BackupFile = (Split-Path $FinalBackupPath -leaf)
-				BackupFolder = (Split-Path $FinalBackupPath | Sort-Object -Unique)
-				BackupPath = ($FinalBackupPath | Sort-Object -Unique)
-				Script = $script
-				Notes = $failures -join (',')
-				FullName = ($FinalBackupPath | Sort-Object -Unique)
-				FileList = $FileList
+				BackupFile    = (split-path $FinalBackupPath -leaf)
+				BackupFolder  = (split-path $FinalBackupPath | Sort-Object -Unique)
+				BackupPath    = ($FinalBackupPath | Sort-Object -Unique)
+				Script	      = $script
+				Notes		  = $failures -join (',')
+				FullName	  = ($FinalBackupPath | Sort-Object -Unique)
+				FileList	  = $FileList
 				SoftwareVersionMajor = $server.VersionMajor
-				Verified = $Verified
-				Type = $outputType
+				Verified	  = $Verified
+				Type		  = $outputType
 			} | Select-DefaultView -ExcludeProperty $OutputExclude
 			$BackupFileName = $null
 		}
