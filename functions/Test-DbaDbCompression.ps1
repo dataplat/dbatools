@@ -281,6 +281,7 @@ SET [RowEstimatePercentOriginal] = tcte.pct_of_orig_row
 	,[PageEstimatePercentOriginal] = tcte.pct_of_orig_page
 	,SizeCurrent = tcte.SizeCurrent
 	,SizeRequested = tcte.SizeRequested
+	,PercentCompression = 100 - (cast(tcte.[SizeRequested] AS NUMERIC(10, 2)) * 100 / (tcte.[SizeCurrent] - ABS(SIGN(tcte.[SizeCurrent])) + 1))
 FROM tmp_cte tcte
 	,##testdbacompression tcomp
 WHERE tcte.objname = tcomp.TableName
@@ -329,10 +330,6 @@ WHERE tcte2.TableName = tcomp2.TableName
 	AND tcte2.[schema] = tcomp2.[schema]
 	AND tcte2.IndexID = tcomp2.IndexID;
 
-UPDATE ##testdbacompression
-SET PercentCompression = 100 - (cast([SizeRequested] AS NUMERIC(10, 2)) * 100 / ([SizeCurrent] - ABS(SIGN([SizeCurrent])) + 1))
-FROM ##testdbacompression
-
 SET NOCOUNT ON;
 
 SELECT DBName = DB_Name()
@@ -359,7 +356,9 @@ IF OBJECT_ID('tempdb..##tmpEstimateRow', 'U') IS NOT NULL
 	DROP TABLE ##tmpEstimateRow
 
 IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
-	DROP TABLE ##tmpEstimatePage;"
+	DROP TABLE ##tmpEstimatePage;
+
+"
 	}
 	
 	process {
