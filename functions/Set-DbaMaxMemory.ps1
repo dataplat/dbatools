@@ -151,7 +151,7 @@ Function Set-DbaMaxMemory {
 			catch {
 				Stop-Function -Message "Could not modify Max Server Memory for $server" -ErrorRecord $_ -Target $currentserver -Continue
 			}
-			Add-Member -InputObject $currentserver -Force -MemberType NoteProperty -Name CurrentMaxValue -Value $_.SqlMaxMB
+			Add-Member -InputObject $currentserver -Force -MemberType NoteProperty -Name CurrentMaxValue -Value $currentserver.SqlMaxMB
 			Select-DefaultView -InputObject $currentserver -Property ComputerName, InstanceName, SqlInstance, TotalMB, OldMaxValue, CurrentMaxValue
 		}
 	}
