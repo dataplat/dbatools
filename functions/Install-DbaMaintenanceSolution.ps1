@@ -125,10 +125,10 @@ function Install-DbaMaintenanceSolution {
             
             if ((Test-Bound -Parameter ReplaceExisting -Not)) {
                 $procs = Get-DbaSqlModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
-                $table = Get-DbaTable -SqlInstance $server -Database $Database -Table CommandLog
+                $table = Get-DbaTable -SqlInstance $server -Database $Database -Table CommandLog -IncludeSystemDBs  | where Database -eq $Database
                 
                 if ($null -ne $procs -or $null -ne $table) {
-                    Stop-Function -Message "The Maintenance Solution alredy exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."
+                    Stop-Function -Message "The Maintenance Solution already exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."
                     return
                 }
             }
