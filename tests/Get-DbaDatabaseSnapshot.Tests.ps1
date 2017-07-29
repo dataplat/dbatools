@@ -12,17 +12,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$db1_snap2 = "dbatoolsci_GetSnap_snapshotted2"
 			$db2 = "dbatoolsci_GetSnap2"
 			$db2_snap1 = "dbatoolsci_GetSnap2_snapshotted"
-			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2 -Force -Silent
-			Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2 | Remove-DbaDatabase -Silent
+			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2 -Force -ErrorAction SilentlyContinue
+			Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2 | Remove-DbaDatabase -ErrorAction SilentlyContinue
 			$server.Query("CREATE DATABASE $db1")
 			$server.Query("CREATE DATABASE $db2")
-			New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Name $db1_snap1 -Silent
-			New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Name $db1_snap2 -Silent
-			New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Name $db2_snap1 -Silent
+			New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Name $db1_snap1 -ErrorAction SilentlyContinue
+			New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Name $db1_snap2 -ErrorAction SilentlyContinue
+			New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Name $db2_snap1 -ErrorAction SilentlyContinue
 		}
 		AfterAll {
-			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2 -Force
-			Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2
+			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1, $db2 -Force -ErrorAction SilentlyContinue
+			Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
 		}
 		It "Gets all snapshots by default" {
 			$results = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2
