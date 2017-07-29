@@ -34,8 +34,8 @@ function Install-DbaMaintenanceSolution {
     .PARAMETER Solution
         You can choose to install the complete solution (All) or only one of:  Backup / IntegrityCheck / IndexOptimize
 
-    .PARAMETER SQLAgentJobs
-        Create SQL Agent Jobs. Valid options are: 'Create', 'Delete', 'NotTouch'
+    .PARAMETER InstallJobs
+        Create SQL Agent Jobs. Valid options are: 'Create', 'Delete', 'Skip'
         
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -60,7 +60,7 @@ function Install-DbaMaintenanceSolution {
         If the Maintenance Solution already exists, the script will be halted.
    
     .EXAMPLE
-        Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -ReplaceExisting -CleanupTime 72 -LogToTable -Solution "Backup" -BackupLocation "Z:\SQLBackup" -SQLAgentJobs Create
+        Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -ReplaceExisting -CleanupTime 72 -LogToTable -Solution "Backup" -BackupLocation "Z:\SQLBackup" -InstallJobs Create
         
     .EXAMPLE
         Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72
@@ -108,8 +108,8 @@ function Install-DbaMaintenanceSolution {
         [switch]$LogToTable,
         [ValidateSet('All', 'Backup', 'IntegrityCheck', 'IndexOptimize')]
         [string]$Solution = 'All',
-        [ValidateSet('Create', 'NotTouch')]
-        [string]$SQLAgentJobs = 'NotTouch',
+        [ValidateSet('Create', 'Skip')]
+        [string]$InstallJobs = 'Skip',
         [switch]$Silent
     )
     
@@ -125,7 +125,7 @@ function Install-DbaMaintenanceSolution {
             }
             
             if ((Test-Bound -Parameter ReplaceExisting -Not)) {
-                $procs = Get-DbaSqlModule -SqlInstance $server | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
+                $procs = Get-DbaSqlModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
                 $table = Get-DbaTable -SqlInstance $server -Database $Database -Table CommandLog
                 
                 if ($null -ne $procs -or $null -ne $table) {
@@ -142,8 +142,8 @@ function Install-DbaMaintenanceSolution {
             
             $db = $server.Databases[$Database]
             
-            if ($SQLAgentJobs -eq 'Create' -and $Solution -ne 'All') {
-                Stop-Function -Message "To create SQL Agent jobs you need to use '-Solution All' and '-SQLAgentJobs Create'"
+            if ($InstallJobs -eq 'Create' -and $Solution -ne 'All') {
+                Stop-Function -Message "To create SQL Agent jobs you need to use '-Solution All' and '-InstallJobs Create'"
                 return
             }
             
@@ -151,7 +151,7 @@ function Install-DbaMaintenanceSolution {
                 Write-Message -Level Verbose -Message "If Ola Hallengren's scripts are found, we will drop and recreate them!"
             }
             
-            if ($CleanupTime -ne 0 -and $SQLAgentJobs -ne 'Create') {
+            if ($CleanupTime -ne 0 -and $InstallJobs -ne 'Create') {
                 Write-Message -Level Output -Message  "CleanupTime $CleanupTime value will be ignored because you chose not to create SQL Agent Jobs"
             }
     
@@ -254,7 +254,7 @@ function Install-DbaMaintenanceSolution {
             }
             
             # Create Jobs
-            if ($SQLAgentJobs -eq 'NotTouch') {
+            if ($InstallJobs -eq 'Skip') {
                 $findCreateJobs = "SET @CreateJobs          = 'Y'"
                 $replaceCreateJobs = "SET @CreateJobs          = 'N'"
                 foreach ($file in $listOfFiles) {
@@ -281,7 +281,7 @@ function Install-DbaMaintenanceSolution {
                 $null = $db.Query($CleanupQuery)
                                 
                 # Remove Ola's Jobs                     
-                if ($SQLAgentJobs -ne 'NotTouch') {
+                if ($InstallJobs -ne 'Skip') {
                     Write-Message -Level Output -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution"
                     $jobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
                     if ($jobs) {
@@ -292,10 +292,11 @@ function Install-DbaMaintenanceSolution {
             
             try {
                 Write-Message -Level Output -Message "Installing on server $SqlInstance, database $Database"
-                
-                foreach ($file in $listOfFiles) {
-                    $shortFileName = Split-Path $file -Leaf
-                    if ($required.Contains($shortFileName)) {
+				
+				foreach ($file in $listOfFiles) {
+					$shortFileName = Split-Path $file -Leaf
+					if ($required.Contains($shortFileName)) {
+						Write-Message -Level Output -Message "Installing $file"
                         $sql = [IO.File]::ReadAllText($file)
                         try {
                             foreach ($query in ($sql -Split "\nGO\b")) {
