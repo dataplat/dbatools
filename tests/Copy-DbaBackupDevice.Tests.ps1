@@ -24,16 +24,23 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		
 		$results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue
-		$testpath = Test-DbaSqlPath -SqlInstance $script:instance2 -Path $backupfilename
-		
 		if ($warn) {
-			It "does not overwrite existing" {
+			It "warns if it has a problem moving (issue for local to local)" {
 				$warn -match "backup device to destination" | Should Be $true
 			}
 		}
 		else {
 			It "should report success" {
 				$results.Status | Should Be "Successful"
+			}
+		}
+		
+		if ($results.Status -eq "Successful") {
+			$results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue
+			if ($warn) {
+				It "does not overwrite existing" {
+					$warn -match "exists at destination" | Should Be $true
+				}
 			}
 		}
 	}
