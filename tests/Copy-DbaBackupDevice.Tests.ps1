@@ -3,7 +3,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-	Context "limited operation testing of this copy command" {
+	Context "setup wtf" {
 		BeforeAll {
 			$devicename = "dbatoolsci-backupdevice"
 			$backupdir = (Get-DbaDefaultPath -SqlInstance $script:instance1).Backup
@@ -18,17 +18,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$server.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
 		}
 		
-		$results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue
-		$testpath = (Test-DbaSqlPath -SqlInstance $script:instance2 -Path "$backupdir\$devicename.bak")
-		
-		if ($warn) {
-			It "does not overwrite existing" {
-				$warn -match "backup device to destination" | Should Be $true
+		Context "limited operation testing of this copy command" {
+			$results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue
+			$testpath = (Test-DbaSqlPath -SqlInstance $script:instance2 -Path "$backupdir\$devicename.bak")
+			
+			if ($warn) {
+				It "does not overwrite existing" {
+					$warn -match "backup device to destination" | Should Be $true
+				}
 			}
-		}
-		else {
-			It "should report success" {
-				$results.Status | Should Be "Successful"
+			else {
+				It "should report success" {
+					$results.Status | Should Be "Successful"
+				}
 			}
 		}
 	}
