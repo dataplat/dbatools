@@ -14,12 +14,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		AfterAll {
 			$server.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
-			$server.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
+			$server1 = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$server1.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
 		}
 		
 		$results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue
-		$testpath = (Test-DbaSqlPath -SqlInstance $script:instance2 -Path "$backupdir\$devicename.bak")
+		$testpath = Test-DbaSqlPath -SqlInstance $script:instance2 -Path $backupfilename
 		
 		if ($warn) {
 			It "does not overwrite existing" {
