@@ -32,6 +32,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$null = Set-DbaDatabaseState -Sqlinstance $script:instance2 -Database $db3 -Offline -Force
 		}
 		AfterAll {
+			Stop-DbaProcess -SqlInstance $script:instance2 -Database $db1, $db2, $db3
 			$null = Set-DbaDatabaseState -Sqlinstance $script:instance2 -Database $db3 -Online -Force
 			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2,$db3 -Force
 			Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2,$db3
@@ -70,7 +71,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$result = New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Silent -Database $db2
 			$ExpectedProps = 'ComputerName,Database,DatabaseCreated,InstanceName,Notes,PrimaryFilePath,SizeMB,SnapshotDb,SnapshotOf,SqlInstance,Status'.Split(',')
 			($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-			$ExpectedPropsDefault = 'ComputerName,InstanceName,SqlInstance,Database,SnapshotOf,SizeMB,DatabaseCreated,PrimaryFilePath,Status'.Split(',')
+			$ExpectedPropsDefault = 'ComputerName,InstanceName,SqlInstance,Notes,Database,SnapshotOf,SizeMB,DatabaseCreated,PrimaryFilePath,Status'.Split(',')
 			($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
 		}
 	}
