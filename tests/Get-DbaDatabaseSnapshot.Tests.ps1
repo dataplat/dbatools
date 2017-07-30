@@ -19,20 +19,20 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$server.Query("CREATE DATABASE $db2")
 			$setupright = $true
 			$needed = @()
-			$needed += New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Name $db1_snap1
-			$needed += New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Name $db1_snap2
-			$needed += New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Name $db2_snap1
+			$needed += New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Name $db1_snap1 -WarningAction SilentlyContinue 
+			$needed += New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Name $db1_snap2 -WarningAction SilentlyContinue
+			$needed += New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Name $db2_snap1 -WarningAction SilentlyContinue
 			if ($needed.Count -ne 3) {
 				$setupright = $false
 				it "has failed setup" {
-					set-testinconclusive -message "setup failed"
+					Set-TestInconclusive -message "Setup failed"
 				}
-				throw
+				return
 			}
 		}
 		AfterAll {
-			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2 -Force
-			Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2
+			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2 -Force -ErrorAction SilentlyContinue
+			Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
 		}
 		
 		
