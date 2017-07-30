@@ -33,4 +33,3 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 	}
 }
-$results
