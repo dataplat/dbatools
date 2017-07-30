@@ -6,5 +6,6 @@ else {
 	$script:instance1 = "localhost\sql2008r2sp2"
 	$script:instance2 = "localhost\sql2016"
 	$script:appeyorlabrepo = "C:\github\appveyor-lab"
-	$Instances = @($script:instance1, $script:instance2)
+	$instances = @($script:instance1, $script:instance2)
+	$ssisserver = "localhost\sql2016"
 }
