@@ -89,3 +89,5 @@ Write-Output "Executing startup scripts for SQL Server 2016"
 foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2016-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
 	Invoke-Sqlcmd2 -ServerInstance localhost\sql2016 -InputFile $file
 }
+
+Get-Service 
