@@ -71,7 +71,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$result = New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Silent -Database $db2
 			$ExpectedProps = 'ComputerName,Database,DatabaseCreated,InstanceName,Notes,PrimaryFilePath,SizeMB,SnapshotDb,SnapshotOf,SqlInstance,Status'.Split(',')
 			($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-			$ExpectedPropsDefault = 'ComputerName,InstanceName,SqlInstance,Notes,Database,SnapshotOf,SizeMB,DatabaseCreated,PrimaryFilePath,Status'.Split(',')
+		}
+		It "Has the correct default properties" {
+			$ExpectedPropsDefault = 'ComputerName,InstanceName,SqlInstance,Database,SnapshotOf,SizeMB,DatabaseCreated,PrimaryFilePath,Status'.Split(',')
 			($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
 		}
 	}
