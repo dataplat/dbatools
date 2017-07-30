@@ -14,7 +14,6 @@ New-Item -Path C:\temp\backups -ItemType Directory -ErrorAction SilentlyContinue
 
 Write-Output "Setting up AppVeyor Services"
 Set-Service -Name 'SQLAgent$sql2016' -StartupType Automatic -WarningAction SilentlyContinue
-Get-Service *MsDts* | Set-Service -StartupType Automatic -WarningAction SilentlyContinue
 Set-Service -Name SQLBrowser -StartupType Automatic -WarningAction SilentlyContinue
 Start-Service SQLBrowser -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 
@@ -73,9 +72,6 @@ do {
 }
 while ((Get-Service 'SQLAgent$sql2016').Status -ne 'Running' -and $z++ -lt 10)
 
-Write-Output "Starting SQL Server Integrated Services to start"
-Get-Service *MsDts* | Start-Service -WarningAction SilentlyContinue
-
 # Whatever, just sleep an extra 5
 Start-Sleep 5
 
@@ -90,4 +86,5 @@ foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2016-startup\*.sql -R
 	Invoke-Sqlcmd2 -ServerInstance localhost\sql2016 -InputFile $file
 }
 
-Get-Service 
+$server = Connect-DbaSqlServer -SqlInstance localhost\sql2016
+$server.Edition
