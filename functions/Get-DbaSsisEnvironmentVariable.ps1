@@ -112,9 +112,6 @@ You should have received a copy of the GNU General Public License along with thi
 		[switch]$Silent
 	)
 	
-	begin {
-		Import-OldSmo
-	}
 	process {
 		foreach ($instance in $SqlInstance) {
 			try {
@@ -132,7 +129,7 @@ You should have received a copy of the GNU General Public License along with thi
 				$SSIS = New-Object "$ISNamespace.IntegrationServices" $server
 			}
 			catch {
-				Stop-Function -Message "Could not connect to SSIS Catalog on $instance"
+				Stop-Function -Message "Could not connect to SSIS Catalog on $instance or current SMO library does not support SSIS catalog"
 				return
 			}
 			
