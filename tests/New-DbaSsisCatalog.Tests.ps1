@@ -10,10 +10,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		if (-not $db) {
 			$password = ConvertTo-SecureString MyVisiblePassWord -AsPlainText -Force
-			$results = New-DbaSsisCatalog -SqlInstance $ssisserver -Password $password -WarningAction SilentlyContinue -WarningVariable $warn
+			$results = New-DbaSsisCatalog -SqlInstance $ssisserver -Password $password -WarningAction SilentlyContinue -WarningVariable warn
 			
 			# Run the tests only if it worked (this could be more accurate but w/e, it's hard to test on appveyor)
-			if (-not $warn) {
+			if ($warn -match "not running") {
+				if (-not $env:APPVEYOR_REPO_BRANCH) {
+					Write-Warning "$warn"
+				}
+			}
+			else {
 				It "uses the specified database" {
 					$results.SsisCatalog | Should Be $database
 				}
