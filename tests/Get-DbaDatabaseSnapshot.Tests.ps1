@@ -27,7 +27,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 				it "has failed setup" {
 					Set-TestInconclusive -message "Setup failed"
 				}
-				return
 			}
 		}
 		AfterAll {
@@ -35,37 +34,38 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
 		}
 		
-		
-		It "Gets all snapshots by default" {
-			$results = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2
-			($results | Where-Object Database -Like 'dbatoolsci_GetSnap*').Count | Should Be 3
-		}
-		It "Honors the Database parameter, returning only snapshots of that database" {
-			$results = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1
-			$results.Count | Should Be 2
-			$result = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2
-			$result.SnapshotOf | Should Be $db2
-		}
-		It "Honors the ExcludeDatabase parameter, returning relevant snapshots" {
-			$alldbs = (Get-DbaDatabase -SqlInstance $script:instance2 | Where-Object IsDatabaseSnapShot -eq $false | Where Name -notin @($db1,$db2)).Name
-			$results = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2 -ExcludeDatabase $alldbs
-			$results.Count | Should Be 3
-		}
-		It "Honors the Snapshot parameter" {
-			$result = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Snapshot $db1_snap1
-			$result.Database | Should Be $db1_snap1
-			$result.SnapshotOf | Should Be $db1
-		}
-		It "Honors the ExcludeSnapshot parameter" {
-			$result = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2 -ExcludeSnapshot $db1_snap1 -Database $db1
-			$result.Database | Should Be $db1_snap2
-		}
-		It "has the correct properties" {
-			$result = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2
-			$ExpectedProps = 'ComputerName,Database,DatabaseCreated,InstanceName,SizeMB,SnapshotDb,SnapshotOf,SqlInstance'.Split(',')
-			($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-			$ExpectedPropsDefault = 'ComputerName,Database,DatabaseCreated,InstanceName,SizeMB,SnapshotOf,SqlInstance'.Split(',')
-			($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
+		if ($setupright) {
+			It "Gets all snapshots by default" {
+				$results = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2
+				($results | Where-Object Database -Like 'dbatoolsci_GetSnap*').Count | Should Be 3
+			}
+			It "Honors the Database parameter, returning only snapshots of that database" {
+				$results = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1
+				$results.Count | Should Be 2
+				$result = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2
+				$result.SnapshotOf | Should Be $db2
+			}
+			It "Honors the ExcludeDatabase parameter, returning relevant snapshots" {
+				$alldbs = (Get-DbaDatabase -SqlInstance $script:instance2 | Where-Object IsDatabaseSnapShot -eq $false | Where-Object Name -notin @($db1, $db2)).Name
+				$results = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2 -ExcludeDatabase $alldbs
+				$results.Count | Should Be 3
+			}
+			It "Honors the Snapshot parameter" {
+				$result = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Snapshot $db1_snap1
+				$result.Database | Should Be $db1_snap1
+				$result.SnapshotOf | Should Be $db1
+			}
+			It "Honors the ExcludeSnapshot parameter" {
+				$result = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2 -ExcludeSnapshot $db1_snap1 -Database $db1
+				$result.Database | Should Be $db1_snap2
+			}
+			It "has the correct properties" {
+				$result = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2
+				$ExpectedProps = 'ComputerName,Database,DatabaseCreated,InstanceName,SizeMB,SnapshotDb,SnapshotOf,SqlInstance'.Split(',')
+				($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+				$ExpectedPropsDefault = 'ComputerName,Database,DatabaseCreated,InstanceName,SizeMB,SnapshotOf,SqlInstance'.Split(',')
+				($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
+			}
 		}
 	}
 }
