@@ -73,6 +73,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 		}
 		It "Has the correct default properties" {
+			$null = Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Force
+			$result = New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Silent -Database $db2
 			$ExpectedPropsDefault = 'ComputerName,InstanceName,SqlInstance,Database,SnapshotOf,SizeMB,DatabaseCreated,PrimaryFilePath,Status'.Split(',')
 			($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
 		}
