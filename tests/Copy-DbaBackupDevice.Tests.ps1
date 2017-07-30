@@ -17,20 +17,20 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
 			$server.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
 		}
+	}
+	
+	Context "limited operation testing of this copy command" {
+		$results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue
+		$testpath = (Test-DbaSqlPath -SqlInstance $script:instance2 -Path "$backupdir\$devicename.bak")
 		
-		Context "limited operation testing of this copy command" {
-			$results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue
-			$testpath = (Test-DbaSqlPath -SqlInstance $script:instance2 -Path "$backupdir\$devicename.bak")
-			
-			if ($warn) {
-				It "does not overwrite existing" {
-					$warn -match "backup device to destination" | Should Be $true
-				}
+		if ($warn) {
+			It "does not overwrite existing" {
+				$warn -match "backup device to destination" | Should Be $true
 			}
-			else {
-				It "should report success" {
-					$results.Status | Should Be "Successful"
-				}
+		}
+		else {
+			It "should report success" {
+				$results.Status | Should Be "Successful"
 			}
 		}
 	}
