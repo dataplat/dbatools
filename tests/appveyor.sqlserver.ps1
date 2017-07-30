@@ -12,7 +12,7 @@ New-Item -Path C:\temp -ItemType Directory -ErrorAction SilentlyContinue | Out-N
 New-Item -Path C:\temp\migration -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 New-Item -Path C:\temp\backups -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 
-Write-Output "Setting sql2016 Agent to Automatic"
+Write-Output "Setting up AppVeyor Services"
 Set-Service -Name 'SQLAgent$sql2016' -StartupType Automatic -WarningAction SilentlyContinue
 Set-Service -Name SQLBrowser -StartupType Automatic -WarningAction SilentlyContinue
 Start-Service SQLBrowser -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
