@@ -3,7 +3,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-	Context "setup wtf" {
+	Context "Setup" {
 		BeforeAll {
 			$devicename = "dbatoolsci-backupdevice"
 			$backupdir = (Get-DbaDefaultPath -SqlInstance $script:instance1).Backup
@@ -17,9 +17,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
 			$server.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
 		}
-	}
-	
-	Context "limited operation testing of this copy command" {
+		
 		$results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue
 		$testpath = (Test-DbaSqlPath -SqlInstance $script:instance2 -Path "$backupdir\$devicename.bak")
 		
