@@ -12,8 +12,8 @@ SQL Server you wish to run the function on.
 .PARAMETER SqlCredential
 Credenitals used to connect to the SQL Server
 
-.PARAMETER SsisCredential
-Required password that will be used for the security key in SSISDB. You must pass in a PowerShell credential - only the password is required for SSIS but PowerShell insists you add a username, so add whatever.
+.PARAMETER Password
+Required password that will be used for the security key in SSISDB.
 
 .PARAMETER SsisCatalog
 SSIS catalog name. By default, this is SSISDB.	
@@ -42,10 +42,17 @@ You should have received a copy of the GNU General Public License along with thi
 .LINK
 https://dbatools.io/New-DbaSsisCatalog
 
-.EXAMPLE   
-New-DbaSsisCatalog -SqlInstance DEV01 -SsisCredential (Get-Credential)
+.EXAMPLE
+$password = ConvertTo-SecureString MyVisiblePassWord -AsPlainText -Force
+New-DbaSsisCatalog -SqlInstance sql2016 -Password $password
 
-Prompts for username/password - while only password is used, the username must be filled out nevertheless. Then creates the SSIS Catalog on server DEV01 with the specified password. 
+Creates the SSIS Catalog on server DEV01 with the specified password. 
+
+.EXAMPLE
+$password = Read-Host -AsSecureString -Prompt "Enter password"
+New-DbaSsisCatalog -SqlInstance DEV01 -Password $password
+
+Creates the SSIS Catalog on server DEV01 with the specified password. 
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
@@ -55,13 +62,11 @@ Prompts for username/password - while only password is used, the username must b
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
 		[parameter(Mandatory = $true)]
-		[PSCredential]$SsisCredential,
+		[Security.SecureString]$Password,
 		[string]$SsisCatalog = "SSISDB",
 		[switch]$Silent
 	)
-	begin {
-		Import-OldSmo
-	}
+	
 	process {
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
@@ -84,13 +89,19 @@ Prompts for username/password - while only password is used, the username must b
 			}
 			
 			#if SQL 2012 or higher only validate databases with ContainmentType = NONE
-			$clrenabled = Get-DbaSpConfigure -SqlInstance $instance -SqlCredential $sqlcredential | Where-Object ConfigName -eq IsSqlClrEnabled
+			$clrenabled = Get-DbaSpConfigure -SqlInstance $server -Config IsSqlClrEnabled
 			
 			if (!$clrenabled.RunningValue) {
 				Stop-Function -Message 'CLR Integration must be enabled.  You can enable it by running Set-DbaSpConfigure -SqlInstance sql2012 -Config IsSqlClrEnabled -Value $true' -Continue -Target $instance
 			}
 			
-			$ssis = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $server
+			try {
+				$ssis = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $server
+			}
+			catch {
+				Stop-Function -Message "Can't load server" -Target $instance -ErrorRecord $_
+				return 
+			}
 			
 			if ($ssis.Catalogs[$SsisCatalog]) {
 				Stop-Function -Message "SSIS Catalog already exists" -Continue -Target $ssis.Catalogs[$SsisCatalog]
@@ -98,7 +109,7 @@ Prompts for username/password - while only password is used, the username must b
 			else {
 				if ($Pscmdlet.ShouldProcess($server, "Creating SSIS catalog: $SsisCatalog")) {
 					try {
-						$ssisdb = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($ssis, $SsisCatalog, $($SsisCredential.GetNetworkCredential().Password))
+						$ssisdb = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($ssis, $SsisCatalog, $(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))))
 						$ssisdb.Create()
 						
 						[pscustomobject]@{
