@@ -105,8 +105,6 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
     )
 	
 	begin {
-		Import-OldSmo
-		
         function Get-RemoteIntegrationService {
             param (
                 [Object]$Computer
