@@ -15,7 +15,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		AfterAll {
 			$server.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
 			$server1 = Connect-DbaSqlServer -SqlInstance $script:instance2
-			$server1.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
+			try {
+				$server1.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
+			}
+			catch {
+				# dont care	
+			}
 		}
 		
 		$results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue
