@@ -55,6 +55,7 @@
 		[PSCredential]$SqlCredential,
 		[ValidateRange(0, 99)]
 		[int[]]$LogNumber,
+		[object[]]$Source,
 		[switch]$Silent
 	)
 	process {
@@ -71,6 +72,9 @@
 			if ($LogNumber) {
 				foreach ($number in $lognumber) {
 					foreach ($object in $server.ReadErrorLog($number)) {
+						if ($Source -and $object.ProcessInfo -ne $Source) {
+							continue
+						}
 						Write-Message -Level Verbose -Message "Processing $object"
 						Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.NetName
 						Add-Member -Force -InputObject $object -MemberType NoteProperty InstanceName -value $server.ServiceName
@@ -83,6 +87,9 @@
 			}
 			else {
 				foreach ($object in $server.ReadErrorLog()) {
+					if ($Source -and $object.ProcessInfo -ne $Source) {
+						continue
+					}
 					Write-Message -Level Verbose -Message "Processing $object"
 					Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.NetName
 					Add-Member -Force -InputObject $object -MemberType NoteProperty InstanceName -value $server.ServiceName
