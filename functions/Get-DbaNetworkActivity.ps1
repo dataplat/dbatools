@@ -1,4 +1,4 @@
-﻿Function Get-DbaNetworkActivity
+function Get-DbaNetworkActivity
 {
   <#
       .SYNOPSIS
@@ -48,7 +48,7 @@
   Param (
     [parameter(ValueFromPipeline)]
     [Alias("cn","host","Server")]
-    [string[]]$ComputerName = $env:COMPUTERNAME,
+    [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
     [PSCredential] $Credential
   )
 
