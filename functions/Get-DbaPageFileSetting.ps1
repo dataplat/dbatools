@@ -1,4 +1,4 @@
-Function Get-DbaPageFileSetting
+function Get-DbaPageFileSetting
 {
 <#
 .SYNOPSIS
@@ -45,7 +45,7 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 	param (
 		[Parameter(Mandatory = $false, Position = 0, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
 		[Alias("cn", "host", "ServerInstance", "Server", "SqlServer")]
-		[object]$ComputerName,
+		[DbaInstanceParameter[]]$ComputerName,
 		[PSCredential] $Credential
 	)
 	PROCESS
