@@ -64,7 +64,7 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
     Param (
         [parameter(Position = 0)]
         [Alias("ServerInstance", "SqlServer")]
-        [string[]]$SqlInstances,
+        [DbaInstanceParameter[]]$SqlInstances,
         # Central Management Server
 
         [string]$SqlCms,
