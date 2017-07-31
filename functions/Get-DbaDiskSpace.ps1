@@ -1,4 +1,4 @@
-Function Get-DbaDiskSpace
+function Get-DbaDiskSpace
 {
 <#
 .SYNOPSIS
@@ -122,7 +122,7 @@ srv0042 D:\                                                               0     
 	Param (
 		[Parameter(Mandatory, ValueFromPipeline)]
 		[Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
-		[String[]]$ComputerName,
+		[DbaInstanceParameter[]]$ComputerName,
 		[ValidateSet('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')]
 		[String]$Unit = 'GB',
 		[Switch]$CheckForSql,
