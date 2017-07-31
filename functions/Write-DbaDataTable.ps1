@@ -121,7 +121,7 @@ function Write-DbaDataTable {
 			$passwd = ConvertTo-SecureString "P@ssw0rd" -AsPlainText -Force
 			$AzureCredential = Mew-Object System.Management.Automation.PSCredential("AzureAccount"),$passwd)
 			$DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
-			Write-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -ReqularUser -BulkCopyTimeOut 300
+			Write-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -RegularUser -BulkCopyTimeOut 300
 
 			This performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials. The RegularUser switch is needed to prevent trying to get administrative privilege, and we increase the BulkCopyTimeout value to cope with any latency
 
@@ -167,7 +167,7 @@ function Write-DbaDataTable {
 		[switch]$KeepNulls,
 		[switch]$Truncate,
 		[ValidateNotNull()]
-		[int]$BulkCopyTimeOut = 5000,
+		[int]$bulkCopyTimeOut = 5000,
 		[switch]$RegularUser,
 		[switch]$Silent
 	)
@@ -178,8 +178,7 @@ function Write-DbaDataTable {
 		# Getting the total rows copied is a challenge. Use SqlBulkCopyExtension.
 		# http://stackoverflow.com/questions/1188384/sqlbulkcopy-row-count-when-complete
 
-		$source = 'namespace System.Data.SqlClient
-		{
+		$source = 'namespace System.Data.SqlClient {
 			using Reflection;
 
 			public static class SqlBulkCopyExtension
@@ -197,19 +196,19 @@ function Write-DbaDataTable {
 
 		Add-Type -ReferencedAssemblies 'System.Data.dll' -TypeDefinition $source -ErrorAction SilentlyContinue
 
-		$dotcount = ([regex]::Matches($table, "\.")).count
+		$dotCount = ([regex]::Matches($table, "\.")).count
 
-		if ($dotcount -lt 2 -and $Database -eq $null) {
-			Stop-Function -Message "You must specify a database or fully qualififed table name"
+		if ($dotCount -lt 2 -and $Database -eq $null) {
+			Stop-Function -Message "You must specify a database or fully qualified table name"
 			return
 		}
 
-		if ($dotcount -eq 1) {
+		if ($dotCount -eq 1) {
 			$schema = $Table.Split(".")[0]
 			$table = $Table.Split(".")[1]
 		}
 
-		if ($dotcount -eq 2) {
+		if ($dotCount -eq 2) {
 			$Database = $Table.Split(".")[0]
 			$schema = $Table.Split(".")[1]
 			$table = $Table.Split(".")[2]
@@ -238,13 +237,17 @@ function Write-DbaDataTable {
 			return
 		}
 
-		if ($server.servertype -eq 'SqlAzureDatabase') {
-			#For some reasons SMO wants an initial pull when talking to Azure Sql DB
-			#This will throw and be caught, and then we can continue as normal.
+		if ($server.ServerType -eq 'SqlAzureDatabase') {
+			<#
+				For some reasons SMO wants an initial pull when talking to Azure Sql DB
+				This will throw and be caught, and then we can continue as normal.
+			#>
 			try {
-				$server.databases | out-null
+				$null = $server.Databases
 			}
-			catch {}
+			catch {
+				#do nothing
+			}
 		}
 		$db = $server.Databases | Where-Object Name -eq $Database
 
@@ -258,16 +261,17 @@ function Write-DbaDataTable {
 
 		foreach ($option in $options) {
 			$optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
-			if ($optionValue -eq $true) { $bulkCopyOptions += "$option" }
+			if ($optionValue -eq $true) {
+				$bulkCopyOptions += "$option"
+			}
 		}
-
 		$bulkCopyOptions = $bulkCopyOptions -join " & "
 
 		if ($truncate -eq $true) {
 			if ($Pscmdlet.ShouldProcess($SqlInstance, "Truncating $fqtn")) {
 				try {
 					Write-Message -Level Output -Message "Truncating $fqtn"
-					$null = $server.Databases[$Database].ExecuteNonQuery("TRUNCATE TABLE $fqtn")
+					$null = $server.Databases[$Database].Query("TRUNCATE TABLE $fqtn")
 				}
 				catch {
 					Write-Message -Level Warning -Message "Could not truncate $fqtn. Table may not exist or may have key constraints." -ErrorRecord $_
@@ -275,64 +279,61 @@ function Write-DbaDataTable {
 			}
 		}
 
-		$tablelock = $NoTableLock -eq $false
-
-		$bulkcopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$Database")
-		$bulkcopy.DestinationTableName = $fqtn
-		$bulkcopy.BatchSize = $batchsize
-		$bulkcopy.NotifyAfter = $NotifyAfter
-		$bulkcopy.BulkCopyTimeOut = $BulkCopyTimeOut
+		$bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$($server.ConnectionContext.ConnectionString);Database=$Database")
+		$bulkCopy.DestinationTableName = $fqtn
+		$bulkCopy.BatchSize = $BatchSize
+		$bulkCopy.NotifyAfter = $NotifyAfter
+		$bulkCopy.BulkCopyTimeOut = $BulkCopyTimeOut
 
 		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-		# Add rowcount output
-		$bulkCopy.Add_SqlRowscopied( {
-				$script:totalrows = $args[1].RowsCopied
-				$percent = [int](($script:totalrows / $rowcount) * 100)
-				$timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
-				Write-Progress -id 1 -activity "Inserting $rowcount rows" -percentcomplete $percent -status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
+		# Add RowCount output
+		$bulkCopy.Add_SqlRowsCopied( {
+				$script:totalRows = $args[1].RowsCopied
+				$percent = [int](($script:totalRows / $rowCount) * 100)
+				$timeTaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
+				Write-Progress -id 1 -activity "Inserting $rowCount rows" -PercentComplete $percent -Status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalRows, $percent, $timeTaken))
 			})
 
-		$PStoSQLtypes = @{
+		$PStoSQLTypes = @{
 			#PS datatype      = SQL data type
 			'System.Int32'    = 'int';
 			'System.UInt32'   = 'bigint';
 			'System.Int16'    = 'smallint';
 			'System.UInt16'   = 'int';
 			'System.Int64'    = 'bigint';
-			'System.UInt64' = 'decimal(20,0)';
+			'System.UInt64'   = 'decimal(20,0)';
 			'System.Decimal'  = 'decimal(20,5)';
 			'System.Single'   = 'bigint';
 			'System.Double'   = 'float';
 			'System.Byte'     = 'tinyint';
 			'System.SByte'    = 'smallint';
 			'System.TimeSpan' = 'nvarchar(30)';
-			'System.String' = 'nvarchar(MAX)';
-			'System.Char' = 'nvarchar(1)'
+			'System.String'   = 'nvarchar(MAX)';
+			'System.Char'     = 'nvarchar(1)'
 			'System.DateTime' = 'datetime2';
-			'System.Boolean' = 'bit';
-			'System.Guid' = 'uniqueidentifier';
-			'Int32' = 'int';
-			'UInt32' = 'bigint';
-			'Int16' = 'smallint';
-			'UInt16' = 'int';
-			'Int64' = 'bigint';
-			'UInt64' = 'decimal(20,0)';
+			'System.Boolean'  = 'bit';
+			'System.Guid'     = 'uniqueidentifier';
+			'Int32'           = 'int';
+			'UInt32'          = 'bigint';
+			'Int16'           = 'smallint';
+			'UInt16'          = 'int';
+			'Int64'           = 'bigint';
+			'UInt64'          = 'decimal(20,0)';
 			'Decimal'         = 'decimal(20,5)';
 			'Single'          = 'bigint';
-			'Double' = 'float';
+			'Double'          = 'float';
 			'Byte'            = 'tinyint';
 			'SByte'           = 'smallint';
 			'TimeSpan'        = 'nvarchar(30)';
-			'String' = 'nvarchar(MAX)';
-			'Char' = 'nvarchar(1)'
-			'DateTime' = 'datetime2';
-			'Boolean' = 'bit';
-			'Bool' = 'bit';
-			'Guid' = 'uniqueidentifier';
-			'int' = 'int';
-			'long' = 'bigint';
+			'String'          = 'nvarchar(MAX)';
+			'Char'            = 'nvarchar(1)'
+			'DateTime'        = 'datetime2';
+			'Boolean'         = 'bit';
+			'Bool'            = 'bit';
+			'Guid'            = 'uniqueidentifier';
+			'int'             = 'int';
+			'long'            = 'bigint';
 		}
-
 	}
 	process {
 		if (Test-FunctionInterrupt) { return }
@@ -341,18 +342,18 @@ function Write-DbaDataTable {
 			return
 		}
 
-		$validtypes = @([System.Data.DataSet], [System.Data.DataTable], [System.Data.DataRow], [System.Data.DataRow[]]) #[System.Data.Common.DbDataReader], [System.Data.IDataReader]
+		$validTypes = @([System.Data.DataSet], [System.Data.DataTable], [System.Data.DataRow], [System.Data.DataRow[]])
 
-			if ($InputObject.GetType() -notin $validtypes) {
+			if ($InputObject.GetType() -notin $validTypes) {
 			Stop-Function -Message "Data is not of the right type (DbDataReader, DataTable, DataRow, or IDataReader). Tip: Try using Out-DbaDataTable to convert the object first."
 			return
 		}
 
-		If ($InputObject.GetType() -eq [System.Data.DataSet]) {
+		if ($InputObject.GetType() -eq [System.Data.DataSet]) {
 			if ($InputObject.Tables -ne $null) { $InputObject = $InputObject.Tables }
 		}
 
-		$db.tables.refresh()
+		$db.Tables.Refresh()
 		$tableExists = $db | Where-Object { $table -in $_.Tables.Name -and $_.Tables.Schema -eq $schema }
 
 		if ($tableExists -eq $null) {
@@ -367,45 +368,50 @@ function Write-DbaDataTable {
 				}
 
 				# Get SQL datatypes by best guess on first data row
-				$sqldatatypes = @(); $index = -1
+				$sqlDataTypes = @();
+				$index = -1
 				$columns = $InputObject.Columns
 
-				if ($columns -eq $null) { $columns = $InputObject.Table.Columns }
-
-				foreach ($column in $columns) {
-					$sqlcolumnname = $column.ColumnName
-
-					try {
-						$columnvalue = $InputObject.Rows[0].$sqlcolumnname
-					}
-					catch {
-						$columnvalue = $InputObject.$sqlcolumnname
-					}
-
-					if ($columnvalue -eq $null) {
-						$columnvalue = $InputObject.$sqlcolumnname
-					}
-
-					# PS to SQL type conversion
-					# If data type exists in hash table, use the corresponding SQL type
-					# Else, fallback to nvarchar
-						if ($PStoSQLtypes.Keys -contains $column.DataType) {
-						$sqldatatype = $PStoSQLtypes[$($column.DataType.toString())]
-					}
-					else {
-						$sqldatatype = "nvarchar(MAX)"
-					}
-
-					$sqldatatypes += "[$sqlcolumnname] $sqldatatype"
+				if ($columns -eq $null) {
+					$columns = $InputObject.Table.Columns
 				}
 
-				$sql = "BEGIN CREATE TABLE $fqtn ($($sqldatatypes -join ' NULL,')) END"
+				foreach ($column in $columns) {
+					$sqlColumnName = $column.ColumnName
+
+					try {
+						$columnValue = $InputObject.Rows[0].$sqlColumnName
+					}
+					catch {
+						$columnValue = $InputObject.$sqlColumnName
+					}
+
+					if ($columnValue -eq $null) {
+						$columnValue = $InputObject.$sqlColumnName
+					}
+
+					<#
+						PS to SQL type conversion
+						If data type exists in hash table, use the corresponding SQL type
+						Else, fallback to nvarchar
+					#>
+					if ($PStoSQLTypes.Keys -contains $column.DataType) {
+						$sqlDataType = $PStoSQLTypes[$($column.DataType.toString())]
+					}
+					else {
+						$sqlDataType = "nvarchar(MAX)"
+					}
+
+					$sqlDataTypes += "[$sqlColumnName] $sqlDataType"
+				}
+
+				$sql = "BEGIN CREATE TABLE $fqtn ($($sqlDataTypes -join ' NULL,')) END"
 
 				Write-Message -Level Debug -Message $sql
 
 					if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating table $fqtn")) {
 					try {
-						$null = $server.Databases[$Database].ExecuteNonQuery($sql)
+						$null = $server.Databases[$Database].Query($sql)
 					}
 					catch {
 						Stop-Function -Message "The following query failed: $sql" -ErrorRecord $_
@@ -415,19 +421,22 @@ function Write-DbaDataTable {
 			}
 		}
 
-			$rowcount = $InputObject.Rows.count
-		if ($rowcount -eq 0) { $rowcount = 1 }
+			$rowCount = $InputObject.Rows.Count
+		if ($rowCount -eq 0) {
+			$rowCount = 1
+		}
 
-		if ($Pscmdlet.ShouldProcess($SqlInstance, "Writing $rowcount rows to $fqtn")) {
+		if ($Pscmdlet.ShouldProcess($SqlInstance, "Writing $rowCount rows to $fqtn")) {
 			$bulkCopy.WriteToServer($InputObject)
-			if ($rowcount -is [int]) { Write-Progress -id 1 -activity "Inserting $rowcount rows" -status "Complete" -Completed }
+			if ($rowCount -is [int]) {
+				Write-Progress -id 1 -activity "Inserting $rowCount rows" -status "Complete" -Completed
+			}
 		}
 	}
 	end {
-		if ($bulkcopy) {
-			$bulkcopy.Close()
-			$bulkcopy.Dispose()
+		if ($bulkCopy) {
+			$bulkCopy.Close()
+			$bulkCopy.Dispose()
 		}
 	}
-	}
-
+}
