@@ -54,7 +54,7 @@ function Get-DbaServerProtocol
 Param (
   [parameter(ValueFromPipeline)]
   [Alias("cn","host","Server")]
-  [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+  [string[]]$ComputerName = $env:COMPUTERNAME,
   [PSCredential] $Credential
 )
 
