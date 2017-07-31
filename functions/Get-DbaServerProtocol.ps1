@@ -1,4 +1,4 @@
-function Get-DbaServerProtocol
+Function Get-DbaServerProtocol
 {
 <#
     .SYNOPSIS
