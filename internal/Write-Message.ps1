@@ -1,4 +1,6 @@
-﻿function Write-Message {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+
+function Write-Message {
 	<#
 		.SYNOPSIS
 			This function acts as central information node for dbatools.
