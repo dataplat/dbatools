@@ -1,4 +1,4 @@
-Function Get-DbaMsdtc
+function Get-DbaMsdtc
 {
 <#
 .SYNOPSIS
@@ -80,7 +80,7 @@ Get DTC status for the computer srv0042 and show in a grid view
 	Param (
 		[Parameter(ValueFromPipeline = $true)]
 		[Alias('cn', 'host', 'Server')]
-		[string[]]$Computername = $env:COMPUTERNAME
+		[DbaInstanceParameter[]]$Computername = $env:COMPUTERNAME
 	)
 	
 BEGIN
