@@ -52,7 +52,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 	[cmdletbinding()]
 	param (
 		[Parameter(Mandatory = $false,ValueFromPipeline = $true)]
-		[string[]]$ComputerName,
+		[DbaInstanceParameter[]]$ComputerName,
 		[Parameter(Mandatory = $false)]
 		[string[]]$AccountName,
 		[Parameter(Mandatory = $false)]
