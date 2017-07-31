@@ -1,4 +1,4 @@
-Function Get-DbaServerProtocol
+function Get-DbaServerProtocol
 {
 <#
     .SYNOPSIS
@@ -54,7 +54,7 @@ Function Get-DbaServerProtocol
 Param (
   [parameter(ValueFromPipeline)]
   [Alias("cn","host","Server")]
-  [string[]]$ComputerName = $env:COMPUTERNAME,
+  [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
   [PSCredential] $Credential
 )
 
