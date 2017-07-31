@@ -1,4 +1,6 @@
-﻿function Test-FunctionInterrupt
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+
+function Test-FunctionInterrupt
 {
     <#
         .SYNOPSIS
