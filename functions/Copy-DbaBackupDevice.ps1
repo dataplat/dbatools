@@ -1,4 +1,4 @@
-﻿function Copy-DbaBackupDevice {
+function Copy-DbaBackupDevice {
 	<#
 		.SYNOPSIS
 			Copies backup devices one by one. Copies both SQL code and the backup file itself.
@@ -31,6 +31,9 @@
 			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
 			To connect as a different Windows user, run PowerShell as that user.
+
+		.PARAMETER BackupDevice
+			BackupDevice to be copied. Auto-populated list of devices. If not provided all BackupDevice(s) will be copied.
 
 		.PARAMETER Force
 			If this switch is enabled, backup device(s) will be dropped and recreated if they already exist on Destination.
@@ -81,6 +84,7 @@
 		[DbaInstanceParameter]$Destination,
 		[PSCredential]
 		$DestinationSqlCredential,
+		[object[]]$BackupDevice
 		[switch]$Force,
 		[switch]$Silent
 	)
@@ -100,8 +104,8 @@
 		$destNetBios = Resolve-NetBiosName $destServer
 	}
 	process	{
-		foreach ($backupDevice in $serverBackupDevices) {
-			$deviceName = $backupDevice.Name
+		foreach ($cBackupDevice in $serverBackupDevices) {
+			$deviceName = $cBackupDevice.Name
 
 			$copyBackupDeviceStatus = [pscustomobject]@{
 				SourceServer = $sourceServer.Name
@@ -112,7 +116,7 @@
 				DateTime = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
 
-			if ($backupDevices.Length -gt 0 -and $backupDevices -notcontains $deviceName) {
+			if ($BackupDevice -and $BackupDevice -notcontains $deviceName) {
 				continue
 			}
 			
@@ -134,7 +138,7 @@
 							$copyBackupDeviceStatus.Status = "Failed"
 							$copyBackupDeviceStatus
 
-							Stop-Function -Message "Issue dropping backup device" -Target $deviceName -InnerErrorRecord $_ -Continue
+							Stop-Function -Message "Issue dropping backup device" -Target $deviceName -ErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -143,14 +147,14 @@
 			if ($Pscmdlet.ShouldProcess($destination, "Generating SQL code for $deviceName")) {
 				Write-Message -Level Verbose -Message "Scripting out SQL for $deviceName"
 				try {
-					$sql = $backupDevice.Script() | Out-String
+					$sql = $cBackupDevice.Script() | Out-String
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 				}
 				catch {
 					$copyBackupDeviceStatus.Status = "Failed"
 					$copyBackupDeviceStatus
 
-					Stop-Function -Message "Issue scripting out backup device" -Target $deviceName -InnerErrorRecord $_ -Continue
+					Stop-Function -Message "Issue scripting out backup device" -Target $deviceName -ErrorRecord $_ -Continue
 				}
 			}
 
@@ -180,7 +184,7 @@
 						$copyBackupDeviceStatus.Status = "Failed"
 						$copyBackupDeviceStatus
 
-						Stop-Function -Message "Issue updating script of backup device with new path" -Target $deviceName -InnerErrorRecord $_ -Continue
+						Stop-Function -Message "Issue updating script of backup device with new path" -Target $deviceName -ErrorRecord $_ -Continue
 					}
 				}
 			}
@@ -194,7 +198,7 @@
 					$copyBackupDeviceStatus.Status = "Failed"
 					$copyBackupDeviceStatus
 
-					Stop-Function -Message "Issue copying backup device to destination" -Target $deviceName -InnerErrorRecord $_ -Continue
+					Stop-Function -Message "Issue copying backup device to destination" -Target $deviceName -ErrorRecord $_ -Continue
 				}
 			}
 
@@ -211,7 +215,7 @@
 					$copyBackupDeviceStatus.Status = "Failed"
 					$copyBackupDeviceStatus
 
-					Stop-Function -Message "Issue adding backup device" -Target $deviceName -InnerErrorRecord $_ -Continue
+					Stop-Function -Message "Issue adding backup device" -Target $deviceName -ErrorRecord $_ -Continue
 				}
 			}
 		} #end foreach backupDevice
