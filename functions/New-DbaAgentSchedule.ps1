@@ -145,9 +145,8 @@ function New-DbaAgentSchedule {
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]
-		$SqlCredential,
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential,
 		[object[]]$Job,
 		[object]$Schedule,
 		[switch]$Disabled,
