@@ -1,4 +1,4 @@
-﻿Function Invoke-DbaLogShippingRecovery
+function Invoke-DbaLogShippingRecovery
 {
 <#
     .SYNOPSIS
@@ -100,7 +100,7 @@
 	(
 		[Parameter(Position = 1)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[Parameter(Mandatory = $false, Position = 2, ValueFromPipeline = $true)]
 		[object[]]$Database,
 		[Parameter(Mandatory = $false, Position = 3)]
