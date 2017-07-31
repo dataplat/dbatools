@@ -13,7 +13,10 @@
 		Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 	
 	.PARAMETER LogNumber 
-		An Int32 value that specifies the index number of the error log required. Error logs are listed 0 through 9 where 0 is the current error log and 9 is the oldest.
+		An Int32 value that specifies the index number of the error log required. 
+		Error logs are listed 0 through 99, where 0 is the current error log and 99 is potential oldest log file.
+
+		SQL Server errorlog rollover defaults to 6, but can be increased to 99. https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/scm-services-configure-sql-server-error-logs
 	
 	.PARAMETER Silent 
 		Use this switch to disable any kind of verbose messages
@@ -42,7 +45,6 @@
 		$servers | Get-DbaSqlLog -LogNumber 0
 		
 		Returns the most recent SQL Server error logs for "sql2014","sql2016" and "sqlcluster\sharepoint"
-	
 #>	
 	[CmdletBinding()]
 	param (
@@ -50,9 +52,8 @@
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential]
-		$SqlCredential,
-		[ValidateRange(0, 9)]
+		[PSCredential]$SqlCredential,
+		[ValidateRange(0, 99)]
 		[int[]]$LogNumber,
 		[switch]$Silent
 	)
@@ -76,7 +77,7 @@
 						Add-Member -Force -InputObject $object -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
 						
 						# Select all of the columns you'd like to show
-						Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, LogDate, ProcessInfo, Text
+						Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, LogDate, 'ProcessInfo as Source', Text
 					}
 				}
 			}
@@ -88,7 +89,7 @@
 					Add-Member -Force -InputObject $object -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
 					
 					# Select all of the columns you'd like to show
-					Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, LogDate, ProcessInfo, Text
+					Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, LogDate, 'ProcessInfo as Source', Text
 				}
 			}
 		}
