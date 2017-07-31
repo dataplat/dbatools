@@ -1,4 +1,4 @@
-﻿function Test-DbaLinkedServerConnection
+function Test-DbaLinkedServerConnection
 {
 <#
 .SYNOPSIS
@@ -59,21 +59,11 @@ Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql201
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
-        [object[]]
-        $SqlInstance,
-        
-        [System.Management.Automation.PSCredential]
-        $SqlCredential,
-        
-        [switch]
-        $Silent
+        [DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential,        
+        [switch]$Silent
     )
-    
-    begin
-    {
-        
-    }
-    
+
     process
     {
         foreach ($instance in $SqlInstance)
