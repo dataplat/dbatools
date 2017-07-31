@@ -167,12 +167,14 @@
 			$missingLogin = $serverJob.OwnerLoginName | Where-Object { $destServer.Logins.Name -notcontains $_ }
 
 			if ($missingLogin.Count -gt 0) {
-				$missingLogin = ($missingLogin | Sort-Object | Get-Unique) -join ", "
-				$copyJobStatus.Status = "Skipped"
-				$copyJobStatus.Notes = "Job is dependent on login $missingLogin"
-				$copyJobStatus
-				Write-Message -Level Warning -Message "Login(s) $missingLogin doesn't exist on destination. Skipping job [$jobName]."
-				continue
+				if ($force -eq $false) {
+					$missingLogin = ($missingLogin | Sort-Object | Get-Unique) -join ", "
+					$copyJobStatus.Status = "Skipped"
+					$copyJobStatus.Notes = "Job is dependent on login $missingLogin"
+					$copyJobStatus
+					Write-Message -Level Warning -Message "Login(s) $missingLogin doesn't exist on destination. Use -Force to set owner to [sa]. Skipping job [$jobName]."
+					continue
+				}
 			}
 
 			$proxyNames = $serverJob.JobSteps.ProxyName | Where-Object { $_.Length -gt 0 }
@@ -227,8 +229,16 @@
 				try {
 					Write-Message -Message "Copying Job $jobName" -Level Verbose
 					$sql = $serverJob.Script() | Out-String
+
+					if ($missingLogin.Count -gt 0 -and $force) {
+						$saLogin = Get-SqlSaLogin -SqlInstance $destServer
+						$sql = $sql -replace [Regex]::Escape("@owner_login_name=N'$missingLogin'"), [Regex]::Escape("@owner_login_name=N'$saLogin'")
+					}
+
 					Write-Message -Message $sql -Level Debug
 					$destServer.Query($sql)
+
+					$destServer.JobServer.Jobs.Refresh()
 				}
 				catch {
 					$copyJobStatus.Status = "Failed"
@@ -241,17 +251,16 @@
 			if ($DisableOnDestination) {
 				if ($Pscmdlet.ShouldProcess($destination, "Disabling $jobName")) {
 					Write-Message -Message "Disabling $jobName on $destination" -Level Verbose
-					$destServer.JobServer.Jobs.Refresh()
-					$destServer.JobServer.Jobs[$job.name].IsEnabled = $False
-					$destServer.JobServer.Jobs[$job.name].Alter()
+					$destServer.JobServer.Jobs[$serverJob.name].IsEnabled = $False
+					$destServer.JobServer.Jobs[$serverJob.name].Alter()
 				}
 			}
 
 			if ($DisableOnSource) {
 				if ($Pscmdlet.ShouldProcess($source, "Disabling $jobName")) {
 					Write-Message -Message "Disabling $jobName on $source" -Level Verbose
-					$job.IsEnabled = $false
-					$job.Alter()
+					$serverJob.IsEnabled = $false
+					$serverJob.Alter()
 				}
 			}
 			$copyJobStatus.Status = "Successful"

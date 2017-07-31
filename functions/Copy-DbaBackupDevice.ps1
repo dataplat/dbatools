@@ -96,7 +96,6 @@
 		$serverBackupDevices = $sourceServer.BackupDevices
 		$destBackupDevices = $destServer.BackupDevices
 
-		Write-Output "Resolving NetBios name"
 		$sourceNetBios = Resolve-NetBiosName $sourceServer
 		$destNetBios = Resolve-NetBiosName $destServer
 	}
@@ -116,7 +115,7 @@
 			if ($backupDevices.Length -gt 0 -and $backupDevices -notcontains $deviceName) {
 				continue
 			}
-
+			
 			if ($destBackupDevices.Name -contains $deviceName) {
 				if ($force -eq $false) {
 					$copyBackupDeviceStatus.Status = "Skipped"
@@ -195,7 +194,7 @@
 					$copyBackupDeviceStatus.Status = "Failed"
 					$copyBackupDeviceStatus
 
-					Stop-Function -Message "Issue copying backup device to destination" -Target $deviceName -InnerErrorRecord $_
+					Stop-Function -Message "Issue copying backup device to destination" -Target $deviceName -InnerErrorRecord $_ -Continue
 				}
 			}
 
