@@ -1,4 +1,4 @@
-Function Set-DbaPowerPlan
+function Set-DbaPowerPlan
 {
 <#
 .SYNOPSIS
@@ -58,7 +58,7 @@ Sets the Power Plan to the custom power plan called "Maximum Performance". Skips
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
-		[object[]]$ComputerName,
+		[DbaInstanceParameter[]]$ComputerName,
 		[ValidateSet('High Performance', 'Balanced', 'Power saver')]
 		[string]$PowerPlan = 'High Performance',
 		[string]$CustomPowerPlan
