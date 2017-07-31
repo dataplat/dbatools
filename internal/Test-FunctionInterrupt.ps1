@@ -25,14 +25,8 @@
         
     )
     
-    try
-    {
-        $var = Get-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -ErrorAction Stop
-        if ($var.Value) { return $true }
-    }
-    catch
-    {
-        
-    }
-    return $false
+    $var = Get-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -ErrorAction Ignore
+    if ($var.Value) { return $true }
+	
+	return $false
 }
