@@ -69,7 +69,7 @@ Remove the schedule on multiple servers using pipe line
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 
 		[System.Management.Automation.PSCredential]
 		$SqlCredential,
