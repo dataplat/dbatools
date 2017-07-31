@@ -1,4 +1,4 @@
-Function Test-DbaDiskAlignment
+function Test-DbaDiskAlignment
 {
 <#
     .SYNOPSIS
@@ -88,8 +88,7 @@ Function Test-DbaDiskAlignment
     Param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer", "SqlInstance")]
-        [object[]]
-        $ComputerName,
+        [DbaInstanceParameter[]]$ComputerName,
         
         [switch]
         $Detailed,
