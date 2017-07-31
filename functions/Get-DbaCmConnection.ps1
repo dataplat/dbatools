@@ -48,7 +48,7 @@
     (
         [Parameter(Position = 0, ValueFromPipeline = $true)]
         [Alias('Filter')]
-        [String[]]
+        [DbaInstanceParameter[]]
         $ComputerName = "*",
 
         [String]
