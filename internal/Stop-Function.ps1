@@ -1,4 +1,6 @@
-﻿function Stop-Function
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+
+function Stop-Function
 {
 	<#
 		.SYNOPSIS
