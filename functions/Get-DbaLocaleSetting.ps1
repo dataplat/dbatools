@@ -14,15 +14,17 @@ function Get-DbaLocaleSetting {
       .PARAMETER Credential
       Credential object used to connect to the computer as a different user.
 
+      .PARAMETER Silent
+      Use this switch to disable any kind of verbose messages
+	
       .NOTES
       Author: Klaas Vandenberghe ( @PowerDBAKlaas )
       Tags: OS
-      dbatools PowerShell module (https://dbatools.io)
-      Copyright (C) 2016 Chrissy LeMaire
-      This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-      This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-      You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
+      Website: https://dbatools.io
+      Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+      License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+	
       .LINK
       https://dbatools.io/Get-DbaLocaleSetting
 
@@ -47,9 +49,9 @@ function Get-DbaLocaleSetting {
 		[parameter(ValueFromPipeline)]
 		[Alias("cn", "host", "Server")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-		[PSCredential]$Credential
+		[PSCredential]$Credential,
+		[switch]$Silent
 	)
-	
 	begin {
 		$sessionoption = New-CimSessionOption -Protocol DCom
 		$keyname = "Control Panel\International"
@@ -63,14 +65,14 @@ function Get-DbaLocaleSetting {
 			$Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
 			if ($Server.ComputerName) {
 				$Computer = $server.ComputerName
-				Write-Verbose "Creating CIMSession on $computer over WSMan"
+				Write-Message -Level Verbose -Message "Creating CIMSession on $computer over WSMan"
 				$CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
 				if (-not $CIMSession) {
-					Write-Verbose "Creating CIMSession on $computer over WSMan failed. Creating CIMSession on $computer over DCom"
+					Write-Message -Level Verbose -Message "Creating CIMSession on $computer over WSMan failed. Creating CIMSession on $computer over DCom"
 					$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
 				}
 				if ($CIMSession) {
-					Write-Verbose "Getting properties from Registry Key"
+					Write-Message -Level Verbose -Message "Getting properties from Registry Key"
 					$PropNames = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName enumvalues -Arguments @{ hDefKey = $CIMHiveCU; sSubKeyName = $keyname } |
 					Select-Object -ExpandProperty snames
 					
@@ -82,11 +84,11 @@ function Get-DbaLocaleSetting {
 					[PSCustomObject]$props
 				}
 				else {
-					Write-Warning "Can't create CIMSession on $computer"
+					Write-Message -Level Warning -Message "Can't create CIMSession on $computer"
 				}
 			}
 			else {
-				Write-Warning "can't connect to $computer"
+				Write-Message -Level Warning -Message "Can't connect to $computer"
 			}
 		}
 	}
