@@ -67,7 +67,7 @@ Returns a connection string builder that can be used to connect to the local sql
 		[Parameter(Mandatory = $false)]
 		[string]$ApplicationName = "dbatools Powershell Module",
 		[Parameter(Mandatory = $false)]
-		[DbaInstanceParameter]$DataSource = $null,
+		[string]$DataSource = $null,
 		[Parameter(Mandatory = $false)]
 		[string]$InitialCatalog = $null,
 		[Parameter(Mandatory = $false)]
