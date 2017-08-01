@@ -1,5 +1,4 @@
-function Get-DbaLocaleSetting
-{
+function Get-DbaLocaleSetting {
   <#
       .SYNOPSIS
       Gets the Locale settings on a computer. 
@@ -43,63 +42,52 @@ function Get-DbaLocaleSetting
       Gets the Locale settings on computers sql1 and sql2, and shows them in a grid view.
 
   #>
-  [CmdletBinding()]
-  Param (
-    [parameter(ValueFromPipeline)]
-    [Alias("cn","host","Server")]
-    [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-    [PSCredential] $Credential
-  )
-
-  BEGIN
-  {
-    $FunctionName = (Get-PSCallstack)[0].Command
-    $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
-    $sessionoption = New-CimSessionOption -Protocol DCom
-    $keyname = "Control Panel\International"
-    $NS = 'root\cimv2'
-    $Reg = 'StdRegProv'
-    [UInt32]$CIMHiveCU = 2147483649
-  }
-  PROCESS
-  {
-    foreach ($computer in $ComputerName)
-    {
-      $props = @{ "ComputerName" = $computer }
-      $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
-      if ( $Server.ComputerName )
-      {
-        $Computer = $server.ComputerName
-        Write-Verbose "$FunctionName - Creating CIMSession on $computer over WSMan"
-        $CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
-        if ( -not $CIMSession )
-        {
-          Write-Verbose "$FunctionName - Creating CIMSession on $computer over WSMan failed. Creating CIMSession on $computer over DCom"
-          $CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
-        }
-        if ( $CIMSession )
-        {
-          Write-Verbose "$FunctionName - Getting properties from Registry Key"
-          $PropNames = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName enumvalues -Arguments @{hDefKey=$CIMHiveCU; sSubKeyName=$keyname} |
-          Select-Object -ExpandProperty snames
-
-          foreach ($Name in $PropNames)
-          {
-            $sValue = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName GetSTRINGvalue -Arguments @{hDefKey=$CIMHiveCU; sSubKeyName=$keyname; sValueName=$Name} |
-            Select-Object -ExpandProperty svalue
-            $props.add($Name,$sValue)
-          }
-          [PSCustomObject]$props
-        } #if CIMSession
-        else
-        {
-          Write-Warning "$FunctionName - Can't create CIMSession on $computer"
-        }
-      } #if computername
-      else
-      {
-        Write-Warning "$FunctionName - can't connect to $computer"
-      }
-    } #foreach computer
-  } #PROCESS
-} #function
+	[CmdletBinding()]
+	Param (
+		[parameter(ValueFromPipeline)]
+		[Alias("cn", "host", "Server")]
+		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+		[PSCredential]$Credential
+	)
+	
+	begin {
+		$sessionoption = New-CimSessionOption -Protocol DCom
+		$keyname = "Control Panel\International"
+		$NS = 'root\cimv2'
+		$Reg = 'StdRegProv'
+		[UInt32]$CIMHiveCU = 2147483649
+	}
+	process {
+		foreach ($computer in $ComputerName.ComputerName) {
+			$props = @{ "ComputerName" = $computer }
+			$Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
+			if ($Server.ComputerName) {
+				$Computer = $server.ComputerName
+				Write-Verbose "Creating CIMSession on $computer over WSMan"
+				$CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
+				if (-not $CIMSession) {
+					Write-Verbose "Creating CIMSession on $computer over WSMan failed. Creating CIMSession on $computer over DCom"
+					$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+				}
+				if ($CIMSession) {
+					Write-Verbose "Getting properties from Registry Key"
+					$PropNames = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName enumvalues -Arguments @{ hDefKey = $CIMHiveCU; sSubKeyName = $keyname } |
+					Select-Object -ExpandProperty snames
+					
+					foreach ($Name in $PropNames) {
+						$sValue = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName GetSTRINGvalue -Arguments @{ hDefKey = $CIMHiveCU; sSubKeyName = $keyname; sValueName = $Name } |
+						Select-Object -ExpandProperty svalue
+						$props.add($Name, $sValue)
+					}
+					[PSCustomObject]$props
+				}
+				else {
+					Write-Warning "Can't create CIMSession on $computer"
+				}
+			}
+			else {
+				Write-Warning "can't connect to $computer"
+			}
+		}
+	}
+}
