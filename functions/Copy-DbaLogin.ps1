@@ -44,7 +44,7 @@ function Copy-DbaLogin {
 			If this switch is enabled, only SQL Server login permissions, roles, etc. will be synced. Logins and users will not be added or dropped.  If a matching Login does not exist on the destination, the Login will be skipped.
 			Credential removal is not currently supported for this parameter.
 
-i		.PARAMETER SyncSaName
+		.PARAMETER SyncSaName
 			If this switch is enabled, the name of the sa account will be synced between Source and Destination
 
 		.PARAMETER OutFile
