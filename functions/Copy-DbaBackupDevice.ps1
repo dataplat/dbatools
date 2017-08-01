@@ -84,7 +84,7 @@ function Copy-DbaBackupDevice {
 		[DbaInstanceParameter]$Destination,
 		[PSCredential]
 		$DestinationSqlCredential,
-		[object[]]$BackupDevice
+		[object[]]$BackupDevice,
 		[switch]$Force,
 		[switch]$Silent
 	)
