@@ -5,16 +5,23 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Orphaned files are correctly identified" {
 		BeforeAll {
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance1
+			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
 			$dbname = "dbatoolsci_findme"
 			Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase
 			$server.Query("CREATE DATABASE $dbname")
+			$result = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
+			if ($result.count -ne 0) {
+				it "has failed setup" {
+					Set-TestInconclusive -message "Setup failed"
+				}
+				throw "has failed setup"
+			}
 		}
 		AfterAll {
-			Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase
+			Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase
 		}
-		$null = Detach-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Force
-		$results = Find-DbaOrphanedFile -SqlInstance $script:instance1
+		$null = Detach-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
+		$results = Find-DbaOrphanedFile -SqlInstance $script:instance2
 		
 		It "Has the correct default properties" {
 			$ExpectedStdProps = 'ComputerName,InstanceName,SqlInstance,Filename,RemoteFilename'.Split(',')
@@ -31,7 +38,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		$results.FileName | Remove-Item
 		
-		$results = Find-DbaOrphanedFile -SqlInstance $script:instance1
+		$results = Find-DbaOrphanedFile -SqlInstance $script:instance2
 		It "Finds zero files after cleaning up" {
 			$results.Count | Should Be 0
 		}
