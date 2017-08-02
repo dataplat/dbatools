@@ -22,7 +22,7 @@
 			Tags: Trace, Flag
 			Original Author: Kevin Bullen (@sqlpadawan)
 
-            References:  https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.management.smo.server.enumactivecurrentsessiontraceflags(v=sql.120).aspx
+			References:  https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.management.smo.server.enumactivecurrentsessiontraceflags(v=sql.120).aspx
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
