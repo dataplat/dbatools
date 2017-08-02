@@ -1,7 +1,7 @@
 function Get-DbaDatabaseEncryption {
     <#
 	.SYNOPSIS
-		Returns a summary of encryption used on databases pased to it.
+		Returns a summary of encryption used on databases passed to it.
 
 	.DESCRIPTION
 		Shows if a database has Transparent Data Encryption (TDE), any certificates, asymmetric keys or symmetric keys with details for each.
