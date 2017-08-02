@@ -68,7 +68,7 @@ function Get-DbaRegisteredServerName {
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.Credential()]$SqlCredential = [System.Management.Automation.PSCredential]::Empty,
+		[PSCredential]$SqlCredential,
 		[Alias("Groups")]
         [object[]]$Group,
         [switch]$NoCmsServer,

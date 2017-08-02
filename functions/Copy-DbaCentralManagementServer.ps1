@@ -112,7 +112,7 @@
 				$copyDestinationGroupStatus = [pscustomobject]@{
 					SourceServer        = $sourceServer.Name
 					DestinationServer   = $destServer.Name
-					Name                = $destinationGroup
+					Name                = $groupName
 					Type                = "Create Destination Group"
 					Status              = $null
 					DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)

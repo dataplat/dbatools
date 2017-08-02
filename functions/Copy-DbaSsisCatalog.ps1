@@ -104,8 +104,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
         [Switch]$Force
     )
 	
-    begin {
-
+	begin {
         function Get-RemoteIntegrationService {
             param (
                 [Object]$Computer
@@ -293,8 +292,9 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
         $sourceFolders = $sourceCatalog.Folders
         $destinationFolders = $destinationCatalog.Folders
     }
-    process {
-        if (!$sourceCatalog) {
+	process {
+		
+		if (!$sourceCatalog) {
             throw "The source SSISDB catalog does not exist."
         }
         if (!$destinationCatalog) {

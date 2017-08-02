@@ -6,7 +6,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	
 	Context "Setup removes, restores and backups on the local drive for Get-DbaBackupHistory" {
 		$null = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase
-		$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak
+		$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak
 		$db = Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
 		$db | Backup-DbaDatabase -Type Full
 		$db | Backup-DbaDatabase -Type Differential
