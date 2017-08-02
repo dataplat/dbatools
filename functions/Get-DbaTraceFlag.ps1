@@ -77,17 +77,17 @@
 			    $tflags = $tflags | Where-Object TraceFlag -In $TraceFlag
 		    }
 	               
-               foreach ($tflag in $tflags) {
-			    [pscustomobject]@{
-				    'ComputerName' = $server.NetName;
-				    'InstanceName' = $server.ServiceName;
-				    'SqlInstance'  = $server.DomainInstanceName;
-				    'TraceFlag'    = $tflag.TraceFlag;
-				    'Global'       = $tflag.Global;
-				    'Session'      = $tflag.Session;
-				    'Status'       = $tflag.Status
-		        } | Select-DefaultView -ExcludeProperty 'Session'
+                foreach ($tflag in $tflags) {
+			        [pscustomobject]@{
+				        'ComputerName' = $server.NetName;
+				        'InstanceName' = $server.ServiceName;
+				        'SqlInstance'  = $server.DomainInstanceName;
+				        'TraceFlag'    = $tflag.TraceFlag;
+				        'Global'       = $tflag.Global;
+				        'Session'      = $tflag.Session;
+				        'Status'       = $tflag.Status
+                } | Select-DefaultView -ExcludeProperty 'Session'
             }
-	    }
-	}
+        }
+    }
 }
