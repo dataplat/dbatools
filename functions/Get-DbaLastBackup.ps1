@@ -67,12 +67,12 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 
 	process {
 		foreach ($instance in $SqlInstance) {
-			Write-Verbose "Connecting to $instance"
+			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Write-Warning "Can't connect to $instance"
+				Write-Message -Level Warning -Message "Can't connect to $instance"
 				Continue
 			}
 
@@ -88,10 +88,10 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 
 			foreach ($db in $dbs) {
 				$result = $null
-				Write-Verbose "Processing $db on $instance"
+				Write-Message -Level Verbose -Message "Processing $db on $instance"
 
 				if ($db.IsAccessible -eq $false) {
-					Write-Warning "The database $db on server $instance is not accessible. Skipping database."
+					Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database."
 					Continue
 				}
 				# To avoid complicated manipulations on datetimes depending on locale settings and culture,
