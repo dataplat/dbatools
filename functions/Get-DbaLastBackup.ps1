@@ -124,9 +124,9 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 					SqlInstance        = $server.DomainInstanceName
 					Database           = $db.name
 					RecoveryModel      = $db.recoverymodel
-					LastFullBackup     = if ($db.LastBackupdate -eq 0) { $null } else { $db.LastBackupdate.tostring() }
-					LastDiffBackup     = if ($db.LastDifferentialBackupDate -eq 0) { $null } else { $db.LastDifferentialBackupDate.tostring() }
-					LastLogBackup      = if ($db.LastLogBackupDate -eq 0) { $null } else { $db.LastLogBackupDate.tostring() }
+					LastFullBackup     = if ($db.LastBackupdate -eq 0) { $null } else { [DbaDateTime]$db.LastBackupdate}
+					LastDiffBackup     = if ($db.LastDifferentialBackupDate -eq 0) { $null } else { [DbaDateTime]$db.LastDifferentialBackupDate }
+					LastLogBackup      = if ($db.LastLogBackupDate -eq 0) { $null } else { [DbaDateTime]$db.LastLogBackupDate }
 					SinceFull          = $SinceFull
 					SinceDiff          = $SinceDiff
 					SinceLog           = $SinceLog
