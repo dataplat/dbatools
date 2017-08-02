@@ -138,7 +138,7 @@ function Get-DbaRegisteredServerName {
 				$servers += ($cms.GetDescendantRegisteredServers()).ServerName
 			}
 
-			if ($NoCmsServer -eq $false) {
+			if ($NoCmsServer -eq $false -and $Group -eq $null) {
 				$servers += $SqlInstance.ComputerName
 			}
 		}
