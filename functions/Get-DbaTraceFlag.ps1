@@ -1,10 +1,10 @@
-﻿FUNCTION Get-DbaTraceFlag {
+﻿function Get-DbaTraceFlag {
 	<#
 		.SYNOPSIS
-			Gets SQL Trace Flags information for each instance(s) of SQL Server.
+			Get global Trace Flag(s) information for each instance(s) of SQL Server.
 
 		.DESCRIPTION
-			The Get-DbaTraceFlag returns connected SMO object for SQL Trace Flags information for each instance(s) of SQL Server.
+			Returns Trace Flags that are enabled globally on each instance(s) of SQL Server as an object.
 
 		.PARAMETER SqlInstance
 			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -22,7 +22,7 @@
 			Tags: Trace, Flag
 			Original Author: Kevin Bullen (@sqlpadawan)
 
-			References:  https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.management.smo.server.enumactivecurrentsessiontraceflags(v=sql.120).aspx
+			References:  https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-traceon-trace-flags-transact-sql
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -34,17 +34,17 @@
 		.EXAMPLE
 			Get-DbaTraceFlag -SqlInstance localhost
 
-			Returns all SQL Trace Flag information on the local default SQL Server instance
+			Returns all Trace Flag information on the local default SQL Server instance
 
 		.EXAMPLE
 			Get-DbaTraceFlag -SqlInstance localhost, sql2016
 
-			Returns all SQl Trace Flag for the local and sql2016 SQL Server instances
+			Returns all Trace Flag(s) for the local and sql2016 SQL Server instances
 
 		.EXAMPLE
 			Get-DbaTraceFlag -SqlInstance localhost -TraceFlag 4199,3205
 
-			Returns all SQl Trace Flag 4199 and 3205 status for local SQL Server instance
+			Returns Trace Flag status for TF 4199 and 3205 for the local SQL Server instance if they are enabled.
 	#>
 	[CmdletBinding()]
 	param (
@@ -59,7 +59,6 @@
 
 	process {
 		foreach ($instance in $SqlInstance) {
-			Write-Verbose "Attempting to connect to $instance"
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
@@ -67,30 +66,28 @@
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
-            $tflags = New-Object System.Data.DataTable;
-
 			$tflags = $server.EnumActiveGlobalTraceFlags();
 			
-			if ($TraceFlag) {
-				$tflags = $tflags | Where-Object TraceFlag -In $TraceFlag
+            if ($tFlags.Rows.Count -eq 0) {
+				Write-Message -Level Output -Message "No global trace flags enabled"
+				return
 			}
-		               
-			foreach ($tflag in $tflags) {
-                
-                #otherwise rowerror, rowstate, blah blah fields added to output.
-                $tflagdata = @{'ComputerName' = $server.NetName;
-                               'InstanceName' = $server.ServiceName;
-                               'SqlInstance' = $server.DomainInstanceName;
-                               'TraceFlag' = $tflag.TraceFlag;
-                               'Global' = $tflag.Global;
-                               'Session' = $tflag.Session;
-                               'Status' = $tflag.Status};
-                               
-                $tflagrow = New-Object psobject -Property $tflagdata
-                
-                Select-DefaultView -InputObject $tflagrow -Property 'ComputerName','InstanceName','SqlInstance','TraceFlag','Global','Session','Status'
 
-            } 
-		}
+		    if ($TraceFlag) {
+			    $tflags = $tflags | Where-Object TraceFlag -In $TraceFlag
+		    }
+	               
+               foreach ($tflag in $tflags) {
+			    [pscustomobject]@{
+				    'ComputerName' = $server.NetName;
+				    'InstanceName' = $server.ServiceName;
+				    'SqlInstance'  = $server.DomainInstanceName;
+				    'TraceFlag'    = $tflag.TraceFlag;
+				    'Global'       = $tflag.Global;
+				    'Session'      = $tflag.Session;
+				    'Status'       = $tflag.Status
+		        } | Select-DefaultView -ExcludeProperty 'Session'
+            }
+	    }
 	}
 }
