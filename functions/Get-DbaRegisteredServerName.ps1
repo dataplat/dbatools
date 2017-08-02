@@ -1,13 +1,14 @@
 function Get-DbaRegisteredServerName {
 	<#
 		.SYNOPSIS
-			Gets list of SQL Server names stored in SQL Server Central Management Server.
+			Gets list of SQL Server names stored in SQL Server Central Management Server (CMS).
 
 		.DESCRIPTION
-			Returns a simple array of server names. Be aware of the dynamic parameter 'Group', which can be used to limit results to one or more groups you have created on the CMS. See get-help for examples.
+			Returns a simple array of server names found in the CMS.
 
 		.PARAMETER SqlInstance
-			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection to allow the function to be executed against multiple SQL Server instances.
+			SQL Server name or SMO object representing the SQL Server to connect to. 
+			This can be a collection to allow the function to be executed against multiple SQL Server instances.
 	
 		.PARAMETER SqlCredential
 			SqlCredential object to connect as. If not specified, current Windows login will be used.
@@ -16,7 +17,8 @@ function Get-DbaRegisteredServerName {
 			Auto-populated list of groups in SQL Server Central Management Server. You can specify one or more, comma separated.
 
 		.PARAMETER NoCmsServer
-			By default, the Central Management Server name is included in the list. Use -NoCmsServer to exclude the CMS itself.
+			If a group is not provided then by default, the Central Management Server name is included in the output.
+			If not searching by group then use -NoCmsServer to exclude the CMS itself.
 
 		.PARAMETER NetBiosName
 			Returns just the NetBios names of each server.
@@ -40,27 +42,32 @@ function Get-DbaRegisteredServerName {
 		.EXAMPLE
 			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a
 
-			Gets a list of all server names from the Central Management Server on sqlserver2014a, using Windows Credentials
+			Gets a list of all server names from the CMS on sqlserver2014a, using Windows Credentials
 
 		.EXAMPLE
 			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -SqlCredential $credential
 
-			Gets a list of all server names from the Central Management Server on sqlserver2014a, using SQL Authentication
+			Gets a list of all server names from the CMS on sqlserver2014a, using SQL Authentication
 
 		.EXAMPLE
 			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -Group HR, Accounting
 
-			Gets a list of server names in the HR and Accounting groups from the Central Management Server on sqlserver2014a.
+			Gets a list of server names in the HR and Accounting groups from the CMS on sqlserver2014a.
 
 		.EXAMPLE
 			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -Group HR, Accounting -IpAddress
 
-			Gets a list of server IP addresses in the HR and Accounting groups from the Central Management Server on sqlserver2014a.
+			Gets a list of server IP addresses in the HR and Accounting groups from the CMS on sqlserver2014a.
 
 		.EXAMPLE
 			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -NoCmsServer
 
-			Gets a list of server names from the Central Management Server on sqlserver2014a, but excludes the cms server name.
+			Gets a list of server names from the CMS on sqlserver2014a, but excludes the CMS server name.
+		
+		.EXAMPLE
+			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -Group HR\Development
+
+			Returns a list of server names in the HR and sub-group Development from the CMS on sqlserver2014a
 
 	#>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
