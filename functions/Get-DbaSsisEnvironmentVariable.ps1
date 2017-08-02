@@ -100,8 +100,7 @@ You should have received a copy of the GNU General Public License along with thi
 		[Alias('SqlServer', 'ServerInstance')]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Parameter(Mandatory = $false)]
-		[PSCredential]
-		$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[parameter(Mandatory = $false)]
 		[object[]]$Environment,
 		[parameter(Mandatory = $false)]
@@ -114,7 +113,6 @@ You should have received a copy of the GNU General Public License along with thi
 	)
 	
 	process {
-		
 		foreach ($instance in $SqlInstance) {
 			try {
 				Write-Message -Message "Connecting to $instance" -Level Verbose
@@ -131,7 +129,7 @@ You should have received a copy of the GNU General Public License along with thi
 				$SSIS = New-Object "$ISNamespace.IntegrationServices" $server
 			}
 			catch {
-				Stop-Function -Message "Could not connect to SSIS Catalog on $instance"
+				Stop-Function -Message "Could not connect to SSIS Catalog on $instance or current SMO library does not support SSIS catalog"
 				return
 			}
 			
@@ -233,18 +231,18 @@ You should have received a copy of the GNU General Public License along with thi
 								}
 								
 								[PSCustomObject]@{
-									ComputerName = $server.NetName
-									InstanceName = $server.ServiceName
-									SqlInstance = $server.DomainInstanceName
-									Folder = $f
-									Environment = $e.Name
-									Id = $variable.variable_id
-									Name = $variable.Name
-									Description = $variable.description
-									Type = $variable.type
-									IsSensitive = $variable.sensitive
-									BaseDataType = $variable.base_data_type
-									Value = $value
+									ComputerName  = $server.NetName
+									InstanceName  = $server.ServiceName
+									SqlInstance   = $server.DomainInstanceName
+									Folder	      = $f
+									Environment   = $e.Name
+									Id		      = $variable.variable_id
+									Name		  = $variable.Name
+									Description   = $variable.description
+									Type		  = $variable.type
+									IsSensitive   = $variable.sensitive
+									BaseDataType  = $variable.base_data_type
+									Value		  = $value
 								}
 							}
 						}
