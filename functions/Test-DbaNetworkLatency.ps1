@@ -8,23 +8,18 @@ Function Test-DbaNetworkLatency {
 	than ping because it actually creates the connection to the SQL Server, and times not ony the entire routine, but also how long the actual queries take vs
 	how long it takes to get the results.
 
-	Server
-	Count
-	Total
-	Avg
-	ExecuteOnlyTotal
-	ExecuteOnlyAvg
+	By default, this command will execute "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" three times.
+	
+	It will then output how long the entire connnection and command took, as well as how long *only* the execution of the command took.
+	
+	This allows you to see if the issue is with the connection or the SQL Server itself.
 
 	.PARAMETER SqlInstance
-	The SQL Server instance.
+	The target SQL Server instance.
 
 	.PARAMETER SqlCredential
-	Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-	$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-	Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
-
+	Optional alternative Windows or SQL Login
+	
 	.PARAMETER Query
 	Specifies the query to be executed. By default, "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" will be executed on master. To execute in other databases, use fully qualified table names.
 
@@ -94,7 +89,8 @@ Function Test-DbaNetworkLatency {
 					if (++$currentcount -eq 1) {
 						$first = [System.Diagnostics.Stopwatch]::StartNew()
 					}
-					$server.ConnectionContext.ExecuteWithResults($query) | Out-Null
+					
+					$null = $server.Query($query)
 					if ($currentcount -eq $count) {
 						$last = $first.elapsed
 					}
@@ -104,10 +100,16 @@ Function Test-DbaNetworkLatency {
 				$end = $start.elapsed
 				
 				$totaltime = $end.TotalMilliseconds
-				$avg = $totaltime / $count
+				$average = $totaltime / $count
 				
 				$totalwarm = $last.TotalMilliseconds
-				$avgwarm = $totalwarm / ($count - 1)
+				if ($Count -eq 1) {
+					$averagewarm = $totalwarm
+				}
+				else {
+					$averagewarm = $totalwarm / ($count - 1)
+				}
+				
 				
 				[PSCustomObject]@{
 					ComputerName = $server.NetName
@@ -115,17 +117,16 @@ Function Test-DbaNetworkLatency {
 					SqlInstance = $server.DomainInstanceName
 					Count = $count
 					Total = [prettytimespan]::FromMilliseconds($totaltime)
-					Avg = [prettytimespan]::FromMilliseconds($avg)
+					Avg = [prettytimespan]::FromMilliseconds($average)
 					ExecuteOnlyTotal = [prettytimespan]::FromMilliseconds($totalwarm)
-					ExecuteOnlyAvg = [prettytimespan]::FromMilliseconds($avgwarm)
-				}
+					ExecuteOnlyAvg = [prettytimespan]::FromMilliseconds($averagewarm)
+				} | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Count as ExecutionCount', Total, 'Avg as Average', ExecuteOnlyTotal, 'ExecuteOnlyAvg as ExecuteOnlyAverage' #backwards compat
 			}
 			catch {
 				Stop-Function -Message "Error occurred: $_" -InnerErrorRecord $_ -Continue
 			}
 		}
 	}
-	
 	end {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlNetworkLatency
 	}

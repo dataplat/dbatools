@@ -1227,7 +1227,7 @@ function Copy-DbaDatabase {
 								Write-Message -Level Verbose -Message "Successfully updated Trustworthy to $sourceDbTrustworthy for $dbName on $destination"
 							}
 							catch {
-								$copyDatabaseStatus.Status = "Successful - failed to apply Trusthworthy"
+								$copyDatabaseStatus.Status = "Successful - failed to apply Trustworthy"
 								$copyDatabaseStatus
 								Stop-Function -Message "Failed to update Trustworthy to $sourceDbTrustworthy for $dbName on $destination" -Target $destination -ErrorRecord $_ -Continue
 							}

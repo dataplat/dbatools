@@ -1,5 +1,4 @@
-Function Test-DbaMaxMemory
-{
+Function Test-DbaMaxMemory {
 <# 
 .SYNOPSIS 
 Calculates the recommended value for SQL Server 'Max Server Memory' configuration setting. Works on SQL Server 2000-2014.
@@ -19,6 +18,9 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 $cred = Get-Credential, then pass $cred variable to this parameter. 
 
 Windows Authentication will be used when SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
 
 .NOTES
 Tags: Memory
@@ -45,82 +47,70 @@ Test-DbaMaxMemory -SqlInstance sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.To
 Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647) and set it to recommended value. 
 
 #>
-
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
-		[DbaInstanceParameter]$SqlInstance,
-		[PSCredential]$SqlCredential
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential,
+		[switch]$Silent
 	)
 	
-	PROCESS
-	{
-		foreach ($servername in $SqlInstance)
-		{
-			Write-Verbose "Counting the running SQL Server instances on $servername"
-
-			try
-			{
+	process {
+		foreach ($instance in $SqlInstance) {
+			Write-Message -Level Verbose -Message "Counting the running SQL Server instances on $instance"
+			
+			try {
 				# Get number of instances running
-				$ipaddr = Resolve-SqlIpAddress -SqlInstance $servername
-				$sqls = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' -and $_.Status -eq 'Running' }
-				$sqlcount = $sqls.count
+				$ipaddr = Resolve-SqlIpAddress -SqlInstance $instance
+				$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' -and $_.Status -eq 'Running' }
+				$instancecount = $sqlservices.count
 			}
-			catch
-			{
-				Write-Warning "Couldn't get accurate SQL Server instance count on $servername. Defaulting to 1."
-				$sqlcount = 1
+			catch {
+				Write-Message -Level Warning -Message "Couldn't get accurate SQL Server instance count on $instance. Defaulting to 1."
+				$instancecount = 1
 			}
 			
-
-            $server = Get-DbaMaxMemory -SqlInstance $servername -SqlCredential $SqlCredential
+			$server = Get-DbaMaxMemory -SqlInstance $instance -SqlCredential $SqlCredential
 			
-			if($null -eq $server)
-            {
-                continue;
-            }
-
-		
+			if ($null -eq $server) {
+				continue
+			}
 			$reserve = 1
-
-            $maxmemory = $server.SqlMaxMB
-            $totalmemory = $server.TotalMB
-
-			if ($totalmemory -ge 4096)
-			{
+			
+			$maxmemory = $server.SqlMaxMB
+			$totalmemory = $server.TotalMB
+			
+			if ($totalmemory -ge 4096) {
 				$currentCount = $totalmemory
-				while ($currentCount/4096 -gt 0)
-				{
-					if ($currentCount -gt 16384)
-					{
+				while ($currentCount/4096 -gt 0) {
+					if ($currentCount -gt 16384) {
 						$reserve += 1
 						$currentCount += -8192
 					}
-					else
-					{
+					else {
 						$reserve += 1
 						$currentCount += -4096
 					}
 				}
 				$recommendedMax = [int]($totalmemory - ($reserve * 1024))
 			}
-			else
-			{
+			else {
 				$recommendedMax = $totalmemory * .5
 			}
 			
-			$recommendedMax = $recommendedMax/$sqlcount
+			$recommendedMax = $recommendedMax/$instancecount
 			
 			[pscustomobject]@{
-				Server = $server.Server
-				InstanceCount = $sqlcount
-				TotalMB = $totalmemory
-				SqlMaxMB = $maxmemory
-				RecommendedMB = $recommendedMax
-			}
+				Server   = $server.Server
+				ComputerName = $server.ComputerName
+				InstanceName = $server.InstanceName
+				SqlInstance = $server.SqlInstance
+				InstanceCount = $instancecount
+				TotalMB  = [int]$totalmemory
+				SqlMaxMB = [int]$maxmemory
+				RecommendedMB = [int]$recommendedMax
+			} | Select-DefaultView -ExcludeProperty Server
 		}
 	}
 }
-
-
