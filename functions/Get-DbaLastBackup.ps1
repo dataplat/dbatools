@@ -62,7 +62,8 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$ExcludeDatabase
+		[object[]]$ExcludeDatabase,
+		[switch]$Silent
 	)
 
 	process {
