@@ -27,9 +27,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	AfterAll {
 		Get-DbaDatabase -SqlInstance $script:instance1 -Database "dbatoolsci_singlerestore" | Remove-DbaDatabase
 		Get-DbaDatabase -SqlInstance $script:instance2 -Database $DestDbRandom | Remove-DbaDatabase
-		if (Test-Path $DestBackupDir) {
-			Remove-Item $DestBackupDir -Force -Recurse
-		}
 	}
 	Context "Should not backup if database and exclude match" {
 		$results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master -Exclude master
