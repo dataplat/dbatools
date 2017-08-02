@@ -101,7 +101,7 @@ function Get-DbaRegisteredServerName {
 				}
 				else {
 					foreach ($elg in $el.ServerGroups) {
-						$results += Find-CmsGroup -CmsGp $elg -Base $partial -Stopat $Stopat
+						$results += Find-CmsGroup -CmsGrp $elg -Base $partial -Stopat $Stopat
 					}
 				}
 			}
