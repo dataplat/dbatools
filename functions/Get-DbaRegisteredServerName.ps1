@@ -130,6 +130,10 @@ function Get-DbaRegisteredServerName {
 			if ($Group -ne $null) {
 				foreach ($currentGroup in $Group) {
 					$cms = Find-CmsGroup -CmsGrp $cmsStore.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
+					if ($cms -eq $null) {
+						Write-Message -Level Output -Message "No groups found matching that name"
+						continue
+					}
 					$servers += ($cms.GetDescendantRegisteredServers()).ServerName
 				}
 			}
