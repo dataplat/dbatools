@@ -4,8 +4,8 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
  	Context "Correctly gets error log messages" {
-		$sourceFilter = 'Logon'
-		$textFilter = 'All rights reserved'
+		$sourceFilter = "Logon"
+		$textFilter = "All rights reserved"
 		BeforeAll {
 			$login = 'DaperDan'
 			$l = Get-DbaLogin -SqlInstance $script:instance1 -Login $login
@@ -31,9 +31,21 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 			$results = Get-DbaSqlLog -SqlInstance $script:instance1 -LogNumber 0
 			($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($expectedProps | Sort-Object)
 		}
-		It "Returns filtered results for -Source set to: $sourceFilter]" {
+		It "Returns filtered results for [Source = $sourceFilter]" {
+			$results = Get-DbaSqlLog -SqlInstance $script:instance1 -Source $sourceFilter
+			$results[0].Source | Should Be $sourceFilter
+		}
+		It "Returns filtered result for [LogNumber = 0] and [Source = $sourceFilter]" {
 			$results = Get-DbaSqlLog -SqlInstance $script:instance1 -LogNumber 0 -Source $sourceFilter
 			$results[0].Source | Should Be $sourceFilter
+		}
+		It "Returns filtered results for [Text = $textFilter]" {
+			$results = Get-DbaSqlLog -SqlInstance $script:instance1 -Text $textFilter
+			{$results[0].Text -like "*$textFilter*"} | Should Be $true
+		}
+		It "Returns filtered result for [LogNumber = 0] and [Text = $textFilter]" {
+			$results = Get-DbaSqlLog -SqlInstance $script:instance1 -LogNumber 0 -Text $textFilter
+			{$results[0].Text -like "*$textFilter"} | Should Be $true
 		}
 	}
 }
