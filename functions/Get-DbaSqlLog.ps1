@@ -72,6 +72,7 @@
 		[ValidateRange(0, 99)]
 		[int[]]$LogNumber,
 		[object[]]$Source,
+		[string]$Text,
 		[switch]$Silent
 	)
 	process {
@@ -91,6 +92,9 @@
 						if ($Source -and $object.ProcessInfo -ne $Source) {
 							continue
 						}
+						if ($Text -and $object.Text -notlike "*$Text*") {
+							continue
+						}
 						Write-Message -Level Verbose -Message "Processing $object"
 						Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.NetName
 						Add-Member -Force -InputObject $object -MemberType NoteProperty InstanceName -value $server.ServiceName
@@ -104,6 +108,9 @@
 			else {
 				foreach ($object in $server.ReadErrorLog()) {
 					if ($Source -and $object.ProcessInfo -ne $Source) {
+						continue
+					}
+					if ($Text -and $object.Text -notlike "*$Text*") {
 						continue
 					}
 					Write-Message -Level Verbose -Message "Processing $object"
