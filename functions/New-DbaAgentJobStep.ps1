@@ -134,7 +134,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 		[PSCredential]$SqlCredential,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[string[]]$Job,
+		[object[]]$Job,
 		[Parameter(Mandatory = $false)]
 		[int]$StepId,
 		[Parameter(Mandatory = $true)]
@@ -215,13 +215,13 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 					# Create the job step object
 					try {
 						# Get the job
-						$smoJob = $Server.JobServer.Jobs[$j]
+						$currentjob = $Server.JobServer.Jobs[$j]
 						
 						# Create the job step
 						$JobStep = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobStep
 						
 						# Set the job where the job steps belongs to
-						$JobStep.Parent = $smoJob
+						$JobStep.Parent = $currentjob
 					}
 					catch {
 						Stop-Function -Message "Something went wrong creating the job step. `n$($_.Exception.Message)" -Target $instance -Continue
@@ -355,7 +355,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 							
 							# Create the job step
 							$JobStep.Create()
-							$Job.Alter()
+							$currentjob.Alter()
 						}
 						catch {
 							Stop-Function -Message "Something went wrong creating the job step. `n$($_.Exception.Message)" -Target $instance -Continue
