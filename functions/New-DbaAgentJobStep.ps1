@@ -234,29 +234,43 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 						if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
 							$JobStep.Name = $StepName
 						}
-						elseif ($NewName -and $Force) {
-							Write-Message -Message "Step $StepName already exists for job. Force is used. Setting job step name to $NewName" -Level Verbose
+						elseif (($Server.JobServer.Jobs[$j].JobSteps.Name -contains $StepName) -and $Force) {
+							Write-Message -Message "Step $StepName already exists for job. Force is used. Removing existing step" -Level Verbose
+							
+							# Remove the job step based on the name
+							Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName
+
+							# Set the name job step object
+							$JobStep.Name = $StepName
 						}
 						else {
 							Stop-Function -Message "The step name $StepName already exists for job $j" -Target $instance -Continue
 						}
 					}
-					
-					if ($StepId) {
+					elseif ($StepId) {
 						# Check if the used step id is already in place
 						if ($Job.JobSteps.ID -notcontains $StepId) {
 							Write-Message -Message "Setting job step step id to $StepId" -Level Verbose
 							$JobStep.ID = $StepId
 						}
+						elseif (($Job.JobSteps.ID -contains $StepId) -and $Force) {
+							Write-Message -Message "Step ID $StepId already exists for job. Force is used. Removing existing step" -Level Verbose
+							
+							# Remove the existing job step
+							$StepName = ($Server.JobServer.Jobs['Job2'].JobSteps | Where-Object {$_.ID -eq 1}).Name
+							Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName
+
+							# Set the ID job step object
+							$JobStep.ID = $StepId
+						}
 						else {
 							Stop-Function -Message "The step id $StepId already exists for job $j" -Target $instance -Continue
 						}
-						
 					}
-					else {
+					 else {
 						# Get the job step count
 						$JobStep.ID = $Job.JobSteps.Count + 1
-					}
+					} 
 					
 					if ($Subsystem) {
 						Write-Message -Message "Setting job step subsystem to $Subsystem" -Level Verbose
