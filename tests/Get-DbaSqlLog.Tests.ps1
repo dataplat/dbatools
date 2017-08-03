@@ -55,9 +55,17 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 			$results = Get-DbaSqlLog -SqlInstance $script:instance1 -After $afterFilter
 			{$results[0].LogDate -ge $afterFilter} | Should Be $true
 		}
+		It "Returns filtered results for [LogNumber = 1] and [After = $afterFilter" {
+			$results = Get-DbaSqlLog -SqlInstance $script:instance1 -LogNumber 1 -After $afterFilter
+			{$results[0].LogDate -ge $afterFilter} | Should Be $true
+		}
 		$beforeFilter = $before.LogDate.AddMinutes(-1)
 		It "Returns filtered result for [Before = $beforeFilter]" {
 			$results = Get-DbaSqlLog -SqlInstance $script:instance1 -Before $beforeFilter
+			{$results[-1].LogDate -le $beforeFilter} | Should Be $true
+		}
+		It "Returns filtered result for [LogNumber = 1] and [Before = $beforeFilter]" {
+			$results = Get-DbaSqlLog -SqlInstance $script:instance1 -LogNumber 1 -Before $beforeFilter
 			{$results[-1].LogDate -le $beforeFilter} | Should Be $true
 		}
 	}
