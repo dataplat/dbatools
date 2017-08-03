@@ -68,12 +68,12 @@
 		.EXAMPLE
 			Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster
 
-			Copies all alerts from sqlserver2014a to sqlcluster, using Windows credentials. If alerts with the same name exist on sqlcluster, they will be skipped.
+			Copies all alerts from sqlserver2014a to sqlcluster using Windows credentials. If alerts with the same name exist on sqlcluster, they will be skipped.
 
 		.EXAMPLE
 			Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -Alert PSAlert -SourceSqlCredential $cred -Force
 
-			Copies a single alert, the PSAlert alert from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a alert with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+			Copies a only the alert named PSAlert from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a alert with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 		.EXAMPLE
 			Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
@@ -133,7 +133,7 @@
 				catch {
 					$copyAgentAlertStatus.Status = "Failed"
 					$copyAgentAlertStatus
-					Stop-Function -Message "Issue creating alert defaults" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
+					Stop-Function -Message "Issue creating alert defaults." -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 				}
 				$copyAgentAlertStatus
 			}
@@ -164,7 +164,7 @@
 
 				if ($PSCmdlet.ShouldProcess($Destination, "Dropping alert $alertName and recreating")) {
 					try {
-						Write-Message -Message "Dropping Alert $alertName on $destServer" -Level Verbose
+						Write-Message -Message "Dropping Alert $alertName on $destServer." -Level Verbose
 
 						$sql = "EXEC msdb.dbo.sp_delete_alert @name = N'$($alertname)';"
 						Write-Message -Message $sql -Level Debug
