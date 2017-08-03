@@ -4,6 +4,8 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
  	Context "Correctly gets error log messages" {
+		$sourceFilter = 'Logon'
+		$textFilter = 'All rights reserved'
 		BeforeAll {
 			$login = 'DaperDan'
 			$l = Get-DbaLogin -SqlInstance $script:instance1 -Login $login
@@ -16,23 +18,22 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 			$server = Connect-DbaSqlServer -SqlInstance $script:instance1
 			$null = $server.Query($sql)
 
-			# (2) Need 4 login failure: Error 18456, Login failed for user %l
-			$loginAttempts = 4
+			# (2) Need a login failure, source would be Logon
 			$pwd = "p0w3rsh3llrules" | ConvertTo-SecureString -Force -AsPlainText
 			$sqlCred = New-Object System.Management.Automation.PSCredential($login, $pwd)
-			for ($e=1; $e -eq $loginAttempts; $e++) {
-				$null = Connect-DbaSqlServer -SqlInstance $instance -Credential $sqlCred
+			try {
+				Connect-DbaSqlServer -SqlInstance $script:instance1 -Credential $sqlCred -ErrorVariable $whatever
 			}
+			catch {}
 		}
 		It "Has the correct default properties" {
 			$expectedProps = 'ComputerName,InstanceName,SqlInstance,LogDate,Source,Text'.Split(',')
 			$results = Get-DbaSqlLog -SqlInstance $script:instance1 -LogNumber 0
 			($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($expectedProps | Sort-Object)
 		}
-		It "Returns filtered results" {
-			$filteredText = 'All rights reserved'
-			$results = Get-DbaSqlLog -SqlInstance $script:instance1 -LogNumber 0 -Text $filteredText
-			$results[0].Text | Should BeLike "*$filteredText*"
+		It "Returns filtered results for -Source set to: $sourceFilter]" {
+			$results = Get-DbaSqlLog -SqlInstance $script:instance1 -LogNumber 0 -Source $sourceFilter
+			$results[0].Source | Should Be $sourceFilter
 		}
 	}
 }
