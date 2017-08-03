@@ -73,6 +73,8 @@
 		[int[]]$LogNumber,
 		[object[]]$Source,
 		[string]$Text,
+		[datetime]$Before,
+		[datetime]$After,
 		[switch]$Silent
 	)
 	process {
@@ -89,10 +91,7 @@
 			if ($LogNumber) {
 				foreach ($number in $lognumber) {
 					foreach ($object in $server.ReadErrorLog($number)) {
-						if ($Source -and $object.ProcessInfo -ne $Source) {
-							continue
-						}
-						if ($Text -and $object.Text -notlike "*$Text*") {
+						if ( ($Source -and $object.ProcessInfo -ne $Source) -or ($Text -and $object.Text -notlike "*$Text*") -or ($After -and $object.LogDate -lt $After) -or ($Before -and $object.LogDate -gt $Before) ) {
 							continue
 						}
 						Write-Message -Level Verbose -Message "Processing $object"
@@ -107,10 +106,7 @@
 			}
 			else {
 				foreach ($object in $server.ReadErrorLog()) {
-					if ($Source -and $object.ProcessInfo -ne $Source) {
-						continue
-					}
-					if ($Text -and $object.Text -notlike "*$Text*") {
+					if ( ($Source -and $object.ProcessInfo -ne $Source) -or ($Text -and $object.Text -notlike "*$Text*") -or ($After -and $object.LogDate -lt $After) -or ($Before -and $object.LogDate -gt $Before) ) {
 						continue
 					}
 					Write-Message -Level Verbose -Message "Processing $object"
