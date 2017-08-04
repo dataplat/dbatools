@@ -124,6 +124,7 @@
 			try {
 				Write-Message -Level VeryVerbose -Message "Connecting to <c='green'>$instance</c>" -Target $instance
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+				$server.ConnectionContext.StatementTimeout = [Int32]::MaxValue
 			}
 			catch {
 				Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
@@ -182,6 +183,7 @@
 			}
 			
 			if (!($NoCheckDb)) {
+				Write-Message -Level Verbose -Message "Updating $db with DBCC CHECKDB DATA_PURITY"
 				If ($Pscmdlet.ShouldProcess($server, "Updating $db with DBCC CHECKDB DATA_PURITY")) {
 					$tsqlCheckDB = "DBCC CHECKDB ('$dbname') WITH DATA_PURITY, NO_INFOMSGS"
 					try {
@@ -199,6 +201,7 @@
 			}
 			
 			if (!($NoUpdateUsage)) {
+				Write-Message -Level Verbose -Message "Updating $db with DBCC UPDATEUSAGE"
 				If ($Pscmdlet.ShouldProcess($server, "Updating $db with DBCC UPDATEUSAGE")) {
 					$tsqlUpdateUsage = "DBCC UPDATEUSAGE ($db) WITH NO_INFOMSGS;"
 					try {
@@ -217,6 +220,7 @@
 			}
 			
 			if (!($NoUpdatestats)) {
+				Write-Message -Level Verbose -Message "Updating $db statistics"
 				If ($Pscmdlet.ShouldProcess($server, "Updating $db statistics")) {
 					$tsqlStats = "EXEC sp_updatestats;"
 					try {
@@ -235,6 +239,7 @@
 			}
 			
 			if (!($NoRefreshView)) {
+				Write-Message -Level Verbose -Message "Refreshing $db Views"
 				$dbViews = $db.Views | Where-Object IsSystemObject -eq $false
 				$RefreshViewResult = "Success"
 				foreach ($dbview in $dbviews) {

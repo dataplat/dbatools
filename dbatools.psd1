@@ -342,7 +342,8 @@
 		'Get-DbaClientAlias',
 		'Get-DbaOperatingSystem',
 		'Install-DbaMaintenanceSolution',
-		'Get-DbaComputerSystem'
+		'Get-DbaComputerSystem',
+		'Get-DbaTraceFlag'
 	)
 	
 	# Cmdlets to export from this module
