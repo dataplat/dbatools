@@ -335,7 +335,10 @@
 		'Get-DbaAgReplica',
 		'Get-DbaAgDatabase',
 		'Get-DbaSqlModule',
-		'Get-DbaRegisteredServersStore'
+		'Get-DbaRegisteredServersStore',
+		'Stop-DBASqlService',
+		'Start-DBASqlService',
+		'Restart-DBASqlService'
 	)
 	
 	# Cmdlets to export from this module
