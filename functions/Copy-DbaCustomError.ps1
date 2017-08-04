@@ -1,54 +1,54 @@
 function Copy-DbaCustomError {
 	<#
 		.SYNOPSIS
-			Copy-DbaCustomError migrates custom errors (user defined messages), by the customer error ID, from one SQL Server to another.
+			Copy-DbaCustomError migrates custom errors (user defined messages), by the custom error ID, from one SQL Server to another.
 
 		.DESCRIPTION
 			By default, all custom errors are copied. The -CustomError parameter is auto-populated for command-line completion and can be used to copy only specific custom errors.
 
-			If the custom error already exists on the destination, it will be skipped unless -Force is used. Interesting fact, if you drop the us_english version, all the other languages will be dropped for that specific ID as well.
-
-			Also, the us_english version must be created first.
+			If the custom error already exists on the destination, it will be skipped unless -Force is used. The us_english version must be created first. If you drop the us_english version, all the other languages will be dropped for that specific ID as well.
 
 		.PARAMETER Source
-			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 		.PARAMETER SourceSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
 		.PARAMETER DestinationSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
 			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER CustomError
-			The customer error(s) to process - this list is auto-populated from the server. If unspecified, all customer errors will be processed.
+			The custom error(s) to process. This list is auto-populated from the server. If unspecified, all custom errors will be processed.
 
 		.PARAMETER ExcludeCustomError
-			The custom error(s) to exclude - this list is auto-populated from the server.
+			The custom error(s) to exclude. This list is auto-populated from the server.
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
-
-		.PARAMETER Force
-			Drops and recreates the custom error if it exists.
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages.
+			If this switch is enabled, the internal messaging functions will be silenced.
+
+		.PARAMETER Force
+			If this switch is enabled, the custom error will be dropped and recreated if it already exists on Destination.
 
 		.NOTES
 			Tags: Migration, CustomError
@@ -65,17 +65,17 @@ function Copy-DbaCustomError {
 		.EXAMPLE
 			Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster
 
-			Copies all server custom errors from sqlserver2014a to sqlcluster, using Windows credentials. If custom errors with the same name exist on sqlcluster, they will be skipped.
+			Copies all server custom errors from sqlserver2014a to sqlcluster using Windows credentials. If custom errors with the same name exist on sqlcluster, they will be skipped.
 
 		.EXAMPLE
 			Copy-DbaCustomError -Source sqlserver2014a -SourceSqlCredential $scred -Destination sqlcluster -DestinationSqlCredential $dcred -CustomError 60000 -Force
 
-			Copies a single custom error, the custom error with ID number 60000 from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
+			Copies only the custom error with ID number 60000 from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
 
 		.EXAMPLE
 			Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -ExcludeCustomError 60000 -Force
 
-			Copies all the custom errors found on sqlserver2014a, except the custom error with ID number 60000,to sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
+			Copies all the custom errors found on sqlserver2014a except the custom error with ID number 60000 to sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
 
 		.EXAMPLE
 			Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
@@ -151,7 +151,7 @@ function Copy-DbaCustomError {
 							$copyCustomErrorStatus.Status = "Failed"
 							$copyCustomErrorStatus
 
-							Stop-Function -Message "Issue dropping customer error" -Target $customErrorId -InnerErrorRecord $_ -Continue
+							Stop-Function -Message "Issue dropping custom error" -Target $customErrorId -InnerErrorRecord $_ -Continue
 						}
 					}
 				}

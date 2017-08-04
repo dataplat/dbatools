@@ -343,7 +343,7 @@
 		'Get-DbaOperatingSystem',
 		'Install-DbaMaintenanceSolution',
 		'Get-DbaComputerSystem',
-		'Get-DbaTraceFlag',
+    'Get-DbaTraceFlag',
 		'Stop-DBASqlService',
 		'Start-DBASqlService',
 		'Restart-DBASqlService'

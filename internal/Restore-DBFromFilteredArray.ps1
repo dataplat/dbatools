@@ -87,7 +87,7 @@ Function Restore-DBFromFilteredArray {
             if (($ScriptOnly -eq $true) -or ($verifyonly -eq $true)) {
                 Write-Message -Level Verbose -Message "No need to close db for this operation"
             }
-            elseIf ($WithReplace -eq $true) {
+            elseIf ($WithReplace -eq $true -and $VerifyOnly -eq $false) {
                 if ($Pscmdlet.ShouldProcess("Killing processes in $dbname on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
                     try {
                         Write-Message -Level Verbose -Message "Set $DbName single_user to kill processes"
@@ -137,26 +137,37 @@ Function Restore-DBFromFilteredArray {
 
         foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object BackupSetGuid)) {
             #$RestorePoints  += [PSCustomObject]@{order=[Decimal]($if.Name); 'Files' = $if.group}
-            $RestorePoints += [PSCustomObject]@{order = [Decimal](($if.Group.backupstartdate | Sort-Object -Unique).ticks); 'Files' = $if.group}
+            $RestorePoints += [PSCustomObject]@{order = [Decimal](($if.Group.LastLsn | Sort-Object -Unique)); 'Files' = $if.group}
         }
         $SortedRestorePoints = $RestorePoints | Sort-Object -property order
         if ($ReuseSourceFolderStructure) {
-            Write-Message -Level Verbose -Message "Checking for folders for Reusing old structure"
+            Write-Message -Level Verbose -Message "Checking for files folders for Reusing old structure"
             foreach ($File in ($RestorePoints.Files.filelist.PhysicalName | Sort-Object -Unique)) {
                 Write-Message -Level VeryVerbose -Message "File = $file"
-                if ((Test-DbaSqlPath -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential) -ne $true) {
-                    if ((New-DbaSqlDirectory -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential).Created -ne $true) {
-                        Write-Message -Level Warning -Message "Destination File $File does not exist, and could not be created on $SqlInstance"
-
-                        return
+                if ((Test-DbaSqlPath -Path $File -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential) -ne $true) {
+                    Write-Message -Level VeryVerbose "File doesn't exist, check for parent folder"
+                    if ((Test-DbaSqlPath -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential) -ne $true) {
+                        Write-Message -Level debug -Message "$(Split-Path -Path $File -Parent) does not exist on $sqlinstance"
+                        if ((New-DbaSqlDirectory -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential).Created -ne $true) {
+                            Stop-Function -message "Destination folder $(Split-Path -Path $File -Parent) does not exist, and could not be created on $SqlInstance" -TargetObject $file -Category 'DeviceError'
+                            return
+                        } 
+                        else {
+                            Write-Message -Level Veryverbose -Message "Folder $(Split-Path -Path $File -Parent) created on $sqlinstance"
+                        }   
                     }
                     else {
-                        Write-Message -Level Verbose -Message "Destination File $File  created on $SqlInstance"
+                        Write-Message -Level Veryverbose -Message "Folder $(Split-Path -Path $File -Parent) exists on $sqlinstance"
                     }
+
                 }
                 else {
-                    Write-Message -Level Verbose -Message "Destination File $File  exists on $SqlInstance"
-                }
+                    Write-Message -Level Veryverbose -Message "Bombing out created on $sqlinstance"
+                    #Stop-Function -message "Destination File $File  exists on $SqlInstance" -Target $file -Category 'DeviceError' -silent $true
+					Stop-Function -message "Destination File $File  exists on $SqlInstance" -Target $file -Category 'DeviceError' -silent $true
+					return
+                }    
+                Write-Message -Level Veryverbose -Message "past resuse tests"
             }
         }
         $RestoreCount = 0
@@ -351,9 +362,8 @@ Function Restore-DBFromFilteredArray {
                     Write-Message -Level Verbose -Message "Failed, Closing Server connection"
                     $RestoreComplete = $False
                     $ExitError = $_.Exception.InnerException
-                    Write-Warning "$FunctionName - $ExitError" -WarningAction stop
-                    #Exit as once one restore has failed there's no point continuing
-                    break
+					Stop-Function -Message "Failed to restore db $DbName, stopping" -ErrorRecord $_
+					return
                 }
                 finally {
                     if ($ReuseSourceFolderStructure) {

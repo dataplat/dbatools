@@ -123,7 +123,7 @@ function Copy-DbaServerTrigger {
 				SourceServer      = $sourceServer.Name
 				DestinationServer = $destServer.Name
 				Name              = $triggerName
-				Type              = $null
+				Type              = "Server"
 				Status            = $null
 				Notes             = $null
 				DateTime          = [DbaDateTime](Get-Date)
@@ -165,8 +165,11 @@ function Copy-DbaServerTrigger {
 					$sql = $sql -replace "CREATE TRIGGER", "`nGO`nCREATE TRIGGER"
 					$sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
 					Write-Message -Level Debug -Message $sql
-					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-
+					
+					foreach ($query in ($sql -split '\nGO\b')) {
+						$destServer.Query($query) | Out-Null
+					}
+					
 					$copyTriggerStatus.Status = "Successful"
 					$copyTriggerStatus
 				}

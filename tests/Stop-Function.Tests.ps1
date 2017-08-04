@@ -1,8 +1,9 @@
-﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+. "$PSScriptRoot\constants.ps1"
 . $PSScriptRoot\..\internal\Stop-Function.ps1
 
-## needs some proper tests for the function here
-Describe "Stop-Function Unit-Tests" -Tag 'UnitTests' {
+Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     Context "Testing non-silent: Explicit call" {
         try
         {
@@ -111,7 +112,7 @@ Describe "Stop-Function Unit-Tests" -Tag 'UnitTests' {
             foreach ($number in (1 .. 3))
             {
                 $a++
-                Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidOperation -Continue -ErrorAction Stop
+				Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidOperation -Continue -ErrorAction Stop 3>&1
                 $b++
             }
         }
@@ -134,7 +135,7 @@ Describe "Stop-Function Unit-Tests" -Tag 'UnitTests' {
                 foreach ($Counter in (1 .. 3))
                 {
                     $d++
-                    Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidOperation -Continue -ContinueLabel "main" -ErrorAction Stop
+					Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidOperation -Continue -ContinueLabel "main" -ErrorAction Stop 3>&1
                     $e++
                 }
                 $f++

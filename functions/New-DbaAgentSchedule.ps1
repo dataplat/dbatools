@@ -158,8 +158,8 @@ function New-DbaAgentSchedule {
 		[ValidateSet('Time','Seconds','Minutes','Hours')]
 		[object]$FrequencySubdayType,
 		[int]$FrequencySubdayInterval,
-		[ValidateSet('First','Second','Third','Fourth','Last')]
-		[int]$FrequencyRelativeInterval,
+		[ValidateSet('Unused','First','Second','Third','Fourth','Last')]
+		[object]$FrequencyRelativeInterval,
 		[int]$FrequencyRecurrenceFactor,
 		[string]$StartDate,
 		[string]$EndDate,
@@ -221,17 +221,16 @@ function New-DbaAgentSchedule {
 		}
 
 		# Check of the relative FrequencyInterval value is of type string and set the integer value
-		if ($FrequencyRelativeInterval -notin 1, 2, 4, 8, 16) {
-			$FrequencyRelativeInterval = 
-				switch ($FrequencyRelativeInterval) { 
-					"First" { 1 } 
-					"Second" { 2 } 
-					"Third" { 4 } 
-					"Fourth" { 8 } 
-					"Last" { 16 } 
-					default {0} 
-				}
-		}
+		[int]$FrequencyRelativeInterval = 
+			switch ($FrequencyRelativeInterval) { 
+				"First" { 1 } 
+				"Second" { 2 } 
+				"Third" { 4 } 
+				"Fourth" { 8 } 
+				"Last" { 16 } 
+				"Unused" { 0 }
+				default {0} 
+			}
 
 		# Check if the interval is valid
 		if (($FrequencyType -eq "Minutes") -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
@@ -420,7 +419,7 @@ function New-DbaAgentSchedule {
 
 		foreach ($instance in $sqlinstance) {
 			# Try connecting to the instance
-			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+			Write-Message -Message "Attempting to connect to $instance" -Level Output
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
@@ -533,7 +532,7 @@ function New-DbaAgentSchedule {
 						# Create the schedule
 						if ($PSCmdlet.ShouldProcess($SqlInstance, "Adding the schedule $Schedule to job $j on $instance")) {
 							try {
-								Write-Message -Message "Adding the schedule $Schedule to job $j" -Level Verbose
+								Write-Message -Message "Adding the schedule $Schedule to job $j" -Level Output
 
 								$JobSchedule.Create()
 
@@ -620,7 +619,7 @@ function New-DbaAgentSchedule {
 				# Create the schedule
 				if ($PSCmdlet.ShouldProcess($SqlInstance, "Adding the schedule $schedule on $instance")) {
 					try {
-						Write-Message -Message "Adding the schedule $schedule on instance $instance" -Level Verbose
+						Write-Message -Message "Adding the schedule $schedule on instance $instance" -Level Output
 
 						$schedule.Create()
 
@@ -631,7 +630,7 @@ function New-DbaAgentSchedule {
 					}
 
 					# Output the job schedule
-					$JobSchedule
+					return $JobSchedule
 				}
 			}
 		} # foreach object instance

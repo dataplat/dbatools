@@ -114,9 +114,9 @@ using the SQL credential stored in the variables
 			If ($Pscmdlet.ShouldProcess($destination, "Execute sp_configure"))
 			{
 				$sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
-				$sourceserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
+				$sourceserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
 				$destserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
-				$destserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
+				$destserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
 				
 				$destprops = $destserver.Configuration.Properties
 				
@@ -130,7 +130,7 @@ using the SQL credential stored in the variables
 						try
 						{
 							$destprop.configvalue = $sourceprop.configvalue
-							$destserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
+							$destserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
 							Write-Output "updated $($destprop.displayname) to $($sourceprop.configvalue)"
 						}
 						catch { Write-Error "Could not $($destprop.displayname) to $($sourceprop.configvalue). Feature may not be supported." }
@@ -140,9 +140,9 @@ using the SQL credential stored in the variables
 				catch { $needsrestart = $true }
 				
 				$sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
-				$sourceserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
+				$sourceserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
 				$destserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
-				$destserver.ConnectionContext.ExecuteNonQuery("RECONFIGURE WITH OVERRIDE") | Out-Null
+				$destserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
 				
 				if ($needsrestart -eq $true)
 				{
@@ -167,7 +167,7 @@ using the SQL credential stored in the variables
 				{
 					try
 					{
-						$server.ConnectionContext.ExecuteNonQuery($line) | Out-Null; Write-Output "Successfully executed $line"
+						$server.Query($line) | Out-Null; Write-Output "Successfully executed $line"
 					}
 					catch
 					{
