@@ -1,4 +1,4 @@
-Function Restart-DBASqlService {
+Function Restart-DbaSqlService {
 <#
     .SYNOPSIS
     Restarts SQL Server services on a computer. 
