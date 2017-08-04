@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.9.10'
+	ModuleVersion = '0.9.23'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -103,7 +103,6 @@
 		'Copy-DbaAgentCategory',
 		'Update-Dbatools',
 		'Test-DbaSqlPath',
-		'Sync-DbaLoginPermissions',
 		'Export-DbaLogin',
 		'Reset-DbaAdmin',
 		'Watch-DbaDbLogin',
@@ -172,7 +171,6 @@
 		'New-DbaDatabaseSnapshot',
 		'Restore-DbaFromDatabaseSnapshot',
 		'Get-DbaTrigger',
-		'Invoke-DbaSqlcmd',
 		'Export-DbaUser',
 		'Get-DbaDatabaseState',
 		'Set-DbaDatabaseState',
@@ -211,8 +209,8 @@
 		'Install-DbaWatchUpdate',
 		'Watch-DbaUpdate',
 		'Uninstall-DbaWatchUpdate',
-		'Get-DbaQueryStoreConfig',
-		'Set-DbaQueryStoreConfig',
+		'Get-DbaDbQueryStoreOptions',
+		'Set-DbaDbQueryStoreOptions',
 		'Restore-DbaDatabase',
 		'Copy-DbaQueryStoreConfig',
 		'Get-DbaExecutionPlan',
@@ -290,7 +288,7 @@
 		'Get-DbaSqlInstanceUserOption',
 		'New-DbaSqlConnectionString',
 		'Get-DbaAgentSchedule',
-		#'Invoke-DbaLogShipping',
+		'Invoke-DbaLogShipping',
 		'Read-DbaTraceFile',
 		'New-DbaComputerCertificate',
 		'Get-DbaComputerCertificate',
@@ -310,8 +308,7 @@
 		'Get-DbaSqlManagementObject',
 		'Test-DbaSqlManagementObject',
 		'Get-DbaMaintenanceSolutionLog',
-		#'Invoke-DbaLogShippingRecovery',
-		'Sync-DbaLoginPermission',
+		'Invoke-DbaLogShippingRecovery',
 		'Find-DbaTrigger',
 		'Find-DbaView',
 		'Invoke-DbaDatabaseUpgrade',
@@ -328,7 +325,7 @@
 		'Get-DbaErrorLog',
 		'Get-DbaDefaultPath',
 		'Get-DbaDbStoredProcedure',
-		'Test-DbaCompression',
+		'Test-DbaDbCompression',
 		'Mount-DbaDatabase',
 		'Dismount-DbaDatabase',
 		'Set-DbaPrivilege',
@@ -336,6 +333,17 @@
 		'Get-DbaAgDatabase',
 		'Get-DbaSqlModule',
 		'Get-DbaRegisteredServersStore',
+		'Sync-DbaSqlLoginPermission',
+		'Invoke-Sqlcmd2',
+		'New-DbaCredential',
+		'Get-DbaFile',
+		'Set-DbaDbCompression',
+		'New-DbaClientAlias',
+		'Get-DbaClientAlias',
+		'Get-DbaOperatingSystem',
+		'Install-DbaMaintenanceSolution',
+		'Get-DbaComputerSystem',
+		'Get-DbaTraceFlag',
 		'Stop-DBASqlService',
 		'Start-DBASqlService',
 		'Restart-DBASqlService'
@@ -416,8 +424,11 @@
 	'Test-SqlPath',
 	'Test-SqlTempDbConfiguration',
 	'Watch-SqlDbLogin',
-	'Invoke-Sqlcmd2',
-	'Get-DbaDatabaseFreeSpace'
+	'Get-DbaDatabaseFreeSpace',
+	'Invoke-DbaSqlcmd',
+	'Get-DbaQueryStoreConfig',
+	'Set-DbaQueryStoreConfig'
+	
 	
 	# List of all modules packaged with this module
 	ModuleList = @()
@@ -461,8 +472,8 @@
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUAd9ZJzf9mnnNaJBSsNoCZFiy
-# aSKggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUrNglhsrUWDRr6b+AQUjO9Nub
+# 87CggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -593,22 +604,22 @@
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUgWfIkOJB2E4ZKuvJmRXbyoba4lMwDQYJKoZIhvcNAQEBBQAE
-# ggEAC8ul3oxSCNLH+uNyrEIFO14Uy+rWer3kPXkphQKTWcF5NgOcnHNRA7yuHjZr
-# PHF0hvyJILOsPsyQKm0ViWTfb/BnyXQsfr8HCHbrtWLB4hRSTJOKqMrVCgsjyWGx
-# ppY/Cl7uOdnRN+eajt875M1Ke+pHai8utU1PqgQrRn5JPWIn/nOw9Azix42csNYr
-# 6ol+0087CVYRtVi1Jo/OzJvsOc331pMAvxRBPRcH/qIz1yJkPMb8XUZ3qcgBLYGA
-# M+VD6eNT5UY5XjK9Q8In1fhqQ8aO01OMlDkH3L2MGiqH7aydmfPAiEUPWYLc80y7
-# RMncbs02ACtE3sw1aBVX6CnkkqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUM51V2W0Y91RpzBfmB4Wc0reFkJMwDQYJKoZIhvcNAQEBBQAE
+# ggEALB+iY2VZAPMBReo3Xv3W0cWWkJCHh+kDzW6Y5yr6bAfX1MCbIZ8vdyn6TX+P
+# WNQNEUwPtwC+kdgEmXYYa3AU9mdbqtnhBW+LfeMaMinQsl2m2I6qnk0fIZzwgDWx
+# VWJA43uML9LCPo1m4F8aM9w7MCQ5YTUnmJjCba5k6iBTSqIVzVFJANNCypO70Uaw
+# DiMsQcjHqY+j09N3YfCHFDSeNZ3wJpG1Ci+DwDlyopfSIvgv9m/u/Ek20b2RTlHF
+# sRZuCUaZBwD+t9qo1+1kngDrKnTizVKrxi+fg60lTwnzXBnBYr1LSuDxDg4F4fye
+# 8ErqSjs1eC33fG5++QCQkucOiKGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIxMTAwMjU2WjAj
-# BgkqhkiG9w0BCQQxFgQUeJzIL2b9hGnVVqzOtriJbpWLgzgwDQYJKoZIhvcNAQEB
-# BQAEggEAhdT4aMlJE0vas213nu9jiWg2SeccGY83a6wN0zKcgEVe4cDkwoqf+xTr
-# i+AysTakm6heFtjHy4A2rY/ybgP8ji/57uefu7U0YW3uRFF390m3yaQpBwEzGhlB
-# ri+MPcSHVoLOCpehC3vlJQu7/BRwISmGacBxhiReSYczmvDZ5ZYN5KcUvl5AXLnj
-# rIp/Shfqz8c1iZ45w+ZAE8EcOqzXaQ0/y1g26k6m18zk8pnELdAcNBZFvDwo4YD4
-# Q3/tdCayKBjRybQNCDHz7AtbCJf8JLBoRExMuEHdLhQkF++4orq2EaSl4OYYXRuV
-# CeaDLGKKMSLvLWkDszoObTRUgiupFw==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwODA0MTUxMDAwWjAj
+# BgkqhkiG9w0BCQQxFgQU5aQG/51E9tixiqOZywazFq2kAN8wDQYJKoZIhvcNAQEB
+# BQAEggEAVVEa4J5gNhngqXm5NMMmYag2bt6qotsGsiDZl6S4JJDZOIDyebcSRemb
+# PSf2lsQqnG7exFeUgsYZQeVK0PZ0dQZ9VGEGFjuf9lfAYRGjU2OQ6Ui/ZSfmUi8L
+# o7w90h8ABfRiOYtZMqD36d2uacvdyqyATSr7QXebygPZ753f5adpiFeuUSSUA9L5
+# C6RPFSHDwIx8ffxeL0AacRSfQe7vNoKFwOnk9i5yCY9NBt4EUECpASkFcQhqorHI
+# 4Uv7o1LMVrVGgfVigck2C9Ici9YOaAnsoV0REcabDExvA2MrUMEu2QkwfH+4+GlA
+# vdsTneh0VgKLNLUu1KiO0tQPDP+7mg==
 # SIG # End signature block
