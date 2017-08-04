@@ -160,7 +160,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 					# than the immediate rollback
 					$sqlinstance.KillAllProcesses($dbname)
 				}
-				$null = $sqlinstance.ConnectionContext.ExecuteNonQuery($sql)
+				$null = $sqlinstance.Query($sql)
 			}
 			catch {
 				Write-Exception $_
@@ -424,7 +424,7 @@ Sets the HR database as SINGLE_USER, dropping all other connections (and rolling
 					try {
 						$sql = "EXEC master.dbo.sp_detach_db N$db"
 						Write-Verbose $sql
-						$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+						$null = $server.Query($sql)
 						$newstate.Status = 'DETACHED'
 					}
 					catch {

@@ -108,7 +108,8 @@
         so.create_date ,
         so.modify_date ,
         so.is_ms_shipped ,
-        sm.definition
+        sm.definition,
+ 		OBJECTPROPERTY(so.object_id, 'ExecIsStartUp') as startup
 		FROM sys.sql_modules sm
         LEFT JOIN sys.objects so ON sm.object_id = so.object_id
         WHERE so.modify_date >= '$($ModifiedSince)'"
@@ -156,13 +157,14 @@
 						InstanceName = $server.ServiceName
 						SqlInstance = $server.DomainInstanceName
 						Database = $row.DatabaseName
-						ModuleName = $row.ModuleName
+						Name = $row.ModuleName
 						ObjectID = $row.object_id
 						SchemaName = $row.SchemaName
 						Type = $row.type_desc
 						CreateDate = $row.create_date
 						ModifyDate = $row.modify_date
-						IsMsShipped = $row.is_ms_shipped
+						IsMsShipped   = $row.is_ms_shipped
+						ExecIsStartUp   = $row.startup
 						Definition = $row.definition
 					} | Select-DefaultView -ExcludeProperty Definition
 				}

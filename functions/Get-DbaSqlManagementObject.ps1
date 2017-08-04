@@ -76,7 +76,7 @@
 			}
 			
 			Write-Message -Level Verbose -Message "Looking for included smo library"
-			$localversion = [version](Get-ChildItem -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Smo.dll").VersionInfo.ProductVersion
+			$localversion = [version](Get-ChildItem -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll").VersionInfo.ProductVersion
 			
 			foreach ($version in $localversion) {
 				if ($VersionNumber -eq 0) {
@@ -85,7 +85,7 @@
 						ComputerName = $env:COMPUTERNAME
 						Version = $localversion
 						Loaded = $loadedversion -contains $localversion
-						LoadTemplate = "Add-Type -Path $("$script:PSModuleRoot\bin\Microsoft.SqlServer.Smo.dll")"
+						LoadTemplate = "Add-Type -Path $("$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll")"
 					}
 				}
 				else {
@@ -96,7 +96,7 @@
 							ComputerName = $env:COMPUTERNAME
 							Version = $localversion
 							Loaded = $loadedversion -contains $localversion
-							LoadTemplate = "Add-Type -Path $("$script:PSModuleRoot\bin\Microsoft.SqlServer.Smo.dll")"
+							LoadTemplate = "Add-Type -Path $("$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll")"
 						}
 					}
 				}

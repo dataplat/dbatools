@@ -9,7 +9,7 @@
 			If the alert already exists on the destination, it will be skipped unless -Force is used.
 
 		.PARAMETER Source
-			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or newer.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
@@ -21,7 +21,7 @@
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or newer.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
 		.PARAMETER DestinationSqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
@@ -68,12 +68,12 @@
 		.EXAMPLE
 			Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster
 
-			Copies all alerts from sqlserver2014a to sqlcluster, using Windows credentials. If alerts with the same name exist on sqlcluster, they will be skipped.
+			Copies all alerts from sqlserver2014a to sqlcluster using Windows credentials. If alerts with the same name exist on sqlcluster, they will be skipped.
 
 		.EXAMPLE
 			Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -Alert PSAlert -SourceSqlCredential $cred -Force
 
-			Copies a single alert, the PSAlert alert from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a alert with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+			Copies a only the alert named PSAlert from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a alert with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 		.EXAMPLE
 			Copy-DbaAgentAlert -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
@@ -126,14 +126,14 @@
 					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$Destination'"
 
 					Write-Message -Message $sql -Level Debug
-					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $destServer.Query($sql)
 
 					$copyAgentAlertStatus.Status = "Successful"
 				}
 				catch {
 					$copyAgentAlertStatus.Status = "Failed"
 					$copyAgentAlertStatus
-					Stop-Function -Message "Issue creating alert defaults" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
+					Stop-Function -Message "Issue creating alert defaults." -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 				}
 				$copyAgentAlertStatus
 			}
@@ -164,11 +164,11 @@
 
 				if ($PSCmdlet.ShouldProcess($Destination, "Dropping alert $alertName and recreating")) {
 					try {
-						Write-Message -Message "Dropping Alert $alertName on $destServer" -Level Verbose
+						Write-Message -Message "Dropping Alert $alertName on $destServer." -Level Verbose
 
 						$sql = "EXEC msdb.dbo.sp_delete_alert @name = N'$($alertname)';"
 						Write-Message -Message $sql -Level Debug
-						$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+						$null = $destServer.Query($sql)
 					}
 					catch {
 						$copyAgentAlertStatus.Status = "Failed"
@@ -210,7 +210,7 @@
 					$sql = $sql -replace "@job_id=N'........-....-....-....-............", "@job_id=N'00000000-0000-0000-0000-000000000000"
 
 					Write-Message -Message $sql -Level Debug
-					$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $destServer.Query($sql)
 
 					$copyAgentAlertStatus.Status = "Successful"
 					$copyAgentAlertStatus
@@ -249,7 +249,7 @@
 						$sql = $sql -replace 'sp_add_alert', 'sp_update_alert'
 
 						Write-Message -Message $sql -Level Debug
-						$null = $destServer.ConnectionContext.ExecuteNonQuery($sql)
+						$null = $destServer.Query($sql)
 
 						$copyAgentAlertStatus.Status = "Successful"
 						$copyAgentAlertStatus

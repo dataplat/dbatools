@@ -1,4 +1,8 @@
-Describe "Get-DbaAgDatabase Unit Tests" -Tag "UnitTests" {
+$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 	InModuleScope dbatools {
 		Context "Validate parameters" {
 			$params = (Get-ChildItem function:\Get-DbaAgDatabase).Parameters	
@@ -26,6 +30,3 @@ Describe "Get-DbaAgDatabase Unit Tests" -Tag "UnitTests" {
 		}
 	}
 }
-Describe "Get-DbaAgDatabase Integration Test" -Tag "IntegrationTests" {
-	Write-Host "[Get-DbaAgDatabase] - No integration test can be performed for this command"
-} 
