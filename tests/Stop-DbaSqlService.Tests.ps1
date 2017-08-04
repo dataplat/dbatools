@@ -24,7 +24,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		It "stops specific services based on instance name through pipeline" {
 			{ Get-DbaSqlService -ComputerName $instances -InstanceName MSSQLSERVER -Type SqlAgent,SqlServer | Stop-DbaSqlService } | Should Not Throw
-			$services = Get-DbaSqlService -ComputerName $instances -InstanceName $instances -Type SqlAgent
+			$services = Get-DbaSqlService -ComputerName $instances -InstanceName MSSQLSERVER -Type SqlAgent,SqlServer
 			foreach ($service in $services) {
 				$service.State | Should Be 'Stopped'
 			}
@@ -32,7 +32,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		It "starts the services back through pipeline" {
 			{ Get-DbaSqlService -ComputerName $instances -InstanceName MSSQLSERVER -Type SqlAgent,SqlServer | Start-DbaSqlService } | Should Not Throw
-			$services = Get-DbaSqlService -ComputerName $instances -InstanceName $instances -Type SqlAgent
+			$services = Get-DbaSqlService -ComputerName $instances -InstanceName MSSQLSERVER -Type SqlAgent,SqlServer
 			foreach ($service in $services) {
 				$service.State | Should Be 'Running'
 			}
