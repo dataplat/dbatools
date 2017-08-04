@@ -13,13 +13,10 @@ New-Item -Path C:\temp\migration -ItemType Directory -ErrorAction SilentlyContin
 New-Item -Path C:\temp\backups -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 
 Write-Output "Setting up AppVeyor Services"
-(Get-DbaSqlService -InstanceName sql2016 -Type Agent).ChangeStartMode('Automatic') -WarningAction SilentlyContinue
+(Get-DbaSqlService -InstanceName sql2016 -Type Agent).ChangeStartMode('Automatic')
 $browser = Get-DbaSqlService -Type Browser
 $browser.ChangeStartMode('Automatic')
 $browser|Start-DbaSqlService -WarningAction SilentlyContinue
-#Set-Service -Name 'SQLAgent$sql2016' -StartupType Automatic -WarningAction SilentlyContinue
-#Set-Service -Name SQLBrowser -StartupType Automatic -WarningAction SilentlyContinue
-#Start-Service SQLBrowser -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 
 $instances = "sql2016", "sql2008r2sp2"
 
@@ -40,12 +37,10 @@ foreach ($instance in $instances) {
 	$Tcp.Alter()
 	 
 	Write-Output "Starting $instance"
-	#Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue
 	Restart-DbaSqlService -InstanceName $instance -Type SqlServer -WarningAction SilentlyContinue
 	
 	if ($instance -eq "sql2016") {
 		Write-Output "Starting Agent for $instance"
-		#Restart-Service 'SQLAgent$sql2016' -WarningAction SilentlyContinue
 		Restart-DbaSqlService -InstanceName $instance -Type SqlServer -WarningAction SilentlyContinue
 	}
 }
@@ -54,7 +49,6 @@ $server = Connect-DbaSqlServer -SqlInstance localhost\SQL2008R2SP2
 $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 $server.Configuration.Alter()
 $null = Set-DbaStartupParameter -SqlInstance localhost\SQL2008R2SP2 -TraceFlagsOverride -TraceFlags 7806 -Confirm:$false -ErrorAction SilentlyContinue
-#Restart-Service "MSSQL`$SQL2008R2SP2" -WarningAction SilentlyContinue
 Restart-DbaSqlService -InstanceName SQL2008R2SP2 -Type SqlServer -WarningAction SilentlyContinue
 $server = Connect-DbaSqlServer -SqlInstance localhost\SQL2008R2SP2
 $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
