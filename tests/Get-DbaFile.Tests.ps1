@@ -4,14 +4,30 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Returns some files" {
-		$results = Get-DbaFile -SqlInstance $script:instance1
-		It "Should find the master data file" {
-			$results.Filename -match 'master.mdf' | Should Be $true
+		BeforeAll {
+			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$random = Get-Random
+			$db = "dbatoolsci_getfile$random"
+			$server.Query("CREATE DATABASE $db")
+		}
+		AfterAll {
+			$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db | Remove-DbaDatabase
 		}
 		
-		$results = Get-DbaFile -SqlInstance $script:instance1 -Path (Get-DbaDefaultPath -SqlInstance $script:instance1).Log
-		It "Should find the master log file" {
-			$results.Filename -match 'mastlog.ldf' | Should Be $true
+		$results = Get-DbaFile -SqlInstance $script:instance2
+		It "Should find the new database file" {
+			$results.Filename -match 'dbatoolsci' | Should Be $true
+		}
+		
+		$results = Get-DbaFile -SqlInstance $script:instance2 -Path (Get-DbaDefaultPath -SqlInstance $script:instance2).Log
+		It "Should find the new database log file" {
+			$results.Filename -like '*dbatoolsci*ldf' | Should Be $true
+		}
+		
+		$masterpath = $server.MasterDBPath
+		$results = Get-DbaFile -SqlInstance $script:instance2 -Path $masterpath
+		It "Should find the master database file" {
+			$results.Filename -match 'master.mdf' | Should Be $true
 		}
 	}
 }
