@@ -41,7 +41,7 @@ foreach ($instance in $instances) {
 	
 	if ($instance -eq "sql2016") {
 		Write-Output "Starting Agent for $instance"
-		Restart-DbaSqlService -InstanceName $instance -Type SqlServer -WarningAction SilentlyContinue
+		Restart-DbaSqlService -InstanceName $instance -Type SqlAgent -WarningAction SilentlyContinue
 	}
 }
 
