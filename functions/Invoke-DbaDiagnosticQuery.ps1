@@ -1,7 +1,7 @@
 function Invoke-DbaDiagnosticQuery {
 <#
 .SYNOPSIS 
-Invoke-DbaDiagnosticQuery runs the scripts provided by Glenn Berry's DMV scripts on specified servers.
+Invoke-DbaDiagnosticQuery runs the scripts provided by Glenn Berry's DMV scripts on specified servers
 
 .DESCRIPTION
 This is the main function of the Sql Server Diagnostic Queries related functions in dbatools. 
@@ -13,13 +13,19 @@ But it is possible to download a newer set or a specific version to an alternati
 It will run all or a selection of those scripts on one or multiple servers and return the result as a PowerShell Object
 
 .PARAMETER SqlInstance
-The target SQL Server. Can be either a string or SMO server.
+The target SQL Server. Can be either a string or SMO server
 	
 .PARAMETER SqlCredential
-Allows alternative Windows or SQL login credentials to be used.
+Allows alternative Windows or SQL login credentials to be used
 
 .PARAMETER Path
 Alternate path for the diagnostic scripts
+
+.PARAMETER Database
+The database(s) to process. If unspecified, all databases will be processed
+
+.PARAMETER ExcludeDatabase
+The database(s) to exclude
 	
 .PARAMETER UseSelectionHelper
 Provides a gridview with all the queries to choose from and will run the selection made by the user on the Sql Server instance specified. 
@@ -42,16 +48,13 @@ Prompts to confirm certain actions
 .PARAMETER WhatIf
 Shows what would happen if the command would execute, but does not actually perform the command
 
-.NOTES
-Author: André Kamman (@AndreKamman), http://clouddba.io
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.	
+.NOTES
+Tags: Database, DMV
+Author: André Kamman (@AndreKamman), http://clouddba.io
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Invoke-DbaDiagnosticQuery
@@ -156,9 +159,6 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 			
 			Write-Message -Level Verbose -Message "Collecting diagnostic query data from server: $instance"
 			
-			# Need to get count of SQLs
-			# if (!$silent) { Write-Progress -Id 0 -Activity "Running Scripts on SQL Server Instance {0} of {1}" -f $servercounter, $SqlInstances.count) -CurrentOperation $instance -PercentComplete (($servercounter / $SqlInstances.count) * 100) }
-			
 			if ($server.VersionMinor -eq 50) {
 				$version = "2008R2"
 			}
@@ -189,10 +189,10 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 				$scriptcount = $parsedscript.count
 			}
 			elseif ($instanceOnly) {
-				$scriptcount = ($parsedscript | Where-Object DatabaseSpecific -eq $false).count
+				$scriptcount = ($parsedscript | Where-Object DBSpecific -eq $false).count
 			}
 			elseif ($DatabaseSpecific) {
-				$scriptcount = ($parsedscript | Where-Object DatabaseSpecific).count
+				$scriptcount = ($parsedscript | Where-Object DBSpecific).count
 			}
 			elseif ($QueryName.Count -ne 0) {
 				$scriptcount = $QueryName.Count
@@ -201,7 +201,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 			foreach ($scriptpart in $parsedscript) {
 				
 				if (($QueryName.Count -ne 0) -and ($QueryName -notcontains $scriptpart.QueryName)) { continue }
-				if (!$scriptpart.DatabaseSpecific -and !$DatabaseSpecific) {
+				if (!$scriptpart.DBSpecific -and !$DatabaseSpecific) {
 					if ($PSCmdlet.ShouldProcess($instance, $scriptpart.QueryName)) {
 						$counter++
 						if (!$silent) {
@@ -248,14 +248,15 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 						}
 					}
 				}
-				elseif ($scriptpart.DatabaseSpecific -and !$instanceOnly) {
-					foreach ($database in $databases) {
-						if ($PSCmdlet.ShouldProcess(('{0} ({1})' -f $instance, $database.name), $scriptpart.QueryName)) {
-							#if (!$silent) { Write-Progress -Id 0 -Activity "Running diagnostic queries on SQL Server" -Status ("Instance {0} of {1}" -f $servercounter, $SqlInstances.count) -CurrentOperation $instance -PercentComplete (($servercounter / $SqlInstances.count) * 100) }
-							if (!$silent) { Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query data from $database on $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100) }
-							Write-Message -Level Output -Message "Collecting diagnostic query data from $database for $($scriptpart.QueryName) on $instance"
+				elseif ($scriptpart.DBSpecific -and !$instanceOnly) {
+					foreach ($currentdb in $databases) {
+						$dbname = $currentdb.name
+						if ($PSCmdlet.ShouldProcess(('{0} ({1})' -f $instance, $currentdb.name), $scriptpart.QueryName)) {
+							
+							if (!$silent) { Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query data from $dbname on $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100) }
+							Write-Message -Level Output -Message "Collecting diagnostic query data from $dbname for $($scriptpart.QueryName) on $instance"
 							try {
-								$result = $server.Query($scriptpart.Text,$database.Name)
+								$result = $server.Query($scriptpart.Text,$currentdb.Name)
 								if (!$result) {
 									$result = [pscustomobject]@{
 										ComputerName = $server.NetName
@@ -273,7 +274,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 								}
 							}
 							catch {
-								Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $database.Name) -Target $database -ErrorRecord $_
+								Write-Message -Level Verbose -Message ('Some error has occured on Server: {0} - Script: {1} - Database: {2}, result will not be saved' -f $instance, $scriptpart.QueryName, $currentdb.Name) -Target $currentdb -ErrorRecord $_
 							}
 							
 							[pscustomobject]@{
@@ -284,7 +285,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 								Name = $scriptpart.QueryName
 								Description = $scriptpart.Description
 								DatabaseSpecific = $scriptpart.DBSpecific
-								DatabaseName = $database.name
+								DatabaseName = $currentdb.name
 								Notes = $null
 								Result = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
 							}
