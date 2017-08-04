@@ -10,13 +10,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 			$startingtfs = $server.Query("DBCC TRACESTATUS(-1)")
 			$startingtfscount = $startingtfs.Count
 			
-			if ($startingtfs -notcontains $safetraceflag) {
+			if ($startingtfs.TraceFlag -notcontains $safetraceflag) {
 				$server.Query("DBCC TRACEON($safetraceflag,-1)  WITH NO_INFOMSGS")
 				$startingtfscount++
 			}
 		}
 		AfterAll {
-			if ($startingtfs -notcontains $safetraceflag) {
+			if ($startingtfs.TraceFlag -notcontains $safetraceflag) {
 				$server.Query("DBCC TRACEOFF($safetraceflag,-1)")
 			}
 		}
