@@ -16,7 +16,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		$results = Get-DbaFile -SqlInstance $script:instance2
 		It "Should find the new database file" {
-			$results.Filename -match 'dbatoolsci' | Should Be $true
+			($results.Filename -match 'dbatoolsci').Count -gt 0 | Should Be $true
 		}
 		
 		$results = Get-DbaFile -SqlInstance $script:instance2 -Path (Get-DbaDefaultPath -SqlInstance $script:instance2).Log
