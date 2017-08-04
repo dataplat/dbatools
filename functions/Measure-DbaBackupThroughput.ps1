@@ -1,5 +1,4 @@
-function Measure-DbaBackupThroughput
-{
+function Measure-DbaBackupThroughput {
 <#
 .SYNOPSIS
 Determines how quickly SQL Server is backing up databases to media.
@@ -95,8 +94,7 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 		[Alias("ServerInstance", "Instance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential]
-		$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
@@ -108,10 +106,8 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 		[switch]$Silent
 	)
 	
-	process
-	{
-		foreach ($instance in $SqlInstance)
-		{
+	process {
+		foreach ($instance in $SqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
@@ -131,31 +127,25 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 				$DatabaseCollection = $DatabaseCollection | Where-Object Name -NotIn $ExcludeDatabase
 			}
 			
-			foreach ($db in $DatabaseCollection)
-			{
+			foreach ($db in $DatabaseCollection) {
 				Write-Message -Level VeryVerbose -Message "Retrieving history for $db"
 				$allhistory = @()
 				
 				# Splatting didn't work
-				if ($since)
-				{	
-					$histories = Get-DbaBackupHistory -SqlInstance $server -Database $db -Since $since -DeviceType $DeviceType | Where-Object Type -eq $Type
+				if ($since) {
+					$histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Since $since -DeviceType $DeviceType | Where-Object Type -eq $Type
 				}
-				else
-				{
-					$histories = Get-DbaBackupHistory -SqlInstance $server -Database $db -Last:$last -DeviceType $DeviceType | Where-Object Type -eq $Type
+				else {
+					$histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Last:$last -DeviceType $DeviceType | Where-Object Type -eq $Type
 				}
 				
-				foreach ($history in $histories)
-				{
+				foreach ($history in $histories) {
 					$timetaken = New-TimeSpan -Start $history.Start -End $history.End
 					
-					if ($timetaken.TotalMilliseconds -eq 0)
-					{
+					if ($timetaken.TotalMilliseconds -eq 0) {
 						$throughput = $history.TotalSize.Megabyte
 					}
-					else
-					{
+					else {
 						$throughput = $history.TotalSize.Megabyte / $timetaken.TotalSeconds
 					}
 					
@@ -163,9 +153,10 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 					
 					$allhistory += $history | Select-Object ComputerName, InstanceName, SqlInstance, Database, MBps, TotalSize, Start, End
 				}
+				
 				Write-Message -Level VeryVerbose -Message "Calculating averages for $db"
-				foreach ($db in ($allhistory | Sort-Object Database | Group-Object Database))
-				{
+				foreach ($db in ($allhistory | Sort-Object Database | Group-Object Database)) {
+					
 					$measuremb = $db.Group.MBps | Measure-Object -Average -Minimum -Maximum
 					$measurestart = $db.Group.Start | Measure-Object -Minimum
 					$measureend = $db.Group.End | Measure-Object -Maximum
@@ -173,18 +164,18 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 					$avgduration = $db.Group | ForEach-Object { New-TimeSpan -Start $_.Start -End $_.End } | Measure-Object -Average TotalSeconds
 					
 					[pscustomobject]@{
-						ComputerName = $db.Group.ComputerName | Select-Object -First 1
-						InstanceName = $db.Group.InstanceName | Select-Object -First 1
-						SqlInstance = $db.Group.SqlInstance | Select-Object -First 1
-						Database = $db.Name
+						ComputerName  = $db.Group.ComputerName | Select-Object -First 1
+						InstanceName  = $db.Group.InstanceName | Select-Object -First 1
+						SqlInstance   = $db.Group.SqlInstance | Select-Object -First 1
+						Database	  = $db.Name
 						AvgThroughputMB = [System.Math]::Round($measuremb.Average, 2)
-						AvgSizeMB = [System.Math]::Round($measuresize.Average, 2)
-						AvgDuration = [dbatimespan](New-TimeSpan -Seconds $avgduration.Average)
+						AvgSizeMB	  = [System.Math]::Round($measuresize.Average, 2)
+						AvgDuration   = [dbatimespan](New-TimeSpan -Seconds $avgduration.Average)
 						MinThroughputMB = [System.Math]::Round($measuremb.Minimum, 2)
 						MaxThroughputMB = [System.Math]::Round($measuremb.Maximum, 2)
 						MinBackupDate = [dbadatetime]$measurestart.Minimum
 						MaxBackupDate = [dbadatetime]$measureend.Maximum
-						BackupCount = $db.Count
+						BackupCount   = $db.Count
 					} | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
 				}
 			}
