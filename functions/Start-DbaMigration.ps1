@@ -456,11 +456,11 @@ Migrate databases using detach/copy/attach. Reattach at source and set source da
 			{
 				if ($BackupRestore)
 				{
-					Copy-DbaDatabase -Source $sourceserver -Destination $destserver -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:IncludeSupportDbs
+					Copy-DbaDatabase -Source $sourceserver -Destination $destserver -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs
 				}
 				else
 				{
-					Copy-DbaDatabase -Source $sourceserver -Destination $destserver -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -IncludeSupportDbs:IncludeSupportDbs
+					Copy-DbaDatabase -Source $sourceserver -Destination $destserver -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -IncludeSupportDbs:$IncludeSupportDbs
 				}
 			}
 			catch { Write-Error "Database migration reported the following error $($_.Exception.Message)" }
