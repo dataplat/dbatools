@@ -5,11 +5,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Context "Verifying output" {
 		It "runs a specific query" {
-			$results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance1 -QueryName 'Memory Clerk Usage'
+			$results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance1 -QueryName 'Memory Clerk Usage' *>&1
 			$results.Name.Count | Should Be 1
 		}
 		It "works with DatabaseSpecific" {
-			$results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance1 -DatabaseSpecific
+			$results = Invoke-DbaDiagnosticQuery -SqlInstance $script:instance1 -DatabaseSpecific *>&1
 			$results.Name.Count -gt 10 | Should Be $true
 		}
 	}
