@@ -20,6 +20,9 @@ The database(s) to process - this list is auto-populated from the server. If uns
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is auto-populated from the server
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 Tags: DisasterRecovery, Backup
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
