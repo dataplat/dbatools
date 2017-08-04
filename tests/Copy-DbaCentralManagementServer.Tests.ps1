@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Setup" {
 		BeforeAll {
-			$server = Connect-DbaSqlServer $script:instance1
+			$server = Connect-DbaSqlServer $script:instance2
 			$regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
 			$dbstore = $regstore.DatabaseEngineServerGroup
 			
@@ -26,14 +26,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		AfterAll {
 			$newgroup.Drop()
-			$server = Connect-DbaSqlServer $script:instance2
+			$server = Connect-DbaSqlServer $script:instance1
 			$regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
 			$dbstore = $regstore.DatabaseEngineServerGroup
 			$groupstore = $dbstore.ServerGroups[$group]
 			$groupstore.Drop()
 		}
 		
-		$results = Copy-DbaCentralManagementServer -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue -CMSGroup $group
+		$results = Copy-DbaCentralManagementServer -Source $script:instance2 -Destination $script:instance1 -WarningVariable warn -WarningAction SilentlyContinue -CMSGroup $group
 		
 		It "should report success" {
 			$results.Status | Should Be "Successful", "Successful"
