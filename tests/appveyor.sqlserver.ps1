@@ -15,7 +15,7 @@ New-Item -Path C:\temp\backups -ItemType Directory -ErrorAction SilentlyContinue
 Write-Output "Setting up AppVeyor Services"
 (Get-DbaSqlService -InstanceName sql2016 -Type Agent).ChangeStartMode('Automatic') -WarningAction SilentlyContinue
 $browser = Get-DbaSqlService -Type Browser
-$browser.ChangeStartMode('Automatic') -WarningAction SilentlyContinue
+$browser.ChangeStartMode('Automatic')
 $browser|Start-DbaSqlService -WarningAction SilentlyContinue
 #Set-Service -Name 'SQLAgent$sql2016' -StartupType Automatic -WarningAction SilentlyContinue
 #Set-Service -Name SQLBrowser -StartupType Automatic -WarningAction SilentlyContinue
