@@ -3,26 +3,35 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-	$BackupLocation = "$script:appeyorlabrepo\singlerestore\singlerestore.bak"
-	$NetworkPath = "C:\temp"
-	
-	# cleanup
-	foreach ($instance in $Instances) {
-		Remove-DbaDatabase -SqlInstance $instance -Confirm:$false -Database singlerestore
+	BeforeAll {
+		$BackupLocation = "$script:appeyorlabrepo\singlerestore\singlerestore.bak"
+		$NetworkPath = "C:\temp"
+		$DBNameBackupRestore = "dbatoolsci_singlerestore"
+		$DBNameAttachDetach = "dbatoolsci_detachattach"
+		# cleanup
+		foreach ($instance in $Instances) {
+			Remove-DbaDatabase -SqlInstance $instance -Confirm:$false -Database $DBNameBackupRestore,$DBNameAttachDetach
+		}
+	}
+	AfterAll {
+		foreach ($instance in $Instances) {
+			Remove-DbaDatabase -SqlInstance $instance -Confirm:$false -Database $DBNameBackupRestore,$DBNameAttachDetach
+		}
 	}
 	
+	
 	# Restore and set owner for Single Restore
-	$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -WithReplace
-	Set-DbaDatabaseOwner -SqlInstance $script:instance1 -Database singlerestore -TargetLogin sa
+	$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -WithReplace -DatabaseName $DBNameBackupRestore
+	Set-DbaDatabaseOwner -SqlInstance $script:instance1 -Database $DBNameBackupRestore -TargetLogin sa
 	
 	Context "Restores database with the same properties." {
 		It "Should copy a database and retain its name, recovery model, and status." {
 			
-			Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database singlerestore -BackupRestore -NetworkShare $NetworkPath
+			Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $DBNameBackupRestore -BackupRestore -NetworkShare $NetworkPath
 			
-			$db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
+			$db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DBNameBackupRestore
 			$db1 | Should Not BeNullOrEmpty
-			$db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database singlerestore
+			$db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $DBNameBackupRestore
 			$db2 | Should Not BeNullOrEmpty
 			
 			# Compare its valuable.
@@ -34,19 +43,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	
 	Context "Doesn't write over existing databases" {
 		It "Should just warn" {
-			$result = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database singlerestore -BackupRestore -NetworkShare $NetworkPath -WarningVariable warning  3>&1
+			$result = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $DBNameBackupRestore -BackupRestore -NetworkShare $NetworkPath -WarningVariable warning  3>&1
 			$warning | Should Match "exists at destination"
 		}
 	}
 	
 	foreach ($instance in $Instances) {
-		Remove-DbaDatabase -SqlInstance $instance -Confirm:$false -Database singlerestore
+		Remove-DbaDatabase -SqlInstance $instance -Confirm:$false -Database $DBNameBackupRestore
 	}
 	
 	Context "Detach, copies and attaches database successfully." {
 		It "Should be success" {
-			$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\detachattach\detachattach.bak -WithReplace
-			$results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database detachattach -DetachAttach -Reattach -Force -WarningAction SilentlyContinue
+			$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\detachattach\detachattach.bak -WithReplace -DatabaseName $DBNameAttachDetach
+			$results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $DBNameAttachDetach -DetachAttach -Reattach -Force -WarningAction SilentlyContinue
 			$results.Status | Should Be "Successful"
 		}
 	}
@@ -54,14 +63,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Database with the same properties." {
 		It "should not be null" {
 			
-			$db1 = (Connect-DbaSqlServer -SqlInstance localhost).Databases['detachattach']
-			$db2 = (Connect-DbaSqlServer -SqlInstance localhost\sql2016).Databases['detachattach']
+			$db1 = (Connect-DbaSqlServer -SqlInstance localhost).Databases[$DBNameAttachDetach]
+			$db2 = (Connect-DbaSqlServer -SqlInstance localhost\sql2016).Databases[$DBNameAttachDetach]
 			
 			$db1 | Should Not Be $null
 			$db2 | Should Not Be $null
 			
-			$db1.Name | Should Be "detachattach"
-			$db2.Name | Should Be "detachattach"
+			$db1.Name | Should Be $DBNameAttachDetach
+			$db2.Name | Should Be $DBNameAttachDetach
 		}
 	<#
 		It "Name, recovery model, and status should match" {

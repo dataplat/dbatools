@@ -159,18 +159,18 @@ if (-not (Test-Path Alias:Copy-SqlDatabaseMail)) { Set-Alias -Scope Global -Name
 if (-not (Test-Path Alias:Copy-SqlDataCollector)) { Set-Alias -Scope Global -Name Copy-SqlDataCollector -Value Copy-DbaDataCollector }
 if (-not (Test-Path Alias:Copy-SqlEndpoint)) { Set-Alias -Scope Global -Name Copy-SqlEndpoint -Value Copy-DbaEndpoint }
 if (-not (Test-Path Alias:Copy-SqlExtendedEvent)) { Set-Alias -Scope Global -Name Copy-SqlExtendedEvent -Value Copy-DbaExtendedEvent }
-if (-not (Test-Path Alias:Copy-SqlJob)) { Set-Alias -Scope Global -Name Copy-SqlJob -Value Copy-DbaJob }
+if (-not (Test-Path Alias:Copy-SqlJob)) { Set-Alias -Scope Global -Name Copy-SqlJob -Value Copy-DbaAgentJob }
 if (-not (Test-Path Alias:Copy-SqlJobServer)) { Set-Alias -Scope Global -Name Copy-SqlJobServer -Value Copy-SqlServerAgent }
 if (-not (Test-Path Alias:Copy-SqlLinkedServer)) { Set-Alias -Scope Global -Name Copy-SqlLinkedServer -Value Copy-DbaLinkedServer }
 if (-not (Test-Path Alias:Copy-SqlLogin)) { Set-Alias -Scope Global -Name Copy-SqlLogin -Value Copy-DbaLogin }
-if (-not (Test-Path Alias:Copy-SqlOperator)) { Set-Alias -Scope Global -Name Copy-SqlOperator -Value Copy-DbaOperator }
+if (-not (Test-Path Alias:Copy-SqlOperator)) { Set-Alias -Scope Global -Name Copy-SqlOperator -Value Copy-DbaAgentOperator }
 if (-not (Test-Path Alias:Copy-SqlPolicyManagement)) { Set-Alias -Scope Global -Name Copy-SqlPolicyManagement -Value Copy-DbaPolicyManagement }
-if (-not (Test-Path Alias:Copy-SqlProxyAccount)) { Set-Alias -Scope Global -Name Copy-SqlProxyAccount -Value Copy-DbaProxyAccount }
+if (-not (Test-Path Alias:Copy-SqlProxyAccount)) { Set-Alias -Scope Global -Name Copy-SqlProxyAccount -Value Copy-DbaAgentProxyAccount }
 if (-not (Test-Path Alias:Copy-SqlResourceGovernor)) { Set-Alias -Scope Global -Name Copy-SqlResourceGovernor -Value Copy-DbaResourceGovernor }
 if (-not (Test-Path Alias:Copy-SqlServerAgent)) { Set-Alias -Scope Global -Name Copy-SqlServerAgent -Value Copy-DbaServerAgent }
 if (-not (Test-Path Alias:Copy-SqlServerRole)) { Set-Alias -Scope Global -Name Copy-SqlServerRole -Value Copy-DbaServerRole }
 if (-not (Test-Path Alias:Copy-SqlServerTrigger)) { Set-Alias -Scope Global -Name Copy-SqlServerTrigger -Value Copy-DbaServerTrigger }
-if (-not (Test-Path Alias:Copy-SqlSharedSchedule)) { Set-Alias -Scope Global -Name Copy-SqlSharedSchedule -Value Copy-DbaSharedSchedule }
+if (-not (Test-Path Alias:Copy-SqlSharedSchedule)) { Set-Alias -Scope Global -Name Copy-SqlSharedSchedule -Value Copy-DbaAgentSharedSchedule }
 if (-not (Test-Path Alias:Copy-SqlSpConfigure)) { Set-Alias -Scope Global -Name Copy-SqlSpConfigure -Value Copy-DbaSpConfigure }
 if (-not (Test-Path Alias:Copy-SqlSsisCatalog)) { Set-Alias -Scope Global -Name Copy-SqlSsisCatalog -Value Copy-DbaSsisCatalog }
 if (-not (Test-Path Alias:Copy-SqlSysDbUserObjects)) { Set-Alias -Scope Global -Name Copy-SqlSysDbUserObjects -Value Copy-DbaSysDbUserObjects }
@@ -221,8 +221,8 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUFUSJns1Zs2vGRB8/11EVeS8N
-# oMCggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUifZ2YCmZ4TgPVc0M/2UEIAsq
+# 0z+ggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -353,22 +353,22 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUa97atuD9pmSX0wwxZ77DWLiJSA8wDQYJKoZIhvcNAQEBBQAE
-# ggEAdYpGbXYtZktrVYv4DMDmft5oIYYmQC6JPyg96WjpKMQlSoEgM/gTytoSf/2Y
-# wVTKnPNSCBABBYFnQw6ESCIAnmhn7IRi2a/5T6Wff+AHpfGT2R0aRsCYQlUWKi5g
-# m6Nv/0ibqwOEKsbaVtRKQxlieYbUTM16W5ZOOTZWGf/tbF3pOKEFsjbgd7JRM8Kc
-# QEmSF/Bo7hpv6J7ijUzFuWMO/7j6Z6NuZUM9lCkdLQbboaV6rR44o2I2E3w9XWhl
-# 3TJ3KStNNL5gC3S0nH/fD4Isp9ZdehF3SaGTJP6yGLpcp5X9cWxnQvoLNpvUQg/N
-# yYdZYNPdWzu+VlIc9XCutmahDaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUk5GqSsldkpPgNr5T/nubCy03pYswDQYJKoZIhvcNAQEBBQAE
+# ggEALxTqyiJkyqYftnW1BGnOee6eLTH54PS3BYof6NXaix5y/a7zdMDRzwju4BX4
+# /5IyyLprXaAspQ8nr0jPhZrwDAfGhj0OREJaybymUV3vTVZ/3Qis2+1hg5Se+LJ/
+# kMKNkd/BIC/tGEF9UcidpF8mqtAVeirkDKc4qi47NjYBVmLRef9FjEFiY9Fs8AFh
+# HTiDyNRqZro6xU0EpybL/dOl5d/9Psg7TRinmix7g+Ql6HHFk9fmT8hGRp5pBGAq
+# 9G6Cty2qk3GH8T5Wa5WvTHsKFmSeJA/15wYzRqowBKLHElxk/4SegipBCFz3oa5/
+# Izkaj0uD6LxftZS912d00WJEvqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzMwMjA1NTMyWjAj
-# BgkqhkiG9w0BCQQxFgQUoJCxlYLbudvS7MccEu7G+KWb7PYwDQYJKoZIhvcNAQEB
-# BQAEggEAIfRXt/1Cr7m5CzzqsyZ8qf2rjCxICzVGBTydCEsSTbLVPRGOLdYYQ7K4
-# 5Z1qSDSh0X/9LvDhFExrBGb3rzfXL53Ubpe+0nZzxbBWGYOa4YMna0vJoAUjWsW8
-# 5KGYPGLT21p6AFs07Q3jzD8+yTO0uKnoJ+uTlz52eCqn4mFfcxWgfjy4I1T4mPgb
-# KM3fBZTEqW6LdMIwvOw1/undE0CIvTF2VF1IaniYKw53eC5dq67P+i4G2lQLuRlC
-# tyFoRf+T4+7FzfHYMUcX0Q9e2p1CQBeHIeyKM0hWCB28tZGcgujnzue5prakl7Sr
-# hqf/MRS+9MQAvyi/7oOx0uzCCxuy0Q==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwODA0MTUxMDAxWjAj
+# BgkqhkiG9w0BCQQxFgQUs9VBLI5xTxrVV1hgc70LhKHMmmMwDQYJKoZIhvcNAQEB
+# BQAEggEAHlnanoxXdRsHk8Nu+6kpI3Up1Vp5WQh1wrmwrk2GBT+o+e5nn14b+3Qn
+# AMk9SbNMTzu0bNRP+NxjNLomBHDA4lViIv+1YGH4k605AZDy05O4pp1QXOHyatH1
+# aRvE2SRAkVFZUWhbpQbxygWtcFvT2bqLV0l6HbCgRYPmgiR/TrzEx/47RfgbG5Jp
+# eXbhgj5bctcd61t2rLu+ormO8YE7AWmQU/I8+U4b+/iIB79UvbZ093XLsFQdRIiR
+# yKVeRL34sD94JS3MkE7wuo0fWHQ2T8vdZ2snYTdtXDGrhEWXvR2+6bj6KxOADM8l
+# d1ne/mXw2f5bdWc/7rgvK1jWB4iy8Q==
 # SIG # End signature block

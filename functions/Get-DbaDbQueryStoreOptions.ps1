@@ -53,7 +53,6 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 
 #>
 	[CmdletBinding()]
-    [OutputType([Microsoft.SqlServer.Management.Smo.QueryStoreOptions[]])]
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
