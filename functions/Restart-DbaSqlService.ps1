@@ -66,9 +66,9 @@ Function Restart-DBASqlService {
 #>
 	[CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess = $true)]
 	Param(
-	[Parameter(Mandatory = $true, ParameterSetName = "Server", Position = 1)]
+	[Parameter(ParameterSetName = "Server", Position = 1)]
 	[Alias("cn","host","Server")]
-		[string[]]$ComputerName,
+		[string[]]$ComputerName = $env:COMPUTERNAME,
   [Alias("Instance")]
 		[string[]]$InstanceName,
 	[ValidateSet("Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS","AnalysisServer","ReportServer","Search","SqlAgent","SqlBrowser","SqlServer","SqlServerIntegrationService")]

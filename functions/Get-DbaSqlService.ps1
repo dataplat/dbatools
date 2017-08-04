@@ -152,6 +152,7 @@ Function Get-DbaSqlService
 					catch
 					{
 						Write-Message -Level Verbose -Silent $Silent -Message "No Sql Services found on $Computer via CIM (WSMan)"
+						continue
 					}
 				}
 				else {
@@ -175,10 +176,12 @@ Function Get-DbaSqlService
 						}
 						catch {
 							Write-Message -Level Warning -Silent $Silent -Message "No Sql Services found on $Computer via CIM (DCOM)"
+							continue
 						}
 					}
 					else {
 						Write-Message -Level Warning -Silent $Silent -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
+						continue
 					}
 				}
 			}
