@@ -1,4 +1,4 @@
-Function Get-DbaPageFileSetting
+function Get-DbaPageFileSetting
 {
 <#
 .SYNOPSIS
@@ -22,12 +22,10 @@ Credential object used to connect to the Computer as a different user
 Tags: CIM
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
-
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+	
 .LINK
  https://dbatools.io/Get-DbaPageFileSetting
 
@@ -45,12 +43,12 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 	param (
 		[Parameter(Mandatory = $false, Position = 0, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
 		[Alias("cn", "host", "ServerInstance", "Server", "SqlServer")]
-		[object]$ComputerName,
+		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential] $Credential
 	)
-	PROCESS
+	process
 	{
-		foreach ( $Computer in $ComputerName )
+		foreach ( $Computer in $ComputerName.ComputerName )
 		{
 			$reply = Resolve-DbaNetworkName -ComputerName $Computer -Credential $Credential -ErrorAction silentlycontinue
 			
@@ -121,9 +119,9 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 			{
 				[PSCustomObject]@{
 					ComputerName = $Computer
-					AutoPageFile = $CompSys.automaticmanagedpagefile
-					FileName = $PF.name # deprecated !
-					Status = $PF.status # deprecated !
+					AutoPageFile = $CompSys.AutomaticManagedPageFile
+					FileName = $PF.Name # deprecated !
+					Status = $PF.Status # deprecated !
 					LastModified = $PF.LastModified
 					LastAccessed = $PF.LastAccessed
 					AllocatedBaseSize = $PFU.AllocatedBaseSize # in MB, between Initial and Maximum Size

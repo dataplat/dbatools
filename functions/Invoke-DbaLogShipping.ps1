@@ -358,27 +358,27 @@ The script will show a message that the copy destination has not been supplied a
 		[parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[Alias("SourceServerInstance", "SourceSqlServerSqlServer")]
-		[object]$SourceSqlInstance,
+		[DbaInstanceParameter]$SourceSqlInstance,
 
 		[parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[Alias("DestinationServerInstance", "DestinationSqlServer")]
-		[object]$DestinationSqlInstance,
+		[DbaInstanceParameter]$DestinationSqlInstance,
 
 		[Parameter(Mandatory = $false)]
-		[System.Management.Automation.PSCredential]
+		[PSCredential]
 		$SourceSqlCredential,
 
 		[Parameter(Mandatory = $false)]
-		[System.Management.Automation.PSCredential]
+		[PSCredential]
 		$SourceCredential,
 
 		[Parameter(Mandatory = $false)]
-		[System.Management.Automation.PSCredential]
+		[PSCredential]
 		$DestinationSqlCredential,
 
 		[Parameter(Mandatory = $false)]
-		[System.Management.Automation.PSCredential]
+		[PSCredential]
 		$DestinationCredential,
 
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]

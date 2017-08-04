@@ -1,4 +1,4 @@
-Function Test-DbaPowerPlan
+function Test-DbaPowerPlan
 {
 <#
 .SYNOPSIS
@@ -62,7 +62,7 @@ To return detailed information Power Plans
 	param (
 		[parameter(ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
-		[string[]]$ComputerName = $env:COMPUTERNAME,
+		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential]$Credential,
 		[string]$CustomPowerPlan,
 		[switch]$Detailed,

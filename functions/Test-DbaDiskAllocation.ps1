@@ -1,4 +1,4 @@
-Function Test-DbaDiskAllocation
+function Test-DbaDiskAllocation
 {
 <#
 .SYNOPSIS
@@ -71,7 +71,7 @@ To return true or false for ALL disks being formatted to 64k
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
-		[object[]]$ComputerName,
+		[DbaInstanceParameter[]]$ComputerName,
 		[switch]$NoSqlCheck,
 		[object]$SqlCredential,
 		[switch]$Detailed,

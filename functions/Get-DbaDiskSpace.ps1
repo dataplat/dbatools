@@ -1,5 +1,4 @@
-Function Get-DbaDiskSpace
-{
+function Get-DbaDiskSpace {
 <#
 .SYNOPSIS
 Displays Disk information for all local drives on a server
@@ -122,7 +121,7 @@ srv0042 D:\                                                               0     
 	Param (
 		[Parameter(Mandatory, ValueFromPipeline)]
 		[Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
-		[String[]]$ComputerName,
+		[DbaInstanceParameter[]]$ComputerName,
 		[ValidateSet('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')]
 		[String]$Unit = 'GB',
 		[Switch]$CheckForSql,
@@ -132,174 +131,141 @@ srv0042 D:\                                                               0     
 		[Switch]$AllDrives
 	)
 	
-	BEGIN
-	{
-    $FunctionName = (Get-PSCallstack)[0].Command
-		Function Get-AllDiskSpace
-		{
+	begin {
+		function Get-AllDiskSpace {
 			$alldisks = @()
 			$driveTypeName = @{
-				'0' = 'Unknown';
-				'1' = 'No Root Directory';
-				'2' = 'Removable Disk';
-				'3' = 'Local Disk';
-				'4' = 'Network Drive';
-				'5' = 'Compact Disk';
-				'6' = 'RAM Disk'
+				'0'  = 'Unknown';
+				'1'  = 'No Root Directory';
+				'2'  = 'Removable Disk';
+				'3'  = 'Local Disk';
+				'4'  = 'Network Drive';
+				'5'  = 'Compact Disk';
+				'6'  = 'RAM Disk'
 			}
 			
-			if ($Detailed -or $AllDrives)
-			{
+			if ($Detailed -or $AllDrives) {
 				$driveTypes = 0 .. 6
 			}
-			else
-			{
+			else {
 				$driveTypes = 2, 3
 			}
 			
-			if ($Unit -eq 'Bytes')
-			{
+			if ($Unit -eq 'Bytes') {
 				$measure = '1'
 			}
-			else
-			{
+			else {
 				$measure = "1$unit"
 			}
 			
-      try
-      {
-      	$disks = Get-WmiObject -Class Win32_Volume -Namespace 'root\CIMV2' -ComputerName $ipaddr | Where-Object DriveType -in ($driveTypes)
-        if ($CheckFragmentation)
-        {
-          ##					$disks = Get-CimInstance -Class Win32_Volume -Namespace 'root\CIMV2' -ComputerName $ipaddr | Where-Object DriveType -in (2,3)
-          $disks = $disks | Select-Object SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize, @{ Name = 'FilePercentFragmentation'; Expression = { "$($_.defraganalysis().defraganalysis.FilePercentFragmentation)" } }
-        }
-        else
-        {
-          #$query = "Select SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize from Win32_Volume where DriveType = 2 or DriveType = 3"
-          ##					$disks = Get-CimInstance -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
-          $disks = $disks | Select-Object SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize
-        }
-      }
-      catch
-      {
-        Write-Warning "$FunctionName - Cannot connect to WMI on $server"
-        return
-      }
+			try {
+				$disks = Get-WmiObject -Class Win32_Volume -Namespace 'root\CIMV2' -ComputerName $ipaddr | Where-Object DriveType -in ($driveTypes)
+				if ($CheckFragmentation) {
+					##					$disks = Get-CimInstance -Class Win32_Volume -Namespace 'root\CIMV2' -ComputerName $ipaddr | Where-Object DriveType -in (2,3)
+					$disks = $disks | Select-Object SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize, @{ Name = 'FilePercentFragmentation'; Expression = { "$($_.defraganalysis().defraganalysis.FilePercentFragmentation)" } }
+				}
+				else {
+					#$query = "Select SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize from Win32_Volume where DriveType = 2 or DriveType = 3"
+					##					$disks = Get-CimInstance -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
+					$disks = $disks | Select-Object SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize
+				}
+			}
+			catch {
+				Write-Warning "Cannot connect to WMI on $server"
+				return
+			}
 			
-			if ($CheckForSql -or $Detailed)
-			{
+			if ($CheckForSql -or $Detailed) {
 				$SqlInstances = @()
 				$FailedToGetServiceInformation = $false
-				try
-				{
+				try {
 					$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
 				}
-				catch
-				{
-					Write-Verbose "$FunctionName - Cannot retrieve service information from $server using Get-Service. Trying WMI"
-					try
-					{
+				catch {
+					Write-Verbose "Cannot retrieve service information from $server using Get-Service. Trying WMI"
+					try {
 						$sqlservices = Get-WmiObject Win32_Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
 					}
-					catch
-					{
-						Write-Warning "$FunctionName - Cannot retrieve service information from $server using Get-Service or WMI."
+					catch {
+						Write-Warning "Cannot retrieve service information from $server using Get-Service or WMI."
 						$FailedToGetServiceInformation = $true
 					}
 				}
 				
-        foreach ($service in $sqlservices)
-        {
-          $instance = $service.DisplayName.Replace('SQL Server (', '')
-          $instance = $instance.TrimEnd(')')
+				foreach ($service in $sqlservices) {
+					$instance = $service.DisplayName.Replace('SQL Server (', '')
+					$instance = $instance.TrimEnd(')')
 					
-          if ($instance -eq 'MSSQLSERVER')
-          {
-            $SqlInstances += $server
-            Write-Verbose "$FunctionName - Instance resolved as $server"
-          }
-          else
-          {
-            $SqlInstances += "$server\$instance"
-            Write-Verbose "$FunctionName - Instance resolved as $server\$instance"
-          }
-        }
+					if ($instance -eq 'MSSQLSERVER') {
+						$SqlInstances += $server
+						Write-Verbose "Instance resolved as $server"
+					}
+					else {
+						$SqlInstances += "$server\$instance"
+						Write-Verbose "Instance resolved as $server\$instance"
+					}
+				}
 			}
 			
-			foreach ($disk in $disks)
-			{
+			foreach ($disk in $disks) {
 				$diskname = $disk.Name
-				if ($CheckForSql -or $Detailed)
-				{
+				if ($CheckForSql -or $Detailed) {
 					$sqldisk = $false
-					if ($FailedToGetServiceInformation)
-					{
+					if ($FailedToGetServiceInformation) {
 						$sqldisk = 'unknown'
 					}
-					else
-					{
-						foreach ($SqlInstance in $SqlInstances)
-						{
-							try
-							{
-								Write-Verbose "$FunctionName - Checking disk $diskname on $SqlInstance"
+					else {
+						foreach ($SqlInstance in $SqlInstances) {
+							try {
+								Write-Verbose "Checking disk $diskname on $SqlInstance"
 								$smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 								$sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
 								$sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
-								if ($sqlcount -gt 0)
-								{
+								if ($sqlcount -gt 0) {
 									$sqldisk = $true
 									break
 								}
 							}
-							catch
-							{
-								Write-Warning "$FunctionName - Can't connect to $server ($SqlInstance)"
+							catch {
+								Write-Warning "Can't connect to $server ($SqlInstance)"
 								continue
 							}
 						}
 					}
 				}
 				
-				if (!$diskname.StartsWith('\\') -or $Detailed)
-				{
-					if ($disk.capacity -eq 0 -or [string]::IsNullOrEmpty($disk.capacity))
-					{
+				if (!$diskname.StartsWith('\\') -or $Detailed) {
+					if ($disk.capacity -eq 0 -or [string]::IsNullOrEmpty($disk.capacity)) {
 						$total = 0
 						$free = 0
 						$percentfree = 0
 					}
-					else
-					{
+					else {
 						$total = [math]::round($disk.Capacity / $measure, 2)
 						$free = [math]::round($disk.Freespace/$measure, 2)
 						$percentfree = [math]::round(($disk.Freespace / $disk.Capacity) * 100, 2)
 					}
 					
 					$diskinfo = [PSCustomObject]@{
-						Server = $server
-						Name = $diskname
-						Label = $disk.Label
+						Server  = $server
+						Name    = $diskname
+						Label   = $disk.Label
 						"SizeIn$unit" = $total
 						"FreeIn$unit" = $free
 						PercentFree = $percentfree
 						BlockSize = $disk.BlockSize
 					}
 					
-					if ($CheckForSql -or $Detailed)
-					{
+					if ($CheckForSql -or $Detailed) {
 						Add-Member -Force -InputObject $diskinfo -MemberType Noteproperty IsSqlDisk -value $sqldisk
 					}
 					
-					if ($Detailed)
-					{
+					if ($Detailed) {
 						Add-Member -Force -InputObject $diskinfo -MemberType Noteproperty FileSystem -value $disk.FileSystem
 						Add-Member -Force -InputObject $diskinfo -MemberType Noteproperty DriveType -value $driveTypeName["$($disk.DriveType)"]
 					}
 					
-					if ($CheckFragmentation)
-					{
+					if ($CheckFragmentation) {
 						Add-Member -Force -InputObject $diskinfo -MemberType Noteproperty PercentFragmented -value $disk.FilePercentFragmentation
 					}
 					$alldisks += $diskinfo
@@ -308,51 +274,22 @@ srv0042 D:\                                                               0     
 			return $alldisks
 		}
 		
-		
-		$processed = New-Object System.Collections.ArrayList
+		$servercollection = @()
 	}
 	
-	PROCESS
-	{
-		
-		foreach ($server in $ComputerName)
-		{
-			if ($server -match '\\')
-			{
-				$server = $server.Split('\')[0]
+	process {
+		# Don't want duplicates when piped
+		foreach ($server in $ComputerName.ComputerName) {
+			if ($server -notin $servercollection) {
+				$servercollection += $server
 			}
-			
-			if ($server -notin $processed)
-			{
-				$null = $processed.Add($server)
-				Write-Verbose "$FunctionName - Connecting to $server"
-			}
-			else
-			{
-				continue
-			}
-			
-			Write-Verbose "$FunctionName - Resolving computername"
-			try
-			{
-				$ipaddr = ((Test-Connection -ComputerName $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
-			}
-			catch
-			{
-				Write-Warning "$FunctionName - Can't resolve $server address"
-				return
-			}
-			
-			$data = Get-AllDiskSpace $server
-			
-			if ($data.Count -gt 1)
-			{
-				$data.GetEnumerator() | ForEach-Object { $_ }
-			}
-			else
-			{
-				$data
-			}
+		}
+	}
+	
+	end {
+		foreach ($server in $servercollection) {
+			$ipaddr = (Resolve-DbaNetworkName -ComputerName $server -Turbo).IpAddress
+			Get-AllDiskSpace $server
 		}
 	}
 }

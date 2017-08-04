@@ -62,9 +62,9 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
-        [parameter(Position = 0)]
+        [parameter(Position = 0, ValueFromPipeline)]
         [Alias("ServerInstance", "SqlServer")]
-        [string[]]$SqlInstances,
+        [object[]]$SqlInstances,
         # Central Management Server
 
         [string]$SqlCms,
