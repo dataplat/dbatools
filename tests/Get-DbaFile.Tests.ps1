@@ -21,7 +21,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		$results = Get-DbaFile -SqlInstance $script:instance2 -Path (Get-DbaDefaultPath -SqlInstance $script:instance2).Log
 		It "Should find the new database log file" {
-			$results.Filename -like '*dbatoolsci*ldf' | Should Be $true
+			($results.Filename -like '*dbatoolsci*ldf').Count -gt 0 | Should Be $true
 		}
 		
 		$masterpath = $server.MasterDBPath
