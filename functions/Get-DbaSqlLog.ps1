@@ -24,6 +24,12 @@
 	.PARAMETER Text
 		Filter results based on a pattern of text (e.g. "login failed", "error: 12345").
 
+	.PARAMETER After
+		Filter the results based on datetime value.
+
+	.PARAMETER Before
+		Filter the results based on datetime value.
+
 	.PARAMETER Silent
 		Use this switch to disable any kind of verbose messages
 
@@ -61,7 +67,17 @@
 		$servers | Get-DbaSqlLog -LogNumber 0
 
 		Returns the most recent SQL Server error logs for "sql2014","sql2016" and "sqlcluster\sharepoint"
-#>
+
+	.EXAMPLE
+		Get-DbaSqlLog -SqlInstance sql01\sharepoint -After '11/14/2006 00:00'
+
+		Returns every log entry found after the date 11/14/2006 00:00 from sql101\sharepoint SQL Server instance.
+
+	.EXAMPLE
+		Get-DbaSqlLog -SqlInstance sql01\sharepoint -Before '08/16/2016 00:00'
+
+		Returns every log entry found before the date 08/16/2016 00:00 from sql101\sharepoint SQL Server instance.
+	#>
 	[CmdletBinding()]
 	param (
 		[Parameter(ValueFromPipeline = $true)]
@@ -73,8 +89,8 @@
 		[int[]]$LogNumber,
 		[object[]]$Source,
 		[string]$Text,
-		[datetime]$Before,
 		[datetime]$After,
+		[datetime]$Before,
 		[switch]$Silent
 	)
 	process {
