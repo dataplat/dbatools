@@ -1,72 +1,70 @@
 function Watch-DbaDbLogin {
     <#
-.SYNOPSIS
-Tracks SQL Server logins: which host they came from, what database they're using, and what program is being used to log in.
+        .SYNOPSIS
+            Tracks SQL Server logins: which host they came from, what database they're using, and what program is being used to log in.
 
-.DESCRIPTION
-Watch-DbaDbLogin uses SQL Server process enumeration to track logins in a SQL Server table. This is helpful when you
-need to migrate a SQL Server, and update connection strings, but have inadequate documentation on which servers/applications
-are logging into your SQL instance.
+        .DESCRIPTION
+            Watch-DbaDbLogin uses SQL Server process enumeration to track logins in a SQL Server table. This is helpful when you need to migrate a SQL Server and update connection strings, but have inadequate documentation on which servers/applications are logging into your SQL instance.
 
-Running this script every 5 minutes for a week should give you a sufficient idea about database and login usage.
+            Running this script every 5 minutes for a week should give you a sufficient idea about database and login usage.
 
-.PARAMETER SqlInstance
-The SQL Server that stores the Watch database
+        .PARAMETER SqlInstance
+            The SQL Server that stores the Watch database.
 
-.PARAMETER SqlCms
-A list of servers to watch is required. If you would like to gather that list from a Central Management Server, use -SqlCms servername.
+        .PARAMETER SqlCms
+            Specifies a Central Management Server to query for a list of servers to watch.
 
-.PARAMETER SqlCmsGroups
-This is an auto-populated array that contains your Central Management Server top-level groups. You can use one or many.
-If -SqlCmsGroups is not specified, the Watch-DbaDbLogin script will run against all servers in your Central Management Server.
+        .PARAMETER SqlCmsGroups
+            This is an auto-populated array that contains your Central Management Server top-level groups. You can use one or many groups.
 
-.PARAMETER ServersFromFile
-A list of servers to watch is required. You can use a file formatted as such:
-sqlserver1
-sqlserver2
+            If -SqlCmsGroups is not specified, the Watch-DbaDbLogin script will run against all servers in your Central Management Server.
 
-.PARAMETER Database
-The Watch database. By default, this is DatabaseLogins.
+        .PARAMETER ServersFromFile
+            Specifies a file containing a list of servers to watch. This file must contain one server name per line.
 
-.PARAMETER Table
-The Watch table. By default, this is DbLogins.
+        .PARAMETER Database
+            The name of the Watch database. By default, this is DatabaseLogins.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+        .PARAMETER Table
+            The name of the Watch table. By default, this is DbLogins.
 
-$cred = Get-Credential, this pass this $cred to the param.
+        .PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.NOTES
-Tags: Logins
-Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on all SQL Servers for
-the most accurate results
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+			To connect as a different Windows user, run PowerShell as that user.
 
-.LINK
-https://dbatools.io/Watch-DbaDbLogin
+        .NOTES
+            Tags: Logins
+            Author: Chrissy LeMaire (@cl), netnerds.net
+            Requires: sysadmin access on all SQL Servers for the most accurate results
 
-.EXAMPLE
-Watch-DbaDbLogin -SqlInstance sqlserver -SqlCms SqlCms1
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-In the above example, a list of servers is generated using all database instances within the Central Management Server "SqlCms1". Using this list, the script then enumerates all the processes and gathers login information, and saves it to the table "Dblogins" within the "DatabaseLogins" database on the SQL Server "sqlserver".
+        .LINK
+            https://dbatools.io/Watch-DbaDbLogin
 
-.EXAMPLE
-Watch-DbaDbLogin -SqlInstance sqlcluster -Database CentralAudit -ServersFromFile .\sqlservers.txt
+        .EXAMPLE
+            Watch-DbaDbLogin -SqlInstance sqlserver -SqlCms SqlCms1
 
-In the above example, a list of servers is gathered from the file sqlservers.txt in the current directory. Using this list, the script then enumerates all the processes and gathers login information, and saves it to the table "Dblogins" within the "CentralAudit" database on the SQL Server "sqlcluster".
+            A list of all database instances within the Central Management Server SqlCms1 is generated. Using this list, the script enumerates all the processes and gathers login information and saves it to the table Dblogins in the DatabaseLogins database on SQL Server sqlserver.
 
-.EXAMPLE
-Watch-DbaDbLogin -SqlInstance sqlserver -SqlCms SqlCms1 -SqlCmsGroups SQL2014Clusters -SqlCredential $cred
+        .EXAMPLE
+            Watch-DbaDbLogin -SqlInstance sqlcluster -Database CentralAudit -ServersFromFile .\sqlservers.txt
 
-In the above example, a list of servers is generated using database instance names within the "SQL2014Clusters" group on the Central Management Server "SqlCms1". Using this list, the script then enumerates all the processes and gathers login information, and saves it to the table "Dblogins" within the "DatabaseLogins" database on "sqlserver".
+            A list of servers is gathered from the file sqlservers.txt in the current directory. Using this list, the script enumerates all the processes and gathers login information and saves it to the table Dblogins in the CentralAudit database on SQL Server sqlcluster.
 
-#>
+        .EXAMPLE
+            Watch-DbaDbLogin -SqlInstance sqlserver -SqlCms SqlCms1 -SqlCmsGroups SQL2014Clusters -SqlCredential $cred
+
+            A list of servers is generated using database instance names within the SQL2014Clusters group on the Central Management Server SqlCms1. Using this list, the script enumerates all the processes and gathers login information and saves it to the table Dblogins in the DatabaseLogins database on sqlserver.
+
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     Param (
         [parameter(Mandatory = $true)]
@@ -146,7 +144,7 @@ In the above example, a list of servers is generated using database instance nam
 		#>
 
         foreach ($servername in $servers) {
-            Write-Output "Attempting to connect to $servername"
+            Write-Output "Attempting to connect to $servername."
             try { $server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential }
             catch { Write-Error "Can't connect to $servername. Skipping."; continue }
 
