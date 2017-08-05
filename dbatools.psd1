@@ -344,9 +344,9 @@
 		'Install-DbaMaintenanceSolution',
 		'Get-DbaComputerSystem',
 		'Get-DbaTraceFlag',
-		'Stop-DBASqlService',
-		'Start-DBASqlService',
-		'Restart-DBASqlService'
+		'Stop-DbaSqlService',
+		'Start-DbaSqlService',
+		'Restart-DbaSqlService'
 	)
 	
 	# Cmdlets to export from this module
