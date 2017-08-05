@@ -26,7 +26,7 @@ Function Restart-DbaSqlService {
     How long to wait for the start/stop request completion before moving on.
     
     .PARAMETER ServiceCollection
-    A collection of services from Get-DBASqlService
+    A collection of services from Get-DbaSqlService
     
     .PARAMETER Silent
     Prevent any output.
@@ -41,7 +41,7 @@ Function Restart-DbaSqlService {
     You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
     .LINK
-    https://dbatools.io/Restart-DBASqlService
+    https://dbatools.io/Restart-DbaSqlService
 
     .EXAMPLE
     Restart-DbaSqlService -ComputerName sqlserver2014a
@@ -65,42 +65,42 @@ Function Restart-DbaSqlService {
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess = $true)]
-	Param(
-	[Parameter(ParameterSetName = "Server", Position = 1)]
-	[Alias("cn","host","Server")]
+	Param (
+		[Parameter(ParameterSetName = "Server", Position = 1)]
+		[Alias("cn", "host", "Server")]
 		[string[]]$ComputerName = $env:COMPUTERNAME,
-  [Alias("Instance")]
+		[Alias("Instance")]
 		[string[]]$InstanceName,
-	[ValidateSet("Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS","AnalysisServer","ReportServer","Search","SqlAgent","SqlBrowser","SqlServer","SqlServerIntegrationService")]
+		[ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "AnalysisServer", "ReportServer", "Search", "SqlAgent", "SqlBrowser", "SqlServer", "SqlServerIntegrationService")]
 		[string[]]$Type,
-	[parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Service")]
+		[parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Service")]
 		[object[]]$ServiceCollection,
 		[int]$Timeout = 30,
-		[PSCredential] $Credential,
+		[PSCredential]$Credential,
 		[switch]$Silent
-)
+	)
 	begin {
 		if ($Type) {
-		  foreach ($i in 0..($Type.Length - 1)) {
-		  	$Type[$i] = switch ($Type[$i]) {
-		  		"Agent" {"SqlAgent"}
-					"Browser" {"SqlBrowser"}
-					"Engine" {"SqlServer"}
-					"FullText" {"Search"}
-					"SSAS" {"AnalysisServer"}
-					"SSIS" {"SqlServerIntegrationService"}
-					"SSRS" {"ReportServer"}
-					default {$_}
+			foreach ($i in 0 .. ($Type.Length - 1)) {
+				$Type[$i] = switch ($Type[$i]) {
+					"Agent" { "SqlAgent" }
+					"Browser" { "SqlBrowser" }
+					"Engine" { "SqlServer" }
+					"FullText" { "Search" }
+					"SSAS" { "AnalysisServer" }
+					"SSIS" { "SqlServerIntegrationService" }
+					"SSRS" { "ReportServer" }
+					default { $_ }
 				}
 			}
 		}
 		$ProcessArray = @()
 		if ($PsCmdlet.ParameterSetName -eq "Server") {
-			$parameters = @{}
-			if ($ComputerName) { $parameters.ComputerName = $ComputerName}
-			if ($InstanceName) { $parameters.InstanceName = $InstanceName}
-			if ($Type) { $parameters.Type = $Type}
-			if ($Credential) { $parameters.Credential = $Credential}
+			$parameters = @{ }
+			if ($ComputerName) { $parameters.ComputerName = $ComputerName }
+			if ($InstanceName) { $parameters.InstanceName = $InstanceName }
+			if ($Type) { $parameters.Type = $Type }
+			if ($Credential) { $parameters.Credential = $Credential }
 			$ServiceCollection = Get-DbaSqlService @parameters
 		}
 	}
@@ -109,11 +109,11 @@ Function Restart-DbaSqlService {
 		$ProcessArray += $ServiceCollection
 	}
 	end {
-		$ProcessArray = $ProcessArray | Where-Object {(!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type)}
+		$ProcessArray = $ProcessArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) }
 		if ($ProcessArray) {
-			Update-DBASqlServiceStatus -ServiceCollection $ProcessArray -Action 'stop' -Timeout $Timeout -Silent $Silent
-			Update-DBASqlServiceStatus -ServiceCollection $ProcessArray -Action 'start' -Timeout $Timeout -Silent $Silent
+			Update-DbaSqlServiceStatus -ServiceCollection $ProcessArray -Action 'stop' -Timeout $Timeout -Silent $Silent
+			Update-DbaSqlServiceStatus -ServiceCollection $ProcessArray -Action 'start' -Timeout $Timeout -Silent $Silent
 		}
-		else { Write-Message -Level Warning -Silent $Silent -Message "No SQL Server services found with current parameters."}
+		else { Write-Message -Level Warning -Silent $Silent -Message "No SQL Server services found with current parameters." }
 	}
 }
