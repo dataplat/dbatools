@@ -16,11 +16,11 @@ function Install-DbaWhoIsActive {
 		The SQL Server instance.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 	
 	.PARAMETER SqlCredential
-		PSCredential object to connect under. If not specified, currend Windows login will be used.
+		PSCredential object to connect under. If not specified, current Windows login will be used.
 	
 	.PARAMETER Database
 		The database to install the procedures to.
-		This parameter is mandatory when executing this command unattendedly.
+		This parameter is mandatory when executing this command unattended.
 	
 	.PARAMETER Update
 		Looks online for the most up to date version, replacing the local one.
@@ -77,20 +77,23 @@ function Install-DbaWhoIsActive {
 	)
 	
 	begin {
+		$baseUrl = "http://whoisactive.com/downloads"
+		$latest = ((Invoke-WebRequest -uri http://whoisactive.com/downloads).Links | where-object {$PSItem.href -match "who_is_active"} | Select-Object href -First 1).href
 		
-		$version = "who_is_active_v11_17"
+		$version = $latest.split(".")[0];
+
 		$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 		$sqlfile = (Get-ChildItem "$temp\$version.sql" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
 		
 		if ($sqlfile -and (-not ($Update))) {
-			Write-Message -Level Verbose -Message "Found local $sqlfile"
+			Write-Message -Level Verbose -Message "Found local $sqlfile."
 		}
 		else {
 			if ($PSCmdlet.ShouldProcess($env:computername, "Downloading sp_WhoisActive")) {
 				try {
 					Write-Message -Level Verbose -Message "Downloading sp_WhoisActive zip file, unzipping and installing."
+					$url = $baseUrl + "/" + $latest
 					
-					$url = "http://whoisactive.com/downloads/$version.zip"
 					$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 					$zipfile = "$temp\spwhoisactive.zip"
 					
@@ -120,14 +123,14 @@ function Install-DbaWhoIsActive {
 					$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select-Object -First 1).FullName
 				}
 				catch {
-					Stop-Function -Message "Couldn't download sp_WhoisActive. Please download and install manually from $url" -ErrorRecord $_
+					Stop-Function -Message "Couldn't download sp_WhoisActive. Please download and install manually from $url." -ErrorRecord $_
 					return
 				}
 			}
 		}
 		
 		if ($PSCmdlet.ShouldProcess($env:computername, "Reading SQL file into memory")) {
-			Write-Message -Level Verbose -Message "Using $sqlfile"
+			Write-Message -Level Verbose -Message "Using $sqlfile."
 			
 			$sql = [IO.File]::ReadAllText($sqlfile)
 			$sql = $sql -replace 'USE master', ''
@@ -140,7 +143,7 @@ function Install-DbaWhoIsActive {
 		
 		foreach ($instance in $SqlInstance) {
 			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance"
+				Write-Message -Level Verbose -Message "Connecting to $instance."
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
@@ -152,12 +155,12 @@ function Install-DbaWhoIsActive {
 					$Database = Show-DbaDatabaseList -SqlInstance $server -Title "Install sp_WhoisActive" -Header "To deploy sp_WhoisActive, select a database or hit cancel to quit." -DefaultDb "master"
 					
 					if (-not $Database) {
-						Stop-Function -Message "You must select a database to install the procedure" -Target $Database
+						Stop-Function -Message "You must select a database to install the procedure." -Target $Database
 						return
 					}
 					
 					if ($Database -ne 'master') {
-						Write-Message -Level Warning -Message "You have selected a database other than master. When you run Invoke-DbaWhoIsActive in the future, you must specify -Database $Database"
+						Write-Message -Level Warning -Message "You have selected a database other than master. When you run Invoke-DbaWhoIsActive in the future, you must specify -Database $Database."
 					}
 				}
 			}
@@ -166,7 +169,7 @@ function Install-DbaWhoIsActive {
 				$allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
 				$databases = $server.Databases | Where-Object Name -eq $Database
 				if ($databases.Count -eq 0) {
-					Stop-Function -Message "Failed to find database $Database on $instance" -ErrorRecord $_ -Continue -Target $instance
+					Stop-Function -Message "Failed to find database $Database on $instance." -ErrorRecord $_ -Continue -Target $instance
 				}
 				$allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 				foreach ($batch in $batches) {
