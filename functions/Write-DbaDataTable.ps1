@@ -1,15 +1,15 @@
 function Write-DbaDataTable {
 	<#
 		.SYNOPSIS
-			Writes data to a SQL Server Table
+			Writes data to a SQL Server Table.
 
 		.DESCRIPTION
-			Writes a .NET DataTable to a SQL Server table using SQL Bulk Copy
+			Writes a .NET DataTable to a SQL Server table using SQL Bulk Copy.
 
 		.PARAMETER SqlInstance
 			The SQL Server instance.
 
-		.PARAMETER SqlCredential
+        .PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
@@ -25,9 +25,9 @@ function Write-DbaDataTable {
 			This is the DataTable (or datarow) to import to SQL Server.
 
 		.PARAMETER Table
-			The table name. You can specify a one, two, or three part table name. If you specify a one or two part name, you must also use -Database.
+			The table name to import data into. You can specify a one, two, or three part table name. If you specify a one or two part name, you must also use -Database.
 
-			If the table does not exist, you can use AutoCreateTable to automatically create the table with inefficient data types.
+			If the table does not exist, you can use -AutoCreateTable to automatically create the table with inefficient data types.
 
 		.PARAMETER Schema
 			Defaults to dbo if no schema is specified.
@@ -39,41 +39,50 @@ function Write-DbaDataTable {
 			Sets the option to show the notification after so many rows of import
 
 		.PARAMETER AutoCreateTable
-			Automatically create the table if it doesn't exist. Note that the table will be created with inefficient data types such as nvarchar(max).
+			If this switch is enabled, the table will be created if it does not already exist. The table will be created with sub-optimal data types such as nvarchar(max)
 
 		.PARAMETER NoTableLock
-			By default, a TableLock is placed on the destination table. Use this parameter to remove the lock.
+			If this switch is enabled, a table lock (TABLOCK) will not be placed on the destination table. By default, this operation will lock the destination table while running.
 
 		.PARAMETER CheckConstraints
-			SqlBulkCopy option. Per Microsoft "Check constraints while data is being inserted. By default, constraints are not checked."
+			If this switch is enabled, the SqlBulkCopy option to process check constraints will be enabled.
+			
+			Per Microsoft "Check constraints while data is being inserted. By default, constraints are not checked."
 
 		.PARAMETER FireTriggers
-			SqlBulkCopy option. Per Microsoft "When specified, cause the server to fire the insert triggers for the rows being inserted into the Database."
+			If this switch is enabled, the SqlBulkCopy option to fire insert triggers will be enabled.
+
+			Per Microsoft "When specified, cause the server to fire the insert triggers for the rows being inserted into the Database."
 
 		.PARAMETER KeepIdentity
-			SqlBulkCopy option. Per Microsoft "Preserve source identity values. When not specified, identity values are assigned by the destination."
+			If this switch is enabled, the SqlBulkCopy option to preserve source identity values will be enabled.
+
+			Per Microsoft "Preserve source identity values. When not specified, identity values are assigned by the destination."
 
 		.PARAMETER KeepNulls
-			SqlBulkCopy option. Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
+			If this switch is enabled, the SqlBulkCopy option to preserve NULL values will be enabled.
+
+			Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
 
 		.PARAMETER Truncate
-			Prompts for confirmation then truncates destination
-
+			If this switch is enabled, the destination table will be truncated after prompting for confirmation.
+			
 		.PARAMETER BulkCopyTimeOut
-			Value in seconds for the BulkCopy operations timeout, default is 30 seconds
+			Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.
 
 		.PARAMETER RegularUser
-			The underlying connection assumes the user connecting has administrative privilege, this switch removest that assumption
-			This is particularly import and when connecting to a SQL Azure Database
+			If this switch is enabled, the user connecting will be assumed to be a non-administrative user. By default, the underlying connection assumes that the user has administrative privileges.
 
-		.PARAMETER Confirm
-			Can disable prompt for confirmation by using -Confirm:$false
+			This is particularly important when connecting to a SQL Azure Database.
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were executed
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Website: https://dbatools.io
@@ -87,35 +96,33 @@ function Write-DbaDataTable {
 			$DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
 			Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers
 
-			Quickly and efficiently performs a bulk insert of all the data in customers.csv into Database: mydb, schema: dbo, table: customers
-			Shows progress as rows are inserted. If table does not exist, import is halted.
+			Performs a bulk insert of all the data in customers.csv into database mydb, schema dbo, table customers. A progress bar will be shown as rows are inserted. If the destination table does not exist, the import will be halted.
 
 		.EXAMPLE
 			$DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
 			$DataTable | Write-DbaDataTable -SqlInstance sql2014 -Table mydb.dbo.customers
 
-			Performs row by row insert. Super slow. No progress bar. Don't do this. Use -InputObject instead.
+			Performs a row by row insert of the data in customers.csv. This is significantly slower than a bulk insert and will not show a progress bar.
+			
+			This method is not recommended. Use -InputObject instead.
 
 		.EXAMPLE
 			$DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
 			Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -AutoCreateTable
 
-			Quickly and efficiently performs a bulk insert of all the data. If mydb.dbo.customers does not exist, it will be created with inefficient but forgiving DataTypes.
+			Performs a bulk insert of all the data in customers.csv. If mydb.dbo.customers does not exist, it will be created with inefficient but forgiving DataTypes.
 
 		.EXAMPLE
 			$DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
 			Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -Truncate
 
-			Quickly and efficiently performs a bulk insert of all the data. Prompts to confirm that truncating mydb.dbo.customers prior to import is desired.
-			Prompts again to perform the import. Answer A for Yes to All.
+			Performs a bulk insert of all the data in customers.csv. Prior to importing into mydb.dbo.customers, the user is informed that the table will be truncated and asks for confirmation. The user is prompted again to perform the import. 
 
 		.EXAMPLE
 			$DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
 			Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Database mydb -Table customers -KeepNulls
 
-			Quickly and efficiently performs a bulk insert of all the data into mydb.dbo.customers -- since Schema was not specified, dbo was used.
-
-			Per Microsoft, KeepNulls will "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
+			Performs a bulk insert of all the data in customers.csv into mydb.dbo.customers. Because Schema was not specified, dbo was used. NULL values in the destination table will be preserved.
 
 		.EXAMPLE
 			$passwd = ConvertTo-SecureString "P@ssw0rd" -AsPlainText -Force
@@ -123,7 +130,7 @@ function Write-DbaDataTable {
 			$DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
 			Write-DbaDataTable -SqlInstance AzureDB.database.windows.net -InputObject $DataTable -Database mydb -Table customers -KeepNulls -Credential $AzureCredential -RegularUser -BulkCopyTimeOut 300
 
-			This performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials. The RegularUser switch is needed to prevent trying to get administrative privilege, and we increase the BulkCopyTimeout value to cope with any latency
+			This performs the same operation as the previous example, but against a SQL Azure Database instance using the required credentials. The -RegularUser switch is needed to prevent trying to get administrative privilege, and we increase the BulkCopyTimeout value to cope with any latency.
 
 		.EXAMPLE
 			$process = Get-Process | Out-DbaDataTable
@@ -131,7 +138,7 @@ function Write-DbaDataTable {
 
 			Creates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process information into the table.
 
-			This is a good example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts thanks to Out-DbaDataTable.
+			This is an example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts thanks to Out-DbaDataTable.
 	#>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param (
@@ -199,7 +206,7 @@ function Write-DbaDataTable {
 		$dotCount = ([regex]::Matches($table, "\.")).count
 
 		if ($dotCount -lt 2 -and $Database -eq $null) {
-			Stop-Function -Message "You must specify a database or fully qualified table name"
+			Stop-Function -Message "You must specify a database or fully qualified table name."
 			return
 		}
 
@@ -229,11 +236,11 @@ function Write-DbaDataTable {
 		$fqtn = "[$Database].[$Schema].[$table]"
 
 		try {
-			Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance" -Target $SqlInstance
+			Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance." -Target $SqlInstance
 			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -RegularUser:$RegularUser
 		}
 		catch {
-			Stop-Function -Message "Failed to process Instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
+			Stop-Function -Message "Failed to process Instance $SqlInstance." -ErrorRecord $_ -Target $SqlInstance
 			return
 		}
 
@@ -252,7 +259,7 @@ function Write-DbaDataTable {
 		$db = $server.Databases | Where-Object Name -eq $Database
 
 		if ($db -eq $null) {
-			Stop-Function -Message "$Database does not exist" -Target $SqlInstance
+			Stop-Function -Message "$Database does not exist." -Target $SqlInstance
 			return
 		}
 
@@ -270,7 +277,7 @@ function Write-DbaDataTable {
 		if ($truncate -eq $true) {
 			if ($Pscmdlet.ShouldProcess($SqlInstance, "Truncating $fqtn")) {
 				try {
-					Write-Message -Level Output -Message "Truncating $fqtn"
+					Write-Message -Level Output -Message "Truncating $fqtn."
 					$null = $server.Databases[$Database].Query("TRUNCATE TABLE $fqtn")
 				}
 				catch {
@@ -291,7 +298,7 @@ function Write-DbaDataTable {
 				$script:totalRows = $args[1].RowsCopied
 				$percent = [int](($script:totalRows / $rowCount) * 100)
 				$timeTaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
-				Write-Progress -id 1 -activity "Inserting $rowCount rows" -PercentComplete $percent -Status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalRows, $percent, $timeTaken))
+				Write-Progress -id 1 -activity "Inserting $rowCount rows." -PercentComplete $percent -Status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalRows, $percent, $timeTaken))
 			})
 
 		$PStoSQLTypes = @{
@@ -338,7 +345,7 @@ function Write-DbaDataTable {
 	process {
 		if (Test-FunctionInterrupt) { return }
 		if ($InputObject -eq $null) {
-			Stop-Function -Message "Input object is null"
+			Stop-Function -Message "Input object is null."
 			return
 		}
 
@@ -363,7 +370,7 @@ function Write-DbaDataTable {
 			}
 			else {
 				if ($schema -notin $server.Databases[0].Schemas.Name) {
-					Stop-Function -Message "Schema does not exist"
+					Stop-Function -Message "Schema does not exist."
 					return
 				}
 
