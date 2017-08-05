@@ -1,5 +1,4 @@
-Function Get-DbaServerProtocol
-{
+Function Get-DbaServerProtocol {
 <#
     .SYNOPSIS
     Gets the SQL Server related server protocols on a computer. 
@@ -53,55 +52,43 @@ Function Get-DbaServerProtocol
     If succesfull, returncode 0 is shown.
 
 #>
-[CmdletBinding()]
-Param (
-  [parameter(ValueFromPipeline)]
-  [Alias("cn","host","Server")]
-  [string[]]$ComputerName = $env:COMPUTERNAME,
-  [PSCredential] $Credential,
-  [switch]$Silent
-)
-
-BEGIN
-  {
-    $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
-  }
-PROCESS
-  {
-      foreach ( $Computer in $ComputerName )
-      {
-          $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
-          if ( $Server.ComputerName )
-          {
-              $Computer = $server.ComputerName
+	[CmdletBinding()]
+	Param (
+		[parameter(ValueFromPipeline)]
+		[Alias("cn", "host", "Server")]
+		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+		[PSCredential]$Credential,
+		[switch]$Silent
+	)
+	
+	process {
+		foreach ($Computer in $ComputerName.ComputerName) {
+			$Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
+			if ($Server.ComputerName) {
+				$Computer = $server.ComputerName
 				Write-Message -Level Verbose -Message "Getting SQL Server namespace on $computer"
-              $namespace = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
-                          Where-Object {(Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ServerNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0} |
-                          Sort-Object Name -Descending | Select-Object -First 1
-              if ( $namespace.Name )
-              {
-                  Write-Message -Level Verbose -Message "Getting Cim class ServerNetworkProtocol in Namespace $($namespace.Name) on $Computer"
-                  try
-                  {
-                    $prot = Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -ClassName ServerNetworkProtocol -ErrorAction SilentlyContinue
-                    $prot | Add-Member -Force -MemberType ScriptMethod -Name Enable -Value {Invoke-CimMethod -MethodName SetEnable -InputObject $this }
-                    $prot | Add-Member -Force -MemberType ScriptMethod -Name Disable -Value {Invoke-CimMethod -MethodName SetDisable -InputObject $this }
-                    foreach ( $protocol in $prot ) { Select-DefaultView -InputObject $protocol -Property 'PSComputerName as ComputerName', 'InstanceName', 'ProtocolDisplayName as DisplayName', 'ProtocolName as Name', 'MultiIpconfigurationSupport as MultiIP', 'Enabled as IsEnabled' }
-                  }
-                  catch
-                  {
-                    Write-Message -Level Warning -Message "No Sql ServerNetworkProtocol found on $Computer"
-                  }
-              } #if namespace
-                else
-                {
-                Write-Message -Level Warning -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
-                } #else no namespace
-          } #if computername
-          else
-          {
-              Write-Message -Level Warning -Message "Failed to connect to $Computer"
-          }
-      } #foreach computer
-    } #PROCESS
-} #function
+				$namespace = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
+				Where-Object { (Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ServerNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0 } |
+				Sort-Object Name -Descending | Select-Object -First 1
+				if ($namespace.Name) {
+					Write-Message -Level Verbose -Message "Getting Cim class ServerNetworkProtocol in Namespace $($namespace.Name) on $Computer"
+					try {
+						$prot = Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -ClassName ServerNetworkProtocol -ErrorAction SilentlyContinue
+						$prot | Add-Member -Force -MemberType ScriptMethod -Name Enable -Value { Invoke-CimMethod -MethodName SetEnable -InputObject $this }
+						$prot | Add-Member -Force -MemberType ScriptMethod -Name Disable -Value { Invoke-CimMethod -MethodName SetDisable -InputObject $this }
+						foreach ($protocol in $prot) { Select-DefaultView -InputObject $protocol -Property 'PSComputerName as ComputerName', 'InstanceName', 'ProtocolDisplayName as DisplayName', 'ProtocolName as Name', 'MultiIpconfigurationSupport as MultiIP', 'Enabled as IsEnabled' }
+					}
+					catch {
+						Write-Message -Level Warning -Message "No Sql ServerNetworkProtocol found on $Computer"
+					}
+				}
+				else {
+					Write-Message -Level Warning -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
+				}
+			}
+			else {
+				Write-Message -Level Warning -Message "Failed to connect to $Computer"
+			}
+		}
+	}
+} 
