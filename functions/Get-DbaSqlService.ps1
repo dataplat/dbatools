@@ -1,5 +1,4 @@
-Function Get-DbaSqlService
-{
+Function Get-DbaSqlService {
 <#
     .SYNOPSIS
     Gets the SQL Server related services on a computer. 
@@ -55,64 +54,50 @@ Function Get-DbaSqlService
     Gets the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
 
 #>
-[CmdletBinding()]
-Param (
-  [parameter(ValueFromPipeline = $true)]
-  [Alias("cn","host","Server")]
-  [string[]]$ComputerName = $env:COMPUTERNAME,
-  [PSCredential] $Credential,
-  [ValidateSet("Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS")]
-  [string]$Type,
-  [switch]$Silent
-)
-
-BEGIN
-  {
-  $FunctionName = (Get-PSCallstack)[0].Command
-  $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
-  $TypeClause = switch($Type){ "Agent" {" = 2"} "Browser" {" = 7"} "Engine" {" = 1"} "FulText" {"= 3 OR SQLServiceType = 9"} "SSAS" {" = 5"} "SSIS" {" = 4"} "SSRS" {" = 6"} default {"> 0"} }
-  }
-PROCESS
-  {
-        foreach ( $Computer in $ComputerName )
-        {
-            $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
-            if ( $Server.ComputerName )
-            {
-                $Computer = $server.ComputerName
-                Write-Message -Level Verbose -Message "Getting SQL Server namespace on $Computer"
-                $namespace = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
-                            Where-Object {(Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue).count -gt 0} |
-                            Sort-Object Name -Descending | Select-Object -First 1
-                if ( $namespace.Name )
-                {
-                    Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer"
-                    try
-                    {
-                        $services = Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE SQLServiceType $TypeClause" -ErrorAction SilentlyContinue
-                        ForEach ( $service in $services ) {
-                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $service.HostName
-                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceTypeDescr -Value $(switch($service.SQLServiceType){1 {'Database Engine'} 2 {'SQL Agent'} 3 {'Full Text Search'} 4 {'SSIS'} 5 {'SSAS'} 6 {'SSRS'} 7 {'SQL Browser'} 8 {'Unknown'} 9 {'FullTextFilter Daemon Launcher'}})
-                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StateDescr -Value $(switch($service.State){ 1 {'Stopped'} 2 {'Start Pending'}  3 {'Stop Pending' } 4 {'Running'}})
-                            Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartModeDescr -Value $(switch($service.StartMode){ 1 {'Unknown'} 2 {'Automatic'}  3 {'Manual' } 4 {'Disabled'}})
-
-                            Select-DefaultView -InputObject $service -Property 'ComputerName','ServiceName', 'DisplayName', 'StartName', 'ServiceTypeDescr', 'StateDescr','StartModedescr'
-                            }
-                     }
-                     catch
-                     {
-                        Write-Message -Level Warning -Message "No Sql Services found on $Computer"
-                     }
-                }
-                  else
-                  {
-                    Write-Message -Level Warning -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
-                  }
-            }
-            else
-            {
-                Write-Message -Level Warning -Message "Failed to connect to $Computer"
-            }
-        }
-    }
+	[CmdletBinding()]
+	Param (
+		[parameter(ValueFromPipeline = $true)]
+		[Alias("cn", "host", "Server")]
+		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+		[PSCredential]$Credential,
+		[ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS")]
+		[string]$Type,
+		[switch]$Silent
+	)
+	
+	process {
+		foreach ($Computer in $ComputerName.ComputerName) {
+			$Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
+			if ($Server.ComputerName) {
+				$Computer = $server.ComputerName
+				Write-Message -Level Verbose -Message "Getting SQL Server namespace on $Computer"
+				$namespace = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
+				Where-Object { (Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue).count -gt 0 } |
+				Sort-Object Name -Descending | Select-Object -First 1
+				if ($namespace.Name) {
+					Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer"
+					try {
+						$services = Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE SQLServiceType $TypeClause" -ErrorAction SilentlyContinue
+						ForEach ($service in $services) {
+							Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $service.HostName
+							Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceTypeDescr -Value $(switch ($service.SQLServiceType) { 1 { 'Database Engine' } 2 { 'SQL Agent' } 3 { 'Full Text Search' } 4 { 'SSIS' } 5 { 'SSAS' } 6 { 'SSRS' } 7 { 'SQL Browser' } 8 { 'Unknown' } 9 { 'FullTextFilter Daemon Launcher' } })
+							Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StateDescr -Value $(switch ($service.State) { 1 { 'Stopped' } 2 { 'Start Pending' }  3 { 'Stop Pending' } 4 { 'Running' } })
+							Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartModeDescr -Value $(switch ($service.StartMode) { 1 { 'Unknown' } 2 { 'Automatic' }  3 { 'Manual' } 4 { 'Disabled' } })
+							
+							Select-DefaultView -InputObject $service -Property 'ComputerName', 'ServiceName', 'DisplayName', 'StartName', 'ServiceTypeDescr', 'StateDescr', 'StartModedescr'
+						}
+					}
+					catch {
+						Write-Message -Level Warning -Message "No Sql Services found on $Computer"
+					}
+				}
+				else {
+					Write-Message -Level Warning -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
+				}
+			}
+			else {
+				Write-Message -Level Warning -Message "Failed to connect to $Computer"
+			}
+		}
+	}
 }
