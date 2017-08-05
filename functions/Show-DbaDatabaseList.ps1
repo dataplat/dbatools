@@ -1,62 +1,51 @@
-Function Show-DbaDatabaseList
-{
-<#
-.SYNOPSIS
-Shows a list of databases in a GUI
-	
-.DESCRIPTION
-Shows a list of databases in a GUI. Returns a simple string. Hitting cancel returns null.
-	
-.PARAMETER SqlInstance
-The SQL Server instance.
-	
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+Function Show-DbaDatabaseList {
+	<#
+		.SYNOPSIS
+			Shows a list of databases in a GUI
+			
+		.DESCRIPTION
+			Shows a list of databases in a GUI. Returns a simple string. Hitting cancel returns null.
+			
+		.PARAMETER SqlInstance
+			The SQL Server instance.
 
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+        .PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
-	
-.PARAMETER Title
-Title of the Window. Default is "Select Database".
-	
-.PARAMETER Header
-Header right above the databases. Default is "Select the database:".
-	
-.PARAMETER DefaultDb
-Highlight (select) a specified database by default	
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.NOTES 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+			To connect as a different Windows user, run PowerShell as that user.		
+		
+		.PARAMETER Title
+			Title of the window being displayed. Default is "Select Database".
+			
+		.PARAMETER Header
+			Header text displayed above the database listing. Default is "Select the database:".
+			
+		.PARAMETER DefaultDb
+			Specify a database to have selected by default when the window appears
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+		.NOTES
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.LINK
+			https://dbatools.io/Show-DbaDatabaseList
 
-.LINK
-https://dbatools.io/Show-DbaDatabaseList
+		.EXAMPLE
+			Show-DbaDatabaseList -SqlInstance sqlserver2014a
 
-.EXAMPLE
-Show-DbaDatabaseList -SqlInstance sqlserver2014a
+			Shows a GUI list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected database.
+			
+		.EXAMPLE   
+			Show-DbaDatabaseList -Source sqlserver2014a -SqlCredential $cred
 
-Shows a GUI list of databases and uses Windows Authentication to log into the SQL Server. Returns a string of the selected database.
-	
-.EXAMPLE   
-Show-DbaDatabaseList -Source sqlserver2014a -SqlCredential $cred
-
-Shows a GUI list of databases and SQL credentials to log into the SQL Server. Returns a string of the selected database.
-	
-#>
+			Shows a GUI list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected database.
+		
+	#>
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]

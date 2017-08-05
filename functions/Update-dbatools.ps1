@@ -21,7 +21,7 @@ Function Update-DbaTools {
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 		.LINK
-			https://dbatools.io/Update-dbatools
+			https://dbatools.io/Update-DbaTools
 
 		.EXAMPLE
 			Update-DbaTools
