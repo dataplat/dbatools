@@ -117,7 +117,7 @@ function Backup-DbaDatabase {
 		[string]$BackupFileName,
 		[switch]$CopyOnly,
 		[ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
-		[string]$Type = "Database",
+		[string]$Type = 'Database',
 		[parameter(ParameterSetName = "NoPipe", Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$DatabaseCollection,
 		[switch]$CreateFolder,
@@ -194,7 +194,7 @@ function Backup-DbaDatabase {
 			continue
 		}
 		
-		Write-Message -Level Verbose -Message "$($DatabaseCollection.count) database to backup"
+		Write-Message -Level Verbose -Message "$($DatabaseCollection.count) database to backup, type = $type"
 		
 		ForEach ($Database in $databasecollection) {
 			$failures = @()
@@ -265,7 +265,7 @@ function Backup-DbaDatabase {
 			
 			if ($type -in 'diff', 'differential') {
 				Write-Message -Level VeryVerbose -Message "Creating differential backup"
-				$type = "Database"
+				$SMOBackuptype = "Database"
 				$backup.Incremental = $true
 				$outputType = 'Differential'
 			}
@@ -274,16 +274,17 @@ function Backup-DbaDatabase {
 				Write-Message -Level VeryVerbose -Message "Creating log backup"
 				$Suffix = "trn"
 				$OutputType = 'Log'
+				$SMOBackupType = 'Log'
 			}
 			
 			if ($type -in 'Full', 'Database') {
 				Write-Message -Level VeryVerbose -Message "Creating full backup"
-				$type = "Database"
+				$SMOBackupType = "Database"
 				$OutputType='Full'
 			}
 			
 			$backup.CopyOnly = $copyonly
-			$backup.Action = $type
+			$backup.Action = $SMOBackupType
 			if ('' -ne $AzureBaseUrl) {
 				$backup.CredentialName = $AzureCredential
 			}
