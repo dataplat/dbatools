@@ -121,7 +121,7 @@ function Connect-SqlInstance {
 		}
 	}
 	
-	$server = New-Object Microsoft.SqlServer.Management.Smo.Server ([guid]::NewGuid())
+	$server = New-Object Microsoft.SqlServer.Management.Smo.Server ([System.Guid]::NewGuid())
 	$server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
 	
 	try {
