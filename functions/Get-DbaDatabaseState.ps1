@@ -1,5 +1,6 @@
-Function Get-DbaDatabaseState {
-    <#
+#ValidationTags#Messaging,FlowControl,Pipeline#
+function Get-DbaDatabaseState {
+	<#
 .SYNOPSIS
 Gets various options for databases, hereby called "states"
 
@@ -22,6 +23,9 @@ The database(s) to process - this list is auto-populated from the server. If uns
 
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is auto-populated from the server
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages and allow exceptions
 
 .NOTES
 Tags: Databases
@@ -55,87 +59,88 @@ Gets options for all databases of the sqlserver2014a instance except HR
 Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 
 #>
-    [CmdletBinding()]
-    Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
-        [PSCredential]
-        $SqlCredential,
-        [Alias("Databases")]
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase
-    )
-	
-    begin {
-        $UserAccessHash = @{
-            'Single'     = 'SINGLE_USER'
-            'Restricted' = 'RESTRICTED_USER'
-            'Multiple'   = 'MULTI_USER'
-        }
-        $ReadOnlyHash = @{
-            $true  = 'READ_ONLY'
-            $false = 'READ_WRITE'
-        }
-        $StatusHash = @{
-            'Offline'       = 'OFFLINE'
-            'Normal'        = 'ONLINE'
-            'EmergencyMode' = 'EMERGENCY'
-        }
+	[CmdletBinding()]
+	Param (
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[Alias("Credential")]
+		[PSCredential]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
+		[switch]$Silent
+	)
+
+	begin {
+		$UserAccessHash = @{
+			'Single'     = 'SINGLE_USER'
+			'Restricted' = 'RESTRICTED_USER'
+			'Multiple'   = 'MULTI_USER'
+		}
+		$ReadOnlyHash = @{
+			$true  = 'READ_ONLY'
+			$false = 'READ_WRITE'
+		}
+		$StatusHash = @{
+			'Offline'       = 'OFFLINE'
+			'Normal'        = 'ONLINE'
+			'EmergencyMode' = 'EMERGENCY'
+			'Restoring'     = 'RESTORING'
+		}
 		
-        function Get-DbState($db) {
-            $base = [PSCustomObject]@{
-                'Access' = ''
-                'Status' = ''
-                'RW'     = ''
-            }
-            $base.RW = $ReadOnlyHash[$db.ReadOnly]
-            $base.Access = $UserAccessHash[$db.UserAccess.toString()]
-            foreach ($status in $StatusHash.Keys) {
-                if ($db.Status -match $status) {
-                    $base.Status = $StatusHash[$status]
-                    break
-                }
-            }
-            return $base
-        }
+		function Get-DbState($db) {
+			$base = [PSCustomObject]@{
+				'Access' = ''
+				'Status' = ''
+				'RW'     = ''
+			}
+			$base.RW = $ReadOnlyHash[$db.ReadOnly]
+			$base.Access = $UserAccessHash[$db.UserAccess.toString()]
+			foreach ($status in $StatusHash.Keys) {
+				if ($db.Status -match $status) {
+					$base.Status = $StatusHash[$status]
+					break
+				}
+			}
+			return $base
+		}
 		
-    }
-    process {
-        foreach ($instance in $SqlInstance) {
-            Write-Verbose "Connecting to $instance"
-            try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-            }
-            catch {
-                Write-Warning "Can't connect to $instance"
-                Continue
-            }
-            $all_dbs = $server.Databases
-            $dbs = $all_dbs | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
+	}
+	process {
+		foreach ($instance in $SqlInstance) {
+			Write-Message -Level Verbose -Message "Connecting to $instance"
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
+			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
+			$all_dbs = $server.Databases
+			$dbs = $all_dbs | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
 			
-            if ($Database) {
-                $dbs = $dbs | Where-Object Name -In $Database
-            }
-            if ($ExcludeDatabase) {
-                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
-            }
-            foreach ($db in $dbs) {
-                $db_status = Get-DbState $db
+			if ($Database) {
+				$dbs = $dbs | Where-Object Name -In $Database
+			}
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
+			}
+			foreach ($db in $dbs) {
+				$db_status = Get-DbState $db
 				
-                [PSCustomObject]@{
-                    SqlInstance  = $server.Name
-                    InstanceName = $server.ServiceName
-                    ComputerName = $server.NetName
-                    DatabaseName = $db.Name
-                    RW           = $db_status.RW
-                    Status       = $db_status.Status
-                    Access       = $db_status.Access
-                    Database     = $db
-                } | Select-DefaultView -ExcludeProperty Database
-            }
-        }
-    }
+				[PSCustomObject]@{
+					SqlInstance  = $server.Name
+					InstanceName = $server.ServiceName
+					ComputerName = $server.NetName
+					DatabaseName = $db.Name
+					RW           = $db_status.RW
+					Status       = $db_status.Status
+					Access       = $db_status.Access
+					Database     = $db
+				} | Select-DefaultView -ExcludeProperty Database
+			}
+		}
+	}
 }
 
