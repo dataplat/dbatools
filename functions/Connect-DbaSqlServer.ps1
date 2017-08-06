@@ -210,7 +210,7 @@ function Connect-DbaSqlServer {
             return $SqlInstance
         }
 		
-        $server = New-Object Microsoft.SqlServer.Management.Smo.Server ([guid]::NewGuid())
+        $server = New-Object Microsoft.SqlServer.Management.Smo.Server ([System.Guid]::NewGuid())
 		
         if ($AppendConnectionString) {
             $connstring = $server.ConnectionContext.ConnectionString
