@@ -29,8 +29,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$needed = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2,$db3,$db4,$db5,$db6,$db7,$db8
 			if ($needed.Count -ne 8) {
 				$setupright = $false
-				it "has failed setup" {
-					Set-TestInconclusive -message "Setup failed"
+				It "has failed setup" {
+					Set-TestInconclusive -Message "Setup failed"
 				}
 			}
 		}
