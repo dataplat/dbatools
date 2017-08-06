@@ -128,7 +128,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 				$result.DatabaseName | Should Be $db6
 				$result.Access | Should Be "MULTI_USER"
 			}
-			It "Sets a databasse as read_write" {
+			It "Sets a database as read_write" {
 				$null = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db7 -ReadOnly -Force
 				$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db7 -ReadWrite -Force
 				$result.DatabaseName | Should Be $db7
