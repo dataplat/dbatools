@@ -1,4 +1,4 @@
-Function Connect-DbaSqlServer {
+function Connect-DbaSqlServer {
     <#
     .SYNOPSIS
         Creates an efficient SMO SQL Server object.
@@ -210,7 +210,7 @@ Function Connect-DbaSqlServer {
             return $SqlInstance
         }
 		
-        $server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlInstance
+        $server = New-Object Microsoft.SqlServer.Management.Smo.Server ([guid]::NewGuid())
 		
         if ($AppendConnectionString) {
             $connstring = $server.ConnectionContext.ConnectionString
@@ -268,7 +268,7 @@ Function Connect-DbaSqlServer {
                         $server.ConnectionContext.set_SecurePassword($Credential.Password)
                     }
                 }
-				
+				$server.ConnectionContext.ServerInstance = $SqlInstance
                 $server.ConnectionContext.Connect()
             }
             catch {
@@ -282,10 +282,10 @@ Function Connect-DbaSqlServer {
 			
         }
 		
-		$loadedsmoversion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
+		$loadedSmoVersion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
 		
-		if ($loadedsmoversion) {
-			$loadedsmoversion = $loadedsmoversion | ForEach-Object {
+		if ($loadedSmoVersion) {
+			$loadedSmoVersion = $loadedSmoVersion | ForEach-Object {
 				if ($_.Location -match "__") {
 					((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0]
 				}
@@ -295,7 +295,7 @@ Function Connect-DbaSqlServer {
 			}
 		}
 		
-		if ($loadedsmoversion -ge 11) {
+		if ($loadedSmoVersion -ge 11) {
 			if ($server.VersionMajor -eq 8) {
 				# 2000
 				$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Version')
