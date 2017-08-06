@@ -48,6 +48,26 @@ namespace Sqlcollaborative.Dbatools.Connection
         /// Globally disables the persistence of Cim sessions used to connect to a target system.
         /// </summary>
         public static bool DisableCimPersistence = false;
+
+        /// <summary>
+        /// Whether the CM connection using Cim over WinRM is disabled globally
+        /// </summary>
+        public static bool DisableConnectionCimRM = false;
+
+        /// <summary>
+        /// Whether the CM connection using Cim over DCOM is disabled globally
+        /// </summary>
+        public static bool DisableConnectionCimDCOM = false;
+
+        /// <summary>
+        /// Whether the CM connection using WMI is disabled globally
+        /// </summary>
+        public static bool DisableConnectionWMI = true;
+
+        /// <summary>
+        /// Whether the CM connection using PowerShell Remoting is disabled globally
+        /// </summary>
+        public static bool DisableConnectionPowerShellRemoting = true;
         #endregion Configuration
     }
 }
