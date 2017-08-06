@@ -129,7 +129,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
         /// <summary>
         /// Cached credentials, if the user stors them under a name.
         /// </summary>
-        public static Dictionary<string, PSCredential> CredentialStore = new Dictionary<string, PSCredential>();
+        internal static Dictionary<string, PSCredential> CredentialStore = new Dictionary<string, PSCredential>();
         #endregion Utility
     }
 }
