@@ -106,7 +106,7 @@
                 }
             }
             catch {
-                if ($_.FullyQualifiedErrorId -eq "UnauthorizedAccessException") {
+                if (($_.Exception.InnerException -eq 0x8007052e) -or ($_.Exception.InnerException -eq 0x80070005)) {
                     New-Object PSObject -Property @{
                         Success       = "Error"
                         Timestamp     = Get-Date
@@ -143,7 +143,7 @@
                 }
             }
             catch {
-                if ($_.FullyQualifiedErrorId -eq "UnauthorizedAccessException") {
+                if (($_.Exception.InnerException -eq 0x8007052e) -or ($_.Exception.InnerException -eq 0x80070005)) {
                     New-Object PSObject -Property @{
                         Success       = "Error"
                         Timestamp     = Get-Date
