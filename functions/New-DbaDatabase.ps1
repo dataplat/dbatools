@@ -392,7 +392,7 @@ Creates a database named NonDefaultLogLocation in the C:\DBATools directory, wit
             #set the collation
             if ($Collation.Length -eq 0)
             {
-                Write-Message -message "USing default server collation" -level verbose
+                Write-Message -message "Using default server collation" -level verbose
             }
             else
             {
@@ -412,8 +412,8 @@ Creates a database named NonDefaultLogLocation in the C:\DBATools directory, wit
             }
 
             #we should now be able to create the db, and run any other config settings afterwards
-            Write-Message -message "Creating Datbase $DatabaseName" -level verbose
-            if ($PSCmdlet.ShouldProcess($instance, "Creating the database on $instance")) 
+            Write-Message -message "Creating Database $DatabaseName" -level verbose
+            if ($PSCmdlet.ShouldProcess($instance, "Creating the database $DatabaseName on instance $instance")) 
             {
                 try
                 {
@@ -421,7 +421,18 @@ Creates a database named NonDefaultLogLocation in the C:\DBATools directory, wit
                 }
                 catch
                 {
-                    Stop-Function -Message "Error creating Database $DatabaseName on server $SqlInstance" -ErrorRecord $_ -Target $instance -Continue
+                    $CreateDBException = @()
+                    $CreateDBException += $_.Exception.Message
+                    $Exception = $_.Exception
+
+                    while ($Exception.InnerException)
+                    {
+                        $CreateDBException += $Exception.InnerException.Message
+                        $Exception = $Exception.InnerException
+                    }
+                    
+                    Stop-Function -Message "Error creating Database $DatabaseName on server $SqlInstance; Error messages: $CreateDBException" `
+                    -ErrorRecord $_ -Target $instance -Continue
                 }      
 
 
@@ -451,7 +462,7 @@ Creates a database named NonDefaultLogLocation in the C:\DBATools directory, wit
             }
 
             #Write completed message
-            Write-Message -message "Completed creating database $DatabaseName on server $Instance" -level Verbose
+            Write-Message -message "Completed creating database $DatabaseName on server $Instance" -level Output
         }
 
     }
