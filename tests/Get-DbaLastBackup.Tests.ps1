@@ -33,9 +33,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Get last history for single database" {
 		$results = Get-DbaLastBackup -SqlInstance $script:instance2 -Database $dbname
 		It "returns a date within the proper range" {
-			[datetime]$results.LastFullBackup -gt $testdate | Should Be $true
-			[datetime]$results.LastDiffBackup -gt $testdate | Should Be $true
-			[datetime]$results.LastLogBackup -gt $testdate | Should Be $true
+			[datetime]$results.LastFullBackup -gt $yesterday | Should Be $true
+			[datetime]$results.LastDiffBackup -gt $yesterday | Should Be $true
+			[datetime]$results.LastLogBackup  -gt $yesterday | Should Be $true
 		}
 	}
 	
