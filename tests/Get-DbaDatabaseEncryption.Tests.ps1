@@ -6,16 +6,18 @@ $script:instance1 = "SVTSQLRESTORE"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "testing pester" {
-        It "Should report that one account named SA exists" {
-            $false | Should Be $true
+        BeforeAll {
+			$random = Get-Random
+            $cert = "dbatoolsci_getcert$random"
+            $password = ConvertTo-SecureString -String Get-Random -AsPlainText -Force
+            New-DbaDatabaseCertificate -SqlInstance $script:instance1 -Name $cert -password $password
+		}
+		AfterAll {
+            Get-DbaDatabaseCertificate -SqlInstance $script:instance1 -Certificate $cert | Remove-DbaDatabaseCertificate -confirm:$false
+		}
+        $results = Get-DbaDatabaseEncryption -SqlInstance $script:instance1 
+        It "Should find a certificate named $cert" {
+            ($results.Name -match 'dbatoolsci').Count -gt 0 | Should Be $true
         }
     }
-
-#    Context "Check that SA account is enabled" {
-#            $results = Get-DbaLogin -SqlInstance $script:instance1 -Login sa
-#            It "Should say the SA account is disabled FALSE" {
-#                $results.IsDisabled | Should Be "False"
-#            }
-#        }
-
 }
