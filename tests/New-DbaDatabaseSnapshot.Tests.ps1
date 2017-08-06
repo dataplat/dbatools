@@ -29,11 +29,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$server.Query("CREATE DATABASE $db1")
 			$server.Query("CREATE DATABASE $db2")
 			$server.Query("CREATE DATABASE $db3")
-			$null = Set-DbaDatabaseState -Sqlinstance $script:instance2 -Database $db3 -Offline -Force
+			$server.Query("ALTER DATABASE $db3 SET OFFLINE WITH ROLLBACK IMMEDIATE")
 		}
 		AfterAll {
-			Stop-DbaProcess -SqlInstance $script:instance2 -Database $db1, $db2, $db3
-			$null = Set-DbaDatabaseState -Sqlinstance $script:instance2 -Database $db3 -Online -Force
+			$server.Query("ALTER DATABASE $db3 SET ONLINE WITH ROLLBACK IMMEDIATE")
 			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2,$db3 -Force
 			Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2,$db3
 		}
