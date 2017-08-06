@@ -194,7 +194,7 @@ function Backup-DbaDatabase {
 			continue
 		}
 		
-		Write-Message -Level Verbose -Message "$($DatabaseCollection.count) database to backup, type = $type"
+		Write-Message -Level Verbose -Message "$($DatabaseCollection.count) database to backup"
 		
 		ForEach ($Database in $databasecollection) {
 			$failures = @()
