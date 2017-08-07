@@ -26,6 +26,22 @@ function Get-JobList {
 		Get-JobList -SqlInstance sql2016 -Filter '*job*' -Not
 
 		Returns any Job object that does not have "job" in the name on sql2016
+	.EXAMPLE
+		Get-JobList -SqlInstance YourServer -Filter 'JobName'
+
+		Returns the Job object where the job name is 'JobName' on sql2016
+	.EXAMPLE
+		Get-JobList -SqlInstance YourServer -Filter 'JobName' -Not
+
+		Returns any Job object where the job name is not 'JobName' on sql2016
+	.EXAMPLE
+		Get-JobList -SqlInstance YourServer -Filter job_3_upload, job_3_download
+
+		Returns the Job object for where job is job_3_upload or job_3_download on sql2016
+	.EXAMPLE
+		Get-JobList -SqlInstance YourServer -Filter job_3_upload, job_3_download -Not
+
+		Returns any Job object where job is not job_3_upload or job_3_download on sql2016
 	.NOTES
 		Original Author: Shawn Melton (@wsmelton)
 
