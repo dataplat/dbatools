@@ -3,7 +3,6 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 if ($env:appveyor) {
-	Write-Warning "detected appveyor"
 	Get-Service | Where-Object { $_.DisplayName -match 'SQL Server (SQL2008R2SP2)' -or $_.DisplayName -match 'SQL Server (SQL2016)' } | Restart-Service -Force
 	do {
 		Start-Sleep 1
