@@ -37,6 +37,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			{ Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 *> $null } | Should Not Throw "You must specify"
 		}
 	}
+	
 	Context "Operations on snapshots" {
 		BeforeEach {
 			$needed = @()

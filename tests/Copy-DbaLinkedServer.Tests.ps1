@@ -2,17 +2,19 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-try {
-	$connstring = "Server=ADMIN:$script:instance1;Trusted_Connection=True"
-	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $script:instance1
-	$server.ConnectionContext.ConnectionString = $connstring
-	$server.ConnectionContext.Connect()
-	$server.ConnectionContext.Disconnect()
-	Clear-DbaSqlConnectionPool
-}
-catch {
-	Write-Host "DAC not working this round, likely due to Appveyor resources"
-	return
+if ($env:appveyor) {
+	try {
+		$connstring = "Server=ADMIN:$script:instance1;Trusted_Connection=True"
+		$server = New-Object Microsoft.SqlServer.Management.Smo.Server $script:instance1
+		$server.ConnectionContext.ConnectionString = $connstring
+		$server.ConnectionContext.Connect()
+		$server.ConnectionContext.Disconnect()
+		Clear-DbaSqlConnectionPool
+	}
+	catch {
+		Write-Host "DAC not working this round, likely due to Appveyor resources"
+		return
+	}
 }
 <#
 $dropsql = "EXEC master.dbo.sp_dropserver @server=N'dbatools-localhost', @droplogins='droplogins';
