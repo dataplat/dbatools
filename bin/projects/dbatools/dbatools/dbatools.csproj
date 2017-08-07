@@ -59,6 +59,7 @@
     <Compile Include="Database\Dependency.cs" />
     <Compile Include="dbaSystem\SystemHost.cs" />
     <Compile Include="Parameter\DbaCredentialParameter.cs" />
+    <Compile Include="TypeConversion\DbaCredentialParameterConverter.cs" />
     <Compile Include="Utility\CredentialPrompt.cs" />
     <Compile Include="Validation\LinkedServerResult.cs" />
     <Compile Include="Utility\DateTimeExtension.cs" />
