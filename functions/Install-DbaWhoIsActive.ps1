@@ -71,32 +71,24 @@ function Install-DbaWhoIsActive {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PsCredential]$SqlCredential,
+		[parameter(Mandatory=$false)]
+		[ValidateScript({Test-Path -Path $_ -PathType file})]
+		[string]$LocalFile,
 		[object]$Database,
-		[switch]$Update,
 		[switch]$Silent
 	)
 	
 	begin {
-		$baseUrl = "http://whoisactive.com/downloads"
-		$latest = ((Invoke-WebRequest -uri http://whoisactive.com/downloads).Links | where-object {$PSItem.href -match "who_is_active"} | Select-Object href -First 1).href
-		
-		$version = $latest.split(".")[0];
-
 		$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-		$sqlfile = (Get-ChildItem "$temp\$version.sql" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
-		
-		if ($sqlfile -and (-not ($Update))) {
-			Write-Message -Level Verbose -Message "Found local $sqlfile."
-		}
-		else {
+		$zipfile = "$temp\spwhoisactive.zip"
+
+		if ($LocalFile -eq $null) {
+			$baseUrl = "http://whoisactive.com/downloads"
+			$latest = ((Invoke-WebRequest -uri http://whoisactive.com/downloads).Links | where-object {$PSItem.href -match "who_is_active"} | Select-Object href -First 1).href	
 			if ($PSCmdlet.ShouldProcess($env:computername, "Downloading sp_WhoisActive")) {
 				try {
 					Write-Message -Level Verbose -Message "Downloading sp_WhoisActive zip file, unzipping and installing."
 					$url = $baseUrl + "/" + $latest
-					
-					$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-					$zipfile = "$temp\spwhoisactive.zip"
-					
 					try {
 						Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop
 					}
@@ -105,30 +97,40 @@ function Install-DbaWhoIsActive {
 						(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
 						Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop
 					}
-					
-					# Unblock if there's a block
-					Unblock-File $zipfile -ErrorAction SilentlyContinue
-					
-					# Keep it backwards compatible
-					$shell = New-Object -ComObject Shell.Application
-					$zipPackage = $shell.NameSpace($zipfile)
-					$destinationFolder = $shell.NameSpace($temp)
-					
-					Get-ChildItem "$temp\who*active*.sql" | Remove-Item
-					
-					$destinationFolder.CopyHere($zipPackage.Items())
-					
-					Remove-Item -Path $zipfile
-					
-					$sqlfile = (Get-ChildItem "$temp\who*active*.sql" | Select-Object -First 1).FullName
-				}
-				catch {
+				} catch {
 					Stop-Function -Message "Couldn't download sp_WhoisActive. Please download and install manually from $url." -ErrorRecord $_
 					return
 				}
 			}
+		} else {
+			# Look local
+			if ($LocalFile.EndsWith("zip")) {
+				Copy-Item -Path $LocalFile -Destination $zipfile -Force;
+			} else {
+				Copy-Item -Path $LocalFile -Destination (Join-Path -path $temp -childpath "whoisactivelocal.sql");
+			}
 		}
-		
+		if ($LocalFile -eq $null -or $LocalFile.EndsWith("zip")) {
+			# Unpack
+			# Unblock if there's a block
+			Unblock-File $zipfile -ErrorAction SilentlyContinue
+					
+			if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
+				Expand-Archive -Path $LocalFile -DestinationPath $temp -Force;
+			} else {
+			# Keep it backwards compatible
+				$shell = New-Object -ComObject Shell.Application
+				$zipPackage = $shell.NameSpace($zipfile)
+				$destinationFolder = $shell.NameSpace($temp)
+				Get-ChildItem "$temp\who*active*.sql" | Remove-Item		
+				$destinationFolder.CopyHere($zipPackage.Items())
+			}					
+			Remove-Item -Path $zipfile
+			$sqlfile = (Get-ChildItem "$temp\who*active*.sql" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+		} else {
+			$sqlfile = $LocalFile;
+		}
+
 		if ($PSCmdlet.ShouldProcess($env:computername, "Reading SQL file into memory")) {
 			Write-Message -Level Verbose -Message "Using $sqlfile."
 			
