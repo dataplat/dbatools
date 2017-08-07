@@ -12,7 +12,8 @@ namespace Sqlcollaborative.Dbatools.Parameter
     /// <summary>
     /// Parameter class that handles the various kinds of credential input
     /// </summary>
-    public class DbaCredentialParameter
+    [System.ComponentModel.TypeConverter(typeof(TypeConversion.DbaCredentialParameterConverter))]
+    public class DbaCredentialParameter : IConvertible
     {
         #region Fields of contract
         /// <summary>
@@ -73,6 +74,21 @@ namespace Sqlcollaborative.Dbatools.Parameter
                 throw new InvalidOperationException("Cannot prompt for credentials in unattended mode!");
             else
                 Credential = PromptForCredential(UserName);
+        }
+
+        /// <summary>
+        /// Creates a credential parameter from anything it nows how to handle
+        /// </summary>
+        /// <param name="Credential">The object to convert</param>
+        public DbaCredentialParameter(object Credential)
+        {
+            if (Credential is NetworkCredential)
+                this.Credential = (new DbaCredentialParameter((NetworkCredential)Credential)).Credential;
+            else if (Credential is PSCredential)
+                this.Credential = (PSCredential)Credential;
+
+            else
+                throw new PSArgumentException("Invalid input type");
         }
         #endregion Constructors
 
@@ -150,5 +166,182 @@ namespace Sqlcollaborative.Dbatools.Parameter
         /// </summary>
         internal static Dictionary<string, PSCredential> CredentialStore = new Dictionary<string, PSCredential>();
         #endregion Utility
+
+        #region Interface Implementation
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public TypeCode GetTypeCode()
+        {
+            return TypeCode.Object;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Format"></param>
+        /// <returns></returns>
+        public bool ToBoolean(IFormatProvider Format)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Format"></param>
+        /// <returns></returns>
+        public char ToChar(IFormatProvider Format)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Format"></param>
+        /// <returns></returns>
+        public sbyte ToSByte(IFormatProvider Format)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Format"></param>
+        /// <returns></returns>
+        public byte ToByte(IFormatProvider Format)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Format"></param>
+        /// <returns></returns>
+        public short ToInt16(IFormatProvider Format)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Format"></param>
+        /// <returns></returns>
+        public ushort ToUInt16(IFormatProvider Format)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Format"></param>
+        /// <returns></returns>
+        public int ToInt32(IFormatProvider Format)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Format"></param>
+        /// <returns></returns>
+        public uint ToUInt32(IFormatProvider Format)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Format"></param>
+        /// <returns></returns>
+        public long ToInt64(IFormatProvider Format)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Format"></param>
+        /// <returns></returns>
+        public ulong ToUInt64(IFormatProvider Format)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Format"></param>
+        /// <returns></returns>
+        public Single ToSingle(IFormatProvider Format)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Format"></param>
+        /// <returns></returns>
+        public double ToDouble(IFormatProvider Format)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Format"></param>
+        /// <returns></returns>
+        public decimal ToDecimal(IFormatProvider Format)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Format"></param>
+        /// <returns></returns>
+        public DateTime ToDateTime(IFormatProvider Format)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Format"></param>
+        /// <returns></returns>
+        public string ToString(IFormatProvider Format)
+        {
+            throw new NotSupportedException();
+        }
+
+        /// <summary>
+        /// Tries to convert the credential parameter to one of its supported types
+        /// </summary>
+        /// <param name="TargetType">The type to convert to</param>
+        /// <param name="Format">Irrelevant</param>
+        /// <returns></returns>
+        public object ToType(Type TargetType, IFormatProvider Format)
+        {
+            if (TargetType.FullName == "System.Management.Automation.PSCredential")
+                return Credential;
+            if (TargetType.FullName == "System.Net.NetworkCredential")
+                return GetNetworkCredential();
+
+            throw new NotSupportedException(String.Format("Converting from {0} to {1} is not supported!", GetType().FullName, TargetType.FullName));
+        }
+        #endregion Interface Implementation
     }
 }
