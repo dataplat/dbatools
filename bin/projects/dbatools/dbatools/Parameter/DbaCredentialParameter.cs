@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Net;
+using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -19,6 +20,24 @@ namespace Sqlcollaborative.Dbatools.Parameter
         /// </summary>
         [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
         public PSCredential Credential;
+
+        /// <summary>
+        /// The name of the credential object
+        /// </summary>
+        [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+        public string UserName
+        {
+            get { return Credential.UserName; }
+        }
+
+        /// <summary>
+        /// The password of the credential object
+        /// </summary>
+        [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+        public SecureString Password
+        {
+            get { return Credential.Password; }
+        }
         #endregion Fields of contract
 
         #region Constructors
