@@ -72,7 +72,7 @@ function Install-DbaWhoIsActive {
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PsCredential]$SqlCredential,
 		[parameter(Mandatory=$false)]
-		[ValidateScript({Test-Path -Path $_ -PathType file})]
+		[ValidateScript({Test-Path -Path $_ -PathType Leaf})]
 		[string]$LocalFile,
 		[object]$Database,
 		[switch]$Silent
@@ -82,7 +82,7 @@ function Install-DbaWhoIsActive {
 		$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 		$zipfile = "$temp\spwhoisactive.zip"
 
-		if ($LocalFile -eq $null) {
+		if ($LocalFile -eq $null -or $Localfile.Length -eq 0) {
 			$baseUrl = "http://whoisactive.com/downloads"
 			$latest = ((Invoke-WebRequest -uri http://whoisactive.com/downloads).Links | where-object {$PSItem.href -match "who_is_active"} | Select-Object href -First 1).href	
 			if ($PSCmdlet.ShouldProcess($env:computername, "Downloading sp_WhoisActive")) {
@@ -110,13 +110,13 @@ function Install-DbaWhoIsActive {
 				Copy-Item -Path $LocalFile -Destination (Join-Path -path $temp -childpath "whoisactivelocal.sql");
 			}
 		}
-		if ($LocalFile -eq $null -or $LocalFile.EndsWith("zip")) {
+		if ($LocalFile -eq $null -or $LocalFile.Length -eq 0 -or $LocalFile.EndsWith("zip")) {
 			# Unpack
 			# Unblock if there's a block
 			Unblock-File $zipfile -ErrorAction SilentlyContinue
 					
 			if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
-				Expand-Archive -Path $LocalFile -DestinationPath $temp -Force;
+				Expand-Archive -Path $zipfile -DestinationPath $temp -Force;
 			} else {
 			# Keep it backwards compatible
 				$shell = New-Object -ComObject Shell.Application
@@ -207,6 +207,7 @@ function Install-DbaWhoIsActive {
 		}
 	}
 	end {
+        Get-Item $sqlfile | Remove-Item
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Install-SqlWhoIsActive
 	}
 }
