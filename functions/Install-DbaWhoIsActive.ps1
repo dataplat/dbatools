@@ -1,69 +1,69 @@
 function Install-DbaWhoIsActive {
-<#
-	.SYNOPSIS
-		Automatically installs or updates sp_WhoisActive by Adam Machanic.
-	
-	.DESCRIPTION
-		This command downloads, extracts and installs sp_WhoisActive with Adam's permission. To read more about sp_WhoisActive, please visit:
+	<#
+		.SYNOPSIS
+			Automatically installs or updates sp_WhoisActive by Adam Machanic.
 		
-		Updates: http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx
+		.DESCRIPTION
+			This command downloads, extracts and installs sp_WhoisActive with Adam's permission. To read more about sp_WhoisActive, please visit http://whoisactive.com and http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/default.aspx
+			
+			Please consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate
+			
+			Note that you will be prompted a bunch of times to confirm an action. 
+	
+ 		.PARAMETER SqlInstance
+			The SQL Server instance. Server version must be SQL Server version 2005 or higher.
+
+        .PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
+	
+		.PARAMETER Database
+			The database to install sp_WhoisActive into. This parameter is mandatory when executing this command unattended.
 		
-		Also, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate
+		.PARAMETER LocalFile 
+			Specifies a path to a local file to install sp_WhoisActive from. This can be either the zipfile as distributed by the website or the expanded SQL script. If this parameter is not specified, the latest version will be downloaded and installed from the internet.
 		
-		Note that you will be prompted a bunch of times to confirm an action. To disable this behavior, pass the -Confirm:$false parameter (see example below).
-	
-	.PARAMETER SqlInstance
-		The SQL Server instance.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
-	
-	.PARAMETER SqlCredential
-		PSCredential object to connect under. If not specified, current Windows login will be used.
-	
-	.PARAMETER Database
-		The database to install the procedures to.
-		This parameter is mandatory when executing this command unattended.
-	
-	.PARAMETER Update
-		Looks online for the most up to date version, replacing the local one.
-	
-	.PARAMETER Silent
-		Replaces user friendly yellow warnings with bloody red exceptions of doom!
-		Use this if you want the function to throw terminating errors you want to catch.
-	
-	.PARAMETER WhatIf
-		Shows what would happen if the command were to run. No actions are actually performed.
-	
-	.PARAMETER Confirm
-		Prompts you for confirmation before executing any changing operations within the command.
-	
-	.EXAMPLE
-		Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
+
+		.EXAMPLE
+			Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master
+			
+			Installs sp_WhoisActive to sqlserver2014a's master database. Logs in using Windows Authentication.
 		
-		Installs sp_WhoisActive to sqlserver2014a's master database. Logs in using Windows Authentication.
-	
-	.EXAMPLE
-		Install-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred
+		.EXAMPLE
+			Install-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred
+			
+			Pops up a dialog box asking which database on sqlserver2014a you want to install the proc to. Logs into SQL Server using SQL Authentication.
 		
-		Pops up a dialog box asking which database on sqlserver2014a you want to install the proc to. Logs into SQL Server using SQL Authentication.
+		.EXAMPLE
+			Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -Update
+			
+			Installs sp_WhoisActive to sqlserver2014a's master database. Forces a retrieval of the script from internet
 		
-	
-	.EXAMPLE
-		Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -Update
+		.EXAMPLE
+			$instances = Get-DbaRegisteredServerName sqlserver
+			Install-DbaWhoIsActive -SqlInstance $instances -Database master
+			
+		.NOTES
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 		
-		Installs sp_WhoisActive to sqlserver2014a's master database. Forces a retrieval of the script from internet
-	
-	.EXAMPLE
-		$instances = Get-DbaRegisteredServerName sqlserver
-		Install-DbaWhoIsActive -SqlInstance $instances -Database master
-		
-	
-	.NOTES
-		Website: https://dbatools.io
-		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-	
-	.LINK
-		https://dbatools.io/Install-DbaWhoIsActive
-#>
+		.LINK
+			https://dbatools.io/Install-DbaWhoIsActive
+	#>
 	
 	[CmdletBinding(SupportsShouldProcess)]
 	param (
@@ -82,7 +82,7 @@ function Install-DbaWhoIsActive {
 		$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 		$zipfile = "$temp\spwhoisactive.zip"
 
-		if ($LocalFile -eq $null -or $Localfile.Length -eq 0) {
+		if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
 			$baseUrl = "http://whoisactive.com/downloads"
 			$latest = ((Invoke-WebRequest -uri http://whoisactive.com/downloads).Links | where-object {$PSItem.href -match "who_is_active"} | Select-Object href -First 1).href	
 			if ($PSCmdlet.ShouldProcess($env:computername, "Downloading sp_WhoisActive")) {
@@ -105,9 +105,9 @@ function Install-DbaWhoIsActive {
 		} else {
 			# Look local
 			if ($LocalFile.EndsWith("zip")) {
-				Copy-Item -Path $LocalFile -Destination $zipfile -Force;
+				Copy-Item -Path $LocalFile -Destination $zipfile -Force
 			} else {
-				Copy-Item -Path $LocalFile -Destination (Join-Path -path $temp -childpath "whoisactivelocal.sql");
+				Copy-Item -Path $LocalFile -Destination (Join-Path -path $temp -childpath "whoisactivelocal.sql")
 			}
 		}
 		if ($LocalFile -eq $null -or $LocalFile.Length -eq 0 -or $LocalFile.EndsWith("zip")) {
@@ -116,7 +116,7 @@ function Install-DbaWhoIsActive {
 			Unblock-File $zipfile -ErrorAction SilentlyContinue
 					
 			if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
-				Expand-Archive -Path $zipfile -DestinationPath $temp -Force;
+				Expand-Archive -Path $zipfile -DestinationPath $temp -Force
 			} else {
 			# Keep it backwards compatible
 				$shell = New-Object -ComObject Shell.Application
@@ -128,7 +128,7 @@ function Install-DbaWhoIsActive {
 			Remove-Item -Path $zipfile
 			$sqlfile = (Get-ChildItem "$temp\who*active*.sql" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
 		} else {
-			$sqlfile = $LocalFile;
+			$sqlfile = $LocalFile
 		}
 
 		if ($PSCmdlet.ShouldProcess($env:computername, "Reading SQL file into memory")) {
