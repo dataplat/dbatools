@@ -1,6 +1,6 @@
 function New-DbaDatabase 
 {
-  <#
+<#
 .SYNOPSIS 
 New-DbaADatabase creates a new database
 
