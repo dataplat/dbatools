@@ -14,7 +14,7 @@ function Get-JobList {
 		Reverse results where object returned excludes filtered content.
 	.PARAMETER Silent
 		Shhhhhhh
-	.EXAMPLE 
+	.EXAMPLE
 		Get-JobList -SqlInstance sql2016
 
 		Returns the full JobServer.Jobs object found on sql2016
@@ -24,7 +24,7 @@ function Get-JobList {
 		Returns the Job object for each job name found to have "job" in the name on sql2016
 	.EXAMPLE
 		Get-JobList -SqlInstance sql2016 -Filter '*job*' -Not
-		
+
 		Returns any Job object that does not have "job" in the name on sql2016
 	.NOTES
 		Original Author: Shawn Melton (@wsmelton)
@@ -38,7 +38,7 @@ function Get-JobList {
 		[Parameter(ValueFromPipeline = $true)]
 		[DbaInstanceParameter]$SqlInstance,
 		[PSCredential]$SqlCredential,
-		[string]$Filter,
+		[string[]]$Filter,
 		[switch]$Not,
 		[switch]$Silent
 	)
@@ -47,30 +47,34 @@ function Get-JobList {
 
 		$jobs = $server.JobServer.Jobs
 		if (Test-Bound 'Filter') {
-			$isLike = $false
-			if ($Filter -match '`*') {
-				$isLike = $true
+			if ($Filter.Count -gt 1) {
+				if ($Not) {
+					$jobs | Where-Object Name -NotIn $Filter
+				}
+				else {
+					$jobs | Where-Object Name -In $Filter
+				}
 			}
-
-			if ($isLike) {
+			else {
 				foreach ($job in $jobs) {
-					if ($Not) {
-						$job | Where-Object Name -NotLike $Filter
+					if ($Filter -match '`*') {
+						if ($Not) {
+							$job | Where-Object Name -NotLike $Filter
+						}
+						else {
+							$job | Where-Object Name -Like $Filter
+						}
 					}
 					else {
-						$job | Where-Object Name -Like $Filter
+						if ($Not) {
+							$job | Where-Object Name -ne $Filter
+						}
+						else {
+							$job | Where-Object Name -eq $Filter
+						}
 					}
 				}
 			}
-			elseif ($Not) {
-				$jobs | Where-Object Name -NotIn $Filter
-			}
-			else {
-				$jobs | Where-Object Name -In $Filter
-			}
-		}
-		else {
-			return $jobs
 		}
 	}
 }
