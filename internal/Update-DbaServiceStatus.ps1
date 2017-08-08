@@ -1,7 +1,7 @@
 Function Update-DbaSqlServiceStatus {
 <#
     .SYNOPSIS
-    Internal function. Sends start/stop request to a SQL Server service.
+    Internal function. Sends start/stop request to a SQL Server service and wait for the result.
 
     .DESCRIPTION
     Accepts objects from Get-DbaSqlService and performs a corresponding action.
@@ -19,7 +19,13 @@ Function Update-DbaSqlServiceStatus {
     Start or stop.
     
     .PARAMETER Silent
-    Supress all the output from the function.
+    Use this switch to disable any kind of verbose messages
+		
+		.PARAMETER WhatIf
+		Shows what would happen if the cmdlet runs. The cmdlet is not run.
+		
+		.PARAMETER Confirm
+		Prompts you for confirmation before running the cmdlet.
 
     .NOTES
     Author: Kirill Kravtsov ( @nvarscar )
@@ -29,7 +35,20 @@ Function Update-DbaSqlServiceStatus {
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
     You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
-
+    
+    .EXAMPLE
+    $serviceCollection = Get-DbaSqlService -ComputerName sql1
+    Update-DbaSqlServiceStatus -ServiceCollection $serviceCollection -Action 'stop' -Timeout 30
+    Update-DbaSqlServiceStatus -ServiceCollection $serviceCollection -Action 'start' -Timeout 30
+    
+    Restarts SQL services on sql1
+    
+    .EXAMPLE
+    $serviceCollection = Get-DbaSqlService -ComputerName sql1
+    $credential = Get-Credential
+    Update-DbaSqlServiceStatus -ServiceCollection $serviceCollection -Action 'stop' -Timeout 0 -Credential $credential
+    
+    Stops SQL services on sql1 and waits indefinitely for them to stop. Uses $credential to authorize on the server.
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param(
