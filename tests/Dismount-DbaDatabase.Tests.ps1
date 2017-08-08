@@ -56,17 +56,23 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$server.Query("CREATE DATABASE $db1")
 			$server.Query("CREATE DATABASE $db2")
 			$null = New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2
-			$null = Backup-DbaDatabase -SqlInstance $script:instance2 -Database $db2
+			$fileStructure = New-Object System.Collections.Specialized.StringCollection
+			foreach ($file in (Get-DbaDatabaseFile -SqlInstance $script:instance2 -Database $db1).PhysicalName) {
+				$null = $fileStructure.Add($file)
+			}
+			Stop-DbaProcess -SqlInstance $script:instance2 -Database $db1
 		}
 		AfterAll {
 			$null = Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Force
-			$null = Attach-DbaDatabase -SqlInstance $script:instance2 -Database $db1
+			$null = Attach-DbaDatabase -SqlInstance $script:instance2 -Database $db1 -FileStructure $fileStructure
 			$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2 | Remove-DbaDatabase
 		}
-		
 		It "Skips detachment if database is snapshotted" {
-			$result = Dismount-DbaDatabase -SqlInstance $script:instance2 -Database $db2 -Force -WarningAction SilentlyContinue
+			$result = Dismount-DbaDatabase -SqlInstance $script:instance2 -Database $db2 -Force -WarningAction SilentlyContinue -WarningVariable warn
 			$result | Should Be $null
+			$warn -match "snapshot" | Should Be $true
+			$result = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db2
+			$result | Should Not Be $null
 		}
 		It "Detaches the database correctly" {
 			$result = Dismount-DbaDatabase -SqlInstance $script:instance2 -Database $db1
