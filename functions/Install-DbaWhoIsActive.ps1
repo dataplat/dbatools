@@ -26,7 +26,7 @@ function Install-DbaWhoIsActive {
 			The database to install sp_WhoisActive into. This parameter is mandatory when executing this command unattended.
 		
 		.PARAMETER LocalFile 
-			Specifies a path to a local file to install sp_WhoisActive from. This can be either the zipfile as distributed by the website or the expanded SQL script. If this parameter is not specified, the latest version will be downloaded and installed from the internet.
+			Specifies the path to a local file to install sp_WhoisActive from. This can be either the zipfile as distributed by the website or the expanded SQL script. If this parameter is not specified, the latest version will be downloaded and installed from https://whoisactive.com/
 		
 		.PARAMETER WhatIf
 			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -40,17 +40,17 @@ function Install-DbaWhoIsActive {
 		.EXAMPLE
 			Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master
 			
-			Installs sp_WhoisActive to sqlserver2014a's master database. Logs in using Windows Authentication.
+			Downloads sp_WhoisActive from the internet and installs to sqlserver2014a's master database. Connects to SQL Server using Windows Authentication.
 		
 		.EXAMPLE
 			Install-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred
 			
-			Pops up a dialog box asking which database on sqlserver2014a you want to install the proc to. Logs into SQL Server using SQL Authentication.
+			Pops up a dialog box asking which database on sqlserver2014a you want to install the procedure into. Connects to SQL Server using SQL Authentication.
 		
 		.EXAMPLE
-			Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -Update
+			Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile c:\SQLAdmin\whoisactive_install.sql
 			
-			Installs sp_WhoisActive to sqlserver2014a's master database. Forces a retrieval of the script from internet
+			Installs sp_WhoisActive to sqlserver2014a's master database from the local file whoisactive_install.sql
 		
 		.EXAMPLE
 			$instances = Get-DbaRegisteredServerName sqlserver
