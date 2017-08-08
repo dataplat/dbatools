@@ -22,6 +22,9 @@ Function Get-DbaSqlService {
     Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS","AnalysisServer",
     	"ReportServer","Search","SqlAgent","SqlBrowser","SqlServer","SqlServerIntegrationService"
 
+    .PARAMETER Silent
+		Use this switch to disable any kind of verbose messages
+    
     .NOTES
     Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
@@ -65,57 +68,38 @@ Function Get-DbaSqlService {
 	Param (
 		[parameter(ValueFromPipeline = $true)]
 		[Alias("cn", "host", "Server")]
-		[string[]]$ComputerName = $env:COMPUTERNAME,
+		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[Alias("Instance")]
 		[string[]]$InstanceName,
 		[PSCredential]$Credential,
-		[ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "AnalysisServer", "ReportServer", "Search", "SqlAgent", "SqlBrowser", "SqlServer", "SqlServerIntegrationService")]
+		[ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "AnalysisServer", "ReportServer", "FullTextFilter Daemon Launcher", "FullText Search", "SqlAgent", "SqlBrowser", "SqlServer", "SqlServerIntegrationService")]
 		[string[]]$Type,
 		[switch]$Silent
 	)
 	
 	BEGIN {
-		function ParseConnectionString([string[]]$connectionString) {
-			function RunSplit ($SplitString, $Pre, $Delimiter) {
-				foreach ($i in 0 .. ($SplitString.Split($Delimiter).Length - 1)) {
-					@{
-						Pre  = switch ($i) { 0 { $Pre }
-							default { $Delimiter } }
-						Value = $SplitString.Split($Delimiter)[$i]
-					}
-				}
-			}
-			$connectionString | Foreach-Object {
-				#find tokens that start from "\" (instance names) and "," (port number)
-				$tokens = RunSplit $_ "" "\" | Foreach-Object { RunSplit $_.Value $_.Pre "," }
-				[pscustomobject]@{
-					ComputerName  = ($tokens | Where-Object { $_.Pre -eq "" }).Value
-					InstanceName  = ($tokens | Where-Object { $_.Pre -eq "\" }).Value
-					Port		  = ($tokens | Where-Object { $_.Pre -eq "," }).Value
-				}
-			}
-		}
-		$FunctionName = (Get-PSCallstack)[0].Command
-		#Parse computer and instance names if the parameters came as a full instance name: server\instance
-		$ComputerName = (ParseConnectionString $ComputerName).ComputerName | Sort-Object -Unique
 		
+		#Dictionary to transform service type IDs into the names from Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer.Services.Type
 		$ServiceIdMap = @(
+			@{ Name = "SqlServer"; Id = 1 },
 			@{ Name = "SqlAgent"; Id = 2 },
-			@{ Name = "SqlBrowser"; Id = 7 }
-			@{ Name = "SqlServer"; Id = 1 }
-			@{ Name = "Search"; Id = 3, 9 }
-			@{ Name = "AnalysisServer"; Id = 5 }
-			@{ Name = "SqlServerIntegrationService"; Id = 4 }
-			@{ Name = "ReportServer"; Id = 6 }
+			@{ Name = "FullText Search"; Id = 3 },
+			@{ Name = "SqlServerIntegrationService"; Id = 4 },
+			@{ Name = "AnalysisServer"; Id = 5 },
+			@{ Name = "ReportServer"; Id = 6 },
+			@{ Name = "SqlBrowser"; Id = 7 },
+			@{ Name = "Unknown"; Id =  8 },
+			@{ Name = "FullTextFilter Daemon Launcher"; Id = 9 }
 		)
 		if ($Type) {
 			$TypeClause = ""
 			foreach ($itemType in $Type) {
+				# Replacing custom types with the canonical names
 				$itemType = switch ($itemType) {
 					"Agent" { "SqlAgent" }
 					"Browser" { "SqlBrowser" }
 					"Engine" { "SqlServer" }
-					"FullText" { "Search" }
+					"FullText" { "FullText Search" }
 					"SSAS" { "AnalysisServer" }
 					"SSIS" { "SqlServerIntegrationService" }
 					"SSRS" { "ReportServer" }
@@ -133,107 +117,75 @@ Function Get-DbaSqlService {
 		}
 	}
 	PROCESS {
-		foreach ($Computer in $ComputerName) {
+		foreach ($Computer in $ComputerName.ComputerName) {
 			$Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
 			if ($Server.ComputerName) {
 				$Computer = $server.ComputerName
-				Write-Message -Level Verbose -Silent $Silent -Message "Getting SQL Server namespace on $Computer via CIM (WSMan)"
-				$namespace = Get-CimInstance -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
-				Where-Object { (Get-CimInstance -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue).count -gt 0 } |
+				Write-Message -Level Verbose -Message "Getting SQL Server namespace on $Computer"
+				$namespace = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
+				Where-Object { (Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue).count -gt 0 } |
 				Sort-Object Name -Descending | Select-Object -First 1
 				if ($namespace.Name) {
-					Write-Message -Level Verbose -Silent $Silent -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer via CIM (WSMan)"
+					Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer"
 					try {
-						$CimInstance = Get-CimInstance -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE $TypeClause" -ErrorAction SilentlyContinue
+						$services = Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE $TypeClause" -ErrorAction SilentlyContinue
+						Write-Message -Level Verbose -Silent $Silent -Message "Creating output objects"
+						ForEach ($service in $services) {
+							Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $service.HostName
+							Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceType -Value ($ServiceIdMap | Where-Object { $_.Id -contains $service.SQLServiceType }).Name
+							Add-Member -Force -InputObject $service -MemberType NoteProperty -Name State -Value $(switch ($service.State) { 1 { 'Stopped' } 2 { 'Start Pending' }  3 { 'Stop Pending' } 4 { 'Running' } })
+							Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartMode -Value $(switch ($service.StartMode) { 1 { 'Unknown' } 2 { 'Automatic' }  3 { 'Manual' } 4 { 'Disabled' } })
+							
+							if ($service.ServiceName -in ("MSSQLSERVER", "SQLSERVERAGENT", "ReportServer", "MSSQLServerOLAPService")) {
+								$instance = "MSSQLSERVER"
+							}
+							else {
+								if ($service.ServiceType -in @("SqlAgent", "SqlServer", "ReportServer", "AnalysisServer")) {
+									if ($service.ServiceName.indexof('$') -ge 0) {
+										$instance = $service.ServiceName.split('$')[1]
+									}
+									else {
+										$instance = "Unknown"
+									}
+								}
+								else {
+									$instance = ""
+								}
+							}
+							$priority = switch ($service.ServiceType) {
+								"SqlAgent" { 200 }
+								"SqlServer"{ 300 }
+								default { 100 }
+							}
+							#If only specific instances are selected
+							if (!$InstanceName -or $instance -in $InstanceName) {
+								#Add other properties and methods
+								Add-Member -Force -InputObject $service -NotePropertyName InstanceName -NotePropertyValue $instance
+								Add-Member -Force -InputObject $service -NotePropertyName ServicePriority -NotePropertyValue $priority
+								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name Stop -Value { $this | Stop-DbaSqlService }
+								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name Start -Value { $this | Start-DbaSqlService }
+								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name Restart -Value { $this | Restart-DbaSqlService }
+								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name ChangeStartMode -Value {
+									Param ([string]$Mode)
+									$this | Change-DBASqlServiceStartupMode -Mode $Mode -ErrorAction Stop
+									$this.StartMode = $Mode
+								}
+							
+								Select-DefaultView -InputObject $service -Property ComputerName, ServiceName, ServiceType, InstanceName, DisplayName, State, StartMode -TypeName DbaSqlService
+							}
+						}
 					}
 					catch {
-						Write-Message -Level Verbose -Silent $Silent -Message "No Sql Services found on $Computer via CIM (WSMan)"
-						continue
+						Write-Message -Level Warning -Message "No Sql Services found on $Computer"
 					}
 				}
 				else {
-					Write-Message -Level Verbose -Silent $Silent -Message "Getting computer information from $Computer via CIMsession (DCOM)"
-					$sessionoption = New-CimSessionOption -Protocol DCOM
-					$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
-					if ($CIMSession) {
-						Write-Message -Level Verbose -Silent $Silent -Message "Get ComputerManagement Namespace in CIMsession on $Computer with protocol DCom."
-						$namespace = Get-CimInstance -CimSession $CIMsession -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
-						Where-Object { (Get-CimInstance -CimSession $CIMsession -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue).count -gt 0 } |
-						Sort-Object Name -Descending | Select-Object -First 1
-					}
-					else {
-						Write-Message -Level Verbose -Silent $Silent -Message "Can't create CIMsession via DCom on $Computer"
-						continue
-					}
-					if ($namespace.Name) {
-						Write-Message -Level Verbose -Silent $Silent -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer via CIM (DCOM)"
-						try {
-							$CimInstance = Get-CimInstance -CimSession $CIMsession -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE $TypeClause" -ErrorAction SilentlyContinue
-						}
-						catch {
-							Write-Message -Level Warning -Silent $Silent -Message "No Sql Services found on $Computer via CIM (DCOM)"
-							continue
-						}
-					}
-					else {
-						Write-Message -Level Warning -Silent $Silent -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
-						continue
-					}
+					Write-Message -Level Warning -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
 				}
 			}
 			else {
-				Write-Message -Level Warning -Silent $Silent -Message "Failed to connect to $Computer"
+				Write-Message -Level Warning -Message "Failed to connect to $Computer"
 			}
-			#Process Cim objects
-			Write-Message -Level Verbose -Silent $Silent -Message "Creating output objects"
-			$CimInstance | ForEach-Object {
-				$CimObject = $_
-				$outObject = [PSCustomObject]@{
-					ComputerName  = $_.HostName
-					ServiceName   = $_.ServiceName
-					DisplayName   = $_.DisplayName
-					StartName	  = $_.StartName
-					ServiceType   = ($ServiceIdMap | Where-Object { $_.Id -contains $CimObject.SQLServiceType }).Name
-					State		  = switch ($_.State) { 1 { 'Stopped' } 2 { 'Start Pending' }  3 { 'Stop Pending' } 4 { 'Running' } }
-					StartMode	  = switch ($_.StartMode) { 1 { 'Unknown' } 2 { 'Automatic' }  3 { 'Manual' } 4 { 'Disabled' } }
-				}
-				if ($outObject.ServiceName -in ("MSSQLSERVER", "SQLSERVERAGENT", "ReportServer", "MSSQLServerOLAPService")) {
-					$instance = "MSSQLSERVER"
-				}
-				else {
-					if ($outObject.ServiceType -in @("SqlAgent", "SqlServer", "ReportServer", "AnalysisServer")) {
-						if ($outObject.ServiceName.indexof('$') -ge 0) {
-							$instance = $outObject.ServiceName.split('$')[1]
-						}
-						else {
-							$instance = "UNKNOWN!"
-						}
-					}
-					else {
-						$instance = ""
-					}
-				}
-				switch ($outObject.ServiceType) {
-					"SqlAgent" { $priority = 200 }
-					"SqlServer"{ $priority = 300 }
-					default { $priority = 100 }
-				}
-				#Add custom properties and methods
-				Add-Member -Force -InputObject $outObject -NotePropertyName InstanceName -NotePropertyValue $instance
-				Add-Member -Force -InputObject $outObject -NotePropertyName ServicePriority -NotePropertyValue $priority
-				Add-Member -Force -InputObject $outObject -MemberType ScriptMethod -Name Stop -Value { $this | Stop-DbaSqlService }
-				Add-Member -Force -InputObject $outObject -MemberType ScriptMethod -Name Start -Value { $this | Start-DbaSqlService }
-				Add-Member -Force -InputObject $outObject -MemberType ScriptMethod -Name Restart -Value { $this | Restart-DbaSqlService }
-				Add-Member -Force -InputObject $outObject -MemberType ScriptMethod -Name ChangeStartMode -Value {
-					Param ([string]$Mode)
-					$this | Change-DBASqlServiceStartupMode -Mode $Mode -ErrorAction Stop
-					$this.StartMode = $Mode
-				}
-				if (!$InstanceName -or $outObject.InstanceName -in $instanceName) {
-					Select-DefaultView -InputObject $outObject -Property ComputerName, ServiceName, ServiceType, InstanceName, DisplayName, State, StartMode -TypeName DbaSqlService
-				}
-			}
-			if ($CIMsession) { Remove-CimSession $CIMsession }
 		}
 	}
 }
