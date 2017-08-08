@@ -33,13 +33,13 @@ Function Update-DbaSqlServiceStatus {
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param(
-	[parameter(ValueFromPipeline = $true, Mandatory = $true)]
-	[object[]]$ServiceCollection,
-	[parameter(Mandatory = $true)]
-	[string[]]$Action,
-	[int]$Timeout = 30,
-	[PSCredential] $Credential,
-	[bool]$Silent
+		[parameter(ValueFromPipeline = $true, Mandatory = $true)]
+		[object[]]$ServiceCollection,
+		[parameter(Mandatory = $true)]
+		[string[]]$Action,
+		[int]$Timeout = 30,
+		[PSCredential] $Credential,
+		[bool]$Silent
 	)
 	begin {
 		$callStack = Get-PSCallStack
