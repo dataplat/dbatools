@@ -82,11 +82,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2,$db3,$db4,$db5,$db6,$db7,$db8
 		}
 		if ($setupright) {
+			# just to have a correct report on how much time BeforeAll takes
+			It "Does nothing" {
+				$true | Should Be $true
+			}
 			It "Honors the Database parameter" {
-				$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db2 -Offline -Force
+				$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db2 -Emergency -Force
 				$result.DatabaseName | Should be $db2
-				$result.Status | Should Be 'OFFLINE'
-				$results = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1,$db2 -Offline -Force
+				$result.Status | Should Be 'EMERGENCY'
+				$results = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1,$db2 -Emergency -Force
 				$results.Count | Should be 2
 			}
 			It "Honors the ExcludeDatabase parameter" {
@@ -97,7 +101,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			}
 			
 			It "Sets a database as online" {
-				$null = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Offline -Force
+				$null = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Emergency -Force
 				$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Online -Force
 				$result.DatabaseName | Should Be $db1
 				$result.Status | Should Be "ONLINE"
@@ -151,7 +155,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 				$comparison = Compare-Object -ReferenceObject ($results.DatabaseName) -DifferenceObject (@($db7,$db8))
 				$comparison.Count | Should Be 0
 			}
-			$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db2 -Offline -Force
+			$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Emergency -Force
 			It "Has the correct properties" {
 				$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,DatabaseName,RW,Status,Access,Notes,Database'.Split(',')
 				($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
@@ -180,6 +184,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$null = Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Force
 			$null = Attach-DbaDatabase -SqlInstance $script:instance2 -Database $db1 -FileStructure $fileStructure
 			$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2 | Remove-DbaDatabase
+		}
+		# just to have a correct report on how much time BeforeAll takes
+		It "Does nothing" {
+			$true | Should Be $true
 		}
 		It "Skips detachment if database is snapshotted" {
 			$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db2 -Detached -Force *>$null
