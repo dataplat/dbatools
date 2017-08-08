@@ -104,28 +104,34 @@ function Install-DbaWhoIsActive {
 			}
 		} else {
 			# Look local
-			if ($LocalFile.EndsWith("zip")) {
-				Copy-Item -Path $LocalFile -Destination $zipfile -Force
-			} else {
-				Copy-Item -Path $LocalFile -Destination (Join-Path -path $temp -childpath "whoisactivelocal.sql")
-			}
+			if ($PSCmdlet.ShouldProcess($env:computername, "Copying local file to temp directory")) {
+
+			    if ($LocalFile.EndsWith("zip")) {
+				    Copy-Item -Path $LocalFile -Destination $zipfile -Force
+			    } else {
+				    Copy-Item -Path $LocalFile -Destination (Join-Path -path $temp -childpath "whoisactivelocal.sql")
+			    }
+            }
 		}
 		if ($LocalFile -eq $null -or $LocalFile.Length -eq 0 -or $LocalFile.EndsWith("zip")) {
 			# Unpack
 			# Unblock if there's a block
-			Unblock-File $zipfile -ErrorAction SilentlyContinue
+			if ($PSCmdlet.ShouldProcess($env:computername, "Unpacking zipfile")) {
+
+			    Unblock-File $zipfile -ErrorAction SilentlyContinue
 					
-			if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
-				Expand-Archive -Path $zipfile -DestinationPath $temp -Force
-			} else {
-			# Keep it backwards compatible
-				$shell = New-Object -ComObject Shell.Application
-				$zipPackage = $shell.NameSpace($zipfile)
-				$destinationFolder = $shell.NameSpace($temp)
-				Get-ChildItem "$temp\who*active*.sql" | Remove-Item		
-				$destinationFolder.CopyHere($zipPackage.Items())
-			}					
-			Remove-Item -Path $zipfile
+			    if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
+		    		Expand-Archive -Path $zipfile -DestinationPath $temp -Force
+	    		} else {
+			    # Keep it backwards compatible
+				    $shell = New-Object -ComObject Shell.Application
+				    $zipPackage = $shell.NameSpace($zipfile)
+				    $destinationFolder = $shell.NameSpace($temp)
+				    Get-ChildItem "$temp\who*active*.sql" | Remove-Item		
+				    $destinationFolder.CopyHere($zipPackage.Items())
+		    	}					
+			    Remove-Item -Path $zipfile
+            }
 			$sqlfile = (Get-ChildItem "$temp\who*active*.sql" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
 		} else {
 			$sqlfile = $LocalFile
