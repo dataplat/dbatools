@@ -63,8 +63,17 @@ Function Update-DBASqlServiceStatus {
 			$svcParam = "name='$service'"
 			$svc = Get-WmiObject Win32_Service -ComputerName $server -filter $svcParam -Credential $credential
 			#Perform $action
-			if ($action -eq 'start') { $x = $svc.StartService() }
-			elseif ($action -eq 'stop') { $x = $svc.StopService() }
+			if ($action -eq 'start') { 
+				$x = $svc.StartService() 
+				$desiredState = 'Running'
+				$undesiredState = 'Stopped'
+			}
+			elseif ($action -eq 'stop') { 
+				$x = $svc.StopService() 
+				$desiredState = 'Stopped'
+				$undesiredState = 'Running'
+			}
+			#If command was not accepted
 			if ($x.ReturnValue -ne 0) {return $x.ReturnValue}
 			$StartTime = Get-Date
 			#Wait for the service to complete the action until timeout
@@ -76,11 +85,16 @@ Function Update-DBASqlServiceStatus {
 					throw $_
 					break
 				}
-				if ($action -eq 'start' -and $svc.State -eq 'Running') { return 0 }
-				elseif ($action -eq 'stop' -and $svc.State -eq 'Stopped') { return 0 }
+				#Succeeded
+				if ($svc.State -eq $desiredState) { return 0 }
+				#Failed after being in the Pending state
+				if ($pending -and $svc.State -eq $undesiredState) { return -2 }
+				#Timed out
 				if ($timeout -gt 0 -and ((Get-Date) - $StartTime).TotalSeconds -gt $timeout) { 
 					return -1
 				}
+				#Still pending
+				if ($svc.State -like '*Pending') { $pending = $true }
 				start-sleep 1
 			}
 		}
@@ -114,6 +128,7 @@ Function Update-DBASqlServiceStatus {
 			    	try {
 			    		$jobResult = $job | Receive-Job -ErrorAction Stop
 				    	switch ($jobResult) {
+				    		-2 { Write-Message -Level Warning -Silent $Silent -FunctionName $callerName -Message "The service $($job.ServiceName) on $($job.ComputerName) failed to $action." }
 				    		-1 { Write-Message -Level Warning -Silent $Silent -FunctionName $callerName -Message "The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) has timed out." }
 				    		0 { switch ($action) { stop { $actionText = 'stopped' }; start { $actionText = 'started' } } 
 				    			Write-Message -Level Output -Silent $Silent -FunctionName $callerName -Message "Service $($job.ServiceName) on $($job.ComputerName) was successfully $actionText." 
