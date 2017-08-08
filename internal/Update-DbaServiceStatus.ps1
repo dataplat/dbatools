@@ -1,4 +1,4 @@
-Function Update-DBASqlServiceStatus {
+Function Update-DbaSqlServiceStatus {
 <#
     .SYNOPSIS
     Internal function. Sends start/stop request to a SQL Server service.
@@ -13,7 +13,7 @@ Function Update-DBASqlServiceStatus {
     How long to wait for the start/stop request completion before moving on.
     
     .PARAMETER ServiceCollection
-    A collection of services from Get-DBASqlService
+    A collection of services from Get-DbaSqlService
     
     .PARAMETER Action
     Start or stop.
@@ -34,12 +34,12 @@ Function Update-DBASqlServiceStatus {
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param(
 	[parameter(ValueFromPipeline = $true, Mandatory = $true)]
-		[object[]]$ServiceCollection,
+	[object[]]$ServiceCollection,
 	[parameter(Mandatory = $true)]
-		[string[]]$Action,
-		[int]$Timeout = 30,
-		[PSCredential] $Credential,
-		[bool]$Silent
+	[string[]]$Action,
+	[int]$Timeout = 30,
+	[PSCredential] $Credential,
+	[bool]$Silent
 	)
 	begin {
 		$callStack = Get-PSCallStack
@@ -53,11 +53,11 @@ Function Update-DBASqlServiceStatus {
 		#Prepare the service control script block
 		$svcControlBlock = {
 			Param (
-			$server,
-			$service,
-			$action,
-			$timeout = 30,
-			$credential
+				$server,
+				$service,
+				$action,
+				$timeout = 30,
+				$credential
 			)
 			#Get WMI service object
 			$svcParam = "name='$service'"
@@ -74,7 +74,7 @@ Function Update-DBASqlServiceStatus {
 				$undesiredState = 'Running'
 			}
 			#If command was not accepted
-			if ($x.ReturnValue -ne 0) {return $x.ReturnValue}
+			if ($x.ReturnValue -ne 0) { return $x.ReturnValue }
 			$StartTime = Get-Date
 			#Wait for the service to complete the action until timeout
 			while ($true -and $x.ReturnValue -eq 0) {
@@ -95,7 +95,7 @@ Function Update-DBASqlServiceStatus {
 				}
 				#Still pending
 				if ($svc.State -like '*Pending') { $pending = $true }
-				start-sleep 1
+				Start-Sleep 1
 			}
 		}
 	}
@@ -103,9 +103,9 @@ Function Update-DBASqlServiceStatus {
 	process {
 		$jobCollection = @()
 		#Get priorities on which the service startup/shutdown order is based
-		$servicePriorityCollection = $ServiceCollection.ServicePriority | Select-Object -unique | Sort-Object -Property @{Expression={[int]$_}; Descending = $action -eq 'start'}
+		$servicePriorityCollection = $ServiceCollection.ServicePriority | Select-Object -unique | Sort-Object -Property @{ Expression={ [int]$_ }; Descending = $action -eq 'start' }
 		foreach ($priority in $servicePriorityCollection) {
-			foreach ($service in ($ServiceCollection | Where-Object { $_.ServicePriority -eq $priority }) ) {
+			foreach ($service in ($ServiceCollection | Where-Object { $_.ServicePriority -eq $priority })) {
 				if ('dbatools.DbaSqlService' -in $service.PSObject.TypeNames) {
 					if ($Pscmdlet.ShouldProcess("Sending $action request to service $($service.ServiceName) on $($service.ComputerName)")) {
 						Write-Message -Level Verbose -Message "Attempting to $action service $($service.ServiceName) on $server."
