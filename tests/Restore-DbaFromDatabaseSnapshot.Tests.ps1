@@ -2,12 +2,11 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-
 # Targets only instance2 because it's the only one where Snapshots can happen
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
 		if ($env:appveyor) {
-			Get-Service | Where-Object { $_.DisplayName -match 'SQL Server (SQL2008R2SP2)' -or $_.DisplayName -match 'SQL Server (SQL2016)' } | Restart-Service -Force
+			Get-Service | Where-Object { $_.DisplayName -match 'SQL Server (SQL2016)' } | Restart-Service -Force
 			do {
 				Start-Sleep 1
 				$null = (& sqlcmd -S $script:instance1 -b -Q "select 1" -d master)
