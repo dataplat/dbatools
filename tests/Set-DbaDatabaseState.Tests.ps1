@@ -167,40 +167,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			}
 		}
 	}
-	Context "Database Detachment" {
-		BeforeAll {
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
-			$db1 = "dbatoolsci_dbsetstate_detached"
-			$db2 = "dbatoolsci_dbsetstate_detached_withSnap"
-			$server.Query("CREATE DATABASE $db1")
-			$server.Query("CREATE DATABASE $db2")
-			$null = New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2
-			$fileStructure = New-Object System.Collections.Specialized.StringCollection
-			foreach ($file in (Get-DbaDatabaseFile -SqlInstance $script:instance2 -Database $db1).PhysicalName) {
-				$null = $fileStructure.Add($file)
-			}
-		}
-		AfterAll {
-			$null = Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Force
-			$null = Attach-DbaDatabase -SqlInstance $script:instance2 -Database $db1 -FileStructure $fileStructure
-			$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2 | Remove-DbaDatabase
-		}
-		# just to have a correct report on how much time BeforeAll takes
-		It "Does nothing" {
-			$true | Should Be $true
-		}
-		It "Skips detachment if database is snapshotted" {
-			$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db2 -Detached -Force *>$null
-			$result | Should Be $null
-		}
-		It "Detaches correctly the database" {
-			$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Detached -Force
-			$result.DatabaseName | Should Be $db1
-			$result.Status | Should Be 'DETACHED'
-			$result = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1
-			$result | Should Be $null
-		}
-	}
 }
 
 

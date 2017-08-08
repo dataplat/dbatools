@@ -1,4 +1,4 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		# memorizing $fileStructure for a later test
 		$fileStructure = New-Object System.Collections.Specialized.StringCollection
-	
+		
 		foreach ($file in (Get-DbaDatabaseFile -SqlInstance $script:instance2 -Database $dbname).PhysicalName) {
 			$null = $fileStructure.Add($file)
 		}
@@ -48,6 +48,30 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 		}
 	}
-	
-
+	Context "Database Detachment" {
+		BeforeAll {
+			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$db1 = "dbatoolsci_dbsetstate_detached"
+			$db2 = "dbatoolsci_dbsetstate_detached_withSnap"
+			$server.Query("CREATE DATABASE $db1")
+			$server.Query("CREATE DATABASE $db2")
+			$null = New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2
+			$null = Backup-DbaDatabase -SqlInstance $script:instance2 -Database $db2
+		}
+		AfterAll {
+			$null = Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Force
+			$null = Attach-DbaDatabase -SqlInstance $script:instance2 -Database $db1
+			$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2 | Remove-DbaDatabase
+		}
+		
+		It "Skips detachment if database is snapshotted" {
+			$result = Dismount-DbaDatabase -SqlInstance $script:instance2 -Database $db2 -Force -WarningAction SilentlyContinue
+			$result | Should Be $null
+		}
+		It "Detaches the database correctly" {
+			$result = Dismount-DbaDatabase -SqlInstance $script:instance2 -Database $db1
+			$result = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1
+			$result | Should Be $null
+		}
+	}
 }
