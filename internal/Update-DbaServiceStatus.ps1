@@ -4,7 +4,7 @@ Function Update-DbaSqlServiceStatus {
     Internal function. Sends start/stop request to a SQL Server service.
 
     .DESCRIPTION
-    Accepts objects from Get-DBASqlService and performs a corresponding action.
+    Accepts objects from Get-DbaSqlService and performs a corresponding action.
 
     .PARAMETER Credential
     Credential object used to connect to the computer as a different user.
