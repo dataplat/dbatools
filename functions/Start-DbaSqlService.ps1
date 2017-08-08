@@ -29,7 +29,7 @@ Function Start-DbaSqlService {
     A collection of services from Get-DbaSqlService
     
     .PARAMETER Silent
-    Prevent any output.
+		Use this switch to disable any kind of verbose messages
 
     .NOTES
     Author: Kirill Kravtsov( @nvarscar )
@@ -68,7 +68,7 @@ Function Start-DbaSqlService {
 	Param (
 		[Parameter(ParameterSetName = "Server", Position = 1)]
 		[Alias("cn", "host", "Server")]
-		[string[]]$ComputerName = $env:COMPUTERNAME,
+		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[Alias("Instance")]
 		[string[]]$InstanceName,
 		[ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "AnalysisServer", "ReportServer", "Search", "SqlAgent", "SqlBrowser", "SqlServer", "SqlServerIntegrationService")]
@@ -86,7 +86,7 @@ Function Start-DbaSqlService {
 					"Agent" { "SqlAgent" }
 					"Browser" { "SqlBrowser" }
 					"Engine" { "SqlServer" }
-					"FullText" { "Search" }
+					"FullText" { "FullText Search" }
 					"SSAS" { "AnalysisServer" }
 					"SSIS" { "SqlServerIntegrationService" }
 					"SSRS" { "ReportServer" }
@@ -94,24 +94,24 @@ Function Start-DbaSqlService {
 				}
 			}
 		}
-		$ProcessArray = @()
+		$processArray = @()
 		if ($PsCmdlet.ParameterSetName -eq "Server") {
 			$parameters = @{ }
 			if ($ComputerName) { $parameters.ComputerName = $ComputerName }
 			if ($InstanceName) { $parameters.InstanceName = $InstanceName }
 			if ($Type) { $parameters.Type = $Type }
 			if ($Credential) { $parameters.Credential = $Credential }
-			$ServiceCollection = Get-DbaSqlService @parameters
+			$serviceCollection = Get-DbaSqlService @parameters
 		}
 	}
 	process {
 		#Get all the objects from the pipeline before proceeding
-		$ProcessArray += $ServiceCollection
+		$processArray += $serviceCollection
 	}
 	end {
-		$ProcessArray = $ProcessArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) }
-		if ($ProcessArray) {
-			Update-DbaSqlServiceStatus -ServiceCollection $ProcessArray -Action 'start' -Timeout $Timeout -Silent $Silent
+		$processArray = $processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) }
+		if ($processArray) {
+			Update-DbaSqlServiceStatus -ServiceCollection $processArray -Action 'start' -Timeout $Timeout -Silent $Silent
 		}
 		else { Write-Message -Level Warning -Silent $Silent -Message "No SQL Server services found with current parameters." }
 	}
