@@ -23,13 +23,19 @@ Function Restart-DbaSqlService {
     	"ReportServer","Search","SqlAgent","SqlBrowser","SqlServer","SqlServerIntegrationService"
     
     .PARAMETER Timeout
-    How long to wait for the start/stop request completion before moving on.
+    How long to wait for the start/stop request completion before moving on. Specify 0 to wait indefinitely.
     
     .PARAMETER ServiceCollection
     A collection of services from Get-DbaSqlService
     
     .PARAMETER Silent
 		Use this switch to disable any kind of verbose messages
+		
+		.PARAMETER WhatIf
+		Shows what would happen if the cmdlet runs. The cmdlet is not run.
+		
+		.PARAMETER Confirm
+		Prompts you for confirmation before running the cmdlet.
 
     .NOTES
     Author: Kirill Kravtsov( @nvarscar )
