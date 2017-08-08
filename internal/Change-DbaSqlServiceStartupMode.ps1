@@ -1,26 +1,43 @@
 Function Change-DbaSqlServiceStartupMode {
 <#
-    .SYNOPSIS
-    Internal function. Implements the method that changes startup mode of the SQL Server service.
-
-    .DESCRIPTION
-    Accepts objects from Get-DbaSqlService and performs a corresponding action.
-
-
-    .PARAMETER ServiceCollection
-    A collection of services from Get-DbaSqlService.
-    
-    .PARAMETER Mode
-    Startup mode of the service: Automatic, Manual or Disabled.
-    
-    .NOTES
-    Author: Kirill Kravtsov ( @nvarscar )
-
-    dbatools PowerShell module (https://dbatools.io)
-    Copyright (C) 2017 Chrissy LeMaire
-    This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-    You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+		.SYNOPSIS
+		Internal function. Implements the method that changes startup mode of the SQL Server service.
+		
+		.DESCRIPTION
+		Accepts objects from Get-DbaSqlService and performs a corresponding action.
+		
+		
+		.PARAMETER ServiceCollection
+		A collection of services from Get-DbaSqlService.
+		
+		.PARAMETER Mode
+		Startup mode of the service: Automatic, Manual or Disabled.
+		
+		.PARAMETER WhatIf
+		Shows what would happen if the cmdlet runs. The cmdlet is not run.
+		
+		.PARAMETER Confirm
+		Prompts you for confirmation before running the cmdlet.
+		
+		.NOTES
+		Author: Kirill Kravtsov ( @nvarscar )
+		
+		dbatools PowerShell module (https://dbatools.io)
+		Copyright (C) 2017 Chrissy LeMaire
+		This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+		You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+		
+		.EXAMPLE
+		Get-DbaSqlService -ComputerName sql1 | Change-DBASqlServiceStartupMode -Mode 'Manual'
+		
+		Sets all SQL services on sql1 to Manual startup.
+		
+		.EXAMPLE
+		$services = Get-DbaSqlService -ComputerName sql1 
+		Change-DBASqlServiceStartupMode -ServiceCollection $services -Mode 'Automatic'
+		
+		Sets all SQL services on sql1 to Automatic startup.
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
