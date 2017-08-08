@@ -14,7 +14,7 @@
 <!-- How does this change solve that purpose -->
 
 ### Commands to test
-<!-- if these are the examples in the help just not it as such -->
+<!-- if these are the examples in the help just note it as such -->
 
 ### Screenshots
 <!-- pictures say a thousand words without typing any of it -->
