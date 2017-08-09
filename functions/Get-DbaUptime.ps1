@@ -24,6 +24,9 @@ Excludes the Windows server information
 .PARAMETER WindowsOnly
 Excludes the SQL server information
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 Tags: CIM
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
@@ -69,7 +72,8 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 		[Switch]$WindowsOnly,
 		[Alias("Credential")]
 		[PSCredential]$SqlCredential,
-		[PSCredential]$WindowsCredential
+		[PSCredential]$WindowsCredential,
+		[switch]$Silent
 	)
 	
 	PROCESS
@@ -88,23 +92,18 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 			{
 				$servername = $instance
 			}
-						
+
 			if ($WindowsOnly -ne $true)
 			{
-				
-				Write-Verbose "Connecting to $servername"
-				try
-				{
-					$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential -ErrorVariable ConnectError
-					
+				try {
+					Write-Message -Level Verbose -Message "Connecting to $instance"
+					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 				}
-				catch
-				{
-					Write-Warning $_
-					continue
+				catch {
+					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				}
 								
-				Write-Verbose "Getting Start times for $servername"
+				Write-Message -Level Verbose -Message "Getting Start times for $servername"
 				#Get tempdb creation date
 				$SQLStartTime = $server.Databases["tempdb"].CreateDate
 				$SQLUptime = New-TimeSpan -Start $SQLStartTime -End (Get-Date)
@@ -113,31 +112,29 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 			
 			if ($SqlOnly -ne $true)
 			{
-				$WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $WindowsCredential).ComputerName
+				$WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $WindowsCredential).FullComputerName
 
 				try
 				{
-					Write-Verbose "Getting WinBootTime via CimInstance for $servername"
+					Write-Message -Level Verbose -Message "Getting WinBootTime via CimInstance for $servername"
 					$WinBootTime = (Get-CimInstance -ClassName win32_operatingsystem -ComputerName $windowsServerName -ErrorAction SilentlyContinue).lastbootuptime
 					$WindowsUptime = New-TimeSpan -start $WinBootTime -end (get-date)
 					$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
-					
 				}
 				catch
 				{
 					try
 					{
-						Write-Verbose "$functionname - Getting WinBootTime via CimInstance DCOM"
+						Write-Message -Level Verbose -Message "Getting WinBootTime via CimInstance DCOM"
 						$CimOption = New-CimSessionOption -Protocol DCOM
 						$CimSession = New-CimSession -Credential:$WindowsCredential -ComputerName $WindowsServerName -SessionOption $CimOption
 						$WinBootTime = ($CimSession | Get-CimInstance -ClassName Win32_OperatingSystem).LastBootUpTime
 						$WindowsUptime = New-TimeSpan -start $WinBootTime -end (get-date)
 						$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
-						
 					}
 					catch
 					{
-						Write-Exception $_
+						Stop-Function -Message "Failure getting WinBootTime" -ErrorRecord $_ -Target $instance -Continue
 					}
 				}
 				
