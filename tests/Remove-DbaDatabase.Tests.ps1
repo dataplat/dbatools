@@ -41,7 +41,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
 			Get-DbaProcess -SqlInstance $script:instance1 -Database singlerestore | Stop-DbaProcess
 			Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -WithReplace -NoRecovery
-            (Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore).IsAccessible | Should Be $false
+            (Connect-DbaSqlServer -SqlInstance $script:instance1).Databases['singlerestore'].IsAccessible | Should Be $false
             Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
             Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore | Should Be $null
     }
