@@ -664,7 +664,7 @@ The script will show a message that the copy destination has not been supplied a
 		}
 
 		# Check the backup network path
-		if (-not ((Test-Path $BackupNetworkPath -PathType Container -IsValid -Credential $SourceCredential) -and (Get-Item $BackupNetworkPath).PSProvider.Name -eq 'FileSystem')) {
+		if ((Test-DbaSqlPath -Path $BackupNetworkPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true){
 			Stop-Function -Message "Backup network path $BackupNetworkPath is not valid or can't be reached." -Target $SourceSqlInstance 
 			return
 		}
@@ -679,7 +679,8 @@ The script will show a message that the copy destination has not been supplied a
 			$CopyDestinationFolder = "$($DestinationServer.Settings.BackupDirectory)\Logshipping"
 
 			# Check to see if the path already exists
-			if (Test-Path $CopyDestinationFolder -Credential $DestinationCredential) {
+            
+			if (Test-DbaSqlPath -Path $CopyDestinationFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) {
 				Write-Message -Message "Copy destination $CopyDestinationFolder already exists" -Level Verbose
 			}
 			else {
@@ -744,7 +745,7 @@ The script will show a message that the copy destination has not been supplied a
 				} # else not force
 			} # if test path copy destination
 		} # if not copy destination
-		elseif (-not ((Test-Path $CopyDestinationFolder -PathType Container -IsValid -Credential $DestinationCredential) -and (Get-Item $CopyDestinationFolder).PSProvider.Name -eq 'FileSystem')) {
+		elseif ((Test-DbaSqlPath -Path $CopyDestinationFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
 			Stop-Function -Message "Copy destination folder $CopyDestinationFolder is not valid or can't be reached." -Target $DestinationSqlInstance 
 			return
 		}
@@ -1092,13 +1093,12 @@ The script will show a message that the copy destination has not been supplied a
 				}
 				Write-Message -Message "Backup network path set to $DatabaseBackupNetworkPath." -Level Verbose
 
-
 				# Checking if the database network path exists
-				if (-not (Test-Path -Path $DatabaseBackupNetworkPath -Credential $SourceCredential)) {
+				if ((Test-DbaSqlPath -Path $DatabaseBackupNetworkPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
 					# To to create the backup directory for the database 
 					try {
 						Write-Message -Message "Backup network path not found. Trying to create it.." -Level Verbose
-						New-Item $DatabaseBackupNetworkPath -ItemType Directory -Credential $SourceCredential | Out-Null
+                        New-DbaSqlDirectory -Path $DatabaseBackupNetworkPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential
 					}
 					catch {
 						Stop-Function -Message "Something went wrong creating the directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
@@ -1203,7 +1203,7 @@ The script will show a message that the copy destination has not been supplied a
 						Write-Message -Message "Restore log folder set to $DatabaseRestoreLogFolder" -Level Verbose
 
 						# Check if the restore data folder exists
-						if (-not (Test-Path -Path $DatabaseRestoreDataFolder -Credential $DestinationCredential)) {
+						if ((Test-DbaSqlPath  -Path $DatabaseRestoreDataFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential)-ne $true) {
 							if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore data folder on $DestinationServerName")) {
 								# Try creating the data folder
 								try {
@@ -1216,12 +1216,12 @@ The script will show a message that the copy destination has not been supplied a
 						}
 
 						# Check if the restore log folder exists
-						if (-not (Test-Path $DatabaseRestoreLogFolder -Credential $DestinationCredential)) {
+						if ((Test-DbaSqlPath  -Path $DatabaseRestoreLogFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential)-ne $true) {
 							if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore log folder on $DestinationServerName")) {
 								# Try creating the log folder
 								try {
 									Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
-									New-Item $DatabaseRestoreLogFolder -ItemType Directory -Credential $DestinationCredential | Out-Null
+                                    New-DbaSqlDirectory -Path $DatabaseRestoreLogFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential
 								}
 								catch {
 									Stop-Function -Message "Something went wrong creating the restore log directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
@@ -1235,7 +1235,7 @@ The script will show a message that the copy destination has not been supplied a
 
 					# Chech if the full backup patk can be reached
 					if ($FullBackupPath) {
-						if (-not (Test-Path -Path $FullBackupPath -Credential $DestinationCredential)) {
+						if ((Test-DbaSqlPath -Path $FullBackupPath -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
 							Stop-Function -Message ("The path to the full backup could not be reached. Check the path and/or the crdential. `n$($_.Exception.Message)") -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
 						}
 					} 
@@ -1252,7 +1252,7 @@ The script will show a message that the copy destination has not been supplied a
 								Stop-Function -Message "The last full backup is not located on shared location. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
 							}
 							# Test the path to the backup
-							elseif (-not (Test-Path $LastBackup.Path -Credential $SourceCredential)) {
+							elseif ((Test-DbaSqlPath -Path $LastBackup.Path -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
 								Stop-Function -Message "The full backup could not be found on $($LastBackup.Path). Check path and/or credentials. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
 							}
 							else {
@@ -1294,11 +1294,11 @@ The script will show a message that the copy destination has not been supplied a
 				}
 
 				# Check if the copy destination folder exists
-				if (-not (Test-Path -Path $DatabaseCopyDestinationFolder -Credential $DestinationCredential)) {
+				if ((Test-DbaSqlPath -Path $DatabaseCopyDestinationFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
 					Write-Message -Message "Copy destination folder $DatabaseCopyDestinationFolder not found. Trying to create it.. ." -Level Verbose
 					if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating copy destination folder on $DestinationServerName")) {
 						try {
-							New-Item $DatabaseCopyDestinationFolder -ItemType Directory -Credential $DestinationCredential | Out-Null
+                            New-DbaSqlDirectory -Path $DatabaseCopyDestinationFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential
 						}
 						catch {
 							Stop-Function -Message "Something went wrong creating the database copy destination folder. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $DestinationServerName -Continue
