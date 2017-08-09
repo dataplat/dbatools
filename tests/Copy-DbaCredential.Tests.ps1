@@ -4,6 +4,13 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 if ($env:appveyor) {
 	try {
+		Get-Service | Where-Object { $_.DisplayName -match 'SQL Server (SQL2008R2SP2)' } | Restart-Service -Force
+		do {
+			Start-Sleep 1
+			$null = (& sqlcmd -S $script:instance1 -b -Q "select 1" -d master)
+		}
+		while ($lastexitcode -ne 0 -and $t++ -lt 10)
+		Start-Sleep 2
 		$connstring = "Server=ADMIN:$script:instance1;Trusted_Connection=True"
 		$server = New-Object Microsoft.SqlServer.Management.Smo.Server $script:instance1
 		$server.ConnectionContext.ConnectionString = $connstring

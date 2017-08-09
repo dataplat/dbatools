@@ -49,6 +49,22 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	Context "Operations on databases" {
 		BeforeAll {
+			
+			if ($env:appveyor) {
+				Get-Service | Where-Object { $_.DisplayName -match 'SQL Server (SQL2016)' } | Restart-Service -Force
+				do {
+					Start-Sleep 1
+					$null = (& sqlcmd -S $script:instance1 -b -Q "select 1" -d master)
+				}
+				while ($lastexitcode -ne 0 -and $t++ -lt 10)
+				
+				do {
+					Start-Sleep 1
+					$null = (& sqlcmd -S $script:instance2 -b -Q "select 1" -d master)
+				}
+				while ($lastexitcode -ne 0 -and $s++ -lt 10)
+			}
+			Start-Sleep -Seconds 3
 			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
 			$db1 = "dbatoolsci_dbsetstate_online"
 			$db2 = "dbatoolsci_dbsetstate_offline"
