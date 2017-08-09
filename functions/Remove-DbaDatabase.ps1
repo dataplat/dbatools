@@ -115,7 +115,7 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 			catch {
 				try {
 					if ($Pscmdlet.ShouldProcess("$db on $server", "alter db set single_user with rollback immediate then drop")) {
-						$null = $server.Query("alter database $db set single_user with rollback immediate; drop database $db")
+						$null = $server.Query("if exists (select * from sys.databases where name = '$($db.name)' and state = 0) alter database $db set single_user with rollback immediate; drop database $db")
 
 						[pscustomobject]@{
 							ComputerName = $server.NetName
