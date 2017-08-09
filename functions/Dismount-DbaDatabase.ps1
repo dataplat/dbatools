@@ -67,8 +67,7 @@
 		[parameter(Mandatory, ParameterSetName = 'SqlInstance')]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]
-		$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[parameter(Mandatory, ParameterSetName = 'SqlInstance')]
 		[string]$Database,
 		[parameter(Mandatory, ParameterSetName = 'Pineline', ValueFromPipeline)]
@@ -99,8 +98,9 @@
 		}
 		
 		foreach ($db in $DatabaseCollection) {
+			$db.Refresh()
 			$server = $db.Parent
-		
+			
 			if ($db.IsSystemObject) {
 				Stop-Function -Message "$db is a system database and cannot be detached using this method" -Target $db -Continue
 			}
@@ -108,6 +108,14 @@
 			Write-Message -Level Verbose -Message "Checking replication status"
 			if ($db.ReplicationOptions -ne "None") {
 				Stop-Function -Message "Skipping $db  on $server because it is replicated" -Target $db -Continue
+			}
+			
+			# repeat because different servers could be piped in
+			$snapshots = (Get-DbaDatabaseSnapshot -SqlInstance $server).SnapshotOf
+			Write-Message -Level Verbose -Message "Checking for snaps"
+			if ($db.Name -in $snapshots) {
+				Write-Message -Level Warning -Message "Database $db has snapshots, you need to drop them before detaching. Skipping $db on $server."
+				Continue
 			}
 			
 			Write-Message -Level Verbose -Message "Checking mirror status"
@@ -182,11 +190,11 @@
 					$server.DetachDatabase($db.Name, $UpdateStatistics)
 					
 					[pscustomobject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						Database = $db.name
-						DetachResult = "Success"
+						ComputerName  = $server.NetName
+						InstanceName  = $server.ServiceName
+						SqlInstance   = $server.DomainInstanceName
+						Database	  = $db.name
+						DetachResult  = "Success"
 					}
 				}
 				catch {

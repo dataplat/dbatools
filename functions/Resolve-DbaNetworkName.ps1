@@ -103,7 +103,7 @@ function Resolve-DbaNetworkName {
 						$fqdn = "$resolved.$dnsdomain"
 					}
 					else {
-						$dnsdomain = $env:USERDNSDOMAIN.ToLower()
+						$dnsdomain = "$env:USERDNSDOMAIN".ToLower()
 						if ($dnsdomain -match "\.") {
 							$fqdn = "$fqdn.$dnsdomain"
 						}
