@@ -49,23 +49,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	Context "Operations on databases" {
 		BeforeAll {
-			
 			if ($env:appveyor) {
-				Get-Service | Where-Object { $_.DisplayName -match 'SQL Server (SQL2016)' } | Restart-Service -Force
+				Get-Service | Where-Object { $_.DisplayName -match 'SQL Server \(SQL2008R2SP2\)' } | Restart-Service -Force
 				do {
 					Start-Sleep 1
 					$null = (& sqlcmd -S $script:instance1 -b -Q "select 1" -d master)
 				}
 				while ($lastexitcode -ne 0 -and $t++ -lt 10)
-				
-				do {
-					Start-Sleep 1
-					$null = (& sqlcmd -S $script:instance2 -b -Q "select 1" -d master)
-				}
-				while ($lastexitcode -ne 0 -and $s++ -lt 10)
 			}
 			Start-Sleep -Seconds 3
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$server = Connect-DbaSqlServer -SqlInstance $script:instance1
 			$db1 = "dbatoolsci_dbsetstate_online"
 			$db2 = "dbatoolsci_dbsetstate_offline"
 			$db3 = "dbatoolsci_dbsetstate_emergency"
@@ -74,7 +67,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$db6 = "dbatoolsci_dbsetstate_multi"
 			$db7 = "dbatoolsci_dbsetstate_rw"
 			$db8 = "dbatoolsci_dbsetstate_ro"
-			Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8 | Remove-DbaDatabase
+			Get-DbaDatabase -SqlInstance $script:instance1 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8 | Remove-DbaDatabase
 			$server.Query("CREATE DATABASE $db1")
 			$server.Query("CREATE DATABASE $db2")
 			$server.Query("CREATE DATABASE $db3")
@@ -84,7 +77,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$server.Query("CREATE DATABASE $db7")
 			$server.Query("CREATE DATABASE $db8")
 			$setupright = $true
-			$needed = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
+			$needed = Get-DbaDatabase -SqlInstance $script:instance1 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
 			if ($needed.Count -ne 8) {
 				$setupright = $false
 				it "has failed setup" {
@@ -93,90 +86,93 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			}
 		}
 		AfterAll {
-			$null = Set-DbaDatabaseState -Sqlinstance $script:instance2 -Database $db2, $db3, $db4, $db5, $db7 -Online -ReadWrite -MultiUser -Force
-			$null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
+			$null = Set-DbaDatabaseState -Sqlinstance $script:instance1 -Database $db2, $db3, $db4, $db5, $db7 -Online -ReadWrite -MultiUser -Force
+			$null = Remove-DbaDatabase -SqlInstance $script:instance1 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
 		}
 		if ($setupright) {
 			# just to have a correct report on how much time BeforeAll takes
-			It "Does nothing" {
+			It "Waits for BeforeAll to finish" {
 				$true | Should Be $true
 			}
 			It "Honors the Database parameter" {
-				$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db2 -Emergency -Force
+				$result = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db2 -Emergency -Force
 				$result.DatabaseName | Should be $db2
 				$result.Status | Should Be 'EMERGENCY'
-				$results = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1, $db2 -Emergency -Force
+				$results = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1, $db2 -Emergency -Force
 				$results.Count | Should be 2
 			}
 			It "Honors the ExcludeDatabase parameter" {
-				$alldbs = (Get-DbaDatabase -SqlInstance $script:instance2 | Where-Object Name -notin @($db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8)).Name
-				$results = Set-DbaDatabaseState -SqlInstance $script:instance2 -ExcludeDatabase $alldbs -Online -Force
+				$alldbs = (Get-DbaDatabase -SqlInstance $script:instance1 | Where-Object Name -notin @($db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8)).Name
+				$results = Set-DbaDatabaseState -SqlInstance $script:instance1 -ExcludeDatabase $alldbs -Online -Force
 				$comparison = Compare-Object -ReferenceObject ($results.DatabaseName) -DifferenceObject (@($db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8))
 				$comparison.Count | Should Be 0
 			}
 			
 			It "Sets a database as online" {
-				$null = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Emergency -Force
-				$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Online -Force
+				$null = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1 -Emergency -Force
+				$result = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1 -Online -Force
 				$result.DatabaseName | Should Be $db1
 				$result.Status | Should Be "ONLINE"
 			}
 			
 			if (-not $env:appveyor) {
 				It "Sets a database as offline" {
-					$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db2 -Offline -Force
+					$result = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db2 -Offline -Force
+					$result = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db2 -Online -Force
+					$result = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db2 -Online -Force
 					$result.DatabaseName | Should Be $db2
 					$result.Status | Should Be "OFFLINE"
+					Remove-DbaDatabase -SqlInstance $script:instance1 -Database $db2
 				}
 			}
 			
 			It "Sets a database as emergency" {
-				$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db3 -Emergency -Force
+				$result = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db3 -Emergency -Force
 				$result.DatabaseName | Should Be $db3
 				$result.Status | Should Be "EMERGENCY"
 			}
 			if (-not $env:appveyor) {
 				It "Sets a database as single_user" {
-					$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db4 -SingleUser -Force
+					$result = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db4 -SingleUser -Force
 					$result.DatabaseName | Should Be $db4
 					$result.Access | Should Be "SINGLE_USER"
 				}
 			}
 			It "Sets a database as restricted_user" {
-				$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db5 -RestrictedUser -Force
+				$result = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db5 -RestrictedUser -Force
 				$result.DatabaseName | Should Be $db5
 				$result.Access | Should Be "RESTRICTED_USER"
 			}
 			It "Sets a database as multi_user" {
-				$null = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db6 -RestrictedUser -Force
-				$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db6 -MultiUser -Force
+				$null = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db6 -RestrictedUser -Force
+				$result = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db6 -MultiUser -Force
 				$result.DatabaseName | Should Be $db6
 				$result.Access | Should Be "MULTI_USER"
 			}
 			It "Sets a database as read_write" {
-				$null = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db7 -ReadOnly -Force
-				$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db7 -ReadWrite -Force
+				$null = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db7 -ReadOnly -Force
+				$result = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db7 -ReadWrite -Force
 				$result.DatabaseName | Should Be $db7
 				$result.RW | Should Be "READ_WRITE"
 			}
 			It "Sets a database as read_only" {
-				$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db8 -ReadOnly -Force
+				$result = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db8 -ReadOnly -Force
 				$result.DatabaseName | Should Be $db8
 				$result.RW | Should Be "READ_ONLY"
 			}
 			It "Works when piped from Get-DbaDatabaseState" {
-				$results = Get-DbaDatabaseState -SqlInstance $script:instance2 -Database $db7, $db8 | Set-DbaDatabaseState -Online -MultiUser -Force
+				$results = Get-DbaDatabaseState -SqlInstance $script:instance1 -Database $db7, $db8 | Set-DbaDatabaseState -Online -MultiUser -Force
 				$results.Count | Should Be 2
 				$comparison = Compare-Object -ReferenceObject ($results.DatabaseName) -DifferenceObject (@($db7, $db8))
 				$comparison.Count | Should Be 0
 			}
 			It "Works when piped from Get-DbaDatabase" {
-				$results = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db7, $db8 | Set-DbaDatabaseState -Online -MultiUser -Force
+				$results = Get-DbaDatabase -SqlInstance $script:instance1 -Database $db7, $db8 | Set-DbaDatabaseState -Online -MultiUser -Force
 				$results.Count | Should Be 2
 				$comparison = Compare-Object -ReferenceObject ($results.DatabaseName) -DifferenceObject (@($db7, $db8))
 				$comparison.Count | Should Be 0
 			}
-			$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Emergency -Force
+			$result = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1 -Emergency -Force
 			It "Has the correct properties" {
 				$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,DatabaseName,RW,Status,Access,Notes,Database'.Split(',')
 				($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
