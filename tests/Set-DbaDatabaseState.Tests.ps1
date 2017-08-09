@@ -98,7 +98,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		if ($setupright) {
 			# just to have a correct report on how much time BeforeAll takes
-			It "Does nothing" {
+			It "Waits for BeforeAll to finish" {
 				$true | Should Be $true
 			}
 			It "Honors the Database parameter" {
@@ -141,17 +141,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 					$result.DatabaseName | Should Be $db4
 					$result.Access | Should Be "SINGLE_USER"
 				}
+				It "Sets a database as multi_user" {
+					$null = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db6 -RestrictedUser -Force
+					$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db6 -MultiUser -Force
+					$result.DatabaseName | Should Be $db6
+					$result.Access | Should Be "MULTI_USER"
+				}
 			}
 			It "Sets a database as restricted_user" {
 				$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db5 -RestrictedUser -Force
 				$result.DatabaseName | Should Be $db5
 				$result.Access | Should Be "RESTRICTED_USER"
-			}
-			It "Sets a database as multi_user" {
-				$null = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db6 -RestrictedUser -Force
-				$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db6 -MultiUser -Force
-				$result.DatabaseName | Should Be $db6
-				$result.Access | Should Be "MULTI_USER"
 			}
 			It "Sets a database as read_write" {
 				$null = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db7 -ReadOnly -Force
