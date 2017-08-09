@@ -1,4 +1,6 @@
 ﻿
+try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("DbaInstance", "Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter") }
+catch { }
 try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("DbaCmConnectionParameter", "Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter") }
 catch { }
 try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("DbaInstanceParameter", "Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter") }
