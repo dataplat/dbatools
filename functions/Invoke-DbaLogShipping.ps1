@@ -133,7 +133,7 @@ The parameter works as a prefix where the name of the database will be added to 
 The default is "LSBackup_[databasename]"
 
 .PARAMETER CopyRetention
-The copy retention period in minutes. Default is 4320 / 72 hours
+The copy retention period in minutes. Default is 4320 / 72 hours.
 
 .PARAMETER CopySchedule
 Name of the backup schedule created for the copy job.
