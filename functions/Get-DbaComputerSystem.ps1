@@ -58,7 +58,7 @@ function Get-DbaComputerSystem {
 			Write-Message -Level Verbose -Message "Attempting to connect to $computer"
 			$server = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential
 
-			$computerResolved = $server.ComputerName
+			$computerResolved = $server.FullComputerName
 
 			if (!$computerResolved) {
 				Write-Message -Level Warning -Message "Unable to resolve hostname of $computer. Skipping."
