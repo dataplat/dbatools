@@ -15,8 +15,8 @@ Function Get-DbaServerProtocol {
     .PARAMETER Credential
     Credential object used to connect to the computer as a different user.
 
-	.PARAMETER Silent
-		Use this switch to disable any kind of verbose messages
+   .PARAMETER Silent
+   Use this switch to disable any kind of verbose messages
 
     .NOTES
     Author: Klaas Vandenberghe ( @PowerDBAKlaas )
