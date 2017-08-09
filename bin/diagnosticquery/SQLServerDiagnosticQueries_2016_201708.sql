@@ -1,8 +1,8 @@
 
--- SQL Server 2017 Diagnostic Information Queries
+-- SQL Server 2016 Diagnostic Information Queries
 -- Glenn Berry 
--- July 2017
--- Last Modified: July 17, 2017
+-- August 2017
+-- Last Modified: August 8, 2017
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -34,8 +34,8 @@
 --*
 --******************************************************************************
 
--- Check the major product version to see if it is SQL Server 2017 CTP 1 or greater
-IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductVersion')) LIKE '14%')
+-- Check the major product version to see if it is SQL Server 2016 CTP 2 or greater
+IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductVersion')) LIKE '13%')
 	BEGIN
 		DECLARE @ProductVersion varchar(128) = CONVERT(varchar(128), SERVERPROPERTY('ProductVersion'));
 		RAISERROR ('Script does not match the ProductVersion [%s] of this instance. Many of these queries may not work on this version.' , 18 , 16 , @ProductVersion);
@@ -50,38 +50,55 @@ IF NOT EXISTS (SELECT * WHERE CONVERT(varchar(128), SERVERPROPERTY('ProductVersi
 SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info];
 ------
 
--- SQL Server 2017 RTM Branch Builds																		
--- Build			Description			Release Date								
--- 14.0.1.246		CTP 1.0				11/30/2016
--- 14.0.100.187		CTP 1.1				12/16/2016
--- 14.0.200.24		CTP 1.2				1/19/2017
--- 14.0.304.138		CTP 1.3				2/17/2017
--- 14.0.405.198		CTP 1.4				3/20/2017
--- 14.0.500.272		CTP 2.0				4/19/2017
--- 14.0.600.250		CTP 2.1				5/17/2017
--- 14.0.800.90		RC1					7/17/2017
-		
-															
+-- SQL Server 2016 RTM Branch Builds								-- SQL Server 2016 SP1 Branch Builds										
+-- Build			Description			Release Date				Build			Description			Release Date				
+-- 13.0.200.172		CTP 2.0				5/26/2015
+-- 13.0.300.44		CTP 2.1				6/14/2015
+-- 13.0.407.1		CTP 2.2				7/28/2015
+-- 13.0.500.53		CTP 2.3				9/4/2015
+-- 13.0.600.65		CTP 2.4				9/30/2015
+-- 13.0.700.242		CTP 3.0				10/29/2015
+-- 13.0.900.73		CTP 3.2				12/12/2015
+-- 13.0.1000.276	CTP 3.3				1/27/2016
+-- 13.0.1100.288	RC0					3/2/2016
+-- 13.0.1200.242	RC1					3/18/2016 
+-- 13.0.1300.275	RC2					3/28/2016
+-- 13.0.1400.361	RC3					4/11/2016
+-- 13.0.1601.5		RTM					6/1/2016
+-- 13.0.1708.0		RTM-GDR				6/12/2016
+-- 13.0.2149.0		RTM CU1				7/25/2016
+-- 13.0.2164.0		RTM CU2				9/22/2016
+-- 13.0.2186.0		RTM CU3				11/16/2016	---->			13.0.4001.0		SP1 RTM				11/16/2016
+-- 13.0.2193.0		RTM CU4				1/18/2017   ---->			13.0.4411.0		SP1 CU1				 1/18/2017
+-- 13.0.2197.0		RTM CU5				3/20/2017   ---->			13.0.4422.0		SP1 CU2				 3/20/2017
+-- 13.0.2204.0		RTM CU6				5/15/2017   ---->			13.0.4435.0		SP1 CU3				 5/15/2017
+-- 13.0.2210.0		RTM CU7				8/8/2017    ---->			13.0.4446.0		SP1 CU4				 8/8/2017
 
 
+-- How to determine the version, edition and update level of SQL Server and its components 
+-- https://support.microsoft.com/en-us/kb/321185														
 
--- Download SQL Server Management Studio (SSMS)
--- https://msdn.microsoft.com/en-us/library/mt238290.aspx				
+-- How to obtain the latest Service Pack for SQL Server 2016
+-- https://support.microsoft.com/en-us/kb/3177534
+
+-- Microsoft SQL Server 2016 RTM Latest Cumulative Update 
+-- https://www.microsoft.com/en-us/download/details.aspx?id=53338
+
+-- SQL Server 2016 build versions 
+-- https://support.microsoft.com/en-us/kb/3177312
+
+-- Where to find information about the latest SQL Server builds
+-- https://support.microsoft.com/en-us/help/957826/where-to-find-information-about-the-latest-sql-server-builds
+
+-- Performance and Stability Related Fixes in Post-SQL Server 2016 SP1 Builds
+-- https://www.sqlskills.com/blogs/glenn/performance-and-stability-related-fixes-in-post-sql-server-2016-sp1-builds/			
 
 -- Announcing updates to the SQL Server Incremental Servicing Model (ISM)
 -- https://blogs.msdn.microsoft.com/sqlreleaseservices/announcing-updates-to-the-sql-server-incremental-servicing-model-ism/
 
--- How to determine the version, edition and update level of SQL Server and its components 
--- https://support.microsoft.com/en-us/kb/321185
+-- Download SQL Server Management Studio (SSMS)
+-- https://msdn.microsoft.com/en-us/library/mt238290.aspx	
 
--- SQL Server 2017 Community Technology Preview 2.0 now available
--- https://blogs.technet.microsoft.com/dataplatforminsider/2017/04/19/sql-server-2017-community-technology-preview-2-0-now-available/
-
--- What's New in SQL Server 2017 (Database Engine)
--- https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/what-s-new-in-sql-server-2017-database-engine
-
--- What's New in SQL Server 2017
--- https://docs.microsoft.com/en-us/sql/sql-server/what-s-new-in-sql-server-2017
 
 
 -- Get socket, physical core and logical core count from the SQL Server Error log. (Query 2) (Core Counts)
@@ -162,7 +179,6 @@ ORDER BY name OPTION (RECOMPILE);
 -- hadoop connectivity (Configure SQL Server to connect to external Hadoop or Microsoft Azure storage blob data sources through PolyBase)
 -- polybase network encryption (Configure SQL Server to encrypt control and data channels when using PolyBase)
 -- remote data archive (Allow the use of the REMOTE_DATA_ARCHIVE data access for Stretch databases)
--- clr strict security is new in SQL Server 2017, and is enabled by default
 
 -- SQLSweet16!, Episode 1: Backup Compression for TDE-enabled Databases
 -- https://blogs.msdn.microsoft.com/sqlcat/2016/06/20/sqlsweet16-episode-1-backup-compression-for-tde-enabled-databases/
@@ -203,6 +219,9 @@ EXEC sys.xp_readerrorlog 0, 1, N'Database Instant File Initialization';
 -- This should be enabled in the vast majority of cases
 -- SQL Server 2016 lets you enable this during the SQL server installation process
 
+-- Database Instant File Initialization
+-- https://docs.microsoft.com/en-us/sql/relational-databases/databases/database-instant-file-initialization
+
 -- Misconceptions around instant file initialization
 -- https://www.sqlskills.com/blogs/paul/misconceptions-around-instant-file-initialization/
 
@@ -230,7 +249,7 @@ FROM sys.dm_os_process_memory WITH (NOLOCK) OPTION (RECOMPILE);
 -- SQL Server Services information (Query 8) (SQL Server Services Info)
 SELECT servicename, process_id, startup_type_desc, status_desc, 
 last_startup_time, service_account, is_clustered, cluster_nodename, [filename], 
-instant_file_initialization_enabled -- New for SQL Server 2016 SP1
+instant_file_initialization_enabled -- New in SQL Server 2016 SP1
 FROM sys.dm_server_services WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
@@ -260,7 +279,7 @@ ORDER BY sj.name OPTION (RECOMPILE);
 -- Look for jobs that have a notify_level_email set to 0 (meaning no e-mail is ever sent)
 --
 -- MSDN sysjobs documentation
--- http://msdn.microsoft.com/en-us/library/ms189817.aspx
+-- https://msdn.microsoft.com/en-us/library/ms189817.aspx
 
 -- SQL Server Maintenance Solution
 -- https://ola.hallengren.com/
@@ -274,22 +293,23 @@ ORDER BY name OPTION (RECOMPILE);
 ------
 
 -- Gives you some basic information about your SQL Server Agent Alerts (which are different from SQL Server Agent jobs)
--- Read more about Agent Alerts here: http://www.sqlskills.com/blogs/glenn/creating-sql-server-agent-alerts-for-critical-errors/
+-- Read more about Agent Alerts here: https://www.sqlskills.com/blogs/glenn/creating-sql-server-agent-alerts-for-critical-errors/
 
 
 
--- Host information (Query 11) (Host Info)
-SELECT host_platform, host_distribution, host_release, 
-       host_service_pack_level, host_sku, os_language_version 
-FROM sys.dm_os_host_info WITH (NOLOCK) OPTION (RECOMPILE); 
+-- Windows information (Query 11) (Windows Info)
+SELECT windows_release, windows_service_pack_level, 
+       windows_sku, os_language_version
+FROM sys.dm_os_windows_info WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
--- host_release codes (only valid for Windows)
+-- Gives you major OS version, Service Pack, Edition, and language info for the operating system
 -- 6.3 is either Windows 8.1, Windows 10 or Windows Server 2012 R2, Windows Server 2016 
 -- 6.2 is either Windows 8 or Windows Server 2012
+-- 6.1 is either Windows 7 or Windows Server 2008 R2
+-- 6.0 is either Windows Vista or Windows Server 2008
 
-
--- host_sku codes (only valid for Windows)
+-- Windows SKU codes
 -- 4 is Enterprise Edition
 -- 7 is Standard Server Edition
 -- 8 is Datacenter Server Edition
@@ -298,7 +318,7 @@ FROM sys.dm_os_host_info WITH (NOLOCK) OPTION (RECOMPILE);
 
 -- 1033 for os_language_version is US-English
 
--- SQL Server 2017 requires Windows Server 2012 or newer
+-- SQL Server 2016 requires Windows Server 2012 or newer
 
 -- Quick-Start Installation of SQL Server 2016
 -- https://msdn.microsoft.com/en-us/library/bb500433(v=sql.130).aspx
@@ -311,7 +331,7 @@ FROM sys.dm_os_host_info WITH (NOLOCK) OPTION (RECOMPILE);
 
 
 -- SQL Server NUMA Node information  (Query 12) (SQL Server NUMA Info)
-SELECT node_id, node_state_desc, memory_node_id, processor_group, cpu_count, online_scheduler_count, 
+SELECT node_id, node_state_desc, memory_node_id, processor_group, online_scheduler_count, 
        idle_scheduler_count, active_worker_count, avg_load_balance, resource_monitor_state
 FROM sys.dm_os_nodes WITH (NOLOCK) 
 WHERE node_state_desc <> N'ONLINE DAC' OPTION (RECOMPILE);
@@ -397,15 +417,15 @@ ORDER BY ag.name, ar.replica_server_name, adc.[database_name] OPTION (RECOMPILE)
 -- https://blogs.msdn.microsoft.com/bobsql/2016/09/26/sql-server-2016-it-just-runs-faster-always-on-availability-groups-turbocharged/
 
 
--- Hardware information from SQL Server 2017  (Query 17) (Hardware Info)
-SELECT cpu_count AS [Logical CPU Count], scheduler_count, (socket_count * cores_per_socket) AS [Physical CPU Count], 
-socket_count AS [Physical CPU Count], cores_per_socket, numa_node_count,
+-- Hardware information from SQL Server 2016  (Query 17) (Hardware Info)
+SELECT cpu_count AS [Logical CPU Count], scheduler_count, hyperthread_ratio AS [Hyperthread Ratio],
+cpu_count/hyperthread_ratio AS [Physical CPU Count], 
 physical_memory_kb/1024 AS [Physical Memory (MB)], committed_kb/1024 AS [Committed Memory (MB)],
 committed_target_kb/1024 AS [Committed Target Memory (MB)],
 max_workers_count AS [Max Workers Count], affinity_type_desc AS [Affinity Type], 
 sqlserver_start_time AS [SQL Server Start Time], virtual_machine_type_desc AS [Virtual Machine Type], 
-softnuma_configuration_desc AS [Soft NUMA Configuration], sql_memory_model_desc, 
-process_physical_affinity
+softnuma_configuration_desc AS [Soft NUMA Configuration],
+sql_memory_model_desc -- New in SQL Server 2016 SP1
 FROM sys.dm_os_sys_info WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
@@ -476,7 +496,6 @@ FROM sys.dm_os_buffer_pool_extension_configuration WITH (NOLOCK) OPTION (RECOMPI
 
 -- Buffer Pool Extension
 -- https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/buffer-pool-extension
-
 
 
 -- Look at buffer descriptors to see BPE usage by database (Query 22) (BPE Usage) 
@@ -613,7 +632,7 @@ ORDER BY [Overall Latency] OPTION (RECOMPILE);
 -- Shows you the drive-level latency for reads and writes, in milliseconds
 -- Latency above 30-40ms is usually a problem
 -- These latency numbers include all file activity against all SQL Server 
--- database file on each drive since SQL Server was last started
+-- database files on each drive since SQL Server was last started
 
 
 -- Calculates average stalls per read, per write, and per total input/output for each database file  (Query 29) (IO Stalls by File)
@@ -681,10 +700,10 @@ db.[compatibility_level] AS [DB Compatibility Level],
 db.is_mixed_page_allocation_on, db.page_verify_option_desc AS [Page Verify Option], 
 db.is_auto_create_stats_on, db.is_auto_update_stats_on, db.is_auto_update_stats_async_on, db.is_parameterization_forced, 
 db.snapshot_isolation_state_desc, db.is_read_committed_snapshot_on, db.is_auto_close_on, db.is_auto_shrink_on, 
-db.target_recovery_time_in_seconds, db.is_cdc_enabled, db.is_published, db.is_distributor,
+db.target_recovery_time_in_seconds, db.is_cdc_enabled, db.is_published, db.is_distributor, db.is_encrypted,
 db.group_database_id, db.replica_id,db.is_memory_optimized_elevate_to_snapshot_on, 
 db.delayed_durability_desc, db.is_auto_create_stats_incremental_on,
-db.is_query_store_on, db.is_sync_with_backup, db.is_temporal_history_retention_enabled,
+db.is_query_store_on, db.is_sync_with_backup, 
 db.is_supplemental_logging_enabled, db.is_remote_data_archive_enabled,
 db.is_encrypted, de.encryption_state, de.percent_complete, de.key_algorithm, de.key_length      
 FROM sys.databases AS db WITH (NOLOCK)
@@ -744,12 +763,31 @@ ORDER BY index_advantage DESC OPTION (RECOMPILE);
 
 
 -- Get VLF Counts for all databases on the instance (Query 33) (VLF Counts)
-SELECT [name] AS [Database Name], [VLF Count] 
-FROM sys.databases AS db WITH (NOLOCK)
-CROSS APPLY (SELECT file_id, COUNT(*) AS [VLF Count] 
-			 FROM sys.dm_db_log_info(db.database_id) 
-             GROUP BY file_id) AS li
-ORDER BY [VLF Count] DESC  OPTION (RECOMPILE);
+-- (adapted from Michelle Ufford) 
+CREATE TABLE #VLFInfo (RecoveryUnitID int, FileID  int,
+					   FileSize bigint, StartOffset bigint,
+					   FSeqNo      bigint, [Status]    bigint,
+					   Parity      bigint, CreateLSN   numeric(38));
+	 
+CREATE TABLE #VLFCountResults(DatabaseName sysname, VLFCount int);
+	 
+EXEC sp_MSforeachdb N'Use [?]; 
+
+				INSERT INTO #VLFInfo 
+				EXEC sp_executesql N''DBCC LOGINFO([?])''; 
+	 
+				INSERT INTO #VLFCountResults 
+				SELECT DB_NAME(), COUNT(*) 
+				FROM #VLFInfo; 
+
+				TRUNCATE TABLE #VLFInfo;'
+	 
+SELECT DatabaseName, VLFCount  
+FROM #VLFCountResults
+ORDER BY VLFCount DESC;
+	 
+DROP TABLE #VLFInfo;
+DROP TABLE #VLFCountResults;
 ------
 
 -- High VLF counts can affect write performance to the log file
@@ -968,7 +1006,6 @@ ON t1.lock_owner_address = t2.resource_address OPTION (RECOMPILE);
 
 
 -- Get CPU Utilization History for last 256 minutes (in one minute intervals)  (Query 41) (CPU Utilization History)
--- This version works with SQL Server 2016
 DECLARE @ts_now bigint = (SELECT cpu_ticks/(cpu_ticks/ms_ticks) FROM sys.dm_os_sys_info WITH (NOLOCK)); 
 
 SELECT TOP(256) SQLProcessUtilization AS [SQL Server Process CPU Utilization], 
@@ -1059,6 +1096,7 @@ ORDER BY SUM(mc.pages_kb) DESC OPTION (RECOMPILE);
 -- These are cached SQL statements or batches that aren't in stored procedures, functions and triggers
 -- Watch out for high values for CACHESTORE_SQLCP
 -- Enabling 'optimize for ad hoc workloads' at the instance level can help reduce this
+-- Running DBCC FREESYSTEMCACHE ('SQL Plans') periodically may be required to better control this
 
 -- CACHESTORE_OBJCP  Object Plans      
 -- These are compiled plans for stored procedures, functions and triggers
@@ -1157,8 +1195,8 @@ SELECT f.name AS [File Name] , f.physical_name AS [Physical Name],
 CAST((f.size/128.0) AS DECIMAL(15,2)) AS [Total Size in MB],
 CAST(f.size/128.0 - CAST(FILEPROPERTY(f.name, 'SpaceUsed') AS int)/128.0 AS DECIMAL(15,2)) 
 AS [Available Space In MB], f.[file_id], fg.name AS [Filegroup Name],
-f.is_percent_growth, f.growth, 
-fg.is_default, fg.is_read_only, fg.is_autogrow_all_files
+f.is_percent_growth, f.growth, fg.is_default, fg.is_read_only, 
+fg.is_autogrow_all_files -- New in SQL Server 2016
 FROM sys.database_files AS f WITH (NOLOCK) 
 LEFT OUTER JOIN sys.filegroups AS fg WITH (NOLOCK)
 ON f.data_space_id = fg.data_space_id
@@ -1190,23 +1228,8 @@ OPTION (RECOMPILE);
 -- Look at log file size and usage, along with the log reuse wait description for the current database
 
 
--- Status of last VLF for current database  (Query 52) (Last VLF Status)
-SELECT TOP(1) DB_NAME(li.database_id) AS [Database Name], li.[file_id],
-               li.vlf_size_mb, li.vlf_sequence_number, li.vlf_active, li.vlf_status
-FROM sys.dm_db_log_info(DB_ID()) AS li 
-ORDER BY vlf_sequence_number DESC OPTION (RECOMPILE);
-------
 
--- Determine whether you will be able to shrink the transaction log file
-
--- vlf_status Values
--- 0 is inactive 
--- 1 is initialized but unused 
--- 2 is active
-
-
-
--- Get database scoped configuration values for current database (Query 53) (Database-scoped Configurations)
+-- Get database scoped configuration values for current database (Query 52) (Database-scoped Configurations)
 SELECT configuration_id, name, [value] AS [value_for_primary], value_for_secondary
 FROM sys.database_scoped_configurations WITH (NOLOCK) OPTION (RECOMPILE);
 ------
@@ -1220,7 +1243,7 @@ FROM sys.database_scoped_configurations WITH (NOLOCK) OPTION (RECOMPILE);
 -- https://msdn.microsoft.com/en-us/library/mt629158.aspx
 
 
--- I/O Statistics by file for the current database  (Query 54) (IO Stats By File)
+-- I/O Statistics by file for the current database  (Query 53) (IO Stats By File)
 SELECT DB_NAME(DB_ID()) AS [Database Name], df.name AS [Logical Name], vfs.[file_id], df.type_desc,
 df.physical_name AS [Physical Name], CAST(vfs.size_on_disk_bytes/1048576.0 AS DECIMAL(10, 2)) AS [Size on Disk (MB)],
 vfs.num_of_reads, vfs.num_of_writes, vfs.io_stall_read_ms, vfs.io_stall_write_ms,
@@ -1243,7 +1266,7 @@ ON vfs.[file_id]= df.[file_id] OPTION (RECOMPILE);
 
 
 
--- Get most frequently executed queries for this database (Query 55) (Query Execution Counts)
+-- Get most frequently executed queries for this database (Query 54) (Query Execution Counts)
 SELECT TOP(50) LEFT(t.[text], 50) AS [Short Query Text], qs.execution_count AS [Execution Count],
 qs.total_logical_reads AS [Total Logical Reads],
 qs.total_logical_reads/qs.execution_count AS [Avg Logical Reads],
@@ -1261,8 +1284,8 @@ ORDER BY qs.execution_count DESC OPTION (RECOMPILE);
 ------
 
 
--- Queries 55 through 60 are the "Bad Man List"
--- Top Cached SPs By Execution Count (Query 56) (SP Execution Counts)
+-- Queries 55 through 60 are the "Bad Man List" for stored procedures
+-- Top Cached SPs By Execution Count (Query 55) (SP Execution Counts)
 SELECT TOP(100) p.name AS [SP Name], qs.execution_count,
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],
 qs.total_worker_time/qs.execution_count AS [AvgWorkerTime], qs.total_worker_time AS [TotalWorkerTime],  
@@ -1280,7 +1303,7 @@ ORDER BY qs.execution_count DESC OPTION (RECOMPILE);
 -- This helps you characterize and baseline your workload
 
 
--- Top Cached SPs By Avg Elapsed Time (Query 57) (SP Avg Elapsed Time)
+-- Top Cached SPs By Avg Elapsed Time (Query 56) (SP Avg Elapsed Time)
 SELECT TOP(25) p.name AS [SP Name], qs.min_elapsed_time, qs.total_elapsed_time/qs.execution_count AS [avg_elapsed_time], 
 qs.max_elapsed_time, qs.last_elapsed_time, qs.total_elapsed_time, qs.execution_count, 
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute], 
@@ -1299,7 +1322,7 @@ ORDER BY avg_elapsed_time DESC OPTION (RECOMPILE);
 
 
 
--- Top Cached SPs By Total Worker time. Worker time relates to CPU cost  (Query 58) (SP Worker Time)
+-- Top Cached SPs By Total Worker time. Worker time relates to CPU cost  (Query 57) (SP Worker Time)
 SELECT TOP(25) p.name AS [SP Name], qs.total_worker_time AS [TotalWorkerTime], 
 qs.total_worker_time/qs.execution_count AS [AvgWorkerTime], qs.execution_count, 
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute],
@@ -1317,7 +1340,7 @@ ORDER BY qs.total_worker_time DESC OPTION (RECOMPILE);
 -- You should look at this if you see signs of CPU pressure
 
 
--- Top Cached SPs By Total Logical Reads. Logical reads relate to memory pressure  (Query 59) (SP Logical Reads)
+-- Top Cached SPs By Total Logical Reads. Logical reads relate to memory pressure  (Query 58) (SP Logical Reads)
 SELECT TOP(25) p.name AS [SP Name], qs.total_logical_reads AS [TotalLogicalReads], 
 qs.total_logical_reads/qs.execution_count AS [AvgLogicalReads],qs.execution_count, 
 ISNULL(qs.execution_count/DATEDIFF(Minute, qs.cached_time, GETDATE()), 0) AS [Calls/Minute], 
@@ -1335,7 +1358,7 @@ ORDER BY qs.total_logical_reads DESC OPTION (RECOMPILE);
 -- You should look at this if you see signs of memory pressure
 
 
--- Top Cached SPs By Total Physical Reads. Physical reads relate to disk read I/O pressure  (Query 60) (SP Physical Reads)
+-- Top Cached SPs By Total Physical Reads. Physical reads relate to disk read I/O pressure  (Query 59) (SP Physical Reads)
 SELECT TOP(25) p.name AS [SP Name],qs.total_physical_reads AS [TotalPhysicalReads], 
 qs.total_physical_reads/qs.execution_count AS [AvgPhysicalReads], qs.execution_count, 
 qs.total_logical_reads,qs.total_elapsed_time, qs.total_elapsed_time/qs.execution_count 
@@ -1353,7 +1376,7 @@ ORDER BY qs.total_physical_reads DESC, qs.total_logical_reads DESC OPTION (RECOM
        
 
 
--- Top Cached SPs By Total Logical Writes (Query 61) (SP Logical Writes)
+-- Top Cached SPs By Total Logical Writes (Query 60) (SP Logical Writes)
 -- Logical writes relate to both memory and disk I/O pressure 
 SELECT TOP(25) p.name AS [SP Name], qs.total_logical_writes AS [TotalLogicalWrites], 
 qs.total_logical_writes/qs.execution_count AS [AvgLogicalWrites], qs.execution_count,
@@ -1373,7 +1396,7 @@ ORDER BY qs.total_logical_writes DESC OPTION (RECOMPILE);
 -- You should look at this if you see signs of I/O pressure or of memory pressure
 
 
--- Lists the top statements by average input/output usage for the current database  (Query 62) (Top IO Statements)
+-- Lists the top statements by average input/output usage for the current database  (Query 61) (Top IO Statements)
 SELECT TOP(50) OBJECT_NAME(qt.objectid, dbid) AS [SP Name],
 (qs.total_logical_reads + qs.total_logical_writes) /qs.execution_count AS [Avg IO], qs.execution_count AS [Execution Count],
 SUBSTRING(qt.[text],qs.statement_start_offset/2, 
@@ -1392,7 +1415,7 @@ ORDER BY [Avg IO] DESC OPTION (RECOMPILE);
 
 
 
--- Possible Bad NC Indexes (writes > reads)  (Query 63) (Bad NC Indexes)
+-- Possible Bad NC Indexes (writes > reads)  (Query 62) (Bad NC Indexes)
 SELECT OBJECT_NAME(s.[object_id]) AS [Table Name], i.name AS [Index Name], i.index_id, 
 i.is_disabled, i.is_hypothetical, i.has_filter, i.fill_factor,
 user_updates AS [Total Writes], user_seeks + user_scans + user_lookups AS [Total Reads],
@@ -1413,7 +1436,7 @@ ORDER BY [Difference] DESC, [Total Writes] DESC, [Total Reads] ASC OPTION (RECOM
 -- Investigate further before dropping an index!
 
 
--- Missing Indexes for current database by Index Advantage  (Query 64) (Missing Indexes)
+-- Missing Indexes for current database by Index Advantage  (Query 63) (Missing Indexes)
 SELECT DISTINCT CONVERT(decimal(18,2), user_seeks * avg_total_user_cost * (avg_user_impact * 0.01)) AS [index_advantage], 
 migs.last_user_seek, mid.[statement] AS [Database.Schema.Table],
 mid.equality_columns, mid.inequality_columns, mid.included_columns,
@@ -1435,7 +1458,7 @@ ORDER BY index_advantage DESC OPTION (RECOMPILE);
 -- Do not just blindly add indexes that show up from this query!!!
 
 
--- Find missing index warnings for cached plans in the current database  (Query 65) (Missing Index Warnings)
+-- Find missing index warnings for cached plans in the current database  (Query 64) (Missing Index Warnings)
 -- Note: This query could take some time on a busy instance
 SELECT TOP(25) OBJECT_NAME(objectid) AS [ObjectName], 
                cp.objtype, cp.usecounts, cp.size_in_bytes, query_plan
@@ -1450,7 +1473,7 @@ ORDER BY cp.usecounts DESC OPTION (RECOMPILE);
 -- This can help you decide whether to add them or not
 
 
--- Breaks down buffers used by current database by object (table, index) in the buffer cache  (Query 66) (Buffer Usage)
+-- Breaks down buffers used by current database by object (table, index) in the buffer cache  (Query 65) (Buffer Usage)
 -- Note: This query could take some time on a busy instance
 SELECT OBJECT_NAME(p.[object_id]) AS [Object Name], p.index_id, 
 CAST(COUNT(*)/128.0 AS DECIMAL(10, 2)) AS [Buffer size(MB)],  
@@ -1474,7 +1497,7 @@ ORDER BY [BufferCount] DESC OPTION (RECOMPILE);
 -- It can help identify possible candidates for data compression
 
 
--- Get Table names, row counts, and compression status for clustered index or heap  (Query 67) (Table Sizes)
+-- Get Table names, row counts, and compression status for clustered index or heap  (Query 66) (Table Sizes)
 SELECT OBJECT_NAME(object_id) AS [ObjectName], 
 SUM(Rows) AS [RowCount], data_compression_desc AS [CompressionType]
 FROM sys.partitions WITH (NOLOCK)
@@ -1496,7 +1519,7 @@ ORDER BY SUM(Rows) DESC OPTION (RECOMPILE);
 
 
 
--- Get some key table properties (Query 68) (Table Properties)
+-- Get some key table properties (Query 67) (Table Properties)
 SELECT OBJECT_NAME(t.[object_id]) AS [ObjectName], p.[rows] AS [Table Rows], p.index_id, 
        p.data_compression_desc AS [Index Data Compression],
        t.create_date, t.lock_on_bulk_load, t.is_replicated, t.has_replication_filter, 
@@ -1519,7 +1542,7 @@ ORDER BY OBJECT_NAME(t.[object_id]), p.index_id OPTION (RECOMPILE);
 
 
 
--- When were Statistics last updated on all indexes?  (Query 69) (Statistics Update)
+-- When were Statistics last updated on all indexes?  (Query 68) (Statistics Update)
 SELECT SCHEMA_NAME(o.Schema_ID) + N'.' + o.[NAME] AS [Object Name], o.[type_desc] AS [Object Type],
       i.[name] AS [Index Name], STATS_DATE(i.[object_id], i.index_id) AS [Statistics Date], 
       s.auto_created, s.no_recompute, s.user_created, s.is_incremental, s.is_temporary,
@@ -1546,7 +1569,7 @@ ORDER BY STATS_DATE(i.[object_id], i.index_id) DESC OPTION (RECOMPILE);
 
 
 
--- Look at most frequently modified indexes and statistics (Query 70) (Volatile Indexes)
+-- Look at most frequently modified indexes and statistics (Query 69) (Volatile Indexes)
 SELECT o.[name] AS [Object Name], o.[object_id], o.[type_desc], s.[name] AS [Statistics Name], 
        s.stats_id, s.no_recompute, s.auto_created, s.is_incremental, s.is_temporary,
 	   sp.modification_counter, sp.[rows], sp.rows_sampled, sp.last_updated
@@ -1564,7 +1587,7 @@ ORDER BY sp.modification_counter DESC, o.name OPTION (RECOMPILE);
 
 
 
--- Get fragmentation info for all indexes above a certain size in the current database  (Query 71) (Index Fragmentation)
+-- Get fragmentation info for all indexes above a certain size in the current database  (Query 70) (Index Fragmentation)
 -- Note: This query could take some time on a very large database
 SELECT DB_NAME(ps.database_id) AS [Database Name], SCHEMA_NAME(o.[schema_id]) AS [Schema Name],
 OBJECT_NAME(ps.OBJECT_ID) AS [Object Name], i.[name] AS [Index Name], ps.index_id, 
@@ -1586,7 +1609,7 @@ ORDER BY ps.avg_fragmentation_in_percent DESC OPTION (RECOMPILE);
 -- and how effective your index maintenance strategy is
 
 
---- Index Read/Write stats (all tables in current DB) ordered by Reads  (Query 72) (Overall Index Usage - Reads)
+--- Index Read/Write stats (all tables in current DB) ordered by Reads  (Query 71) (Overall Index Usage - Reads)
 SELECT OBJECT_NAME(i.[object_id]) AS [ObjectName], i.[name] AS [IndexName], i.index_id, 
        s.user_seeks, s.user_scans, s.user_lookups,
 	   s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads], 
@@ -1605,7 +1628,7 @@ ORDER BY s.user_seeks + s.user_scans + s.user_lookups DESC OPTION (RECOMPILE); -
 -- Show which indexes in the current database are most active for Reads
 
 
---- Index Read/Write stats (all tables in current DB) ordered by Writes  (Query 73) (Overall Index Usage - Writes)
+--- Index Read/Write stats (all tables in current DB) ordered by Writes  (Query 72) (Overall Index Usage - Writes)
 SELECT OBJECT_NAME(i.[object_id]) AS [ObjectName], i.[name] AS [IndexName], i.index_id,
 	   s.user_updates AS [Writes], s.user_seeks + s.user_scans + s.user_lookups AS [Total Reads], 
 	   i.[type_desc] AS [Index Type], i.fill_factor AS [Fill Factor], i.has_filter, i.filter_definition,
@@ -1622,7 +1645,7 @@ ORDER BY s.user_updates DESC OPTION (RECOMPILE);						 -- Order by writes
 -- Show which indexes in the current database are most active for Writes
 
 
--- Get in-memory OLTP index usage (Query 74) (XTP Index Usage)
+-- Get in-memory OLTP index usage (Query 73) (XTP Index Usage)
 SELECT OBJECT_NAME(i.[object_id]) AS [Object Name], i.index_id, i.[name] AS [Index Name],
        i.[type_desc], xis.scans_started, xis.scans_retries, 
 	   xis.rows_touched, xis.rows_returned
@@ -1640,7 +1663,7 @@ ORDER BY OBJECT_NAME(i.[object_id]) OPTION (RECOMPILE);
 -- https://msdn.microsoft.com/en-us/library/dn133166.aspx
 
 
--- Look at Columnstore index physical statistics (Query 75) (Columnstore Index Physical Stat)
+-- Look at Columnstore index physical statistics (Query 74) (Columnstore Index Physical Stat)
 SELECT OBJECT_NAME(ps.object_id) AS [TableName],  
 	i.[name] AS [IndexName], ps.index_id, ps.partition_number,
 	ps.delta_store_hobt_id, ps.state_desc, ps.total_rows, ps.size_in_bytes,
@@ -1658,7 +1681,7 @@ ORDER BY ps.object_id, ps.partition_number, ps.row_group_id OPTION (RECOMPILE);
 -- https://msdn.microsoft.com/en-us/library/dn832030.aspx
 
 
--- Get lock waits for current database (Query 76) (Lock Waits)
+-- Get lock waits for current database (Query 75) (Lock Waits)
 SELECT o.name AS [table_name], i.name AS [index_name], ios.index_id, ios.partition_number,
 		SUM(ios.row_lock_wait_count) AS [total_row_lock_waits], 
 		SUM(ios.row_lock_wait_in_ms) AS [total_row_lock_wait_in_ms],
@@ -1681,7 +1704,7 @@ ORDER BY total_lock_wait_in_ms DESC OPTION (RECOMPILE);
 
 
 
--- Look at UDF execution statistics (Query 77) (UDF Statistics)
+-- Look at UDF execution statistics (Query 76) (UDF Statistics)
 SELECT OBJECT_NAME(object_id) AS [Function Name], execution_count,
 	   total_worker_time, total_logical_reads, total_physical_reads,
        total_elapsed_time
@@ -1697,7 +1720,7 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 -- https://msdn.microsoft.com/en-US/library/mt429371.aspx
 
 
--- Get QueryStore Options for this database (Query 78) (QueryStore Options)
+-- Get Query Store Options for this database (Query 77) (QueryStore Options)
 SELECT actual_state_desc, desired_state_desc,
        current_storage_size_mb, [max_storage_size_mb], 
 	   query_capture_mode_desc, size_based_cleanup_mode_desc
@@ -1705,13 +1728,13 @@ FROM sys.database_query_store_options WITH (NOLOCK) OPTION (RECOMPILE);
 ------
 
 -- New for SQL Server 2016
--- Requires that QueryStore is enabled for this database
+-- Requires that Query Store is enabled for this database
 
 -- Tuning Workload Performance with Query Store
 -- http://blogs.technet.com/b/dataplatforminsider/archive/2015/12/16/tuning-workload-performance-with-query-store.aspx
 
 
--- Get highest aggregate duration queries over last hour (Query 79) (High Aggregate Duration Queries)
+-- Get highest aggregate duration queries over last hour (Query 78) (High Aggregate Duration Queries)
 WITH AggregatedDurationLastHour
 AS
 (SELECT q.query_id, SUM(count_executions * avg_duration) AS total_duration,
@@ -1754,7 +1777,7 @@ ORDER BY total_duration DESC OPTION (RECOMPILE);
 -- Requires that QueryStore is enabled for this database
 
 
--- Get input buffer information for the current database (Query 80) (Input Buffer)
+-- Get input buffer information for the current database (Query 79) (Input Buffer)
 SELECT es.session_id, DB_NAME(es.database_id) AS [Database Name],
 es.login_time, es.cpu_time, es.logical_reads,
 es.[status], ib.event_info AS [Input Buffer]
@@ -1763,7 +1786,6 @@ CROSS APPLY sys.dm_exec_input_buffer(es.session_id, NULL) AS ib
 WHERE es.database_id = DB_ID()
 AND es.session_id > 50
 AND es.session_id <> @@SPID OPTION (RECOMPILE);
-------
 
 -- Gives you input buffer information from all non-system sessions for the current database
 -- Replaces DBCC INPUTBUFFER
@@ -1773,29 +1795,7 @@ AND es.session_id <> @@SPID OPTION (RECOMPILE);
 
 
 
--- Get any resumable index rebuild operation information (Query 81) (Resumable Index Rebuild)
-SELECT OBJECT_NAME(iro.object_id) AS [Object Name], iro.index_id, iro.name AS [Index Name],
-       iro.sql_text, iro.last_max_dop_used, iro.partition_number, iro.state_desc, iro.start_time, iro.percent_complete
-FROM  sys.index_resumable_operations AS iro WITH (NOLOCK)
-OPTION (RECOMPILE);
------- 
-
--- index_resumable_operations (Transact-SQL)
--- https://docs.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-index-resumable-operations
-
-
--- Get database automatic tuning options (Query 82) (Automatic Tuning Options)
-SELECT [name], desired_state_desc, actual_state_desc, reason_desc
-FROM sys.database_automatic_tuning_options WITH (NOLOCK)
-OPTION (RECOMPILE);
------- 
-
--- sys.database_automatic_tuning_options (Transact-SQL)
--- https://docs.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-database-automatic-tuning-options-transact-sql
-
-
-
--- Look at recent Full backups for the current database (Query 83) (Recent Full Backups)
+-- Look at recent Full backups for the current database (Query 80) (Recent Full Backups)
 SELECT TOP (30) bs.machine_name, bs.server_name, bs.database_name AS [Database Name], bs.recovery_model,
 CONVERT (BIGINT, bs.backup_size / 1048576 ) AS [Uncompressed Backup Size (MB)],
 CONVERT (BIGINT, bs.compressed_backup_size / 1048576 ) AS [Compressed Backup Size (MB)],
@@ -1845,3 +1845,10 @@ ORDER BY bs.backup_finish_date DESC OPTION (RECOMPILE);
 
 -- Microsoft IT Pro Cloud Essentials
 -- http://bit.ly/2443SAd
+
+
+-- August 2017 blog series about upgrading and migrating SQL Server
+-- https://www.sqlskills.com/blogs/glenn/category/upgrading-sql-server/
+
+
+
