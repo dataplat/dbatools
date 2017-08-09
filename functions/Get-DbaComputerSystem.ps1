@@ -117,7 +117,7 @@ function Get-DbaComputerSystem {
 				}
 			}
 			$inputObject = [PSCustomObject]@{
-				ComputerName            = $computer.ComputerName
+				ComputerName            = $computerResolved
 				Domain                  = $computerSystem.Domain
 				DomainRole              = $domainRole
 				Manufacturer            = $computerSystem.Manufacturer
