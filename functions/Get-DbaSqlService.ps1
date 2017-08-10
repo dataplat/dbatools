@@ -19,6 +19,9 @@ Function Get-DbaSqlService
     Use -Type to collect only services of the desired SqlServiceType.
     Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
 
+    .PARAMETER Silent
+    Use this switch to disable any kind of verbose messages
+
     .NOTES
     Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
@@ -58,12 +61,12 @@ Param (
   [Alias("cn","host","Server")]
   [string[]]$ComputerName = $env:COMPUTERNAME,
   [PSCredential] $Credential,
-  [ValidateSet("Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS")][string]$Type
+  [ValidateSet("Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS")][string]$Type,
+  [switch]$Silent
 )
 
 BEGIN
   {
-  $FunctionName = (Get-PSCallstack)[0].Command
   $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
   $TypeClause = switch($Type){ "Agent" {" = 2"} "Browser" {" = 7"} "Engine" {" = 1"} "FulText" {"= 3 OR SQLServiceType = 9"} "SSAS" {" = 5"} "SSIS" {" = 4"} "SSRS" {" = 6"} default {"> 0"} }
   }
@@ -72,16 +75,16 @@ PROCESS
         foreach ( $Computer in $ComputerName )
         {
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
-            if ( $Server.ComputerName )
+            if ( $Server.FullComputerName )
             {
-                $Computer = $server.ComputerName
-                Write-Verbose "$FunctionName - Getting SQL Server namespace on $Computer via CIM (WSMan)"
+                $Computer = $server.FullComputerName
+                Write-Message -Level Verbose -Message "Getting SQL Server namespace on $Computer via CIM (WSMan)"
                 $namespace = Get-CimInstance -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
                             Where-Object {(Get-CimInstance -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue).count -gt 0} |
                             Sort-Object Name -Descending | Select-Object -First 1
                 if ( $namespace.Name )
                 {
-                    Write-Verbose "$FunctionName - Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer via CIM (WSMan)"
+                    Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer via CIM (WSMan)"
                     try
                     {
                         Get-CimInstance -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE SQLServiceType $TypeClause" -ErrorAction SilentlyContinue |
@@ -99,29 +102,29 @@ PROCESS
                      }
                      catch
                      {
-                        Write-Warning "$FunctionName - No Sql Services found on $Computer via CIM (WSMan)"
+                        Write-Message -Level Warning -Message "No Sql Services found on $Computer via CIM (WSMan)"
                      }
                 }
                 else
                 {
-                  Write-Verbose "$FunctionName - Getting computer information from $Computer via CIMsession (DCOM)"
+                  Write-Message -Level Verbose -Message "Getting computer information from $Computer via CIMsession (DCOM)"
                   $sessionoption = New-CimSessionOption -Protocol DCOM
                   $CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
                   if ( $CIMSession )
                   {
-                    Write-Verbose "$FunctionName - Get ComputerManagement Namespace in CIMsession on $Computer with protocol DCom."
+                    Write-Message -Level Verbose -Message "Get ComputerManagement Namespace in CIMsession on $Computer with protocol DCom."
                     $namespace = Get-CimInstance -CimSession $CIMsession -NameSpace root\Microsoft\SQLServer -ClassName "__NAMESPACE" -Filter "Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
                     Where-Object {(Get-CimInstance -CimSession $CIMsession -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue).count -gt 0} |
                     Sort-Object Name -Descending | Select-Object -First 1
                   }
                   else
                   {
-                    Write-Warning "$FunctionName - can't create CIMsession via DCom on $Computer"
+                    Write-Message -Level Warning -Message "can't create CIMsession via DCom on $Computer"
                     continue
                   }
                   if ( $namespace.Name )
                   {
-                      Write-Verbose "$FunctionName - Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer via CIM (DCOM)"
+                      Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer via CIM (DCOM)"
                       try
                       {
                           Get-CimInstance -CimSession $CIMsession -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE SQLServiceType $TypeClause" -ErrorAction SilentlyContinue |
@@ -139,19 +142,19 @@ PROCESS
                         }
                         catch
                         {
-                          Write-Warning "$FunctionName - No Sql Services found on $Computer via CIM (DCOM)"
+                          Write-Message -Level Warning -Message "No Sql Services found on $Computer via CIM (DCOM)"
                         }
                     if ( $CIMsession ) { Remove-CimSession $CIMsession }
                   }
                   else
                   {
-                  Write-Warning "$FunctionName - No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
+                  Write-Message -Level Warning -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
                   }
                 }
             }
             else
             {
-                Write-Warning "$FunctionName - Failed to connect to $Computer"
+                Write-Message -Level Warning -Message "Failed to connect to $Computer"
             }
         }
     }
