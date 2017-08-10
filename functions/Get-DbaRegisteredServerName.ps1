@@ -202,20 +202,20 @@ function Get-DbaRegisteredServerName {
 		}
 
 		if ($IpAddress) {
-			$ret = ($servers | Select-Object IPAddress)
+			$ret = @($servers | Select-Object IPAddress)
 
 			if (!$NoCmsServer) {
-				$ret += ($cmsServers | Select-Object IPAddress)
+				$ret += @($cmsServers | Select-Object IPAddress)
 			}
 
 			$ret | Select-Object -Unique -ExpandProperty IPAddress
 		}
 
 		elseif ($NetBiosName) {
-			$ret = ($servers | Select-Object ComputerName)
+			$ret = @($servers | Select-Object ComputerName)
 
 			if (!$NoCmsServer) {
-				$ret += ($cmsServers | Select-Object ComputerName)
+				$ret += @($cmsServers | Select-Object ComputerName)
 			}
 
 			$ret | Select-Object -Unique -ExpandProperty ComputerName
@@ -228,14 +228,13 @@ function Get-DbaRegisteredServerName {
 
 		#By default, return only the server name for backwards compatibility
 		else {
-			$ret = ($servers | Select-Object ServerName)
+			$ret = @($servers | Select-Object ServerName)
 
 			if (!$NoCmsServer) {
-				$ret += ($cmsServers | Select-Object ServerName)
+				$ret += @($cmsServers | Select-Object ServerName)
 			}
 
 			$ret | Select-Object -Unique -ExpandProperty ServerName
-
 		}
 
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlRegisteredServerName
