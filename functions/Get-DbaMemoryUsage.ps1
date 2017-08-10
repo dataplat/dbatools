@@ -201,9 +201,9 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 	process {
 		foreach ($Computer in $ComputerName.ComputerName) {
 			$reply = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -ErrorAction SilentlyContinue
-			if ($reply.ComputerName) {
-				$Computer = $reply.ComputerName
-				Write-Verbose "Connecting to $Computer"
+			if ($reply.FullComputerName) {
+				$Computer = $reply.FullComputerName
+				Write-Message -Level Verbose -Message "Connecting to $Computer"
 				Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock
 			}
 			else {
