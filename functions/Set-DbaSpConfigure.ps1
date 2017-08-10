@@ -146,7 +146,7 @@
 					
 					#If it's a dynamic setting we're all clear, otherwise let the user know that SQL needs to be restarted for the change to take
 					if ($isDynamic -eq $false) {
-						Write-Message -Level Warning -Message "Config set for $Config, but restart of SQL Server is required for the new value ($value) to be used (old value: $($value))" -Target $Instance
+						Write-Message -Level Warning -Message "Configuration item $ConfigName has been set, but restart of SQL Server is required for the new value $value to be used (old value: $currentRunValue)" -Target $Instance
 					}
 				}
 				catch {
