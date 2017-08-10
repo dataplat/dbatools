@@ -4,35 +4,40 @@
 			Attach a SQL Server Database - aliased to Attach-DbaDatabase
 
 		.DESCRIPTION
-			This command will attach a SQL Server database
+			This command will attach a SQL Server database.
 
 		.PARAMETER SqlInstance
-			The target SQL Server
+			The SQL Server instance. Server version must be SQL Server version XXXX or higher.
 
-		.PARAMETER SqlCredential
-			PSCredential object to connect as. If not specified, current Windows login will be used
+        .PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Database
-			A string value that specifies the name of the database or databases to be attached
+			The database(s) to attach.
 
 		.PARAMETER FileStructure
 			A StringCollection object value that contains a list database files. If FileStructure is not specified, BackupHistory will be used to guess the structure.
 	
 		.PARAMETER DatabaseOwner
-			Sets the database owner for the database. The sa account (or equialent) will be used if DatabaseOwner is not specified.
+			Sets the database owner for the database. The sa account (or equivalent) will be used if DatabaseOwner is not specified.
 
 		.PARAMETER AttachOption
-			A AttachOptions object value that contains the attachment options. Valid options include 
-			None, RebuildLog, EnableBroker, NewBroker and ErrorBrokerConversations
+			An AttachOptions object value that contains the attachment options. Valid options are "None", "RebuildLog", "EnableBroker", "NewBroker" and "ErrorBrokerConversations".
 	
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Database
@@ -50,8 +55,7 @@
 			$filestructure.Add("E:\archive\example.ndf")
 			Mount-DbaDatabase -SqlInstance sql2016 -Database example -FileStructure $fileStructure
 	
-			Will mount a database named "example" to sql2016 with the files "E:\archive\example.mdf", "E:\archive\example.ldf", "E:\archive\example.ndf".
-			The database will be given the owner "sa" and the attach option is None (as opposed to rebuildlog, enable broker, new broker, or errorbrokerconversations
+			Attaches a database named "example" to sql2016 with the files "E:\archive\example.mdf", "E:\archive\example.ldf" and "E:\archive\example.ndf". The database owner will be set to sa and the attach option is None.
 	
 		.EXAMPLE
 			Mount-DbaDatabase -SqlInstance sql2016 -Database example
@@ -99,19 +103,18 @@
 			foreach ($db in $database) {
 				
 				if ($server.Databases[$db]) {
-					Stop-Function -Message "$db is already attached to $server" -Target $db -Continue
+					Stop-Function -Message "$db is already attached to $server." -Target $db -Continue
 				}
 				
 				if ($server.Databases[$db].IsSystemObject) {
-					Stop-Function -Message "$db is a system database and cannot be attached using this method" -Target $db -Continue
+					Stop-Function -Message "$db is a system database and cannot be attached using this method." -Target $db -Continue
 				}
 				
 				if (-Not (Test-Bound -Parameter FileStructure)) {
-					#$backuphistory = Get-DbaBackupHistory -SqlInstance $server -LastFull -Database $db
 					$backuphistory = Get-DbaBackupHistory -SqlInstance $server -Database $db -Type Full | Sort-Object End -Descending | Select-Object -First 1
 
 					if (-not $backuphistory) {
-						$message = "Could not enumerate backup history to automatically build FileStructure. Rerun the command and provide the filestructure parameter"
+						$message = "Could not enumerate backup history to automatically build FileStructure. Rerun the command and provide the filestructure parameter."
 						Stop-Function -Message $message -Target $db -Continue
 					}
 					
@@ -122,7 +125,7 @@
 					foreach ($file in $filepaths) {
 						$exists = Test-DbaSqlpath -SqlInstance $server -Path $file
 						if (-not $exists) {
-							$message = "Could not find the files to build the FileStructure. Rerun the command and provide the FileStructure parameter"
+							$message = "Could not find the files to build the FileStructure. Rerun the command and provide the FileStructure parameter."
 							Stop-Function -Message $message -Target $file -Continue
 						}
 						
