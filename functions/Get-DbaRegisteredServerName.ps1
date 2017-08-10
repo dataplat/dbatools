@@ -20,6 +20,7 @@ function Get-DbaRegisteredServerName {
 
 		.PARAMETER NoCmsServer
 			Excludes the CMS itself from returning in the output, if pulling NetBiosName, IpAddress, or ServerName.
+			Without this parameter, the CMS will only be included if you do not specify a group.
 
 		.PARAMETER FullObject
 			Returns the full SMO RegisteredServer object for each server. This will not return an object for the CMS Server.
@@ -201,10 +202,12 @@ function Get-DbaRegisteredServerName {
 			}
 		}
 
+		$IncludeCmsServer = ($NoCmsServer -eq $false -and $null -eq $Group)
+
 		if ($IpAddress) {
 			$ret = @($servers | Select-Object IPAddress)
 
-			if (!$NoCmsServer) {
+			if ($IncludeCmsServer) {
 				$ret += @($cmsServers | Select-Object IPAddress)
 			}
 
@@ -214,7 +217,7 @@ function Get-DbaRegisteredServerName {
 		elseif ($NetBiosName) {
 			$ret = @($servers | Select-Object ComputerName)
 
-			if (!$NoCmsServer) {
+			if ($IncludeCmsServer) {
 				$ret += @($cmsServers | Select-Object ComputerName)
 			}
 
@@ -230,7 +233,7 @@ function Get-DbaRegisteredServerName {
 		else {
 			$ret = @($servers | Select-Object ServerName)
 
-			if (!$NoCmsServer) {
+			if ($IncludeCmsServer) {
 				$ret += @($cmsServers | Select-Object ServerName)
 			}
 
