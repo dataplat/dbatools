@@ -231,7 +231,11 @@ function Resolve-DbaNetworkName {
 						}
 					}
 				}
-				$FullComputerName = $conn.DNSHostname + "." + $DNSSuffix.DNSDomain
+				if ($DNSSuffix.DNSDomain.Length -eq 0) {
+					$FullComputerName = $conn.DNSHostname
+				} else {
+					$FullComputerName = $conn.DNSHostname + "." + $DNSSuffix.DNSDomain
+				}
 				try {
 					Write-Message -Level VeryVerbose -Message "Resolving $FullComputerName using .NET.Dns GetHostEntry"
 					$hostentry = ([System.Net.Dns]::GetHostEntry($FullComputerName)).HostName
@@ -247,7 +251,7 @@ function Resolve-DbaNetworkName {
 				}
 				if ($FullComputerName -eq ".") {
 					Write-Message -Level VeryVerbose -Message "No DNS FQDN found. Setting to null"
-					$fqdn = $FullComputerName
+					$FullComputerName = $null
 				}
 
 				[PSCustomObject]@{
