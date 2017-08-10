@@ -102,11 +102,10 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 				catch {
 					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				}
-								
 				Write-Message -Level Verbose -Message "Getting Start times for $servername"
 				#Get tempdb creation date
-				$SQLStartTime = $server.Databases["tempdb"].CreateDate
-				$SQLUptime = New-TimeSpan -Start $SQLStartTime -End (Get-Date)
+				$SQLStartTime = $server.Databases["tempdb"].CreateDate.ToUniversalTime()
+				$SQLUptime = New-TimeSpan -Start $SQLStartTime -End (Get-Date).ToUniversalTime()
 				$SQLUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($SQLUptime.Days), $($SQLUptime.Hours), $($SQLUptime.Minutes), $($SQLUptime.Seconds)
 			}
 			
@@ -117,8 +116,8 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 				try
 				{
 					Write-Message -Level Verbose -Message "Getting WinBootTime via CimInstance for $servername"
-					$WinBootTime = (Get-CimInstance -ClassName win32_operatingsystem -ComputerName $windowsServerName -ErrorAction SilentlyContinue).lastbootuptime
-					$WindowsUptime = New-TimeSpan -start $WinBootTime -end (get-date)
+					$WinBootTime = (Get-CimInstance -ClassName win32_operatingsystem -ComputerName $windowsServerName -ErrorAction SilentlyContinue).LastBootUpTime
+					$WindowsUptime = New-TimeSpan -start $WinBootTime.ToUniversalTime() -end (Get-Date).ToUniversalTime()
 					$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
 				}
 				catch
@@ -129,7 +128,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 						$CimOption = New-CimSessionOption -Protocol DCOM
 						$CimSession = New-CimSession -Credential:$WindowsCredential -ComputerName $WindowsServerName -SessionOption $CimOption
 						$WinBootTime = ($CimSession | Get-CimInstance -ClassName Win32_OperatingSystem).LastBootUpTime
-						$WindowsUptime = New-TimeSpan -start $WinBootTime -end (get-date)
+						$WindowsUptime = New-TimeSpan -start $WinBootTimeToUniversalTime() -end (Get-Date).ToUniversalTime()
 						$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
 					}
 					catch
