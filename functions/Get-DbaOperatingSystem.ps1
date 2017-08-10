@@ -55,18 +55,24 @@ function Get-DbaOperatingSystem {
 				Write-Message -Level Warning -Message "Unable to resolve hostname of $computer. Skipping."
 				continue
 			}
-
-			if (Test-Bound "Credential") {
-				$os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved -Credential $Credential
-				$tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved -Credential $Credential
-				$powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved -Credential $Credential | Select-Object ElementName, InstanceId, IsActive
+			
+			try {
+				if (Test-Bound "Credential") {
+					$os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved -Credential $Credential -Silent
+					$tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved -Credential $Credential -Silent
+					$powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved -Credential $Credential -Silent | Select-Object ElementName, InstanceId, IsActive
+				}
+				else {
+					$os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved -Silent
+					$tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved -Silent
+					$powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved -Silent | Select-Object ElementName, InstanceId, IsActive
+				}
 			}
-			else {
-				$os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved
-				$tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved
-				$powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved | Select-Object ElementName, InstanceId, IsActive
+			catch {
+				Stop-Function -Message "Failure" -ErrorRecord $_
+				return
 			}
-
+			
 			$activePowerPlan = ($powerPlan | Where-Object IsActive).ElementName -join ','
 			$language = Get-Language $os.OSLanguage
 			
