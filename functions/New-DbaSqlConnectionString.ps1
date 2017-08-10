@@ -192,7 +192,8 @@ Creates a connection string with ReadOnly ApplicantionIntent.
 				return $instance.ConnectionContext.ConnectionString
 			}
 			else {
-				$server = New-Object Microsoft.SqlServer.Management.Smo.Server $instance
+				$guid = [System.Guid]::NewGuid()
+				$server = New-Object Microsoft.SqlServer.Management.Smo.Server $guid
 				
 				if ($AppendConnectionString) {
 					$connstring = $server.ConnectionContext.ConnectionString
@@ -204,7 +205,6 @@ Creates a connection string with ReadOnly ApplicantionIntent.
 					$server.ConnectionContext.ApplicationName = $clientname
 					
 					if ($AccessToken) { $server.ConnectionContext.AccessToken = $AccessToken }
-					if ($ApplicationIntent) { $server.ConnectionContext.ApplicationIntent = $ApplicationIntent }
 					if ($BatchSeparator) { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
 					if ($ConnectTimeout) { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
 					if ($Database) { $server.ConnectionContext.DatabaseName = $Database }
@@ -226,6 +226,7 @@ Creates a connection string with ReadOnly ApplicantionIntent.
 					$connstring = $server.ConnectionContext.ConnectionString
 					if ($MultiSubnetFailover) { $connstring = "$connstring;MultiSubnetFailover=True" }
 					if ($FailoverPartner) { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
+					if ($ApplicationIntent) { $connstring = "$connstring;ApplicationIntent=$ApplicationIntent;" }
 					
 					if ($connstring -ne $server.ConnectionContext.ConnectionString) {
 						$server.ConnectionContext.ConnectionString = $connstring
@@ -249,7 +250,7 @@ Creates a connection string with ReadOnly ApplicantionIntent.
 						}
 					}
 					
-					$server.ConnectionContext.ConnectionString
+					($server.ConnectionContext.ConnectionString).Replace($guid, $SqlInstance)
 				}
 			}
 		}
