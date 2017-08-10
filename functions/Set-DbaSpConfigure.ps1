@@ -129,10 +129,10 @@
 			
 				#Going outside the min/max boundary can be done, but it can break SQL, so I don't think allowing that is wise at this juncture
 				if ($value -lt $minValue -or $value -gt $maxValue) {
-					Stop-Function -Message "Value out of range for $Config ($minValue <-> $maxValue)" -Continue -Category InvalidArgument
+					Stop-Function -Message "Value out of range for $ConfigName ($minValue <-> $maxValue)" -Continue -Category InvalidArgument
 				}
 			
-				If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $Config from $currentRunValue to $value.")) {
+				If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $ConfigName from $currentRunValue to $value.")) {
 					try {
 						$server.Configuration.$ConfigName.ConfigValue = $value
 						$server.Configuration.Alter()
