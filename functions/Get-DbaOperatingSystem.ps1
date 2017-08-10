@@ -49,7 +49,7 @@ function Get-DbaOperatingSystem {
 			Write-Message -Level Verbose -Message "Attempting to connect to $computer"
 			$server = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential
 
-			$computerResolved = $server.ComputerName
+			$computerResolved = $server.FullComputerName
 
 			if (!$computerResolved) {
 				Write-Message -Level Warning -Message "Unable to resolve hostname of $computer. Skipping."
@@ -71,7 +71,7 @@ function Get-DbaOperatingSystem {
 			$language = Get-Language $os.OSLanguage
 			
 			[PSCustomObject]@{
-				ComputerName             = $computer.ComputerName
+				ComputerName             = $computerResolved
 				Manufacturer             = $os.Manufacturer
 				Organization             = $os.Organization
 				Architecture             = $os.OSArchitecture
