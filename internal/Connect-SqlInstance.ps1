@@ -122,7 +122,7 @@ function Connect-SqlInstance {
 	}
 	
 	$SqlConnection = New-Object System.Data.SqlClient.SqlConnection
-	$SqlConnection.ConnectionString = (New-DbaSqlConnectionString @PSBoundParameters)
+	$SqlConnection.ConnectionString = (New-DbaSqlConnectionString -SqlInstance $SqlInstance -SqlCredential $SqlCredential -ClientName "dbatools PowerShell module - dbatools.io")
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlConnection
 	
 	try {
