@@ -144,15 +144,15 @@ function Get-DbaTcpPort {
 					
 					$computer = $instance.ComputerName
 					$resolved = Resolve-DbaNetworkName -ComputerName $instance -Verbose:$false
-					$fqdn = $resolved.FQDN
+					$computername = $resolved.FullComputerName
 					
 					try {
 						Write-Message -Level Verbose -Message "Trying with ComputerName ($computer)"
 						$someIps = Invoke-ManagedComputerCommand -ComputerName $computer -ArgumentList $computer -ScriptBlock $scriptblock
 					}
 					catch {
-						Write-Message -Level Verbose -Message "Trying with FQDN because ComputerName failed"
-						$someIps = Invoke-ManagedComputerCommand -ComputerName $fqdn -ArgumentList $fqdn -ScriptBlock $scriptblock
+						Write-Message -Level Verbose -Message "Trying with FullComputerName because ComputerName failed"
+						$someIps = Invoke-ManagedComputerCommand -ComputerName $computername -ArgumentList $fqdn -ScriptBlock $scriptblock
 					}
 				}
 				catch {
