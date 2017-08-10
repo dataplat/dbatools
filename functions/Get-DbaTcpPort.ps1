@@ -53,7 +53,7 @@ function Get-DbaTcpPort {
 			Remote sqlwmi is used by default. If this doesn't work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.
 
 		.EXAMPLE
-			Get-DbaRegisteredServerName -SqlInstance sql2014 | Get-DbaTcpPort -NoIpV6 -Detailed -Verbose
+			Get-DbaRegisteredServerName -SqlInstance sql2014 | Get-DbaTcpPort -ExcludeIpv6 -Detailed -Verbose
 
 			Returns an object with server name, IPAddress (just ipv4), port and static ($true/$false) for every server listed in the Central Management Server on sql2014
 	#>
