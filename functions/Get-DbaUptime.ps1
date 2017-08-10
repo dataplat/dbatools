@@ -128,7 +128,7 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 						$CimOption = New-CimSessionOption -Protocol DCOM
 						$CimSession = New-CimSession -Credential:$WindowsCredential -ComputerName $WindowsServerName -SessionOption $CimOption
 						$WinBootTime = ($CimSession | Get-CimInstance -ClassName Win32_OperatingSystem).LastBootUpTime
-						$WindowsUptime = New-TimeSpan -start $WinBootTimeToUniversalTime() -end (Get-Date).ToUniversalTime()
+						$WindowsUptime = New-TimeSpan -start $WinBootTime.ToUniversalTime() -end (Get-Date).ToUniversalTime()
 						$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
 					}
 					catch
