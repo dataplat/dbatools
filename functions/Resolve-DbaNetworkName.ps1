@@ -265,7 +265,7 @@ function Resolve-DbaNetworkName {
 					DNSDomain        = $DNSSuffix.DNSDomain
 					Domain           = $conn.Domain
 					DNSHostEntry     = $hostentry
-					FQDN             = $fqdn
+					FQDN             = $fqdn.TrimEnd(".")
 					FullComputerName = $FullComputerName
 				}
 			}
