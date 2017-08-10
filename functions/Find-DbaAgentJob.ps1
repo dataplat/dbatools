@@ -12,6 +12,13 @@ function Find-DbaAgentJob {
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
+		.PARAMETER Name
+			Filter agent jobs to only the name(s) you list. 
+			This is a regex pattern by default so no asterisks are necessary. If you need an exact match, use -Exact.
+
+		.PARAMETER StepName
+			Filter based on StepName. This is a regex pattern by default so no asterisks are necessary. If you need an exact match, use -Exact.
+
 		.PARAMETER LastUsed
 			Find all jobs that havent ran in the INT number of previous day(s)
 
@@ -21,17 +28,11 @@ function Find-DbaAgentJob {
 		.PARAMETER Failed
 			Find all jobs that have failed
 
-		.PARAMETER NoSchedule
-			Find all jobs with schedule set to it
+		.PARAMETER ExcludeSchedule
+			Find all jobs with no schedule assigned
 
 		.PARAMETER NoEmailNotification
 			Find all jobs without email notification configured
-
-		.PARAMETER Exclude
-			Allows you to enter an array of agent job names to ignore
-
-		.PARAMETER Name
-			Filter agent jobs to only the names you list. This is a regex pattern by default so no asterisks are necessary. If you need an exact match, use -Exact.
 
 		.PARAMETER Category
 			Filter based on agent job categories
@@ -39,11 +40,8 @@ function Find-DbaAgentJob {
 		.PARAMETER Owner
 			Filter based on owner of the job/s
 
-		.PARAMETER StepName
-			Filter based on StepName. This is a regex pattern by default so no asterisks are necessary. If you need an exact match, use -Exact.
-
-		.PARAMETER Exact
-			Job Names and Step Names are searched for by regex by default. Use Exact to return only exact matches.
+		.PARAMETER Exclude
+			Allows you to enter an array of agent job names to ignore
 
 		.PARAMETER Since
 			Datetime object used to narrow the results to a date
@@ -73,7 +71,7 @@ function Find-DbaAgentJob {
 			Returns all agent job(s) that have not ran in 10 days
 
 		.EXAMPLE
-			Find-DbaAgentJob -SqlInstance Dev01 -Disabled -NoEmailNotification -NoSchedule
+			Find-DbaAgentJob -SqlInstance Dev01 -Disabled -NoEmailNotification -ExcludeSchedule
 
 			Returns all agent job(s) that are either disabled, have no email notification or dont have a schedule. returned with detail
 
@@ -93,7 +91,7 @@ function Find-DbaAgentJob {
 			Returns all agent job(s) that have failed since July of 2016 (and still have history in msdb)
 
 		.EXAMPLE
-			Get-DbaRegisteredServerName -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -NoSchedule -Detailed | Format-Table -AutoSize -Wrap
+			Get-DbaRegisteredServerName -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -ExcludeSchedule -Detailed | Format-Table -AutoSize -Wrap
 
 			Queries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule.
 
@@ -111,11 +109,10 @@ function Find-DbaAgentJob {
 		$SqlCredential,
 		[string[]]$Name,
 		[string[]]$StepName,
-		[switch]$Exact,
 		[int]$LastUsed,
 		[switch]$Disabled,
 		[switch]$Failed,
-		[switch]$NoSchedule,
+		[switch]$ExcludeSchedule,
 		[switch]$NoEmailNotification,
 		[string[]]$Category,
 		[string]$Owner,
@@ -124,7 +121,7 @@ function Find-DbaAgentJob {
 		[switch]$Silent
 	)
 	begin {
-		if ($Failed, [boolean]$Name, [boolean]$StepName, [boolean]$LastUsed.ToString(), $Disabled, $NoSchedule, $NoEmailNotification, [boolean]$Category, [boolean]$Owner, [boolean]$Exclude -notcontains $true) {
+		if ($Failed, [boolean]$Name, [boolean]$StepName, [boolean]$LastUsed.ToString(), $Disabled, $ExcludeSchedule, $NoEmailNotification, [boolean]$Category, [boolean]$Owner, [boolean]$Exclude -notcontains $true) {
 			Stop-Function -Message "At least one search term must be specified"
 		}
 	}
@@ -146,28 +143,13 @@ function Find-DbaAgentJob {
 			$output = @()
 
 			if ($Failed) {
-				Write-Message -Level Verbose -Message "Checking for failed jobs"
+				Write-Message -Level Verbose -Message "Checking for failed jobs."
 				$output += $jobs | Where-Object { $_.LastRunOutcome -eq "Failed" }
 			}
 
 			if ($Name) {
-				foreach ($jobname in $Name) {
-					Write-Message -Level Verbose -Message "Gettin some jobs by their names"
-					if ($Exact -eq $true) {
-						$output += $jobs | Where-Object { $_.Name -eq $name }
-					}
-					else {
-						try {
-							$output += $jobs | Where-Object { $_.Name -match $name }
-						}
-						catch {
-							# they prolly put aterisks thinking it's a like
-							$Name = $Name -replace '\*', ''
-							$Name = $Name -replace '\%', ''
-							$output += $jobs | Where-Object { $_.Name -match $name }
-						}
-					}
-				}
+				Write-Message -Level Verbose -Message "Retrieving jobs by their name."
+				$output += Get-JobList -SqlInstance $server -Filter $Name
 			}
 
 			if ($StepName) {
@@ -202,7 +184,7 @@ function Find-DbaAgentJob {
 				$output += $jobs | Where-Object { $_.IsEnabled -eq $false }
 			}
 
-			if ($NoSchedule) {
+			if ($ExcludeSchedule) {
 				Write-Message -Level Verbose -Message "Finding job/s that have no schedule defined"
 				$output += $jobs | Where-Object { $_.HasSchedule -eq $false }
 			}
