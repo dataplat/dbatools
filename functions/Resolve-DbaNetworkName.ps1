@@ -185,12 +185,12 @@ function Resolve-DbaNetworkName {
 					try {
 						try {
 							# if an alias (CNAME) is passed we should try to connect to the A name via CIM or WinRM
-							$ComputerNameIP = ([System.Net.Dns]::GetHostEntry($ComputerName)).AddressList[0].IPAddressToString
+							$ComputerNameIP = ([System.Net.Dns]::GetHostEntry($Computer)).AddressList[0].IPAddressToString
 							$RemoteComputer = [System.Net.Dns]::GetHostByAddress($ComputerNameIP).HostName
 						} catch {
-							$RemoteComputer = $ComputerName
+							$RemoteComputer = $Computer
 						}
-						Write-Message -Level VeryVerbose -Message "Getting computer information from $Computer"
+						Write-Message -Level VeryVerbose -Message "Getting computer information from $RemoteComputer"
 						$ScBlock = {
 							$reg = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine, [Microsoft.Win32.RegistryView]::Default)
 							$key = $reg.OpenSubKey("SYSTEM\CurrentControlSet\services\Tcpip\Parameters")
@@ -216,14 +216,17 @@ function Resolve-DbaNetworkName {
 						try {
 							$fqdn = ([System.Net.Dns]::GetHostEntry($Computer)).HostName
 							$hostname = $fqdn.Split(".")[0]
-
+							$suffix = $fqdn.Replace("$hostname.", "")
+							if ($hostname -eq $fqdn) {
+								$suffix = ""
+							}
 							$conn = [PSCustomObject]@{
 								Name        = $Computer
 								DNSHostname = $hostname
-								Domain      = $fqdn.Replace("$hostname.", "")
+								Domain      = $suffix
 							}
 							$DNSSuffix = [PSCustomObject]@{
-								DNSDomain   = $fqdn.Replace("$hostname.", "")
+								DNSDomain   = $suffix
 							}
 						}
 						catch {
