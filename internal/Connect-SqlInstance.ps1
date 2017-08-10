@@ -121,34 +121,11 @@ function Connect-SqlInstance {
 		}
 	}
 	
-	$server = New-Object Microsoft.SqlServer.Management.Smo.Server ([System.Guid]::NewGuid())
-	$server | Add-Member -MemberType ScriptMethod -Name ToString -Value { $this.Name } -Force
-	$server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
+	$SqlConnection = New-Object System.Data.SqlClient.SqlConnection
+	$SqlConnection.ConnectionString = (New-DbaSqlConnectionString @PSBoundParameters)
+	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlConnection
 	
 	try {
-		if ($SqlCredential.Username -ne $null) {
-			$username = ($SqlCredential.Username).TrimStart("\")
-			
-			if ($username -like "*\*") {
-				$username = $username.Split("\")[1]
-				$authtype = "Windows Authentication with Credential"
-				$server.ConnectionContext.LoginSecure = $true
-				$server.ConnectionContext.ConnectAsUser = $true
-				$server.ConnectionContext.ConnectAsUserName = $username
-				$server.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
-			}
-			else {
-				$authtype = "SQL Authentication"
-				$server.ConnectionContext.LoginSecure = $false
-				$server.ConnectionContext.set_Login($username)
-				$server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
-			}
-		}
-	}
-	catch { }
-	
-	try {
-		$server.ConnectionContext.ServerInstance = $ConvertedSqlInstance.FullSmoName
 		$server.ConnectionContext.Connect()
 	}
 	catch {
