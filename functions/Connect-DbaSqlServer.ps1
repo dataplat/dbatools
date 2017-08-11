@@ -208,20 +208,76 @@ function Connect-DbaSqlServer {
 			return $SqlInstance
 		}
 		
-		$SqlConnection = New-Object System.Data.SqlClient.SqlConnection
-		$SqlConnection.ConnectionString = (New-DbaSqlConnectionString @PSBoundParameters)
+		($server = New-Object Microsoft.SqlServer.Management.Smo.Server).ConnectionContext.ServerInstance = $SqlInstance
 		
-		try {
-			$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlConnection
+		if ($AppendConnectionString) {
+			$connstring = $server.ConnectionContext.ConnectionString
+			$server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
 			$server.ConnectionContext.Connect()
 		}
-		catch {
-			$message = $_.Exception.InnerException.InnerException
-			$message = "$message".ToString()
-			$message = ($message -Split '-->')[0]
-			$message = ($message -Split 'at System.Data.SqlClient')[0]
-			$message = ($message -Split 'at System.Data.ProviderBase')[0]
-			throw "Can't connect to $SqlInstance`: $message "
+		else {
+			
+			$server.ConnectionContext.ApplicationName = $ClientName
+			
+			if ($AccessToken) { $server.ConnectionContext.AccessToken = $AccessToken }
+			if ($BatchSeparator) { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
+			if ($ConnectTimeout) { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
+			if ($Database) { $server.ConnectionContext.DatabaseName = $Database }
+			if ($EncryptConnection) { $server.ConnectionContext.EncryptConnection = $true }
+			if ($IsActiveDirectoryUniversalAuth) { $server.ConnectionContext.IsActiveDirectoryUniversalAuth = $true }
+			if ($LockTimeout) { $server.ConnectionContext.LockTimeout = $LockTimeout }
+			if ($MaxPoolSize) { $server.ConnectionContext.MaxPoolSize = $MaxPoolSize }
+			if ($MinPoolSize) { $server.ConnectionContext.MinPoolSize = $MinPoolSize }
+			if ($MultipleActiveResultSets) { $server.ConnectionContext.MultipleActiveResultSets = $true }
+			if ($NetworkProtocol) { $server.ConnectionContext.NetworkProtocol = $NetworkProtocol }
+			if ($NonPooledConnection) { $server.ConnectionContext.NonPooledConnection = $true }
+			if ($PacketSize) { $server.ConnectionContext.PacketSize = $PacketSize }
+			if ($PooledConnectionLifetime) { $server.ConnectionContext.PooledConnectionLifetime = $PooledConnectionLifetime }
+			if ($StatementTimeout) { $server.ConnectionContext.StatementTimeout = $StatementTimeout }
+			if ($SqlExecutionModes) { $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes }
+			if ($TrustServerCertificate) { $server.ConnectionContext.TrustServerCertificate = $true }
+			if ($WorkstationId) { $server.ConnectionContext.WorkstationId = $WorkstationId }
+			
+			$connstring = $server.ConnectionContext.ConnectionString
+			if ($MultiSubnetFailover) { $connstring = "$connstring;MultiSubnetFailover=True" }
+			if ($FailoverPartner) { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
+			if ($ApplicationIntent) { $connstring = "$connstring;ApplicationIntent=$ApplicationIntent" }
+			
+			if ($connstring -ne $server.ConnectionContext.ConnectionString) {
+				$server.ConnectionContext.ConnectionString = $connstring
+			}
+			
+			try {
+				if ($Credential.username -ne $null) {
+					$username = ($Credential.username).TrimStart("\")
+					
+					if ($username -like "*\*") {
+						$username = $username.Split("\")[1]
+						$authtype = "Windows Authentication with Credential"
+						$server.ConnectionContext.LoginSecure = $true
+						$server.ConnectionContext.ConnectAsUser = $true
+						$server.ConnectionContext.ConnectAsUserName = $username
+						$server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
+					}
+					else {
+						$authtype = "SQL Authentication"
+						$server.ConnectionContext.LoginSecure = $false
+						$server.ConnectionContext.set_Login($username)
+						$server.ConnectionContext.set_SecurePassword($Credential.Password)
+					}
+				}
+				
+				$server.ConnectionContext.Connect()
+			}
+			catch {
+				$message = $_.Exception.InnerException.InnerException
+				$message = $message.ToString()
+				$message = ($message -Split '-->')[0]
+				$message = ($message -Split 'at System.Data.SqlClient')[0]
+				$message = ($message -Split 'at System.Data.ProviderBase')[0]
+				throw "Can't connect to $SqlInstance`: $message "
+			}
+			
 		}
 		
 		$loadedSmoVersion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
