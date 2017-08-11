@@ -1,4 +1,5 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
+﻿New-DbaComputerCertificate -SelfSigned -Silent
+$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -15,6 +16,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		It "returns the right FriendlyName" {
 			"$($cert.FriendlyName)" -match 'SQL Server' | Should Be $true
-		}		
+		}
 	}
 }
