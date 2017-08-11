@@ -16,7 +16,7 @@ Describe "Invoke-DbaCycleErrorLog Unit Tests" -Tag "UnitTests" {
 	}
 }
 Describe "Invoke-DbaCycleErrorLog Integration Test" -Tag "IntegrationTests" {
-	$results = Invoke-DbaCycleErrorLog -SqlInstance sql2008 -Type instance
+	$results = Invoke-DbaCycleErrorLog -SqlInstance $script:instance1 -Type instance
 
 	Context "Validate output" {
 		it "Should have correct properties" {
