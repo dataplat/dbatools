@@ -7,7 +7,7 @@
 			This command will attach a SQL Server database.
 
 		.PARAMETER SqlInstance
-			The SQL Server instance. Server version must be SQL Server version XXXX or higher.
+			The SQL Server instance.
 
         .PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
