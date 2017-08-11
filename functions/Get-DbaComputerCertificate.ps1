@@ -87,9 +87,8 @@ Gets computer certificates on sql2016 that match thumbprints 8123472E32AB412ED42
 				}
 				else {
 					try {
-						# This used to be hostname only but that didn't support clusters
 						Write-Verbose "Searching Cert:\$Store\$Folder"
-						Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { $_.DnsNameList -match $env:USERDNSDOMAIN -and $_.EnhancedKeyUsageList -match '1\.3\.6\.1\.5\.5\.7\.3\.1' }
+						Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { "$($_.EnhancedKeyUsageList)" -match '1\.3\.6\.1\.5\.5\.7\.3\.1' }
 					}
 					catch {
 						# don't care
