@@ -5,10 +5,10 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Can get a certificate" {
 		BeforeAll {
-			$cert = New-DbaComputerCertificate -SelfSigned -Silent
+			$cert = New-DbaComputerCertificate -SelfSigned #-Silent
 		}
 		AfterAll {
-			Remove-DbaComputerCertificate -Thumbprint $cert.Thumbprint -Confirm:$false
+			#Remove-DbaComputerCertificate -Thumbprint $cert.Thumbprint -Confirm:$false
 		}
 		
 		$results = Get-DbaComputerCertificate
