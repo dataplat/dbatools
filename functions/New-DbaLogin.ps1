@@ -55,8 +55,8 @@ function New-DbaLogin {
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
 		[parameter(Mandatory, ValueFromPipeline = $true)]
-		[Alias("Login", "LoginName")]
-		[object[]]$Name,
+		[Alias("Name", "LoginName")]
+		[object[]]$Login,
 		[parameter(ParameterSetName = "RegularLogin")]
 		[Security.SecureString]$Password,
 		[parameter(ParameterSetName = "RegularLogin")]
@@ -83,11 +83,11 @@ function New-DbaLogin {
 			Stop-Function -Message "Please specify only one password parameter at a time." -Category InvalidArgument -Silent $Silent
 		}
 		
-		if ($Name.Length -gt 1 -and ($Sid -or $MapToCertificate -or $MapToAssymetricKey -or $HashedPassword)) {
+		if ($Login.Length -gt 1 -and ($Sid -or $MapToCertificate -or $MapToAssymetricKey -or $HashedPassword)) {
 			Stop-Function -Message "Please specify a single login when using one of the following parameters: -Sid, -MapToCertificate, -MapToAssymetricKey, -HashedPassword." -Category InvalidArgument -Silent $Silent
 		}
 		
-		foreach ($login in $Name) {
+		foreach ($login in $Login) {
 			if ($login.GetType().Name -eq 'Login') {
 				if ($login.LoginType -eq 'SqlLogin' -and !($Password -or $HashedPassword)) {
 					$passwordNotSpecified = $true
@@ -133,17 +133,17 @@ function New-DbaLogin {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Silent $Silent -Continue
 			}
 			
-			foreach ($login in $Name) {
+			foreach ($loginItem in $Login) {
 				#check if Name is a login SMO object
-				if ($login.GetType().Name -eq 'Login') {
-					$loginName = $login.Name
-					$loginType = $login.LoginType
+				if ($loginItem.GetType().Name -eq 'Login') {
+					$loginName = $loginItem.Name
+					$loginType = $loginItem.LoginType
 				}
 				else {
-					$loginName = $login
+					$loginName = $loginItem
 					if ($PsCmdlet.ParameterSetName -eq "MapToCertificate") { $loginType = 'Certificate' }
 					elseif ($PsCmdlet.ParameterSetName -eq "MapToAssymetricKey") { $loginType = 'AssymetricKey' }
-					elseif ($login.IndexOf('\') -eq -1) {	$loginType = 'SqlLogin' }
+					elseif ($loginItem.IndexOf('\') -eq -1) {	$loginType = 'SqlLogin' }
 					else { $loginType = 'WindowsUser' }
 				}
 				
@@ -161,11 +161,11 @@ function New-DbaLogin {
 				
 				if ($existingLogin) {
 					if ($force) {
-						Write-Message -Level Verbose -Message "Dropping login $name"
+						Write-Message -Level Verbose -Message "Dropping login $loginName"
 						$existingLogin.Drop()
 					}
 					else {
-						Stop-Function -Message "Login exists and Force was not specified" -Target $name -Silent $Silent -Continue
+						Stop-Function -Message "Login exists and Force was not specified" -Target $loginName -Silent $Silent -Continue
 					}
 				}
 				
