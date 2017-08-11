@@ -121,7 +121,7 @@ function Connect-SqlInstance {
 		}
 	}
 	
-	($server = New-Object Microsoft.SqlServer.Management.Smo.Server).ConnectionContext.ServerInstance = $ConvertedSqlInstance.FullSmoName
+	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $ConvertedSqlInstance.FullSmoName
 	$server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
 	
 	try {
@@ -162,13 +162,13 @@ function Connect-SqlInstance {
 			throw $_
 		}
 	}
-
+	
 	if ($MinimumVersion -and $server.VersionMajor) {
 		if ($server.versionMajor -lt $MinimumVersion) {
 			throw "SQL Server version $MinimumVersion required - $server not supported."
 		}
 	}
-
+	
 	if (-not $RegularUser) {
 		if ($server.ConnectionContext.FixedServerRoles -notmatch "SysAdmin") {
 			throw "Not a sysadmin on $ConvertedSqlInstance. Quitting."
