@@ -8,7 +8,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$cert = New-DbaComputerCertificate -SelfSigned -Silent
 		}
 		AfterAll {
-			$cert | Remove-DbaComputerCertificate -Confirm:$false
+			Remove-DbaComputerCertificate -Thumbprint $cert.Thumbprint -Confirm:$false
 		}
 		It "returns the right EnhancedKeyUsageList" {
 			"$($cert.EnhancedKeyUsageList)" -match '1\.3\.6\.1\.5\.5\.7\.3\.1' | Should Be $true
