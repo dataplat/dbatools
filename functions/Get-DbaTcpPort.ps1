@@ -53,7 +53,7 @@ function Get-DbaTcpPort {
 			Remote sqlwmi is used by default. If this doesn't work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.
 
 		.EXAMPLE
-			Get-DbaRegisteredServerName -SqlInstance sql2014 | Get-DbaTcpPort -NoIpV6 -Detailed -Verbose
+			Get-DbaRegisteredServerName -SqlInstance sql2014 | Get-DbaTcpPort -ExcludeIpv6 -Detailed -Verbose
 
 			Returns an object with server name, IPAddress (just ipv4), port and static ($true/$false) for every server listed in the Central Management Server on sql2014
 	#>
@@ -144,15 +144,15 @@ function Get-DbaTcpPort {
 					
 					$computer = $instance.ComputerName
 					$resolved = Resolve-DbaNetworkName -ComputerName $instance -Verbose:$false
-					$fqdn = $resolved.FQDN
+					$computername = $resolved.FullComputerName
 					
 					try {
 						Write-Message -Level Verbose -Message "Trying with ComputerName ($computer)"
 						$someIps = Invoke-ManagedComputerCommand -ComputerName $computer -ArgumentList $computer -ScriptBlock $scriptblock
 					}
 					catch {
-						Write-Message -Level Verbose -Message "Trying with FQDN because ComputerName failed"
-						$someIps = Invoke-ManagedComputerCommand -ComputerName $fqdn -ArgumentList $fqdn -ScriptBlock $scriptblock
+						Write-Message -Level Verbose -Message "Trying with FullComputerName because ComputerName failed"
+						$someIps = Invoke-ManagedComputerCommand -ComputerName $computername -ArgumentList $fqdn -ScriptBlock $scriptblock
 					}
 				}
 				catch {

@@ -19,7 +19,7 @@ function Write-DbaDataTable {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Database
-			The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
+			The database to import the table into.
 
 		.PARAMETER InputObject
 			This is the DataTable (or datarow) to import to SQL Server.
