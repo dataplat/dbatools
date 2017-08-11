@@ -5,11 +5,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Can remove a certificate" {
 		BeforeAll {
-			$cert = New-DbaComputerCertificate -SelfSigned -Silent
-			$thumbprint = $cert.Thumbprint
+			$null = Add-DbaComputerCertificate -Path $script:appeyorlabrepo\certificates\localhost.crt -Confirm:$false
+			$thumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
 		}
 		
-		$results = $cert | Remove-DbaComputerCertificate -Confirm:$false
+		$results = Remove-DbaComputerCertificate -Thumbprint $thumbprint -Confirm:$false
 
 		It "returns the store Name" {
 			$results.Store -eq "LocalMachine" | Should Be $true
