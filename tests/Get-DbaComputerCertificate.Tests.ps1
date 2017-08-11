@@ -5,19 +5,26 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Can get a certificate" {
 		BeforeAll {
-			$cert = New-DbaComputerCertificate -SelfSigned #-Silent
+			$null = Add-DbaComputerCertificate -Path $script:appeyorlabrepo\certificates\localhost.crt -Confirm:$false
+			$thumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
 		}
 		AfterAll {
-			#Remove-DbaComputerCertificate -Thumbprint $cert.Thumbprint -Confirm:$false
+			Remove-DbaComputerCertificate -Thumbprint $thumbprint -Confirm:$false
 		}
 		
-		$results = Get-DbaComputerCertificate
+		$cert = Get-DbaComputerCertificate -Thumbprint $thumbprint
 		
-		It "Should show the proper thumbprint has been added" {
-			"$($results.Thumbprint)" -match $cert.Thumbprint | Should Be $true
+		It "returns a single certificate with a specific thumbprint" {
+			$cert.Thumbprint | Should Be $thumbprint
 		}
-		It "Should show the proper thumbprint has been added" {
-			"$($results.EnhancedKeyUsageList)" -match '1\.3\.6\.1\.5\.5\.7\.3\.1' | Should Be $true
+		
+		$cert = Get-DbaComputerCertificate
+		
+		It "returns all certificates and at least one has the specified thumbprint" {
+			"$($cert.Thumbprint)" -match $thumbprint | Should Be $true
+		}
+		It "returns all certificates and at least one has the specified EnhancedKeyUsageList" {
+			"$($cert.EnhancedKeyUsageList)" -match '1\.3\.6\.1\.5\.5\.7\.3\.1' | Should Be $true
 		}
 	}
 }
