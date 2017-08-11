@@ -208,7 +208,7 @@ function Connect-DbaSqlServer {
 			return $SqlInstance
 		}
 		
-		($server = New-Object Microsoft.SqlServer.Management.Smo.Server).ConnectionContext.ServerInstance = $SqlInstance
+		$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlInstance
 		
 		if ($AppendConnectionString) {
 			$connstring = $server.ConnectionContext.ConnectionString
