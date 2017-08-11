@@ -15,8 +15,8 @@ Function Get-DbaServerProtocol {
     .PARAMETER Credential
     Credential object used to connect to the computer as a different user.
 
-	.PARAMETER Silent
-		Use this switch to disable any kind of verbose messages
+   .PARAMETER Silent
+   Use this switch to disable any kind of verbose messages
 
     .NOTES
     Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -64,8 +64,8 @@ Function Get-DbaServerProtocol {
 	process {
 		foreach ($Computer in $ComputerName.ComputerName) {
 			$Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
-			if ($Server.ComputerName) {
-				$Computer = $server.ComputerName
+			if ($Server.FullComputerName) {
+				$Computer = $server.FullComputerName
 				Write-Message -Level Verbose -Message "Getting SQL Server namespace on $computer"
 				$namespace = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
 				Where-Object { (Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ServerNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0 } |

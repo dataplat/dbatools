@@ -35,10 +35,10 @@ function Copy-DbaLogin {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Login
-			The login(s) to process. This list is auto-populated from the server. If unspecified, all logins will be processed.
+			The login(s) to process. Options for this list are auto-populated from the server. If unspecified, all logins will be processed.
 
 		.PARAMETER ExcludeLogin
-			The login(s) to exclude. This list is auto-populated from the server
+			The login(s) to exclude. Options for this list are auto-populated from the server.
 
 		.PARAMETER SyncOnly
 			If this switch is enabled, only SQL Server login permissions, roles, etc. will be synced. Logins and users will not be added or dropped.  If a matching Login does not exist on the destination, the Login will be skipped.
