@@ -119,5 +119,8 @@ function Get-JobList {
 				}
 			}
 		}
+		else {
+			$jobs
+		}
 	}
 }
