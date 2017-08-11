@@ -8,7 +8,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$cert = New-DbaComputerCertificate -SelfSigned -Silent
 		}
 		AfterAll {
-			$cert | Remove-DbaComputerCertificate -Confirm:$false
+			Remove-DbaComputerCertificate -Thumbprint $cert.Thumbprint -Confirm:$false
 		}
 		
 		$results = Get-DbaComputerCertificate
