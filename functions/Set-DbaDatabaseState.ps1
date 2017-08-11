@@ -298,7 +298,11 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 				else {
 					if ($Pscmdlet.ShouldProcess($server, "Set $db to READ_ONLY")) {
 						Write-Message -Level VeryVerbose -Message "Setting database $db to READ_ONLY"
-						$warn += Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "READ_ONLY" -immediate $Force
+						$partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "READ_ONLY" -immediate $Force
+						$warn += $partial
+						if (!$partial) {
+							$db_status.RW = 'READ_ONLY'
+						}
 					}
 				}
 			}
@@ -310,7 +314,11 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 				else {
 					if ($Pscmdlet.ShouldProcess($server, "Set $db to READ_WRITE")) {
 						Write-Message -Level VeryVerbose -Message "Setting database $db to READ_WRITE"
-						$warn += Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "READ_WRITE" -immediate $Force
+						$partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "READ_WRITE" -immediate $Force
+						$warn += $partial
+						if (!$partial) {
+							$db_status.RW = 'READ_WRITE'
+						}
 					}
 				}
 			}
@@ -322,7 +330,11 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 				else {
 					if ($Pscmdlet.ShouldProcess($server, "Set $db to ONLINE")) {
 						Write-Message -Level VeryVerbose -Message "Setting database $db to ONLINE"
-						$warn += Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "ONLINE" -immediate $Force
+						$partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "ONLINE" -immediate $Force
+						$warn += $partial
+						if (!$partial) {
+							$db_status.Status = 'ONLINE'
+						}
 					}
 				}
 			}
@@ -334,7 +346,11 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 				else {
 					if ($Pscmdlet.ShouldProcess($server, "Set $db to OFFLINE")) {
 						Write-Message -Level VeryVerbose -Message "Setting database $db to OFFLINE"
-						$warn = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "OFFLINE" -immediate $Force
+						$partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "OFFLINE" -immediate $Force
+						$warn += $partial
+						if (!$partial) {
+							$db_status.Status = 'OFFLINE'
+						}
 					}
 				}
 			}
@@ -346,7 +362,10 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 				else {
 					if ($Pscmdlet.ShouldProcess($server, "Set $db to EMERGENCY")) {
 						Write-Message -Level VeryVerbose -Message "Setting database $db to EMERGENCY"
-						$warn += Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "EMERGENCY" -immediate $Force
+						$partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "EMERGENCY" -immediate $Force
+						if (!$partial) {
+							$db_status.Status = 'EMERGENCY'
+						}
 					}
 				}
 			}
@@ -358,7 +377,10 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 				else {
 					if ($Pscmdlet.ShouldProcess($server, "Set $db to SINGLE_USER")) {
 						Write-Message -Level VeryVerbose -Message "Setting $db to SINGLE_USER"
-						$warn += Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "SINGLE_USER" -immediate $Force
+						$partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "SINGLE_USER" -immediate $Force
+						if (!$partial) {
+							$db_status.Access = 'SINGLE_USER'
+						}
 					}
 				}
 			}
@@ -370,7 +392,10 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 				else {
 					if ($Pscmdlet.ShouldProcess($server, "Set $db to RESTRICTED_USER")) {
 						Write-Message -Level VeryVerbose -Message "Setting $db to RESTRICTED_USER"
-						$warn += Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "RESTRICTED_USER" -immediate $Force
+						$partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "RESTRICTED_USER" -immediate $Force
+						if (!$partial) {
+							$db_status.Access = 'RESTRICTED_USER'
+						}
 					}
 				}
 			}
@@ -382,7 +407,10 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 				else {
 					if ($Pscmdlet.ShouldProcess($server, "Set $db to MULTI_USER")) {
 						Write-Message -Level VeryVerbose -Message "Setting $db to MULTI_USER"
-						$warn += Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "MULTI_USER" -immediate $Force
+						$partial = Edit-DatabaseState -sqlinstance $server -dbname $db.Name -opt "MULTI_USER" -immediate $Force
+						if (!$partial) {
+							$db_status.Access = 'MULTI_USER'
+						}
 					}
 				}
 			}
@@ -451,7 +479,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 				}
 				
 			}
-			if ($warn.Count -gt 0) {
+			if ($warn) {
 				$warn = $warn | Get-Unique
 				$warn = $warn -Join ';'
 			}
@@ -472,7 +500,12 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 				} | Select-DefaultView -ExcludeProperty Database
 			} else {
 				$db.Refresh()
-				$newstate = Get-DbState $db
+				if ($null -eq $warn) {
+					# we avoid reenumerating properties
+					$newstate = $db_status
+				} else {
+					$newstate = Get-DbState $db
+				}
 				
 				[PSCustomObject]@{
 					ComputerName = $server.NetName

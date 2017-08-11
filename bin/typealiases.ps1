@@ -1,4 +1,6 @@
 ﻿
+try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("DbaInstance", "Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter") }
+catch { }
 try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("DbaCmConnectionParameter", "Sqlcollaborative.Dbatools.Parameter.DbaCmConnectionParameter") }
 catch { }
 try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("DbaInstanceParameter", "Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter") }
@@ -20,4 +22,8 @@ catch { }
 try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("dbavalidate", "Sqlcollaborative.Dbatools.Utility.Validation") }
 catch { }
 try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("DbaMode", "Sqlcollaborative.Dbatools.General.ExecutionMode") }
+catch { }
+try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("DbaCredential", "Sqlcollaborative.Dbatools.Parameter.DbaCredentialparameter") }
+catch { }
+try { [psobject].Assembly.GetType("System.Management.Automation.TypeAccelerators")::add("DbaCredentialParameter", "Sqlcollaborative.Dbatools.Parameter.DbaCredentialparameter") }
 catch { }

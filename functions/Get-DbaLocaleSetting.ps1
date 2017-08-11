@@ -15,6 +15,9 @@
       .PARAMETER Credential
       Credential object used to connect to the computer as a different user.
 
+      .PARAMETER Silent
+      Use this switch to disable any kind of verbose messages and allow exceptions
+
       .NOTES
       Author: Klaas Vandenberghe ( @PowerDBAKlaas )
       Tags: OS
@@ -48,12 +51,12 @@
     [parameter(ValueFromPipeline)]
     [Alias("cn","host","Server")]
     [string[]]$ComputerName = $env:COMPUTERNAME,
-    [PSCredential] $Credential
+    [PSCredential] $Credential,
+    [switch]$Silent
   )
 
   BEGIN
   {
-    $FunctionName = (Get-PSCallstack)[0].Command
     $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique
     $sessionoption = New-CimSessionOption -Protocol DCom
     $keyname = "Control Panel\International"
@@ -67,19 +70,19 @@
     {
       $props = @{ "ComputerName" = $computer }
       $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
-      if ( $Server.ComputerName )
+      if ( $Server.FullComputerName )
       {
-        $Computer = $server.ComputerName
-        Write-Verbose "$FunctionName - Creating CIMSession on $computer over WSMan"
+        $Computer = $server.FullComputerName
+        Write-Message -Level Verbose -Message "Creating CIMSession on $computer over WSMan"
         $CIMsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
         if ( -not $CIMSession )
         {
-          Write-Verbose "$FunctionName - Creating CIMSession on $computer over WSMan failed. Creating CIMSession on $computer over DCom"
+          Write-Message -Level Verbose -Message "Creating CIMSession on $computer over WSMan failed. Creating CIMSession on $computer over DCom"
           $CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
         }
         if ( $CIMSession )
         {
-          Write-Verbose "$FunctionName - Getting properties from Registry Key"
+          Write-Message -Level Verbose -Message "Getting properties from Registry Key"
           $PropNames = Invoke-CimMethod -CimSession $CIMsession -Namespace $NS -ClassName $Reg -MethodName enumvalues -Arguments @{hDefKey=$CIMHiveCU; sSubKeyName=$keyname} |
           Select-Object -ExpandProperty snames
 
@@ -93,12 +96,12 @@
         } #if CIMSession
         else
         {
-          Write-Warning "$FunctionName - Can't create CIMSession on $computer"
+          Write-Message -Level Warning -Message "Can't create CIMSession on $computer"
         }
       } #if computername
       else
       {
-        Write-Warning "$FunctionName - can't connect to $computer"
+        Write-Message -Level Warning -Message "Can't connect to $computer"
       }
     } #foreach computer
   } #PROCESS
