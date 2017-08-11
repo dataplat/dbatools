@@ -269,7 +269,7 @@
 		
 		if ($JobCollection) {
 			foreach ($currentjob in $JobCollection) {
-				Get-JobHistory -Server $currentjob.Parent.Parent -Job $currentjob.Name
+				Get-JobHistory -Server $currentjob.Parent.Parent -Job $currentjob.Name -WithOutputFile:$WithOutputFile
 			}
 		}
 		
