@@ -1,5 +1,6 @@
-﻿Function Start-DbccCheck
+Function Start-DbccCheck
 {
+	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
 		[object]$server,
 		[string]$dbname,
@@ -19,7 +20,7 @@
 			}
 			else
 			{
-				$null = $server.ConnectionContext.ExecuteNonQuery("dbcc checkdb ([$dbname])")
+				$null = $server.Query("dbcc checkdb ([$dbname])")
 				Write-Verbose "Dbcc CHECKDB finished successfully for $dbname on $servername"
 			}
 			return "Success"

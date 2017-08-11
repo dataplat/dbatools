@@ -1,4 +1,4 @@
-﻿Function Rename-LogicalFile
+Function Rename-LogicalFile
 {
 <# 
 	.SYNOPSIS
@@ -15,10 +15,10 @@
 	[CmdletBinding()]
 	param (
         [parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[string]$DbName,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential]$SqlCredential,
         [string]$Prefix,
         [hashtable]$Mapping
 	)
@@ -29,7 +29,7 @@
         return $false
     }
 
-    $server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+    $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     if ($null -eq $server.Databases[$DbName])
     {
         Write-Error "$FunctionName - Database $DbName does not exist"

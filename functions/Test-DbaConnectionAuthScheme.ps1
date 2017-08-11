@@ -1,4 +1,4 @@
-﻿Function Test-DbaConnectionAuthScheme
+Function Test-DbaConnectionAuthScheme
 {
 <#
 .SYNOPSIS
@@ -11,7 +11,7 @@ ConnectName is the name you used to connect. ServerName is the name that the SQL
 
 If -Kerberos or -Ntlm is specified, the $true/$false results of the test will be returned. Returns $true or $false by default for one server. Returns Server name and Results for more than one server.
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 	
 .PARAMETER Kerberos
@@ -45,17 +45,17 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Test-DbaConnectionAuthScheme
 
 .EXAMPLE
-Test-DbaConnectionAuthScheme -SqlServer sqlserver2014a, sql2016
+Test-DbaConnectionAuthScheme -SqlInstance sqlserver2014a, sql2016
 
 Returns ConnectName, ServerName, Transport and AuthScheme for sqlserver2014a and sql2016.
 
 .EXAMPLE   
-Test-DbaConnectionAuthScheme -SqlServer sqlserver2014a -Kerberos
+Test-DbaConnectionAuthScheme -SqlInstance sqlserver2014a -Kerberos
 
 Returns $true or $false depending on if the connection is Kerberos or not.
 	
 .EXAMPLE   
-Test-DbaConnectionAuthScheme -SqlServer sqlserver2014a -Detailed
+Test-DbaConnectionAuthScheme -SqlInstance sqlserver2014a -Detailed
 
 Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id = @@SPID"
 	
@@ -64,10 +64,10 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 	[OutputType("System.Collections.ArrayList")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential", "Cred")]
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[switch]$Kerberos,
 		[switch]$Ntlm,
 		[switch]$Detailed
@@ -80,12 +80,12 @@ Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id =
 	
 	PROCESS
 	{
-		foreach ($servername in $SqlServer)
+		foreach ($servername in $SqlInstance)
 		{
 			try
 			{
 				Write-Verbose "Connecting to $servername"
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
 				
 				if ($server.versionMajor -lt 9)
 				{

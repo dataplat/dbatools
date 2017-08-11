@@ -1,6 +1,6 @@
-﻿Function Get-DbaDatabaseState
-{
-<#
+#ValidationTags#Messaging,FlowControl,Pipeline#
+function Get-DbaDatabaseState {
+	<#
 .SYNOPSIS
 Gets various options for databases, hereby called "states"
 
@@ -15,23 +15,25 @@ Returns an object with SqlInstance, Database, RW, Status, Access
 .PARAMETER SqlInstance
 The SQL Server that you're connecting to
 
-.PARAMETER Credential
+.PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Database
-Gets options only on these databases
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Exclude
-Gets options for all but these specific databases
+.PARAMETER ExcludeDatabase
+The database(s) to exclude - this list is auto-populated from the server
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages and allow exceptions
 
 .NOTES
+Tags: Databases
 Author: niphlod
 
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Get-DbaDatabaseState
@@ -61,101 +63,84 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
+		[Alias("Credential")]
 		[PSCredential]
-		[System.Management.Automation.CredentialAttribute()]$Credential
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
+		[switch]$Silent
 	)
 
-	DynamicParam
-	{
-		if ($SqlInstance)
-		{
-			Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $Credential -NoSystem
-		}
-	}
-
-	BEGIN
-	{
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-
-
+	begin {
 		$UserAccessHash = @{
-			'Single' = 'SINGLE_USER'
+			'Single'     = 'SINGLE_USER'
 			'Restricted' = 'RESTRICTED_USER'
-			'Multiple' = 'MULTI_USER'
+			'Multiple'   = 'MULTI_USER'
 		}
 		$ReadOnlyHash = @{
-			$true = 'READ_ONLY'
+			$true  = 'READ_ONLY'
 			$false = 'READ_WRITE'
 		}
 		$StatusHash = @{
-			'Offline' = 'OFFLINE'
-			'Normal' = 'ONLINE'
+			'Offline'       = 'OFFLINE'
+			'Normal'        = 'ONLINE'
 			'EmergencyMode' = 'EMERGENCY'
+			'Restoring'     = 'RESTORING'
 		}
-
-		function Get-DbState($db)
-		{
+		
+		function Get-DbState($db) {
 			$base = [PSCustomObject]@{
 				'Access' = ''
 				'Status' = ''
-				'RW' = ''
+				'RW'     = ''
 			}
 			$base.RW = $ReadOnlyHash[$db.ReadOnly]
 			$base.Access = $UserAccessHash[$db.UserAccess.toString()]
-			foreach($status in $StatusHash.Keys)
-			{
-				if($db.Status -match $status)
-				{
+			foreach ($status in $StatusHash.Keys) {
+				if ($db.Status -match $status) {
 					$base.Status = $StatusHash[$status]
 					break
 				}
 			}
 			return $base
 		}
-
+		
 	}
-	PROCESS
-	{
-		foreach ($instance in $SqlInstance)
-		{
-			Write-Verbose "Connecting to $instance"
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
+	process {
+		foreach ($instance in $SqlInstance) {
+			Write-Message -Level Verbose -Message "Connecting to $instance"
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
 			}
-			catch
-			{
-				Write-Warning "Can't connect to $instance"
-				Continue
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			$all_dbs = $server.Databases
 			$dbs = $all_dbs | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
-
-			if ($databases.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
+			
+			if ($Database) {
+				$dbs = $dbs | Where-Object Name -In $Database
 			}
-			if ($exclude.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
-			foreach($db in $dbs)
-			{
+			foreach ($db in $dbs) {
 				$db_status = Get-DbState $db
-
+				
 				[PSCustomObject]@{
-					SqlInstance   = $server.Name
-					InstanceName  = $server.ServiceName
-					ComputerName  = $server.NetName
-					DatabaseName  = $db.Name
-					RW            = $db_status.RW
-					Status        = $db_status.Status
-					Access        = $db_status.Access
-					Database      = $db
+					SqlInstance  = $server.Name
+					InstanceName = $server.ServiceName
+					ComputerName = $server.NetName
+					DatabaseName = $db.Name
+					RW           = $db_status.RW
+					Status       = $db_status.Status
+					Access       = $db_status.Access
+					Database     = $db
 				} | Select-DefaultView -ExcludeProperty Database
 			}
 		}
 	}
 }
+

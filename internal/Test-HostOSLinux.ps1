@@ -1,10 +1,10 @@
-﻿Function Test-HostOSLinux
+Function Test-HostOSLinux
 {
 	param (
-		[object]$sqlserver,
+		[object]$SqlInstance,
 		[object]$sqlcredential
 	)
 	
-	$server = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $sqlcredential
+	$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
 	$server.ConnectionContext.ExecuteScalar("SELECT @@VERSION") -match "Linux"
 }

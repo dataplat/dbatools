@@ -1,4 +1,4 @@
-﻿Function Select-DefaultView
+Function Select-DefaultView
 {
 	<# 
 	
@@ -6,9 +6,10 @@
 	
 	See it in action in Get-DbaSnapshot and Remove-DbaDatabaseSnapshot
 	
-	this is all from boe, thanks boe! 
+	a lot of this is from boe, thanks boe! 
 	https://learn-powershell.net/2013/08/03/quick-hits-set-the-default-property-display-in-powershell-on-custom-objects/
 	
+	TypeName creates a new type so that we can use ps1xml to modify the output
 	#>
 	
 	[CmdletBinding()]
@@ -16,42 +17,60 @@
 		[parameter(ValueFromPipeline = $true)]
 		[object]$InputObject,
 		[string[]]$Property,
-		[string[]]$ExcludeProperty
+		[string[]]$ExcludeProperty,
+		[string]$TypeName
 	)
-	
-	if ($InputObject -eq $null) { return }
-	
-	if ($ExcludeProperty)
+	process
 	{
-		$properties = ($InputObject.PsObject.Members | Where-Object MemberType -ne 'Method' | Where-Object { $_.Name -notin $ExcludeProperty }).Name
-		$defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$properties)
-	}
-	else
-	{
-		# property needs to be string
-		if ("$property" -like "* as *")
+		
+		if ($InputObject -eq $null) { return }
+		
+		if ($TypeName)
 		{
-			$newproperty = @()
-			foreach ($p in $property)
-			{
-				if ($p -like "* as *")
-				{
-					$old, $new = $p -isplit " as "
-					$inputobject | Add-Member -MemberType AliasProperty -Name $new -Value $old -Force
-					$newproperty += $new
-				}
-				else
-				{
-					$newproperty += $p
-				}
-			}
-			$property = $newproperty
+			$InputObject.PSObject.TypeNames.Insert(0, "dbatools.$TypeName")
 		}
 		
-		$defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$Property)
+		if ($ExcludeProperty)
+		{
+			if ($InputObject.GetType().Name.ToString() -eq 'DataRow')
+			{
+				$ExcludeProperty += 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
+			}
+			
+			$properties = ($InputObject.PsObject.Members | Where-Object MemberType -ne 'Method' | Where-Object { $_.Name -notin $ExcludeProperty }).Name
+			$defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$properties)
+		}
+		else
+		{
+			# property needs to be string
+			if ("$property" -like "* as *")
+			{
+				$newproperty = @()
+				foreach ($p in $property)
+				{
+					if ($p -like "* as *")
+					{
+						$old, $new = $p -isplit " as "
+						# Do not be tempted to not pipe here
+						$inputobject | Add-Member -Force -MemberType AliasProperty -Name $new -Value $old -ErrorAction SilentlyContinue
+						$newproperty += $new
+					}
+					else
+					{
+						$newproperty += $p
+					}
+				}
+				$property = $newproperty
+			}
+			
+			$defaultset = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet', [string[]]$Property)
+		}
+		
+		$standardmembers = [System.Management.Automation.PSMemberInfo[]]@($defaultset)
+		
+		# Do not be tempted to not pipe here
+		$inputobject | Add-Member -Force -MemberType MemberSet -Name PSStandardMembers -Value $standardmembers -ErrorAction SilentlyContinue
+		
+		$inputobject
 	}
-	
-	$standardmembers = [System.Management.Automation.PSMemberInfo[]]@($defaultset)
-	$inputobject | Add-Member MemberSet PSStandardMembers $standardmembers -Force
-	$inputobject
 }

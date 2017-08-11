@@ -1,4 +1,4 @@
-﻿Function Restore-Database
+Function Restore-Database
 {
 <# 
 	.SYNOPSIS
@@ -7,8 +7,8 @@
 #>
 	[CmdletBinding()]
 	param (
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[string]$DbName,
 		[string[]]$BackupFile,
 		[string]$FileType = "Database",
@@ -18,10 +18,10 @@
 		[Alias("Tsql")]
 		[switch]$ScriptOnly,
 		[switch]$VerifyOnly,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[PSCredential]$SqlCredential
 	)
 	
-	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	$servername = $server.name
 	$server.ConnectionContext.StatementTimeout = 0
 	$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore

@@ -1,12 +1,13 @@
-﻿Function Set-DbaSpn
+#ValidationTags#FlowControl,Pipeline#
+Function Set-DbaSpn
 {
 <#
 .SYNOPSIS
-Sets an SPN for a given service account in active directory, and also enables delegation to the same SPN
+Sets an SPN for a given service account in active directory (and also enables delegation to the same SPN by default)
 
 .DESCRIPTION
 This function will connect to Active Directory and search for an account. If the account is found, it will attempt to add an SPN. Once the SPN
-is added, the function will also set delegation to that service. In order to run this function, the credential you provide must have write
+is added, the function will also set delegation to that service, unless -NoDelegation is specified. In order to run this function, the credential you provide must have write
 access to Active Directory.
 
 Note: This function supports -WhatIf
@@ -17,18 +18,21 @@ The SPN you want to add
 .PARAMETER ServiceAccount
 The account you want the SPN added to
 
-.PARAMETER DomainName
-To set the SPN for another domain
-	
 .PARAMETER Credential
 The credential you want to use to connect to Active Directory to make the changes
 
+.PARAMETER NoDelegation
+Skips setting the delegation
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
 .PARAMETER Confirm
 Turns confirmations before changes on or off
-	
+
 .PARAMETER WhatIf
 Shows what would happen if the command was executed	
-	
+
 .NOTES
 Tags: SPN
 Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
@@ -47,16 +51,29 @@ Set-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\acco
 
 Connects to Active Directory and adds a provided SPN to the given account.
 
+Set-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account -Silent
+
+Connects to Active Directory and adds a provided SPN to the given account, suppressing all error messages and throw exceptions that can be caught instead
+
 .EXAMPLE
 Set-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account -Credential (Get-Credential)
 
 Connects to Active Directory and adds a provided SPN to the given account. Uses alternative account to connect to AD.
 
 .EXAMPLE
-Test-DbaSpn -ComputerName sql2016 | Where { $_.isSet -eq $false } | Set-DbaSpn -WhatIf
-	
-Connects to Active Directory and adds a provided SPN to the given account. Uses alternative account to connect to AD.
+Set-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account -NoDelegation
 
+Connects to Active Directory and adds a provided SPN to the given account, without the delegation.
+
+.EXAMPLE
+Test-DbaSpn -ComputerName sql2016 | Where { $_.isSet -eq $false } | Set-DbaSpn
+
+Sets all missing SPNs for sql2016
+
+.EXAMPLE
+Test-DbaSpn -ComputerName sql2016 | Where { $_.isSet -eq $false } | Set-DbaSpn -WhatIf
+
+Displays what would happen trying to set all missing SPNs for sql2016
 
 #>
 	[cmdletbinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
@@ -68,122 +85,97 @@ Connects to Active Directory and adds a provided SPN to the given account. Uses 
 		[Alias("InstanceServiceAccount", "AccountName")]
 		[string]$ServiceAccount,
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
-		[pscredential]$Credential,
-		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
-		[string]$DomainName		
+		[PSCredential]$Credential,
+		[switch]$NoDelegation,
+		[switch]$Silent
 	)
 	
 	process
 	{
-		$OGServiceAccount = $ServiceAccount
-		if ($serviceaccount -like "*\*")
-		{
-			Write-Debug "Account provided in in domain\user format, stripping out domain info..."
-			$serviceaccount = ($serviceaccount.split("\"))[1]
+		#did we find the server account?
+		Write-Message -Message "Looking for account $ServiceAccount..." -Level Verbose
+		$searchfor = 'User'
+		if($ServiceAccount.EndsWith('$')) {
+			$searchfor = 'Computer'
 		}
-		if ($serviceaccount -like "*@*")
+		try
 		{
-			Write-Debug "Account provided in in user@domain format, stripping out domain info..."
-			$serviceaccount = ($serviceaccount.split("@"))[0]
+			$Result = Get-DbaADObject -ADObject $ServiceAccount -Type $searchfor -Credential $Credential -Silent
 		}
-		
-		if ($domainName) {
-			$root = ""
-			$splitDomainName = $domainName.split(".")
-			ForEach ($s in $splitDomainName) {
-				if ($root -ne "") {
-					$root += ","
-				}
-				$root += "DC=" + $s
+		catch
+		{
+			Stop-Function -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($ServiceAccount). $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ServiceAccount
+		}
+		if ($Result.Count -gt 0)
+		{
+			try {
+				$adentry = $Result.GetUnderlyingObject()
+			} catch {
+				Stop-Function -Message "The SQL Service account ($ServiceAccount) has been found, but you don't have enough permission to inspect its properties $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ServiceAccount
 			}
 		} else {
-			$root = ([ADSI]"LDAP://RootDSE").defaultNamingContext
+			Stop-Function -Message "The SQL Service account ($ServiceAccount) has not been found" -Silent $Silent -Target $ServiceAccount
 		}
-		$adsearch = New-Object System.DirectoryServices.DirectorySearcher
-		
-		if ($Credential)
+		# Cool! Add an SPN
+		$delegate = $true
+		if ($PSCmdlet.ShouldProcess("$spn", "Adding SPN to service account"))
 		{
-			$domain = New-Object System.DirectoryServices.DirectoryEntry -ArgumentList ("LDAP://" + $root), $($Credential.UserName), $($Credential.GetNetworkCredential().password)
-		}
-		else
-		{
-			$domain = New-Object System.DirectoryServices.DirectoryEntry -ArgumentList ("LDAP://" + $root)
-		}
-		
-		$adsearch.SearchRoot = $domain
-		$adsearch.Filter = $("(&(samAccountName={0}))" -f $serviceaccount)
-		Write-Verbose "Looking for account $serviceAccount..."
-		$result = $adsearch.FindOne()
-		
-		#did we find the server account?
-		
-		if ($result -eq $null)
-		{
-			Write-Warning "The account specified for the SPN ($serviceAccount) does not exist on the domain"
-			continue
-		}
-		else
-		{
-			# Cool! Add an SPN
-			
-			$adentry = $result.GetDirectoryEntry()
-			$delegate = $true
-			
-			if ($PSCmdlet.ShouldProcess("$spn", "Adding SPN to service account"))
+			try
 			{
-				try
-				{
-					$null = $adentry.Properties['serviceprincipalname'].Add($spn)
-					Write-Verbose "Added SPN $spn to samaccount $serviceaccount"
-					$status = "Successfully added SPN"
-					$adentry.CommitChanges()
-					$set = $true
-				}
-				catch
-				{
-					Write-Warning "Could not add SPN. Error returned was: $_"
-					$set = $false
-					$status = "Failed to add SPN"
-					$delegate = $false
-				}
-				
-				[pscustomobject]@{
-					Name = $spn
-					ServiceAccount = $OGServiceAccount
-					Property = "servicePrincipalName"
-					IsSet = $set
-					Notes = $status
-				}
+				$null = $adentry.Properties['serviceprincipalname'].Add($spn)
+				$status = "Successfully added SPN"
+				$adentry.CommitChanges()
+				Write-Message -Message "Added SPN $spn to $ServiceAccount" -Level Verbose
+				$set = $true
+			}
+			catch
+			{
+				Write-Message -Message "Could not add SPN. $($_.Exception.Message)" -Level Warning -Silent $Silent -ErrorRecord $_ -Target $ServiceAccount
+				$set = $false
+				$status = "Failed to add SPN"
+				$delegate = $false
 			}
 			
-			if (!$delegate) { continue }
-			
-			# Don't forget delegation!
-			$adentry = $result.GetDirectoryEntry()
-			if ($PSCmdlet.ShouldProcess("$spn", "Adding constrained delegation to service account for SPN"))
-			{
-				try
+			[pscustomobject]@{
+				Name = $spn
+				ServiceAccount = $ServiceAccount
+				Property = "servicePrincipalName"
+				IsSet = $set
+				Notes = $status
+			}
+		}
+		
+		#if we have the SPN set, we can add the delegation
+		if ($delegate) {
+			# but only if $NoDelegation is not passed
+			if(!$NoDelegation) {
+				if ($PSCmdlet.ShouldProcess("$spn", "Adding constrained delegation to service account for SPN"))
 				{
-					$null = $adentry.Properties['msDS-AllowedToDelegateTo'].Add($spn)
-					Write-Verbose "Added kerberos delegation to $spn for samaccount $serviceaccount"
-					$adentry.CommitChanges()
-					$set = $true
-					$status = "Successfully added constrained delegation"
+					try
+					{
+						$null = $adentry.Properties['msDS-AllowedToDelegateTo'].Add($spn)
+						$adentry.CommitChanges()
+						Write-Message -Message "Added kerberos delegation to $spn for $ServiceAccount" -Level Verbose
+						$set = $true
+						$status = "Successfully added constrained delegation"
+					}
+					catch
+					{
+						Write-Message -Message "Could not add delegation. $($_.Exception.Message)" -Level Warning -Silent $Silent -ErrorRecord $_ -Target $ServiceAccount
+						$set = $false
+						$status = "Failed to add constrained delegation"
+					}
+					
+					[pscustomobject]@{
+						Name = $spn
+						ServiceAccount = $ServiceAccount
+						Property = "msDS-AllowedToDelegateTo"
+						IsSet = $set
+						Notes = $status
+					}
 				}
-				catch
-				{
-					Write-Warning "Could not add delegation. Error returned was: $_"
-					$set = $false
-					$status = "Failed to add constrained delegation"
-				}
-				
-				[pscustomobject]@{
-					Name = $spn
-					ServiceAccount = $OGServiceAccount
-					Property = "msDS-AllowedToDelegateTo"
-					IsSet = $set
-					Notes = $status
-				}
+			} else {
+				Write-Message -Message "Skipping delegation as instructed" -Level Verbose
 			}
 		}
 	}
