@@ -78,6 +78,13 @@
 			Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 -Job 'Output File Cleanup'
 
 			Returns all properties for all SQl Agent Job execution results of the 'Output File Cleanup' job on sql2\Inst2K17.
+			
+
+		.EXAMPLE
+			Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 -Job 'Output File Cleanup' -WithOutputFile
+
+			Returns all properties for all SQl Agent Job execution results of the 'Output File Cleanup' job on sql2\Inst2K17,
+			with additional properties that show the output filename path
 
 		.EXAMPLE
 			Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 -NoJobSteps
