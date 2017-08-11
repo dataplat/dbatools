@@ -108,50 +108,55 @@
 			
 			#Grab the current config value
 			$currentValues = ($server.Configuration.$ConfigName)
-			$currentRunValue = $currentValues.RunValue
-			$minValue = $currentValues.Minimum
-			$maxValue = $currentValues.Maximum
-			$isDynamic = $currentValues.IsDynamic
+			if ($currentValues) {
+				$currentRunValue = $currentValues.RunValue
+				$minValue = $currentValues.Minimum
+				$maxValue = $currentValues.Maximum
+				$isDynamic = $currentValues.IsDynamic
 			
-			#Let us not waste energy setting the value to itself
-			if ($currentRunValue -eq $value) {
-				switch ($Mode) {
-					'Lazy' {
-						Write-Message -Level Verbose -Message "Skipping over <c='green'>$instance</c> since its <c='gray'>$ConfigName</c> is already set to <c='gray'>$Value</c>" -Target $instance
-						continue main
+				#Let us not waste energy setting the value to itself
+				if ($currentRunValue -eq $value) {
+					switch ($Mode) {
+						'Lazy' {
+							Write-Message -Level Verbose -Message "Skipping over <c='green'>$instance</c> since its <c='gray'>$ConfigName</c> is already set to <c='gray'>$Value</c>" -Target $instance
+							continue main
+						}
+						'Strict' {
+							Stop-Function -Message "Value to set is the same as the existing value. No work being performed." -Continue -ContinueLabel main -Target $instance -Category InvalidData
+						}
 					}
-					'Strict' {
-						Stop-Function -Message "Value to set is the same as the existing value. No work being performed." -Continue -ContinueLabel main -Target $instance -Category InvalidData
+				}
+			
+				#Going outside the min/max boundary can be done, but it can break SQL, so I don't think allowing that is wise at this juncture
+				if ($value -lt $minValue -or $value -gt $maxValue) {
+					Stop-Function -Message "Value out of range for $ConfigName ($minValue <-> $maxValue)" -Continue -Category InvalidArgument
+				}
+			
+				If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $ConfigName from $currentRunValue to $value.")) {
+					try {
+						$server.Configuration.$ConfigName.ConfigValue = $value
+						$server.Configuration.Alter()
+					
+						[pscustomobject]@{
+							ComputerName = $server.NetName
+							InstanceName = $server.ServiceName
+							SqlInstance  = $server.DomainInstanceName
+							OldValue	 = $currentRunValue
+							NewValue	 = $value
+						}
+					
+						#If it's a dynamic setting we're all clear, otherwise let the user know that SQL needs to be restarted for the change to take
+						if ($isDynamic -eq $false) {
+							Write-Message -Level Warning -Message "Configuration setting $ConfigName has been set, but restart of SQL Server is required for the new value `"$value`" to be used (old value: `"$currentRunValue`")" -Target $Instance
+						}
+					}
+					catch {
+						Stop-Function -Message "Unable to change config setting" -Target $Instance -ErrorRecord $_ -Continue -ContinueLabel main
 					}
 				}
 			}
-			
-			#Going outside the min/max boundary can be done, but it can break SQL, so I don't think allowing that is wise at this juncture
-			if ($value -lt $minValue -or $value -gt $maxValue) {
-				Stop-Function -Message "Value out of range for $Config (min: $minValue - max $maxValue)" -Continue -Category InvalidArgument
-			}
-			
-			If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $Config from $currentRunValue to $value.")) {
-				try {
-					$server.Configuration.$ConfigName.ConfigValue = $value
-					$server.Configuration.Alter()
-					
-					[pscustomobject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance  = $server.DomainInstanceName
-						OldValue	 = $currentRunValue
-						NewValue	 = $value
-					}
-					
-					#If it's a dynamic setting we're all clear, otherwise let the user know that SQL needs to be restarted for the change to take
-					if ($isDynamic -eq $false) {
-						Write-Message -Level Warning -Message "Config set for $Config, but restart of SQL Server is required for the new value ($value) to be used (old value: $($value))" -Target $Instance
-					}
-				}
-				catch {
-					Stop-Function -Message "Unable to change config setting" -Target $Instance -ErrorRecord $_ -Continue -ContinueLabel main
-				}
+			else {
+				Stop-Function -Message "Config setting $ConfigName not found" -Target $Instance -ErrorRecord $_ -Continue -ContinueLabel main
 			}
 		}
 	}

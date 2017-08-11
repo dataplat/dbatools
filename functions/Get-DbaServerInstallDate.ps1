@@ -32,30 +32,30 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
-https://dbatools.io/Get-DbaInstallDate
+https://dbatools.io/Get-DbaServerInstallDate
 
 .EXAMPLE
-Get-DbaInstallDate -SqlInstance SqlBox1\Instance2
+Get-DbaServerInstallDate -SqlInstance SqlBox1\Instance2
 
 Returns an object with SQL Instance Install date as a string and the Windows install date as string. 
 
 .EXAMPLE
-Get-DbaInstallDate -SqlInstance winserver\sqlexpress, sql2016
+Get-DbaServerInstallDate -SqlInstance winserver\sqlexpress, sql2016
 
 Returns an object with SQL Instance Install date as a string and the Windows install date as a string for both SQLInstances that are passed to the cmdlet.  
 	
 .EXAMPLE   
-Get-DbaInstallDate -SqlInstance sqlserver2014a, sql2016 
+Get-DbaServerInstallDate -SqlInstance sqlserver2014a, sql2016 
 
 Returns an object with only the SQL Server Install date as a string. 
 
 .EXAMPLE   
-Get-DbaInstallDate -SqlInstance sqlserver2014a, sql2016 -IncludeWindows
+Get-DbaServerInstallDate -SqlInstance sqlserver2014a, sql2016 -IncludeWindows
 
 Returns an object with the Windows Install date and the SQL install date as a string. 
 
 .EXAMPLE   
-Get-DbaRegisteredServerName -SqlInstance sql2014 | Get-DbaInstallDate
+Get-DbaRegisteredServerName -SqlInstance sql2014 | Get-DbaServerInstallDate
 
 Returns an object with SQL Instance install date as a string for every server listed in the Central Management Server on sql2014
 	

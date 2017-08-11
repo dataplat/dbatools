@@ -62,9 +62,8 @@ function Get-DbaClientProtocol {
 	process {
 		foreach ( $computer in $ComputerName.ComputerName ) {
 			$server = Resolve-DbaNetworkName -ComputerName $computer -Credential $credential
-			if ( $server.ComputerName ) {
-				$computer = $server.ComputerName
-				
+			if ( $server.FullComputerName ) {
+				$computer = $server.FullComputerName
 				Write-Message -Level Verbose -Message "Getting SQL Server namespace on $computer" -Silent $Silent
                 $namespace = Get-DbaCmObject -ComputerName $computer -Namespace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name LIke 'ComputerManagement%'" -ErrorAction SilentlyContinue |
 					Where-Object {(Get-DbaCmObject -ComputerName $computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ClientNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0} |
