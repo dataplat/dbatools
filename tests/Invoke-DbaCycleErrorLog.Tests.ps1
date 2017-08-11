@@ -16,12 +16,12 @@ Describe "Invoke-DbaCycleErrorLog Unit Tests" -Tag "UnitTests" {
 	}
 }
 Describe "Invoke-DbaCycleErrorLog Integration Test" -Tag "IntegrationTests" {
-	$results = Invoke-DbaCycleErrorLog -SqlInstance sql2008 -Type instance
+	$results = Invoke-DbaCycleErrorLog -SqlInstance $script:instance1 -Type instance
 
 	Context "Validate output" {
 		it "Should have correct properties" {
 			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,LogType,IsSuccessful,Notes'.Split(',')
-			($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+			(($results | Get-Member -MemberType Properties).Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 		}
 		it "Should cycle instance error log" {
 			$results.LogType | Should Be "instance"
