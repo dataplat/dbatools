@@ -51,7 +51,7 @@
     $Name = $Name.ToLower()
     
     $temp = $null
-    $temp = [sqlcollective.dbatools.Configuration.Config]::Cfg[$Name].Value
+    $temp = [Sqlcollaborative.Dbatools.Configuration.Config]::Cfg[$Name].Value
     if ($temp -eq $null) { $temp = $Fallback }
     
     if ($NotNull -and ($temp -eq $null))

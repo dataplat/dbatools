@@ -1,37 +1,56 @@
-﻿Function Update-dbatools
-{
-<#
-.SYNOPSIS
-Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.
+Function Update-DbaTools {
+	<#
+		.SYNOPSIS
+			Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.
 
-.DESCRIPTION
-Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.
+		.DESCRIPTION
+			Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.
 
-.NOTES 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.PARAMETER Development
+			If this switch is enabled, the current development branch will be installed. By default, the latest official release is installed.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.NOTES 
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.LINK
-https://dbatools.io/Update-dbatools
+		.LINK
+			https://dbatools.io/Update-DbaTools
 
-.EXAMPLE
-Update-dbatools
+		.EXAMPLE
+			Update-DbaTools
 
-Updates dbatools. Deletes current copy and replaces it with freshest copy.
-	
-#>	
-	Invoke-Expression (Invoke-WebRequest -UseBasicParsing https://raw.githubusercontent.com/sqlcollaborative/dbatools/master/install.ps1).Content
+			Updates dbatools. Deletes current copy and replaces it with freshest copy.
+
+		.EXAMPLE
+			Update-DbaTools -dev
+
+			Updates dbatools to the current development branch. Deletes current copy and replaces it with latest from github.
+	#>	
+[CmdletBinding(SupportsShouldProcess=$true,ConfirmImpact="Low")]
+param(
+	[parameter(Mandatory=$false)]
+	[Alias("dev","devbranch")]
+	[switch]$Development
+)
+	$MyModuleBase = (Get-Module -name dbatools).ModuleBase;
+	$InstallScript = join-path -path $MyModuleBase -ChildPath "install.ps1";
+	if($Development) {
+		Write-Verbose "Installing dev/beta channel via $Installscript.";
+		if ($PSCmdlet.ShouldProcess("development branch","Updating dbatools")) {
+			& $InstallScript -beta;
+		}
+	}
+	else {
+		Write-Verbose "Installing release version via $Installscript."
+		if ($PSCmdlet.ShouldProcess("release branch","Updating dbatools")) {
+			& $InstallScript;
+		}
+	}
 }

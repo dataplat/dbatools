@@ -1,4 +1,4 @@
-﻿Function Get-DbaRestoreHistory
+Function Get-DbaRestoreHistory
 {
 <#
 .SYNOPSIS
@@ -7,65 +7,61 @@ Returns restore history details for databases on a SQL Server
 .DESCRIPTION
 By default, this command will return the server name, database, username, restore type, date, from file and to files.
 
-Thanks to https://www.mssqltips.com/sqlservertip/1724/when-was-the-last-time-your-sql-server-database-was-restored/ for the query and https://sqlstudies.com/2016/07/27/when-was-this-database-restored/ for the idea.
+Thanks to https://www.mssqltips.com/SqlInstancetip/1724/when-was-the-last-time-your-sql-server-database-was-restored/ for the query and https://sqlstudies.com/2016/07/27/when-was-this-database-restored/ for the idea.
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
-.PARAMETER Credential
+.PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Databases
-Return restore information for only specific databases. These are only the databases that currently exist on the server.
-	
-.PARAMETER Exclude
-Return restore information for all but these specific databases
+.PARAMETER Database
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+
+.PARAMETER ExcludeDatabase
+The database(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER Since
 Datetime object used to narrow the results to a date
 	
-.PARAMETER Detailed
-Returns default information plus From (\\server\backups\test.bak) and To (the mdf and ldf locations) information
-	
 .PARAMETER Force
 Returns a ton of information about the backup history with no max rows
 
+.PARAMETER Last
+Returns the last restore action performed on each specified database
+
 .NOTES
-Tags: DisasterRecovery, Backup, Restore
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+Tags: DisasterRecovery, Backup, Restore, Databases
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Get-DbaRestoreHistory
 
 .EXAMPLE
-Get-DbaRestoreHistory -SqlServer sqlserver2014a
+Get-DbaRestoreHistory -SqlInstance sql2016
 
-Returns server name, database, username, restore type, date for all restored databases on sqlserver2014a.
+Returns server name, database, username, restore type, date for all restored databases on sql2016.
 
 .EXAMPLE   
-Get-DbaRestoreHistory -SqlServer sqlserver2014a -Databases db1, db2 -Since '7/1/2016 10:47:00'
+Get-DbaRestoreHistory -SqlInstance sql2016 -Database db1, db2 -Since '7/1/2016 10:47:00'
 
 Returns restore information only for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.
 	
 .EXAMPLE   
-Get-DbaRestoreHistory -SqlServer sqlserver2014a, sql2016 -Detailed -Exclude db1
+Get-DbaRestoreHistory -SqlInstance sql2016, sql2016 -Exclude db1
 
-Lots of detailed information for all databases except db1 on sqlserver2014a and sql2016
+Lots of detailed information for all databases except db1 on sql2016 and sql2016
 
 .EXAMPLE   
-Get-DbaRestoreHistory -SqlServer sql2014 -Databases AdventureWorks2014, pubs -Detailed | Format-Table
+Get-DbaRestoreHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs | Format-Table
 
 Adds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and makes the output pretty
 
 .EXAMPLE   
-Get-SqlRegisteredServerName -SqlServer sql2016 | Get-DbaRestoreHistory
+Get-DbaRegisteredServerName -SqlInstance sql2016 | Get-DbaRestoreHistory
 
 Returns database restore information for every database on every server listed in the Central Management Server on sql2016
 	
@@ -73,55 +69,61 @@ Returns database restore information for every database on every server listed i
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
-		[Alias("SqlCredential")]
-		[PsCredential]$Credential,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[Alias("Credential")]
+		[PSCredential]
+		$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
 		[datetime]$Since,
-		[switch]$Detailed,
-		[switch]$Force
+		[switch]$Force,
+		[switch]$Last
 	)
 	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
-	
-	BEGIN
-	{
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-		
+	begin
+	{		
 		if ($Since -ne $null)
 		{
 			$Since = $Since.ToString("yyyy-MM-dd HH:mm:ss")
 		}
 	}
 	
-	PROCESS
+	process
 	{
-		foreach ($server in $SqlServer)
+		foreach ($instance in $SqlInstance)
 		{
 			try
 			{
-				$sourceserver = Connect-SqlServer -SqlServer $server -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				
-				if ($sourceserver.VersionMajor -lt 9)
+				if ($server.VersionMajor -lt 9)
 				{
 					Write-Warning "SQL Server 2000 not supported"
 					continue
 				}
 				
+				$computername = $server.NetName
+				$instancename = $server.ServiceName
+				$servername = $server.DomainInstanceName
+				
 				if ($force -eq $true)
 				{
-					$select = "SELECT * "
+					$select = "SELECT '$computername' AS [ComputerName],
+					'$instancename' AS [InstanceName],
+					'$servername' AS [SqlInstance], * "
 				}
 				else
 				{
 					$select = "SELECT 
-				     '$server' AS [Server],
-				     rsh.destination_database_name AS [Database],
-				     --rsh.restore_history_id as RestoreHistoryID,
-				     rsh.user_name AS [Username],
-				     CASE 
+					'$computername' AS [ComputerName],
+					'$instancename' AS [InstanceName],
+					'$servername' AS [SqlInstance],
+					 rsh.destination_database_name AS [Database],
+					 --rsh.restore_history_id as RestoreHistoryID,
+					 rsh.user_name AS [Username],
+					 CASE 
 						 WHEN rsh.restore_type = 'D' THEN 'Database'
 						 WHEN rsh.restore_type = 'F' THEN 'File'
 						 WHEN rsh.restore_type = 'G' THEN 'Filegroup'
@@ -130,38 +132,42 @@ Returns database restore information for every database on every server listed i
 						 WHEN rsh.restore_type = 'V' THEN 'Verifyonly'
 						 WHEN rsh.restore_type = 'R' THEN 'Revert'
 						 ELSE rsh.restore_type
-				     END AS [RestoreType],
-				     rsh.restore_date AS [Date],
-				     ISNULL(STUFF((SELECT ', ' + bmf.physical_device_name 
+					 END AS [RestoreType],
+					 rsh.restore_date AS [Date],
+					 ISNULL(STUFF((SELECT ', ' + bmf.physical_device_name 
 									FROM msdb.dbo.backupmediafamily bmf
 								   WHERE bmf.media_set_id = bs.media_set_id
 								 FOR XML PATH('')), 1, 2, ''), '') AS [From],
-				     ISNULL(STUFF((SELECT ', ' + rf.destination_phys_name 
+					 ISNULL(STUFF((SELECT ', ' + rf.destination_phys_name 
 									FROM msdb.dbo.restorefile rf
 								   WHERE rsh.restore_history_id = rf.restore_history_id
-								 FOR XML PATH('')), 1, 2, ''), '') AS [To]  
+								 FOR XML PATH('')), 1, 2, ''), '') AS [To],
+					bs.first_lsn,
+					bs.last_lsn,
+					bs.checkpoint_lsn,
+					bs.database_backup_lsn
 				  "
 				}
 				
 				$from = " FROM msdb.dbo.restorehistory rsh
 					INNER JOIN msdb.dbo.backupset bs ON rsh.backup_set_id = bs.backup_set_id"
 				
-				if ($exclude.length -gt 0 -or $databases.length -gt 0 -or $Since.length -gt 0)
+				if ($ExcludeDatabase -or $Database -or $Since -or $last)
 				{
 					$where = " WHERE "
 				}
 				
 				$wherearray = @()
 				
-				if ($exclude.length -gt 0)
+				if ($ExcludeDatabase)
 				{
-					$dblist = $exclude -join "','"
+					$dblist = $ExcludeDatabase -join "','"
 					$wherearray += " destination_database_name not in ('$dblist')"
 				}
 				
-				if ($databases.length -gt 0)
+				if ($Database)
 				{
-					$dblist = $databases -join "','"
+					$dblist = $Database -join "','"
 					$wherearray += "destination_database_name in ('$dblist')"
 				}
 				
@@ -170,6 +176,15 @@ Returns database restore information for every database on every server listed i
 					$wherearray += "rsh.restore_date >= '$since'"
 				}
 				
+
+				if ($last)
+				{
+					$wherearray += "rsh.backup_set_id in
+						(select max(backup_set_id) from msdb.dbo.restorehistory
+						group by destination_database_name
+						)"
+				}
+
 				if ($where.length -gt 0)
 				{
 					$wherearray = $wherearray -join " and "
@@ -177,20 +192,29 @@ Returns database restore information for every database on every server listed i
 				}
 				
 				$sql = "$select $from $where"
+				
 				Write-Debug $sql
 				
-				if ($Detailed -eq $true -or $Force -eq $true)
+				$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows 
+
+				if ($last)
 				{
-					return $sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
+					$ga = $results | group-Object database
+					$tmpres = @()	
+					$ga | foreach-Object {
+						$tmpres += $_.Group | SORT-OBJECT RESTORE_DATE -Descending | SELECT * -first 1 
+					}
+					$results = $tmpres
 				}
-				
-				$sourceserver.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty From, To, RowError, Rowstate, table, itemarray, haserrors
+				$results | Select-DefaultView -Exclude first_lsn,last_lsn,checkpoint_lsn,database_backup_lsn,RowError,RowState,Table,ItemArray,HasErrors
 			}
 			catch
 			{
-				Write-Warning "$_ `nMoving on"
+				Write-Warning $_
+				Write-Exception $_
 				continue
 			}
 		}
 	}
 }
+

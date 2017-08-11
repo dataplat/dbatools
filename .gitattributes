@@ -1,0 +1,95 @@
+# Set default behaviour, in case users don't have core.autocrlf unset.
+* -text
+
+# These files are text and should be normalized (convert crlf =&gt; lf)
+*.cs      text diff=csharp
+*.xaml    text
+*.csproj  text
+*.sln     text
+*.tt      text
+*.ps1     text
+*.cmd     text
+*.msbuild text
+*.md      text
+*.vb      text
+*.resx    text
+*.c       text diff=cpp
+*.cpp     text diff=cpp
+*.cxx     text diff=cpp
+*.h       text diff=cpp
+*.hxx     text diff=cpp
+*.py      text diff=python
+*.rb      text diff=ruby
+*.java    text diff=java
+*.html    text diff=html
+*.htm     text diff=html
+*.scss    text
+*.sass    text
+*.lisp    text
+*.clj     text
+*.sql     text
+*.php     text
+*.lua     text
+*.m       text
+*.asm     text
+*.erl     text
+*.fs      text
+*.fsx     text
+*.hs      text
+
+*.csproj  text=auto
+*.vbproj  text=auto
+*.fsproj  text=auto
+*.dbproj  text=auto
+
+
+# Declare files that will always have CRLF line endings on checkout.
+*.sln     text=auto eol=crlf
+
+# Images should be treated as binary
+# (binary is a macro for -text -diff)
+*.png     binary
+*.PNG     binary
+*.jpg     binary
+*.JPG     binary
+*.jpeg    binary
+*.JPEG    binary
+*.gif     binary
+*.GIF     binary
+*.bmp     binary
+*.BMP     binary
+*.ico     binary
+*.ICO     binary
+*.ppm     binary
+*.pgm     binary
+*.pbm     binary
+*.xpm     -text diff -merge
+
+# Vector graphics
+*.svg     -text diff -merge
+
+
+*.sdf     binary
+
+# CMake files
+CMakeLists.txt    text
+*.cmake   text
+
+# Makefiles
+Makefile  text
+makefile  text
+GNUmakefile       text
+*.mk      text
+
+
+# diff behavior for common document formats
+*.doc   diff=astextplain
+*.DOC   diff=astextplain
+*.docx  diff=astextplain
+*.DOCX  diff=astextplain
+*.dot   diff=astextplain
+*.DOT   diff=astextplain
+*.pdf   diff=astextplain
+*.PDF   diff=astextplain
+*.rtf   diff=astextplain
+*.RTF   diff=astextplain

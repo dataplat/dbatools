@@ -1,107 +1,110 @@
-﻿FUNCTION Get-DbaAgentOperator
-{
-<#
-.SYNOPSIS
-Returns all SQL Agent operators on a SQL Server Agent.
+function Get-DbaAgentOperator {
+    <#
+		.SYNOPSIS
+			Returns all SQL Agent operators on a SQL Server Agent.
 
-.DESCRIPTION
-This function returns SQL Agent operators.
+		.DESCRIPTION
+			This function returns SQL Agent operators.
 
-.PARAMETER SqlInstance
-SQLServer name or SMO object representing the SQL Server to connect to.
-This can be a collection and receive pipeline input.
+		.PARAMETER SqlInstance
+			SQLServer name or SMO object representing the SQL Server to connect to.
+			This can be a collection and receive pipeline input.
 
-.PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, currend Windows login will be used.
+		.PARAMETER SqlCredential
+			PSCredential object to connect as. If not specified, current Windows login will be used.
+		
+		.PARAMETER Operator
+			The operator(s) to process - this list is auto-populated from the server. If unspecified, all operators will be processed.
 
-.NOTES 
-Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-Date: 2017-01-16
+		.PARAMETER ExcludeOperator
+			The operator(s) to exclude - this list is auto-populated from the server
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.	
+		.PARAMETER Silent
+			Use this switch to disable any kind of verbose messages
 
-.LINK
-https://dbatools.io/Get-DbaAgentOperator
+		.NOTES
+			Tags: Agent, Operator
+			Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
-.EXAMPLE
-Get-DbaAgentOperator -SqlInstance ServerA,ServerB\instanceB
-Returns any SQL Agent operators on serverA and serverB\instanceB
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.EXAMPLE
-'serverA','serverB\instanceB' | Get-DbaAgentOperator
-Returns all SQL Agent operators  on serverA and serverB\instanceB
+		.LINK
+			https://dbatools.io/Get-DbaAgentOperator
 
-#>
-	[CmdletBinding()]
-	Param (
-		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "Instance", "SqlServer")]
-		[string[]]$SqlInstance,
-		[PSCredential] [System.Management.Automation.CredentialAttribute()]$SqlCredential
-	)
-BEGIN {}
-PROCESS
-	{
-		foreach ($instance in $SqlInstance)
-		{
-			try
-			{
-				Write-Verbose "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+		.EXAMPLE
+			Get-DbaAgentOperator -SqlInstance ServerA,ServerB\instanceB
+
+			Returns any SQL Agent operators on serverA and serverB\instanceB
+
+		.EXAMPLE
+			'ServerA','ServerB\instanceB' | Get-DbaAgentOperator
+
+			Returns all SQL Agent operators  on serverA and serverB\instanceB
+		
+		.EXAMPLE
+			Get-DbaAgentOperator -SqlInstance ServerA -Operator Dba1,Dba2
+
+			Returns only the SQL Agent Operators Dba1 and Dba2 on ServerA.
+
+		.EXAMPLE
+			Get-DbaAgentOperator -SqlInstance ServerA,ServerB -ExcludeOperator Dba3
+
+			Returns all the SQL Agent operators on ServerA and ServerB, except the Dba3 operator.
+	#>
+    [CmdletBinding()]
+    Param (
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]
+        $SqlCredential,
+		[object[]]$Operator,
+		[object[]]$ExcludeOperator,
+        [switch]$Silent
+    )
+    process {
+        foreach ($instance in $SqlInstance) {
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $instance"
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+			
+            Write-Message -Level Verbose -Message "Getting Edition from $server"
+            Write-Message -Level Verbose -Message "$server is a $($server.Edition)"
+			
+            if ($server.Edition -like 'Express*') {
+                Stop-Function -Message "There is no SQL Agent on $server, it's a $($server.Edition)" -Continue -Target $server
+            }
+			
+            $defaults = "ComputerName", "SqlInstance", "InstanceName", "Name", "ID", "Enabled as IsEnabled", "EmailAddress", "LastEmail"
+
+			if ($Operator) {
+				$operators = $server.JobServer.Operators | Where-Object Name -In $Operator
 			}
-			catch
-			{
-				Write-Warning "Failed to connect to $instance"
-				continue
+			elseif ($ExcludeOperator) {
+				$operators = $server.JobServer.Operators | Where-Object Name -NotIn $ExcludeOperator
+			}
+			else {
+				$operators = $server.JobServer.Operators
 			}
 			
-			Write-Verbose "Getting Edition from $server"
-			Write-Verbose "$server is a $($server.Edition)"
-			
-			if ( $server.Edition -like 'Express*' )
-            {
-            Write-Warning "There is no SQL Agent on $server , it's a $($server.Edition)"
-            continue
-			}
-			
-			$operators = $server.Jobserver.operators
-			
-			if ( $operators.count -lt 1 )
-			{
-				Write-Verbose "No operators on $server"
-			}
-			else
-			{
-				foreach ( $operator in $operators )
-				{
-					$jobs = $server.JobServer.jobs | Where-Object { $_.OperatorToEmail, $_.OperatorToNetSend, $_.OperatorToPage -contains $operator.Name }
-					$lastemail = $operator.LastEmailDate
-					
-					if (((Get-Date) - $lastemail).TotalDays -gt 36500)
-					{
-						$lastemail = $null
-					}
-					
-					[pscustomobject]@{
-						ComputerName = $server.NetName
-						SqlInstance = $server.Name
-						InstanceName = $server.ServiceName
-						OperatorName = $operator.Name
-                        OperatorID = $operator.ID
-                        IsEnabled = $operator.Enabled
-                        EmailAddress = $operator.EmailAddress
-						LastEmailDate = $lastemail
-						RelatedJobs = $jobs
-						Operator = $operator
-					} | Select-DefaultView -ExcludeProperty Operator
-				}
-			}
-		}
-	}
+            foreach ($operator in $operators) {
+				
+                $jobs = $server.JobServer.jobs | Where-Object { $_.OperatorToEmail, $_.OperatorToNetSend, $_.OperatorToPage -contains $operator.Name }
+                $lastemail = [dbadatetime]$operator.LastEmailDate
+				
+                Add-Member -Force -InputObject $operator -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                Add-Member -Force -InputObject $operator -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                Add-Member -Force -InputObject $operator -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                Add-Member -Force -InputObject $operator -MemberType NoteProperty -Name RelatedJobs -Value $jobs
+                Add-Member -Force -InputObject $operator -MemberType NoteProperty -Name LastEmail -Value $lastemail
+                Select-DefaultView -InputObject $operator -Property $defaults
+            }
+        }
+    }
 }

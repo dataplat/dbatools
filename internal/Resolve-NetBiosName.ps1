@@ -1,4 +1,4 @@
-﻿Function Resolve-NetBiosName
+Function Resolve-NetBiosName
 {
  <#
 .SYNOPSIS
@@ -7,12 +7,12 @@ Internal function. Takes a best guess at the NetBIOS name of a server.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
+		[PSCredential]$SqlCredential
 	)
 	
-	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	$servernetbios = $server.ComputerNamePhysicalNetBIOS
 	
 	if ($servernetbios -eq $null)

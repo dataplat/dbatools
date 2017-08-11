@@ -1,4 +1,4 @@
-﻿Function Get-SqlDefaultPaths
+Function Get-SqlDefaultPaths
 {
 <#
 .SYNOPSIS
@@ -8,16 +8,33 @@ Internal function. Returns the default data and log paths for SQL Server. Needed
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[string]$filetype,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[PSCredential]$SqlCredential
 	)
 	
-	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-	
+	try 
+	{
+		if ($SqlInstance -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
+		{
+			Write-verbose "$FunctionName - Opening SQL Server connection"
+			$NewConnection = $True
+			$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential	
+		}
+		else
+		{
+			Write-Verbose "$FunctionName - reusing SMO connection"
+			$server = $SqlInstance
+		}
+	}
+	catch {
+
+		Write-Warning "$FunctionName - Cannot connect to $SqlInstance" 
+		break
+	}
 	switch ($filetype) { "mdf" { $filetype = "data" } "ldf" { $filetype = "log" } }
 	
 	if ($filetype -eq "log")

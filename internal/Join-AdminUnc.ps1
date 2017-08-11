@@ -1,4 +1,4 @@
-﻿Function Join-AdminUnc
+Function Join-AdminUnc
 {
 <#
 .SYNOPSIS

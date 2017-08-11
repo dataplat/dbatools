@@ -1,4 +1,4 @@
-﻿Function Set-DbaPowerPlan
+Function Set-DbaPowerPlan
 {
 <#
 .SYNOPSIS
@@ -14,7 +14,7 @@ https://support.microsoft.com/en-us/kb/2207548
 http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/
 	
 .PARAMETER ComputerName
-The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works. This command handles named instances.
+The SQL Server (or server in general) that you're connecting to. The -SqlInstance parameter also works. This command handles named instances.
 	
 .PARAMETER PowerPlan
 The Power Plan that you wish to use. These are validated to Windows default Power Plans (Power saver, Balanced, High Performance)
@@ -57,8 +57,8 @@ Sets the Power Plan to the custom power plan called "Maximum Performance". Skips
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
-		[string[]]$ComputerName,
+		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
+		[object[]]$ComputerName,
 		[ValidateSet('High Performance', 'Balanced', 'Power saver')]
 		[string]$PowerPlan = 'High Performance',
 		[string]$CustomPowerPlan

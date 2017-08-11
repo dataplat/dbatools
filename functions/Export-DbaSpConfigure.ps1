@@ -58,7 +58,7 @@ File to disk, and string path.
 	{
 		$server = Connect-SqlInstance $sqlinstance $SqlCredential
 		
-		if ($server.versionMajor -lt 9) { "Windows 2000 not supported for sp_configure export."; return }
+		if ($server.versionMajor -lt 9) { "Windows 2000 not supported for sp_configure export."; break }
 		
 		if ($path.length -eq 0)
 		{

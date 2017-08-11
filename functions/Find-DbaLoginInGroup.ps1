@@ -1,4 +1,4 @@
-﻿function Find-DbaLoginInGroup
+function Find-DbaLoginInGroup
 {
 <#
 .SYNOPSIS
@@ -25,10 +25,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .PARAMETER SqlInstance 
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-collection and recieve pipeline input.
+collection and receive pipeline input.
 
 .PARAMETER SqlCredential
-PSCredential object to connect under. If not specified, currend Windows login will be used.
+PSCredential object to connect under. If not specified, current Windows login will be used.
 
 .PARAMETER Login
 Find all AD Groups used on the instance that an individual login is a member of.
@@ -56,8 +56,8 @@ Returns all active directory users within all windows AD groups that have logins
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential,
 		[string[]]$Login
 	)
 	begin
@@ -149,7 +149,7 @@ Returns all active directory users within all windows AD groups that have logins
 			try
 			{
 				Write-Verbose "Connecting to $Instance"
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $sqlcredential
 			}
 			catch
 			{

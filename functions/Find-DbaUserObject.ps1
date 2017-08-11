@@ -1,4 +1,4 @@
-﻿Function Find-DbaUserObject
+Function Find-DbaUserObject
 {
 <#
 .SYNOPSIS
@@ -12,13 +12,15 @@ Looks at the below list of objects to see if they are either owned by a user or 
     USed in Proxy
     SQL Agent Steps using a Proxy
     Endpoints
+    Server Roles
     Database Schemas
     Database Roles
-    Dabtabase Assembles
+    Database Assembles
     Database Synonyms
 
+
 .PARAMETER SqlInstance
-SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input
+SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
 
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, current Windows login will be used.
@@ -53,8 +55,8 @@ Shows all user owned (non-sa, non-dbo) objects and verbose output
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlInstances")]
-		[object[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential,
 		[string]$Pattern
 	)
 	begin
@@ -72,7 +74,7 @@ Shows all user owned (non-sa, non-dbo) objects and verbose output
 			try
 			{
 				Write-Verbose "Connecting to $Instance"
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
@@ -227,9 +229,43 @@ Shows all user owned (non-sa, non-dbo) objects and verbose output
 					Parent = $endPoint.Parent.Name
 				}
 			}
+
+			## Server Roles
+			if (-not $pattern)
+			{
+				foreach ($role in $server.Roles | Where-Object{ $_.Owner -ne $saname })
+				{
+					Write-Verbose "checking if $db is owned "
+					
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						SqlInstance = $server.ServiceName
+						Type = "Server Role"
+						Owner = $role.Owner
+						Name = $role.Name
+						Parent = $role.Parent.Name
+					}
+				}
+			}
+			else
+			{
+				foreach ($role in $server.Roles | Where-Object { $_.Owner -match $pattern })
+				{
+					
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						SqlInstance = $server.ServiceName
+						Type = "Server Role"
+						Owner = $role.Owner
+						Name = $role.Name
+						Parent = $role.Parent.Name
+					}
+				}
+			}
+
 			
 			## Loop internal database
-			foreach ($db in $server.Databases | Where-Object { $_.Status -eq "Normal" })
+			foreach ($db in $server.Databases | Where-Object IsAccessible)
 			{
 				Write-Verbose "Gather user owned object in database: $db"
 				##schemas

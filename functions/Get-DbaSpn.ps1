@@ -1,4 +1,5 @@
-﻿function Get-DbaSpn
+#ValidationTags#FlowControl,Pipeline#
+function Get-DbaSpn
 {
 <#
 .SYNOPSIS
@@ -15,15 +16,15 @@ The servers you want to return set SPNs for. This is defaulted automatically to 
 The accounts you want to retrieve set SPNs for.
 
 .PARAMETER Credential
-User credential to connect to the remote servers or active directory. This is a required parameter.
-	
-.PARAMETER ByAccount
-Shows all SPNs registered by the specified AccountName otherwise, only results will be shown for the specified ComputerName (which is localhost by default)
+User credential to connect to the remote servers or active directory.
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
 
 .NOTES
 Tags: SPN
 Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
-	
+
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -39,7 +40,7 @@ Get-DbaSpn -ServerName SQLSERVERA -Credential (Get-Credential)
 Returns a custom object with SearchTerm (ServerName) and the SPNs that were found
 
 .EXAMPLE
-Get-DbaSpn -AccountName doamain\account -Credential (Get-Credential)
+Get-DbaSpn -AccountName domain\account -Credential (Get-Credential)
 
 Returns a custom object with SearchTerm (domain account) and the SPNs that were found
 
@@ -48,64 +49,51 @@ Get-DbaSpn -ServerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
 
 Returns a custom object with SearchTerm (ServerName) and the SPNs that were found for multiple computers
 #>
-    [cmdletbinding()]
+	[cmdletbinding()]
 	param (
-        [Parameter(Mandatory = $false,ValueFromPipeline = $true)]
-        [string[]]$ComputerName = $env:COMPUTERNAME,
-        [Parameter(Mandatory = $false)]
-		[string[]]$AccountName,
-		[switch]$ByAccount,
+		[Parameter(Mandatory = $false,ValueFromPipeline = $true)]
+		[string[]]$ComputerName,
 		[Parameter(Mandatory = $false)]
-        [PSCredential]$Credential
+		[string[]]$AccountName,
+		[Parameter(Mandatory = $false)]
+		[PSCredential]$Credential,
+		[switch]$Silent
 	)
 	begin
 	{
-		Function Process-Account ($AccountName, $ByAccount) {
+		Function Process-Account ($AccountName) {
 			
 			ForEach ($account in $AccountName)
 			{
-				$ogaccount = $account
-				if ($account -like "*\*")
-				{
-					Write-Verbose "Account name ($account) provided in in domain\user format, stripping out domain info."
-					$account = ($account.split("\"))[1]
+				Write-Message -Message "Looking for account $account..." -Level Verbose
+				$searchfor = 'User'
+				if($account.EndsWith('$')) {
+					$searchfor = 'Computer'
 				}
-				if ($account -like "*@*")
-				{
-					Write-Verbose "Account name ($account) provided in in user@domain format, stripping out domain info."
-					$account = ($account.split("@"))[0]
-				}
-				
-				$root = ([ADSI]"LDAP://RootDSE").defaultNamingContext
-				$adsearch = New-Object System.DirectoryServices.DirectorySearcher
-				
-				if ($Credential)
-				{
-					$domain = New-Object System.DirectoryServices.DirectoryEntry -ArgumentList ("LDAP://" + $root), $($Credential.UserName), $($Credential.GetNetworkCredential().password)
-				}
-				else
-				{
-					$domain = New-Object System.DirectoryServices.DirectoryEntry -ArgumentList ("LDAP://" + $root)
-				}
-				
-				$adsearch.SearchRoot = $domain
-				$adsearch.Filter = $("(&(samAccountName={0}))" -f $account)
-				
-				Write-Verbose "Looking for account $account..."
-				
 				try
 				{
-					$Result = $adsearch.FindOne()
+					$Result = Get-DbaADObject -ADObject $account -Type $searchfor -Credential $Credential -Silent
 				}
 				catch
 				{
-					Write-Warning "AD lookup failure. This may be because the hostname ($computer) was not resolvable within the domain ($domain) or the SQL Server service account ($serviceaccount) couldn't be found in domain."
+					Write-Message -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($Account)." -Level Warning
+					continue
+				}
+				if ($Result.Count -gt 0)
+				{
+					try {
+						$results = $Result.GetUnderlyingObject()
+						$spns = $results.Properties.servicePrincipalName
+					} catch {
+						Write-Message -Message "The SQL Service account ($Account) has been found, but you don't have enough permission to inspect its SPNs" -Level Warning
+						continue
+					}
+				} else {
+					Write-Message -Message "The SQL Service account ($Account) has not been found" -Level Warning
 					continue
 				}
 				
-				$properties = $result.Properties
-				
-				foreach ($spn in $result.Properties.serviceprincipalname)
+				foreach ($spn in $spns)
 				{
 					if ($spn -match "\:")
 					{
@@ -123,38 +111,41 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 						}
 					}
 					[pscustomobject] @{
-						Input = $ogaccount
-						AccountName = $ogaccount
+						Input = $Account
+						AccountName = $Account
 						ServiceClass = "MSSQLSvc" # $serviceclass
 						Port = $port
 						SPN = $spn
 					}
 				}
 			}
-			continue
+		}
+		if ($ComputerName.Count -eq 0 -and $AccountName.Count -eq 0) {
+			$ComputerName = @($env:COMPUTERNAME)
 		}
 	}
 	
 	process
 	{	
+		
 		foreach ($computer in $ComputerName)
 		{
 			if ($computer)
 			{
 				if ($computer.EndsWith('$'))
 				{
-					Write-Verbose "$computer is an account name. Processing as account."
-					Process-Account -AccountName $computer -ByAccount:$true
+					Write-Message -Message "$computer is an account name. Processing as account." -Level Verbose
+					Process-Account -AccountName $computer
 					continue
 				}
 			}
 			
-			Write-Verbose "Getting SQL Server SPN for $computer"
+			Write-Message -Message "Getting SQL Server SPN for $computer" -Level Verbose
 			$spns = Test-DbaSpn -ComputerName $computer -Credential $Credential
 			
 			$sqlspns = 0
 			$spncount = $spns.count
-			Write-Verbose "Calculated $spncount SQL SPN entries that should exist for $computer"
+			Write-Message -Message "Calculated $spncount SQL SPN entries that should exist for $computer" -Level Verbose
 			foreach ($spn in $spns | Where-Object { $_.IsSet -eq $true })
 			{
 				$sqlspns++
@@ -183,14 +174,14 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 					}
 				}
 			}
-			Write-Verbose "Found $sqlspns set SQL SPN entries for $computer"
+			Write-Message -Message "Found $sqlspns set SQL SPN entries for $computer" -Level Verbose
 		}
 		
 		if ($AccountName)
 		{
 			foreach ($account in $AccountName)
 			{
-				Process-Account -AccountName $account -ByAccount:$ByAccount
+				Process-Account -AccountName $account
 			}
 		}
 	}

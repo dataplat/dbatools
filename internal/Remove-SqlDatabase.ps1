@@ -1,4 +1,4 @@
-﻿Function Remove-SqlDatabase
+Function Remove-SqlDatabase
 {
 <#
 .SYNOPSIS
@@ -8,18 +8,18 @@ an SMO server object.
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[Parameter(Mandatory = $true)]
 		[string]$DBName,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[PSCredential]$SqlCredential
 	)
 	
 	$escapedname = "[$dbname]"
 	
 	try
 	{
-		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		$server.KillDatabase($dbname)
 		$server.Refresh()
 		return "Successfully dropped $dbname on $($server.name)"
@@ -28,7 +28,7 @@ an SMO server object.
 	{
 		try
 		{
-			$null = $server.ConnectionContext.ExecuteNonQuery("DROP DATABASE $escapedname")
+			$null = $server.Query("DROP DATABASE $escapedname")
 			return "Successfully dropped $dbname on $($server.name)"
 		}
 		catch

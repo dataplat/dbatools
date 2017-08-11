@@ -1,4 +1,4 @@
-﻿Function Test-DbaDiskAllocation
+Function Test-DbaDiskAllocation
 {
 <#
 .SYNOPSIS
@@ -14,7 +14,7 @@ https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx - "The perf
 http://tk.azurewebsites.net/2012/08/
 	
 .PARAMETER ComputerName
-The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works.
+The SQL Server (or server in general) that you're connecting to. The -SqlInstance parameter also works.
 
 .PARAMETER NoSqlCheck
 Check to skip the check for SQL Data or Log files existing on the disk. 
@@ -31,6 +31,9 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+	
 .NOTES
 Tags: CIM, Storage
 Requires: Windows sysadmin access on SQL Servers
@@ -64,53 +67,48 @@ To return true or false for ALL disks being formatted to 64k
 	
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	[OutputType("System.Collections.ArrayList","System.Boolean")]
+	[OutputType("System.Collections.ArrayList", "System.Boolean")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
-		[string[]]$ComputerName,
+		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
+		[object[]]$ComputerName,
 		[switch]$NoSqlCheck,
 		[object]$SqlCredential,
-		[switch]$Detailed
+		[switch]$Detailed,
+		[switch]$Silent
 	)
 	
 	BEGIN
 	{
+		if ($Detailed)
+		{
+			Write-Message -Level Warning -Message "Detailed is deprecated and will be removed in dbatools 1.0"
+		}
+		
+		$sessionoptions = New-CimSessionOption -Protocol DCOM
+		
 		Function Get-AllDiskAllocation
 		{
 			$alldisks = @()
-			$sqlservers = @()
-			try
-			{
-				Write-Verbose "Testing connection to $server and resolving IP address"
-				$ipaddr = (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1
-				
-			}
-			catch
-			{
-				Write-Warning "Can't connect to $server"
-				return
-			}
+			$SqlInstances = @()
 			
 			try
 			{
-				Write-Verbose "Getting disk information from $server"
-				$sessionoptions = New-CimSessionOption -Protocol DCOM
-				$CIMsession = New-CimSession -ComputerName $ipaddr -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $SqlCredential
-
+				Write-Message -Level Verbose -Message "Getting disk information from $computer"
+				
 				# $query = "Select Label, BlockSize, Name from Win32_Volume WHERE FileSystem='NTFS'"
 				# $disks = Get-WmiObject -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
 				$disks = Get-CimInstance -CimSession $CIMsession -ClassName win32_volume -Filter "FileSystem='NTFS'" -ErrorAction Stop | Sort-Object -Property Name
 			}
 			catch
 			{
-				Write-Warning "Can't connect to WMI on $server"
+				Stop-Function -Message "Can't connect to WMI on $computer"
 				return
 			}
 			
 			if ($NoSqlCheck -eq $false)
 			{
-				Write-Verbose "Checking for SQL Services"
+				Write-Message -Level Verbose -Message "Checking for SQL Services"
 				$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
 				foreach ($service in $sqlservices)
 				{
@@ -118,19 +116,20 @@ To return true or false for ALL disks being formatted to 64k
 					$instance = $instance.TrimEnd(')')
 					
 					$instancename = $instance.Replace("MSSQLSERVER", "Default")
-					Write-Verbose "Found instance $instancename"
+					Write-Message -Level Verbose -Message "Found instance $instancename"
 					
 					if ($instance -eq 'MSSQLSERVER')
 					{
-						$sqlservers += $ipaddr
+						$SqlInstances += $ipaddr
 					}
 					else
 					{
-						$sqlservers += "$ipaddr\$instance"
+						$SqlInstances += "$ipaddr\$instance"
 					}
 				}
-				$sqlcount = $sqlservers.Count
-				Write-Verbose "$sqlcount instance(s) found"
+				$sqlcount = $SqlInstances.Count
+				
+				Write-Message -Level Verbose -Message "$sqlcount instance(s) found"
 			}
 			
 			foreach ($disk in $disks)
@@ -143,12 +142,12 @@ To return true or false for ALL disks being formatted to 64k
 					{
 						$sqldisk = $false
 						
-						foreach ($sqlserver in $sqlservers)
+						foreach ($SqlInstance in $SqlInstances)
 						{
-							Write-Verbose "Connecting to SQL instance ($sqlserver)"
+							Write-Message -Level Verbose -Message "Connecting to SQL instance ($SqlInstance)"
 							try
 							{
-								$smoserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+								$smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 								$sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
 								$sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
 								if ($sqlcount -gt 0)
@@ -159,7 +158,7 @@ To return true or false for ALL disks being formatted to 64k
 							}
 							catch
 							{
-								Write-Warning "Can't connect to $server ($sqlserver)"
+								Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 								continue
 							}
 						}
@@ -181,7 +180,7 @@ To return true or false for ALL disks being formatted to 64k
 					if ($NoSqlCheck -eq $false)
 					{
 						$alldisks += [PSCustomObject]@{
-							Server = $server
+							Server = $computer
 							Name = $diskname
 							Label = $disk.Label
 							BlockSize = $disk.BlockSize
@@ -192,7 +191,7 @@ To return true or false for ALL disks being formatted to 64k
 					else
 					{
 						$alldisks += [PSCustomObject]@{
-							Server = $server
+							Server = $computer
 							Name = $diskname
 							Label = $disk.Label
 							BlockSize = $disk.BlockSize
@@ -203,87 +202,64 @@ To return true or false for ALL disks being formatted to 64k
 			}
 			return $alldisks
 		}
-		
-		$collection = New-Object System.Collections.ArrayList
-		$processed = New-Object System.Collections.ArrayList
 	}
 	
 	PROCESS
 	{
-		foreach ($server in $ComputerName)
+		foreach ($computer in $ComputerName)
 		{
-			if ($server -match '\\')
+			
+			$computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $credential
+			$ipaddr = $computer.IpAddress
+			$Computer = $computer.ComputerName
+			
+			if (!$Computer)
 			{
-				$server = $server.Split('\')[0]
+				Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
 			}
 			
-			if ($server -notin $processed)
+			Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan"
+			
+			if (!$Credential)
 			{
-				$null = $processed.Add($server)
-				Write-Verbose "Connecting to $server"
+				$cimsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue
 			}
 			else
 			{
-				continue
+				$cimsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
 			}
 			
-			$data = Get-AllDiskAllocation $server
-			
-			if ([string]::IsNullOrEmpty( ($data.Server) ) )
+			if ($null -eq $cimsession.id)
 			{
-				Write-Verbose "Server query failed. Removing from processed collection"
-				$null = $processed.Remove($server)
-				continue
-			}
-			
-			if ($data.Count -gt 1)
-			{
-				$data.GetEnumerator() | ForEach-Object { $null = $collection.Add($_) }
-			}
-			else
-			{
-				$null = $collection.Add($data)
-			}
-		}
-	}
-	
-	END
-	{
-		if ($Detailed -eq $true)
-		{
-			return $collection
-		}
-		else
-		{
-			$newcollection = @()
-			foreach ($server in $processed)
-			{
-				$disks = $collection | Where-Object { $_.Server -eq $Server }
+				Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCom"
 				
-				if ($NoSqlCheck -eq $true)
+				if (!$Credential)
 				{
-					$falsecount = $disks | Where-Object { $_.IsBestPractice -eq $false }
+					$cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
 				}
 				else
 				{
-					$falsecount = $disks | Where-Object { $_.IsSqlDisk -eq $true -and $_.IsBestPractice -eq $false  }
-				}
-				
-				$IsBestPractice = $true # Being optimistic ;)
-
-				if ($falsecount.name.count -gt 0)
-				{
-					$IsBestPractice = $false # D'oh!
-				}
-				
-				if ($processed.Count -eq 1) { return $IsBestPractice }
-				
-				$newcollection += [PSCustomObject]@{
-					Server = $server
-					IsBestPractice = $IsBestPractice
+					$cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
 				}
 			}
-			return $newcollection
+			
+			if ($null -eq $cimsession.id)
+			{
+				Stop-Function -Message "Can't create CimSession on $computer" -Target $Computer
+			}
+			
+			Write-Message -Level Verbose -Message "Getting Power Plan information from $Computer"
+			
+			$data = Get-AllDiskAllocation $computer
+						
+			if ($data.Count -gt 1)
+			{
+				$data.GetEnumerator()
+			}
+			else
+			{
+				$data
+			}
 		}
 	}
 }

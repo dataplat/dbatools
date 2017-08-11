@@ -1,4 +1,4 @@
-﻿function Test-DbaLsnChain
+function Test-DbaLsnChain
 {
 <#
 .SYNOPSIS 
@@ -34,12 +34,17 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
 #>
 	[CmdletBinding()]
 	Param (
-		[parameter(Mandatory = $true)]
-        [object[]]$FilteredRestoreFiles
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [object[]]$FilteredRestoreFiles,
+        [switch]$Continue
 	)
 
     #Need to anchor  with full backup:
     $FunctionName =(Get-PSCallstack)[0].Command
+    if ($continue)
+    {
+        return $true
+    }
     Write-Verbose "$FunctionName - Testing LSN Chain"
     $FullDBAnchor = $FilteredRestoreFiles | Where-Object {$_.BackupTypeDescription -eq 'Database'}
     if (($FullDBAnchor | Group-Object -Property FirstLSN | Measure-Object).count -ne 1)
@@ -52,17 +57,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
         return $false
         break;
     }
-    #Check all the backups relate to the full backup
-    
-    #Via RecoveryForkID:
-    #Allow for striped fill backups:
-    $RecoveryForkID = ($FullDBAnchor | Select-Object -First 1).RecoveryForkID
-    if (($FilteredRestoreFiles | Where-Object {$_.RecoveryForkID -ne $RecoveryForkID}).count -gt 0)
-    {
-        Write-Warning "$FunctionName - Multiple RecoveryForkIDs found, not supported"
-        return $false
-        break
-    }
+
     #Via LSN chain:
     $CheckPointLSN = ($FullDBAnchor | Select-Object -First 1).CheckPointLSN
     $FullDBLastLSN = ($FullDBAnchor | Select-Object -First 1).LastLSN 
@@ -96,12 +91,12 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
 
 
     #Check T-log LSNs form a chain.
-    $TranLogBackups = $FilteredRestoreFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $FullDBAnchor.CheckPointLSN} | Sort-Object -Property LastLSN
+    $TranLogBackups = $FilteredRestoreFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $FullDBAnchor.CheckPointLSN} | Sort-Object -Property LastLSN, FirstLsn
     for ($i=0; $i -lt ($TranLogBackups.count)-1)
     {
         if ($i -eq 0)
         {
-            if ($TranLogBackups[$i].FirstLSN -gt $TlogAnchor.LastLSN)
+            if ($TranLogBackups[$i].FirstLSN -ge $TlogAnchor.LastLSN)
             {
                 Write-Warning "$FunctionName - Break in LSN Chain between $($TlogAnchor.BackupPath) and $($TranLogBackups[($i)].BackupPath) "
                 return $false
