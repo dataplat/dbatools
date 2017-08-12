@@ -1,4 +1,4 @@
-﻿Function Find-DbaDatabase
+Function Find-DbaDatabase
 {
 <#
 .SYNOPSIS
@@ -9,7 +9,7 @@ Allows you to search SQL Server instances for database that have either the same
 
 There a several reasons for the service broker guid not matching on a restored database primarily using alter database new broker. or turn off broker to return a guid of 0000-0000-0000-0000. 
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER SqlCredential
@@ -28,6 +28,7 @@ Search for an exact match instead of a pattern
 Output a more detailed view showing regular output plus Tables, StoredProcedures, Views and ExtendedProperties to see they closely match to help find related databases.
 
 .NOTES
+Tags: DisasterRecovery
 Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
 
 dbatools PowerShell module (https://dbatools.io)
@@ -40,25 +41,25 @@ You should have received a copy of the GNU General Public License along with thi
  https://dbatools.io/Find-DbaDatabase
 
 .EXAMPLE
-Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern Report
+Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern Report
 Returns all database from the SqlInstances that have a database with Report in the name
 	
 .EXAMPLE
-Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern TestDB -Exact -Detailed 
+Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern TestDB -Exact -Detailed 
 Returns all database from the SqlInstances that have a database named TestDB with a detailed output.
 
 .EXAMPLE
-Find-DbaDatabase -SqlServer "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Property ServiceBrokerGuid -Pattern '-faeb-495a-9898-f25a782835f5' -Detailed 
+Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Property ServiceBrokerGuid -Pattern '-faeb-495a-9898-f25a782835f5' -Detailed 
 Returns all database from the SqlInstances that have the same Service Broker GUID with a deatiled output
 
 #>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[ValidateSet('Name', 'ServiceBrokerGuid', 'Owner')]
 		[string]$Property = 'Name',
 		[parameter(Mandatory = $true)]
@@ -68,16 +69,16 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 	)
 	process
 	{
-		foreach ($instance in $SqlServer)
+		foreach ($instance in $SqlInstance)
 		{
 			try
 			{
 				Write-Verbose "Connecting to $instance"
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
-				Write-Warning "Failed to connect to: $server"
+				Write-Warning "Failed to connect to: $instance"
 				continue
 			}
 			
@@ -127,9 +128,9 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 						Tables = ($db.Tables | Where-Object { $_.IsSystemObject -eq $false }).Count
 						StoredProcedures = ($db.StoredProcedures | Where-Object { $_.IsSystemObject -eq $false }).Count
 						Views = ($db.Views | Where-Object { $_.IsSystemObject -eq $false }).Count
-						ExtendedPropteries = $extendedproperties
+						ExtendedProperties = $extendedproperties
 						Database = $db
-					} | Select-DefaultField -ExcludeProperty Database
+					} | Select-DefaultView -ExcludeProperty Database
 				}
 				else
 				{
@@ -142,7 +143,7 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 						Owner = $db.Owner
 						CreateDate = $db.CreateDate
 						Database = $db
-					} | Select-DefaultField -ExcludeProperty Database
+					} | Select-DefaultView -ExcludeProperty Database
 				}
 			}
 		}

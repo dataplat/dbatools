@@ -1,4 +1,4 @@
-﻿function Get-DbaXEventsSession
+function Get-DbaXEventsSession
 {
  <#
 .SYNOPSIS
@@ -17,6 +17,7 @@ Credential object used to connect to the SQL Server as a different user
 Only return specific sessions. This parameter is auto-populated.
 
 .NOTES
+Tags: Memory
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 	
 dbatools PowerShell module (https://dbatools.io)
@@ -30,12 +31,12 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Get-DbaXEventsSession
 
 .EXAMPLE
-Get-DbaXEventsSession -SqlServer ServerA\sql987
+Get-DbaXEventsSession -SqlInstance ServerA\sql987
 
 Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties.
 
 .EXAMPLE
-Get-DbaXEventsSession -SqlServer ServerA\sql987 | Format-Table ComputerName, SQLInstance, Session, Status -AutoSize
+Get-DbaXEventsSession -SqlInstance ServerA\sql987 | Format-Table ComputerName, SQLInstance, Session, Status -AutoSize
 
 Returns a formatted table displaying ComputerName, SQLInstance, Session, and Status.
 
@@ -48,28 +49,23 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
-		[PsCredential]$SqlCredential
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential
 	)
-	
-	DynamicParam { if ($SqlInstance) { return (Get-ParamSqlExtendedEvents -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential) } }
-	
-	BEGIN
-	{
+
+	begin {
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null)
 		{
 			throw "SMO version is too old. To collect Extended Events, you must have SQL Server Management Studio 2012 or higher installed."
 		}
-		$sessions = $psboundparameters.Sessions
 	}
-	PROCESS
-	{
+	process {
 		foreach ($instance in $SqlInstance)
 		{
 			Write-Verbose "Connecting to $instance."
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential -ErrorAction SilentlyContinue
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential -ErrorAction SilentlyContinue
 				Write-Verbose "SQL Instance $instance is version $($server.versionmajor)."
 			}
 			catch
@@ -91,9 +87,9 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 				
 				$xesessions = $XEStore.sessions
 				
-				if ($sessions)
+				if ($Session)
 				{
-					$xesessions = $xesessions | Where-Object { $_.Name -in $sessions }
+					$xesessions = $xesessions | Where-Object { $_.Name -in $Session }
 				}
 				
 				try
@@ -122,5 +118,4 @@ Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Stat
 			}
 		}
 	}
-	END { }
 }

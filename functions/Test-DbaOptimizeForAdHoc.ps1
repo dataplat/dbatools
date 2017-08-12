@@ -1,66 +1,65 @@
-﻿Function Test-DbaOptimizeForAdHoc
+Function Test-DbaOptimizeForAdHoc
 {
 <# 
-.SYNOPSIS 
-Displays information relating to SQL Server Optimize for AdHoc Workloads setting.  Works on SQL Server 2008-2016.
+	.SYNOPSIS 
+		Displays information relating to SQL Server Optimize for AdHoc Workloads setting.  Works on SQL Server 2008-2016.
 
-.DESCRIPTION 
-When this option is set, plan cache size is further reduced for single-use adhoc OLTP workload.
+	.DESCRIPTION 
+		When this option is set, plan cache size is further reduced for single-use ad hoc OLTP workload.
 
-More info: https://msdn.microsoft.com/en-us/library/cc645587.aspx
-http://www.sqlservercentral.com/blogs/glennberry/2011/02/25/some-suggested-sql-server-2008-r2-instance-configuration-settings/
+		More info: https://msdn.microsoft.com/en-us/library/cc645587.aspx
+		http://www.sqlservercentral.com/blogs/glennberry/2011/02/25/some-suggested-sql-server-2008-r2-instance-configuration-settings/
 
-These are just general recommendations for SQL Server and are a good starting point for setting the "optimize for adhoc workloads" option.
+		These are just general recommendations for SQL Server and are a good starting point for setting the "optimize for adhoc workloads" option.
 
-.PARAMETER SqlServer
-Allows you to specify a comma separated list of servers to query.
+	.PARAMETER SqlInstance
+		A collection of one or more SQL Server instance names to query.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$cred = Get-Credential, this pass this $cred to the param. 
+	.PARAMETER SqlCredential
+		Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+		$cred = Get-Credential, this pass this $cred to the param. 
 
-.NOTES 
-Author: Brandon Abshire, netnerds.net
+		Windows Authentication will be used if SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	.NOTES 
+		Author: Brandon Abshire, netnerds.net
+		Website: https://dbatools.io
+		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.LINK 
-https://dbatools.io/Test-DbaOptimizeAdHoc
+	.LINK 
+		https://dbatools.io/Test-DbaOptimizeForAdHoc
 
-.EXAMPLE   
-Test-DbaOptimizeAdHoc -SqlServer sql2008, sqlserver2012
-Get Optimize for AdHoc Workloads setting for servers sql2008 and sqlserver2012 and also the recommended one.
+	.EXAMPLE   
+		Test-DbaOptimizeForAdHoc -SqlInstance sql2008, sqlserver2012
+		
+		Get Optimize for AdHoc Workloads setting for servers sql2008 and sqlserver2012 and also the recommended one.
 
 #>
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[Alias("ServerInstance", "SqlServer", "SqlServers")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential
 	)
 	
 	BEGIN
 	{
-        $notesAdHocZero = "Recommended configuration is 1"
-		$notesAsRecommended = "Configuration is as recommended"
+        $notesAdHocZero = "Recommended configuration is 1 (enabled)."
+		$notesAsRecommended = "Configuration is already set as recommended."
 	}
 	
 	PROCESS
 	{
 		
-		foreach ($servername in $sqlserver)
+		foreach ($servername in $SqlInstance)
 		{
 			Write-Verbose "Attempting to connect to $servername"
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
 			}
 			catch
 			{

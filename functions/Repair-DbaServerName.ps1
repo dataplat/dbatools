@@ -1,4 +1,4 @@
-﻿Function Repair-DbaServerName
+Function Repair-DbaServerName
 {
 <#
 .SYNOPSIS
@@ -13,7 +13,7 @@ If the automatically determiend new name matches the old name, the command will 
 	
 https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER Credential
@@ -34,7 +34,8 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER AutoFix
 Automatically performs the fix
 
-.NOTES 
+.NOTES
+Tags: SPN
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -48,17 +49,17 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Repair-DbaServerName
 
 .EXAMPLE
-Repair-DbaServerName -SqlServer sql2014
+Repair-DbaServerName -SqlInstance sql2014
 
 Checks to see if the server is updatable, prompts galore, changes name.
 
 .EXAMPLE
-Repair-DbaServerName -SqlServer sql2014 -AutoFix
+Repair-DbaServerName -SqlInstance sql2014 -AutoFix
 
 Even more prompts/confirms, but removes Replication or breaks mirroring if necessary.
 
 .EXAMPLE   
-Repair-DbaServerName -SqlServer sql2014 -AutoFix -Force
+Repair-DbaServerName -SqlInstance sql2014 -AutoFix -Force
 	
 Skips some prompts/confirms but not all of them.
 	
@@ -66,9 +67,9 @@ Skips some prompts/confirms but not all of them.
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
-		[PsCredential]$Credential,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$Credential,
 		[switch]$AutoFix,
 		[switch]$Force
 	)
@@ -76,58 +77,33 @@ Skips some prompts/confirms but not all of them.
 	BEGIN
 	{
 		if ($Force -eq $true) { $ConfirmPreference = "None" }
-		$collection = New-Object System.Collections.ArrayList
 	}
 	
 	PROCESS
 	{
-		$servercount++
-		
-		foreach ($servername in $SqlServer)
+		foreach ($servername in $SqlInstance)
 		{
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $Credential
 			}
 			catch
 			{
-				if ($servercount -eq 1 -and $SqlServer.count -eq 1)
-				{
-					throw $_
-				}
-				else
-				{
-					Write-Warning "Can't connect to $servername. Moving on."
-					Continue
-				}
+				Write-Warning "Can't connect to $servername. Moving on."
+				Continue
 			}
 			
 			if ($server.isClustered)
 			{
-				if ($servercount -eq 1 -and $SqlServer.count -eq 1)
-				{
-					# If we ever decide with a -Force to support a cluster name change
-					# We would compare $server.NetName, and never ComputerNamePhysicalNetBIOS
-					throw "$servername is a cluster. Microsoft does not support renaming clusters."
-				}
-				else
-				{
-					Write-Warning "$servername is a cluster. Microsoft does not support renaming clusters."
-					Continue
-				}
+				
+				Write-Warning "$servername is a cluster. Microsoft does not support renaming clusters."
+				Continue
 			}
 			
 			if ($server.VersionMajor -eq 8)
 			{
-				if ($servercount -eq 1 -and $SqlServer.count -eq 1)
-				{
-					throw "SQL Server 2000 not supported."
-				}
-				else
-				{
-					Write-Warning "SQL Server 2000 not supported. Skipping $servername."
-					Continue
-				}
+				Write-Warning "SQL Server 2000 not supported. Skipping $servername."
+				Continue
 			}
 			
 			# Check to see if we can easily proceed
@@ -135,7 +111,7 @@ Skips some prompts/confirms but not all of them.
 			
 			$nametest = Test-DbaServerName $servername -Detailed -NoWarning
 			$serverinstancename = $nametest.ServerInstanceName
-			$sqlservername = $nametest.SqlServerName
+			$SqlInstancename = $nametest.SqlServerName
 			
 			if ($nametest.RenameRequired -eq $false)
 			{
@@ -180,7 +156,7 @@ Skips some prompts/confirms but not all of them.
 									Write-Debug $sql
 									try
 									{
-										$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+										$null = $server.Query($sql)
 										Write-Output "Successfully executed $sql`n"
 									}
 									catch
@@ -262,7 +238,7 @@ Skips some prompts/confirms but not all of them.
 			}
 			
 			if ($nametest.Warnings.length -gt 0)
-			{				
+			{
 				$reportingservice = Get-Service -ComputerName $server.ComputerNamePhysicalNetBIOS -DisplayName "SQL Server Reporting Services ($instance)" -ErrorAction SilentlyContinue
 				
 				if ($reportingservice.Status -eq "Running")
@@ -275,13 +251,13 @@ Skips some prompts/confirms but not all of them.
 				}
 			}
 			
-			if ($Pscmdlet.ShouldProcess($server.name, "Performing sp_dropserver to remove the old server name, $sqlservername, then sp_addserver to add $serverinstancename"))
+			if ($Pscmdlet.ShouldProcess($server.name, "Performing sp_dropserver to remove the old server name, $SqlInstancename, then sp_addserver to add $serverinstancename"))
 			{
-				$sql = "sp_dropserver '$sqlservername'"
+				$sql = "sp_dropserver '$SqlInstancename'"
 				Write-Debug $sql
 				try
 				{
-					$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $server.Query($sql)
 					Write-Output "`nSuccessfully executed $sql"
 				}
 				catch
@@ -295,7 +271,7 @@ Skips some prompts/confirms but not all of them.
 				
 				try
 				{
-					$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $server.Query($sql)
 					Write-Output "Successfully executed $sql"
 				}
 				catch
@@ -332,7 +308,7 @@ Skips some prompts/confirms but not all of them.
 			
 			if ($renamed -eq $true)
 			{
-				Write-Output "`n$servername successfully renamed from $sqlservername to $serverinstancename"
+				Write-Output "`n$servername successfully renamed from $SqlInstancename to $serverinstancename"
 			}
 			
 			if ($needsrestart -eq $true)
@@ -340,9 +316,5 @@ Skips some prompts/confirms but not all of them.
 				Write-Output "SQL Service restart for $serverinstancename still required"
 			}
 		}
-	}
-	END
-	{
-		# Nothing needed
 	}
 }

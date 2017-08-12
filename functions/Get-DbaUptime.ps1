@@ -9,7 +9,7 @@ By default, this command returns for each SQL Server instance passed in:
 SQL Instance last startup time, Uptime as a PS TimeSpan, Uptime as a formatted string
 Hosting Windows server last startup time, Uptime as a PS TimeSpan, Uptime as a formatted string
 	
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server that you're connecting to.
 
 .PARAMETER SqlCredential
@@ -24,7 +24,11 @@ Excludes the Windows server information
 .PARAMETER WindowsOnly
 Excludes the SQL server information
 
-.NOTES 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
+.NOTES
+Tags: CIM
 Original Author: Stuart Moore (@napalmgram), stuart-moore.com
 	
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -37,22 +41,22 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Get-DbaUptime
 
 .EXAMPLE
-Get-DbaUptime -SqlServer SqlBox1\Instance2
+Get-DbaUptime -SqlInstance SqlBox1\Instance2
 
 Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress instance on winserver
 
 .EXAMPLE
-Get-DbaUptime -SqlServer winserver\sqlexpress, sql2016
+Get-DbaUptime -SqlInstance winserver\sqlexpress, sql2016
 
 Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress instance on host winserver  and the default instance on host sql2016
 	
 .EXAMPLE   
-Get-DbaUptime -SqlServer sqlserver2014a, sql2016 -SqlOnly
+Get-DbaUptime -SqlInstance sqlserver2014a, sql2016 -SqlOnly
 
 Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string for the sqlexpress instance on host winserver  and the default instance on host sql2016
 
 .EXAMPLE   
-Get-SqlRegisteredServerName -SqlServer sql2014 | Get-DbaUptime 
+Get-DbaRegisteredServerName -SqlInstance sql2014 | Get-DbaUptime 
 
 Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for every server listed in the Central Management Server on sql2014
 	
@@ -60,20 +64,24 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance", "ComputerName")]
-		[object[]]$SqlServer,
+		[Alias("ServerInstance", "SqlServer", "ComputerName")]
+		[DbaInstanceParameter[]]$SqlInstance,
 		[parameter(ParameterSetName = "Sql")]
 		[Switch]$SqlOnly,
 		[parameter(ParameterSetName = "Windows")]
 		[Switch]$WindowsOnly,
 		[Alias("Credential")]
-		[PsCredential]$SqlCredential,
-		[PsCredential]$WindowsCredential
+		[PSCredential]$SqlCredential,
+		[PSCredential]$WindowsCredential,
+		[switch]$Silent
 	)
 	
-	PROCESS
+	begin {
+		$nowutc = (Get-Date).ToUniversalTime()
+	}
+	process
 	{
-		foreach ($instance in $SqlServer)
+		foreach ($instance in $SqlInstance)
 		{
 			if ($instance.Gettype().FullName -eq [System.Management.Automation.PSCustomObject] )
 			{
@@ -87,56 +95,48 @@ Returns an object with SQL Server start time, uptime as TimeSpan object, uptime 
 			{
 				$servername = $instance
 			}
-						
+
 			if ($WindowsOnly -ne $true)
 			{
-				
-				Write-Verbose "Connecting to $servername"
-				try
-				{
-					$server = Connect-SqlServer -SqlServer $servername -SqlCredential $SqlCredential -ErrorVariable ConnectError
-					
+				try {
+					Write-Message -Level Verbose -Message "Connecting to $instance"
+					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 				}
-				catch
-				{
-					Write-Warning $_
-					continue
+				catch {
+					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				}
-								
-				Write-Verbose "Getting Start times for $servername"
-				#Get TempDB creation date
-				$SQLStartTime = $server.Databases["TempDB"].CreateDate
-				$SQLUptime = New-TimeSpan -Start $SQLStartTime -End (Get-Date)
+				Write-Message -Level Verbose -Message "Getting Start times for $servername"
+				#Get tempdb creation date
+				$SQLStartTime = $server.Databases["tempdb"].CreateDate
+				$SQLUptime = New-TimeSpan -Start $SQLStartTime.ToUniversalTime() -End $nowutc
 				$SQLUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($SQLUptime.Days), $($SQLUptime.Hours), $($SQLUptime.Minutes), $($SQLUptime.Seconds)
 			}
 			
 			if ($SqlOnly -ne $true)
 			{
-				$WindowsServerName = (Resolve-DbaNetworkName $servername).ComputerName
+				$WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $WindowsCredential).FullComputerName
 
 				try
 				{
-					Write-Verbose "Getting WinBootTime via CimInstance for $servername"
-					$WinBootTime = (Get-CimInstance -ClassName win32_operatingsystem -ComputerName $windowsServerName -ErrorAction SilentlyContinue).lastbootuptime
-					$WindowsUptime = New-TimeSpan -start $WinBootTime -end (get-date)
+					Write-Message -Level Verbose -Message "Getting WinBootTime via CimInstance for $servername"
+					$WinBootTime = (Get-DbaOperatingSystem -ComputerName $windowsServerName -Credential $WindowsCredential -ErrorAction SilentlyContinue).LastBootUpTime
+					$WindowsUptime = New-TimeSpan -start $WinBootTime.ToUniversalTime() -end $nowutc
 					$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
-					
 				}
 				catch
 				{
 					try
 					{
-						Write-Verbose "$functionname - Getting WinBootTime via CimInstance DCOM"
+						Write-Message -Level Verbose -Message "Getting WinBootTime via CimInstance DCOM"
 						$CimOption = New-CimSessionOption -Protocol DCOM
 						$CimSession = New-CimSession -Credential:$WindowsCredential -ComputerName $WindowsServerName -SessionOption $CimOption
 						$WinBootTime = ($CimSession | Get-CimInstance -ClassName Win32_OperatingSystem).LastBootUpTime
-						$WindowsUptime = New-TimeSpan -start $WinBootTime -end (get-date)
+						$WindowsUptime = New-TimeSpan -start $WinBootTime.ToUniversalTime() -end $nowutc
 						$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
-						
 					}
 					catch
 					{
-						Write-Exception $_
+						Stop-Function -Message "Failure getting WinBootTime" -ErrorRecord $_ -Target $instance -Continue
 					}
 				}
 				
