@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.9.27'
+	ModuleVersion = '0.9.28'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -346,7 +346,8 @@
 		'Get-DbaTraceFlag',
 		'Stop-DbaSqlService',
 		'Start-DbaSqlService',
-		'Restart-DbaSqlService'
+		'Restart-DbaSqlService',
+		'Invoke-CycleErrorLog'
 	)
 	
 	# Cmdlets to export from this module
