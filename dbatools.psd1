@@ -347,7 +347,8 @@
 		'Stop-DbaSqlService',
 		'Start-DbaSqlService',
 		'Restart-DbaSqlService',
-		'Invoke-CycleErrorLog'
+		'Invoke-CycleErrorLog',
+		'Get-DbaCollations'
 	)
 	
 	# Cmdlets to export from this module
