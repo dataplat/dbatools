@@ -79,6 +79,7 @@ function Install-DbaWhoIsActive {
 	)
 	
 	begin {
+        $DbatoolsData = Get-DbaConfigValue -Name "Path.DbatoolsData"
 		$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 		$zipfile = "$temp\spwhoisactive.zip"
 
@@ -99,7 +100,7 @@ function Install-DbaWhoIsActive {
 						$url = $baseUrl + "/" + $latest
 						try {
 							Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop
-							Copy-Item -Path $latest -Destination $LocalCachedCopy
+							Copy-Item -Path $zipfile -Destination $LocalCachedCopy
 						}
 						catch {
 							#try with default proxy and usersettings
@@ -223,7 +224,9 @@ function Install-DbaWhoIsActive {
 		}
 	}
 	end {
-        Get-Item $sqlfile | Remove-Item
+        if ($PSCmdlet.ShouldProcess($env:computername, "Post-install cleanup")) {
+            Get-Item $sqlfile | Remove-Item
+        }
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Install-SqlWhoIsActive
 	}
 }
