@@ -85,21 +85,31 @@ function Install-DbaWhoIsActive {
 		if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
 			$baseUrl = "http://whoisactive.com/downloads"
 			$latest = ((Invoke-WebRequest -uri http://whoisactive.com/downloads).Links | where-object {$PSItem.href -match "who_is_active"} | Select-Object href -First 1).href	
-			if ($PSCmdlet.ShouldProcess($env:computername, "Downloading sp_WhoisActive")) {
-				try {
-					Write-Message -Level Verbose -Message "Downloading sp_WhoisActive zip file, unzipping and installing."
-					$url = $baseUrl + "/" + $latest
+			$LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $latest;
+
+			if (Test-Path -Path $LocalCachedCopy -PathType Leaf) {
+				Write-Message -Level Verbose -Message "Locally-cached copy exists, not downloading."
+				if ($PSCmdlet.ShouldProcess($env:computername, "Copying sp_WhoisActive from local cache for installation")) {
+					Copy-Item -Path $LocalCachedCopy -Destination $zipfile;
+				}
+			} else {
+				if ($PSCmdlet.ShouldProcess($env:computername, "Downloading sp_WhoisActive")) {
 					try {
-						Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop
+						Write-Message -Level Verbose -Message "Downloading sp_WhoisActive zip file, unzipping and installing."
+						$url = $baseUrl + "/" + $latest
+						try {
+							Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop
+							Copy-Item -Path $latest -Destination $LocalCachedCopy
+						}
+						catch {
+							#try with default proxy and usersettings
+							(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+							Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop
+						}
+					} catch {
+						Stop-Function -Message "Couldn't download sp_WhoisActive. Please download and install manually from $url." -ErrorRecord $_
+						return
 					}
-					catch {
-						#try with default proxy and usersettings
-						(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-						Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop
-					}
-				} catch {
-					Stop-Function -Message "Couldn't download sp_WhoisActive. Please download and install manually from $url." -ErrorRecord $_
-					return
 				}
 			}
 		} else {
