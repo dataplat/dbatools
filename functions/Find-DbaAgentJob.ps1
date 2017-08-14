@@ -67,7 +67,7 @@ function Find-DbaAgentJob {
 			Returns all agent job(s) that have backup in the name
 
 		.EXAMPLE
-			Find-DbaAgentJob -SqlInstance Dev01, Dev02 -Name Mybackup
+			Find-DbaAgentJob -SqlInstance Dev01, Dev02 -JobName Mybackup
 
 			Returns all agent job(s) that are named exactly Mybackup
 
