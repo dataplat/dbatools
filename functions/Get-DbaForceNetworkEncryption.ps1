@@ -70,7 +70,7 @@ function Get-DbaForceNetworkEncryption {
 				Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
 			}
 			
-			Write-Message -Level Output -Message "Connecting to SQL WMI on $($instance.ComputerName)"
+			Write-Message -Level Verbose -Message "Connecting to SQL WMI on $($instance.ComputerName)"
 			try {
 				$sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
 			}
@@ -98,10 +98,10 @@ function Get-DbaForceNetworkEncryption {
 			
 			if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 			
-			Write-Message -Level Output -Message "Regroot: $regroot" -Target $instance
-			Write-Message -Level Output -Message "ServiceAcct: $serviceaccount" -Target $instance
-			Write-Message -Level Output -Message "InstanceName: $instancename" -Target $instance
-			Write-Message -Level Output -Message "VSNAME: $vsname" -Target $instance
+			Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
+			Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount" -Target $instance
+			Write-Message -Level Verbose -Message "InstanceName: $instancename" -Target $instance
+			Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 			
 			$scriptblock = {
 				$regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
