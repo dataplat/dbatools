@@ -12,7 +12,7 @@ function Find-DbaAgentJob {
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
-		.PARAMETER Name
+		.PARAMETER JobName
 			Filter agent jobs to only the name(s) you list. 
 			This is a regex pattern by default so no asterisks are necessary. If you need an exact match, use -Exact.
 
@@ -61,7 +61,7 @@ function Find-DbaAgentJob {
 			https://dbatools.io/Find-DbaAgentJob
 
 		.EXAMPLE
-			Find-DbaAgentJob -SqlInstance Dev01 -Name backup
+			Find-DbaAgentJob -SqlInstance Dev01 -JobName backup
 
 			Returns all agent job(s) that have backup in the name
 
@@ -107,7 +107,7 @@ function Find-DbaAgentJob {
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]
 		$SqlCredential,
-		[string[]]$Name,
+		[string[]]$JobName,
 		[string[]]$StepName,
 		[int]$LastUsed,
 		[switch]$Disabled,
@@ -147,9 +147,9 @@ function Find-DbaAgentJob {
 				$output += $jobs | Where-Object { $_.LastRunOutcome -eq "Failed" }
 			}
 
-			if ($Name) {
+			if ($JobName) {
 				Write-Message -Level Verbose -Message "Retrieving jobs by their name."
-				$output += Get-JobList -SqlInstance $server -Filter $Name
+				$output += Get-JobList -SqlInstance $server -Filter $JobName
 			}
 
 			if ($StepName) {
