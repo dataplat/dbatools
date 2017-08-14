@@ -64,7 +64,7 @@ function Get-DbaForceNetworkEncryption {
 			
 			Write-Message -Level Verbose -Message "Resolving hostname"
 			$resolved = $null
-			$resolved = Resolve-DbaNetworkName -ComputerName $instance -Turbo
+			$resolved = Resolve-DbaNetworkName -ComputerName $instance
 			
 			if ($null -eq $resolved) {
 				Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
