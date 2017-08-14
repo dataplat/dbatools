@@ -77,7 +77,7 @@ function Find-DbaAgentJob {
 			Returns all agent job(s) that have not ran in 10 days
 
 		.EXAMPLE
-			Find-DbaAgentJob -SqlInstance Dev01 -IsDisabled -NoEmailNotification -IsNotScheduled
+			Find-DbaAgentJob -SqlInstance Dev01 -IsDisabled -IsNoEmailNotification -IsNotScheduled
 
 			Returns all agent job(s) that are either disabled, have no email notification or don't have a schedule. returned with detail
 
@@ -119,14 +119,14 @@ function Find-DbaAgentJob {
 		[switch]$IsFailed,
 		[Alias("NoSchedule")]
 		[switch]$IsNotScheduled,
-		[switch]$NoEmailNotification,
+		[switch]$IsNoEmailNotification,
 		[string[]]$Category,
 		[string]$Owner,
 		[datetime]$Since,
 		[switch]$Silent
 	)
 	begin {
-		if ($Failed, [boolean]$Name, [boolean]$StepName, [boolean]$LastUsed.ToString(), $Disabled, $ExcludeSchedule, $NoEmailNotification, [boolean]$Category, [boolean]$Owner, [boolean]$Exclude -notcontains $true) {
+		if ($IsFailed, [boolean]$JobName, [boolean]$StepName, [boolean]$LastUsed.ToString(), $IsDisabled, $IsNotScheduled, $IsNoEmailNotification, [boolean]$Category, [boolean]$Owner, [boolean]$ExcludeJobName -notcontains $true) {
 			Stop-Function -Message "At least one search term must be specified"
 		}
 	}
@@ -178,9 +178,9 @@ function Find-DbaAgentJob {
 				Write-Message -Level Verbose -Message "Finding job/s that have no schedule defined"
 				$output += $jobs | Where-Object HasSchedule -eq $false
 			}
-			if ($NoEmailNotification) {
+			if ($IsNoEmailNotification) {
 				Write-Message -Level Verbose -Message "Finding job/s that have no email operator defined"
-				$output += $jobs | Where-Object { $_.OperatorToEmail -eq "" }
+				$output += $jobs | Where-Object { [string]::IsNullOrEmpty($_.OperatorToEmail) -eq $true }
 			}
 
 			if ($Category) {
