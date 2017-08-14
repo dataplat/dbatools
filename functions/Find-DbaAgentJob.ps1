@@ -14,13 +14,14 @@ function Find-DbaAgentJob {
 
 		.PARAMETER JobName
 			Filter agent jobs to only the name(s) you list. 
-			This is a regex pattern by default so no asterisks are necessary. If you need an exact match, use -Exact.
+			Supports regular expression (e.g. MyJob*) being passed in.
 
 		.PARAMETER ExcludeJobName
 			Allows you to enter an array of agent job names to ignore
 
 		.PARAMETER StepName
-			Filter based on StepName. This is a regex pattern by default so no asterisks are necessary. If you need an exact match, use -Exact.
+			Filter based on StepName. 
+			Supports regular expression (e.g. MyJob*) being passed in.
 
 		.PARAMETER LastUsed
 			Find all jobs that havent ran in the INT number of previous day(s)
@@ -61,9 +62,14 @@ function Find-DbaAgentJob {
 			https://dbatools.io/Find-DbaAgentJob
 
 		.EXAMPLE
-			Find-DbaAgentJob -SqlInstance Dev01 -JobName backup
+			Find-DbaAgentJob -SqlInstance Dev01 -JobName backup*
 
 			Returns all agent job(s) that have backup in the name
+
+		.EXAMPLE
+			Find-DbaAgentJob -SqlInstance Dev01, Dev02 -Name Mybackup
+
+			Returns all agent job(s) that are named exactly Mybackup
 
 		.EXAMPLE
 			Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10
@@ -94,11 +100,6 @@ function Find-DbaAgentJob {
 			Get-DbaRegisteredServerName -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -ExcludeSchedule -Detailed | Format-Table -AutoSize -Wrap
 
 			Queries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule.
-
-		.EXAMPLE
-			Find-DbaAgentJob -SqlInstance Dev01, Dev02 -Name Mybackup -Exact
-
-			Returns all agent job(s) that are named exactly Mybackup
 	#>
 	[CmdletBinding()]
 	Param (
@@ -152,27 +153,12 @@ function Find-DbaAgentJob {
 
 			if ($JobName) {
 				Write-Message -Level Verbose -Message "Retrieving jobs by their name."
-				$output += Get-JobList -SqlInstance $server -Filter $JobName
+				$output += Get-JobList -SqlInstance $server -JobFilter $JobName
 			}
 
 			if ($StepName) {
-				foreach ($name in $StepName) {
-					Write-Message -Level Verbose -Message "Gettin some jobs by their names"
-					if ($Exact -eq $true) {
-						$output += $jobs | Where-Object { $_.JobSteps.Name -eq $name }
-					}
-					else {
-						try {
-							$output += $jobs | Where-Object { $_.JobSteps.Name -match $name }
-						}
-						catch {
-							# they prolly put aterisks thinking it's a like
-							$StepName = $StepName -replace '\*', ''
-							$StepName = $StepName -replace '\%', ''
-							$output += $jobs | Where-Object { $_.JobSteps.Name -match $name }
-						}
-					}
-				}
+				Write-Message -Level Verbose -Message "Retrieving jobs by their step names."
+				$output += Get-JobList -SqlInstance $server -StepFilter $StepName
 			}
 
 			if ($LastUsed) {
@@ -231,7 +217,7 @@ function Find-DbaAgentJob {
 				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name ComputerName -value $server.NetName
 				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
 				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-				$job | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Name, LastRunDate, LastRunOutcome, IsEnabled, CreateDate, HasSchedule, OperatorToEmail, Category, OwnerLoginName
+				$job | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Name as JobName', LastRunDate, LastRunOutcome, IsEnabled, CreateDate, HasSchedule, OperatorToEmail, Category, OwnerLoginName
 			}
 		}
 	}
