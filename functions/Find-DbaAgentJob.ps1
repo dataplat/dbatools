@@ -22,7 +22,7 @@ function Find-DbaAgentJob {
 		.PARAMETER LastUsed
 			Find all jobs that havent ran in the INT number of previous day(s)
 
-		.PARAMETER Disabled
+		.PARAMETER IsDisabled
 			Find all jobs that are disabled
 
 		.PARAMETER Failed
@@ -71,7 +71,7 @@ function Find-DbaAgentJob {
 			Returns all agent job(s) that have not ran in 10 days
 
 		.EXAMPLE
-			Find-DbaAgentJob -SqlInstance Dev01 -Disabled -NoEmailNotification -ExcludeSchedule
+			Find-DbaAgentJob -SqlInstance Dev01 -IsDisabled -NoEmailNotification -ExcludeSchedule
 
 			Returns all agent job(s) that are either disabled, have no email notification or dont have a schedule. returned with detail
 
@@ -107,10 +107,12 @@ function Find-DbaAgentJob {
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]
 		$SqlCredential,
+		[Alias("Name")]
 		[string[]]$JobName,
 		[string[]]$StepName,
 		[int]$LastUsed,
-		[switch]$Disabled,
+		[Alias("Disabled")]
+		[switch]$IsDisabled,
 		[switch]$Failed,
 		[switch]$ExcludeSchedule,
 		[switch]$NoEmailNotification,
@@ -179,9 +181,9 @@ function Find-DbaAgentJob {
 				$output += $jobs | Where-Object { $_.LastRunDate -le $SinceDate }
 			}
 
-			if ($Disabled) {
+			if ($IsDisabled) {
 				Write-Message -Level Verbose -Message "Finding job/s that are disabled"
-				$output += $jobs | Where-Object { $_.IsEnabled -eq $false }
+				$output += $jobs | Where-Object IsEnabled -eq $false
 			}
 
 			if ($ExcludeSchedule) {
