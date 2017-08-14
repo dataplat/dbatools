@@ -1,4 +1,4 @@
-function Get-DbaHadr {
+function Get-DbaAgHadr {
 	<#
 		.SYNOPSIS
 			Gets the Hadr service setting on the specified SQL Server instance.
@@ -23,10 +23,10 @@ function Get-DbaHadr {
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 		.LINK
-			https://dbatools.io/Get-DbaHadr
+			https://dbatools.io/Get-DbaAgHadr
 
 		.EXAMPLE
-			Get-DbaHadr -SqlInstance sql2016
+			Get-DbaAgHadr -SqlInstance sql2016
 
 			Returns a status of the Hadr setting for sql2016 SQL Server instance.
 	#>
