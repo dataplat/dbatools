@@ -16,6 +16,9 @@ function Find-DbaAgentJob {
 			Filter agent jobs to only the name(s) you list. 
 			This is a regex pattern by default so no asterisks are necessary. If you need an exact match, use -Exact.
 
+		.PARAMETER ExcludeJobName
+			Allows you to enter an array of agent job names to ignore
+
 		.PARAMETER StepName
 			Filter based on StepName. This is a regex pattern by default so no asterisks are necessary. If you need an exact match, use -Exact.
 
@@ -28,10 +31,10 @@ function Find-DbaAgentJob {
 		.PARAMETER Failed
 			Find all jobs that have failed
 
-		.PARAMETER ExcludeSchedule
+		.PARAMETER IsNotScheduled
 			Find all jobs with no schedule assigned
 
-		.PARAMETER NoEmailNotification
+		.PARAMETER IsNoEmailNotification
 			Find all jobs without email notification configured
 
 		.PARAMETER Category
@@ -39,9 +42,6 @@ function Find-DbaAgentJob {
 
 		.PARAMETER Owner
 			Filter based on owner of the job/s
-
-		.PARAMETER Exclude
-			Allows you to enter an array of agent job names to ignore
 
 		.PARAMETER Since
 			Datetime object used to narrow the results to a date
@@ -71,9 +71,9 @@ function Find-DbaAgentJob {
 			Returns all agent job(s) that have not ran in 10 days
 
 		.EXAMPLE
-			Find-DbaAgentJob -SqlInstance Dev01 -IsDisabled -NoEmailNotification -ExcludeSchedule
+			Find-DbaAgentJob -SqlInstance Dev01 -IsDisabled -NoEmailNotification -IsNotScheduled
 
-			Returns all agent job(s) that are either disabled, have no email notification or dont have a schedule. returned with detail
+			Returns all agent job(s) that are either disabled, have no email notification or don't have a schedule. returned with detail
 
 		.EXAMPLE
 			Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10 -Exclude "Yearly - RollUp Workload", "SMS - Notification"
@@ -109,16 +109,17 @@ function Find-DbaAgentJob {
 		$SqlCredential,
 		[Alias("Name")]
 		[string[]]$JobName,
+		[string[]]$ExcludeJobName,
 		[string[]]$StepName,
 		[int]$LastUsed,
 		[Alias("Disabled")]
 		[switch]$IsDisabled,
 		[switch]$Failed,
-		[switch]$ExcludeSchedule,
+		[Alias("NoSchedule")]
+		[switch]$IsNotScheduled,
 		[switch]$NoEmailNotification,
 		[string[]]$Category,
 		[string]$Owner,
-		[string[]]$Exclude,
 		[datetime]$Since,
 		[switch]$Silent
 	)
@@ -186,15 +187,14 @@ function Find-DbaAgentJob {
 				$output += $jobs | Where-Object IsEnabled -eq $false
 			}
 
-			if ($ExcludeSchedule) {
+			if ($IsNotScheduled) {
 				Write-Message -Level Verbose -Message "Finding job/s that have no schedule defined"
-				$output += $jobs | Where-Object { $_.HasSchedule -eq $false }
+				$output += $jobs | Where-Object HasSchedule -eq $false
 			}
 			if ($NoEmailNotification) {
 				Write-Message -Level Verbose -Message "Finding job/s that have no email operator defined"
 				$output += $jobs | Where-Object { $_.OperatorToEmail -eq "" }
 			}
-
 
 			if ($Category) {
 				Write-Message -Level Verbose -Message "Finding job/s that have the specified category defined"
