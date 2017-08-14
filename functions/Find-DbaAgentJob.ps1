@@ -119,6 +119,7 @@ function Find-DbaAgentJob {
 		[switch]$IsFailed,
 		[Alias("NoSchedule")]
 		[switch]$IsNotScheduled,
+		[Alias("NoEmailNotification")]
 		[switch]$IsNoEmailNotification,
 		[string[]]$Category,
 		[string]$Owner,
