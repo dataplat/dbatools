@@ -29,7 +29,7 @@ function Find-DbaAgentJob {
 		.PARAMETER IsDisabled
 			Find all jobs that are disabled
 
-		.PARAMETER Failed
+		.PARAMETER IsFailed
 			Find all jobs that have failed
 
 		.PARAMETER IsNotScheduled
@@ -92,7 +92,7 @@ function Find-DbaAgentJob {
 			Returns all job/s on Dev01 that are in either category "REPL-Distribution" or "REPL-Snapshot" with detailed output
 
 		.EXAMPLE
-			Find-DbaAgentJob -SqlInstance Dev01, Dev02 -Failed -Since '7/1/2016 10:47:00'
+			Find-DbaAgentJob -SqlInstance Dev01, Dev02 -IsFailed -Since '7/1/2016 10:47:00'
 
 			Returns all agent job(s) that have failed since July of 2016 (and still have history in msdb)
 
@@ -115,7 +115,8 @@ function Find-DbaAgentJob {
 		[int]$LastUsed,
 		[Alias("Disabled")]
 		[switch]$IsDisabled,
-		[switch]$Failed,
+		[Alias("Failed")]
+		[switch]$IsFailed,
 		[Alias("NoSchedule")]
 		[switch]$IsNotScheduled,
 		[switch]$NoEmailNotification,
@@ -146,9 +147,9 @@ function Find-DbaAgentJob {
 			$jobs = $server.JobServer.jobs
 			$output = @()
 
-			if ($Failed) {
+			if ($IsFailed) {
 				Write-Message -Level Verbose -Message "Checking for failed jobs."
-				$output += $jobs | Where-Object { $_.LastRunOutcome -eq "Failed" }
+				$output += $jobs | Where-Object LastRunOutcome -eq "Failed"
 			}
 
 			if ($JobName) {
