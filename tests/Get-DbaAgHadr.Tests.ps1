@@ -4,9 +4,13 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Get-DbaAgHadr Unit Tests" -Tag "UnitTests" {
 	Context "Validate parameters" {
 		$paramCount = 3
-		$defaultParamCount = 13
+		<# 
+			Get commands, Default count = 11
+			Commands with SupportShouldProcess = 13
+		#>
+		$defaultParamCount = 11
 		[object[]]$params = (Get-ChildItem function:\Get-DbaAgHadr).Parameters.Keys
-		$knownParameters = 'SqlInstance', 'SqlCredential', 'AllowException'
+		$knownParameters = 'SqlInstance', 'Credential', 'AllowException'
 		it "Should contian our parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}
