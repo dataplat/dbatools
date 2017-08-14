@@ -1,140 +1,139 @@
 function Expand-DbaTLogResponsibly {
-<#
+    <#
+        .SYNOPSIS
+            This command will help you to automatically grow your transaction log  file in a responsible way (preventing the generation of too many VLFs).
 
-.SYNOPSIS
-This command will help you to automatically grow your T-Log database file in a responsible way (preventing the generation of too many VLFs).
+        .DESCRIPTION
+            As you may already know, having a transaction log file with too many Virtual Log Files (VLFs) can hurt your database performance in many ways.
 
-.DESCRIPTION
-As you may already know, having a TLog file with too many VLFs can hurt your database performance in many ways.
+            Example:
+                Too many VLFs can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even impact insert/update/delete performance.
 
-Example:
-    Too many virtual log files can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance. 
-    References:
-        http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/
-        http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx
-        http://www.brentozar.com/blitz/high-virtual-log-file-vlf-count/
-    
-	In order to get rid of this fragmentation we need to grow the file taking the following into consideration:
-        - How many VLFs are created when we perform a grow operation or when an auto-grow is invoked?
-    Note: In SQL Server 2014 this algorithm has changed (http://www.sqlskills.com/blogs/paul/important-change-vlf-creation-algorithm-sql-server-2014/)
+                References:
+                    http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/
+                    http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx
+                    http://www.brentozar.com/blitz/high-virtual-log-file-vlf-count/
+                
+                In order to get rid of this fragmentation we need to grow the file taking the following into consideration:
+                    - How many VLFs are created when we perform a grow operation or when an auto-grow is invoked?
+                
+                Note: In SQL Server 2014 this algorithm has changed (http://www.sqlskills.com/blogs/paul/important-change-vlf-creation-algorithm-sql-server-2014/)
 
-Attention:
-    We are growing in MB instead of GB because of known issue prior to SQL 2012:
-        More detail here: 
-            http://www.sqlskills.com/BLOGS/PAUL/post/Bug-log-file-growth-broken-for-multiples-of-4GB.aspx
-	    and 
-            http://connect.microsoft.com/SqlInstance/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately
-	    or 
-            https://connect.microsoft.com/SqlInstance/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb
+            Attention:
+                We are growing in MB instead of GB because of known issue prior to SQL 2012:
+                    More detail here: 
+                        http://www.sqlskills.com/BLOGS/PAUL/post/Bug-log-file-growth-broken-for-multiples-of-4GB.aspx
+                    and 
+                        http://connect.microsoft.com/SqlInstance/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately
+                    or 
+                        https://connect.microsoft.com/SqlInstance/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb
 
-Understanding related problems:
-        http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/
-        http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx
-        http://www.brentozar.com/blitz/high-virtual-log-file-vlf-count/
-    
-Known bug before SQL Server 2012
-        http://www.sqlskills.com/BLOGS/PAUL/post/Bug-log-file-growth-broken-for-multiples-of-4GB.aspx
-        http://connect.microsoft.com/SqlInstance/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately
-        https://connect.microsoft.com/SqlInstance/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb
+            Understanding related problems:
+                    http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/
+                    http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx
+                    http://www.brentozar.com/blitz/high-virtual-log-file-vlf-count/
+                
+            Known bug before SQL Server 2012
+                    http://www.sqlskills.com/BLOGS/PAUL/post/Bug-log-file-growth-broken-for-multiples-of-4GB.aspx
+                    http://connect.microsoft.com/SqlInstance/feedback/details/481594/log-growth-not-working-properly-with-specific-growth-sizes-vlfs-also-not-created-appropriately
+                    https://connect.microsoft.com/SqlInstance/feedback/details/357502/transaction-log-file-size-will-not-grow-exactly-4gb-when-filegrowth-4gb
 
-How it works?
-    The transaction log will grow in chunks until it reaches the desired size. 
-    Example: If you have a log file with 8192MB and you say that the target size is 81920MB (80GB) it will grow in chunks of 8192MB until it reaches 81920MB. 8192 -> 16384 -> 24576 ... 73728 -> 81920
+            How it works?
+                The transaction log will grow in chunks until it reaches the desired size. 
+                Example: If you have a log file with 8192MB and you say that the target size is 81920MB (80GB) it will grow in chunks of 8192MB until it reaches 81920MB. 8192 -> 16384 -> 24576 ... 73728 -> 81920
 
-.PARAMETER SqlInstance 
-Represents the name/ip of the instance where the database(s) that you want to grow exist
- 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+		.PARAMETER SqlInstance
+            The target SQL Server instance.
+                    
+        .PARAMETER Database
+            The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER TargetLogSizeMB
-Represents the target size of the log file, expressed in MB.
+        .PARAMETER TargetLogSizeMB
+            Specifies the target size of the transaction log file in megabytes.
 
-.PARAMETER IncrementSizeMB
-Represents the incremental size of each growth, expressed in MB.
-If you don't provide this parameter, the value will be calculated automatically. Otherwise, the input value will be compared with the suggested value for your target size. If these values differ, you will be prompted to confirm your choice. 
+        .PARAMETER IncrementSizeMB
+            Specifies the amount the transaction log should grow in megabytes. If this value differs from the suggested value based on your TargetLogSizeMB, you will be prompted to confirm your choice.
+            
+            This value will be calculated if not specified.
 
-.PARAMETER LogFileId
-If you want to grow additional T-Log files, you can specify the log file number (FileId column from DBCC LOGINFO output). If you do not specify the log file number, only the first T-log file will be processed.
+        .PARAMETER LogFileId
+            Specifies the file number(s) of additional transaction log files to grow.
 
-.PARAMETER ShrinkLogFile
-This command can automatically shrink your log files for you.
+            If this value is not specified, only the first transaction log file will be processed.
 
-.PARAMETER ShrinkSizeMB
-The target size of the log file after the shrink is performed.
+        .PARAMETER ShrinkLogFile
+            If this switch is enabled, your transaction log files will be shrunk.
 
-.PARAMETER BackupDirectory
-Backups must be performed in order to shrink the T-log. Designate a location for your backups. If you do not specify the backup directory, the SQL Server's default backup directory will be used. 
+        .PARAMETER ShrinkSizeMB
+            Specifies the target size of the transaction log file for the shrink operation.
 
-.PARAMETER SqlCredential 
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+        .PARAMETER BackupDirectory
+            Specifies the location of your backups. Backups must be performed to shrink the transaction log.
 
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.  
+            If this value is not specified, the SQL Server instance's default backup directory will be used.
 
-Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+         .PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER ExcludeDatabase
-Databases not to process.
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+            To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+		.PARAMETER ExcludeDatabase
+            The database(s) to exclude. Options for this list are auto-populated from the server.
+            
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.NOTES
-Tags: Storage, Backup
-This script uses Get-DbaDiskSpace dbatools command to get the TLog's drive free space
-   
-Original Author: Claudio Silva (@ClaudioESSilva)
-Requires: ALTER DATABASE permission
-Limitations: Freespace cannot be validated on the directory where the log file resides in SQL Server 2005.
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-Website: https://dbatools.io
-Copyright (C) 2016 Chrissy LeMaire		 
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
 
-.LINK
-https://dbatools.io/Expand-DbaTLogResponsibly
+        .NOTES
+            Tags: Storage, Backup
+            This script uses Get-DbaDiskSpace dbatools command to get the TLog's drive free space
+            
+            Original Author: Claudio Silva (@ClaudioESSilva)
+            Requires: ALTER DATABASE permission
+            Limitations: Freespace cannot be validated on the directory where the log file resides in SQL Server 2005.
 
-.EXAMPLE
-Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSizeMB 50000
+            Website: https://dbatools.io
+            Copyright (C) 2016 Chrissy LeMaire		 
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-This is the simplest example. The increment value will be calculated and will grow the T-Log of the db1 database on sqlcluster to 50000 MB.
+        .LINK
+            https://dbatools.io/Expand-DbaTLogResponsibly
 
-.EXAMPLE
-Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1, db2 -TargetLogSizeMB 10000 -IncrementSizeMB 200
+        .EXAMPLE
+            Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSizeMB 50000
 
-Grows the T-Log of db1 and db2 databases on sqlcluster to 1000MB. If you don't provide this parameter, the value will be calculated automatically. Otherwise, the input value will be compared with the suggested value for your target size. If these values differ, you will be prompted to confirm your choice. 
+            Grows the transaction log for database db1 on sqlcluster to 50000 MB and calculates the increment size.
 
-.EXAMPLE
-Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSizeMB 10000 -LogFileId 9
+        .EXAMPLE
+            Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1, db2 -TargetLogSizeMB 10000 -IncrementSizeMB 200
 
-Grows the T-Log with FileId 9 of the db1 database on sqlcluster instance to 10000MB.
+            Grows the transaction logs for databases db1 and db2 on sqlcluster to 1000MB and sets the growth increment to 200MB.
 
-.EXAMPLE
-Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database (Get-Content D:\DBs.txt) -TargetLogSizeMB 50000
+        .EXAMPLE
+            Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1 -TargetLogSizeMB 10000 -LogFileId 9
 
-Grows the T-Log of the databases specified in the file 'D:\DBs.txt' on sqlcluster instance to 50000MB.
+            Grows the transaction log file  with FileId 9 of the db1 database on sqlcluster instance to 10000MB.
 
-.EXAMPLE
-Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database db1, db2 -TargetLogSizeMB 50000
+        .EXAMPLE
+            Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database (Get-Content D:\DBs.txt) -TargetLogSizeMB 50000
 
-Grows the T-Log of the databases db1 and db2 on the sqlcluster instance to 50000MB.
+            Grows the transaction log of the databases specified in the file 'D:\DBs.txt' on sqlcluster instance to 50000MB.
 
-.EXAMPLE
-Expand-DbaTLogResponsibly -SqlInstance sqlcluster -Database 'db with space' -TargetLogSizeMB 50000 -Verbose
+        .EXAMPLE
+            Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogSizeMB 100 -IncrementSizeMB 10 -ShrinkLogFile -ShrinkSizeMB 10 -BackupDirectory R:\MSSQL\Backup
 
-Use -Verbose to view in detail all actions performed by this script
-
-.EXAMPLE
-Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogSizeMB 100 -IncrementSizeMB 10 -ShrinkLogFile -ShrinkSizeMB 10 -BackupDirectory R:\MSSQL\Backup
-
-#>
+            Grows the transaction logs for databases db1 and db2 on SQL server SQLInstance to 100MB, sets the incremental growth to 10MB, shrinks the transaction log to 10MB and uses the directory R:\MSSQL\Backup for the required backups.
+    #>
     [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Default')]
     param (
         [parameter(Position = 1, Mandatory = $true)]
@@ -163,11 +162,11 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
     )
 	
     begin {
-        Write-Message -Level Verbose -Message "Set ErrorActionPreference to Inquire"
+        Write-Message -Level Verbose -Message "Set ErrorActionPreference to Inquire."
         $ErrorActionPreference = 'Inquire'
 		
         #Convert MB to KB (SMO works in KB)
-        Write-Message -Level Verbose -Message "Convert variables MB to KB (SMO works in KB)"
+        Write-Message -Level Verbose -Message "Convert variables MB to KB (SMO works in KB)."
         [int]$TargetLogSizeKB = $TargetLogSizeMB * 1024
         [int]$LogIncrementSize = $incrementSizeMB * 1024
         [int]$ShrinkSize = $ShrinkSizeMB * 1024
@@ -180,7 +179,7 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
         }
 		
         #Set base information
-        Write-Message -Level Verbose -Message "Initialize the instance '$SqlInstance'"
+        Write-Message -Level Verbose -Message "Initialize the instance '$SqlInstance'."
 		
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		
@@ -192,7 +191,7 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
             $pathexists = Test-DbaSqlPath -SqlInstance $server -Path $backupdirectory
 			
             if ($pathexists -eq $false) {
-                Stop-Function -Message "Backup directory does not exist"
+                Stop-Function -Message "Backup directory does not exist."
             }
         }
     }
@@ -206,11 +205,11 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
             #control the iteration number
             $databaseProgressbar = 0;
 			
-            Write-Message -Level Verbose -Message "Resolving NetBIOS name"
+            Write-Message -Level Verbose -Message "Resolving NetBIOS name."
             $sourcenetbios = Resolve-NetBiosName $server
 			
             $databases = $server.Databases | Where-Object IsAccessible
-            Write-Message -Level Verbose -Message "Number of databases found: $($databases.Count)"
+            Write-Message -Level Verbose -Message "Number of databases found: $($databases.Count)."
             if ($Database) {
                 $databases = $databases | Where-Object Name -In $Database
             }
@@ -221,7 +220,7 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
             #go through all databases
             Write-Message -Level Verbose -Message "Processing...foreach database..."
             foreach ($db in $databases.Name) {
-                Write-Message -Level Verbose -Message "Working on $db"
+                Write-Message -Level Verbose -Message "Working on $db."
                 $databaseProgressbar += 1
 				
                 #set step to reutilize on logging operations
@@ -244,7 +243,7 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
                     
                     $numLogfiles = $server.Databases[$db].LogFiles.Count
 					
-                    Write-Message -Level Verbose -Message "$step - Use log file: $logfile"
+                    Write-Message -Level Verbose -Message "$step - Use log file: $logfile."
                     $currentSize = $logfile.Size
                     $currentSizeMB = $currentSize/1024
 
@@ -254,13 +253,13 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
                     Write-Message -Level Verbose -Message "$step - Log file current size: $([System.Math]::Round($($currentSize/1024.0), 2)) MB "
                     [long]$requiredSpace = ($TargetLogSizeKB - $currentSize)
 					
-                    Write-Message -Level Verbose -Message "Verifying if sufficient space exists ($([System.Math]::Round($($requiredSpace / 1024.0), 2))MB) on the volume to perform this task"
+                    Write-Message -Level Verbose -Message "Verifying if sufficient space exists ($([System.Math]::Round($($requiredSpace / 1024.0), 2))MB) on the volume to perform this task."
 					
                     [long]$TotalTLogFreeDiskSpaceKB = 0
                     Write-Message -Level Verbose -Message "Get TLog drive free space"
                     [object]$AllDrivesFreeDiskSpace = Get-DbaDiskSpace -ComputerName $sourcenetbios -Unit KB | Select-Object Name, SizeInKB
 					
-                    #Verfiy path using Split-Path on $logfile.FileName in backwards. This way we will catch the LUNs. Example: "K:\Log01" as LUN name. Need to add final backslash if not there
+                    #Verify path using Split-Path on $logfile.FileName in backwards. This way we will catch the LUNs. Example: "K:\Log01" as LUN name. Need to add final backslash if not there
                     $DrivePath = Split-Path $logfile.FileName -parent
                     $DrivePath = if (!($DrivePath.EndsWith("\"))) { "$DrivePath\" }
                     else { $DrivePath }
@@ -304,10 +303,10 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
                     }
                     else {
                         if ($currentSize -ige $TargetLogSizeKB -and ($ShrinkLogFile -eq $false)) {
-                            Write-Message -Level Verbose -Message "$step - [INFO] The T-Log file '$logfile' size is already equal or greater than target size - No action required"
+                            Write-Message -Level Verbose -Message "$step - [INFO] The T-Log file '$logfile' size is already equal or greater than target size - No action required."
                         }
                         else {
-                            Write-Message -Level Verbose -Message "$step - [OK] There is sufficient free space to perform this task"
+                            Write-Message -Level Verbose -Message "$step - [OK] There is sufficient free space to perform this task."
 							
                             # If SQL Server version is greater or equal to 2012
                             if ($server.Version.Major -ge "11") {
@@ -334,7 +333,7 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
                                 }
 								
                                 if (($IncrementSizeMB % 4096) -eq 0) {
-                                    Write-Message -Level Verbose -Message "Your instance version is below SQL 2012, remember the known BUG mentioned on HELP. `r`nUse Get-Help Expand-DbaTLogFileResponsibly to read help`r`nUse a different value for incremental size`r`n"
+                                    Write-Message -Level Verbose -Message "Your instance version is below SQL 2012, remember the known BUG mentioned on HELP. `r`nUse Get-Help Expand-DbaTLogFileResponsibly to read help`r`nUse a different value for incremental size.`r`n"
                                     return
                                 }
                             }
@@ -353,7 +352,7 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
                                     $sqlResult = $server.ConnectionContext.ExecuteWithResults($sql);
 									
                                     if ($sqlResult.Tables[0].Rows[0]["last_log_backup_lsn"] -is [System.DBNull]) {
-                                        Write-Warning  "First, you need to make a full backup before you can do Tlog backup on database '$db' (last_log_backup_lsn is null)"
+                                        Write-Warning  "First, you need to make a full backup before you can do Tlog backup on database '$db' (last_log_backup_lsn is null)."
                                         Continue
                                     }
                                 }
@@ -362,8 +361,8 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
                                 }
 								
                                 If ($Pscmdlet.ShouldProcess($($server.name), "Backing up TLog for $db")) {
-                                    Write-Message -Level Verbose -Message "We are about to backup the Tlog for database '$db' to '$backupdirectory' and shrink the Log"
-                                    Write-Message -Level Verbose -Message "Starting Size = $currentSizeMB"
+                                    Write-Message -Level Verbose -Message "We are about to backup the Tlog for database '$db' to '$backupdirectory' and shrink the log."
+                                    Write-Message -Level Verbose -Message "Starting Size = $currentSizeMB."
 									
                                     $DefaultCompression = $server.Configuration.DefaultBackupCompression.ConfigValue
 									
@@ -408,7 +407,7 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
                                         while (($logfile.Size/1024) -gt $ShrinkSizeMB -and ++$backupRetries -lt 6)
 										
                                         $currentSize = $logfile.Size
-                                        Write-Message -Level Verbose -Message "TLog backup and truncate for database '$db' finished. Current tlog size after $backupRetries backups is $($currentSize/1024)MB"
+                                        Write-Message -Level Verbose -Message "TLog backup and truncate for database '$db' finished. Current TLog size after $backupRetries backups is $($currentSize/1024)MB"
                                     }
                                 }
                             }
@@ -437,7 +436,7 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
                             If ($Pscmdlet.ShouldProcess($($server.name), "Starting log growth. Increment chunk size: $($LogIncrementSize/1024)MB for database '$db'")) {
                                 Write-Message -Level Verbose -Message "Starting log growth. Increment chunk size: $($LogIncrementSize/1024)MB for database '$db'"
 								
-                                Write-Message -Level Verbose -Message "$step - While current size less than target log size"
+                                Write-Message -Level Verbose -Message "$step - While current size less than target log size."
 								
                                 while ($currentSize -lt $TargetLogSizeKB) {
 									
@@ -448,9 +447,9 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
                                         -PercentComplete ($currentSize / $TargetLogSizeKB * 100) `
                                         -Status "Remaining - $([System.Math]::Round($($($TargetLogSizeKB - $currentSize) / 1024.0), 2)) MB"
 									
-                                    Write-Message -Level Verbose -Message "$step - Verifying if the log can grow or if it's already at the desired size"
+                                    Write-Message -Level Verbose -Message "$step - Verifying if the log can grow or if it's already at the desired size."
                                     if (($TargetLogSizeKB - $currentSize) -lt $LogIncrementSize) {
-                                        Write-Message -Level Verbose -Message "$step - Log size is lower than the increment size. Setting current size equals $TargetLogSizeKB"
+                                        Write-Message -Level Verbose -Message "$step - Log size is lower than the increment size. Setting current size equals $TargetLogSizeKB."
                                         $currentSize = $TargetLogSizeKB
                                     }
                                     else {
@@ -459,7 +458,7 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
                                     }
 									
                                     #When -WhatIf Switch, do not run
-                                    if ($PSCmdlet.ShouldProcess("$step - File will grow to $([System.Math]::Round($($currentSize/1024.0), 2)) MB", "This action will grow the file $logfile on database $db to $([System.Math]::Round($($currentSize/1024.0), 2)) MB .`r`nDo you wish to continue?", "Performe grow")) {
+                                    if ($PSCmdlet.ShouldProcess("$step - File will grow to $([System.Math]::Round($($currentSize/1024.0), 2)) MB", "This action will grow the file $logfile on database $db to $([System.Math]::Round($($currentSize/1024.0), 2)) MB .`r`nDo you wish to continue?", "Perform grow")) {
                                         Write-Message -Level Verbose -Message "$step - Set size $logfile to $([System.Math]::Round($($currentSize/1024.0), 2)) MB"
                                         $logfile.size = $currentSize
 										
@@ -474,14 +473,14 @@ Expand-DbaTLogResponsibly -SqlInstance SqlInstance -Database db1,db2 -TargetLogS
 								
                                 Write-Message -Level Verbose -Message "`r`n$step - [OK] Growth process for logfile '$logfile' on database '$db', has been finished."
 								
-                                Write-Message -Level Verbose -Message "$step - Grow $logfile log file on $db database finished"
+                                Write-Message -Level Verbose -Message "$step - Grow $logfile log file on $db database finished."
                             }
                         }
                     } #else space available
                 }
-                #else verifying existance
+                #else verifying existence
                 else {
-                    Write-Message -Level Verbose -Message "Database '$db' does not exist on instance '$SqlInstance'"
+                    Write-Message -Level Verbose -Message "Database '$db' does not exist on instance '$SqlInstance'."
                 }
 
                 #Get the number of VLFs

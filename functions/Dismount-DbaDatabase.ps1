@@ -1,40 +1,46 @@
 ﻿function Dismount-DbaDatabase {
 	<#
 		.SYNOPSIS
-			Detach a SQL Server Database
+			Detach a SQL Server Database.
 
 		.DESCRIPTION
-			This command detaches one or more SQL Server databases. If necessary, -Force can be used to break mirrors and remove databases from avaialblity groups prior to detaching.
+			This command detaches one or more SQL Server databases. If necessary, -Force can be used to break mirrors and remove databases from availability groups prior to detaching.
 
 		.PARAMETER SqlInstance
-			The target SQL Server
+			The SQL Server instance.
 
-		.PARAMETER SqlCredential
-			PSCredential object to connect as. If not specified, current Windows login will be used
+        .PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Database
-			A string value that specifies the name of the database or databases to be detached
+			The database(s) to detach.
 
 		.PARAMETER FileStructure
-			A StringCollection object value that contains a list database files. If this value is not provided, a best effort will be made to figure out the filestructure based on previous backup history.
+			A StringCollection object value that contains a list database files. If FileStructure is not specified, BackupHistory will be used to guess the structure.
 	
 		.PARAMETER DatabaseCollection
 			A collection of databases (such as returned by Get-DbaDatabase), to be detached.
 		
 		.PARAMETER UpdateStatistics
-			A switch that specifies whether to update the statistics for the database before detaching it
+			If this switch is enabled, statistics for the database will be updated prior to detaching it.
 	
 		.PARAMETER Force
-			If database is part of a mirror, it will break the mirror. If it is part of an Availability Group, it will remove it from the Availability Group.
+			If this switch is enabled and the database is part of a mirror, the mirror will be broken. If the database is part of an Availability Group, it will be removed from the AG.
 	
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Database
@@ -53,13 +59,14 @@
 		.EXAMPLE
 			Get-DbaDatabase -SqlInstance sql2016b -Database 'PerformancePoint Service Application_10032db0fa0041df8f913f558a5dc0d4' | Detach-DbaDatabase -Force
 
-			Detaches 'PerformancePoint Service Application_10032db0fa0041df8f913f558a5dc0d4' from sql2016b. Since Force was specified, if the databse is part of mirror, the mirror will be broken prior to detaching.
-			If the database is part of an availability group, it will first be dropped prior to detachment
+			Detaches 'PerformancePoint Service Application_10032db0fa0041df8f913f558a5dc0d4' from sql2016b. Since Force was specified, if the database is part of mirror, the mirror will be broken prior to detaching.
+
+			If the database is part of an Availability Group, it will first be dropped prior to detachment.
 	
 			.EXAMPLE
 			Get-DbaDatabase -SqlInstance sql2016b -Database WSS_Logging | Detach-DbaDatabase -Force -WhatIf
 
-			Shows what would happen if the command were to execute (without actually executing the detach/break/remove commands) 
+			Shows what would happen if the command were to execute (without actually executing the detach/break/remove commands). 
 	
 	#>
 	[CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = "Default")]
@@ -70,7 +77,7 @@
 		[PSCredential]$SqlCredential,
 		[parameter(Mandatory, ParameterSetName = 'SqlInstance')]
 		[string]$Database,
-		[parameter(Mandatory, ParameterSetName = 'Pineline', ValueFromPipeline)]
+		[parameter(Mandatory, ParameterSetName = 'Pipeline', ValueFromPipeline)]
 		[Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
 		[Switch]$UpdateStatistics,
 		[switch]$Force,
@@ -102,12 +109,12 @@
 			$server = $db.Parent
 			
 			if ($db.IsSystemObject) {
-				Stop-Function -Message "$db is a system database and cannot be detached using this method" -Target $db -Continue
+				Stop-Function -Message "$db is a system database and cannot be detached using this method." -Target $db -Continue
 			}
 			
-			Write-Message -Level Verbose -Message "Checking replication status"
+			Write-Message -Level Verbose -Message "Checking replication status."
 			if ($db.ReplicationOptions -ne "None") {
-				Stop-Function -Message "Skipping $db  on $server because it is replicated" -Target $db -Continue
+				Stop-Function -Message "Skipping $db  on $server because it is replicated." -Target $db -Continue
 			}
 			
 			# repeat because different servers could be piped in
@@ -147,13 +154,13 @@
 				if ($db.IsMirroringEnabled) {
 					If ($Pscmdlet.ShouldProcess($server, "Breaking mirror for $db on $server")) {
 						try {
-							Write-Message -Level Warning -Message "Breaking mirror for $db on $server"
+							Write-Message -Level Warning -Message "Breaking mirror for $db on $server."
 							$db.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
 							$db.Alter()
 							$db.Refresh()
 						}
 						catch {
-							Stop-Function -Message "Could not break mirror for $db on $server - not detaching" -Target $db -ErrorRecord $_ -Continue
+							Stop-Function -Message "Could not break mirror for $db on $server - not detaching." -Target $db -ErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -163,7 +170,7 @@
 					If ($Pscmdlet.ShouldProcess($server, "Attempting remove $db on $server from Availability Group $ag")) {
 						try {
 							$server.AvailabilityGroups[$ag].AvailabilityDatabases[$db.name].Drop()
-							Write-Message -Level Verbose -Message "Successfully removed $db from  detach from $ag on $server"
+							Write-Message -Level Verbose -Message "Successfully removed $db from  detach from $ag on $server."
 						}
 						catch {
 							if ($_.Exception.InnerException) {
@@ -171,7 +178,7 @@
 								$exception = " | $(($exception[1] -Split "at Microsoft.SqlServer.Management.Common.ConnectionManager")[0])".TrimEnd()
 							}
 							
-							Stop-Function -Message "Could not remove $db from $ag on $server $exception" -Target $db -ErrorRecord $_ -Continue
+							Stop-Function -Message "Could not remove $db from $ag on $server $exception." -Target $db -ErrorRecord $_ -Continue
 						}
 					}
 				}
