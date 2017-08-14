@@ -257,7 +257,12 @@ function Resolve-DbaNetworkName {
 					Write-Message -Level VeryVerbose -Message "No DNS FQDN found. Setting to null"
 					$FullComputerName = $null
 				}
-
+				
+				if ($FullComputerName -ne "." -and $FullComputerName -notmatch "\." -and $conn.Domain -match "\.") {
+					$d = $conn.Domain
+					$FullComputerName = "$FullComputerName.$d"
+				}
+				
 				[PSCustomObject]@{
 					InputName        = $OGComputer
 					ComputerName     = $conn.Name
