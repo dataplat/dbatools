@@ -125,7 +125,7 @@ function Resolve-DbaNetworkName {
 				}
 				
 				if ($fqdn -notmatch "\.") {
-					if ($computer -match "\.") {
+					if ($computer.ComputerName -match "\.") {
 						$dnsdomain = $computer.ComputerName.Substring($computer.ComputerName.IndexOf(".") + 1)
 						$fqdn = "$resolved.$dnsdomain"
 					}
