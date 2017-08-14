@@ -36,6 +36,9 @@ function Install-DbaWhoIsActive {
 
 		.PARAMETER Silent
 			If this switch is enabled, the internal messaging functions will be silenced.
+		
+		.PARAMETER Force
+			If this switch is enabled, the sp_WhoisActive will be downloaded from the internet even if previously cached.
 
 		.EXAMPLE
 			Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master
@@ -75,7 +78,8 @@ function Install-DbaWhoIsActive {
 		[ValidateScript({Test-Path -Path $_ -PathType Leaf})]
 		[string]$LocalFile,
 		[object]$Database,
-		[switch]$Silent
+		[switch]$Silent,
+		[switch]$Force
 	)
 	
 	begin {
@@ -88,7 +92,7 @@ function Install-DbaWhoIsActive {
 			$latest = ((Invoke-WebRequest -uri http://whoisactive.com/downloads).Links | where-object {$PSItem.href -match "who_is_active"} | Select-Object href -First 1).href	
 			$LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $latest;
 
-			if (Test-Path -Path $LocalCachedCopy -PathType Leaf) {
+			if ((Test-Path -Path $LocalCachedCopy -PathType Leaf) -and (-not $Force)) {
 				Write-Message -Level Verbose -Message "Locally-cached copy exists, skipping download."
 				if ($PSCmdlet.ShouldProcess($env:computername, "Copying sp_WhoisActive from local cache for installation")) {
 					Copy-Item -Path $LocalCachedCopy -Destination $zipfile;
