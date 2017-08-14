@@ -89,11 +89,12 @@ function Install-DbaWhoIsActive {
 			$LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $latest;
 
 			if (Test-Path -Path $LocalCachedCopy -PathType Leaf) {
-				Write-Message -Level Verbose -Message "Locally-cached copy exists, not downloading."
+				Write-Message -Level Verbose -Message "Locally-cached copy exists, skipping download."
 				if ($PSCmdlet.ShouldProcess($env:computername, "Copying sp_WhoisActive from local cache for installation")) {
 					Copy-Item -Path $LocalCachedCopy -Destination $zipfile;
 				}
-			} else {
+			}
+			else {
 				if ($PSCmdlet.ShouldProcess($env:computername, "Downloading sp_WhoisActive")) {
 					try {
 						Write-Message -Level Verbose -Message "Downloading sp_WhoisActive zip file, unzipping and installing."
@@ -107,13 +108,15 @@ function Install-DbaWhoIsActive {
 							(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
 							Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop
 						}
-					} catch {
+					}
+					catch {
 						Stop-Function -Message "Couldn't download sp_WhoisActive. Please download and install manually from $url." -ErrorRecord $_
 						return
 					}
 				}
 			}
-		} else {
+		}
+		else {
 			# Look local
 			if ($PSCmdlet.ShouldProcess($env:computername, "Copying local file to temp directory")) {
 
@@ -133,7 +136,8 @@ function Install-DbaWhoIsActive {
 					
 			    if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
 		    		Expand-Archive -Path $zipfile -DestinationPath $temp -Force
-	    		} else {
+				}
+				else {
 			    # Keep it backwards compatible
 				    $shell = New-Object -ComObject Shell.Application
 				    $zipPackage = $shell.NameSpace($zipfile)
@@ -144,7 +148,8 @@ function Install-DbaWhoIsActive {
 			    Remove-Item -Path $zipfile
             }
 			$sqlfile = (Get-ChildItem "$temp\who*active*.sql" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
-		} else {
+		}
+		else {
 			$sqlfile = $LocalFile
 		}
 
