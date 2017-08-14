@@ -12,7 +12,7 @@ function Get-DbaAgHadr {
 		.PARAMETER Credential
 			Credential object used to connect to the Windows server itself as a different user
 
-		.PARAMETER AllowException
+		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -36,7 +36,7 @@ function Get-DbaAgHadr {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$Credential,
-		[switch]$AllowException
+		[switch]$Silent
 	)
 	process {
 		foreach ($instance in $SqlInstance) {
@@ -53,7 +53,7 @@ function Get-DbaAgHadr {
 			}
 			[PSCustomObject]@{
 				ComputerName = $computerName
-				InsanceName = $instanceName
+				InstanceName = $instanceName
 				SqlInstance = $instance.FullName
 				IsHadrEnabled = $currentState.IsHadrEnabled
 			}
