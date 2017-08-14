@@ -7,10 +7,10 @@ Describe "Invoke-DbaCycleErrorLog Unit Tests" -Tag "UnitTests" {
 		$defaultParamCount = 13
 		[object[]]$params = (Get-ChildItem function:\Invoke-DbaCycleErrorLog).Parameters.Keys
 		$knownParameters = 'SqlInstance', 'SqlCredential', 'Type', 'Silent'
-		it "Should contain our parameters" {
+		it "Should contain our specific parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}
-		it "Should only contain our parameters" {
+		it "Should only contain $paramCount parameters" {
 			$params.Count - $defaultParamCount | Should Be $paramCount
 		}
 	}
