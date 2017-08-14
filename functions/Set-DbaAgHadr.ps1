@@ -1,5 +1,4 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-
 function Set-DbaAgHadr {
 	<#
 		.SYNOPSIS
@@ -18,14 +17,14 @@ function Set-DbaAgHadr {
 		.PARAMETER Enabled
 			Boolean value, supports passing in 0, 1, $true or $false
 
-		.PARAMETER AllowException
-			Use this switch to disable any kind of verbose messages
-
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
 
 		.PARAMETER Confirm
 			Prompts you for confirmation before executing any changing operations within the command.
+
+		.PARAMETER Silent
+			Use this switch to disable any kind of verbose messages
 
 		.NOTES
 			Original Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
@@ -54,7 +53,7 @@ function Set-DbaAgHadr {
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$Credential,
 		[boolean]$Enabled,
-		[switch]$AllowException
+		[switch]$Silent
 	)
 	begin {
 		if (Test-Bound 'Enabled') {
