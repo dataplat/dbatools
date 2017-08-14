@@ -94,26 +94,45 @@ function Get-JobList {
 					}
 					if ($StepFilter -match '`*') {
 						if ($Not) {
-							$job.JobSteps | Where-Object Name -NotLike $StepFilter
+							$stepFound = $job.JobSteps | Where-Object Name -NotLike $StepFilter
+							if ($stepFound.Count -gt 0) {
+								$job
+							}
 						}
 						else {
-							$job.JobSteps | Where-Object Name -Like $StepFilter
+							$stepFound = $job.JobSteps | Where-Object Name -Like $StepFilter
+							if ($stepFound.Count -gt 0) {
+								$job
+							}
+							
 						}
 					}
 					elseif ($StepName.Count -gt 1) {
 						if ($Not) {
-							$job.JobSteps | Where-Object Name -NotIn $StepName
+							$stepFound = $job.JobSteps | Where-Object Name -NotIn $StepName
+							if ($stepFound.Count -gt 0) {
+								$job
+							}
 						}
 						else {
-							$job.JobSteps | Where-Object Name -In $StepName
+							$stepFound = $job.JobSteps | Where-Object Name -In $StepName
+							if ($stepFound.Count -gt 0) {
+								$job
+							}
 						}
 					}
 					else {
 						if ($Not) {
-							$job.JobSteps | Where-Object Name -NE $StepName
+							$stepFound = $job.JobSteps | Where-Object Name -NE $StepName
+							if ($stepFound.Count -gt 0) {
+								$job
+							}
 						}
 						else {
-							$job.JobSteps | Where-Object Name -EQ $StepName
+							$stepFound = $job.JobSteps | Where-Object Name -EQ $StepName
+							if ($stepFound.Count -gt 0) {
+								$job
+							}
 						}
 					}
 				}
