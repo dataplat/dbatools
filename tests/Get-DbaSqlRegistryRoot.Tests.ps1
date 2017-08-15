@@ -9,7 +9,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		if ($results.count -gt 1) {
 			It "returns at least one named instance if more than one result is returned" {
-				$results.SqlInstance -match '\\' | Should Be $true
+				($results.SqlInstance -match '\\').Count -gt 0 | Should Be $true
 			}
 		}
 		
