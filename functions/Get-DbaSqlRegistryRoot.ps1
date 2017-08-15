@@ -83,7 +83,7 @@ Gets the registry root for all instances on server1
 				Write-Message -Level Verbose -Message "VSNAME: $vsname"
 				
 				[pscustomobject]@{
-					ComputerName	    = $env:COMPUTERNAME
+					ComputerName	    = $computer.ComputerName
 					InstanceName	    = $instancename
 					SqlInstance		    = $vsname
 					Hive			    = "HKLM"
