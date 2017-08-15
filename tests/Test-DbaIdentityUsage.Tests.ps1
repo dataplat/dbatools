@@ -24,8 +24,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Identity column should have 128 uses" {
             $results.NumberOfUses | Should Be 128
         }
-        It "TinyInt identity column with 128 rows inserted should be 50.20% full" {
-            $results.PercentUsed | Should Be 50.20
+        It "TinyInt identity column with 128 rows inserted should be 50.39% full" {
+            $results.PercentUsed | Should Be 50.39
         }
 
         $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
@@ -37,8 +37,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Identity column should have 255 uses" {
             $results.NumberOfUses | Should Be 255
         }
-        It "TinyInt with 255 rows should be 100% full" {
-            $results.PercentUsed | Should Be 100
+        It "TinyInt with 255 rows should be 100.39% full" {
+            $results.PercentUsed | Should Be 100.39
         }
 
     }
@@ -46,7 +46,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Verify Test Identity Usage with increment of 5" {
         BeforeAll {
             $table = "TestTable_$(Get-random)"
-            $tableDDL = "CREATE TABLE $table (testId TINYINT IDENTITY(0,5),testData DATETIME2 DEFAULT getdate() )"
+            $tableDDL = "CREATE TABLE $table (testId tinyint IDENTITY(0,5),testData DATETIME2 DEFAULT getdate() )"
             Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $tableDDL -database TempDb
 
         }
@@ -64,8 +64,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Identity column should have 24 uses" {
             $results.NumberOfUses | Should Be 24
         }
-        It "TinyInt identity column with 25 rows using increment of 5 should be 47.06% full" {
-            $results.PercentUsed | Should Be 47.06
+        It "TinyInt identity column with 25 rows using increment of 5 should be 9.41% full" {
+            $results.PercentUsed | Should Be 9.41
         }
 
     }
