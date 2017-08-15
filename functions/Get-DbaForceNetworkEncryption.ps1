@@ -64,7 +64,7 @@ function Get-DbaForceNetworkEncryption {
 			
 			Write-Message -Level Verbose -Message "Resolving hostname"
 			$resolved = $null
-			$resolved = Resolve-DbaNetworkName -ComputerName $instance -Turbo
+			$resolved = Resolve-DbaNetworkName -ComputerName $instance
 			
 			if ($null -eq $resolved) {
 				Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
@@ -108,7 +108,8 @@ function Get-DbaForceNetworkEncryption {
 				$cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
 				$forceencryption = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
 				
-				[pscustomobject]@{
+				# [pscustomobject] doesn't always work, unsure why. so return hashtable then turn it into  pscustomobject on client
+				@{
 					ComputerName		  = $env:COMPUTERNAME
 					InstanceName		  = $args[2]
 					SqlInstance		      = $args[1]
@@ -119,7 +120,10 @@ function Get-DbaForceNetworkEncryption {
 			
 			if ($PScmdlet.ShouldProcess("local", "Connecting to $instance")) {
 				try {
-					Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
+					$results = Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop -Raw
+					foreach ($result in $results) {
+						[pscustomobject]$result	
+					}
 				}
 				catch {
 					Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue
