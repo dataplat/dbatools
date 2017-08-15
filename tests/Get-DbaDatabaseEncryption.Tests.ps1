@@ -3,7 +3,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "testing pester" {
+    Context "Test Retriving Certificate" {
         BeforeAll {
 			$random = Get-Random
             $cert = "dbatoolsci_getcert$random"
