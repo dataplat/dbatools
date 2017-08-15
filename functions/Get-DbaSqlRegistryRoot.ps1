@@ -88,7 +88,7 @@ Gets the registry root for all instances on server1
 					SqlInstance		    = $vsname
 					Hive			    = "HKLM"
 					Path			    = $regroot
-					RegistryRoot	    = "HKLM:\\$regroot"
+					RegistryRoot	    = "HKLM:\$regroot"
 				}
 			}
 		}
