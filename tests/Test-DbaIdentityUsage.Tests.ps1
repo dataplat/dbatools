@@ -24,8 +24,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Identity column should have 128 uses" {
             $results.NumberOfUses | Should Be 128
         }
-        It "TinyInt identity column with 128 rows inserted should be 50.39% full" {
-            $results.PercentUsed | Should Be 50.39
+        It "TinyInt identity column with 128 rows inserted should be 50.20% full" {
+            $results.PercentUsed | Should Be 50.20
         }
 
         $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
@@ -37,8 +37,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Identity column should have 255 uses" {
             $results.NumberOfUses | Should Be 255
         }
-        It "TinyInt with 255 rows should be 100.39% full" {
-            $results.PercentUsed | Should Be 100.39
+        It "TinyInt with 255 rows should be 100% full" {
+            $results.PercentUsed | Should Be 100
         }
 
     }
@@ -64,8 +64,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Identity column should have 24 uses" {
             $results.NumberOfUses | Should Be 24
         }
-        It "TinyInt identity column with 25 rows using increment of 5 should be 9.41% full" {
-            $results.PercentUsed | Should Be 9.41
+        It "TinyInt identity column with 25 rows using increment of 5 should be 47.06% full" {
+            $results.PercentUsed | Should Be 47.06
         }
 
     }
