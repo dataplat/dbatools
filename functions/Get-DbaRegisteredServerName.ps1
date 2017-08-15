@@ -5,8 +5,7 @@ function Get-DbaRegisteredServerName {
 
 		.DESCRIPTION
 			Returns an array of servers found in the CMS. By default, the command returns the ServerName property
-			of the servers. You can specify -FullObject to return the full SMO object, -IpAddress for only the
-			IPv4 Addresses of the server, and -NetBiosName for only the ComputerName.
+			of the servers. -IpAddress for only the IPv4 Addresses of the server, and -NetBiosName for only the ComputerName.
 
 		.PARAMETER SqlInstance
 			SQL Server name or SMO object representing the SQL Server to connect to.
@@ -22,17 +21,14 @@ function Get-DbaRegisteredServerName {
 			List of groups to filter out. You can specify one or more, comma separated.
 
 		.PARAMETER NoCmsServer
-			Excludes the CMS itself from returning in the output, if pulling NetBiosName, IpAddress, or ServerName.
+			Excludes the CMS itself from returning in the output.
 			Without this parameter, the CMS will only be included if you do not specify a group.
 
-		.PARAMETER FullObject
-			Returns the full SMO RegisteredServer object for each server. This will not return an object for the CMS Server.
-
 		.PARAMETER NetBiosName
-			Returns just the NetBios names of each server.
+			Returns only the NetBios names of each server.
 
 		.PARAMETER IpAddress
-			Returns just the IP addresses of each server.
+			Returns only the IP addresses of each server.
 
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
@@ -60,12 +56,7 @@ function Get-DbaRegisteredServerName {
 		.EXAMPLE
 			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -Group HR, Accounting
 
-			Gets a list of servers in the HR and Accounting groups from the CMS on sqlserver2014a.
-
-		.EXAMPLE
-			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -NoCmsServer
-
-			Gets a list of server names from the CMS on sqlserver2014a, but excludes the CMS server name.
+			Gets a list of server names in the HR and Accounting groups from the CMS on sqlserver2014a.
 
 		.EXAMPLE
 			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -Group HR\Development
@@ -81,11 +72,6 @@ function Get-DbaRegisteredServerName {
 			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -NetBiosName
 
 			Gets a list of the NetBIOS names of the servers in the CMS on sqlserver2014a, using Windows Credentials
-
-		.EXAMPLE
-			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -FullObject
-
-			Returns the full SMO RegisteredServer object for servers in the CMS on sqlserver2014a, using Windows Credentials
 	#>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	param (
@@ -105,99 +91,41 @@ function Get-DbaRegisteredServerName {
 		[switch]$FullObject,
 		[switch]$Silent
 	)
-	process {
-		if ($NoCmsServer -and $FullObject) {
-			Write-Message -Level Verbose -Message ("-NoCmsServer is not valid in combination with -FullObject, ignoring. " + `
-					"-FullObject does not return an entry for the CMS itself.")
+	begin {
+		if ($FullObject) {
+			Write-Message -Level Warning -Message "To return the full object, use the function Get-DbaRegisteredServer instead."
+			return
 		}
 
+		$servers = Get-DbaRegisteredServer -SqlInstance $SqlInstance -SqlCredential $SqlCredential `
+			-Group $Group -ExcludeGroup $ExcludeGroup -Silent:$Silent
+	}
+
+	process {
 		if (Test-FunctionInterrupt) { return }
 
-		# see notes at Get-ParamSqlCmsGroups
-		function Find-CmsGroup {
-			[cmdletbinding()]
-			param(
-				$CmsGrp,
-				$Base = $null,
-				$Stopat
-			)
-			$results = @()
-			foreach ($el in $CmsGrp) {
-				if ($null -eq $Base -or [string]::IsNullOrWhiteSpace($Base) ) {
-					$partial = $el.name
-				}
-				else {
-					$partial = "$Base\$($el.name)"
-				}
-				if ($partial -eq $Stopat) {
-					return $el
-				}
-				else {
-					foreach ($elg in $el.ServerGroups) {
-						$results += Find-CmsGroup -CmsGrp $elg -Base $partial -Stopat $Stopat
-					}
-				}
-			}
-			return $results
-		}
-
-		$servers = @()
+		#Store some information about the CMS's for later use
 		$cmsServers = @()
 		foreach ($instance in $SqlInstance) {
 			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-				$sqlConnection = $server.ConnectionContext.SqlConnectionObject
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
-
-			try {
-				$cmsStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlConnection)
-			}
-			catch {
-				Stop-Function -Message "Cannot access Central Management Server" -ErrorRecord $_ -Continue
-				return
-			}
-			
-			if (Test-Bound -ParameterName ExcludeGroup) {
-				$Group = ($cmsStore.DatabaseEngineServerGroup.ServerGroups | Where-Object Name -notin $ExcludeGroup).Name
-			}
-			
-			if ($Group) {
-				foreach ($currentGroup in $Group) {
-					$cms = Find-CmsGroup -CmsGrp $cmsStore.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
-					if ($null -eq $cms) {
-						Write-Message -Level Output -Message "No groups found matching that name"
-						continue
-					}
-					$servers += ($cms.GetDescendantRegisteredServers())
+				$lookup = (Resolve-DbaNetworkName $instance -Turbo -Silent)
+				$fakeCms = [PSCustomObject]@{
+					ComputerName = $lookup.ComputerName
+					ServerName   = $lookup.InputName
+					IPAddress    = $lookup.IPAddress
 				}
-			}
-			else {
-				$cms = $cmsStore.ServerGroups["DatabaseEngineServerGroup"]
-				$servers += ($cms.GetDescendantRegisteredServers())
-			}
-			
-			#Store some information about the CMS's for later use
-			try {
-				$ip = (Resolve-DbaNetworkName $server.Name -Turbo -Silent).IpAddress
+				$cmsServers += $fakeCms
 			}
 			catch {
-				$ip = $null
+				#Just skip it if resolving fails
 			}
-			$fakeCms = [PSCustomObject]@{
-				ComputerName = $server.ComputerNamePhysicalNetBIOS
-				ServerName   = $server.Name
-				IPAddress    = $ip
-			}
-			$cmsServers += $fakeCms
 		}
 	}
 	
 	end {
-		if ($NetBiosName -or $IpAddress) {
+		$IncludeCmsServer = ($NoCmsServer -eq $false -and $null -eq $Group)
+
+		if ($IpAddress -or $NetBiosName) {
 			# Use Resolve-DbaNetworkName to get IP / ComputerName
 			foreach ($server in $servers) {
 				try {
@@ -211,8 +139,6 @@ function Get-DbaRegisteredServerName {
 				}
 			}
 		}
-		
-		$IncludeCmsServer = ($NoCmsServer -eq $false -and $null -eq $Group)
 
 		if ($IpAddress) {
 			$ret = @($servers | Select-Object IPAddress)
@@ -234,12 +160,7 @@ function Get-DbaRegisteredServerName {
 			$ret | Select-Object -Unique -ExpandProperty ComputerName
 		}
 
-		# #If -FullObject is specified, return everything, no distinct
-		elseif ($FullObject) {
-			return $servers
-		}
-
-		#By default, return only the server name for backwards compatibility
+		#Return only the distinct names of the servers
 		else {
 			$ret = @($servers | Select-Object ServerName)
 
