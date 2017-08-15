@@ -46,7 +46,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Verify Test Identity Usage with increment of 5" {
         BeforeAll {
             $table = "TestTable_$(Get-random)"
-            $tableDDL = "CREATE TABLE $table (testId TINYINT IDENTITY(0,5),testData DATETIME2 DEFAULT getdate() )"
+            $tableDDL = "CREATE TABLE $table (testId tinyint IDENTITY(0,5),testData DATETIME2 DEFAULT getdate() )"
             Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $tableDDL -database TempDb
 
         }
