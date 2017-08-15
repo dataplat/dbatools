@@ -43,7 +43,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     }
 
-    Context "Verify Test Identity Usage increment of 5" {
+    Context "Verify Test Identity Usage with increment of 5" {
         BeforeAll {
             $table = "TestTable_$(Get-random)"
             $tableDDL = "CREATE TABLE $table (testId TINYINT IDENTITY(0,5),testData DATETIME2 DEFAULT getdate() )"
