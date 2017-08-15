@@ -109,7 +109,10 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
             param (
                 [Object]$Computer
             )
-            $result = Get-Service -ComputerName $Computer -Name msdts*
+            if ($Computer -like "*\*") {
+                $Computer = $Computer -split '\\' | Select-Object -First 1
+            }
+	    $result = Get-Service -ComputerName $Computer -Name msdts*
             if ($result.Count -gt 0) {
                 $running = $false
                 foreach ($service in $result) {
