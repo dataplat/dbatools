@@ -25,6 +25,7 @@ https://www.petri.com/test-network-connectivity-powershell-test-connection-cmdle
       $True 
     }
     Catch {
+      Write-Exception $_
       Write-Verbose $_.Exception.Message
       $False
  
