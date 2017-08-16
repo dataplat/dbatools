@@ -19,8 +19,7 @@ Function Get-DbaSqlService {
     
     .PARAMETER Type
     Use -Type to collect only services of the desired SqlServiceType.
-    Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS","AnalysisServer",
-    	"ReportServer","Search","SqlAgent","SqlBrowser","SqlServer","SqlServerIntegrationService"
+    Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
 
     .PARAMETER Silent
 		Use this switch to disable any kind of verbose messages
@@ -72,7 +71,7 @@ Function Get-DbaSqlService {
 		[Alias("Instance")]
 		[string[]]$InstanceName,
 		[PSCredential]$Credential,
-		[ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "AnalysisServer", "ReportServer", "FullTextFilter Daemon Launcher", "FullText Search", "SqlAgent", "SqlBrowser", "SqlServer", "SqlServerIntegrationService")]
+		[ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS")]
 		[string[]]$Type,
 		[switch]$Silent
 	)
@@ -81,31 +80,18 @@ Function Get-DbaSqlService {
 		
 		#Dictionary to transform service type IDs into the names from Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer.Services.Type
 		$ServiceIdMap = @(
-			@{ Name = "SqlServer"; Id = 1 },
-			@{ Name = "SqlAgent"; Id = 2 },
-			@{ Name = "FullText Search"; Id = 3 },
-			@{ Name = "SqlServerIntegrationService"; Id = 4 },
-			@{ Name = "AnalysisServer"; Id = 5 },
-			@{ Name = "ReportServer"; Id = 6 },
-			@{ Name = "SqlBrowser"; Id = 7 },
-			@{ Name = "Unknown"; Id =  8 },
-			@{ Name = "FullTextFilter Daemon Launcher"; Id = 9 }
+			@{ Name = "Engine"; Id = 1 },
+			@{ Name = "Agent"; Id = 2 },
+			@{ Name = "FullText"; Id = 3, 9 },
+			@{ Name = "SSIS"; Id = 4 },
+			@{ Name = "SSAS"; Id = 5 },
+			@{ Name = "SSRS"; Id = 6 },
+			@{ Name = "Browser"; Id = 7 },
+			@{ Name = "Unknown"; Id =  8 }
 		)
 		if ($Type) {
 			$TypeClause = ""
 			foreach ($itemType in $Type) {
-				# Replacing custom types with the canonical names
-				$itemType = switch ($itemType) {
-					"Agent" { "SqlAgent" }
-					"Browser" { "SqlBrowser" }
-					"Engine" { "SqlServer" }
-					"FullText" { "FullText Search" }
-					"SSAS" { "AnalysisServer" }
-					"SSIS" { "SqlServerIntegrationService" }
-					"SSRS" { "ReportServer" }
-					default { $_ }
-				}
-				
 				foreach ($id in ($ServiceIdMap | Where-Object { $_.Name -eq $itemType }).Id) {
 					if ($TypeClause) { $TypeClause += ' OR ' }
 					$TypeClause += "SQLServiceType = $id"
@@ -140,7 +126,7 @@ Function Get-DbaSqlService {
 								$instance = "MSSQLSERVER"
 							}
 							else {
-								if ($service.ServiceType -in @("SqlAgent", "SqlServer", "ReportServer", "AnalysisServer")) {
+								if ($service.ServiceType -in @("Agent", "Engine", "SSRS", "SSAS")) {
 									if ($service.ServiceName.indexof('$') -ge 0) {
 										$instance = $service.ServiceName.split('$')[1]
 									}
@@ -153,8 +139,8 @@ Function Get-DbaSqlService {
 								}
 							}
 							$priority = switch ($service.ServiceType) {
-								"SqlAgent" { 200 }
-								"SqlServer"{ 300 }
+								"Agent" { 200 }
+								"Engine"{ 300 }
 								default { 100 }
 							}
 							#If only specific instances are selected
@@ -162,12 +148,12 @@ Function Get-DbaSqlService {
 								#Add other properties and methods
 								Add-Member -Force -InputObject $service -NotePropertyName InstanceName -NotePropertyValue $instance
 								Add-Member -Force -InputObject $service -NotePropertyName ServicePriority -NotePropertyValue $priority
-								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name Stop -Value { $this | Stop-DbaSqlService }
-								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name Start -Value { $this | Start-DbaSqlService }
-								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name Restart -Value { $this | Restart-DbaSqlService }
+								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name Stop -Value { Stop-DbaSqlService -ServiceCollection $this }
+								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name Start -Value { Start-DbaSqlService -ServiceCollection $this }
+								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name Restart -Value { Restart-DbaSqlService -ServiceCollection $this }
 								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name ChangeStartMode -Value {
 									Param ([string]$Mode)
-									$this | Change-DBASqlServiceStartupMode -Mode $Mode -ErrorAction Stop
+									Set-ServiceStartMode -ServiceCollection $this -Mode $Mode -ErrorAction Stop
 									$this.StartMode = $Mode
 								}
 							
