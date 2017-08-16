@@ -38,15 +38,15 @@ Function Update-ServiceStatus {
     
     .EXAMPLE
     $serviceCollection = Get-DbaSqlService -ComputerName sql1
-    Update-DbaSqlServiceStatus -ServiceCollection $serviceCollection -Action 'stop' -Timeout 30
-    Update-DbaSqlServiceStatus -ServiceCollection $serviceCollection -Action 'start' -Timeout 30
+    Update-ServiceStatus -ServiceCollection $serviceCollection -Action 'stop' -Timeout 30
+    Update-ServiceStatus -ServiceCollection $serviceCollection -Action 'start' -Timeout 30
     
     Restarts SQL services on sql1
     
     .EXAMPLE
     $serviceCollection = Get-DbaSqlService -ComputerName sql1
     $credential = Get-Credential
-    Update-DbaSqlServiceStatus -ServiceCollection $serviceCollection -Action 'stop' -Timeout 0 -Credential $credential
+    Update-ServiceStatus -ServiceCollection $serviceCollection -Action 'stop' -Timeout 0 -Credential $credential
     
     Stops SQL services on sql1 and waits indefinitely for them to stop. Uses $credential to authorize on the server.
 #>
