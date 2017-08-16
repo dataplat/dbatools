@@ -18,6 +18,9 @@ function Get-DbaAgListener {
 
         .PARAMETER AvailabilityGroup
             Specify the Availability Group name that you want to get information on.
+		
+		.PARAMETER Listener
+			Specify the Listener name that you want to get information on.
 
         .PARAMETER Silent
             If this switch is enabled, the internal messaging functions will be silenced.
@@ -53,6 +56,7 @@ function Get-DbaAgListener {
         $SqlCredential,
         [parameter(ValueFromPipeline = $true)]
         [object[]]$AvailabilityGroup,
+		[object[]]$Listener,
         [switch]$Silent
     )
 
@@ -73,13 +77,20 @@ function Get-DbaAgListener {
             if ($AvailabilityGroup) {
                 $ags = $ags | Where-Object Name -in $AvailabilityGroup
             }
+			
+			if ($Listener) {
+				$ags = $ags | Where-Object AvailabilityGroupListeners -match $Listener
+				if ($ags.Length -eq 0) {
+					Stop-Function -Message "We could not find the listener $Listener on $serverName" -Target $serverName -Continue
+				}
+			}
 
             foreach ($ag in $ags) {     
                 
-                $listener = $ag.AvailabilityGroupListeners
+                $Listener = $ag.AvailabilityGroupListeners
                 $defaults = 'Parent as AvailabilityGroupName','Name as ListenerName','PortNumber','ClusterIPConfiguration'
                 
-                Select-DefaultView -InputObject $listener -Property $defaults
+                Select-DefaultView -InputObject $Listener -Property $defaults
             }
 
         }
