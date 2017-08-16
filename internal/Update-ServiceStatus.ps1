@@ -1,4 +1,4 @@
-Function Update-DbaSqlServiceStatus {
+Function Update-ServiceStatus {
 <#
     .SYNOPSIS
     Internal function. Sends start/stop request to a SQL Server service and wait for the result.

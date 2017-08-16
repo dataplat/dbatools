@@ -19,8 +19,7 @@ Function Restart-DbaSqlService {
     
     .PARAMETER Type
     Use -Type to collect only services of the desired SqlServiceType.
-    Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS","AnalysisServer",
-    	"ReportServer","Search","SqlAgent","SqlBrowser","SqlServer","SqlServerIntegrationService"
+    Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
     
     .PARAMETER Timeout
     How long to wait for the start/stop request completion before moving on. Specify 0 to wait indefinitely.
@@ -77,7 +76,7 @@ Function Restart-DbaSqlService {
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[Alias("Instance")]
 		[string[]]$InstanceName,
-		[ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS", "AnalysisServer", "ReportServer", "Search", "SqlAgent", "SqlBrowser", "SqlServer", "SqlServerIntegrationService")]
+		[ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS")]
 		[string[]]$Type,
 		[parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Service")]
 		[object[]]$ServiceCollection,
@@ -86,28 +85,9 @@ Function Restart-DbaSqlService {
 		[switch]$Silent
 	)
 	begin {
-		if ($Type) {
-			foreach ($i in 0 .. ($Type.Length - 1)) {
-				$Type[$i] = switch ($Type[$i]) {
-					"Agent" { "SqlAgent" }
-					"Browser" { "SqlBrowser" }
-					"Engine" { "SqlServer" }
-					"FullText" { "FullText Search" }
-					"SSAS" { "AnalysisServer" }
-					"SSIS" { "SqlServerIntegrationService" }
-					"SSRS" { "ReportServer" }
-					default { $_ }
-				}
-			}
-		}
 		$processArray = @()
 		if ($PsCmdlet.ParameterSetName -eq "Server") {
-			$parameters = @{ }
-			if ($ComputerName) { $parameters.ComputerName = $ComputerName }
-			if ($InstanceName) { $parameters.InstanceName = $InstanceName }
-			if ($Type) { $parameters.Type = $Type }
-			if ($Credential) { $parameters.Credential = $Credential }
-			$serviceCollection = Get-DbaSqlService @parameters
+			$serviceCollection = Get-DbaSqlService @PSBoundParameters
 		}
 	}
 	process {
@@ -117,8 +97,8 @@ Function Restart-DbaSqlService {
 	end {
 		$processArray = $processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) }
 		if ($processArray) {
-			Update-DbaSqlServiceStatus -ServiceCollection $processArray -Action 'stop' -Timeout $Timeout -Silent $Silent
-			Update-DbaSqlServiceStatus -ServiceCollection $processArray -Action 'start' -Timeout $Timeout -Silent $Silent
+			Update-ServiceStatus -ServiceCollection $processArray -Action 'stop' -Timeout $Timeout -Silent $Silent
+			Update-ServiceStatus -ServiceCollection $processArray -Action 'start' -Timeout $Timeout -Silent $Silent
 		}
 		else { Write-Message -Level Warning -Silent $Silent -Message "No SQL Server services found with current parameters." }
 	}

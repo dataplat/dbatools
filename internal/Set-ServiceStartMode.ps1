@@ -1,4 +1,4 @@
-Function Change-DbaSqlServiceStartupMode {
+Function Set-ServiceStartMode {
 <#
 		.SYNOPSIS
 		Internal function. Implements the method that changes startup mode of the SQL Server service.
@@ -29,13 +29,13 @@ Function Change-DbaSqlServiceStartupMode {
 		You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 		
 		.EXAMPLE
-		Get-DbaSqlService -ComputerName sql1 | Change-DBASqlServiceStartupMode -Mode 'Manual'
+		Get-DbaSqlService -ComputerName sql1 | Set-ServiceStartMode -Mode 'Manual'
 		
 		Sets all SQL services on sql1 to Manual startup.
 		
 		.EXAMPLE
 		$services = Get-DbaSqlService -ComputerName sql1 
-		Change-DBASqlServiceStartupMode -ServiceCollection $services -Mode 'Automatic'
+		Set-ServiceStartMode -ServiceCollection $services -Mode 'Automatic'
 		
 		Sets all SQL services on sql1 to Automatic startup.
 
