@@ -1,9 +1,9 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 # Targets only instance2 because it's the only one where Snapshots can happen
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
 		if ($env:appveyor) {
 			Get-Service | Where-Object { $_.DisplayName -match 'SQL Server (SQL2008R2SP2)' -or $_.DisplayName -match 'SQL Server (SQL2016)' } | Restart-Service -Force
@@ -12,7 +12,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 				$null = (& sqlcmd -S $script:instance1 -b -Q "select 1" -d master)
 			}
 			while ($lastexitcode -ne 0 -and $t++ -lt 10)
-			
+
 			do {
 				Start-Sleep 1
 				$null = (& sqlcmd -S $script:instance2 -b -Q "select 1" -d master)
@@ -20,7 +20,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			while ($lastexitcode -ne 0 -and $s++ -lt 10)
 		}
 	}
-	Context "Parameters validation" {
+	Context "Parameter validation" {
 		It "Stops if no Database or AllDatabases" {
 			{ New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Silent } | Should Throw "You must specify"
 		}
@@ -28,13 +28,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			{ New-DbaDatabaseSnapshot -SqlInstance $script:instance2 *> $null } | Should Not Throw "You must specify"
 		}
 	}
-	
+
 	Context "Operations on not supported databases" {
 		It "Doesn't support model, master or tempdb" {
 			$result = New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Silent -Database model,master,tempdb
 			$result | Should Be $null
 		}
-		
+
 	}
 	Context "Operations on databases" {
 		BeforeAll {
@@ -58,7 +58,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2,$db3 -Force
 			Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2,$db3
 		}
-		
+
 		if ($setupright) {
 			if (-not $env:appveyor) {
 				It "Skips over offline databases nicely" {
@@ -99,7 +99,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 				$ExpectedProps = 'ComputerName,Database,DatabaseCreated,InstanceName,Notes,PrimaryFilePath,SizeMB,SnapshotDb,SnapshotOf,SqlInstance,Status'.Split(',')
 				($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 			}
-			
+
 			It "Has the correct default properties" {
 				$null = Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Force
 				$result = New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Silent -Database $db2

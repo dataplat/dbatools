@@ -1,7 +1,8 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-Describe "Invoke-DbaCycleErrorLog Unit Tests" -Tag "UnitTests" {
+
+Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 	Context "Validate parameters" {
 		$paramCount = 4
 		$defaultParamCount = 13
@@ -15,7 +16,8 @@ Describe "Invoke-DbaCycleErrorLog Unit Tests" -Tag "UnitTests" {
 		}
 	}
 }
-Describe "Invoke-DbaCycleErrorLog Integration Test" -Tag "IntegrationTests" {
+
+Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
 	$results = Invoke-DbaCycleErrorLog -SqlInstance $script:instance1 -Type instance
 
 	Context "Validate output" {
