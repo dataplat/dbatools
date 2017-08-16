@@ -12,15 +12,53 @@ function New-DbaLogin {
 	.PARAMETER SqlCredential
 	Allows you to login to SQL Server using alternative credentials
 	
-	.PARAMETER Name
-	The Login name
+	.PARAMETER Login
+	The Login name(s)
 		
 	.PARAMETER Password
-	Secure string used to authenticate the Credential Identity
+	Secure string used to authenticate the Login
 	
+	.PARAMETER HashedPassword
+	Hashed password string used to authenticate the Login
+	
+	.PARAMETER InputObject
+	Takes the parameters required from a Login object that has been piped into the command
+	
+	.PARAMETER LoginRenameHashtable
+	Pass a hash table into this parameter to change login names when piping objects into the procedure
+	
+	.PARAMETER MapToCertificate
+	Map the login to a certificate
+	
+	.PARAMETER MapToAsymmetricKey
+	Map the login to an asymmetric key
+	
+	.PARAMETER MapToCredential
+	Map the login to a credential
+	
+	.PARAMETER Sid
+	Provide an explicit Sid that should be used when creating the account. Can be [byte[]] or hex [string] ('0xFFFF...')
+	
+	.PARAMETER DefaultDatabase
+	Default database for the login
+	
+	.PARAMETER Language
+	Login's default language
+	
+	.PARAMETER PasswordExpiration
+	Enforces password expiration policy. Requires PasswordPolicy to be enabled. Can be $true or $false(default)
+	
+	.PARAMETER PasswordPolicy
+	Enforces password complexity policy. Can be $true or $false(default)
+	
+	.PARAMETER Disabled
+	Create the login in a disabled state
+	
+	.PARAMETER NewSid
+	Ignore sids from the piped login object to generate new sids on the server. Useful when copying login onto the same server
 	
 	.PARAMETER Force
-	If credential exists, drop and recreate 
+	If login exists, drop and recreate 
 		
 	.PARAMETER WhatIf 
 	Shows what would happen if the command were to run. No actions are actually performed 
@@ -32,30 +70,49 @@ function New-DbaLogin {
 	Use this switch to disable any kind of verbose messages
 	
 	.NOTES
-	Tags: Certificate
+	Tags: Login
+	Author: Kirill Kravtsov (@nvarscar)
+	dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+	Copyright (C) 2016 Chrissy LeMaire
 	
-	Website: https://dbatools.io
-	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+	This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+	
+	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+	
+	You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+	.LINK
+	https://dbatools.io/New-DbaLogin
 	
 	.EXAMPLE
-	New-DbaCredential -SqlInstance Server1
+	New-DbaLogin -SqlInstance Server1,Server2 -Login Newlogin
 	
-	You will be prompted to securely enter your password, then a credential will be created in the master database on server1 if it does not exist.
+	You will be prompted to securely enter the password for a login [Newlogin]. The login would be created on servers Server1 and Server2 with default parameters.
 	
 	.EXAMPLE
-	New-DbaCredential -SqlInstance Server1 -Database db1 -Confirm:$false
+	$securePassword = Read-Host "Input password" -AsSecureString
+	New-DbaLogin -SqlInstance Server1\sql1 -Login Newlogin -Password $securePassword -PasswordPolicy -PasswordExpiration
 	
-	Suppresses all prompts to install but prompts to securely enter your password and creates a credential in the 'db1' database
+	Creates a login on Server1\sql1 with a predefined password. The login will have password and expiration policies enforced onto it.
+	
+	.EXAMPLE
+	Get-DbaLogin -SqlInstance sql1 -Login Oldlogin | New-DbaLogin -SqlInstance sql1 -LoginRenameHashtable @{Oldlogin = 'Newlogin'} -Force -NewSid -Disabled:$false
+	
+	Copies a login [Oldlogin] to the same instance sql1 with the same parameters (including password). New login will have a new sid, a new name [Newlogin] and will not be disabled. Existing login [Newlogin] will be removed prior to creation.
+	
+	.EXAMPLE
+	Get-DbaLogin -SqlInstance sql1 -Login Login1,Login2 | New-DbaLogin -SqlInstance sql2 -PasswordPolicy -PasswordExpiration -DefaultDatabase tempdb -Disabled
+	
+	Copies logins [Login1] and [Login2] from instance sql1 to instance sql2, but enforces password and expiration policies for the new logins. New logins will also have a default database set to [tempdb] and will be created in a disabled state.
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Password")]
 	param (
-		[parameter(Mandatory)]
+		[parameter(Mandatory, Position = 1)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
 		[Alias("Name", "LoginName")]
-		[parameter(ParameterSetName = "Password")]
+		[parameter(ParameterSetName = "Password", Position = 2)]
 		[parameter(ParameterSetName = "PasswordHash")]
 		[parameter(ParameterSetName = "MapToCertificate")]
 		[parameter(ParameterSetName = "MapToAsymmetricKey")]
@@ -66,9 +123,11 @@ function New-DbaLogin {
 		[parameter(ParameterSetName = "MapToCertificate")]
 		[parameter(ParameterSetName = "MapToAsymmetricKey")]
 		[object[]]$InputObject,
+		[Alias("Rename")]
 		[hashtable]$LoginRenameHashtable,
-		[parameter(ParameterSetName = "Password")]
+		[parameter(ParameterSetName = "Password", Position = 3)]
 		[Security.SecureString]$Password,
+		[Alias("Hash","PasswordHash")]
 		[parameter(ParameterSetName = "PasswordHash")]
 		[string]$HashedPassword,
 		[parameter(ParameterSetName = "MapToCertificate")]
@@ -92,36 +151,22 @@ function New-DbaLogin {
 		[parameter(ParameterSetName = "Password")]
 		[parameter(ParameterSetName = "PasswordHash")]
 		[switch]$PasswordPolicy,
+		[Alias("Disable")]
+		[switch]$Disabled,
 		[switch]$NewSid,
 		[switch]$Force,
 		[switch]$Silent
 	)
 	
 	begin {
-		# function to convert byte object (@(1,100,23,54)) into hex sring (0x01641736)
-		function Convert-ByteToHexString {
-			Param ([byte[]]$InputObject)
-			$outString = "0x"; $InputObject | ForEach-Object { $outString += ("{0:X}" -f $_).PadLeft(2, "0") }
-			Return $outString
-		}
-		# function to convert hex string (0x01641736) into byte object (@(1,100,23,54))
-		function Convert-HexStringToByte {
-			Param ([string]$InputObject)
-			$hexString = $InputObject.TrimStart("0x")
-			if ($hexString.Length % 2 -eq 1) { $hexString = '0' + $hexString }
-			[byte[]]$outByte = $null; $outByte += 0 .. (($hexString.Length)/2-1) | ForEach-Object { [Int16]::Parse($hexString.Substring($_*2, 2), 'HexNumber') }
-			Return $outByte
-		}
-		
-		<#
-		if ($loginCollection.Length -gt 1 -and ($Sid -or $MapToCertificate -or $MapToAsymmetricKey -or $MapToCredential)) {
-			Stop-Function -Message "Please specify a single login when using one of the following parameters: -Sid, -MapToCertificate, -MapToAsymmetricKey, -MapToCredential." -Category InvalidArgument -Silent $Silent
-			Return
-		}
-		#>
-
 		if ($Sid) {
 			if ($Sid.GetType().Name -ne 'Byte[]') {
+				foreach ($symbol in $Sid.TrimStart("0x").ToCharArray()) {
+					if ($symbol -notin "0123456789ABCDEF".ToCharArray()) {
+						Stop-Function -Message "Sid has invalid character '$symbol', cannot proceed." -Category InvalidArgument -Silent $Silent
+						return
+					}
+				}
 				$Sid = Convert-HexStringToByte $Sid
 			}
 		}
@@ -168,9 +213,15 @@ function New-DbaLogin {
 			foreach ($loginItem in $loginCollection) {
 				#check if $loginItem is an SMO Login object
 				if ($loginItem.GetType().Name -eq 'Login') {
+					#Get all the necessary fields
 					$loginName = $loginItem.Name
 					$loginType = $loginItem.LoginType
 					$currentSid = $loginItem.Sid
+					$currentDefaultDatabase = $loginItem.DefaultDatabase
+					$currentLanguage = $loginItem.Language
+					$currentPasswordExpiration = $loginItem.PasswordExpiration
+					$currentPasswordPolicyEnforced = $loginItem.PasswordPolicyEnforced
+					$currentDisabled = $loginItem.IsDisabled
 					
 					#Get previous password
 					if ($loginType -eq 'SqlLogin' -and !($Password -or $HashedPassword)) {
@@ -200,20 +251,60 @@ function New-DbaLogin {
 						$currentHashedPassword = $hashedPass
 					}
 					
-					if ($loginType -eq 'AsymmetricKey' -and !$MapToAsymmetricKey) {
-						$MapToAsymmetricKey = $login.AsymmetricKey
+					#Get cryptography and attached credentials
+					if ($loginType -eq 'AsymmetricKey') {
+						$currentAsymmetricKey = $loginItem.AsymmetricKey
 					}
-					if ($loginType -eq 'Certificate' -and !$MapToCertificate) {
-						$MapToCertificate = $login.Certificate
+					if ($loginType -eq 'Certificate') {
+						$currentCertificate = $loginItem.Certificate
+					}
+					#This method or property is accessible only while working with SQL Server 2008 or later.
+					if ($sourceServer.versionMajor -gt 9) {
+						if ($loginItem.EnumCredentials()) {
+							$currentCredential = $loginItem.EnumCredentials()
+						}
 					}
 				}
 				else {
 					$loginName = $loginItem
-					$currentSid = $Sid
+					$currentSid = $currentDefaultDatabase = $currentLanguage = $currentPasswordExpiration = $currentAsymmetricKey = $currentCertificate = $currentCredential = $currentDisabled = $currentPasswordPolicyEnforced = $null
+					
 					if ($PsCmdlet.ParameterSetName -eq "MapToCertificate") { $loginType = 'Certificate' }
 					elseif ($PsCmdlet.ParameterSetName -eq "MapToAsymmetricKey") { $loginType = 'AsymmetricKey' }
 					elseif ($loginItem.IndexOf('\') -eq -1) {	$loginType = 'SqlLogin' }
 					else { $loginType = 'WindowsUser' }
+				}
+				
+				if (($server.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($loginType -eq 'SqlLogin')) {
+					Write-Message -Level Warning -Message "$instance does not have Mixed Mode enabled. [$loginName] is an SQL Login. Enable mixed mode authentication after the migration completes to use this type of login." -Silent $Silent
+				}
+				
+				if ($Sid) {
+					$currentSid = $Sid
+				}
+				if ($DefaultDatabase) {
+					$currentDefaultDatabase = $DefaultDatabase
+				}
+				if ($Language) {
+					$currentLanguage = $Language
+				}
+				if ($PSBoundParameters.Keys -contains 'PasswordExpiration') {
+					$currentPasswordExpiration = $PasswordExpiration
+				}
+				if ($PSBoundParameters.Keys -contains 'PasswordPolicy') {
+					$currentPasswordPolicyEnforced = $PasswordPolicy
+				}
+				if ($PSBoundParameters.Keys -contains 'MapToAsymmetricKey') {
+					$currentAsymmetricKey = $MapToAsymmetricKey
+				}
+				if ($PSBoundParameters.Keys -contains 'MapToCertificate') {
+					$currentCertificate = $MapToCertificate
+				}
+				if ($PSBoundParameters.Keys -contains 'MapToCredential') {
+					$currentCredential = $MapToCredential
+				}
+				if ($PSBoundParameters.Keys -contains 'Disabled'){
+					$currentDisabled = $Disabled
 				}
 				
 				#Apply renaming if necessary
@@ -236,30 +327,28 @@ function New-DbaLogin {
 				}
 				
 				#verify if login exists on the server
-				$existingLogin = $server.Logins[$loginName]
-				
-				if ($existingLogin) {
+				if ($existingLogin = $server.Logins[$loginName]) {
 					if ($force) {
-						Write-Message -Level Verbose -Message "Dropping login $loginName on $instance"
-						try {
-							$existingLogin.Drop()
-						}
-						catch {
-							Stop-Function -Message "Could not remove existing login $loginName on $instance, skipping." -Target $loginName -Silent $Silent -Continue
+						if ($Pscmdlet.ShouldProcess($existingLogin, "Dropping existing login $loginName on $instance because -Force was used")) {
+							try {
+								$existingLogin.Drop()
+							}
+							catch {
+								Stop-Function -Message "Could not remove existing login $loginName on $instance, skipping." -Target $loginName -Silent $Silent -Continue
+							}
 						}
 					}
 					else {
-						Stop-Function -Message "Login $loginName exists on $instance and -Force was not specified" -Target $loginName -Silent $Silent -Continue
+						Stop-Function -Message "Login $loginName already exists on $instance and -Force was not specified" -Target $loginName -Silent $Silent -Continue
 					}
 				}
 				
 				
 				if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating login $loginName on $instance")) {
 					try {
-						Write-Message -Level Verbose -Message "Attempting to create login $loginName on $instance."
 						$newLogin = New-Object Microsoft.SqlServer.Management.Smo.Login($server, $loginName)
 						$newLogin.LoginType = $loginType
-						
+										
 						$withParams = ""
 						
 						if ($loginType -eq 'SqlLogin' -and $currentSid -and !$NewSid) {
@@ -269,20 +358,20 @@ function New-DbaLogin {
 						}
 						
 						if ($loginType -in ("WindowsUser","WindowsGroup","SqlLogin")) {
-							if ($DefaultDatabase) {
-								Write-Message -Level Verbose -Message "Setting $loginName default database to $DefaultDatabase"
-								$withParams += ", DEFAULT_DATABASE = [$DefaultDatabase]"
-								$newLogin.DefaultDatabase = $DefaultDatabase
+							if ($currentDefaultDatabase) {
+								Write-Message -Level Verbose -Message "Setting $loginName default database to $currentDefaultDatabase"
+								$withParams += ", DEFAULT_DATABASE = [$currentDefaultDatabase]"
+								$newLogin.DefaultDatabase = $currentDefaultDatabase
 							}
 							
-							if ($Language) {
-								Write-Message -Level Verbose -Message "Setting $loginName language to $Language"
-								$withParams += ", DEFAULT_LANGUAGE = [$Language]"
-								$newLogin.Language = $Language
-								$
+							if ($currentLanguage) {
+								Write-Message -Level Verbose -Message "Setting $loginName language to $currentLanguage"
+								$withParams += ", DEFAULT_LANGUAGE = [$currentLanguage]"
+								$newLogin.Language = $currentLanguage
 							}
 							
-							if ($PasswordExpiration) {
+							#CHECK_EXPIRATION: default - OFF
+							if ($currentPasswordExpiration) {
 								$withParams += ", CHECK_EXPIRATION = ON"
 								$newLogin.PasswordExpirationEnabled = $true
 							}
@@ -291,7 +380,8 @@ function New-DbaLogin {
 								$newLogin.PasswordExpirationEnabled = $false
 							}
 							
-							if ($PasswordPolicy) {
+							#CHECK_POLICY: default - ON
+							if ($currentPasswordPolicyEnforced) {
 								$withParams += ", CHECK_POLICY = ON"
 								$newLogin.PasswordPolicyEnforced = $true
 							}
@@ -302,132 +392,94 @@ function New-DbaLogin {
 							
 							#Generate hashed password if necessary
 							if ($Password) {
-								$currentHashedPassword = Generate-DbaPasswordHash $Password $server.Version.Major
+								$currentHashedPassword = Get-PasswordHash $Password $server.versionMajor
 							}
 							elseif ($HashedPassword) {
 								$currentHashedPassword = $HashedPassword
 							}
 						}
 						elseif ($loginType -eq 'AsymmetricKey') {
-									$newLogin.AsymmetricKey = $MapToAsymmetricKey }
+							$newLogin.AsymmetricKey = $currentAsymmetricKey
+						}
+						elseif ($loginType -eq 'Certificate') {
+							$newLogin.Certificate = $currentCertificate
+						}
+						
+						#Add credential
+						if ($currentCredential) {
+							$withParams += ", CREDENTIAL = [$currentCredential]"
+						}
 						
 						Write-Message -Level Verbose -Message "Adding as login type $loginType"
 						
-						# Attempt to add SQL Login User
-						if ($loginType -eq "SqlLogin") {
-							try {
+						# Attempt to add login using SMO, then T-SQL
+						try {
+							if ($loginType -in ("WindowsUser","WindowsGroup","AsymmetricKey","Certificate")) {
+								if ($withParams) { $withParams = " WITH " + $withParams.TrimStart(',') }
+								$newLogin.Create()
+							}
+							elseif ($loginType -eq "SqlLogin") {
 								$newLogin.Create($currentHashedPassword, [Microsoft.SqlServer.Management.Smo.LoginCreateOptions]::IsHashed)
-								$newLogin.Refresh()
+							}
+							$newLogin.Refresh()
+							
+							#Adding credential
+							if ($currentCredential) {
+								try {
+									$newLogin.AddCredential($currentCredential)
+								}
+								catch {
+									$newLogin.Drop()
+									throw $_
+								}
+							}
+							Write-Message -Level Verbose -Message "Successfully added $loginName to $instance."
+							$newLoginStatus.Status = "Successful"
+						}
+						catch {
+							Write-Message -Level Verbose -Message "Failed to create $loginName on $instance using SMO, trying T-SQL."
+							try {
+								if ($loginType -eq 'AsymmetricKey') { $sql = "CREATE LOGIN [$loginName] FROM ASYMMETRIC KEY [$currentAsymmetricKey]" }
+								elseif ($loginType -eq 'Certificate') { $sql = "CREATE LOGIN [$loginName] FROM CERTIFICATE [$currentCertificate]" }
+								elseif ($loginType -eq "SqlLogin") { $sql = "CREATE LOGIN [$loginName] WITH PASSWORD = $currentHashedPassword HASHED" + $withParams }
+								else { $sql = "CREATE LOGIN [$loginName] FROM WINDOWS" + $withParams }
+
+								$null = $server.Query($sql)
+								$newLogin = $server.logins[$loginName]
 								Write-Message -Level Verbose -Message "Successfully added $loginName to $instance."
-	
 								$newLoginStatus.Status = "Successful"
 							}
 							catch {
-								Write-Message -Level Verbose -Message "Failed to create $loginName on $instance using SMO, trying T-SQL."
+								$newLoginStatus.Status = "Failed"
+								$newLoginStatus.Notes = $_.Exception.GetBaseException().Message
+								$newLoginStatus
+								Stop-Function -Message "Failed to add $loginName to $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Silent $Silent -Continue 3>$null
+							}
+						}
+						
+						#Process the Disabled property
+						if ($currentDisabled) {
+							try {
+								$newLogin.Disable()
+								Write-Message -Level Verbose -Message "Login $loginName has been disabled on $instance."
+							}
+							catch {
+								Write-Message -Level Verbose -Message "Failed to disable $loginName on $instance using SMO, trying T-SQL."
 								try {
-									$sql = "CREATE LOGIN [$loginName] WITH PASSWORD = $currentHashedPassword HASHED" + $withParams
-	
+									$sql = "ALTER LOGIN [$loginName] DISABLE"
 									$null = $server.Query($sql)
-	
-									$newLogin = $server.logins[$loginName]
-									Write-Message -Level Verbose -Message "Successfully added $loginName to $instance."
-	
-									$newLoginStatus.Status = "Successful"
-	
+									Write-Message -Level Verbose -Message "Login $loginName has been disabled on $instance."
 								}
 								catch {
 									$newLoginStatus.Status = "Failed"
 									$newLoginStatus.Notes = $_.Exception.GetBaseException().Message
 									$newLoginStatus
-									Stop-Function -Message "Failed to add $loginName to $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Silent $Silent -Continue 3>$null
+									Stop-Function -Message "Failed to disable $loginName on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Silent $Silent -Continue 3>$null
 								}
 							}
 						}
-						# Attempt to add Windows User
-						elseif ($loginType -in ("WindowsUser","WindowsGroup")) {
-							try {
-								$newLogin.Create()
-								$newLogin.Refresh()
-								Write-Message -Level Verbose -Message "Successfully added $loginName to $instance."
-	
-								$newLoginStatus.Status = "Successful"
-							}
-							catch {
-								Write-Message -Level Verbose -Message "Failed to create $loginName on $instance using SMO, trying T-SQL."
-								try {
-									if ($withParams) { $withParams = " WITH " + $withParams.TrimStart(',') }
-									$sql = "CREATE LOGIN [$loginName] FROM WINDOWS" + $withParams
-	
-									$null = $server.Query($sql)
-	
-									$newLogin = $server.logins[$loginName]
-									Write-Message -Level Verbose -Message "Successfully added $loginName to $instance."
-	
-									$newLoginStatus.Status = "Successful"
-								}
-								catch {
-									$newLoginStatus.Status = "Failed"
-									$newLoginStatus.Notes = $_.Exception.GetBaseException().Message
-									$newLoginStatus
-									Stop-Function -Message "Failed to add $loginName to $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Silent $Silent -Continue 3>$null
-								}
-							}
-						}
-						# Create login from AsymmetricKey or Certificate
-						elseif ($loginType -in ('AsymmetricKey','Certificate')) {
-							try {
-								if ($loginType -eq 'AsymmetricKey') { $newLogin.AsymmetricKey = $MapToAsymmetricKey }
-							  elseif ($loginType -eq 'Certificate') { $newLogin.Certificate = $MapToCertificate }
-								$newLogin.Create()
-								$newLogin.Refresh()
-								Write-Message -Level Verbose -Message "Successfully added $loginName to $instance."
-		
-								$newLoginStatus.Status = "Successful"
-							}
-							catch {
-								Write-Message -Level Verbose -Message "Failed to create $loginName on $instance using SMO, trying T-SQL."
-								try {
-									if ($loginType -eq 'AsymmetricKey') { $sql = "CREATE LOGIN [$loginName] FROM ASYMMETRIC KEY [$MapToAsymmetricKey]" }
-									elseif ($loginType -eq 'Certificate') { $sql = "CREATE LOGIN [$loginName] FROM CERTIFICATE [$MapToCertificate]" }
-	
-									$null = $server.Query($sql)
-	
-									$newLogin = $server.logins[$loginName]
-									Write-Message -Level Verbose -Message "Successfully added $loginName to $instance."
-	
-									$newLoginStatus.Status = "Successful"
-								}
-								catch {
-									$newLoginStatus.Status = "Failed"
-									$newLoginStatus.Notes = $_.Exception.GetBaseException().Message
-									$newLoginStatus
-									Stop-Function -Message "Failed to add $loginName to $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Silent $Silent -Continue 3>$null
-								}
-							}
-						}		
 						#Display results
 						$newLoginStatus
-						
-						#Add credential
-						if ($MapToCredential) {
-							Write-Message -Level Verbose -Message "Mapping $loginName to the credential $MapToCredential"
-							try {
-								$newLogin.AddCredential($MapToCredential)
-							}
-							catch {
-								Write-Message -Level Verbose -Message "Failed to map $loginName to the credential $MapToCredential on $instance using SMO, trying T-SQL."
-								try {
-									$sql = "ALTER LOGIN [$loginName] ADD CREDENTIAL [$MapToCredential]"
-	
-									$null = $server.Query($sql)
-	
-									Write-Message -Level Verbose -Message "Successfully mapped $loginName to the credential $MapToCredential on $instance."	
-								}
-								catch {									
-									Stop-Function -Message "Failed to map $loginName to the credential $MapToCredential on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Silent $Silent -Continue
-								}
-							}
-						}
 					}
 					catch {
 						Stop-Function -Message "Failed to create login $loginName on $instance. Exception: $($_.Exception.InnerException)" -Target $credential -Silent $Silent -InnerErrorRecord $_ -Continue
@@ -437,12 +489,3 @@ function New-DbaLogin {
 		}
 	}
 }
-
-<#
-
-import-module C:\Git\nvarscar-dbatools\new-dbalogin\dbatools
-#Get-DbaLogin -SqlInstance 'wpg1lsds01,7220' -Login 'BakReports'|New-DbaLogin -SqlInstance 'wpg1lsds01,7220' -LoginRenameHashtable @{BakReports = 'Test2'} -Force
-#New-DbaLogin -SqlInstance 'wpg1lsds01,7220' -Force -NewSid -HashedPassword 0x0200BE5E02140D98881D689DA864C447D2E6D49C3E9DC10099C4A34110C82E503349D8ACF10B49455CD8FADA810BC9EB7315DCB6A4C3C7222C84E46B4C283AD3B0B50DB274F7 -Login Test5, Test6, Test7 
-
-New-DbaLogin -SqlInstance 'wpg1lsds01,7220' -Force -NewSid -Login Test5, Test6, Test7 -MapToCertificate 'asd'
-#>
