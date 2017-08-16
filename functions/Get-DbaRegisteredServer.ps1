@@ -4,9 +4,7 @@ function Get-DbaRegisteredServer {
 			Gets list of SQL Server objects stored in SQL Server Central Management Server (CMS).
 
 		.DESCRIPTION
-			Returns an array of servers found in the CMS. By default, the command returns the ServerName property
-			of the servers. You can specify -FullObject to return the full SMO object, -IpAddress for only the
-			IPv4 Addresses of the server, and -NetBiosName for only the ComputerName.
+			Returns an array of servers found in the CMS.
 
 		.PARAMETER SqlInstance
 			SQL Server name or SMO object representing the SQL Server to connect to.
@@ -17,9 +15,14 @@ function Get-DbaRegisteredServer {
 
 		.PARAMETER Group
 			List of groups to filter to in SQL Server Central Management Server. You can specify one or more, comma separated.
+			You can specify a sub-group path with a forward slash (e.g. "group1/subgroup1a")
 
 		.PARAMETER ExcludeGroup
 			List of groups to filter out. You can specify one or more, comma separated.
+
+		.PARAMETER ExcludeCmsServer
+			Filters out the CMS you are connected to. This does a full match of the value passed in to `-SqlInstance`
+			and the ServerName property of the CMS registration.
 
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
@@ -65,7 +68,7 @@ function Get-DbaRegisteredServer {
 		[Alias("Groups")]
 		[object[]]$Group,
 		[object[]]$ExcludeGroup,
-		[switch]$NoCmsServer,
+		[switch]$ExcludeCmsServer,
 		[switch]$Silent
 	)
 	begin {
@@ -134,8 +137,12 @@ function Get-DbaRegisteredServer {
 				}
 			}
 			else {
-				$cms = $cmsStore.ServerGroups["DatabaseEngineServerGroup"]
+				$cms = $cmsStore.DatabaseEngineServerGroup
 				$servers += ($cms.GetDescendantRegisteredServers())
+			}
+
+			if ($ExcludeCmsServer) {
+				$servers = ($servers | Where-Object { $_.ServerName -ne $instance})
 			}
 		}
 	}
