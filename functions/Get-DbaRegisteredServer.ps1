@@ -110,19 +110,10 @@ function Get-DbaRegisteredServer {
 		$servers = @()
 		foreach ($instance in $SqlInstance) {
 			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-				$sqlConnection = $server.ConnectionContext.SqlConnectionObject
+				$cmsStore = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential -Silent:$Silent
 			}
 			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
-
-			try {
-				$cmsStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlConnection)
-			}
-			catch {
-				Stop-Function -Message "Cannot access Central Management Server" -ErrorRecord $_ -Continue
+				Stop-Function -Message "Cannot access Central Management Server '$instance'" -ErrorRecord $_ -Continue
 				return
 			}
 
@@ -134,7 +125,7 @@ function Get-DbaRegisteredServer {
 				foreach ($currentGroup in $Group) {
 					$cms = Find-CmsGroup -CmsGrp $cmsStore.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
 					if ($null -eq $cms) {
-						Write-Message -Level Output -Message "No groups found matching that name"
+						Write-Message -Level Output -Message "No groups found matching that name on instance '$instance'"
 						continue
 					}
 					$servers += ($cms.GetDescendantRegisteredServers())
