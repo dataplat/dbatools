@@ -38,7 +38,7 @@ Function Get-DbaSqlBuildReference {
 		Returns information builds identified by these versions strings
 	
 	.EXAMPLE
-		Get-DbaRegisteredServerName -SqlInstance sqlserver2014a | Get-DbaSqlBuildReference
+		Get-DbaRegisteredServer -SqlInstance sqlserver2014a -NameOnly | Get-DbaSqlBuildReference
 		
 		Integrate with other commandlets to have builds checked for all your registered servers on sqlserver2014a
 	

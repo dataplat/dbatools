@@ -24,6 +24,9 @@ function Get-DbaRegisteredServer {
 			Filters out the CMS you are connected to. This does a full match of the value passed in to `-SqlInstance`
 			and the ServerName property of the CMS registration.
 
+		.PARAMETER NameOnly
+			Returns a distinct list of the server names. Useful for passing the list of servers to another function.
+
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
 
@@ -45,9 +48,9 @@ function Get-DbaRegisteredServer {
 			Gets a list of servers from the CMS on sqlserver2014a, using Windows Credentials
 
 		.EXAMPLE
-			Get-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential
+			Get-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential -NameOnly
 
-			Gets a list of servers from the CMS on sqlserver2014a, using SQL Authentication
+			Returns only the server names from the CMS on sqlserver2014a, using SQL Authentication
 
 		.EXAMPLE
 			Get-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR, Accounting
@@ -69,6 +72,7 @@ function Get-DbaRegisteredServer {
 		[object[]]$Group,
 		[object[]]$ExcludeGroup,
 		[switch]$ExcludeCmsServer,
+		[switch]$NameOnly,
 		[switch]$Silent
 	)
 	begin {
@@ -148,6 +152,22 @@ function Get-DbaRegisteredServer {
 	}
 
 	end {
+		foreach ($server in $servers) {
+			try {
+				$lookup = Resolve-DbaNetworkName $server.ServerName -Turbo -Silent
+				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $lookup.ComputerName
+				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $lookup.IPAddress
+			}
+			catch {
+				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $null
+				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $null
+			}
+		}
+
+		if ($NameOnly) {
+			return $servers | Select-Object -ExpandProperty ServerName -Unique
+		}
+
 		return $servers
 	}
 }

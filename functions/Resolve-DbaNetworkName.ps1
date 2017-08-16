@@ -77,9 +77,9 @@ function Resolve-DbaNetworkName {
 			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\sqlexpress and sql2014
 
 		.EXAMPLE
-			Get-DbaRegisteredServerName -SqlInstance sql2014 | Resolve-DbaNetworkName
+			Get-DbaRegisteredServer -SqlInstance sql2014 -NameOnly | Resolve-DbaNetworkName
 
-			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaRegisteredServerName
+			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaRegisteredServer
 	#>
 	[CmdletBinding()]
 	param (
