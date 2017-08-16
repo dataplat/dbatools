@@ -1,9 +1,9 @@
 ﻿if (-not $env:appveyor) {
-	$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
+	$CommandName = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
 	Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 	. "$PSScriptRoot\constants.ps1"
 	
-	Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+	Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		Context "Can generate a new certificate" {
 			BeforeAll {
 				$cert = New-DbaComputerCertificate -SelfSigned -Silent
