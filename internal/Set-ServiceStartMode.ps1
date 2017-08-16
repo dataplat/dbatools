@@ -42,11 +42,6 @@ Function Set-ServiceStartMode {
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
-		[ValidateScript({
-				$supportedModes = @("Automatic", "Manual", "Disabled")
-				if ($_ -notin $supportedModes) { throw ("Use one of the following values: {0}" -f ($supportedModes -join ' | ')) }
-				else { $true }
-			})]
 		[string]$Mode,
 		[parameter(ValueFromPipeline = $true, Mandatory = $true)]
 		[object[]]$ServiceCollection

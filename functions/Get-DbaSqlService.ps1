@@ -152,7 +152,15 @@ Function Get-DbaSqlService {
 								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name Start -Value { Start-DbaSqlService -ServiceCollection $this }
 								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name Restart -Value { Restart-DbaSqlService -ServiceCollection $this }
 								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name ChangeStartMode -Value {
-									Param ([string]$Mode)
+									Param (
+										[parameter(Mandatory = $true)]
+										[string]$Mode
+									)
+									$supportedModes = @("Automatic", "Manual", "Disabled")
+									if ($Mode -notin $supportedModes) { 
+										Write-Message -Level Warning -Message ("Incorrect mode '$Mode'. Use one of the following values: {0}" -f ($supportedModes -join ' | ')) -Silent $false -FunctionName 'Get-DbaSqlService'
+										Return
+									}
 									Set-ServiceStartMode -ServiceCollection $this -Mode $Mode -ErrorAction Stop
 									$this.StartMode = $Mode
 								}
