@@ -12,41 +12,43 @@ function Copy-DbaResourceGovernor {
 			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
 
 		.PARAMETER SourceSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2008 or higher.
 
 		.PARAMETER DestinationSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
 			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER ResourcePool
-			The resource pool(s) to process - this list is auto-populated from the server. If unspecified, all resource pools will be processed.
+			Specifies the resource pool(s) to process. Options for this list are auto-populated from the server. If unspecified, all resource pools will be processed.
 
 		.PARAMETER ExcludeResourcePool
-			The resource pool(s) to exclude - this list is auto-populated from the server
+			Specifies the resource pool(s) to exclude. Options for this list are auto-populated from the server
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Force
-			If policies exists on destination server, it will be dropped and recreated.
+			If this switch is enabled, the policies will be dropped and recreated on Destination.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Migration, ResourceGovernor
@@ -63,12 +65,12 @@ function Copy-DbaResourceGovernor {
 		.EXAMPLE
 			Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster
 
-			Copies all extended event policies from sqlserver2014a to sqlcluster, using Windows credentials.
+			Copies all extended event policies from sqlserver2014a to sqlcluster using Windows credentials to connect to the SQL Server instances..
 
 		.EXAMPLE
 			Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -SourceSqlCredential $cred
 
-			Copies all extended event policies from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
+			Copies all extended event policies from sqlserver2014a to sqlcluster using SQL credentials to connect to sqlserver2014a and Windows credentials to connect to sqlcluster.
 
 		.EXAMPLE
 			Copy-DbaResourceGovernor -Source sqlserver2014a -Destination sqlcluster -WhatIf
@@ -125,7 +127,7 @@ function Copy-DbaResourceGovernor {
 				try {
 					$sql = $sourceServer.ResourceGovernor.Script() | Out-String
 					Write-Message -Level Debug -Message $sql
-					Write-Message -Level Verbose -Message "Updating Resource Governor settings"
+					Write-Message -Level Verbose -Message "Updating Resource Governor settings."
 					$destServer.Query($sql)
 
 					$copyResourceGovSetting.Status = "Successful"
@@ -136,7 +138,7 @@ function Copy-DbaResourceGovernor {
 					$copyResourceGovSetting.Notes = $_.Exception
 					$copyResourceGovSetting
 
-					Stop-Function -Message "Not able to update settings" -Target $destServer -ErrorRecord $_
+					Stop-Function -Message "Not able to update settings." -Target $destServer -ErrorRecord $_
 				}
 			}
 		}
@@ -152,7 +154,7 @@ function Copy-DbaResourceGovernor {
 			$pools = $sourceServer.ResourceGovernor.ResourcePools | Where-Object { $_.Name -notin "internal", "default" }
 		}
 
-		Write-Message -Level Verbose -Message "Migrating pools"
+		Write-Message -Level Verbose -Message "Migrating pools."
 		foreach ($pool in $pools) {
 			$poolName = $pool.Name
 
@@ -168,7 +170,7 @@ function Copy-DbaResourceGovernor {
 
 			if ($destServer.ResourceGovernor.ResourcePools[$poolName] -ne $null) {
 				if ($force -eq $false) {
-					Write-Message -Level Warning -Message "Pool '$poolName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
+					Write-Message -Level Warning -Message "Pool '$poolName' was skipped because it already exists on $destination. Use -Force to drop and recreate."
 
 					$copyResourceGovPool.Status = "Skipped"
 					$copyResourceGovPool.Notes = "Already exists on destination"
@@ -177,7 +179,7 @@ function Copy-DbaResourceGovernor {
 				}
 				else {
 					if ($Pscmdlet.ShouldProcess($destination, "Attempting to drop $poolName")) {
-						Write-Message -Level Verbose -Message "Pool '$poolName' exists on $destination"
+						Write-Message -Level Verbose -Message "Pool '$poolName' exists on $destination."
 						Write-Message -Level Verbose -Message "Force specified. Dropping $poolName."
 
 						try {
@@ -204,7 +206,7 @@ function Copy-DbaResourceGovernor {
 				try {
 					$sql = $pool.Script() | Out-String
 					Write-Message -Level Debug -Message $sql
-					Write-Message -Level Verbose -Message "Copying pool $poolName"
+					Write-Message -Level Verbose -Message "Copying pool $poolName."
 					$destServer.Query($sql)
 
 					$copyResourceGovPool.Status = "Successful"
@@ -226,7 +228,7 @@ function Copy-DbaResourceGovernor {
 
 						$sql = $workloadGroup.Script() | Out-String
 						Write-Message -Level Debug -Message $sql
-						Write-Message -Level Verbose -Message "Copying $workgroupName"
+						Write-Message -Level Verbose -Message "Copying $workgroupName."
 						$destServer.Query($sql)
 
 						$copyResourceGovWorkGroup.Status = "Successful"
@@ -238,7 +240,7 @@ function Copy-DbaResourceGovernor {
 					$copyResourceGovWorkGroup.Notes = $_.Exception
 					$copyResourceGovWorkGroup
 
-					Stop-Function -Message "Unable to migrate pool" -Target $pool -ErrorRecord $_
+					Stop-Function -Message "Unable to migrate pool." -Target $pool -ErrorRecord $_
 				}
 			}
 		}
@@ -248,7 +250,7 @@ function Copy-DbaResourceGovernor {
 				Write-Message -Level Warning -Message "The resource governor is not available in this edition of SQL Server. You can manipulate resource governor metadata but you will not be able to apply resource governor configuration. Only Enterprise edition of SQL Server supports resource governor."
 			}
 			else {
-				Write-Message -Level Verbose -Message "Reconfiguring Resource Governor"
+				Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
 				$sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
 				$destServer.Query($sql)
 

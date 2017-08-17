@@ -36,6 +36,9 @@ function Install-DbaWhoIsActive {
 
 		.PARAMETER Silent
 			If this switch is enabled, the internal messaging functions will be silenced.
+		
+		.PARAMETER Force
+			If this switch is enabled, the sp_WhoisActive will be downloaded from the internet even if previously cached.
 
 		.EXAMPLE
 			Install-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master
@@ -75,34 +78,49 @@ function Install-DbaWhoIsActive {
 		[ValidateScript({Test-Path -Path $_ -PathType Leaf})]
 		[string]$LocalFile,
 		[object]$Database,
-		[switch]$Silent
+		[switch]$Silent,
+		[switch]$Force
 	)
 	
 	begin {
+        $DbatoolsData = Get-DbaConfigValue -Name "Path.DbatoolsData"
 		$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 		$zipfile = "$temp\spwhoisactive.zip"
 
 		if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
 			$baseUrl = "http://whoisactive.com/downloads"
 			$latest = ((Invoke-WebRequest -uri http://whoisactive.com/downloads).Links | where-object {$PSItem.href -match "who_is_active"} | Select-Object href -First 1).href	
-			if ($PSCmdlet.ShouldProcess($env:computername, "Downloading sp_WhoisActive")) {
-				try {
-					Write-Message -Level Verbose -Message "Downloading sp_WhoisActive zip file, unzipping and installing."
-					$url = $baseUrl + "/" + $latest
-					try {
-						Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop
-					}
-					catch {
-						#try with default proxy and usersettings
-						(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-						Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop
-					}
-				} catch {
-					Stop-Function -Message "Couldn't download sp_WhoisActive. Please download and install manually from $url." -ErrorRecord $_
-					return
+			$LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $latest;
+
+			if ((Test-Path -Path $LocalCachedCopy -PathType Leaf) -and (-not $Force)) {
+				Write-Message -Level Verbose -Message "Locally-cached copy exists, skipping download."
+				if ($PSCmdlet.ShouldProcess($env:computername, "Copying sp_WhoisActive from local cache for installation")) {
+					Copy-Item -Path $LocalCachedCopy -Destination $zipfile;
 				}
 			}
-		} else {
+			else {
+				if ($PSCmdlet.ShouldProcess($env:computername, "Downloading sp_WhoisActive")) {
+					try {
+						Write-Message -Level Verbose -Message "Downloading sp_WhoisActive zip file, unzipping and installing."
+						$url = $baseUrl + "/" + $latest
+						try {
+							Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop
+							Copy-Item -Path $zipfile -Destination $LocalCachedCopy
+						}
+						catch {
+							#try with default proxy and usersettings
+							(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+							Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop
+						}
+					}
+					catch {
+						Stop-Function -Message "Couldn't download sp_WhoisActive. Please download and install manually from $url." -ErrorRecord $_
+						return
+					}
+				}
+			}
+		}
+		else {
 			# Look local
 			if ($PSCmdlet.ShouldProcess($env:computername, "Copying local file to temp directory")) {
 
@@ -122,7 +140,8 @@ function Install-DbaWhoIsActive {
 					
 			    if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
 		    		Expand-Archive -Path $zipfile -DestinationPath $temp -Force
-	    		} else {
+				}
+				else {
 			    # Keep it backwards compatible
 				    $shell = New-Object -ComObject Shell.Application
 				    $zipPackage = $shell.NameSpace($zipfile)
@@ -133,7 +152,8 @@ function Install-DbaWhoIsActive {
 			    Remove-Item -Path $zipfile
             }
 			$sqlfile = (Get-ChildItem "$temp\who*active*.sql" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
-		} else {
+		}
+		else {
 			$sqlfile = $LocalFile
 		}
 
@@ -213,7 +233,9 @@ function Install-DbaWhoIsActive {
 		}
 	}
 	end {
-        Get-Item $sqlfile | Remove-Item
+        if ($PSCmdlet.ShouldProcess($env:computername, "Post-install cleanup")) {
+            Get-Item $sqlfile | Remove-Item
+        }
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Install-SqlWhoIsActive
 	}
 }
