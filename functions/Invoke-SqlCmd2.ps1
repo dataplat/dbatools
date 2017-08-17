@@ -146,9 +146,6 @@ function Invoke-Sqlcmd2
     .LINK
         https://github.com/RamblingCookieMonster/PowerShell
 
-    .LINK
-        New-SQLConnection
-
     .FUNCTIONALITY
         SQL
     #>

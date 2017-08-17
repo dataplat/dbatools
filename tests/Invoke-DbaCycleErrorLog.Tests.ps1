@@ -1,21 +1,23 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-Describe "Invoke-DbaCycleErrorLog Unit Tests" -Tag "UnitTests" {
+
+Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 	Context "Validate parameters" {
 		$paramCount = 4
 		$defaultParamCount = 13
 		[object[]]$params = (Get-ChildItem function:\Invoke-DbaCycleErrorLog).Parameters.Keys
 		$knownParameters = 'SqlInstance', 'SqlCredential', 'Type', 'Silent'
-		it "Should contian our parameters" {
+		it "Should contain our specific parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}
-		it "Should only contain our parameters" {
+		it "Should only contain $paramCount parameters" {
 			$params.Count - $defaultParamCount | Should Be $paramCount
 		}
 	}
 }
-Describe "Invoke-DbaCycleErrorLog Integration Test" -Tag "IntegrationTests" {
+
+Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
 	$results = Invoke-DbaCycleErrorLog -SqlInstance $script:instance1 -Type instance
 
 	Context "Validate output" {

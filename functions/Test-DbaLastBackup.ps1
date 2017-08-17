@@ -378,8 +378,8 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                         $mb = $restorelist.BackupSizeMB
 						
                         if ($MaxMB -gt 0 -and $MaxMB -lt $mb) {
-                            $restoreresult = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxMB MB)"
-                            $dbccresult = "Skipped"
+							$success = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxMB MB)"
+							$dbccresult = "Skipped"
                         }
                         else {
                             $dbccElapsed = $restoreElapsed = $startRestore = $endRestore = $startDbcc = $endDbcc = $null
