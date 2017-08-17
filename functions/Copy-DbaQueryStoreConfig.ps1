@@ -172,7 +172,7 @@
 				}
 				catch {
 					$copyQueryStoreStatus.Status = "Failed"
-					Stop-Function -Message "Issue setting QueryStore on $db." -Target $db -InnerErrorRecord $_ -Continue
+					Stop-Function -Message "Issue setting Query Store on $db." -Target $db -InnerErrorRecord $_ -Continue
 				}
 					$copyQueryStoreStatus
 			}
