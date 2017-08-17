@@ -708,7 +708,7 @@ The script will show a message that the copy destination has not been supplied a
 								}
 								# If the server is local and the credential is set
 								elseif ($DestinationCredential) {
-									Invoke-Command2 -ScriptBlock -Credential $DestinationCredential {
+									Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
 										Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
 										New-Item -Path $CopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
 									}
@@ -1098,7 +1098,10 @@ The script will show a message that the copy destination has not been supplied a
 					# To to create the backup directory for the database 
 					try {
 						Write-Message -Message "Backup network path not found. Trying to create it.." -Level Verbose
-                        New-DbaSqlDirectory -Path $DatabaseBackupNetworkPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential
+                        Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+						    Write-Message -Message "Creating backup folder $DatabaseBackupNetworkPath" -Level Verbose
+							New-Item -Path $DatabaseBackupNetworkPath -ItemType Directory -Credential $SourceCredential -Force:$Force | Out-Null
+                        }
 					}
 					catch {
 						Stop-Function -Message "Something went wrong creating the directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
@@ -1207,7 +1210,10 @@ The script will show a message that the copy destination has not been supplied a
 							if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore data folder on $DestinationServerName")) {
 								# Try creating the data folder
 								try {
-									New-Item $DatabaseRestoreDataFolder -ItemType Directory -Credential $DestinationCredential | Out-Null
+                                    Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+						                Write-Message -Message "Creating data folder $DatabaseRestoreDataFolder" -Level Verbose
+							            New-Item -Path $DatabaseRestoreDataFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                                    }
 								}
 								catch {
 									Stop-Function -Message "Something went wrong creating the restore data directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
@@ -1220,8 +1226,10 @@ The script will show a message that the copy destination has not been supplied a
 							if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore log folder on $DestinationServerName")) {
 								# Try creating the log folder
 								try {
-									Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
-                                    New-DbaSqlDirectory -Path $DatabaseRestoreLogFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential
+                                    Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+						               Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
+							            New-Item -Path $DatabaseRestoreLogFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                                    }
 								}
 								catch {
 									Stop-Function -Message "Something went wrong creating the restore log directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
@@ -1295,10 +1303,12 @@ The script will show a message that the copy destination has not been supplied a
 
 				# Check if the copy destination folder exists
 				if ((Test-DbaSqlPath -Path $DatabaseCopyDestinationFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
-					Write-Message -Message "Copy destination folder $DatabaseCopyDestinationFolder not found. Trying to create it.. ." -Level Verbose
 					if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating copy destination folder on $DestinationServerName")) {
 						try {
-                            New-DbaSqlDirectory -Path $DatabaseCopyDestinationFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential
+                                Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+						            Write-Message -Message "Copy destination folder $DatabaseCopyDestinationFolder not found. Trying to create it.. ." -Level Verbose
+							        New-Item -Path $DatabaseCopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                                }
 						}
 						catch {
 							Stop-Function -Message "Something went wrong creating the database copy destination folder. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $DestinationServerName -Continue
@@ -1680,3 +1690,7 @@ The script will show a message that the copy destination has not been supplied a
 		Write-Message -Message "Finished setting up log shipping." -Level Output
 	}
 }
+
+
+
+
