@@ -350,7 +350,7 @@
 		'Invoke-CycleErrorLog',
 		'Get-DbaSqlRegistryRoot',
 		'Get-DbaAvailableCollation',
-		'Get-DbaDetailedPermission'
+		'Get-DbaUserLevelPermission'
 	)
 	
 	# Cmdlets to export from this module
