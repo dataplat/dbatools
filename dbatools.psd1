@@ -349,7 +349,8 @@
 		'Restart-DbaSqlService',
 		'Invoke-CycleErrorLog',
 		'Get-DbaSqlRegistryRoot',
-		'Get-DbaAvailableCollation'
+		'Get-DbaAvailableCollation',
+		'Get-DbaDetailedPermission'
 	)
 	
 	# Cmdlets to export from this module
