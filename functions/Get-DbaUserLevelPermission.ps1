@@ -1,10 +1,14 @@
-﻿function Get-DbaDetailedPermission {
+﻿function Get-DbaUserLevelPermission {
 	<# 
 	.SYNOPSIS 
-		Displays permissions information for the server and database roles and securables.
+		Displays detailed permissions information for the server and database roles and securables.
 
 	.DESCRIPTION 
 		This command will display all server logins, server level securable, database logins and database securables.
+	
+		DISA STIG implementators will find this command useful as it uses Permissions.sql provided by DISA.
+	
+		Note that if you Ctrl-C out of this command and end it prematurely, it will leave behind a STIG schema in tempdb.
 
 	.PARAMETER SqlInstance
 		Allows you to specify a comma separated list of servers to query.
@@ -42,18 +46,18 @@
 		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.LINK 
-		https://dbatools.io/Get-DbaDetailedPermission
+		https://dbatools.io/Get-DbaUserLevelPermission
 
 	.EXAMPLE   
-		Get-DbaDetailedPermission -SqlInstance sql2008, sqlserver2012
+		Get-DbaUserLevelPermission -SqlInstance sql2008, sqlserver2012
 		Check server and database permissions for servers sql2008 and sqlserver2012.
 
 	.EXAMPLE   
-		Get-DbaDetailedPermission -SqlInstance sql2008 -Database TestDB
+		Get-DbaUserLevelPermission -SqlInstance sql2008 -Database TestDB
 		Check server and database permissions on server sql2008 for only the TestDB database
 
 	.EXAMPLE   
-		Get-DbaDetailedPermission -SqlInstance sql2008 -Database TestDB -IncludePublicGuest -IncludeSystemObjects
+		Get-DbaUserLevelPermission -SqlInstance sql2008 -Database TestDB -IncludePublicGuest -IncludeSystemObjects
 		Check server and database permissions on server sql2008 for only the TestDB database,
         including public and guest grants, and sys schema objects.
 	#>
@@ -212,7 +216,7 @@
 				
 				#Create objects in active database
 				Write-Message -Level Verbose -Message "Creating objects"
-				$db.ExecuteNonQuery($sql)
+				try { $db.ExecuteNonQuery($sql) } catch {} # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
 				
 				#Grab permissions data
 				if (-not $serverDT) {
@@ -229,7 +233,7 @@
 							Type		    = $row.Type
 							Member		    = $row.Member
 							RoleSecurableClass = $row.'Role/Securable/Class'
-							Schema_Owner    = $row.'Schema/Owner'
+							SchemaOwner     = $row.'Schema/Owner'
 							Securable	    = $row.Securable
 							GranteeType	    = $row.'Grantee Type'
 							Grantee		    = $row.Grantee
@@ -254,7 +258,7 @@
 						Type		    = $row.Type
 						Member		    = $row.Member
 						RoleSecurableClass = $row.'Role/Securable/Class'
-						Schema_Owner    = $row.'Schema/Owner'
+						SchemaOwner     = $row.'Schema/Owner'
 						Securable	    = $row.Securable
 						GranteeType	    = $row.'Grantee Type'
 						Grantee		    = $row.Grantee
@@ -269,7 +273,7 @@
 				#Delete objects
 				Write-Message -Level Verbose -Message "Deleting objects"
 				$db.ExecuteNonQuery($endSQL)
-				#$sql = $sql.Replace($db.Name, "<TARGETDB>")
+				$sql = $sql.Replace($db.Name, "<TARGETDB>")
 				
 				#Sashay Away
 			}
