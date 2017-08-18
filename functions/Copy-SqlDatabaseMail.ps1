@@ -1,4 +1,4 @@
-﻿Function Copy-SqlDatabaseMail
+Function Copy-SqlDatabaseMail
 {
 <#
 .SYNOPSIS

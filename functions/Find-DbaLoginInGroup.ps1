@@ -1,4 +1,4 @@
-﻿function Find-DbaLoginInGroup
+function Find-DbaLoginInGroup
 {
 <#
 .SYNOPSIS

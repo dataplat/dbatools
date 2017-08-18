@@ -1,4 +1,4 @@
-﻿Function Copy-SqlLinkedServer
+Function Copy-SqlLinkedServer
 {
 <# 
 .SYNOPSIS 

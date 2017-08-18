@@ -1,4 +1,4 @@
-﻿Function Test-SqlConnection
+Function Test-SqlConnection
 {
 <# 
 .SYNOPSIS 

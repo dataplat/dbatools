@@ -1,4 +1,4 @@
-﻿Function Test-SqlPath
+Function Test-SqlPath
 {
 <#
 .SYNOPSIS

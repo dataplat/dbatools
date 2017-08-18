@@ -1,4 +1,4 @@
-﻿#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
+#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
 
 if (-not $PSScriptRoot)
 {
@@ -15,6 +15,7 @@ if ($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notlike "master")
 $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
 . $PSScriptRoot\..\internal\$sut
 . $PSScriptRoot\..\internal\Write-Message.ps1
+. $PSScriptRoot\..\internal\Test-DbaDeprecation.ps1
 Import-Module PSScriptAnalyzer
 ## Added PSAvoidUsingPlainTextForPassword as credential is an object and therefore fails. We can ignore any rules here under special circumstances agreed by admins :-)
 $Rules = (Get-ScriptAnalyzerRule).Where{ $_.RuleName -notin ('PSAvoidUsingPlainTextForPassword') }

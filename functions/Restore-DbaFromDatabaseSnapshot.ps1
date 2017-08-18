@@ -1,4 +1,4 @@
-﻿Function Restore-DbaFromDatabaseSnapshot
+Function Restore-DbaFromDatabaseSnapshot
 {
 <#
 .SYNOPSIS

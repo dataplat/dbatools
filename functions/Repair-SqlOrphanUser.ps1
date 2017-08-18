@@ -1,4 +1,4 @@
-﻿Function Repair-SqlOrphanUser
+Function Repair-SqlOrphanUser
 {
 <#
 .SYNOPSIS
@@ -71,7 +71,7 @@ Will also remove all users that does not have their matching login by calling Re
 	
 .NOTES
 Tags: Orphan
-Original Author: Cláudio Silva (@ClaudioESSilva)
+Original Author: Claudio Silva (@ClaudioESSilva)
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 

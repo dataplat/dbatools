@@ -1,4 +1,4 @@
-﻿function Get-DbaLinkedServer
+function Get-DbaLinkedServer
 {
 <#
 .SYNOPSIS

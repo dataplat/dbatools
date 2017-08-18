@@ -1,4 +1,4 @@
-﻿FUNCTION Get-DbaDatabase
+FUNCTION Get-DbaDatabase
 {
 <#
 .SYNOPSIS
@@ -100,6 +100,7 @@ Returns databases on multiple instances piped into the function
 	BEGIN
 	{
 		$databases = $psboundparameters.Databases
+		$exclude = $psboundparameters.Exclude
 		
 		if ($NoUserDb -and $NoSystemDb)
 		{
@@ -121,8 +122,6 @@ Returns databases on multiple instances piped into the function
 				Write-Warning "Failed to connect to: $instance"
 				continue
 			}
-			
-			$defaults = 'Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
 			
 			if ($NoUserDb)
 			{
@@ -171,7 +170,21 @@ Returns databases on multiple instances piped into the function
 				$inputobject = $server.Databases
 			}
 			
-			Select-DefaultView -InputObject $inputobject -Property $defaults
+			if ($exclude)
+			{
+				$inputobject = $inputobject | Where-Object {$_.Name -notin $exclude }
+			}
+			
+			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance','Name', 'Status', 'RecoveryModel', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner', 'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup', 'LastLogBackupDate as LastLogBackup'
+			
+			foreach ($db in $inputobject)
+			{
+				Add-Member -InputObject $db -MemberType NoteProperty ComputerName -value $server.NetName
+				Add-Member -InputObject $db -MemberType NoteProperty InstanceName -value $server.ServiceName
+				Add-Member -InputObject $db -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
+				
+				Select-DefaultView -InputObject $db -Property $defaults
+			}
 		}
 	}
 }

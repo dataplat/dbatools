@@ -1,4 +1,4 @@
-﻿function Get-DbaHelpIndex
+function Get-DbaHelpIndex
 {
 <#
 .SYNOPSIS

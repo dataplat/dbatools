@@ -1,4 +1,4 @@
-﻿Function Test-SqlSa
+Function Test-SqlSa
 {
 <#
 .SYNOPSIS

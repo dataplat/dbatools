@@ -1,4 +1,4 @@
-﻿#region Logging.MaxErrorCount
+#region Logging.MaxErrorCount
 $ScriptBlock = {
     Param (
         $Value

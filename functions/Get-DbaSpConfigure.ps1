@@ -1,4 +1,4 @@
-﻿FUNCTION Get-DbaSpConfigure
+FUNCTION Get-DbaSpConfigure
 {
 <#
 .SYNOPSIS
@@ -56,7 +56,7 @@ Returns only the system configuration for MaxServerMemory. Configs is autopopula
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
+		[object[]]$SqlServer,
 		[System.Management.Automation.PSCredential]$SqlCredential
 	)
 	

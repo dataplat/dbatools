@@ -1,4 +1,4 @@
-﻿Function Get-DbaRestoreHistory
+Function Get-DbaRestoreHistory
 {
 <#
 .SYNOPSIS

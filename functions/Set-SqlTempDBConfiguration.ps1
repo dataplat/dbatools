@@ -1,4 +1,4 @@
-﻿function Set-SqlTempDbConfiguration
+function Set-SqlTempDbConfiguration
 {
 <#
 .SYNOPSIS

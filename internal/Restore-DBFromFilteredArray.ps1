@@ -1,4 +1,4 @@
-﻿Function Restore-DBFromFilteredArray
+Function Restore-DBFromFilteredArray
 {
 <# 
 	.SYNOPSIS
@@ -27,7 +27,8 @@
 		[switch]$UseDestinationDefaultDirectories,
 		[switch]$ReuseSourceFolderStructure,
 		[switch]$Force,
-		[string]$RestoredDatababaseNamePrefix
+		[string]$RestoredDatababaseNamePrefix,
+		[switch]$TrustDbBackupHistory
 	)
     
 	    Begin
@@ -72,7 +73,7 @@
 			$DestinationLogDirectory = Get-SqlDefaultPaths $Server log
 		}
 
-		If ($DbName -in $Server.databases.name -and $ScriptOnly -eq $false)
+		If ($DbName -in $Server.databases.name -and $ScriptOnly -eq $false -and $VerfiyOnly -eq $false)
 		{
 			If ($ReplaceDatabase -eq $true)
 			{	
@@ -98,7 +99,25 @@
 			}
 
 		}
-
+		$MissingFiles = @()
+		if ($TrustDbBackupHistory)
+		{
+			Write-Verbose "$FunctionName - Trusted File checks"
+			Foreach ($File in $InternalFiles)
+			{
+				Write-Verbose "$FunctionName - Checking $($File.BackupPath) exists"
+				if((Test-SqlPath -SqlServer $sqlServer -SqlCredential $SqlCredential -Path $File.BackupPath) -eq $false)
+				{
+					Write-verbose "$$FunctionName - $($File.backupPath) is missing"
+					$MissingFiles += $File.BackupPath
+				}
+			}
+			if ($MissingFiles.Length -gt 0)
+			{
+				Write-Warning "$FunctionName - Files $($MissingFiles -join ',') are missing, cannot progress"
+				return false
+			}
+		}
  		$RestorePoints  = @()
         $if = $InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Database'} | Group-Object FirstLSN
 		$RestorePoints  += @([PSCustomObject]@{order=[Decimal]1;'Files' = $if.group})
@@ -329,7 +348,7 @@
 						BackupFilesCount = $RestoreFiles.Count
 						RestoredFilesCount = $RestoreFiles[0].Filelist.PhysicalName.count
 						BackupSizeMB = ($RestoreFiles | measure-object -property BackupSizeMb -Sum).sum
-						CompressedBackupSizeMB = ($RestoreFiles | measure-object -property CompressedBackupSizeMb -Sum).sum
+						CompressedBackupSizeMB = if([bool]($RestoreFiles.PSobject.Properties.name -match 'CompressedBackupSizeMb')){($RestoreFiles | measure-object -property CompressedBackupSizeMB -Sum).sum}else{$null}
 						BackupFile = $RestoreFiles.BackupPath -join ','
 						RestoredFile = $RestoredFile
 						RestoredFileFull = $RestoreFiles[0].Filelist.PhysicalName -join ','

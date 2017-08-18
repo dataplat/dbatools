@@ -1,4 +1,4 @@
-﻿<#
+<#
 This is for all configuration values regarding the logging system
 
 NOTES:

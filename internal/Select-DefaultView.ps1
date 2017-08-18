@@ -1,4 +1,4 @@
-﻿Function Select-DefaultView
+Function Select-DefaultView
 {
 	<# 
 	
@@ -6,9 +6,10 @@
 	
 	See it in action in Get-DbaSnapshot and Remove-DbaDatabaseSnapshot
 	
-	this is all from boe, thanks boe! 
+	a lot of this is from boe, thanks boe! 
 	https://learn-powershell.net/2013/08/03/quick-hits-set-the-default-property-display-in-powershell-on-custom-objects/
 	
+	TypeName creates a new type so that we can use ps1xml to modify the output
 	#>
 	
 	[CmdletBinding()]
@@ -16,13 +17,19 @@
 		[parameter(ValueFromPipeline = $true)]
 		[object]$InputObject,
 		[string[]]$Property,
-		[string[]]$ExcludeProperty
+		[string[]]$ExcludeProperty,
+		[string]$TypeName
 	)
 	process
 	{
 		
-	if ($InputObject -eq $null) { return }
-	
+		if ($InputObject -eq $null) { return }
+		
+		if ($TypeName)
+		{
+			$InputObject.PSObject.TypeNames.Insert(0, "dbatools.$TypeName")
+		}
+		
 		if ($ExcludeProperty)
 		{
 			$properties = ($InputObject.PsObject.Members | Where-Object MemberType -ne 'Method' | Where-Object { $_.Name -notin $ExcludeProperty }).Name
@@ -39,7 +46,8 @@
 					if ($p -like "* as *")
 					{
 						$old, $new = $p -isplit " as "
-						$inputobject | Add-Member -MemberType AliasProperty -Name $new -Value $old -Force
+						# Do not be tempted to not pipe here
+						$inputobject | Add-Member -MemberType AliasProperty -Name $new -Value $old -Force -ErrorAction SilentlyContinue
 						$newproperty += $new
 					}
 					else
@@ -54,7 +62,10 @@
 		}
 		
 		$standardmembers = [System.Management.Automation.PSMemberInfo[]]@($defaultset)
-		$inputobject | Add-Member MemberSet PSStandardMembers $standardmembers -Force
+		
+		# Do not be tempted to not pipe here
+		$inputobject | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value $standardmembers -Force -ErrorAction SilentlyContinue
+		
 		$inputobject
 	}
 }

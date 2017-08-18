@@ -1,4 +1,4 @@
-﻿Function Find-DbaCommand
+Function Find-DbaCommand
 {
 <#
 .SYNOPSIS
@@ -182,7 +182,7 @@ Finds all commands searching the entire help for "snapshot", rebuilding the inde
 			Write-Verbose "Rebuild done in $($swrebuild.Elapsedmilliseconds)ms"
 			
 		}
-		$consolidated = Get-Content $idxfile | ConvertFrom-Json
+		$consolidated = Get-Content -Raw $idxfile | ConvertFrom-Json
 		$result = $consolidated
 		if ($Pattern.length -gt 0)
 		{

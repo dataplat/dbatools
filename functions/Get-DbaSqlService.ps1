@@ -1,4 +1,4 @@
-﻿Function Get-DbaSqlService
+Function Get-DbaSqlService
 {
 <#
     .SYNOPSIS

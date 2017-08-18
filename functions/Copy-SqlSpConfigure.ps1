@@ -1,4 +1,4 @@
-﻿Function Copy-SqlSpConfigure
+Function Copy-SqlSpConfigure
 {
 <#
 .SYNOPSIS 

@@ -1,4 +1,4 @@
-﻿$scriptBlock = {
+$scriptBlock = {
     #region Helper Functions
     function Clean-ErrorXml
     {

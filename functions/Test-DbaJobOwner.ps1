@@ -1,4 +1,4 @@
-﻿function Test-DbaJobOwner
+function Test-DbaJobOwner
 {
 <#
 .SYNOPSIS
@@ -97,6 +97,12 @@ that TargetLogin must be a valid security principal that exists on the target se
 			if ($psboundparameters.TargetLogin.length -eq 0)
 			{
 				$TargetLogin = ($server.logins | Where-Object { $_.id -eq 1 }).Name
+                
+                #sql2000 id property is empty -force target login to 'sa' login
+                if (($server.versionMajor -lt 9) -and ([string]::IsNullOrEmpty($TargetLogin)))
+                {
+                    $TargetLogin = "sa"
+                }
 			}
 			
 			#Validate login

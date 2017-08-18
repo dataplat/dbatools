@@ -1,4 +1,4 @@
-﻿Function Get-DbaClusterActiveNode
+Function Get-DbaClusterActiveNode
 {
 <#
 .SYNOPSIS

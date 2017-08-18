@@ -1,4 +1,4 @@
-﻿Function Set-DbaPowerPlan
+Function Set-DbaPowerPlan
 {
 <#
 .SYNOPSIS

@@ -1,4 +1,4 @@
-﻿Function Get-DbaProcess
+Function Get-DbaProcess
 {
 <#
 .SYNOPSIS

@@ -1,11 +1,11 @@
-﻿Function Watch-DbaUpdate
+Function Watch-DbaUpdate
 {
 <# 
 .SYNOPSIS 
-Just for fun - checks the PowerShell Gallery ever few hours for updates to dbatools - notifies max every 6 hours.
+Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once max per release.
 
 .DESCRIPTION 
-Only supports Windows 10. Not sure how to make the notification last longer (like Slack does).
+Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once max per release.
 	
 Anyone know how to make it clickable so that it opens an URL?
 

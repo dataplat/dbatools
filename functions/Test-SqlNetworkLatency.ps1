@@ -1,4 +1,4 @@
-﻿Function Test-SqlNetworkLatency
+Function Test-SqlNetworkLatency
 {
 <#
 .SYNOPSIS

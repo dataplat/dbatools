@@ -1,4 +1,4 @@
-﻿Function Get-DbaMaxMemory
+Function Get-DbaMaxMemory
 {
 <# 
 .SYNOPSIS 

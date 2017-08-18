@@ -1,4 +1,4 @@
-﻿Function Remove-DbaSpn
+Function Remove-DbaSpn
 {
 <#
 .SYNOPSIS

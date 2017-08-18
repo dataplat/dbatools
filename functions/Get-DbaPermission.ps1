@@ -1,4 +1,4 @@
-﻿Function Get-DbaPermission
+Function Get-DbaPermission
 {
 <#
 .SYNOPSIS

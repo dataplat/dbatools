@@ -1,4 +1,4 @@
-﻿function Get-DbaConfigValue
+function Get-DbaConfigValue
 {
 	<#
 		.SYNOPSIS

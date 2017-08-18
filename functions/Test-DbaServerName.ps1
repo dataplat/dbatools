@@ -1,4 +1,4 @@
-﻿Function Test-DbaServerName
+Function Test-DbaServerName
 {
 <#
 .SYNOPSIS
@@ -62,20 +62,14 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
+		[object[]]$SqlServer,
 		[PsCredential]$Credential,
 		[switch]$Detailed,
 		[switch]$NoWarning
 	)
 
-	BEGIN
-	{
-		$collection = New-Object System.Collections.ArrayList
-	}
-
 	PROCESS
 	{
-		$servercount++
 
 		foreach ($servername in $SqlServer)
 		{
@@ -85,15 +79,8 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 			}
 			catch
 			{
-				if ($servercount -eq 1 -and $SqlServer.count -eq 1) # This helps with handling servernames being passed via commandline or via pipeline
-				{
-					throw $_
-				}
-				else
-				{
 					Write-Warning "Can't connect to $servername. Moving on."
 					Continue
-				}
 			}
 
 			if ($server.isClustered)
@@ -133,6 +120,9 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				SqlServerName = $sqlservername
 				IsEqual = $serverinstancename -eq $sqlservername
 				RenameRequired = $serverinstancename -ne $sqlservername
+                Updatable = "N/A"
+                Warnings = $null
+                Blockers = $null
 			}
 
 			if ($Detailed)
@@ -159,14 +149,18 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				{
 					if ($rs.Status -eq 'Running')
 					{
-						$rstext = "Reporting Services must be stopped and updated."
+						$rstext = "Reporting Services ($instance) must be stopped and updated."
 					}
 					else
 					{
-						$rstext = "Reporting Services exists. When it is started again, it must be updated."
+						$rstext = "Reporting Services ($instance) exists. When it is started again, it must be updated."
 					}
-					$serverinfo | Add-Member -NotePropertyName Warnings -NotePropertyValue $rstext
+					$serverinfo.Warnings = $rstext
 				}
+                else
+                {
+                    $serverinfo.Warnings = "N/A"
+                }
 
 				# check for mirroring
 				$mirroreddb = $server.Databases | Where-Object { $_.IsMirroringEnabled -eq $true }
@@ -203,21 +197,24 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 
 				if ($reasons.length -gt 0)
 				{
-					$serverinfo | Add-Member -NotePropertyName Updatable -NotePropertyValue $false
-					$serverinfo | Add-Member -NotePropertyName Blockers -NotePropertyValue $reasons
+                    $serverinfo.Updatable = $false
+                    $serverinfo.Blockers = $reasons
 				}
 				else
 				{
-					$serverinfo | Add-Member -NotePropertyName Updatable -NotePropertyValue $true
+                    $serverinfo.Updatable = $true
+                    $serverinfo.Blockers = "N/A"
 				}
 			}
-
-			$null = $collection.Add($serverinfo)
+			
+			if ($Detailed)
+			{
+				$serverinfo
+			}
+			else
+			{
+				$serverinfo | Select-DefaultView -ExcludeProperty Warnings, Blockers
+			}
 		}
-	}
-
-	END
-	{
-		return $collection
 	}
 }

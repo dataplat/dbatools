@@ -1,4 +1,4 @@
-﻿Function Uninstall-DbaWatchUpdate
+Function Uninstall-DbaWatchUpdate
 {
 <# 
 .SYNOPSIS 

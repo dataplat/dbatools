@@ -1,4 +1,4 @@
-﻿<#
+<#
 This configuration file is for all settings of how dbatools interacts with users
 #>
 

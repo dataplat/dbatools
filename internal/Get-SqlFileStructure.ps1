@@ -1,4 +1,4 @@
-﻿Function Get-SqlFileStructure
+Function Get-SqlFileStructure
 {
 <#
 .SYNOPSIS

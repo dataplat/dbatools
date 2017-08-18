@@ -1,4 +1,4 @@
-﻿Function Get-DbaDiskSpace
+Function Get-DbaDiskSpace
 {
 <#
 .SYNOPSIS
@@ -21,7 +21,7 @@ Display the disk space information in a specific unit. Valid values include 'Byt
 Check to see if any SQL Data or Log files exists on the disk. Uses Windows authentication to connect by default.
 
 .PARAMETER SqlCredential
-If you want to use SQL Server Authentication to connect.
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
 .PARAMETER CheckFragmentation
 Includes a check for fragmentation in all filesystems. This will increase the runtime of the function, as a fragmentation check can take seconds or even minutes for a single volume.
@@ -118,15 +118,15 @@ srv0042 \\?\Volume{7a31be94-b842-42f5-af71-e0464a1a9803}\ Recovery     0,44     
 srv0042 D:\                                                               0        0           0               False            Compact Disk
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true)]
+	[CmdletBinding()]
 	Param (
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[Parameter(Mandatory, ValueFromPipeline)]
 		[Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
 		[String[]]$ComputerName,
 		[ValidateSet('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')]
 		[String]$Unit = 'GB',
 		[Switch]$CheckForSql,
-		[Object]$SqlCredential,
+		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Switch]$Detailed,
 		[Switch]$CheckFragmentation,
 		[Switch]$AllDrives
@@ -134,6 +134,7 @@ srv0042 D:\                                                               0     
 	
 	BEGIN
 	{
+    $FunctionName = (Get-PSCallstack)[0].Command
 		Function Get-AllDiskSpace
 		{
 			$alldisks = @()
@@ -165,28 +166,26 @@ srv0042 D:\                                                               0     
 				$measure = "1$unit"
 			}
 			
-			try
-			{
-				if ($CheckFragmentation)
-				{
-					##					$disks = Get-CimInstance -Class Win32_Volume -Namespace 'root\CIMV2' -ComputerName $ipaddr | Where-Object DriveType -in (2,3)
-					$disks = Get-WmiObject -Class Win32_Volume -Namespace 'root\CIMV2' -ComputerName $ipaddr | Where-Object DriveType -in ($driveTypes)
-					$disks = $disks | Select-Object SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize, @{ Name = 'FilePercentFragmentation'; Expression = { "$($_.defraganalysis().defraganalysis.FilePercentFragmentation)" } }
-				}
-				else
-				{
-					$query = "Select SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize from Win32_Volume where DriveType = 2 or DriveType = 3"
-					##					$disks = Get-CimInstance -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
-					$disks = Get-WmiObject -Class Win32_Volume -Namespace 'root\CIMV2' -ComputerName $ipaddr | Where-Object DriveType -in ($driveTypes)
-					$disks = $disks | Select-Object SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize
-					
-				}
-			}
-			catch
-			{
-				Write-Warning "Cannot connect to WMI on $server"
-				return
-			}
+      try
+      {
+      	$disks = Get-WmiObject -Class Win32_Volume -Namespace 'root\CIMV2' -ComputerName $ipaddr | Where-Object DriveType -in ($driveTypes)
+        if ($CheckFragmentation)
+        {
+          ##					$disks = Get-CimInstance -Class Win32_Volume -Namespace 'root\CIMV2' -ComputerName $ipaddr | Where-Object DriveType -in (2,3)
+          $disks = $disks | Select-Object SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize, @{ Name = 'FilePercentFragmentation'; Expression = { "$($_.defraganalysis().defraganalysis.FilePercentFragmentation)" } }
+        }
+        else
+        {
+          #$query = "Select SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize from Win32_Volume where DriveType = 2 or DriveType = 3"
+          ##					$disks = Get-CimInstance -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
+          $disks = $disks | Select-Object SystemName, Name, DriveType, FileSystem, FreeSpace, Capacity, Label, BlockSize
+        }
+      }
+      catch
+      {
+        Write-Warning "$FunctionName - Cannot connect to WMI on $server"
+        return
+      }
 			
 			if ($CheckForSql -or $Detailed)
 			{
@@ -198,34 +197,34 @@ srv0042 D:\                                                               0     
 				}
 				catch
 				{
-					Write-Verbose "Cannot retrieve service information from $server using Get-Service. Trying WMI"
+					Write-Verbose "$FunctionName - Cannot retrieve service information from $server using Get-Service. Trying WMI"
 					try
 					{
 						$sqlservices = Get-WmiObject Win32_Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
 					}
 					catch
 					{
-						Write-Warning "Cannot retrieve service information from $server using Get-Service or WMI."
+						Write-Warning "$FunctionName - Cannot retrieve service information from $server using Get-Service or WMI."
 						$FailedToGetServiceInformation = $true
 					}
 				}
 				
-				foreach ($service in $sqlservices)
-				{
-					$instance = $service.DisplayName.Replace('SQL Server (', '')
-					$instance = $instance.TrimEnd(')')
+        foreach ($service in $sqlservices)
+        {
+          $instance = $service.DisplayName.Replace('SQL Server (', '')
+          $instance = $instance.TrimEnd(')')
 					
-					if ($instance -eq 'MSSQLSERVER')
-					{
-						$sqlservers += $server
-						Write-Verbose "Instance resolved as $server"
-					}
-					else
-					{
-						$sqlservers += "$server\$instance"
-						Write-Verbose "Instance resolved as $server\$instance"
-					}
-				}
+          if ($instance -eq 'MSSQLSERVER')
+          {
+            $sqlservers += $server
+            Write-Verbose "$FunctionName - Instance resolved as $server"
+          }
+          else
+          {
+            $sqlservers += "$server\$instance"
+            Write-Verbose "$FunctionName - Instance resolved as $server\$instance"
+          }
+        }
 			}
 			
 			foreach ($disk in $disks)
@@ -244,7 +243,7 @@ srv0042 D:\                                                               0     
 						{
 							try
 							{
-								Write-Verbose "Connecting to $SqlServer SQL instance"
+								Write-Verbose "$FunctionName - Checking disk $diskname on $SqlServer"
 								$smoserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 								$sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
 								$sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
@@ -256,7 +255,7 @@ srv0042 D:\                                                               0     
 							}
 							catch
 							{
-								Write-Warning "Can't connect to $server ($sqlserver)"
+								Write-Warning "$FunctionName - Can't connect to $server ($sqlserver)"
 								continue
 							}
 						}
@@ -326,21 +325,21 @@ srv0042 D:\                                                               0     
 			if ($server -notin $processed)
 			{
 				$null = $processed.Add($server)
-				Write-Verbose "Connecting to $server"
+				Write-Verbose "$FunctionName - Connecting to $server"
 			}
 			else
 			{
 				continue
 			}
 			
-			Write-Verbose "Resolving computername"
+			Write-Verbose "$FunctionName - Resolving computername"
 			try
 			{
-				$ipaddr = ((Test-Connection -ComputerName $ComputerName -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
+				$ipaddr = ((Test-Connection -ComputerName $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address).IPAddressToString
 			}
 			catch
 			{
-				Write-Warning "Can't resolve $server address"
+				Write-Warning "$FunctionName - Can't resolve $server address"
 				return
 			}
 			

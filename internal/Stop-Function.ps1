@@ -72,19 +72,6 @@
             - Throw a bloody terminating error. Game over.
             - Write a nice warning about how Foo failed bar, then call continue to process the next item in the loop.
             In both cases, the error record added to $error will have the content of $foo added, the better to figure out what went wrong.
-        
-        .NOTES
-            Author:      Friedrich Weinmann
-            Editors:     -
-            Created on:  08.02.2017
-            Last Change: 10.02.2017
-            Version:     1.1
-            
-            Release 1.1 (10.02.2017, Friedrich Weinmann)
-            - Fixed Bug: Fails on Write-Error
-    
-            Release 1.0 (08.02.2017, Friedrich Weinmann)
-            - Initial Release
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding(DefaultParameterSetName = 'Plain')]
@@ -93,14 +80,13 @@
         [string]
         $Message,
         
-        [Parameter(Mandatory = $true)]
         [bool]
-        $Silent,
+        $Silent = $Silent,
         
-        [Parameter(Mandatory = $true, ParameterSetName = 'Plain')]
-        [Parameter(Mandatory = $false, ParameterSetName = 'Exception')]
+        [Parameter(ParameterSetName = 'Plain')]
+        [Parameter(ParameterSetName = 'Exception')]
         [System.Management.Automation.ErrorCategory]
-        $Category,
+        $Category = ([System.Management.Automation.ErrorCategory]::NotSpecified),
         
         [Parameter(ParameterSetName = 'Exception')]
         [System.Management.Automation.ErrorRecord]
@@ -125,7 +111,7 @@
     $timestamp = Get-Date
     
     $Exception = New-Object System.Exception($Message, $InnerErrorRecord.Exception)
-    if (-not $Category) { $Category = $InnerErrorRecord.CategoryInfo.Category }
+    if ((-not $PSBoundParameters.ContainsKey("Category")) -and ($PSBoundParameters.ContainsKey("InnerErrorRecord")) -and ($InnerErrorRecord.CategoryInfo.Category)) { $Category = $InnerErrorRecord.CategoryInfo.Category }
     $record = New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $Target)
     
     # Manage Debugging
@@ -142,7 +128,12 @@
             else { Continue }
         }
         
-        Write-Message -Message "Terminating function!" -Level 9 -Silent $Silent -FunctionName $FunctionName
+        # Extra insurance that it'll stop
+        Set-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -Value $true
+		
+		# Removed the bottom below because it should be up to the developer to tell the user if its continuing or what
+		# It also seems like it's terminating the function as a whole, even if it continues on to the next server
+		# Write-Message -Message "Terminating function!" -Level 9 -Silent $Silent -FunctionName $FunctionName
         
         
         throw $record
@@ -163,7 +154,12 @@
         }
         else
         {
-            Write-Message -Message "Terminating function!" -Warning -Silent $Silent -FunctionName $FunctionName
+            # Make sure the function knows it should be stopping
+            Set-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -Value $true
+			
+			# Removed the bottom below because it should be up to the developer to tell the user if its continuing or what
+			# It also seems like it's terminating the function as a whole, even if it continues on to the next server
+			# Write-Message -Message "Terminating function!" -Warning -Silent $Silent -FunctionName $FunctionName
             return
         }
     }

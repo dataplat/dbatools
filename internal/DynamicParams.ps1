@@ -1,4 +1,4 @@
-﻿<#
+<#
 
 	These are all the functions for tab completion (auto-population of params)
 	To use, place this after params in a function

@@ -1,4 +1,4 @@
-﻿Function Copy-SqlDatabase
+Function Copy-SqlDatabase
 {
 <#
 .SYNOPSIS 

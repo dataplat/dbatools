@@ -1,4 +1,4 @@
-﻿Function Read-DbaBackupHeader
+Function Read-DbaBackupHeader
 {
 <#
 .SYNOPSIS 
@@ -93,7 +93,7 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 		Write-Verbose "$FunctionName - Connecting to $SqlServer"
 		try
 		{
-			$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $Credential -ErrorVariable ConnectError
+			$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ErrorVariable ConnectError
 			
 		}
 		catch

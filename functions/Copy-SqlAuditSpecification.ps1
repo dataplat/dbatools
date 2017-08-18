@@ -1,4 +1,4 @@
-﻿Function Copy-SqlAuditSpecification
+Function Copy-SqlAuditSpecification
 {
 <#
 .SYNOPSIS 

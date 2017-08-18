@@ -1,4 +1,4 @@
-﻿Function Find-SqlUnusedIndex
+Function Find-SqlUnusedIndex
 {
 <#
 .SYNOPSIS

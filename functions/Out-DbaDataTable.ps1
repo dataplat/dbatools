@@ -1,4 +1,4 @@
-﻿Function Out-DbaDataTable
+Function Out-DbaDataTable
 {
 <#
 .SYNOPSIS 
@@ -12,6 +12,12 @@ Thanks to Chad Miller, this script is all him. https://gallery.technet.microsoft
 .PARAMETER InputObject
 The object to transform into a DataTable
 	
+.PARAMETER IgnoreNull 
+Use this switch to ignore null rows
+
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
@@ -41,7 +47,9 @@ Similar to above but $dbalist gets piped in
 	[CmdletBinding()]
 	param (
 		[Parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
-		[PSObject[]]$InputObject
+		[AllowNull()][PSObject[]]$InputObject,
+		[switch]$IgnoreNull,
+		[switch]$Silent
 	)
 	
 	BEGIN
@@ -80,9 +88,21 @@ Similar to above but $dbalist gets piped in
 		$datatable = New-Object System.Data.DataTable
 	}
 	
-	PROCESS
-	
+	PROCESS	
 	{
+		if (!$InputObject)
+		{
+			if ($IgnoreNull)
+			{
+				Stop-Function -Message "The InputObject from the pipe is null. Skipping." -Continue
+			}
+			else
+			{ 
+				$datarow = $datatable.NewRow()
+				$datatable.Rows.Add($datarow)
+				continue
+			}
+		}
 		foreach ($object in $InputObject)
 		{
 			$datarow = $datatable.NewRow()

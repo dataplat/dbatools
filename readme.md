@@ -1,20 +1,8 @@
-﻿# dbatools
-[![licence badge]][licence]
-[![Build status](https://ci.appveyor.com/api/projects/status/cy5sm45x6atculse/branch/master?svg=true)](https://ci.appveyor.com/project/sqlcollaborative/dbatools/branch/master)
-
-[licence badge]:https://img.shields.io/badge/License-GPL%20v3-blue.svg
-[stars badge]:https://img.shields.io/github/stars/sqlcollaborative/dbatools.svg
-[forks badge]:https://img.shields.io/github/forks/sqlcollaborative/dbatools.svg
-[issues badge]:https://img.shields.io/github/issues/sqlcollaborative/dbatools.svg
-
-[licence]:https://github.com/sqlcollaborative/dbatools/blob/master/LICENSE.txt
-[stars]:https://github.com/sqlcollaborative/dbatools/stargazers
-[forks]:https://github.com/sqlcollaborative/dbatools/network
-[issues]:https://github.com/sqlcollaborative/dbatools/issues 
+# dbatools
 
 This module is a SQL Server DBA's best friend.
 
-The dbatools project initially started out as Start-SqlMigration.ps1, but has now grown into a collection of various commands that help automate DBA tasks and encourage best practices.
+The dbatools project initially started out as Start-SqlMigration.ps1, but has now grown into a collection of over 150 commands that help automate DBA tasks and encourage best practices.
 
 See the [getting started](https://dbatools.io/getting-started) page on [dbatools.io](https://dbatools.io) for more information.
 
@@ -22,7 +10,7 @@ See the [getting started](https://dbatools.io/getting-started) page on [dbatools
 
 Got ideas for new commands? Please propose them as [issues](https://dbatools.io/issues) and let us know what you'd like to see. Bug reports should also be filed under this repository's [issues](https://github.com/sqlcollaborative/dbatools/issues) section.
 
-There's also around a hundred of us on the [SQL Server Community Slack](https://sqlcommunity.slack.com) in the #dbatools channel. Need an invite? Check out the [self-invite page](https://dbatools.io/slack/). Drop by if you'd like to chat about dbatools or even [join the team](https://dbatools.io/team)!
+There's also around 500 of us on the [SQL Server Community Slack](https://sqlcommunity.slack.com) in the #dbatools channel. Need an invite? Check out the [self-invite page](https://dbatools.io/slack/). Drop by if you'd like to chat about dbatools or even [join the team](https://dbatools.io/team)!
 
 ## Installer
 This module is now in the PowerShell Gallery. Run the following from an administrative prompt to install:
@@ -32,7 +20,7 @@ Install-Module dbatools
 
 Or if you don't have a version of PowerShell that supports the Gallery, you can install it manually:
 ```powershell
-Invoke-Expression (Invoke-WebRequest https://git.io/vn1hQ)
+Invoke-Expression (Invoke-WebRequest https://dbatools.io/in)
 ```
 
 ## dbatools.io is awesome

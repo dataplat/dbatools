@@ -1,4 +1,4 @@
-﻿Function Remove-SqlOrphanUser
+Function Remove-SqlOrphanUser
 {
 <#
 .SYNOPSIS
@@ -35,7 +35,7 @@ Prompts you for confirmation before executing any changing operations within the
 
 .NOTES
 Tags: Orphan
-Original Author: Cláudio Silva (@ClaudioESSilva)
+Original Author: Claudio Silva (@ClaudioESSilva)
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 

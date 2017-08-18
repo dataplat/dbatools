@@ -1,4 +1,4 @@
-﻿Function Start-DbccCheck
+Function Start-DbccCheck
 {
 	param (
 		[object]$server,

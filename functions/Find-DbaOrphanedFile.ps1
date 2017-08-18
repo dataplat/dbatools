@@ -1,4 +1,4 @@
-﻿Function Find-DbaOrphanedFile
+Function Find-DbaOrphanedFile
 {
 <#
 .SYNOPSIS 

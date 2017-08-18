@@ -1,4 +1,4 @@
-﻿function Show-Notification (
+function Show-Notification (
 	$title = "dbatools update",
 	$text = "Version $galleryversion is now available"
 )

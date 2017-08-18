@@ -1,4 +1,4 @@
-﻿Function Restore-SqlBackupFromDirectory
+Function Restore-SqlBackupFromDirectory
 {
 <# 
 .SYNOPSIS 
@@ -68,7 +68,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Restore-SqlBackupFromDirectory
 
 .EXAMPLE   
-Restore-SqlBackupFromDirectory -ServerName sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
+Restore-SqlBackupFromDirectory -SqlServer sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
 
 Description
 
@@ -221,7 +221,7 @@ All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA wil
 		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
 		$server.ConnectionContext.StatementTimeout = 0
 		
-		if ($server.versionMajor -lt 8 -and $server.versionMajor -lt 8)
+		if ($server.versionMajor -lt 8)
 		{
 			throw "This script can only be run on SQL Server 2000 and above. Quitting."
 		}

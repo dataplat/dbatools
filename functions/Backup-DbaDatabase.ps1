@@ -1,4 +1,4 @@
-﻿Function Backup-DbaDatabase
+Function Backup-DbaDatabase
 {
 <#
 .SYNOPSIS
@@ -51,6 +51,16 @@ This value is overwritten if you specify multiple Backup Directories
 .PARAMETER CreateFolder
 If switch enabled then each databases will be backed up into a seperate folder on each of the specified backuppaths
 
+.PARAMETER CompressBackup
+If switch enabled, function will try to perform a compressed backup if supported by the version and edition of SQL Server.
+If not set, function will use the Server's default setting for compression
+
+.PARAMETER Checksum
+If switch enabled the backup checksum will be calculated
+
+.PARAMETER Verify
+If switch enabled, the backup with be verified by running a RESTORE VERIFYONLY against the Sql Instance
+
 .PARAMETER DatabaseCollection
 Internal parameter
 
@@ -89,7 +99,10 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 		[parameter(ParameterSetName = "NoPipe", Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$DatabaseCollection,
 		[switch]$CreateFolder,
-		[int]$FileCount=0
+		[int]$FileCount=0,
+		[switch]$CompressBackup,
+		[switch]$Checksum,
+		[switch]$Verify
 	)
 	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
 	
@@ -107,11 +120,18 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			}
 			catch
 			{
-				Write-Warning "$FunctionName - Cannot connect to $SqlInstance £"
+				Write-Warning "$FunctionName - Cannot connect to $SqlInstance"
 				continue
 			}
 			
-			$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $databases }
+			if ($databases)
+			{
+				$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $databases }
+			}
+			else
+			{
+				$DatabaseCollection = $server.Databases
+			}
 			
 			if ($BackupDirectory.count -gt 1)
 			{
@@ -191,7 +211,25 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 			$backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
 			$backup.Database = $Database.Name
 			$Suffix = "bak"
-			
+
+			if ($CompressBackup)
+			{
+				if ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10)
+				{
+					Write-Warning "$FunctionName - Compression is not supported with this version/edition of Sql Server"
+				}
+				else
+				{
+					Write-Verbose "$FunctionName - Compression enabled"
+					$backup.CompressionOption =1
+				}
+			}
+
+			if ($Checksum)
+			{
+				$backup.Checksum = $true
+			}
+
 			if ($type -in 'diff', 'differential')
 			{
 				Write-Verbose "Creating differential backup"
@@ -346,6 +384,36 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					$script = $backup.Script($server)
 					Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
 					$BackupComplete = $true
+					$Filelist = @()
+					$FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{Name="FileType";Expression={"D"}}, @{Name="LogicalName";Expression={$_.Name}}, @{Name="PhysicalName";Expression={$_.FileName}}
+					$FileList += $server.Databases[$dbname].LofFiles | Select-Object @{Name="FileType";Expression={"L"}}, @{Name="LogicalName";Expression={$_.Name}}, @{Name="PhysicalName";Expression={$_.FileName}}
+					if ($Verify)
+					{
+						$verifiedresult = [PSCustomObject]@{
+										SqlInstance = $server.name
+										DatabaseName = $dbname
+										BackupComplete = $BackupComplete
+										BackupFilesCount = $FinalBackupPath.count	
+										BackupFile = (split-path $FinalBackupPath -leaf)
+										BackupFolder = (split-path $FinalBackupPath | Sort-Object -Unique)
+										BackupPath = ($FinalBackupPath | Sort-Object -Unique)
+										Script = $script
+										Notes = $failures -join (',')
+										FullName = ($FinalBackupPath | Sort-Object -Unique)
+										FileList = $FileList
+										SoftwareVersionMajor = $server.VersionMajor
+								}  | Restore-DbaDatabase -SqlServer $server -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
+						if ($verifiedResult[0] -eq "Verify successful")
+						{
+							$VerifiedDesc = $verifiedResult[0]
+							$Verified = $true
+						}
+						else
+						{
+							$VerifiedDesc = $verifiedResult[0]
+							$Verified = $false
+						}
+					}
 				}
 				catch
 				{
@@ -366,7 +434,11 @@ Backs up AdventureWorks2014 to sql2016's C:\temp folder
 					Script = $script
 					Notes = $failures -join (',')
 					FullName = ($FinalBackupPath | Sort-Object -Unique)
-			} | Select-DefaultView -ExcludeProperty FullName
+					FileList = $FileList
+					SoftwareVersionMajor = $server.VersionMajor
+					Verified = $Verified
+					VerifiedDesc = $VerifiedDesc
+			} | Select-DefaultView -ExcludeProperty FullName, FileList, SoftwareVersionMajor
 			$BackupFileName = $null
 		}
 	}

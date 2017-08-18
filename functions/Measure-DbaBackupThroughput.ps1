@@ -1,4 +1,4 @@
-﻿function Measure-DbaBackupThroughput
+function Measure-DbaBackupThroughput
 {
 <#
 .SYNOPSIS
@@ -8,7 +8,7 @@ Determines how quickly SQL Server is backing up databases to media.
 Returns backup history details for some or all databases on a SQL Server. 
 
 Output looks like this
-Server          : sql2016
+SqlInstance     : sql2016
 Database        : SharePoint_Config
 AvgThroughputMB : 1.07
 AvgSizeMB       : 24.17
@@ -50,32 +50,34 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 https://dbatools.io/Measure-DbaBackupThroughput
 
 .EXAMPLE
-Measure-DbaBackupThroughput -SqlInstance sqlserver2016a
-Will fill this in
+Measure-DbaBackupThroughput -SqlInstance sql2016
+
+Parses every backup in msdb's backuphistory for stats on all databases
 
 .EXAMPLE
-Measure-DbaBackupThroughput -SqlInstance sqlserver2016a -Databases db1
-Will fill this in
+Measure-DbaBackupThroughput -SqlInstance sql2016 -Databases AdventureWorks2014
+
+Parses every backup in msdb's backuphistory for stats on AdventureWorks2014
 	
 .EXAMPLE
 Measure-DbaBackupThroughput -SqlInstance sql2005 -Last
-Full
+
+Processes the last full, diff and log backups every backup for all databases on sql2005
 	
 .EXAMPLE
 Measure-DbaBackupThroughput -SqlInstance sql2005 -Last -Type Log
 	
-.EXAMPLE
-Measure-DbaBackupThroughput -SqlInstance sql2005 -Last -Type Log
+Processes the last log backups every backup for all databases on sql2005
 
 .EXAMPLE
 Measure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-7)
 	
-Gets info for last week
+Gets backup calculations for the last week
 	
 .EXAMPLE
 Measure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-365) -Databases bigoldb
 	
-Will fill this in
+Gets backup calculations, limited to the last year and only the bigoldb database
 
 #>
 	[CmdletBinding()]
@@ -127,7 +129,7 @@ Will fill this in
 				# Splatting didnt work
 				if ($since)
 				{	
-					$histories = Get-DbaBackupHistory -SqlServer $server -Databases $database -Last:$last -Since $since | Where-Object Type -eq $Type
+					$histories = Get-DbaBackupHistory -SqlServer $server -Databases $database -Since $since | Where-Object Type -eq $Type
 				}
 				else
 				{
@@ -149,7 +151,7 @@ Will fill this in
 					
 					Add-Member -InputObject $history -MemberType Noteproperty -Name MBps -value $throughput
 					
-					$allhistory += $history | Select-Object Server, Database, MBps, TotalSizeMB, Start, End
+					$allhistory += $history | Select-Object ComputerName, InstanceName, SqlInstance, Database, MBps, TotalSizeMB, Start, End
 				}
 				
 				foreach ($db in ($allhistory | Sort-Object Database | Group-Object Database))
@@ -163,7 +165,9 @@ Will fill this in
 					$date = Get-Date
 					
 					[pscustomobject]@{
-						Server = $db.Group.Server | Select-Object -First 1
+						ComputerName = $db.Group.ComputerName | Select-Object -First 1
+						InstanceName = $db.Group.InstanceName | Select-Object -First 1
+						SqlInstance = $db.Group.SqlInstance | Select-Object -First 1
 						Database = $db.Name
 						AvgThroughputMB = [System.Math]::Round($measuremb.Average, 2)
 						AvgSizeMB = [System.Math]::Round($measuresize.Average, 2)
@@ -173,7 +177,7 @@ Will fill this in
 						MinBackupDate = $measurestart.Minimum
 						MaxBackupDate = $measureend.Maximum
 						BackupCount = $db.Count
-					}
+					} | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
 				}
 			}
 		}

@@ -1,4 +1,4 @@
-﻿Function Test-DbaMaxMemory
+Function Test-DbaMaxMemory
 {
 <# 
 .SYNOPSIS 

@@ -1,4 +1,4 @@
-﻿FUNCTION Get-DbaAgentOperator
+FUNCTION Get-DbaAgentOperator
 {
 <#
 .SYNOPSIS

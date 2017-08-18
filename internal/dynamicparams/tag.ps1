@@ -1,4 +1,4 @@
-﻿$ScriptBlock = {
+$ScriptBlock = {
     param (
         $commandName,        
         $parameterName,        

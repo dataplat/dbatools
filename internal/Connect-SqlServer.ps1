@@ -1,4 +1,4 @@
-﻿Function Connect-SqlServer
+Function Connect-SqlServer
 {
 <# 
 .SYNOPSIS 
@@ -31,17 +31,17 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 				{
 					$username = $username.Split("\")[1]
 					$authtype = "Windows Authentication with Credential"
-					$server.ConnectionContext.LoginSecure = $true
-					$server.ConnectionContext.ConnectAsUser = $true
-					$server.ConnectionContext.ConnectAsUserName = $username
-					$server.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
+					$paramserver.ConnectionContext.LoginSecure = $true
+					$paramserver.ConnectionContext.ConnectAsUser = $true
+					$paramserver.ConnectionContext.ConnectAsUserName = $username
+					$paramserver.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
 				}
 				else
 				{
 					$authtype = "SQL Authentication"
-					$server.ConnectionContext.LoginSecure = $false
-					$server.ConnectionContext.set_Login($username)
-					$server.ConnectionContext.set_SecurePassword($SqlCredential.Password)
+					$paramserver.ConnectionContext.LoginSecure = $false
+					$paramserver.ConnectionContext.set_Login($username)
+					$paramserver.ConnectionContext.set_SecurePassword($SqlCredential.Password)
 				}
 			}
 			

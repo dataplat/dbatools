@@ -1,4 +1,4 @@
-﻿Function Export-SqlLogin
+Function Export-SqlLogin
 {
 <#
 .SYNOPSIS

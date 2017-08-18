@@ -1,4 +1,4 @@
-﻿Function Reset-SqlAdmin
+Function Reset-SqlAdmin
 {
 <# 
 .SYNOPSIS 

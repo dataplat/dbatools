@@ -1,4 +1,4 @@
-﻿Function Copy-SqlOperator
+Function Copy-SqlOperator
 {
 <#
 .SYNOPSIS 

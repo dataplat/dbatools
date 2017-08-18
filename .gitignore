@@ -6,3 +6,5 @@ dbatools-exceptions.txt
 
 # ignore the settings folder and files for VSCode
 .vscode/*
+*.psproj
+dbatools.psprojs

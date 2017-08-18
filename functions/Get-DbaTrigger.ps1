@@ -1,4 +1,4 @@
-﻿Function Get-DbaTrigger
+Function Get-DbaTrigger
 {
 <#
 .SYNOPSIS

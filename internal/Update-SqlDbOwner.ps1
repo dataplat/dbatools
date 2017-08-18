@@ -1,4 +1,4 @@
-﻿Function Update-SqlDbOwner
+Function Update-SqlDbOwner
 {
 <#
 .SYNOPSIS

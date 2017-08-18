@@ -1,4 +1,4 @@
-﻿Function Set-DbaQueryStoreConfig
+Function Set-DbaQueryStoreConfig
 {
 <#
 .SYNOPSIS
@@ -66,7 +66,7 @@ You should have received a copy of the GNU General Public License along with thi
 https://dbatools.io/Set-QueryStoreConfig
 
 .EXAMPLE
-Set-DbaQueryStoreConfig -SqlInstance ServerA\SQL -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode All -CleanupMode Auto -StaleQueryThreshold 100
+Set-DbaQueryStoreConfig -SqlInstance ServerA\SQL -State ReadWrite -FlushInterval 600 -CollectionInterval 10 -MaxSize 100 -CaptureMode All -CleanupMode Auto -StaleQueryThreshold 100 -AllDatabases
 
 Configure the Query Store settings for all user databases in the ServerA\SQL Instance.
 

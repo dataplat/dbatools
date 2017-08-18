@@ -1,4 +1,4 @@
-﻿Function Convert-DbVersionToSqlVersion
+Function Convert-DbVersionToSqlVersion
 {
 	param (
 		[string]$dbversion
