@@ -61,91 +61,99 @@ function Start-DbaMigration {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER BackupRestore
-			Use the a Copy-Only Backup and Restore Method. This parameter requires that you specify -NetworkShare in a valid UNC format (\\server\share)
-
-		.PARAMETER DetachAttach
-			Uses the detach/copy/attach method to perform database migrations. No files are deleted on the source. If the destination attachment fails, the source database will be reattached. File copies are performed over administrative shares (\\server\x$\mssql) using BITS. If a database is being mirrored, the mirror will be broken prior to migration. 
-
-		.PARAMETER Reattach
-			Reattaches all source databases after DetachAttach migration.
-
-		.PARAMETER ReuseSourceFolderStructure
-			By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. The same structure will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default SQL structure (MSSQL12.INSTANCE, etc)
+			If this switch is enabled, the Copy-Only backup and restore method is used to perform database migrations. You must specify -NetworkShare with a valid UNC format as well (\\server\share).
 
 		.PARAMETER NetworkShare
-			Specifies the network location for the backup files. The SQL Service service accounts must read/write permission to access this location.
-
-		.PARAMETER SetSourceReadOnly
-			Sets all migrated databases to ReadOnly prior to detach/attach & backup/restore. If -Reattach is used, db is set to read-only after reattach.
+			Specifies the network location for the backup files. The SQL Server service accounts on both Source and Destination must have read/write permission to access this location.
 
 		.PARAMETER WithReplace
-			It's exactly WITH REPLACE. This is useful if you want to stage some complex file paths.
+			If this switch is enabled, databases are restored from backup using WITH REPLACE. This is useful if you want to stage some complex file paths.
+
+		.PARAMETER ReuseSourceFolderStructure
+			If this switch is enabled, the data and log directory structures on Source will be kept on Destination. Otherwise, databases will be migrated to Destination's default data and log directories.
+			
+			Consider this if you're migrating between different versions and use part of Microsoft's default SQL structure (MSSQL12.INSTANCE, etc.).
+
+		.PARAMETER DetachAttach
+			If this switch is enabled, the the detach/copy/attach method is used to perform database migrations. No files are deleted on Source. If the destination attachment fails, the source database will be reattached. File copies are performed over administrative shares (\\server\x$\mssql) using BITS. If a database is being mirrored, the mirror will be broken prior to migration. 
+
+		.PARAMETER Reattach
+			If this switch is enabled, all databases are reattached to Source after a DetachAttach migration is complete.
+		
+			.PARAMETER NoRecovery
+			If this switch is enabled, databases will be left in the No Recovery state to enable further backups to be added.
+
+		.PARAMETER IncludeSupportDbs
+			If this switch is enabled, the ReportServer, ReportServerTempDb, SSIDb, and distribution databases will be migrated if they exist. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
+
+		.PARAMETER SetSourceReadOnly
+			If this switch is enabled, all migrated databases will be set to ReadOnly on the source instance prior to detach/attach & backup/restore. If -Reattach is specified, the database is set to read-only after reattaching.
 
 		.PARAMETER NoDatabases
-			Skips the database migration.
+			If this switch is enabled, databases will not be migrated.
 
 		.PARAMETER NoLogins
-			Skips the login migration.
+			If this switch is enabled, Logins will not be migrated.
 
 		.PARAMETER NoAgentServer
-			Skips the job server (SQL Agent) migration.
+			If this switch is enabled, SQL Agent jobs will not be migrated.
 
 		.PARAMETER NoCredentials
-			Skips the credential migration.
+			If this switch is enabled, Credentials will not be migrated.
 
 		.PARAMETER NoLinkedServers
-			Skips the Linked Server migration.
+			If this switch is enabled, Linked Servers will not be migrated.
 
 		.PARAMETER NoSpConfigure
-			Skips the global configuration migration.
+			If this switch is enabled, options configured via sp_configure will not be migrated.
 
 		.PARAMETER NoCentralManagementServer
-			Skips the CMS migration.
+			If this switch is enabled, Central Management Server will not be migrated.
 
 		.PARAMETER NoDatabaseMail
-			Skips the database mail migration.
+			If this switch is enabled, Database Mail will not be migrated.
 
 		.PARAMETER NoSysDbUserObjects
-			Skips the import of user objects found in source SQL Server's master, msdb and model databases to the destination.
+			If this switch is enabled, user objects found in the master, msdb and model databases will not be migrated.
 
 		.PARAMETER NoSystemTriggers
-			Skips the System Triggers migration.
+			If this switch is enabled, System Triggers will not be migrated.
 
 		.PARAMETER NoBackupDevices
-			Skips the backup device migration.
+			If this switch is enabled, Backup Devices will not be migrated.
 
 		.PARAMETER NoAudits
-			Skips the Audit migration.
+			If this switch is enabled, Audits will not be migrated.
 
 		.PARAMETER NoEndpoints
-			Skips the Endpoint migration.
+			If this switch is enabled, Endpoints will not be migrated.
 
 		.PARAMETER NoExtendedEvents
-			Skips the Extended Event migration.
+			If this switch is enabled, Extended Events will not be migrated.
 
 		.PARAMETER NoPolicyManagement
-			Skips the Policy Management migration.
+			If this switch is enabled, Policy-Based Management will not be migrated.
 
 		.PARAMETER NoResourceGovernor
-			Skips the Resource Governor migration.
+			If this switch is enabled, Resource Governor will not be migrated.
 
 		.PARAMETER NoServerAuditSpecifications
-			Skips the Server Audit Specification migration.
+			If this switch is enabled, the Server Audit Specification will not be migrated.
 
 		.PARAMETER NoCustomErrors
-			Skips the Custom Error (User Defined Messages) migration.
+			If this switch is enabled, Custom Errors (User Defined Messages) will not be migrated.
 
 		.PARAMETER NoDataCollector
-			Skips the Data Collector migration.
+			If this switch is enabled, the Data Collector will not be migrated.
 			
 		.PARAMETER NoSaRename
-			Skips renaming of the sa account to match on destination. 
+			If this switch is enabled, the sa account will not be renamed on the destination instance to match the source.
 			
 		.PARAMETER DisableJobsOnDestination
-			Disables migrated SQL Agent jobs on destination server
+			If this switch is enabled, migrated SQL Agent jobs will be disabled on the destination instance.
 
 		.PARAMETER DisableJobsOnSource
-			Disables migrated SQL Agent jobs on source server
+			If this switch is enabled, SQL Agent jobs will be disabled on the source instance.
 
 		.PARAMETER Force
 			If migrating users, forces drop and recreate of SQL and Windows logins. 
@@ -156,12 +164,6 @@ function Start-DbaMigration {
 
 		.PARAMETER WhatIf
 			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-		.PARAMETER NoRecovery
-			Leaves the databases in No Recovery state to enable further backups to be added
-
-		.PARAMETER IncludeSupportDbs
-			Migration of ReportServer, ReportServerTempDb, SSIDb, and distribution databases if they exist. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
 
 		.PARAMETER Confirm 
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
@@ -426,8 +428,6 @@ function Start-DbaMigration {
 				catch { Write-Error "System Triggers migration reported the following error $($_.Exception.Message)" }
 			}
 		}
-		
-		################################################################################################################################################################
 		
 		if (!$NoDatabases)
 		{
