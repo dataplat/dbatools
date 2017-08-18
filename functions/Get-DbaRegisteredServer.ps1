@@ -136,21 +136,17 @@ function Get-DbaRegisteredServer {
 				$servers = ($servers | Where-Object { $_.ServerName -ne $instance})
 			}
 		}
-	}
 
-	end {
 		foreach ($server in $servers) {
 			try {
 				$lookup = Resolve-DbaNetworkName $server.ServerName -Turbo -Silent
 				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $lookup.ComputerName
-				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $lookup.IPAddress
+				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $lookup.IPAddress -PassThru
 			}
 			catch {
 				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $null
-				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $null
+				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $null -PassThru
 			}
 		}
-
-		return $servers
 	}
 }
