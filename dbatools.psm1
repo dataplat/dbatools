@@ -125,3 +125,6 @@ Set-Alias -Name Test-SqlDiskAllocation -Value Test-DbaDiskAllocation
 Set-Alias -Name Get-DiskSpace -Value Get-DbaDiskSpace
 Set-Alias -Name Get-SqlMaxMemory -Value Get-DbaMaxMemory
 Set-Alias -Name Set-SqlMaxMemory -Value Set-DbaMaxMemory
+Set-Alias -Name Install-SqlWhoIsActive -Value Install-DbaWhoIsActive
+Set-Alias -Name Show-SqlWhoIsActive -Value Invoke-DbaWhoIsActive
+

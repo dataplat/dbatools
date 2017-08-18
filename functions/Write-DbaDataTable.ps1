@@ -61,6 +61,9 @@ Can disable prompt for confirmation by using -Confirm:$false
 .PARAMETER WhatIf
 Shows what would happen if the command were executed 
 
+.PARAMETER Silent 
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
@@ -104,29 +107,58 @@ Write-DbaDataTable -SqlServer sql2014 -InputObject $datatable -Database mydb -Ta
 Quickly and efficiently performs a bulk insert of all the data into mydb.dbo.customers -- since Schema was not specified, dbo was used.
 	
 Per Microsoft, KeepNulls will "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
-	
+
+.EXAMPLE
+$process = Get-Process | Out-DbaDataTable
+Write-DbaDataTable -InputObject $process -SqlServer sql2014 -Database mydb -Table myprocesses -AutoCreateTable
+
+Creates a table based on the Process object with over 60 columns, converted from PowerShell data types to SQL Server data types. After the table is created a bulk insert is performed to add process information into the table.
+
+This is a good example of the type conversion in action. All process properties are converted, including special types like TimeSpan. Script properties are resolved before the type conversion starts thanks to Out-DbaDataTable.
 #>	
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param (
-		[Parameter(Mandatory = $true)]
+		[Parameter(Position = 0,
+                   Mandatory = $true)]
+		[Alias("ServerInstance", "SqlInstance")]
+        [ValidateNotNull()]
 		[object]$SqlServer,
+
+        [Parameter(Position = 1)]
+        [ValidateNotNull()]
 		[Alias("Credential")]
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[Parameter(ValueFromPipeline = $true)]
+        
+		[Parameter(Position = 2,
+                   Mandatory = $true,
+                   ValueFromPipeline = $true)]
 		[Alias("DataTable")]
+        [ValidateNotNull()]
 		[object]$InputObject,
-		[string]$Schema = 'dbo',
-		[Parameter(Mandatory = $true)]
+        
+        [Parameter(Position = 3,
+                   Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
 		[string]$Table,
+
+        [Parameter(Position = 4)]
+        [ValidateNotNullOrEmpty()]
+		[string]$Schema = 'dbo',
+        
+        [ValidateNotNull()]
 		[int]$BatchSize = 50000,
+
+        [ValidateNotNull()]
 		[int]$NotifyAfter = 5000,
+
+        [switch]$AutoCreateTable,
 		[switch]$NoTableLock,
 		[switch]$CheckConstraints,
 		[switch]$FireTriggers,
 		[switch]$KeepIdentity,
 		[switch]$KeepNulls,
 		[switch]$Truncate,
-		[switch]$AutoCreateTable
+		[switch]$Silent
 	)
 	
 	DynamicParam { if ($sqlserver) { return Get-ParamSqlDatabase -SqlServer $SqlServer -SqlCredential $SqlCredential } }
@@ -162,7 +194,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 		
 		if ($dotcount -lt 2 -and $database -eq $null)
 		{
-			Write-Warning "You must specify a database or fully qualififed table name"
+			Write-Message -Level Warning -Message "You must specify a database or fully qualififed table name"
 			Continue
 		}
 		
@@ -187,7 +219,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 		
 		if ($db -eq $null)
 		{
-			Write-Warning "$database does not exist"
+			Write-Message -Level Warning -Message "$database does not exist"
 			continue
 		}
 		
@@ -208,12 +240,12 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 			{
 				try
 				{
-					Write-Output "Truncating $fqtn"
+					Write-Message -Level Output -Message "Truncating $fqtn"
 					$null = $server.Databases[$database].ExecuteNonQuery("TRUNCATE TABLE $fqtn")
 				}
 				catch
 				{
-					Write-Warning "Could not truncate $fqtn. Table may not exist or may have key constraints."
+					Write-Message -Level Warning -Message "Could not truncate $fqtn. Table may not exist or may have key constraints."
 				}
 			}
 		}
@@ -222,7 +254,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 		
 		if ($InputObject -eq $null)
 		{
-			Write-Warning "Using the pipeline can be insanely (5 minutes vs 0.5 seconds) slower for larger batches and doesn't show a progress bar. Consider using -InputObject for large batches."
+			Write-Message -Once SlowDataTablePipeline -Level Warning -Message "Using the pipeline can be insanely (5 minutes vs 0.5 seconds) slower for larger batches and doesn't show a progress bar. Consider using -InputObject for large batches."
 		}
 		
 		$bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($server.ConnectionContext.ConnectionString) #, $bulkCopyOptions)
@@ -238,22 +270,62 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 				$timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
 				Write-Progress -id 1 -activity "Inserting $rowcount rows" -percentcomplete $percent -status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
 			})
-	}
+	
+        $PStoSQLtypes = @{
+            #PS datatype      = SQL data type
+            'System.Int32'    = 'int';
+            'System.UInt32'   = 'bigint';
+            'System.Int16'    = 'smallint';
+            'System.UInt16'   = 'int';
+            'System.Int64'    = 'bigint';
+            'System.UInt64'   = 'decimal(20,0)';
+            'System.Decimal'  = 'decimal(20,5)';
+            'System.Single'   = 'bigint';
+            'System.Double'   = 'float';
+            'System.Byte'     = 'tinyint';
+            'System.SByte'    = 'smallint';
+            'System.TimeSpan' = 'nvarchar(30)';
+            'System.String'   = 'nvarchar(MAX)';
+            'System.Char'     = 'nvarchar(1)'
+            'System.DateTime' = 'datetime';
+            'System.Boolean'  = 'bit';
+            'System.Guid'     = 'uniqueidentifier';
+            'Int32'           = 'int';
+            'UInt32'          = 'bigint';
+            'Int16'           = 'smallint';
+            'UInt16'          = 'int';
+            'Int64'           = 'bigint';
+            'UInt64'          = 'decimal(20,0)';
+            'Decimal'         = 'decimal(20,5)';
+            'Single'          = 'bigint';
+            'Double'          = 'float';
+            'Byte'            = 'tinyint';
+            'SByte'           = 'smallint';
+            'TimeSpan'        = 'nvarchar(30)';
+            'String'          = 'nvarchar(MAX)';
+            'Char'            = 'nvarchar(1)'
+            'DateTime'        = 'datetime';
+            'Boolean'         = 'bit';
+            'Bool'            = 'bit';
+            'Guid'            = 'uniqueidentifier';
+            'int'             = 'int';
+            'long'            = 'bigint';
+        }
+
+    }
 	
 	PROCESS
 	{
 		if ($InputObject -eq $null)
 		{
-			Write-Warning "Input object is null"
-			break
+			Stop-Function -Message "Input object is null"
 		}
 		
 		$validtypes = @([System.Data.DataSet], [System.Data.DataTable], [System.Data.DataRow], [System.Data.DataRow[]]) #[System.Data.Common.DbDataReader], [System.Data.IDataReader]
 		
 		if ($InputObject.GetType() -notin $validtypes)
 		{
-			Write-Warning "Data is not of the right type (DbDataReader, DataTable, DataRow, or IDataReader)."
-			break
+			Stop-Function -Message "Data is not of the right type (DbDataReader, DataTable, DataRow, or IDataReader). Tip: Try using Out-DbaDataTable to convert the object first."
 		}
 		
 		If ($InputObject.GetType() -eq [System.Data.DataSet])
@@ -268,15 +340,13 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 		{
 			if ($AutoCreateTable -eq $false)
 			{
-				Write-Warning "$fqtn does not exist. Use -AutoCreateTable to AutoCreate."
-				break
+				Stop-Function -Message "$fqtn does not exist. Use -AutoCreateTable to AutoCreate."
 			}
 			else
 			{
 				if ($schema -notin $server.Databases[0].Schemas.Name)
 				{
-					Write-Warning "Schema does not exist"
-					break
+					Stop-Function -Message "Schema does not exist"
 				}
 				
 				# Get SQL datatypes by best guess on first data row
@@ -303,35 +373,24 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 						$columnvalue = $InputObject.$sqlcolumnname
 					}
 					
-					# bigint, float, and datetime are more accurate, but it didn't work
-					# as often as it should have, so we'll just go for a smaller datatype
-					
-					# also, if anyone wants to add support for using the datatable datatypes
-					# to make the table creation more accurate, please do
-					
-					if ([int64]::TryParse($columnvalue, [ref]0) -eq $true)
+                    # PS to SQL type conversion
+                    # If data type exists in hash table, use the corresponding SQL type
+                    # Else, fallback to nvarchar
+                    if ($PStoSQLtypes.Keys -contains $column.DataType)
 					{
-						$sqldatatype = "varchar(50)"
-					}
-					elseif ([double]::TryParse($columnvalue, [ref]0) -eq $true)
-					{
-						$sqldatatype = "varchar(50)"
-					}
-					elseif ([datetime]::TryParse($columnvalue, [ref]0) -eq $true)
-					{
-						$sqldatatype = "varchar(50)"
-					}
-					else
-					{
-						$sqldatatype = "varchar(MAX)"
-					}
-					
+                        $sqldatatype = $PStoSQLtypes[$($column.DataType.toString())]
+					} 
+                    else
+                    {
+                        $sqldatatype = "nvarchar(MAX)"
+                    }
+                    
 					$sqldatatypes += "[$sqlcolumnname] $sqldatatype"
 				}
 				
 				$sql = "BEGIN CREATE TABLE $fqtn ($($sqldatatypes -join ' NULL,')) END"
 				
-				Write-Debug $sql
+				Write-Message -Level Debug -Message $sql
 				
 				if ($Pscmdlet.ShouldProcess($SqlServer, "Creating table $fqtn"))
 				{
@@ -341,8 +400,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 					}
 					catch
 					{
-						Write-Warning "The following query failed: $sql"
-						return
+						Stop-Function -Message "The following query failed: $sql"
 					}
 				}
 			}

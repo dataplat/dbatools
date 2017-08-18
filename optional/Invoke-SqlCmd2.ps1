@@ -137,7 +137,7 @@ function Invoke-Sqlcmd2
 
     .NOTES
         Changelog moved to CHANGELOG.md:
-        
+
         https://github.com/sqlcollaborative/Invoke-SqlCmd2/blob/master/CHANGELOG.md
 
     .LINK
@@ -152,7 +152,7 @@ function Invoke-Sqlcmd2
     .FUNCTIONALITY
         SQL
     #>
-	
+
 	[CmdletBinding(DefaultParameterSetName = 'Ins-Que')]
 	[OutputType([System.Management.Automation.PSCustomObject], [System.Data.DataRow], [System.Data.DataTable], [System.Data.DataTableCollection], [System.Data.DataSet])]
 	param (
@@ -267,7 +267,7 @@ function Invoke-Sqlcmd2
 		[ValidateNotNullOrEmpty()]
 		[System.Data.SqlClient.SQLConnection]$SQLConnection
 	)
-	
+
 	Begin
 	{
 		if ($InputFile)
@@ -275,9 +275,9 @@ function Invoke-Sqlcmd2
 			$filePath = $(Resolve-Path $InputFile).path
 			$Query = [System.IO.File]::ReadAllText("$filePath")
 		}
-		
+
 		Write-Verbose "Running Invoke-Sqlcmd2 with ParameterSet '$($PSCmdlet.ParameterSetName)'.  Performing query '$Query'"
-		
+
 		If ($As -eq "PSObject")
 		{
 			#This code scrubs DBNulls.  Props to Dave Wyatt
@@ -310,7 +310,7 @@ function Invoke-Sqlcmd2
                     }
                 }
 '@
-			
+
 			Try
 			{
 				Add-Type -TypeDefinition $cSharp -ReferencedAssemblies 'System.Data', 'System.Xml' -ErrorAction stop
@@ -324,7 +324,7 @@ function Invoke-Sqlcmd2
 				}
 			}
 		}
-		
+
 		#Handle existing connections
 		if ($PSBoundParameters.ContainsKey('SQLConnection'))
 		{
@@ -340,7 +340,7 @@ function Invoke-Sqlcmd2
 					Throw $_
 				}
 			}
-			
+
 			if ($Database -and $SQLConnection.Database -notlike $Database)
 			{
 				Try
@@ -353,7 +353,7 @@ function Invoke-Sqlcmd2
 					Throw "Could not change Connection database '$($SQLConnection.Database)' to $Database`: $_"
 				}
 			}
-			
+
 			if ($SQLConnection.state -like "Open")
 			{
 				$ServerInstance = @($SQLConnection.DataSource)
@@ -363,20 +363,45 @@ function Invoke-Sqlcmd2
 				Throw "SQLConnection is not open"
 			}
 		}
-		
+
 	}
 	Process
 	{
 		foreach ($SQLInstance in $ServerInstance)
 		{
 			Write-Verbose "Querying ServerInstance '$SQLInstance'"
-			
+
 			if ($PSBoundParameters.Keys -contains "SQLConnection")
 			{
 				$Conn = $SQLConnection
 			}
 			elseif ($SQLInstance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
 			{
+                if ($SQLInstance.ConnectionContext.IsOpen -eq $false)
+			    {
+                    Try
+				    {
+                        Write-Verbose "Opening connection from '$($SQLInstance.State)' state"
+				        $SQLInstance.ConnectionContext.Connect()
+                    }
+				    Catch
+				    {
+					    Throw $_
+				    }
+			    }
+
+				if ($Database -and $SQLInstance.ConnectionContext.SqlConnectionObject.Database -notlike $Database)
+			    {
+                    Try
+				    {
+					    Write-Verbose "Changing SMO object database from '$($SQLInstance.ConnectionContext.SqlConnectionObject.Database)' to $Database"
+					    $SQLInstance.ConnectionContext.SqlConnectionObject.ChangeDatabase($Database)
+				    }
+				    Catch
+				    {
+					    Throw "Could not change Connection database '$($SQLInstance.ConnectionContext.SqlConnectionObject.Database)' to $Database`: $_"
+				    }
+                }
 				$Conn = $SQLInstance.ConnectionContext.SqlConnectionObject
 			}
 			else
@@ -389,11 +414,11 @@ function Invoke-Sqlcmd2
 				{
 					$ConnectionString = "Server={0};Database={1};Integrated Security=True;Connect Timeout={2};Encrypt={3}" -f $SQLInstance, $Database, $ConnectionTimeout, $Encrypt
 				}
-				
+
 				$conn = New-Object System.Data.SqlClient.SQLConnection
 				$conn.ConnectionString = $ConnectionString
 				Write-Debug "ConnectionString $ConnectionString"
-				
+
 				Try
 				{
 					$conn.Open()
@@ -404,7 +429,7 @@ function Invoke-Sqlcmd2
 					continue
 				}
 			}
-			
+
 			#Following EventHandler is used for PRINT and RAISERROR T-SQL statements. Executed when -Verbose parameter specified by caller
 			if ($PSBoundParameters.Verbose)
 			{
@@ -412,10 +437,10 @@ function Invoke-Sqlcmd2
 				$handler = [System.Data.SqlClient.SqlInfoMessageEventHandler] { Write-Verbose "$($_)" }
 				$conn.add_InfoMessage($handler)
 			}
-			
+
 			$cmd = New-Object system.Data.SqlClient.SqlCommand($Query, $conn)
 			$cmd.CommandTimeout = $QueryTimeout
-			
+
 			if ($SqlParameters -ne $null)
 			{
 				$SqlParameters.GetEnumerator() |
@@ -426,10 +451,10 @@ function Invoke-Sqlcmd2
 					{ $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value) }
 				} > $null
 			}
-			
+
 			$ds = New-Object system.Data.DataSet
 			$da = New-Object system.Data.SqlClient.SqlDataAdapter($cmd)
-			
+
 			Try
 			{
 				[void]$da.fill($ds)
@@ -437,11 +462,11 @@ function Invoke-Sqlcmd2
 			Catch [System.Data.SqlClient.SqlException] # For SQL exception
 			{
 				$Err = $_
-				
+
 				Write-Verbose "Capture SQL Error"
-				
+
 				if ($PSBoundParameters.Verbose) { Write-Verbose "SQL Error:  $Err" } #Shiyang, add the verbose output of exception
-				
+
 				switch ($ErrorActionPreference.tostring())
 				{
 					{ 'SilentlyContinue', 'Ignore' -contains $_ } { }
@@ -453,11 +478,11 @@ function Invoke-Sqlcmd2
 			Catch # For other exception
 			{
 				Write-Verbose "Capture Other Error"
-				
+
 				$Err = $_
-				
+
 				if ($PSBoundParameters.Verbose) { Write-Verbose "Other Error:  $Err" }
-				
+
 				switch ($ErrorActionPreference.tostring())
 				{
 					{ 'SilentlyContinue', 'Ignore' -contains $_ } { }
@@ -474,7 +499,7 @@ function Invoke-Sqlcmd2
 					$conn.Close()
 				}
 			}
-			
+
 			if ($AppendServerInstance)
 			{
 				#Basics from Chad Miller
@@ -486,7 +511,7 @@ function Invoke-Sqlcmd2
 					$row.ServerInstance = $SQLInstance
 				}
 			}
-			
+
 			switch ($As)
 			{
 				'DataSet'

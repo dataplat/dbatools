@@ -159,7 +159,12 @@ Integrate with other commandlets to have builds checked for all your registered 
 	{
 		foreach ($instance in $SqlInstance)
 		{
-			$Detected = Resolve-DbaSqlBuild -Build $instance.Version.ToString()
+			try {
+				$null = $instance.Version.ToString()
+			} catch {
+				Stop-Function -Message "Failed to connect to: $instance" -Continue -Silent $Silent -Target $instance
+			}
+			$Detected = Resolve-DbaSqlBuild  $instance.Version.ToString()
 			
 			[PSCustomObject]@{
 				SqlInstance = $instance.DomainInstanceName

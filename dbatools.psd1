@@ -11,7 +11,7 @@
 	RootModule = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.8.942'
+	ModuleVersion = '0.8.957'
 	
 	# ID used to uniquely identify this module
 	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -117,13 +117,11 @@
 		'Get-DbaDiskSpace',
 		'Remove-SqlDatabaseSafely',
 		'Show-SqlDatabaseList',
-		'Show-SqlWhoIsActive',
 		'Set-SqlTempDbConfiguration',
 		'Test-SqlTempDbConfiguration',
 		'Repair-SqlOrphanUser',
 		'Remove-SqlOrphanUser',
 		'Find-SqlUnusedIndex',
-		'Install-SqlWhoIsActive',
 		'Update-SqlWhoIsActive',
 		'Test-DbaDiskAllocation',
 		'Test-DbaPowerPlan',
@@ -248,9 +246,30 @@
 		'Test-DbaLinkedServerConnection',
 		'Get-DbaDatabaseFile',
 		'Read-DbaTransactionLog',
-		'Get-DbaTable'
-		#'Get-DbaLinkedServer',
-		#'Invoke-DbaLogShippingRecovery',
+		'Get-DbaTable',
+		'Invoke-DbaDatabaseShrink',
+		'Get-DbaEstimatedCompletionTime',
+		'Export-DbaScript',
+		'New-DbaScriptingOption',
+		'Get-DbaLinkedServer',
+		'Set-DbaStartupParameter',
+		'New-DbaAgentJob',
+		'Export-DbaScript',
+		'Get-DbaLogin',
+		'New-DbaScriptingOption',
+		'Save-DbaDiagnosticQueryScript',
+		'Invoke-DbaDiagnosticQuery',
+		'Export-DbaDiagnosticQuery',
+		'Invoke-DbaWhoisActive',
+		'Install-DbaWhoIsActive',
+		'Set-DbaAgentJob',
+		'Remove-DbaAgentJob',
+		'New-DbaAgentJobStep',
+		'Set-DbaAgentJobStep',
+		'Remove-DbaAgentJobStep',
+		'New-DbaAgentSchedule',
+		'Set-DbaAgentSchedule',
+		'Remove-DbaAgentSchedule'
 	)
 	
 	# Cmdlets to export from this module
@@ -266,11 +285,13 @@
 	'Copy-SqlJobServer',
 	'Restore-HallengrenBackup',
 	'Update-SqlWhoIsActive',
+	'Install-SqlWhoIsActive',
 	'Show-SqlMigrationConstraint',
 	'Test-SqlDiskAllocation',
 	'Get-DiskSpace',
 	'Get-SqlMaxMemory',
-	'Set-SqlMaxMemory'
+	'Set-SqlMaxMemory',
+	'Show-SqlWhoIsActive'
 	
 	# List of all modules packaged with this module
 	ModuleList = @()

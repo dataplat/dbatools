@@ -1,16 +1,13 @@
 ﻿
 #region Test whether the module had already been imported
-$ImportLibrary = $true
-try
+if (([System.Management.Automation.PSTypeName]'SqlCollective.Dbatools.Configuration.Config').Type)
 {
-    $null = New-Object sqlcollective.dbatools.Configuration.Config
-    
     # No need to load the library again, if the module was once already imported.
     $ImportLibrary = $false
 }
-catch
+else
 {
-    
+    $ImportLibrary = $true
 }
 #endregion Test whether the module had already been imported
 
@@ -20,7 +17,7 @@ if ($ImportLibrary)
     $source = @'
 using System;
 
-namespace sqlcollective.dbatools
+namespace Sqlcollective.Dbatools
 {
     namespace Configuration
     {
@@ -90,6 +87,8 @@ namespace sqlcollective.dbatools
     {
         using System.Collections.Generic;
         using System.Management.Automation;
+        using Microsoft.Management.Infrastructure;
+        using Microsoft.Management.Infrastructure.Options;
 
         /// <summary>
         /// Provides static tools for managing connections
@@ -100,6 +99,43 @@ namespace sqlcollective.dbatools
             /// List of all registered connections.
             /// </summary>
             public static Dictionary<string, ManagementConnection> Connections = new Dictionary<string, ManagementConnection>();
+
+            #region Configuration
+            /// <summary>
+            /// The time interval that must pass, before a connection using a known to not work connection protocol is reattempted
+            /// </summary>
+            public static TimeSpan BadConnectionTimeout = new TimeSpan(0, 15, 0);
+
+            /// <summary>
+            /// Globally disables all caching done by the Computer Management functions.
+            /// </summary>
+            public static bool DisableCache = false;
+
+            /// <summary>
+            /// Disables the caching of bad credentials. dbatools caches bad logon credentials for wmi/cim and will not reuse them.
+            /// </summary>
+            public static bool DisableBadCredentialCache = false;
+
+            /// <summary>
+            /// Disables the automatic registration of working credentials. dbatools will caches the last working credential when connecting using wmi/cim and will use those rather than using known bad credentials
+            /// </summary>
+            public static bool DisableCredentialAutoRegister = false;
+
+            /// <summary>
+            /// Enabling this will force the use of the last credentials known to work, rather than even trying explicit credentials.
+            /// </summary>
+            public static bool OverrideExplicitCredential = false;
+
+            /// <summary>
+            /// Enables automatic failover to working credentials, when passed credentials either are known, or turn out to not work.
+            /// </summary>
+            public static bool EnableCredentialFailover = false;
+
+            /// <summary>
+            /// Globally disables the persistence of Cim sessions used to connect to a target system.
+            /// </summary>
+            public static bool DisableCimPersistence = false;
+            #endregion Configuration
         }
 
         /// <summary>
@@ -113,11 +149,177 @@ namespace sqlcollective.dbatools
             /// </summary>
             public string ComputerName;
 
+            #region Configuration
+            /// <summary>
+            /// Locally disables the caching of bad credentials
+            /// </summary>
+            public bool DisableBadCredentialCache
+            {
+                get
+                {
+                    switch (_DisableBadCredentialCache)
+                    {
+                        case -1:
+                            return false;
+                        case 1:
+                            return true;
+                        default:
+                            return ConnectionHost.DisableBadCredentialCache;
+                    }
+                }
+                set
+                {
+                    if (value) { _DisableBadCredentialCache = 1; }
+                    else { _DisableBadCredentialCache = -1; }
+                }
+            }
+            private int _DisableBadCredentialCache = 0;
+
+            /// <summary>
+            /// Locally disables the caching of working credentials
+            /// </summary>
+            public bool DisableCredentialAutoRegister
+            {
+                get
+                {
+                    switch (_DisableCredentialAutoRegister)
+                    {
+                        case -1:
+                            return false;
+                        case 1:
+                            return true;
+                        default:
+                            return ConnectionHost.DisableCredentialAutoRegister;
+                    }
+                }
+                set
+                {
+                    if (value) { _DisableCredentialAutoRegister = 1; }
+                    else { _DisableCredentialAutoRegister = -1; }
+                }
+            }
+            private int _DisableCredentialAutoRegister = 0;
+
+            /// <summary>
+            /// Locally overrides explicit credentials with working ones that were cached
+            /// </summary>
+            public bool OverrideExplicitCredential
+            {
+                get
+                {
+                    switch (_OverrideExplicitCredential)
+                    {
+                        case -1:
+                            return false;
+                        case 1:
+                            return true;
+                        default:
+                            return ConnectionHost.OverrideExplicitCredential;
+                    }
+                }
+                set
+                {
+                    if (value) { _OverrideExplicitCredential = 1; }
+                    else { _OverrideExplicitCredential = -1; }
+                }
+            }
+            private int _OverrideExplicitCredential = 0;
+
+            /// <summary>
+            /// Locally enables automatic failover to working credentials, when passed credentials either are known, or turn out to not work.
+            /// </summary>
+            public bool EnableCredentialFailover
+            {
+                get
+                {
+                    switch (_EnableCredentialFailover)
+                    {
+                        case -1:
+                            return false;
+                        case 1:
+                            return true;
+                        default:
+                            return ConnectionHost.EnableCredentialFailover;
+                    }
+                }
+                set
+                {
+                    if (value) { _EnableCredentialFailover = 1; }
+                    else { _EnableCredentialFailover = -1; }
+                }
+            }
+            private int _EnableCredentialFailover = 0;
+
+            /// <summary>
+            /// Locally disables the persistence of Cim sessions used to connect to a target system.
+            /// </summary>
+            public bool DisableCimPersistence
+            {
+                get
+                {
+                    switch (_DisableCimPersistence)
+                    {
+                        case -1:
+                            return false;
+                        case 1:
+                            return true;
+                        default:
+                            return ConnectionHost.DisableCimPersistence;
+                    }
+                }
+                set
+                {
+                    if (value) { _DisableCimPersistence = 1; }
+                    else { _DisableCimPersistence = -1; }
+                }
+            }
+            private int _DisableCimPersistence = 0;
+
+            /// <summary>
+            /// Connectiontypes that will never be used
+            /// </summary>
+            public ManagementConnectionType DisabledConnectionTypes
+            {
+                get
+                {
+                    ManagementConnectionType temp = ManagementConnectionType.None;
+                    if (CimRM == ManagementConnectionProtocolState.Disabled) { temp = temp | ManagementConnectionType.CimRM; }
+                    if (CimDCOM == ManagementConnectionProtocolState.Disabled) { temp = temp | ManagementConnectionType.CimDCOM; }
+                    if (Wmi == ManagementConnectionProtocolState.Disabled) { temp = temp | ManagementConnectionType.Wmi; }
+                    if (PowerShellRemoting == ManagementConnectionProtocolState.Disabled) { temp = temp | ManagementConnectionType.PowerShellRemoting; }
+                    return temp;
+                }
+                set
+                {
+                    if ((value & ManagementConnectionType.CimRM) != 0) { CimRM = ManagementConnectionProtocolState.Disabled; }
+                    else if ((CimRM & ManagementConnectionProtocolState.Disabled) != 0) { CimRM = ManagementConnectionProtocolState.Unknown; }
+                    if ((value & ManagementConnectionType.CimDCOM) != 0) { CimDCOM = ManagementConnectionProtocolState.Disabled; }
+                    else if ((CimDCOM & ManagementConnectionProtocolState.Disabled) != 0) { CimDCOM = ManagementConnectionProtocolState.Unknown; }
+                    if ((value & ManagementConnectionType.Wmi) != 0) { Wmi = ManagementConnectionProtocolState.Disabled; }
+                    else if ((Wmi & ManagementConnectionProtocolState.Disabled) != 0) { Wmi = ManagementConnectionProtocolState.Unknown; }
+                    if ((value & ManagementConnectionType.PowerShellRemoting) != 0) { PowerShellRemoting = ManagementConnectionProtocolState.Disabled; }
+                    else if ((PowerShellRemoting & ManagementConnectionProtocolState.Disabled) != 0) { PowerShellRemoting = ManagementConnectionProtocolState.Unknown; }
+                }
+            }
+
+            /// <summary>
+            /// Restores all deviations from public policy back to default
+            /// </summary>
+            public void RestoreDefaultConfiguration()
+            {
+                _DisableBadCredentialCache = 0;
+                _DisableCredentialAutoRegister = 0;
+                _OverrideExplicitCredential = 0;
+                _DisableCimPersistence = 0;
+                _EnableCredentialFailover = 0;
+            }
+            #endregion Configuration
+
             #region Connection Stats
             /// <summary>
             /// Did the last connection attempt using CimRM work?
             /// </summary>
-            public bool CimRM;
+            public ManagementConnectionProtocolState CimRM = ManagementConnectionProtocolState.Unknown;
 
             /// <summary>
             /// When was the last connection attempt using CimRM?
@@ -127,7 +329,7 @@ namespace sqlcollective.dbatools
             /// <summary>
             /// Did the last connection attempt using CimDCOM work?
             /// </summary>
-            public bool CimDCOM;
+            public ManagementConnectionProtocolState CimDCOM = ManagementConnectionProtocolState.Unknown;
 
             /// <summary>
             /// When was the last connection attempt using CimRM?
@@ -137,7 +339,7 @@ namespace sqlcollective.dbatools
             /// <summary>
             /// Did the last connection attempt using Wmi work?
             /// </summary>
-            public bool Wmi;
+            public ManagementConnectionProtocolState Wmi = ManagementConnectionProtocolState.Unknown;
 
             /// <summary>
             /// When was the last connection attempt using CimRM?
@@ -147,7 +349,7 @@ namespace sqlcollective.dbatools
             /// <summary>
             /// Did the last connection attempt using PowerShellRemoting work?
             /// </summary>
-            public bool PowerShellRemoting;
+            public ManagementConnectionProtocolState PowerShellRemoting = ManagementConnectionProtocolState.Unknown;
 
             /// <summary>
             /// When was the last connection attempt using CimRM?
@@ -163,22 +365,22 @@ namespace sqlcollective.dbatools
                 switch (Type)
                 {
                     case ManagementConnectionType.CimRM:
-                        CimRM = true;
+                        CimRM = ManagementConnectionProtocolState.Success;
                         LastCimRM = DateTime.Now;
                         break;
 
                     case ManagementConnectionType.CimDCOM:
-                        CimDCOM = true;
+                        CimDCOM = ManagementConnectionProtocolState.Success;
                         LastCimDCOM = DateTime.Now;
                         break;
 
                     case ManagementConnectionType.Wmi:
-                        Wmi = true;
+                        Wmi = ManagementConnectionProtocolState.Success;
                         LastWmi = DateTime.Now;
                         break;
 
                     case ManagementConnectionType.PowerShellRemoting:
-                        PowerShellRemoting = true;
+                        PowerShellRemoting = ManagementConnectionProtocolState.Success;
                         LastPowerShellRemoting = DateTime.Now;
                         break;
 
@@ -196,22 +398,22 @@ namespace sqlcollective.dbatools
                 switch (Type)
                 {
                     case ManagementConnectionType.CimRM:
-                        CimRM = false;
+                        CimRM = ManagementConnectionProtocolState.Error;
                         LastCimRM = DateTime.Now;
                         break;
 
                     case ManagementConnectionType.CimDCOM:
-                        CimDCOM = false;
+                        CimDCOM = ManagementConnectionProtocolState.Error;
                         LastCimDCOM = DateTime.Now;
                         break;
 
                     case ManagementConnectionType.Wmi:
-                        Wmi = false;
+                        Wmi = ManagementConnectionProtocolState.Error;
                         LastWmi = DateTime.Now;
                         break;
 
                     case ManagementConnectionType.PowerShellRemoting:
-                        PowerShellRemoting = false;
+                        PowerShellRemoting = ManagementConnectionProtocolState.Error;
                         LastPowerShellRemoting = DateTime.Now;
                         break;
 
@@ -228,14 +430,14 @@ namespace sqlcollective.dbatools
             public PSCredential Credentials;
 
             /// <summary>
-            /// Whether the default credentials override explicitly specified credentials
-            /// </summary>
-            public bool OverrideInputCredentials;
-
-            /// <summary>
             /// Whether the default windows credentials are known to not work against the target.
             /// </summary>
             public bool WindowsCredentialsAreBad;
+
+            /// <summary>
+            /// Whether windows credentials are known to be good. Do not build conditions on them being false, just on true.
+            /// </summary>
+            public bool UseWindowsCredentials;
 
             /// <summary>
             /// Credentials known to not work. They will not be used when specified.
@@ -248,11 +450,23 @@ namespace sqlcollective.dbatools
             /// <param name="Credential">The bad credential that must be punished</param>
             public void AddBadCredential(PSCredential Credential)
             {
+                if (DisableBadCredentialCache)
+                    return;
+
                 if (Credential == null)
                 {
                     WindowsCredentialsAreBad = true;
+                    UseWindowsCredentials = false;
                     return;
                 }
+
+                // If previously good credentials have been revoked, better remove them from the list
+                if ((Credentials != null) && (Credentials.UserName.ToLower() == Credential.UserName.ToLower()))
+                {
+                    if (Credentials.GetNetworkCredential().Password == Credential.GetNetworkCredential().Password)
+                        Credentials = null;
+                }
+
                 foreach (PSCredential cred in KnownBadCredentials)
                 {
                     if (cred.UserName.ToLower() == Credential.UserName.ToLower())
@@ -265,17 +479,47 @@ namespace sqlcollective.dbatools
             }
 
             /// <summary>
+            /// Reports a credentials object as being legit.
+            /// </summary>
+            /// <param name="Credential">The functioning credential that we may want to use again</param>
+            public void AddGoodCredential(PSCredential Credential)
+            {
+                if (!DisableCredentialAutoRegister)
+                {
+                    Credentials = Credential;
+                    if (Credential == null) { UseWindowsCredentials = true; }
+                }
+            }
+
+            /// <summary>
             /// Calculates, which credentials to use. Will consider input, compare it with know not-working credentials or use the configured working credentials for that.
             /// </summary>
             /// <param name="Credential">Any credential object a user may have explicitly specified.</param>
-            /// <param name="DisableBadCredentialCache">Whether to check for bad credentials and exclude them.</param>
-            /// <param name="WasBound">Whether the user of the calling function explicitly specified credentials to use.</param>
             /// <returns>The Credentials to use</returns>
-            public PSCredential GetCredential(PSCredential Credential, bool DisableBadCredentialCache, bool WasBound)
+            public PSCredential GetCredential(PSCredential Credential)
             {
-                if (OverrideInputCredentials || !WasBound) { return Credentials; }
-                if (Credential == null) { return null; }
+                // If nothing was bound, return whatever is available
+                // If something was bound, however explicit override is in effect AND either we have a good credential OR know Windows Credentials are good to use, use the cached credential
+                // Without the additional logic conditions, OverrideExplicitCredential would override all input, even if we haven't found a working credential yet.
+                if (OverrideExplicitCredential && (UseWindowsCredentials || (Credentials != null))) { return Credentials; }
 
+                // Handle Windows authentication
+                if (Credential == null)
+                {
+                    if (WindowsCredentialsAreBad)
+                    {
+                        if (EnableCredentialFailover && (Credentials != null))
+                            return Credentials;
+                        else
+                            throw new PSArgumentException("Windows authentication was used, but is known to not work!", "Credential");
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+
+                // Compare with bad credential cache
                 if (!DisableBadCredentialCache)
                 {
                     foreach (PSCredential cred in KnownBadCredentials)
@@ -283,11 +527,24 @@ namespace sqlcollective.dbatools
                         if (cred.UserName.ToLower() == Credential.UserName.ToLower())
                         {
                             if (cred.GetNetworkCredential().Password == Credential.GetNetworkCredential().Password)
-                                return Credentials;
+                            {
+                                if (EnableCredentialFailover)
+                                {
+                                    if ((Credentials != null) || !WindowsCredentialsAreBad)
+                                        return Credentials;
+                                    else
+                                        throw new PSArgumentException("Specified credentials are known to not work! Credential failover is enabled but there are no known working credentials.", "Credential");
+                                }
+                                else
+                                {
+                                    throw new PSArgumentException("Specified credentials are known to not work!", "Credential");
+                                }
+                            }
                         }
                     }
                 }
 
+                // Return unknown credential, so it may be tried out
                 return Credential;
             }
 
@@ -337,42 +594,58 @@ namespace sqlcollective.dbatools
 
             #region Connection Types
             /// <summary>
-            /// Connectiontypes that will never be used
-            /// </summary>
-            public ManagementConnectionType DisabledConnectionTypes = ManagementConnectionType.None;
-            
-            /// <summary>
             /// Returns the next connection type to try.
             /// </summary>
             /// <param name="ExcludedTypes">Exclude any type already tried and failed</param>
+            /// <param name="Force">Overrides the timeout on bad connections</param>
             /// <returns>The next type to try.</returns>
-            public ManagementConnectionType GetConnectionType(ManagementConnectionType ExcludedTypes)
+            public ManagementConnectionType GetConnectionType(ManagementConnectionType ExcludedTypes, bool Force)
             {
                 ManagementConnectionType temp = ExcludedTypes | DisabledConnectionTypes;
 
-                if (((ManagementConnectionType.CimRM & temp) == 0) && CimRM)
+                #region Use working connections first
+                if (((ManagementConnectionType.CimRM & temp) == 0) && ((CimRM & ManagementConnectionProtocolState.Success) != 0))
                     return ManagementConnectionType.CimRM;
 
-                if (((ManagementConnectionType.CimDCOM & temp) == 0) && CimDCOM)
+                if (((ManagementConnectionType.CimDCOM & temp) == 0) && ((CimDCOM & ManagementConnectionProtocolState.Success) != 0))
                     return ManagementConnectionType.CimDCOM;
 
-                if (((ManagementConnectionType.Wmi & temp) == 0) && Wmi)
+                if (((ManagementConnectionType.Wmi & temp) == 0) && ((Wmi & ManagementConnectionProtocolState.Success) != 0))
                     return ManagementConnectionType.Wmi;
 
-                if (((ManagementConnectionType.PowerShellRemoting & temp) == 0) && PowerShellRemoting)
+                if (((ManagementConnectionType.PowerShellRemoting & temp) == 0) && ((PowerShellRemoting & ManagementConnectionProtocolState.Success) != 0))
                     return ManagementConnectionType.PowerShellRemoting;
+                #endregion Use working connections first
 
-                if (((ManagementConnectionType.CimRM & temp) == 0) && !CimRM)
+                #region Then prefer unknown connections
+                if (((ManagementConnectionType.CimRM & temp) == 0) && ((CimRM & ManagementConnectionProtocolState.Unknown) != 0))
                     return ManagementConnectionType.CimRM;
 
-                if (((ManagementConnectionType.CimDCOM & temp) == 0) && !CimDCOM)
+                if (((ManagementConnectionType.CimDCOM & temp) == 0) && ((CimDCOM & ManagementConnectionProtocolState.Unknown) != 0))
                     return ManagementConnectionType.CimDCOM;
 
-                if (((ManagementConnectionType.Wmi & temp) == 0) && !Wmi)
+                if (((ManagementConnectionType.Wmi & temp) == 0) && ((Wmi & ManagementConnectionProtocolState.Unknown) != 0))
                     return ManagementConnectionType.Wmi;
 
-                if (((ManagementConnectionType.PowerShellRemoting & temp) == 0) && !PowerShellRemoting)
+                if (((ManagementConnectionType.PowerShellRemoting & temp) == 0) && ((PowerShellRemoting & ManagementConnectionProtocolState.Unknown) != 0))
                     return ManagementConnectionType.PowerShellRemoting;
+                #endregion Then prefer unknown connections
+
+                #region Finally try what would not work previously
+                if (((ManagementConnectionType.CimRM & temp) == 0) && ((CimRM & ManagementConnectionProtocolState.Error) != 0) && ((LastCimRM + ConnectionHost.BadConnectionTimeout < DateTime.Now) | Force))
+                    return ManagementConnectionType.CimRM;
+
+                if (((ManagementConnectionType.CimDCOM & temp) == 0) && ((CimDCOM & ManagementConnectionProtocolState.Error) != 0) && ((LastCimDCOM + ConnectionHost.BadConnectionTimeout < DateTime.Now) | Force))
+                    return ManagementConnectionType.CimDCOM;
+
+                if (((ManagementConnectionType.Wmi & temp) == 0) && ((Wmi & ManagementConnectionProtocolState.Error) != 0) && ((LastWmi + ConnectionHost.BadConnectionTimeout < DateTime.Now) | Force))
+                    return ManagementConnectionType.Wmi;
+
+                if (((ManagementConnectionType.PowerShellRemoting & temp) == 0) && ((PowerShellRemoting & ManagementConnectionProtocolState.Error) != 0) && ((LastPowerShellRemoting + ConnectionHost.BadConnectionTimeout < DateTime.Now) | Force))
+                    return ManagementConnectionType.PowerShellRemoting;
+                #endregion Finally try what would not work previously
+
+                // Do not try to use disabled protocols
 
                 throw new PSInvalidOperationException("No connectiontypes left to try!");
             }
@@ -386,16 +659,16 @@ namespace sqlcollective.dbatools
             {
                 List<ManagementConnectionType> types = new List<ManagementConnectionType>();
 
-                if (((DisabledConnectionTypes & ManagementConnectionType.CimRM) == 0) && ((CimRM) || (LastCimRM < Timestamp)))
+                if (((DisabledConnectionTypes & ManagementConnectionType.CimRM) == 0) && ((CimRM == ManagementConnectionProtocolState.Success) || (LastCimRM < Timestamp)))
                     types.Add(ManagementConnectionType.CimRM);
 
-                if (((DisabledConnectionTypes & ManagementConnectionType.CimDCOM) == 0) && ((CimDCOM) || (LastCimDCOM < Timestamp)))
+                if (((DisabledConnectionTypes & ManagementConnectionType.CimDCOM) == 0) && ((CimDCOM == ManagementConnectionProtocolState.Success) || (LastCimDCOM < Timestamp)))
                     types.Add(ManagementConnectionType.CimDCOM);
 
-                if (((DisabledConnectionTypes & ManagementConnectionType.Wmi) == 0) && ((Wmi) || (LastWmi < Timestamp)))
+                if (((DisabledConnectionTypes & ManagementConnectionType.Wmi) == 0) && ((Wmi == ManagementConnectionProtocolState.Success) || (LastWmi < Timestamp)))
                     types.Add(ManagementConnectionType.Wmi);
 
-                if (((DisabledConnectionTypes & ManagementConnectionType.PowerShellRemoting) == 0) && ((PowerShellRemoting) || (LastPowerShellRemoting < Timestamp)))
+                if (((DisabledConnectionTypes & ManagementConnectionType.PowerShellRemoting) == 0) && ((PowerShellRemoting == ManagementConnectionProtocolState.Success) || (LastPowerShellRemoting < Timestamp)))
                     types.Add(ManagementConnectionType.PowerShellRemoting);
 
                 return types;
@@ -427,11 +700,9 @@ namespace sqlcollective.dbatools
                 Connection.LastPowerShellRemoting = LastPowerShellRemoting;
 
                 Connection.Credentials = Credentials;
-                Connection.OverrideInputCredentials = OverrideInputCredentials;
+                Connection.OverrideExplicitCredential = OverrideExplicitCredential;
                 Connection.KnownBadCredentials = KnownBadCredentials;
                 Connection.WindowsCredentialsAreBad = WindowsCredentialsAreBad;
-
-                Connection.DisabledConnectionTypes = DisabledConnectionTypes;
             }
             #endregion Internals
 
@@ -451,8 +722,396 @@ namespace sqlcollective.dbatools
             public ManagementConnection(string ComputerName)
             {
                 this.ComputerName = ComputerName.ToLower();
+                if (Utility.Validation.IsLocalhost(ComputerName))
+                    CimRM = ManagementConnectionProtocolState.Disabled;
             }
             #endregion Constructors
+
+            #region CIM Execution
+
+            #region WinRM
+            /// <summary>
+            /// The options ot use when establishing a CIM Session
+            /// </summary>
+            public WSManSessionOptions CimWinRMOptions
+            {
+                get
+                {
+                    if (_CimWinRMOptions == null) { return null; }
+                    return new WSManSessionOptions(_CimWinRMOptions); ;
+                }
+                set
+                {
+                    cimWinRMSession = null;
+                    _CimWinRMOptions = value;
+                }
+            }
+            private WSManSessionOptions _CimWinRMOptions;
+
+            private CimSession cimWinRMSession;
+            private PSCredential cimWinRMSessionLastCredential;
+
+            private CimSession GetCimWinRMSession(PSCredential Credential)
+            {
+                // Prepare the last session if any
+                CimSession tempSession = cimWinRMSession;
+
+                // If we use different credentials than last time, now's the time to interrupt
+                if (!(cimWinRMSessionLastCredential == null && Credential == null))
+                {
+                    if (cimWinRMSessionLastCredential == null || Credential == null)
+                        tempSession = null;
+                    else if (cimWinRMSessionLastCredential.UserName != Credential.UserName)
+                        tempSession = null;
+                    else if (cimWinRMSessionLastCredential.GetNetworkCredential().Password != Credential.GetNetworkCredential().Password)
+                        tempSession = null;
+                }
+
+                if (tempSession == null)
+                {
+                    WSManSessionOptions options = null;
+                    if (CimWinRMOptions == null)
+                    {
+                        options = GetDefaultCimWsmanOptions();
+                    }
+                    else { options = CimWinRMOptions; }
+                    if (Credential != null) { options.AddDestinationCredentials(new CimCredential(PasswordAuthenticationMechanism.Default, Credential.GetNetworkCredential().Domain, Credential.GetNetworkCredential().UserName, Credential.Password)); }
+
+                    try { tempSession = CimSession.Create(ComputerName, options); }
+                    catch (Exception e)
+                    {
+                        bool testBadCredential = false;
+                        try
+                        {
+                            string tempMessageId = ((CimException)(e.InnerException)).MessageId;
+                            if (tempMessageId ==  "HRESULT 0x8007052e")
+                                testBadCredential = true;
+                            else if (tempMessageId == "HRESULT 0x80070005")
+                                testBadCredential = true;
+                        }
+                        catch { }
+
+                        if (testBadCredential) { throw new UnauthorizedAccessException("Invalid credentials!", e); }
+                        else { throw e; }
+                    }
+
+                    cimWinRMSessionLastCredential = Credential;
+                }
+
+                return tempSession;
+            }
+
+            /// <summary>
+            /// Returns the default wsman options object
+            /// </summary>
+            /// <returns>Something very default-y</returns>
+            private WSManSessionOptions GetDefaultCimWsmanOptions()
+            {
+                WSManSessionOptions options = new WSManSessionOptions();
+                options.DestinationPort = 0;
+                options.MaxEnvelopeSize = 0;
+                options.CertCACheck = true;
+                options.CertCNCheck = true;
+                options.CertRevocationCheck = true;
+                options.UseSsl = false;
+                options.PacketEncoding = PacketEncoding.Utf8;
+                options.NoEncryption = false;
+                options.EncodePortInServicePrincipalName = false;
+
+                return options;
+            }
+
+            /// <summary>
+            /// Get all cim instances of the appropriate class using WinRM
+            /// </summary>
+            /// <param name="Credential">The credentiuls to use for the connection.</param>
+            /// <param name="Class">The class to query.</param>
+            /// <param name="Namespace">The namespace to look in (defaults to root\cimv2).</param>
+            /// <returns>Hopefully a mountainload of CimInstances</returns>
+            public object GetCimRMInstance(PSCredential Credential, string Class, string Namespace = @"root\cimv2")
+            {
+                CimSession tempSession;
+                IEnumerable<CimInstance> result = new List<CimInstance>();
+
+                try
+                {
+                    tempSession = GetCimWinRMSession(Credential);
+                    result = tempSession.EnumerateInstances(Namespace, Class);
+                    result.GetEnumerator().MoveNext();
+                }
+                catch (Exception e)
+                {
+                    bool testBadCredential = false;
+                    try
+                    {
+                        string tempMessageId = ((CimException)e).MessageId;
+                        if (tempMessageId == "HRESULT 0x8007052e")
+                            testBadCredential = true;
+                        else if (tempMessageId == "HRESULT 0x80070005")
+                            testBadCredential = true;
+                    }
+                    catch { }
+
+                    if (testBadCredential) { throw new UnauthorizedAccessException("Invalid credentials!", e); }
+                    else { throw e; }
+                }
+
+                if (DisableCimPersistence)
+                {
+                    try { tempSession.Close(); }
+                    catch {  }
+                    cimWinRMSession = null;
+                }
+                else
+                {
+                    if (cimWinRMSession != tempSession)
+                        cimWinRMSession = tempSession;
+                }
+                return result;
+            }
+
+            /// <summary>
+            /// Get all cim instances matching the query using WinRM
+            /// </summary>
+            /// <param name="Credential">The credentiuls to use for the connection.</param>
+            /// <param name="Query">The query to use requesting information.</param>
+            /// <param name="Dialect">Defaults to WQL.</param>
+            /// <param name="Namespace">The namespace to look in (defaults to root\cimv2).</param>
+            /// <returns></returns>
+            public object QueryCimRMInstance(PSCredential Credential, string Query, string Dialect = "WQL", string Namespace = @"root\cimv2")
+            {
+                CimSession tempSession;
+                IEnumerable<CimInstance> result = new List<CimInstance>();
+
+                try
+                {
+                    tempSession = GetCimWinRMSession(Credential);
+                    result = tempSession.QueryInstances(Namespace, Dialect, Query);
+                    result.GetEnumerator().MoveNext();
+                }
+                catch (Exception e)
+                {
+                    bool testBadCredential = false;
+                    try
+                    {
+                        string tempMessageId = ((CimException)e).MessageId;
+                        if (tempMessageId == "HRESULT 0x8007052e")
+                            testBadCredential = true;
+                        else if (tempMessageId == "HRESULT 0x80070005")
+                            testBadCredential = true;
+                    }
+                    catch { }
+
+                    if (testBadCredential) { throw new UnauthorizedAccessException("Invalid credentials!", e); }
+                    else { throw e; }
+                }
+
+                if (DisableCimPersistence)
+                {
+                    try { tempSession.Close(); }
+                    catch { }
+                    cimWinRMSession = null;
+                }
+                else
+                {
+                    if (cimWinRMSession != tempSession)
+                        cimWinRMSession = tempSession;
+                }
+                return result;
+            }
+            #endregion WinRM
+
+            #region DCOM
+            /// <summary>
+            /// The options ot use when establishing a CIM Session
+            /// </summary>
+            public DComSessionOptions CimDComOptions
+            {
+                get
+                {
+                    if (_CimDComOptions == null) { return null; }
+                    DComSessionOptions options = new DComSessionOptions();
+                    options.PacketPrivacy = _CimDComOptions.PacketPrivacy;
+                    options.PacketIntegrity = _CimDComOptions.PacketIntegrity;
+                    options.Impersonation = _CimDComOptions.Impersonation;
+                    return options;
+                }
+                set
+                {
+                    _CimDComOptions = null;
+                    _CimDComOptions = value;
+                }
+            }
+            private DComSessionOptions _CimDComOptions;
+
+            private CimSession cimDComSession;
+            private PSCredential cimDComSessionLastCredential;
+
+            private CimSession GetCimDComSession(PSCredential Credential)
+            {
+                // Prepare the last session if any
+                CimSession tempSession = cimDComSession;
+
+                // If we use different credentials than last time, now's the time to interrupt
+                if (!(cimDComSessionLastCredential == null && Credential == null))
+                {
+                    if (cimDComSessionLastCredential == null || Credential == null)
+                        tempSession = null;
+                    else if (cimDComSessionLastCredential.UserName != Credential.UserName)
+                        tempSession = null;
+                    else if (cimDComSessionLastCredential.GetNetworkCredential().Password != Credential.GetNetworkCredential().Password)
+                        tempSession = null;
+                }
+
+                if (tempSession == null)
+                {
+                    DComSessionOptions options = null;
+                    if (CimWinRMOptions == null)
+                    {
+                        options = GetDefaultCimDcomOptions();
+                    }
+                    else { options = CimDComOptions; }
+                    if (Credential != null) { options.AddDestinationCredentials(new CimCredential(PasswordAuthenticationMechanism.Default, Credential.GetNetworkCredential().Domain, Credential.GetNetworkCredential().UserName, Credential.Password)); }
+
+                    try { tempSession = CimSession.Create(ComputerName, options); }
+                    catch (Exception e)
+                    {
+                        bool testBadCredential = false;
+                        try
+                        {
+                            string tempMessageId = ((CimException)(e.InnerException)).MessageId;
+                            if (tempMessageId == "HRESULT 0x8007052e")
+                                testBadCredential = true;
+                            else if (tempMessageId == "HRESULT 0x80070005")
+                                testBadCredential = true;
+                        }
+                        catch { }
+
+                        if (testBadCredential) { throw new UnauthorizedAccessException("Invalid credentials!", e); }
+                        else { throw e; }
+                    }
+
+                    cimDComSessionLastCredential = Credential;
+                }
+
+                return tempSession;
+            }
+
+            /// <summary>
+            /// Returns the default DCom options object
+            /// </summary>
+            /// <returns>Something very default-y</returns>
+            private DComSessionOptions GetDefaultCimDcomOptions()
+            {
+                DComSessionOptions options = new DComSessionOptions();
+                options.PacketPrivacy = true;
+                options.PacketIntegrity = true;
+                options.Impersonation = ImpersonationType.Impersonate;
+
+                return options;
+            }
+
+            /// <summary>
+            /// Get all cim instances of the appropriate class using DCOM
+            /// </summary>
+            /// <param name="Credential">The credentiuls to use for the connection.</param>
+            /// <param name="Class">The class to query</param>
+            /// <param name="Namespace">The namespace to look in (defaults to root\cimv2)</param>
+            /// <returns>Hopefully a mountainload of CimInstances</returns>
+            public object GetCimDComInstance(PSCredential Credential, string Class, string Namespace = @"root\cimv2")
+            {
+                CimSession tempSession;
+                IEnumerable<CimInstance> result = new List<CimInstance>();
+
+                try
+                {
+                    tempSession = GetCimDComSession(Credential);
+                    result = tempSession.EnumerateInstances(Namespace, Class);
+                    result.GetEnumerator().MoveNext();
+                }
+                catch (Exception e)
+                {
+                    bool testBadCredential = false;
+                    try
+                    {
+                        string tempMessageId = ((CimException)e).MessageId;
+                        if (tempMessageId == "HRESULT 0x8007052e")
+                            testBadCredential = true;
+                        else if (tempMessageId == "HRESULT 0x80070005")
+                            testBadCredential = true;
+                    }
+                    catch { }
+
+                    if (testBadCredential) { throw new UnauthorizedAccessException("Invalid credentials!", e); }
+                    else { throw e; }
+                }
+
+                if (DisableCimPersistence)
+                {
+                    try { tempSession.Close(); }
+                    catch { }
+                    cimDComSession = null;
+                }
+                else
+                {
+                    if (cimDComSession != tempSession)
+                        cimDComSession = tempSession;
+                }
+                return result;
+            }
+
+            /// <summary>
+            /// Get all cim instances matching the query using DCOM
+            /// </summary>
+            /// <param name="Credential">The credentiuls to use for the connection.</param>
+            /// <param name="Query">The query to use requesting information.</param>
+            /// <param name="Dialect">Defaults to WQL.</param>
+            /// <param name="Namespace">The namespace to look in (defaults to root\cimv2).</param>
+            /// <returns></returns>
+            public object QueryCimDCOMInstance(PSCredential Credential, string Query, string Dialect = "WQL", string Namespace = @"root\cimv2")
+            {
+                CimSession tempSession;
+                IEnumerable<CimInstance> result = new List<CimInstance>();
+
+                try
+                {
+                    tempSession = GetCimDComSession(Credential);
+                    result = tempSession.QueryInstances(Namespace, Dialect, Query);
+                    result.GetEnumerator().MoveNext();
+                }
+                catch (Exception e)
+                {
+                    bool testBadCredential = false;
+                    try
+                    {
+                        string tempMessageId = ((CimException)e).MessageId;
+                        if (tempMessageId == "HRESULT 0x8007052e")
+                            testBadCredential = true;
+                        else if (tempMessageId == "HRESULT 0x80070005")
+                            testBadCredential = true;
+                    }
+                    catch { }
+
+                    if (testBadCredential) { throw new UnauthorizedAccessException("Invalid credentials!", e); }
+                    else { throw e; }
+                }
+
+                if (DisableCimPersistence)
+                {
+                    try { tempSession.Close(); }
+                    catch { }
+                    cimDComSession = null;
+                }
+                else
+                {
+                    if (cimDComSession != tempSession)
+                        cimDComSession = tempSession;
+                }
+                return result;
+            }
+            #endregion DCOM
+
+            #endregion CIM Execution
 
             /// <summary>
             /// Simple string representation
@@ -462,6 +1121,32 @@ namespace sqlcollective.dbatools
             {
                 return ComputerName;
             }
+        }
+
+        /// <summary>
+        /// The various types of state a connection-protocol may have
+        /// </summary>
+        public enum ManagementConnectionProtocolState
+        {
+            /// <summary>
+            /// The default initial state, before any tests are performed
+            /// </summary>
+            Unknown = 1,
+
+            /// <summary>
+            /// A successful connection was last established
+            /// </summary>
+            Success = 2,
+
+            /// <summary>
+            /// Connecting using the relevant protocol failed last it was tried
+            /// </summary>
+            Error = 3,
+
+            /// <summary>
+            /// The relevant protocol has been disabled and should not be used
+            /// </summary>
+            Disabled = 4
         }
 
         /// <summary>
@@ -499,6 +1184,125 @@ namespace sqlcollective.dbatools
 
     namespace Database
     {
+        using System.Numerics;
+        using Utility;
+
+        /// <summary>
+        /// Object containing the information about the history of mankind ... or a database backup. WHo knows.
+        /// </summary>
+        public class BackupHistory
+        {
+            /// <summary>
+            /// The name of the computer running MSSQL Server
+            /// </summary>
+            public string ComputerName;
+
+            /// <summary>
+            /// The Instance that was queried
+            /// </summary>
+            public string InstanceName;
+
+            /// <summary>
+            /// The full Instance name as seen from outside
+            /// </summary>
+            public string SqlInstance;
+
+            /// <summary>
+            /// The Database that was backed up
+            /// </summary>
+            public string Database;
+
+            /// <summary>
+            /// The user that is running the backup
+            /// </summary>
+            public string UserName;
+
+            /// <summary>
+            /// When was the backup started
+            /// </summary>
+            public DbaDateTime Start;
+
+            /// <summary>
+            /// When did the backup end
+            /// </summary>
+            public DbaDateTime End;
+
+            /// <summary>
+            /// What was the longest duration among the backups
+            /// </summary>
+            public DbaTimeSpan Duration;
+
+            /// <summary>
+            /// Where is the backup stored
+            /// </summary>
+            public string Path;
+
+            /// <summary>
+            /// What is the total size of the backup
+            /// </summary>
+            public Size TotalSize;
+
+            /// <summary>
+            /// The kind of backup this was
+            /// </summary>
+            public string Type;
+
+            /// <summary>
+            /// The ID for the Backup job
+            /// </summary>
+            public string BackupSetupId;
+
+            /// <summary>
+            /// What kind of backup-device was the backup stored to
+            /// </summary>
+            public string DeviceType;
+
+            /// <summary>
+            /// What is the name of the backup software?
+            /// </summary>
+            public string Software;
+
+            /// <summary>
+            /// The full name of the backup
+            /// </summary>
+            public string FullName;
+
+            /// <summary>
+            /// The files that are part of this backup
+            /// </summary>
+            public string[] FileList;
+
+            /// <summary>
+            /// The position of the backup
+            /// </summary>
+            public int Position;
+
+            /// <summary>
+            /// The first Log Sequence Number
+            /// </summary>
+            public BigInteger FirstLsn;
+
+            /// <summary>
+            /// The Log Squence Number that marks the beginning of the backup
+            /// </summary>
+            public BigInteger DatabaseBackupLsn;
+
+            /// <summary>
+            /// The checkpoint's Log Sequence Number
+            /// </summary>
+            public BigInteger CheckpointLsn;
+
+            /// <summary>
+            /// The last Log Sequence Number
+            /// </summary>
+            public BigInteger LastLsn;
+
+            /// <summary>
+            /// The primary version number of the Sql Server
+            /// </summary>
+            public int SoftwareVersionMajor;
+        }
+
         /// <summary>
         /// Class containing all dependency information over a database object
         /// </summary>
@@ -1082,11 +1886,12 @@ namespace sqlcollective.dbatools
         using Connection;
         using System.Collections.Generic;
         using System.Management.Automation;
+        using System.Text.RegularExpressions;
 
         /// <summary>
-        /// Input converter for Windows Management Information
+        /// Input converter for Computer Management Information
         /// </summary>
-        public class DbaWmConnectionParameter
+        public class DbaCmConnectionParameter
         {
             #region Fields of contract
             /// <summary>
@@ -1113,7 +1918,7 @@ namespace sqlcollective.dbatools
             /// </summary>
             /// <param name="Input">The parameter object to convert</param>
             [ParameterContract(ParameterContractType.Operator, ParameterContractBehavior.Conversion)]
-            public static implicit operator ManagementConnection(DbaWmConnectionParameter Input)
+            public static implicit operator ManagementConnection(DbaCmConnectionParameter Input)
             {
                 return Input.Connection;
             }
@@ -1122,7 +1927,7 @@ namespace sqlcollective.dbatools
             /// Creates a new DbaWmConnectionParameter based on an input-name
             /// </summary>
             /// <param name="ComputerName">The name of the computer the connection is stored for.</param>
-            public DbaWmConnectionParameter(string ComputerName)
+            public DbaCmConnectionParameter(string ComputerName)
             {
                 InputObject = ComputerName;
                 if (! Utility.Validation.IsValidComputerTarget(ComputerName))
@@ -1154,7 +1959,7 @@ namespace sqlcollective.dbatools
             /// Creates a new DbaWmConnectionParameter based on an already existing connection object.
             /// </summary>
             /// <param name="Connection">The connection to accept</param>
-            public DbaWmConnectionParameter(ManagementConnection Connection)
+            public DbaCmConnectionParameter(ManagementConnection Connection)
             {
                 InputObject = Connection;
 
@@ -1167,7 +1972,7 @@ namespace sqlcollective.dbatools
             /// Tries to convert a generic input object into a true input.
             /// </summary>
             /// <param name="Input">Any damn object in the world</param>
-            public DbaWmConnectionParameter(object Input)
+            public DbaCmConnectionParameter(object Input)
             {
                 InputObject = Input;
                 PSObject tempInput = new PSObject(Input);
@@ -1188,21 +1993,26 @@ namespace sqlcollective.dbatools
                             ManagementConnection con = new ManagementConnection();
                             con.ComputerName = (string)tempInput.Properties["ComputerName"].Value;
 
-                            con.CimRM = (bool)tempInput.Properties["CimRM"].Value;
+                            con.CimRM = (ManagementConnectionProtocolState)tempInput.Properties["CimRM"].Value;
                             con.LastCimRM = (DateTime)tempInput.Properties["LastCimRM"].Value;
-                            con.CimDCOM = (bool)tempInput.Properties["CimDCOM"].Value;
+                            con.CimDCOM = (ManagementConnectionProtocolState)tempInput.Properties["CimDCOM"].Value;
                             con.LastCimDCOM = (DateTime)tempInput.Properties["LastCimDCOM"].Value;
-                            con.Wmi = (bool)tempInput.Properties["Wmi"].Value;
+                            con.Wmi = (ManagementConnectionProtocolState)tempInput.Properties["Wmi"].Value;
                             con.LastWmi = (DateTime)tempInput.Properties["LastWmi"].Value;
-                            con.PowerShellRemoting = (bool)tempInput.Properties["PowerShellRemoting"].Value;
+                            con.PowerShellRemoting = (ManagementConnectionProtocolState)tempInput.Properties["PowerShellRemoting"].Value;
                             con.LastPowerShellRemoting = (DateTime)tempInput.Properties["LastPowerShellRemoting"].Value;
 
                             con.Credentials = (PSCredential)tempInput.Properties["Credentials"].Value;
-                            con.OverrideInputCredentials = (bool)tempInput.Properties["OverrideInputCredentials"].Value;
+                            con.OverrideExplicitCredential = (bool)tempInput.Properties["OverrideExplicitCredential"].Value;
                             con.KnownBadCredentials = (List<PSCredential>)tempInput.Properties["KnownBadCredentials"].Value;
                             con.WindowsCredentialsAreBad = (bool)tempInput.Properties["WindowsCredentialsAreBad"].Value;
+                            con.UseWindowsCredentials = (bool)tempInput.Properties["UseWindowsCredentials"].Value;
 
-                            con.DisabledConnectionTypes = (ManagementConnectionType)tempInput.Properties["DisabledConnectionTypes"].Value;
+                            con.DisableBadCredentialCache = (bool)tempInput.Properties["DisableBadCredentialCache"].Value;
+                            con.DisableCimPersistence = (bool)tempInput.Properties["DisableCimPersistence"].Value;
+                            con.DisableCredentialAutoRegister = (bool)tempInput.Properties["DisableCredentialAutoRegister"].Value;
+                            con.EnableCredentialFailover = (bool)tempInput.Properties["EnableCredentialFailover"].Value;
+
                         }
                         catch
                         {
@@ -1216,6 +2026,359 @@ namespace sqlcollective.dbatools
                 }
             }
         }
+
+        /// <summary>
+        /// Input converter for instance information
+        /// </summary>
+        public class DbaInstanceParameter
+        {
+            #region Fields of contract
+            /// <summary>
+            /// Name of the computer as resolvable by DNS
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+            public string ComputerName
+            {
+                get { return _ComputerName; }
+            }
+
+            /// <summary>
+            /// Name of the instance on the target server
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Optional)]
+            public string InstanceName
+            {
+                get
+                {
+                    return _InstanceName;
+                }
+            }
+
+            /// <summary>
+            /// The port over which to connect to the server. Only present if non-default
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Optional)]
+            public int Port
+            {
+                get
+                {
+                    return _Port;
+                }
+            }
+
+            /// <summary>
+            /// Full name of the instance, including the server-name
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+            public string FullName
+            {
+                get
+                {
+                    string temp = _ComputerName;
+                    if (_Port > 0) { temp += (":" + _Port); }
+                    if (!String.IsNullOrEmpty(_InstanceName)) { temp += ("\\" + _InstanceName); }
+                    return temp;
+                }
+            }
+
+            /// <summary>
+            /// Full name of the instance, including the server-name, used when connecting via SMO
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+            public string FullSmoName
+            {
+                get
+                {
+                    string temp = _ComputerName;
+                    if (_Port > 0) { return temp + "," + _Port; }
+                    if (!String.IsNullOrEmpty(_InstanceName)) { return temp + "\\" + _InstanceName; }
+                    return temp;
+                }
+            }
+
+            /// <summary>
+            /// Name of the computer as used in an SQL Statement
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+            public string SqlComputerName
+            {
+                get { return "[" + _ComputerName + "]"; }
+            }
+
+            /// <summary>
+            /// Name of the instance as used in an SQL Statement
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Optional)]
+            public string SqlInstanceName
+            {
+                get
+                {
+                    if (String.IsNullOrEmpty(_InstanceName)) { return ""; }
+                    else { return"[" + _InstanceName + "]"; }
+                }
+            }
+
+            /// <summary>
+            /// Full name of the instance, including the server-name as used in an SQL statement
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+            public string SqlFullName
+            {
+                get
+                {
+                    if (String.IsNullOrEmpty(_InstanceName)) { return "[" + _ComputerName + "]"; }
+                    else { return "[" + _ComputerName + "\\" + _InstanceName + "]"; }
+                }
+            }
+
+            /// <summary>
+            /// The original object passed to the parameter class.
+            /// </summary>
+            [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+            public object InputObject;
+            #endregion Fields of contract
+
+            private string _ComputerName;
+            private string _InstanceName;
+            private int _Port;
+
+            #region Uncontracted properties
+            /// <summary>
+            /// What kind of object was bound to the parameter class? For efficiency's purposes.
+            /// </summary>
+            public DbaInstanceInputType Type
+            {
+                get
+                {
+                    try
+                    {
+                        PSObject tempObject = new PSObject(InputObject);
+                        string typeName = tempObject.TypeNames[0].ToLower();
+
+                        switch (typeName)
+                        {
+                            case "microsoft.sqlserver.management.smo.server":
+                                return DbaInstanceInputType.Server;
+                            case "microsoft.sqlserver.management.smo.linkedserver":
+                                return DbaInstanceInputType.Linked;
+                            default:
+                                return DbaInstanceInputType.Default;
+                        }
+                    }
+                    catch { return DbaInstanceInputType.Default; }
+                }
+            }
+
+            /// <summary>
+            /// Returns, whether a live SMO object was bound for the purpose of accessing LinkedServer functionality
+            /// </summary>
+            public bool LinkedLive
+            {
+                get
+                {
+                    return (((DbaInstanceInputType.Linked | DbaInstanceInputType.Server) & Type) != 0);
+                }
+            }
+
+            /// <summary>
+            /// Returns the available Linked Server objects from live objects only
+            /// </summary>
+            public object LinkedServer
+            {
+                get
+                {
+                    switch (Type)
+                    {
+                        case DbaInstanceInputType.Linked:
+                            return InputObject;
+                        case DbaInstanceInputType.Server:
+                            PSObject tempObject = new PSObject(InputObject);
+                            return tempObject.Properties["LinkedServers"].Value;
+                        default:
+                            return null;
+                    }
+                }
+            }
+            #endregion Uncontracted properties
+
+            /// <summary>
+            /// Converts the parameter class to its full name
+            /// </summary>
+            /// <param name="Input">The parameter class object to convert</param>
+            [ParameterContract(ParameterContractType.Operator, ParameterContractBehavior.Conversion)]
+            public static implicit operator string(DbaInstanceParameter Input)
+            {
+                return Input.FullName;
+            }
+
+            #region Constructors
+            /// <summary>
+            /// Creates a DBA Instance Parameter from string
+            /// </summary>
+            /// <param name="Name">The name of the instance</param>
+            public DbaInstanceParameter(string Name)
+            {
+                InputObject = Name;
+
+                if (Name == ".")
+                {
+                    _ComputerName = Name;
+                    return;
+                }
+
+                string tempString = Name;
+
+                // Case: Default instance | Instance by port
+                if (tempString.Split('\\').Length == 1)
+                {
+                    if (Regex.IsMatch(tempString, @"[:,]\d{1,5}$") && !Regex.IsMatch(tempString, Utility.RegexHelper.IPv6) && ((tempString.Split(':').Length == 2) || (tempString.Split(',').Length == 2)))
+                    {
+                        char delimiter;
+                        if (Regex.IsMatch(tempString, @"[:]\d{1,5}$"))
+                            delimiter = ':';
+                        else
+                            delimiter = ',';
+
+                        try
+                        {
+                            Int32.TryParse(tempString.Split(delimiter)[1], out _Port);
+                            if (_Port > 65535) { throw new PSArgumentException("Failed to parse instance name: " + tempString); }
+                            tempString = tempString.Split(delimiter)[0];
+                        }
+                        catch
+                        {
+                            throw new PSArgumentException("Failed to parse instance name: " + Name);
+                        }
+                    }
+
+                    if (Utility.Validation.IsValidComputerTarget(tempString))
+                    {
+                        _ComputerName = tempString;
+                    }
+
+                    else
+                    {
+                        throw new PSArgumentException("Failed to parse instance name: " + Name);
+                    }
+                }
+
+                // Case: Named instance
+                else if (Name.Split('\\').Length == 2)
+                {
+                    string tempComputerName = Name.Split('\\')[0];
+                    string tempInstanceName = Name.Split('\\')[1];
+
+                    if (Regex.IsMatch(tempComputerName, @"[:,]\d{1,5}$") && !Regex.IsMatch(tempComputerName, Utility.RegexHelper.IPv6))
+                    {
+                        throw new PSArgumentException("Both port and instancename detected! This is redundant and bad practice, specify only one: " + Name);
+                    }
+
+                    if (Utility.Validation.IsValidComputerTarget(tempComputerName) && Utility.Validation.IsValidInstanceName(tempInstanceName))
+                    {
+                        _ComputerName = tempComputerName;
+                        _InstanceName = tempInstanceName;
+                    }
+
+                    else
+                    {
+                        throw new PSArgumentException("Failed to parse instance name: " + Name);
+                    }
+                }
+
+                // Case: Bad input
+                else { throw new PSArgumentException("Failed to parse instance name: " + Name); }
+            }
+
+            /// <summary>
+            /// Creates a DBA Instance parameter from any object
+            /// </summary>
+            /// <param name="Input">Object to parse</param>
+            public DbaInstanceParameter(object Input)
+            {
+                InputObject = Input;
+                PSObject tempInput = new PSObject(Input);
+                string typeName = "";
+
+                try { typeName = tempInput.TypeNames[0].ToLower(); }
+                catch
+                {
+                    throw new PSArgumentException("Failed to interpret input as Instance: " + Input.ToString());
+                }
+
+                typeName = typeName.Replace("Deserialized.", "");
+
+                switch (typeName)
+                {
+                    case "microsoft.sqlserver.management.smo.server":
+                        try
+                        {
+                            _ComputerName = (string)tempInput.Properties["NetName"].Value;
+                            _InstanceName = (string)tempInput.Properties["InstanceName"].Value;
+                            PSObject tempObject = new PSObject(tempInput.Properties["ConnectionContext"].Value);
+
+                            string tempConnectionString = (string)tempObject.Properties["ConnectionString"].Value;
+                            tempConnectionString = tempConnectionString.Split(';')[0].Split('=')[1].Trim().Replace(" ", "");
+
+                            if (Regex.IsMatch(tempConnectionString, @",\d{1,5}$") && (tempConnectionString.Split(',').Length == 2))
+                            {
+                                try { Int32.TryParse(tempConnectionString.Split(',')[1], out _Port); }
+                                catch (Exception e)
+                                {
+                                    throw new PSArgumentException("Failed to parse port number on connection string: " + tempConnectionString, e);
+                                }
+                                if (_Port > 65535) { throw new PSArgumentException("Failed to parse port number on connection string: " + tempConnectionString); }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            throw new PSArgumentException("Failed to interpret input as Instance: " + Input.ToString() + " : " + e.Message, e);
+                        }
+                        break;
+                    case "microsoft.sqlserver.management.smo.linkedserver":
+                        try { _ComputerName = (string)tempInput.Properties["Name"].Value; }
+                        catch (Exception e)
+                        {
+                            throw new PSArgumentException("Failed to interpret input as Instance: " + Input.ToString(), e);
+                        }
+                        break;
+                    default:
+                        throw new PSArgumentException("Failed to interpret input as Instance: " + Input.ToString());
+                }
+            }
+            #endregion Constructors
+
+            /// <summary>
+            /// Overrides the regular tostring to show something pleasant and useful
+            /// </summary>
+            /// <returns>The full SMO name</returns>
+            public override string ToString()
+            {
+                return FullSmoName;
+            }
+        }
+
+        #region Auxilliary Tools
+        /// <summary>
+        /// What kind of object was bound to the parameter class?
+        /// </summary>
+        public enum DbaInstanceInputType
+        {
+            /// <summary>
+            /// Anything, really. An unspecific not reusable type was bound
+            /// </summary>
+            Default,
+
+            /// <summary>
+            /// A live smo linked server object was bound
+            /// </summary>
+            Linked,
+
+            /// <summary>
+            /// A live smo server object was bound
+            /// </summary>
+            Server,
+        }
+        #endregion Auxilliary Tools
 
         #region ParameterClass Interna
         /// <summary>
@@ -1328,7 +2491,1832 @@ namespace sqlcollective.dbatools
 
     namespace Utility
     {
+        using System.Management.Automation;
+        using System.Net;
+        using System.Net.NetworkInformation;
         using System.Text.RegularExpressions;
+
+        /// <summary>
+        /// Extends DateTime
+        /// </summary>
+        public static class DateTimeExtension
+        {
+            /// <summary>
+            /// Adds a compareTo method to DateTime to compare with DbaDateTimeBase
+            /// </summary>
+            /// <param name="obj">The extended DateTime object</param>
+            /// <param name="comparedTo">The DbaDateTimeBase to compare with</param>
+            /// <returns></returns>
+            public static int CompareTo(PSObject obj, DbaDateTimeBase comparedTo)
+            {
+                return ((DateTime)obj.BaseObject).CompareTo(comparedTo.GetBaseObject());
+            }
+        }
+
+
+        /// <summary>
+        /// Base class for wrapping around a DateTime object
+        /// </summary>
+        public class DbaDateTimeBase : IComparable, IComparable<DateTime>, IEquatable<DateTime> // IFormattable,
+        {
+            #region Properties
+            /// <summary>
+            /// The core resource, containing the actual timestamp
+            /// </summary>
+            internal DateTime _timestamp;
+
+            /// <summary>
+            /// Gets the date component of this instance.
+            /// </summary>
+            public DateTime Date
+            {
+                get { return _timestamp.Date; }
+            }
+
+            /// <summary>
+            /// Gets the day of the month represented by this instance.
+            /// </summary>
+            public int Day
+            {
+                get { return _timestamp.Day; }
+            }
+
+            /// <summary>
+            /// Gets the day of the week represented by this instance.
+            /// </summary>
+            public DayOfWeek DayOfWeek
+            {
+                get { return _timestamp.DayOfWeek; }
+            }
+
+            /// <summary>
+            /// Gets the day of the year represented by this instance.
+            /// </summary>
+            public int DayOfYear
+            {
+                get { return _timestamp.DayOfYear; }
+            }
+
+            /// <summary>
+            /// Gets the hour component of the date represented by this instance.
+            /// </summary>
+            public int Hour
+            {
+                get { return _timestamp.Hour; }
+            }
+
+            /// <summary>
+            /// Gets a value that indicates whether the time represented by this instance is based on local time, Coordinated Universal Time (UTC), or neither.
+            /// </summary>
+            public DateTimeKind Kind
+            {
+                get { return _timestamp.Kind; }
+            }
+
+            /// <summary>
+            /// Gets the milliseconds component of the date represented by this instance.
+            /// </summary>
+            public int Millisecond
+            {
+                get { return _timestamp.Millisecond; }
+            }
+
+            /// <summary>
+            /// Gets the minute component of the date represented by this instance.
+            /// </summary>
+            public int Minute
+            {
+                get { return _timestamp.Minute; }
+            }
+
+            /// <summary>
+            /// Gets the month component of the date represented by this instance.
+            /// </summary>
+            public int Month
+            {
+                get { return _timestamp.Month; }
+            }
+
+            /// <summary>
+            /// Gets the seconds component of the date represented by this instance.
+            /// </summary>
+            public int Second
+            {
+                get { return _timestamp.Second; }
+            }
+
+            /// <summary>
+            /// Gets the number of ticks that represent the date and time of this instance.
+            /// </summary>
+            public long Ticks
+            {
+                get { return _timestamp.Ticks; }
+            }
+
+            /// <summary>
+            /// Gets the time of day for this instance.
+            /// </summary>
+            public TimeSpan TimeOfDay
+            {
+                get { return _timestamp.TimeOfDay; }
+            }
+
+            /// <summary>
+            /// Gets the year component of the date represented by this instance.
+            /// </summary>
+            public int Year
+            {
+                get { return _timestamp.Year; }
+            }
+            #endregion Properties
+
+            #region Constructors
+            /// <summary>
+            /// Constructor that should never be called, since this class should never be instantiated. It's there for implicit calls on child classes.
+            /// </summary>
+            public DbaDateTimeBase()
+            {
+
+            }
+
+            /// <summary>
+            /// Constructs a generic timestamp object wrapper from an input timestamp object.
+            /// </summary>
+            /// <param name="Timestamp">The timestamp to wrap</param>
+            public DbaDateTimeBase(DateTime Timestamp)
+            {
+                _timestamp = Timestamp;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            public DbaDateTimeBase(long ticks)
+            {
+                _timestamp = new DateTime(ticks);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            /// <param name="kind"></param>
+            public DbaDateTimeBase(long ticks, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(ticks, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            public DbaDateTimeBase(int year, int month, int day)
+            {
+                _timestamp = new DateTime(year, month, day);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="calendar"></param>
+            public DbaDateTimeBase(int year, int month, int day, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            public DbaDateTimeBase(int year, int month, int day, int hour, int minute, int second)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="kind"></param>
+            public DbaDateTimeBase(int year, int month, int day, int hour, int minute, int second, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="calendar"></param>
+            public DbaDateTimeBase(int year, int month, int day, int hour, int minute, int second, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            public DbaDateTimeBase(int year, int month, int day, int hour, int minute, int second, int millisecond)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="kind"></param>
+            public DbaDateTimeBase(int year, int month, int day, int hour, int minute, int second, int millisecond, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="calendar"></param>
+            public DbaDateTimeBase(int year, int month, int day, int hour, int minute, int second, int millisecond, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="calendar"></param>
+            /// <param name="kind"></param>
+            public DbaDateTimeBase(int year, int month, int day, int hour, int minute, int second, int millisecond, System.Globalization.Calendar calendar, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, calendar, kind);
+            }
+            #endregion Constructors
+
+            #region Methods
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime Add(TimeSpan value)
+            {
+                return _timestamp.Add(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime AddDays(double value)
+            {
+                return _timestamp.AddDays(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime AddHours(double value)
+            {
+                return _timestamp.AddHours(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime AddMilliseconds(double value)
+            {
+                return _timestamp.AddMilliseconds(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime AddMinutes(double value)
+            {
+                return _timestamp.AddMinutes(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="months"></param>
+            /// <returns></returns>
+            public DateTime AddMonths(int months)
+            {
+                return _timestamp.AddMonths(months);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime AddSeconds(double value)
+            {
+                return _timestamp.AddSeconds(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime AddTicks(long value)
+            {
+                return _timestamp.AddTicks(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime AddYears(int value)
+            {
+                return _timestamp.AddYears(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public int CompareTo(System.Object value)
+            {
+                return _timestamp.CompareTo(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public int CompareTo(DateTime value)
+            {
+                return _timestamp.CompareTo(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public override bool Equals(System.Object value)
+            {
+                return _timestamp.Equals(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public bool Equals(DateTime value)
+            {
+                return _timestamp.Equals(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public string[] GetDateTimeFormats()
+            {
+                return _timestamp.GetDateTimeFormats();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="provider"></param>
+            /// <returns></returns>
+            public string[] GetDateTimeFormats(System.IFormatProvider provider)
+            {
+                return _timestamp.GetDateTimeFormats(provider);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="format"></param>
+            /// <returns></returns>
+            public string[] GetDateTimeFormats(char format)
+            {
+                return _timestamp.GetDateTimeFormats(format);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="format"></param>
+            /// <param name="provider"></param>
+            /// <returns></returns>
+            public string[] GetDateTimeFormats(char format, System.IFormatProvider provider)
+            {
+                return _timestamp.GetDateTimeFormats(format, provider);
+            }
+
+            /// <summary>
+            /// Retrieve base DateTime object, this is a wrapper for
+            /// </summary>
+            /// <returns>Base DateTime object</returns>
+            public DateTime GetBaseObject()
+            {
+                return _timestamp;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public override int GetHashCode()
+            {
+                return _timestamp.GetHashCode();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public System.TypeCode GetTypeCode()
+            {
+                return _timestamp.GetTypeCode();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public bool IsDaylightSavingTime()
+            {
+                return _timestamp.IsDaylightSavingTime();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public TimeSpan Subtract(DateTime value)
+            {
+                return _timestamp.Subtract(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public DateTime Subtract(TimeSpan value)
+            {
+                return _timestamp.Subtract(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public long ToBinary()
+            {
+                return _timestamp.ToBinary();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public long ToFileTime()
+            {
+                return _timestamp.ToFileTime();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public long ToFileTimeUtc()
+            {
+                return _timestamp.ToFileTimeUtc();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public DateTime ToLocalTime()
+            {
+                return _timestamp.ToLocalTime();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public string ToLongDateString()
+            {
+                return _timestamp.ToLongDateString();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public string ToLongTimeString()
+            {
+                return _timestamp.ToLongTimeString();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public double ToOADate()
+            {
+                return _timestamp.ToOADate();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public string ToShortDateString()
+            {
+                return _timestamp.ToShortDateString();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public string ToShortTimeString()
+            {
+                return _timestamp.ToShortTimeString();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="format"></param>
+            /// <returns></returns>
+            public string ToString(string format)
+            {
+                return _timestamp.ToString(format);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="provider"></param>
+            /// <returns></returns>
+            public string ToString(System.IFormatProvider provider)
+            {
+                return _timestamp.ToString(provider);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="format"></param>
+            /// <param name="provider"></param>
+            /// <returns></returns>
+            public string ToString(string format, System.IFormatProvider provider)
+            {
+                return _timestamp.ToString(format, provider);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public DateTime ToUniversalTime()
+            {
+                return _timestamp.ToUniversalTime();
+            }
+
+
+            #endregion Methods
+
+            #region Operators
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timestamp"></param>
+            /// <param name="Duration"></param>
+            /// <returns></returns>
+            public static DbaDateTimeBase operator +(DbaDateTimeBase Timestamp, TimeSpan Duration)
+            {
+                return Timestamp.Add(Duration);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timestamp"></param>
+            /// <param name="Duration"></param>
+            /// <returns></returns>
+            public static DbaDateTimeBase operator -(DbaDateTimeBase Timestamp, TimeSpan Duration)
+            {
+                return Timestamp.Subtract(Duration);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timestamp1"></param>
+            /// <param name="Timestamp2"></param>
+            /// <returns></returns>
+            public static bool operator ==(DbaDateTimeBase Timestamp1, DbaDateTimeBase Timestamp2)
+            {
+                return (Timestamp1.GetBaseObject().Equals(Timestamp2.GetBaseObject()));
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timestamp1"></param>
+            /// <param name="Timestamp2"></param>
+            /// <returns></returns>
+            public static bool operator !=(DbaDateTimeBase Timestamp1, DbaDateTimeBase Timestamp2)
+            {
+                return (!Timestamp1.GetBaseObject().Equals(Timestamp2.GetBaseObject()));
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timestamp1"></param>
+            /// <param name="Timestamp2"></param>
+            /// <returns></returns>
+            public static bool operator >(DbaDateTimeBase Timestamp1, DbaDateTimeBase Timestamp2)
+            {
+                return Timestamp1.GetBaseObject() > Timestamp2.GetBaseObject();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timestamp1"></param>
+            /// <param name="Timestamp2"></param>
+            /// <returns></returns>
+            public static bool operator <(DbaDateTimeBase Timestamp1, DbaDateTimeBase Timestamp2)
+            {
+                return Timestamp1.GetBaseObject() < Timestamp2.GetBaseObject();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timestamp1"></param>
+            /// <param name="Timestamp2"></param>
+            /// <returns></returns>
+            public static bool operator >=(DbaDateTimeBase Timestamp1, DbaDateTimeBase Timestamp2)
+            {
+                return Timestamp1.GetBaseObject() >= Timestamp2.GetBaseObject();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timestamp1"></param>
+            /// <param name="Timestamp2"></param>
+            /// <returns></returns>
+            public static bool operator <=(DbaDateTimeBase Timestamp1, DbaDateTimeBase Timestamp2)
+            {
+                return Timestamp1.GetBaseObject() <= Timestamp2.GetBaseObject();
+            }
+            #endregion Operators
+
+            #region Implicit Conversions
+            /// <summary>
+            /// Implicitly convert DbaDateTimeBase to DateTime
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DateTime(DbaDateTimeBase Base)
+            {
+                return Base.GetBaseObject();
+            }
+
+            /// <summary>
+            /// Implicitly convert DateTime to DbaDateTimeBase
+            /// </summary>
+            /// <param name="Base">The object to convert</param>
+            public static implicit operator DbaDateTimeBase(DateTime Base)
+            {
+                return new DbaDateTimeBase(Base.Ticks, Base.Kind);
+            }
+            #endregion Implicit Conversions
+        }
+
+        /// <summary>
+        /// A dbatools-internal datetime wrapper for neater display
+        /// </summary>
+        public class DbaDate : DbaDateTimeBase
+        {
+            #region Constructors
+            /// <summary>
+            /// Constructs a generic timestamp object wrapper from an input timestamp object.
+            /// </summary>
+            /// <param name="Timestamp">The timestamp to wrap</param>
+            public DbaDate(DateTime Timestamp)
+            {
+                _timestamp = Timestamp;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            public DbaDate(long ticks)
+            {
+                _timestamp = new DateTime(ticks);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            /// <param name="kind"></param>
+            public DbaDate(long ticks, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(ticks, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            public DbaDate(int year, int month, int day)
+            {
+                _timestamp = new DateTime(year, month, day);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="calendar"></param>
+            public DbaDate(int year, int month, int day, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            public DbaDate(int year, int month, int day, int hour, int minute, int second)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="kind"></param>
+            public DbaDate(int year, int month, int day, int hour, int minute, int second, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="calendar"></param>
+            public DbaDate(int year, int month, int day, int hour, int minute, int second, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            public DbaDate(int year, int month, int day, int hour, int minute, int second, int millisecond)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="kind"></param>
+            public DbaDate(int year, int month, int day, int hour, int minute, int second, int millisecond, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="calendar"></param>
+            public DbaDate(int year, int month, int day, int hour, int minute, int second, int millisecond, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="calendar"></param>
+            /// <param name="kind"></param>
+            public DbaDate(int year, int month, int day, int hour, int minute, int second, int millisecond, System.Globalization.Calendar calendar, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, calendar, kind);
+            }
+            #endregion Constructors
+
+            /// <summary>
+            /// Provids the default-formated string, using the defined default formatting.
+            /// </summary>
+            /// <returns>Formatted datetime-string</returns>
+            public override string ToString()
+            {
+                if (UtilityHost.DisableCustomDateTime) { return _timestamp.ToString(); }
+                return _timestamp.ToString(UtilityHost.FormatDate);
+            }
+
+            #region Implicit Conversions
+            /// <summary>
+            /// Implicitly convert to DateTime
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DateTime(DbaDate Base)
+            {
+                return Base.GetBaseObject();
+            }
+
+            /// <summary>
+            /// Implicitly convert from DateTime
+            /// </summary>
+            /// <param name="Base">The object to convert</param>
+            public static implicit operator DbaDate(DateTime Base)
+            {
+                 return new DbaDate(Base);
+            }
+
+            /// <summary>
+            /// Implicitly convert to DbaDate
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DbaDateTime(DbaDate Base)
+            {
+                return new DbaDateTime(Base.GetBaseObject());
+            }
+
+            /// <summary>
+            /// Implicitly convert to DbaTime
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DbaTime(DbaDate Base)
+            {
+                return new DbaTime(Base.GetBaseObject());
+            }
+            #endregion Implicit Conversions
+
+            #region Statics
+            /// <summary>
+            /// Generates a DbaDate object based off DateTime object. Will be null if Base is the start value (Tickes == 0).
+            /// </summary>
+            /// <param name="Base">The Datetime to base it off</param>
+            /// <returns>The object to generate (or null)</returns>
+            public static DbaDate Generate(DateTime Base)
+            {
+                if (Base.Ticks == 0)
+                    return null;
+                else
+                    return new DbaDate(Base);
+            }
+            #endregion Statics
+        }
+
+        /// <summary>
+        /// A dbatools-internal datetime wrapper for neater display
+        /// </summary>
+        public class DbaDateTime : DbaDateTimeBase
+        {
+            #region Constructors
+            /// <summary>
+            /// Constructs a generic timestamp object wrapper from an input timestamp object.
+            /// </summary>
+            /// <param name="Timestamp">The timestamp to wrap</param>
+            public DbaDateTime(DateTime Timestamp)
+            {
+                _timestamp = Timestamp;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            public DbaDateTime(long ticks)
+            {
+                _timestamp = new DateTime(ticks);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            /// <param name="kind"></param>
+            public DbaDateTime(long ticks, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(ticks, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            public DbaDateTime(int year, int month, int day)
+            {
+                _timestamp = new DateTime(year, month, day);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="calendar"></param>
+            public DbaDateTime(int year, int month, int day, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            public DbaDateTime(int year, int month, int day, int hour, int minute, int second)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="kind"></param>
+            public DbaDateTime(int year, int month, int day, int hour, int minute, int second, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="calendar"></param>
+            public DbaDateTime(int year, int month, int day, int hour, int minute, int second, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            public DbaDateTime(int year, int month, int day, int hour, int minute, int second, int millisecond)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="kind"></param>
+            public DbaDateTime(int year, int month, int day, int hour, int minute, int second, int millisecond, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="calendar"></param>
+            public DbaDateTime(int year, int month, int day, int hour, int minute, int second, int millisecond, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="calendar"></param>
+            /// <param name="kind"></param>
+            public DbaDateTime(int year, int month, int day, int hour, int minute, int second, int millisecond, System.Globalization.Calendar calendar, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, calendar, kind);
+            }
+            #endregion Constructors
+
+            /// <summary>
+            /// Provids the default-formated string, using the defined default formatting.
+            /// </summary>
+            /// <returns>Formatted datetime-string</returns>
+            public override string ToString()
+            {
+                if (UtilityHost.DisableCustomDateTime) { return _timestamp.ToString(); }
+                return _timestamp.ToString(UtilityHost.FormatDateTime);
+            }
+
+            #region Implicit Conversions
+            /// <summary>
+            /// Implicitly convert to DateTime
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DateTime(DbaDateTime Base)
+            {
+                return Base.GetBaseObject();
+            }
+
+            /// <summary>
+            /// Implicitly convert from DateTime
+            /// </summary>
+            /// <param name="Base">The object to convert</param>
+            public static implicit operator DbaDateTime(DateTime Base)
+            {
+                return new DbaDateTime(Base);
+            }
+
+            /// <summary>
+            /// Implicitly convert to DbaDate
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DbaDate(DbaDateTime Base)
+            {
+                return new DbaDate(Base.GetBaseObject());
+            }
+
+            /// <summary>
+            /// Implicitly convert to DbaTime
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DbaTime(DbaDateTime Base)
+            {
+                return new DbaTime(Base.GetBaseObject());
+            }
+            #endregion Implicit Conversions
+
+            #region Statics
+            /// <summary>
+            /// Generates a DbaDateTime object based off DateTime object. Will be null if Base is the start value (Tickes == 0).
+            /// </summary>
+            /// <param name="Base">The Datetime to base it off</param>
+            /// <returns>The object to generate (or null)</returns>
+            public static DbaDateTime Generate(DateTime Base)
+            {
+                if (Base.Ticks == 0)
+                    return null;
+                else
+                    return new DbaDateTime(Base);
+            }
+            #endregion Statics
+        }
+
+        /// <summary>
+        /// A dbatools-internal datetime wrapper for neater display
+        /// </summary>
+        public class DbaTime : DbaDateTimeBase
+        {
+            #region Constructors
+            /// <summary>
+            /// Constructs a generic timestamp object wrapper from an input timestamp object.
+            /// </summary>
+            /// <param name="Timestamp">The timestamp to wrap</param>
+            public DbaTime(DateTime Timestamp)
+            {
+                _timestamp = Timestamp;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            public DbaTime(long ticks)
+            {
+                _timestamp = new DateTime(ticks);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            /// <param name="kind"></param>
+            public DbaTime(long ticks, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(ticks, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            public DbaTime(int year, int month, int day)
+            {
+                _timestamp = new DateTime(year, month, day);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="calendar"></param>
+            public DbaTime(int year, int month, int day, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            public DbaTime(int year, int month, int day, int hour, int minute, int second)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="kind"></param>
+            public DbaTime(int year, int month, int day, int hour, int minute, int second, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="calendar"></param>
+            public DbaTime(int year, int month, int day, int hour, int minute, int second, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            public DbaTime(int year, int month, int day, int hour, int minute, int second, int millisecond)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="kind"></param>
+            public DbaTime(int year, int month, int day, int hour, int minute, int second, int millisecond, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, kind);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="calendar"></param>
+            public DbaTime(int year, int month, int day, int hour, int minute, int second, int millisecond, System.Globalization.Calendar calendar)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, calendar);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="year"></param>
+            /// <param name="month"></param>
+            /// <param name="day"></param>
+            /// <param name="hour"></param>
+            /// <param name="minute"></param>
+            /// <param name="second"></param>
+            /// <param name="millisecond"></param>
+            /// <param name="calendar"></param>
+            /// <param name="kind"></param>
+            public DbaTime(int year, int month, int day, int hour, int minute, int second, int millisecond, System.Globalization.Calendar calendar, System.DateTimeKind kind)
+            {
+                _timestamp = new DateTime(year, month, day, hour, minute, second, millisecond, calendar, kind);
+            }
+            #endregion Constructors
+
+            /// <summary>
+            /// Provids the default-formated string, using the defined default formatting.
+            /// </summary>
+            /// <returns>Formatted datetime-string</returns>
+            public override string ToString()
+            {
+                if (UtilityHost.DisableCustomDateTime) { return _timestamp.ToString(); }
+                return _timestamp.ToString(UtilityHost.FormatTime);
+            }
+
+            #region Implicit Conversions
+            /// <summary>
+            /// Implicitly convert to DateTime
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DateTime(DbaTime Base)
+            {
+                return Base.GetBaseObject();
+            }
+
+            /// <summary>
+            /// Implicitly convert from DateTime
+            /// </summary>
+            /// <param name="Base">The object to convert</param>
+            public static implicit operator DbaTime(DateTime Base)
+            {
+                return new DbaTime(Base);
+            }
+
+            /// <summary>
+            /// Implicitly convert to DbaDate
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DbaDate(DbaTime Base)
+            {
+                return new DbaDate(Base.GetBaseObject());
+            }
+
+            /// <summary>
+            /// Implicitly convert to DbaTime
+            /// </summary>
+            /// <param name="Base">The source object to convert</param>
+            public static implicit operator DbaDateTime(DbaTime Base)
+            {
+                return new DbaDateTime(Base.GetBaseObject());
+            }
+
+            /// <summary>
+            /// Implicitly convert to string
+            /// </summary>
+            /// <param name="Base">Object to convert</param>
+            public static implicit operator string(DbaTime Base)
+            {
+                return Base.ToString();
+            }
+            #endregion Implicit Conversions
+
+            #region Statics
+            /// <summary>
+            /// Generates a DbaDateTime object based off DateTime object. Will be null if Base is the start value (Tickes == 0).
+            /// </summary>
+            /// <param name="Base">The Datetime to base it off</param>
+            /// <returns>The object to generate (or null)</returns>
+            public static DbaTime Generate(DateTime Base)
+            {
+                if (Base.Ticks == 0)
+                    return null;
+                else
+                    return new DbaTime(Base);
+            }
+            #endregion Statics
+        }
+
+        /// <summary>
+        /// A wrapper class, encapsuling a regular TimeSpan object. Used to provide custom timespan display.
+        /// </summary>
+        public class DbaTimeSpan : IComparable, IComparable<TimeSpan>, IComparable<DbaTimeSpan>, IEquatable<TimeSpan>
+        {
+            internal TimeSpan _timespan;
+
+            #region Properties
+            /// <summary>
+            /// Gets the days component of the time interval represented by the current TimeSpan structure.
+            /// </summary>
+            public int Days
+            {
+                get
+                {
+                    return _timespan.Days;
+                }
+            }
+            
+            /// <summary>
+            /// Gets the hours component of the time interval represented by the current TimeSpan structure.
+            /// </summary>
+            public int Hours
+            {
+                get
+                {
+                    return _timespan.Hours;
+                }
+            }
+
+            /// <summary>
+            /// Gets the milliseconds component of the time interval represented by the current TimeSpan structure.
+            /// </summary>
+            public int Milliseconds
+            {
+                get
+                {
+                    return _timespan.Milliseconds;
+                }
+            }
+
+            /// <summary>
+            /// Gets the minutes component of the time interval represented by the current TimeSpan structure.
+            /// </summary>
+            public int Minutes
+            {
+                get
+                {
+                    return _timespan.Minutes;
+                }
+            }
+
+            /// <summary>
+            /// Gets the seconds component of the time interval represented by the current TimeSpan structure.
+            /// </summary>
+            public int Seconds
+            {
+                get
+                {
+                    return _timespan.Seconds;
+                }
+            }
+
+            /// <summary>
+            /// Gets the number of ticks that represent the value of the current TimeSpan structure.
+            /// </summary>
+            public long Ticks
+            {
+                get
+                {
+                    return _timespan.Ticks;
+                }
+            }
+
+            /// <summary>
+            /// Gets the value of the current TimeSpan structure expressed in whole and fractional days.
+            /// </summary>
+            public double TotalDays
+            {
+                get
+                {
+                    return _timespan.TotalDays;
+                }
+            }
+
+            /// <summary>
+            /// Gets the value of the current TimeSpan structure expressed in whole and fractional hours.
+            /// </summary>
+            public double TotalHours
+            {
+                get
+                {
+                    return _timespan.TotalHours;
+                }
+            }
+
+            /// <summary>
+            /// Gets the value of the current TimeSpan structure expressed in whole and fractional milliseconds.
+            /// </summary>
+            public double TotalMilliseconds
+            {
+                get
+                {
+                    return _timespan.TotalMilliseconds;
+                }
+            }
+
+            /// <summary>
+            /// Gets the value of the current TimeSpan structure expressed in whole and fractional minutes.
+            /// </summary>
+            public double TotalMinutes
+            {
+                get
+                {
+                    return _timespan.TotalMinutes;
+                }
+            }
+
+            /// <summary>
+            /// Gets the value of the current TimeSpan structure expressed in whole and fractional seconds.
+            /// </summary>
+            public double TotalSeconds
+            {
+                get
+                {
+                    return _timespan.TotalSeconds;
+                }
+            }
+            #endregion Properties
+
+            #region Constructors
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="Timespan"></param>
+            public DbaTimeSpan(TimeSpan Timespan)
+            {
+                _timespan = Timespan;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ticks"></param>
+            public DbaTimeSpan(long ticks)
+            {
+                _timespan = new TimeSpan(ticks);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="hours"></param>
+            /// <param name="minutes"></param>
+            /// <param name="seconds"></param>
+            public DbaTimeSpan(int hours, int minutes, int seconds)
+            {
+                _timespan = new TimeSpan(hours, minutes, seconds);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="days"></param>
+            /// <param name="hours"></param>
+            /// <param name="minutes"></param>
+            /// <param name="seconds"></param>
+            public DbaTimeSpan(int days, int hours, int minutes, int seconds)
+            {
+                _timespan = new TimeSpan(days, hours, minutes, seconds);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="days"></param>
+            /// <param name="hours"></param>
+            /// <param name="minutes"></param>
+            /// <param name="seconds"></param>
+            /// <param name="milliseconds"></param>
+            public DbaTimeSpan(int days, int hours, int minutes, int seconds, int milliseconds)
+            {
+                _timespan = new TimeSpan(days, hours, minutes, seconds, milliseconds);
+            }
+            #endregion Constructors
+
+            #region Methods
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ts"></param>
+            /// <returns></returns>
+            public TimeSpan Add(TimeSpan ts)
+            {
+                return _timespan.Add(ts);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public int CompareTo(System.Object value)
+            {
+                return _timespan.CompareTo(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public int CompareTo(TimeSpan value)
+            {
+                return _timespan.CompareTo(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public int CompareTo(DbaTimeSpan value)
+            {
+                return _timespan.CompareTo(value.GetBaseObject());
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public TimeSpan Duration()
+            {
+                return _timespan.Duration();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="value"></param>
+            /// <returns></returns>
+            public override bool Equals(System.Object value)
+            {
+                return _timespan.Equals(value);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="obj"></param>
+            /// <returns></returns>
+            public bool Equals(TimeSpan obj)
+            {
+                return _timespan.Equals(obj);
+            }
+
+            /// <summary>
+            /// Returns the wrapped base object
+            /// </summary>
+            /// <returns>The base object</returns>
+            public TimeSpan GetBaseObject()
+            {
+                return _timespan;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public override int GetHashCode()
+            {
+                return _timespan.GetHashCode();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public TimeSpan Negate()
+            {
+                return _timespan.Negate();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ts"></param>
+            /// <returns></returns>
+            public TimeSpan Subtract(TimeSpan ts)
+            {
+                return _timespan.Subtract(ts);
+            }
+
+            /// <summary>
+            /// Returns the default string representation of the TimeSpan object
+            /// </summary>
+            /// <returns>The string representation of the DbaTimeSpan object</returns>
+            public override string ToString()
+            {
+                if (UtilityHost.DisableCustomTimeSpan) { return _timespan.ToString(); }
+                else if (_timespan.Ticks % 10000000 == 0) { return _timespan.ToString(); }
+                else
+                {
+                    string temp = _timespan.ToString();
+
+                    if (_timespan.TotalSeconds < 10) { temp = temp.Substring(0, temp.LastIndexOf(".") + 3); }
+                    else if (_timespan.TotalSeconds < 100) { temp = temp.Substring(0, temp.LastIndexOf(".") + 2); }
+                    else { temp = temp.Substring(0, temp.LastIndexOf(".")); }
+
+                    return temp;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="format"></param>
+            /// <returns></returns>
+            public string ToString(string format)
+            {
+                return _timespan.ToString(format);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="format"></param>
+            /// <param name="formatProvider"></param>
+            /// <returns></returns>
+            public string ToString(string format, System.IFormatProvider formatProvider)
+            {
+                return _timespan.ToString(format, formatProvider);
+            }
+            #endregion Methods
+
+            #region Implicit Operators
+            /// <summary>
+            /// Implicitly converts a DbaTimeSpan object into a TimeSpan object
+            /// </summary>
+            /// <param name="Base">The original object to revert</param>
+            public static implicit operator TimeSpan(DbaTimeSpan Base)
+            {
+                try { return Base.GetBaseObject(); }
+                catch { }
+                return new TimeSpan();
+            }
+
+            /// <summary>
+            /// Implicitly converts a TimeSpan object into a DbaTimeSpan object
+            /// </summary>
+            /// <param name="Base">The original object to wrap</param>
+            public static implicit operator DbaTimeSpan(TimeSpan Base)
+            {
+                return new DbaTimeSpan(Base);
+            }
+            #endregion Implicit Operators
+        }
 
         /// <summary>
         /// Static class that holds useful regex patterns, ready for use
@@ -1338,12 +4326,12 @@ namespace sqlcollective.dbatools
             /// <summary>
             /// Pattern that checks for a valid hostname
             /// </summary>
-            public static string HostName = @"^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$";
+            public static string HostName = @"^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-_]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-_]{0,61}[a-zA-Z0-9]))*$";
 
             /// <summary>
             /// Pattern that checks for valid hostnames within a larger text
             /// </summary>
-            public static string ExHostName = @"([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*";
+            public static string HostNameEx = @"([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-_]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-_]{0,61}[a-zA-Z0-9]))*";
 
             /// <summary>
             /// Pattern that checks for a valid IPv4 address
@@ -1353,7 +4341,7 @@ namespace sqlcollective.dbatools
             /// <summary>
             /// Pattern that checks for valid IPv4 addresses within a larger text
             /// </summary>
-            public static string ExIPv4 = @"(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}";
+            public static string IPv4Ex = @"(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}";
 
             /// <summary>
             /// Will match a valid IPv6 address
@@ -1363,12 +4351,12 @@ namespace sqlcollective.dbatools
             /// <summary>
             /// Will match any IPv6 address within a larger text
             /// </summary>
-            public static string ExIPv6 = @"(?:^|(?<=\s))(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))(?=\s|$)";
+            public static string IPv6Ex = @"(?:^|(?<=\s))(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))(?=\s|$)";
 
             /// <summary>
             /// Will match any string that in its entirety represents a valid target for dns- or ip-based targeting. Combination of HostName, IPv4 and IPv6
             /// </summary>
-            public static string ComputerTarget = @"^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$|^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$|^(?:^|(?<=\s))(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))(?=\s|$)$";
+            public static string ComputerTarget = @"^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-_]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-_]{0,61}[a-zA-Z0-9]))*$|^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$|^(?:^|(?<=\s))(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))(?=\s|$)$";
 
             /// <summary>
             /// Will match a valid Guid
@@ -1378,7 +4366,369 @@ namespace sqlcollective.dbatools
             /// <summary>
             /// Will match any number of valid Guids in a larger text
             /// </summary>
-            public static string ExGuid = @"(\{{0,1}([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){12}\}{0,1})";
+            public static string GuidEx = @"(\{{0,1}([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){12}\}{0,1})";
+
+            /// <summary>
+            /// Will match a mostly valid instance name.
+            /// </summary>
+            public static string InstanceName = @"^[\p{L}&_#][\p{L}\d\$#_]{1,15}$";
+
+            /// <summary>
+            /// Will match any instance of a mostly valid instance name.
+            /// </summary>
+            public static string InstanceNameEx = @"[\p{L}&_#][\p{L}\d\$#_]{1,15}";
+
+            /// <summary>
+            /// Matches a word against the list of officially reserved keywords
+            /// </summary>
+            public static string SqlReservedKeyword = @"^ADD$|^ALL$|^ALTER$|^AND$|^ANY$|^AS$|^ASC$|^AUTHORIZATION$|^BACKUP$|^BEGIN$|^BETWEEN$|^BREAK$|^BROWSE$|^BULK$|^BY$|^CASCADE$|^CASE$|^CHECK$|^CHECKPOINT$|^CLOSE$|^CLUSTERED$|^COALESCE$|^COLLATE$|^COLUMN$|^COMMIT$|^COMPUTE$|^CONSTRAINT$|^CONTAINS$|^CONTAINSTABLE$|^CONTINUE$|^CONVERT$|^CREATE$|^CROSS$|^CURRENT$|^CURRENT_DATE$|^CURRENT_TIME$|^CURRENT_TIMESTAMP$|^CURRENT_USER$|^CURSOR$|^DATABASE$|^DBCC$|^DEALLOCATE$|^DECLARE$|^DEFAULT$|^DELETE$|^DENY$|^DESC$|^DISK$|^DISTINCT$|^DISTRIBUTED$|^DOUBLE$|^DROP$|^DUMP$|^ELSE$|^END$|^ERRLVL$|^ESCAPE$|^EXCEPT$|^EXEC$|^EXECUTE$|^EXISTS$|^EXIT$|^EXTERNAL$|^FETCH$|^FILE$|^FILLFACTOR$|^FOR$|^FOREIGN$|^FREETEXT$|^FREETEXTTABLE$|^FROM$|^FULL$|^FUNCTION$|^GOTO$|^GRANT$|^GROUP$|^HAVING$|^HOLDLOCK$|^IDENTITY$|^IDENTITY_INSERT$|^IDENTITYCOL$|^IF$|^IN$|^INDEX$|^INNER$|^INSERT$|^INTERSECT$|^INTO$|^IS$|^JOIN$|^KEY$|^KILL$|^LEFT$|^LIKE$|^LINENO$|^LOAD$|^MERGE$|^NATIONAL$|^NOCHECK$|^NONCLUSTERED$|^NOT$|^NULL$|^NULLIF$|^OF$|^OFF$|^OFFSETS$|^ON$|^OPEN$|^OPENDATASOURCE$|^OPENQUERY$|^OPENROWSET$|^OPENXML$|^OPTION$|^OR$|^ORDER$|^OUTER$|^OVER$|^PERCENT$|^PIVOT$|^PLAN$|^PRECISION$|^PRIMARY$|^PRINT$|^PROC$|^PROCEDURE$|^PUBLIC$|^RAISERROR$|^READ$|^READTEXT$|^RECONFIGURE$|^REFERENCES$|^REPLICATION$|^RESTORE$|^RESTRICT$|^RETURN$|^REVERT$|^REVOKE$|^RIGHT$|^ROLLBACK$|^ROWCOUNT$|^ROWGUIDCOL$|^RULE$|^SAVE$|^SCHEMA$|^SECURITYAUDIT$|^SELECT$|^SEMANTICKEYPHRASETABLE$|^SEMANTICSIMILARITYDETAILSTABLE$|^SEMANTICSIMILARITYTABLE$|^SESSION_USER$|^SET$|^SETUSER$|^SHUTDOWN$|^SOME$|^STATISTICS$|^SYSTEM_USER$|^TABLE$|^TABLESAMPLE$|^TEXTSIZE$|^THEN$|^TO$|^TOP$|^TRAN$|^TRANSACTION$|^TRIGGER$|^TRUNCATE$|^TRY_CONVERT$|^TSEQUAL$|^UNION$|^UNIQUE$|^UNPIVOT$|^UPDATE$|^UPDATETEXT$|^USE$|^USER$|^VALUES$|^VARYING$|^VIEW$|^WAITFOR$|^WHEN$|^WHERE$|^WHILE$|^WITH$|^WITHIN GROUP$|^WRITETEXT$";
+
+            /// <summary>
+            /// Will match any reserved keyword in a larger text
+            /// </summary>
+            public static string SqlReservedKeywordEx = @"ADD|ALL|ALTER|AND|ANY|AS|ASC|AUTHORIZATION|BACKUP|BEGIN|BETWEEN|BREAK|BROWSE|BULK|BY|CASCADE|CASE|CHECK|CHECKPOINT|CLOSE|CLUSTERED|COALESCE|COLLATE|COLUMN|COMMIT|COMPUTE|CONSTRAINT|CONTAINS|CONTAINSTABLE|CONTINUE|CONVERT|CREATE|CROSS|CURRENT|CURRENT_DATE|CURRENT_TIME|CURRENT_TIMESTAMP|CURRENT_USER|CURSOR|DATABASE|DBCC|DEALLOCATE|DECLARE|DEFAULT|DELETE|DENY|DESC|DISK|DISTINCT|DISTRIBUTED|DOUBLE|DROP|DUMP|ELSE|END|ERRLVL|ESCAPE|EXCEPT|EXEC|EXECUTE|EXISTS|EXIT|EXTERNAL|FETCH|FILE|FILLFACTOR|FOR|FOREIGN|FREETEXT|FREETEXTTABLE|FROM|FULL|FUNCTION|GOTO|GRANT|GROUP|HAVING|HOLDLOCK|IDENTITY|IDENTITY_INSERT|IDENTITYCOL|IF|IN|INDEX|INNER|INSERT|INTERSECT|INTO|IS|JOIN|KEY|KILL|LEFT|LIKE|LINENO|LOAD|MERGE|NATIONAL|NOCHECK|NONCLUSTERED|NOT|NULL|NULLIF|OF|OFF|OFFSETS|ON|OPEN|OPENDATASOURCE|OPENQUERY|OPENROWSET|OPENXML|OPTION|OR|ORDER|OUTER|OVER|PERCENT|PIVOT|PLAN|PRECISION|PRIMARY|PRINT|PROC|PROCEDURE|PUBLIC|RAISERROR|READ|READTEXT|RECONFIGURE|REFERENCES|REPLICATION|RESTORE|RESTRICT|RETURN|REVERT|REVOKE|RIGHT|ROLLBACK|ROWCOUNT|ROWGUIDCOL|RULE|SAVE|SCHEMA|SECURITYAUDIT|SELECT|SEMANTICKEYPHRASETABLE|SEMANTICSIMILARITYDETAILSTABLE|SEMANTICSIMILARITYTABLE|SESSION_USER|SET|SETUSER|SHUTDOWN|SOME|STATISTICS|SYSTEM_USER|TABLE|TABLESAMPLE|TEXTSIZE|THEN|TO|TOP|TRAN|TRANSACTION|TRIGGER|TRUNCATE|TRY_CONVERT|TSEQUAL|UNION|UNIQUE|UNPIVOT|UPDATE|UPDATETEXT|USE|USER|VALUES|VARYING|VIEW|WAITFOR|WHEN|WHERE|WHILE|WITH|WITHIN GROUP|WRITETEXT";
+
+            /// <summary>
+            /// Matches a word against the list of officially reserved keywords for odbc
+            /// </summary>
+            public static string SqlReservedKeywordOdbc = @"^ABSOLUTE$|^ACTION$|^ADA$|^ADD$|^ALL$|^ALLOCATE$|^ALTER$|^AND$|^ANY$|^ARE$|^AS$|^ASC$|^ASSERTION$|^AT$|^AUTHORIZATION$|^AVG$|^BEGIN$|^BETWEEN$|^BIT$|^BIT_LENGTH$|^BOTH$|^BY$|^CASCADE$|^CASCADED$|^CASE$|^CAST$|^CATALOG$|^CHAR$|^CHAR_LENGTH$|^CHARACTER$|^CHARACTER_LENGTH$|^CHECK$|^CLOSE$|^COALESCE$|^COLLATE$|^COLLATION$|^COLUMN$|^COMMIT$|^CONNECT$|^CONNECTION$|^CONSTRAINT$|^CONSTRAINTS$|^CONTINUE$|^CONVERT$|^CORRESPONDING$|^COUNT$|^CREATE$|^CROSS$|^CURRENT$|^CURRENT_DATE$|^CURRENT_TIME$|^CURRENT_TIMESTAMP$|^CURRENT_USER$|^CURSOR$|^DATE$|^DAY$|^DEALLOCATE$|^DEC$|^DECIMAL$|^DECLARE$|^DEFAULT$|^DEFERRABLE$|^DEFERRED$|^DELETE$|^DESC$|^DESCRIBE$|^DESCRIPTOR$|^DIAGNOSTICS$|^DISCONNECT$|^DISTINCT$|^DOMAIN$|^DOUBLE$|^DROP$|^ELSE$|^END$|^END-EXEC$|^ESCAPE$|^EXCEPT$|^EXCEPTION$|^EXEC$|^EXECUTE$|^EXISTS$|^EXTERNAL$|^EXTRACT$|^FALSE$|^FETCH$|^FIRST$|^FLOAT$|^FOR$|^FOREIGN$|^FORTRAN$|^FOUND$|^FROM$|^FULL$|^GET$|^GLOBAL$|^GO$|^GOTO$|^GRANT$|^GROUP$|^HAVING$|^HOUR$|^IDENTITY$|^IMMEDIATE$|^IN$|^INCLUDE$|^INDEX$|^INDICATOR$|^INITIALLY$|^INNER$|^INPUT$|^INSENSITIVE$|^INSERT$|^INT$|^INTEGER$|^INTERSECT$|^INTERVAL$|^INTO$|^IS$|^ISOLATION$|^JOIN$|^KEY$|^LANGUAGE$|^LAST$|^LEADING$|^LEFT$|^LEVEL$|^LIKE$|^LOCAL$|^LOWER$|^MATCH$|^MAX$|^MIN$|^MINUTE$|^MODULE$|^MONTH$|^NAMES$|^NATIONAL$|^NATURAL$|^NCHAR$|^NEXT$|^NO$|^NONE$|^NOT$|^NULL$|^NULLIF$|^NUMERIC$|^OCTET_LENGTH$|^OF$|^ON$|^ONLY$|^OPEN$|^OPTION$|^OR$|^ORDER$|^OUTER$|^OUTPUT$|^OVERLAPS$|^PAD$|^PARTIAL$|^PASCAL$|^POSITION$|^PRECISION$|^PREPARE$|^PRESERVE$|^PRIMARY$|^PRIOR$|^PRIVILEGES$|^PROCEDURE$|^PUBLIC$|^READ$|^REAL$|^REFERENCES$|^RELATIVE$|^RESTRICT$|^REVOKE$|^RIGHT$|^ROLLBACK$|^ROWS$|^SCHEMA$|^SCROLL$|^SECOND$|^SECTION$|^SELECT$|^SESSION$|^SESSION_USER$|^SET$|^SIZE$|^SMALLINT$|^SOME$|^SPACE$|^SQL$|^SQLCA$|^SQLCODE$|^SQLERROR$|^SQLSTATE$|^SQLWARNING$|^SUBSTRING$|^SUM$|^SYSTEM_USER$|^TABLE$|^TEMPORARY$|^THEN$|^TIME$|^TIMESTAMP$|^TIMEZONE_HOUR$|^TIMEZONE_MINUTE$|^TO$|^TRAILING$|^TRANSACTION$|^TRANSLATE$|^TRANSLATION$|^TRIM$|^TRUE$|^UNION$|^UNIQUE$|^UNKNOWN$|^UPDATE$|^UPPER$|^USAGE$|^USER$|^USING$|^VALUE$|^VALUES$|^VARCHAR$|^VARYING$|^VIEW$|^WHEN$|^WHENEVER$|^WHERE$|^WITH$|^WORK$|^WRITE$|^YEAR$|^ZONE$";
+
+            /// <summary>
+            /// Will match any reserved odbc-keyword in a larger text
+            /// </summary>
+            public static string SqlReservedKeywordOdbcEx = @"ABSOLUTE|ACTION|ADA|ADD|ALL|ALLOCATE|ALTER|AND|ANY|ARE|AS|ASC|ASSERTION|AT|AUTHORIZATION|AVG|BEGIN|BETWEEN|BIT|BIT_LENGTH|BOTH|BY|CASCADE|CASCADED|CASE|CAST|CATALOG|CHAR|CHAR_LENGTH|CHARACTER|CHARACTER_LENGTH|CHECK|CLOSE|COALESCE|COLLATE|COLLATION|COLUMN|COMMIT|CONNECT|CONNECTION|CONSTRAINT|CONSTRAINTS|CONTINUE|CONVERT|CORRESPONDING|COUNT|CREATE|CROSS|CURRENT|CURRENT_DATE|CURRENT_TIME|CURRENT_TIMESTAMP|CURRENT_USER|CURSOR|DATE|DAY|DEALLOCATE|DEC|DECIMAL|DECLARE|DEFAULT|DEFERRABLE|DEFERRED|DELETE|DESC|DESCRIBE|DESCRIPTOR|DIAGNOSTICS|DISCONNECT|DISTINCT|DOMAIN|DOUBLE|DROP|ELSE|END|END-EXEC|ESCAPE|EXCEPT|EXCEPTION|EXEC|EXECUTE|EXISTS|EXTERNAL|EXTRACT|FALSE|FETCH|FIRST|FLOAT|FOR|FOREIGN|FORTRAN|FOUND|FROM|FULL|GET|GLOBAL|GO|GOTO|GRANT|GROUP|HAVING|HOUR|IDENTITY|IMMEDIATE|IN|INCLUDE|INDEX|INDICATOR|INITIALLY|INNER|INPUT|INSENSITIVE|INSERT|INT|INTEGER|INTERSECT|INTERVAL|INTO|IS|ISOLATION|JOIN|KEY|LANGUAGE|LAST|LEADING|LEFT|LEVEL|LIKE|LOCAL|LOWER|MATCH|MAX|MIN|MINUTE|MODULE|MONTH|NAMES|NATIONAL|NATURAL|NCHAR|NEXT|NO|NONE|NOT|NULL|NULLIF|NUMERIC|OCTET_LENGTH|OF|ON|ONLY|OPEN|OPTION|OR|ORDER|OUTER|OUTPUT|OVERLAPS|PAD|PARTIAL|PASCAL|POSITION|PRECISION|PREPARE|PRESERVE|PRIMARY|PRIOR|PRIVILEGES|PROCEDURE|PUBLIC|READ|REAL|REFERENCES|RELATIVE|RESTRICT|REVOKE|RIGHT|ROLLBACK|ROWS|SCHEMA|SCROLL|SECOND|SECTION|SELECT|SESSION|SESSION_USER|SET|SIZE|SMALLINT|SOME|SPACE|SQL|SQLCA|SQLCODE|SQLERROR|SQLSTATE|SQLWARNING|SUBSTRING|SUM|SYSTEM_USER|TABLE|TEMPORARY|THEN|TIME|TIMESTAMP|TIMEZONE_HOUR|TIMEZONE_MINUTE|TO|TRAILING|TRANSACTION|TRANSLATE|TRANSLATION|TRIM|TRUE|UNION|UNIQUE|UNKNOWN|UPDATE|UPPER|USAGE|USER|USING|VALUE|VALUES|VARCHAR|VARYING|VIEW|WHEN|WHENEVER|WHERE|WITH|WORK|WRITE|YEAR|ZONE";
+
+            /// <summary>
+            /// Matches a word against the list of keywords that are likely to become reserved in the future
+            /// </summary>
+            public static string SqlReservedKeywordFuture = @"^ABSOLUTE$|^ACTION$|^ADMIN$|^AFTER$|^AGGREGATE$|^ALIAS$|^ALLOCATE$|^ARE$|^ARRAY$|^ASENSITIVE$|^ASSERTION$|^ASYMMETRIC$|^AT$|^ATOMIC$|^BEFORE$|^BINARY$|^BIT$|^BLOB$|^BOOLEAN$|^BOTH$|^BREADTH$|^CALL$|^CALLED$|^CARDINALITY$|^CASCADED$|^CAST$|^CATALOG$|^CHAR$|^CHARACTER$|^CLASS$|^CLOB$|^COLLATION$|^COLLECT$|^COMPLETION$|^CONDITION$|^CONNECT$|^CONNECTION$|^CONSTRAINTS$|^CONSTRUCTOR$|^CORR$|^CORRESPONDING$|^COVAR_POP$|^COVAR_SAMP$|^CUBE$|^CUME_DIST$|^CURRENT_CATALOG$|^CURRENT_DEFAULT_TRANSFORM_GROUP$|^CURRENT_PATH$|^CURRENT_ROLE$|^CURRENT_SCHEMA$|^CURRENT_TRANSFORM_GROUP_FOR_TYPE$|^CYCLE$|^DATA$|^DATE$|^DAY$|^DEC$|^DECIMAL$|^DEFERRABLE$|^DEFERRED$|^DEPTH$|^DEREF$|^DESCRIBE$|^DESCRIPTOR$|^DESTROY$|^DESTRUCTOR$|^DETERMINISTIC$|^DIAGNOSTICS$|^DICTIONARY$|^DISCONNECT$|^DOMAIN$|^DYNAMIC$|^EACH$|^ELEMENT$|^END-EXEC$|^EQUALS$|^EVERY$|^EXCEPTION$|^FALSE$|^FILTER$|^FIRST$|^FLOAT$|^FOUND$|^FREE$|^FULLTEXTTABLE$|^FUSION$|^GENERAL$|^GET$|^GLOBAL$|^GO$|^GROUPING$|^HOLD$|^HOST$|^HOUR$|^IGNORE$|^IMMEDIATE$|^INDICATOR$|^INITIALIZE$|^INITIALLY$|^INOUT$|^INPUT$|^INT$|^INTEGER$|^INTERSECTION$|^INTERVAL$|^ISOLATION$|^ITERATE$|^LANGUAGE$|^LARGE$|^LAST$|^LATERAL$|^LEADING$|^LESS$|^LEVEL$|^LIKE_REGEX$|^LIMIT$|^LN$|^LOCAL$|^LOCALTIME$|^LOCALTIMESTAMP$|^LOCATOR$|^MAP$|^MATCH$|^MEMBER$|^METHOD$|^MINUTE$|^MOD$|^MODIFIES$|^MODIFY$|^MODULE$|^MONTH$|^MULTISET$|^NAMES$|^NATURAL$|^NCHAR$|^NCLOB$|^NEW$|^NEXT$|^NO$|^NONE$|^NORMALIZE$|^NUMERIC$|^OBJECT$|^OCCURRENCES_REGEX$|^OLD$|^ONLY$|^OPERATION$|^ORDINALITY$|^OUT$|^OUTPUT$|^OVERLAY$|^PAD$|^PARAMETER$|^PARAMETERS$|^PARTIAL$|^PARTITION$|^PATH$|^PERCENT_RANK$|^PERCENTILE_CONT$|^PERCENTILE_DISC$|^POSITION_REGEX$|^POSTFIX$|^PREFIX$|^PREORDER$|^PREPARE$|^PRESERVE$|^PRIOR$|^PRIVILEGES$|^RANGE$|^READS$|^REAL$|^RECURSIVE$|^REF$|^REFERENCING$|^REGR_AVGX$|^REGR_AVGY$|^REGR_COUNT$|^REGR_INTERCEPT$|^REGR_R2$|^REGR_SLOPE$|^REGR_SXX$|^REGR_SXY$|^REGR_SYY$|^RELATIVE$|^RELEASE$|^RESULT$|^RETURNS$|^ROLE$|^ROLLUP$|^ROUTINE$|^ROW$|^ROWS$|^SAVEPOINT$|^SCOPE$|^SCROLL$|^SEARCH$|^SECOND$|^SECTION$|^SENSITIVE$|^SEQUENCE$|^SESSION$|^SETS$|^SIMILAR$|^SIZE$|^SMALLINT$|^SPACE$|^SPECIFIC$|^SPECIFICTYPE$|^SQL$|^SQLEXCEPTION$|^SQLSTATE$|^SQLWARNING$|^START$|^STATE$|^STATEMENT$|^STATIC$|^STDDEV_POP$|^STDDEV_SAMP$|^STRUCTURE$|^SUBMULTISET$|^SUBSTRING_REGEX$|^SYMMETRIC$|^SYSTEM$|^TEMPORARY$|^TERMINATE$|^THAN$|^TIME$|^TIMESTAMP$|^TIMEZONE_HOUR$|^TIMEZONE_MINUTE$|^TRAILING$|^TRANSLATE_REGEX$|^TRANSLATION$|^TREAT$|^TRUE$|^UESCAPE$|^UNDER$|^UNKNOWN$|^UNNEST$|^USAGE$|^USING$|^VALUE$|^VAR_POP$|^VAR_SAMP$|^VARCHAR$|^VARIABLE$|^WHENEVER$|^WIDTH_BUCKET$|^WINDOW$|^WITHIN$|^WITHOUT$|^WORK$|^WRITE$|^XMLAGG$|^XMLATTRIBUTES$|^XMLBINARY$|^XMLCAST$|^XMLCOMMENT$|^XMLCONCAT$|^XMLDOCUMENT$|^XMLELEMENT$|^XMLEXISTS$|^XMLFOREST$|^XMLITERATE$|^XMLNAMESPACES$|^XMLPARSE$|^XMLPI$|^XMLQUERY$|^XMLSERIALIZE$|^XMLTABLE$|^XMLTEXT$|^XMLVALIDATE$|^YEAR$|^ZONE$";
+
+            /// <summary>
+            /// Will match against the list of keywords that are likely to become reserved in the future and are used in a larger text
+            /// </summary>
+            public static string SqlReservedKeywordFutureEx = @"ABSOLUTE|ACTION|ADMIN|AFTER|AGGREGATE|ALIAS|ALLOCATE|ARE|ARRAY|ASENSITIVE|ASSERTION|ASYMMETRIC|AT|ATOMIC|BEFORE|BINARY|BIT|BLOB|BOOLEAN|BOTH|BREADTH|CALL|CALLED|CARDINALITY|CASCADED|CAST|CATALOG|CHAR|CHARACTER|CLASS|CLOB|COLLATION|COLLECT|COMPLETION|CONDITION|CONNECT|CONNECTION|CONSTRAINTS|CONSTRUCTOR|CORR|CORRESPONDING|COVAR_POP|COVAR_SAMP|CUBE|CUME_DIST|CURRENT_CATALOG|CURRENT_DEFAULT_TRANSFORM_GROUP|CURRENT_PATH|CURRENT_ROLE|CURRENT_SCHEMA|CURRENT_TRANSFORM_GROUP_FOR_TYPE|CYCLE|DATA|DATE|DAY|DEC|DECIMAL|DEFERRABLE|DEFERRED|DEPTH|DEREF|DESCRIBE|DESCRIPTOR|DESTROY|DESTRUCTOR|DETERMINISTIC|DIAGNOSTICS|DICTIONARY|DISCONNECT|DOMAIN|DYNAMIC|EACH|ELEMENT|END-EXEC|EQUALS|EVERY|EXCEPTION|FALSE|FILTER|FIRST|FLOAT|FOUND|FREE|FULLTEXTTABLE|FUSION|GENERAL|GET|GLOBAL|GO|GROUPING|HOLD|HOST|HOUR|IGNORE|IMMEDIATE|INDICATOR|INITIALIZE|INITIALLY|INOUT|INPUT|INT|INTEGER|INTERSECTION|INTERVAL|ISOLATION|ITERATE|LANGUAGE|LARGE|LAST|LATERAL|LEADING|LESS|LEVEL|LIKE_REGEX|LIMIT|LN|LOCAL|LOCALTIME|LOCALTIMESTAMP|LOCATOR|MAP|MATCH|MEMBER|METHOD|MINUTE|MOD|MODIFIES|MODIFY|MODULE|MONTH|MULTISET|NAMES|NATURAL|NCHAR|NCLOB|NEW|NEXT|NO|NONE|NORMALIZE|NUMERIC|OBJECT|OCCURRENCES_REGEX|OLD|ONLY|OPERATION|ORDINALITY|OUT|OUTPUT|OVERLAY|PAD|PARAMETER|PARAMETERS|PARTIAL|PARTITION|PATH|PERCENT_RANK|PERCENTILE_CONT|PERCENTILE_DISC|POSITION_REGEX|POSTFIX|PREFIX|PREORDER|PREPARE|PRESERVE|PRIOR|PRIVILEGES|RANGE|READS|REAL|RECURSIVE|REF|REFERENCING|REGR_AVGX|REGR_AVGY|REGR_COUNT|REGR_INTERCEPT|REGR_R2|REGR_SLOPE|REGR_SXX|REGR_SXY|REGR_SYY|RELATIVE|RELEASE|RESULT|RETURNS|ROLE|ROLLUP|ROUTINE|ROW|ROWS|SAVEPOINT|SCOPE|SCROLL|SEARCH|SECOND|SECTION|SENSITIVE|SEQUENCE|SESSION|SETS|SIMILAR|SIZE|SMALLINT|SPACE|SPECIFIC|SPECIFICTYPE|SQL|SQLEXCEPTION|SQLSTATE|SQLWARNING|START|STATE|STATEMENT|STATIC|STDDEV_POP|STDDEV_SAMP|STRUCTURE|SUBMULTISET|SUBSTRING_REGEX|SYMMETRIC|SYSTEM|TEMPORARY|TERMINATE|THAN|TIME|TIMESTAMP|TIMEZONE_HOUR|TIMEZONE_MINUTE|TRAILING|TRANSLATE_REGEX|TRANSLATION|TREAT|TRUE|UESCAPE|UNDER|UNKNOWN|UNNEST|USAGE|USING|VALUE|VAR_POP|VAR_SAMP|VARCHAR|VARIABLE|WHENEVER|WIDTH_BUCKET|WINDOW|WITHIN|WITHOUT|WORK|WRITE|XMLAGG|XMLATTRIBUTES|XMLBINARY|XMLCAST|XMLCOMMENT|XMLCONCAT|XMLDOCUMENT|XMLELEMENT|XMLEXISTS|XMLFOREST|XMLITERATE|XMLNAMESPACES|XMLPARSE|XMLPI|XMLQUERY|XMLSERIALIZE|XMLTABLE|XMLTEXT|XMLVALIDATE|YEAR|ZONE";
+        }
+
+        /// <summary>
+        /// Class that reports File size.
+        /// </summary>
+        [Serializable]
+        public class Size : IComparable<Size>, IComparable
+        {
+            /// <summary>
+            /// Number of bytes contained in whatever object uses this object as a property
+            /// </summary>
+            public long Byte
+            {
+                get
+                {
+                    return _Byte;
+                }
+                set
+                {
+                    _Byte = value;
+                }
+            }
+            private long _Byte = -1;
+
+            /// <summary>
+            /// Kilobyte representation of the bytes
+            /// </summary>
+            public double Kilobyte
+            {
+                get
+                {
+                    return ((double)_Byte / (double)1024);
+                }
+                set
+                {
+
+                }
+            }
+
+            /// <summary>
+            /// Megabyte representation of the bytes
+            /// </summary>
+            public double Megabyte
+            {
+                get
+                {
+                    return ((double)_Byte / (double)1048576);
+                }
+                set
+                {
+
+                }
+            }
+
+            /// <summary>
+            /// Gigabyte representation of the bytes
+            /// </summary>
+            public double Gigabyte
+            {
+                get
+                {
+                    return ((double)_Byte / (double)1073741824);
+                }
+                set
+                {
+
+                }
+            }
+
+            /// <summary>
+            /// Terabyte representation of the bytes
+            /// </summary>
+            public double Terabyte
+            {
+                get
+                {
+                    return ((double)_Byte / (double)1099511627776);
+                }
+                set
+                {
+
+                }
+            }
+
+            /// <summary>
+            /// Number if digits behind the dot.
+            /// </summary>
+            public int Digits
+            {
+                get
+                {
+                    return _Digits;
+                }
+                set
+                {
+                    if (value < 0) { _Digits = 0; }
+                    else { _Digits = value; }
+                }
+            }
+            private int _Digits = 2;
+
+            /// <summary>
+            /// Shows the default string representation of size
+            /// </summary>
+            /// <returns></returns>
+            public override string ToString()
+            {
+                string format = "{0:N" + _Digits + "}";
+
+                if (Terabyte > 1)
+                {
+                    return (String.Format(format, Terabyte) + " TB");
+                }
+                else if (Gigabyte > 1)
+                {
+                    return (String.Format(format, Gigabyte) + " GB");
+                }
+                else if (Megabyte > 1)
+                {
+                    return (String.Format(format, Megabyte) + " MB");
+                }
+                else if (Kilobyte > 1)
+                {
+                    return (String.Format(format, Kilobyte) + " KB");
+                }
+                else if (Byte > -1)
+                {
+                    return (String.Format(format, Byte) + " B");
+                }
+                else if (Byte == -1)
+                    return "Unlimited";
+                else { return ""; }
+            }
+
+            /// <summary>
+            /// Simple equality test
+            /// </summary>
+            /// <param name="obj">The object to test it against</param>
+            /// <returns>True if equal, false elsewise</returns>
+            public override bool Equals(object obj)
+            {
+                return ((obj != null) && (obj is Size) && (this.Byte == ((Size)obj).Byte));
+            }
+
+            /// <summary>
+            /// Meaningless, but required
+            /// </summary>
+            /// <returns>Some meaningless output</returns>
+            public override int GetHashCode()
+            {
+                return this.Byte.GetHashCode();
+            }
+
+            /// <summary>
+            /// Creates an empty size.
+            /// </summary>
+            public Size()
+            {
+
+            }
+
+            /// <summary>
+            /// Creates a size with some content
+            /// </summary>
+            /// <param name="Byte">The length in bytes to set the size to</param>
+            public Size(long Byte)
+            {
+                this.Byte = Byte;
+            }
+
+            /// <summary>
+            /// Some more interface implementation. Used to sort the object
+            /// </summary>
+            /// <param name="obj">The object to compare to</param>
+            /// <returns>Something</returns>
+            public int CompareTo(Size obj)
+            {
+                if (this.Byte == obj.Byte) { return 0; }
+                if (this.Byte < obj.Byte) { return -1; }
+
+                return 1;
+            }
+
+            /// <summary>
+            /// Some more interface implementation. Used to sort the object
+            /// </summary>
+            /// <param name="obj">The object to compare to</param>
+            /// <returns>Something</returns>
+            public int CompareTo(Object obj)
+            {
+                try
+                {
+                    if (this.Byte == ((Size)obj).Byte) { return 0; }
+                    if (this.Byte < ((Size)obj).Byte) { return -1; }
+
+                    return 1;
+                }
+                catch { return 0; }
+            }
+
+            #region Operators
+            /// <summary>
+            /// Adds two sizes
+            /// </summary>
+            /// <param name="a">The first size to add</param>
+            /// <param name="b">The second size to add</param>
+            /// <returns>The sum of both sizes</returns>
+            public static Size operator +(Size a, Size b)
+            {
+                return new Size(a.Byte + b.Byte);
+            }
+
+            /// <summary>
+            /// Substracts two sizes
+            /// </summary>
+            /// <param name="a">The first size to substract</param>
+            /// <param name="b">The second size to substract</param>
+            /// <returns>The difference between both sizes</returns>
+            public static Size operator -(Size a, Size b)
+            {
+                return new Size(a.Byte - b.Byte);
+            }
+
+            /// <summary>
+            /// Implicitly converts int to size
+            /// </summary>
+            /// <param name="a">The number to convert</param>
+            public static implicit operator Size(int a)
+            {
+                return new Size(a);
+            }
+
+            /// <summary>
+            /// Implicitly converts size to int
+            /// </summary>
+            /// <param name="a">The size to convert</param>
+            public static implicit operator Int32(Size a)
+            {
+                return (Int32)a._Byte;
+            }
+
+            /// <summary>
+            /// Implicitly converts long to size
+            /// </summary>
+            /// <param name="a">The number to convert</param>
+            public static implicit operator Size(long a)
+            {
+                return new Size(a);
+            }
+
+            /// <summary>
+            /// Implicitly converts size to long
+            /// </summary>
+            /// <param name="a">The size to convert</param>
+            public static implicit operator Int64(Size a)
+            {
+                return a._Byte;
+            }
+
+            /// <summary>
+            /// Implicitly converts string to size
+            /// </summary>
+            /// <param name="a">The string to convert</param>
+            public static implicit operator Size(String a)
+            {
+                return new Size(Int64.Parse(a));
+            }
+
+            /// <summary>
+            /// Implicitly converts double to size
+            /// </summary>
+            /// <param name="a">The number to convert</param>
+            public static implicit operator Size(double a)
+            {
+                return new Size((long)a);
+            }
+
+            /// <summary>
+            /// Implicitly converts size to double
+            /// </summary>
+            /// <param name="a">The size to convert</param>
+            public static implicit operator double(Size a)
+            {
+                return a._Byte;
+            }
+            #endregion Operators
+        }
+
+        /// <summary>
+        /// Provides static resources to utility-namespaced stuff
+        /// </summary>
+        public static class UtilityHost
+        {
+            /// <summary>
+            /// Restores all DateTime objects to their default display behavior
+            /// </summary>
+            public static bool DisableCustomDateTime = false;
+
+            /// <summary>
+            /// Restores all timespan objects to their default display behavior.
+            /// </summary>
+            public static bool DisableCustomTimeSpan = false;
+
+            /// <summary>
+            /// Formating string for date-style datetime objects.
+            /// </summary>
+            public static string FormatDate = "dd MMM yyyy";
+
+            /// <summary>
+            /// Formating string for datetime-style datetime objects
+            /// </summary>
+            public static string FormatDateTime = "yyyy-MM-dd HH:mm:ss.fff";
+
+            /// <summary>
+            /// Formating string for time-style datetime objects
+            /// </summary>
+            public static string FormatTime = "HH:mm:ss";
+
+            /// <summary>
+            /// The Version of the dbatools Library. Used to compare with import script to determine out-of-date libraries
+            /// </summary>
+            public readonly static Version LibraryVersion = new Version(1, 0, 1, 6);
         }
 
         /// <summary>
@@ -1386,6 +4736,74 @@ namespace sqlcollective.dbatools
         /// </summary>
         public static class Validation
         {
+            /// <summary>
+            /// Tests whether a given string is the local host.
+            /// Does NOT use DNS resolution, DNS aliases will NOT be recognized!
+            /// </summary>
+            /// <param name="Name">The name to test for being local host</param>
+            /// <returns>Whether the name is localhost</returns>
+            public static bool IsLocalhost(string Name)
+            {
+                #region Handle IP Addresses
+                try
+                {
+                    IPAddress tempAddress;
+                    IPAddress.TryParse(Name, out tempAddress);
+                    if (IPAddress.IsLoopback(tempAddress))
+                        return true;
+
+                    foreach (NetworkInterface netInterface in NetworkInterface.GetAllNetworkInterfaces())
+                    {
+                        IPInterfaceProperties ipProps = netInterface.GetIPProperties();
+                        foreach (UnicastIPAddressInformation addr in ipProps.UnicastAddresses)
+                        {
+                            if (tempAddress.ToString() == addr.Address.ToString())
+                                return true;
+                        }
+                    }
+                }
+                catch { }
+                #endregion Handle IP Addresses
+
+                #region Handle Names
+                try
+                {
+                    if (Name.ToLower() == "localhost")
+                        return true;
+                    if (Name.ToLower() == Environment.MachineName.ToLower())
+                        return true;
+                    if (Name.ToLower() == (Environment.MachineName + "." + Environment.GetEnvironmentVariable("USERDNSDOMAIN")).ToLower())
+                        return true;
+                }
+                catch { }
+                #endregion Handle Names
+                return false;
+            }
+
+            /// <summary>
+            /// Tests whether a given string is a recommended instance name. Recommended names musst be legal, nbot on the ODBC list and not on the list of words likely to become reserved keywords in the future.
+            /// </summary>
+            /// <param name="InstanceName">The name to test. MAY contain server name, but will NOT test the server.</param>
+            /// <returns>Whether the name is recommended</returns>
+            public static bool IsRecommendedInstanceName(string InstanceName)
+            {
+                string temp;
+                if (InstanceName.Split('\\').Length == 1) { temp = InstanceName; }
+                else if (InstanceName.Split('\\').Length == 2) { temp = InstanceName.Split('\\')[1]; }
+                else { return false; }
+
+                if (Regex.IsMatch(temp, RegexHelper.SqlReservedKeyword, RegexOptions.IgnoreCase)) { return false; }
+                if (Regex.IsMatch(temp, RegexHelper.SqlReservedKeywordFuture, RegexOptions.IgnoreCase)) { return false; }
+                if (Regex.IsMatch(temp, RegexHelper.SqlReservedKeywordOdbc, RegexOptions.IgnoreCase)) { return false; }
+
+                if (temp.ToLower() == "default") { return false; }
+                if (temp.ToLower() == "mssqlserver") { return false; }
+
+                if (!Regex.IsMatch(temp, RegexHelper.InstanceName, RegexOptions.IgnoreCase)) { return false; }
+
+                return true;
+            }
+
             /// <summary>
             /// Tests whether a given string is a valid target for targeting as a computer. Will first convert from idn name.
             /// </summary>
@@ -1399,15 +4817,118 @@ namespace sqlcollective.dbatools
                 }
                 catch { return false; }
             }
+
+            /// <summary>
+            /// Tests whether a given string is a valid instance name.
+            /// </summary>
+            /// <param name="InstanceName">The name to test. MAY contain server name, but will NOT test the server.</param>
+            /// <returns>Whether the name is legal</returns>
+            public static bool IsValidInstanceName(string InstanceName)
+            {
+                string temp;
+                if (InstanceName.Split('\\').Length == 1) { temp = InstanceName; }
+                else if (InstanceName.Split('\\').Length == 2) { temp = InstanceName.Split('\\')[1]; }
+                else { return false; }
+
+                if (Regex.IsMatch(temp, RegexHelper.SqlReservedKeyword, RegexOptions.IgnoreCase)) { return false; }
+                
+                if (temp.ToLower() == "default") { return false; }
+                if (temp.ToLower() == "mssqlserver") { return false; }
+
+                if (!Regex.IsMatch(temp, RegexHelper.InstanceName, RegexOptions.IgnoreCase)) { return false; }
+
+                return true;
+            }
+        }
+    }
+
+    namespace Validation
+    {
+        /// <summary>
+        /// The results of testing linked server connectivity as seen from the server that was linked to.
+        /// </summary>
+        [Serializable]
+        public class LinkedServerResult
+        {
+            /// <summary>
+            /// The name of the server running the tests
+            /// </summary>
+            public string ComputerName;
+
+            /// <summary>
+            /// The name of the instance running the tests
+            /// </summary>
+            public string InstanceName;
+
+            /// <summary>
+            /// The full name of the instance running the tests
+            /// </summary>
+            public string SqlInstance;
+
+            /// <summary>
+            /// The name of the linked server, the connectivity with whom was tested
+            /// </summary>
+            public string LinkedServerName;
+
+            /// <summary>
+            /// The name of the remote computer running the linked server.
+            /// </summary>
+            public string RemoteServer;
+
+            /// <summary>
+            /// The test result
+            /// </summary>
+            public bool Connectivity;
+
+            /// <summary>
+            /// Text interpretation of the result. Contains error messages if the test failed.
+            /// </summary>
+            public string Result;
+
+            /// <summary>
+            /// Creates an empty object
+            /// </summary>
+            public LinkedServerResult()
+            {
+
+            }
+
+            /// <summary>
+            /// Creates a test result with prefilled values
+            /// </summary>
+            /// <param name="ComputerName">The name of the server running the tests</param>
+            /// <param name="InstanceName">The name of the instance running the tests</param>
+            /// <param name="SqlInstance">The full name of the instance running the tests</param>
+            /// <param name="LinkedServerName">The name of the linked server, the connectivity with whom was tested</param>
+            /// <param name="RemoteServer">The name of the remote computer running the linked server.</param>
+            /// <param name="Connectivity">The test result</param>
+            /// <param name="Result">Text interpretation of the result. Contains error messages if the test failed.</param>
+            public LinkedServerResult(string ComputerName, string InstanceName, string SqlInstance, string LinkedServerName, string RemoteServer, bool Connectivity, string Result)
+            {
+                this.ComputerName = ComputerName;
+                this.InstanceName = InstanceName;
+                this.SqlInstance = SqlInstance;
+                this.LinkedServerName = LinkedServerName;
+                this.RemoteServer = RemoteServer;
+                this.Connectivity = Connectivity;
+                this.Result = Result;
+            }
         }
     }
 }
 '@
     #endregion Source Code
     
+    #region Add Code
     try
     {
-        Add-Type $source -ErrorAction Stop
+        $paramAddType = @{
+            TypeDefinition = $source
+            ErrorAction = 'Stop'
+            ReferencedAssemblies = ([appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -match "^Microsoft\.Management\.Infrastructure, |^System\.Numerics, " | Where-Object Location).Location
+        }
+        
+        Add-Type @paramAddType
     }
     catch
     {
@@ -1416,11 +4937,11 @@ namespace sqlcollective.dbatools
 Dear User,
 
 in the name of the dbatools team I apologize for the inconvenience.
-Generally, when something goes wrong we try to handle it for you and interpret
-it for you in a way you can understand. Unfortunately, something went wrong with
-importing our main library, so all the systems making this possible don't work
-yet. This really shouldn't happen in any PowerShell environment imaginable, but
-... well, it hapend and you are reading this message.
+Generally, when something goes wrong we try to handle and interpret in an
+understandable manner. Unfortunately, something went awry with importing
+our main library, so all the systems making this possible would not be initialized
+yet. We have taken great pains to avoid this issue but this notification indicates
+we have failed.
 
 Please, in order to help us prevent this from happening again, visit us at:
 https://github.com/sqlcollaborative/dbatools/issues
@@ -1442,4 +4963,20 @@ aka "The guy who made most of The Library that Failed to import"
         throw
         #endregion Warning
     }
+    #endregion Add Code
 }
+
+#region Version Warning
+$LibraryVersion = New-Object System.Version(1, 0, 1, 6)
+if ($LibraryVersion -ne ([Sqlcollective.Dbatools.Utility.UtilityHost]::LibraryVersion))
+{
+    Write-Warning @"
+A version missmatch between the dbatools library loaded and the one expected by
+this module. This usually happens when you update the dbatools module and use
+Remove-Module / Import-Module in order to load the latest version without
+starting a new PowerShell instance.
+
+Please restart the console to apply the library update, or unexpected behavior will likely occur.
+"@
+}
+#endregion Version Warning

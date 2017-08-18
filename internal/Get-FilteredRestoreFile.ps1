@@ -46,7 +46,7 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
    
         if ($TrustDbBackupHistory)
         {
-            Write-Verbose "$FunctionName - Trusted backup history"
+            Write-Verbose "$FunctionName - Trusted backup history loop"
 
             $tmpInternalFiles = @()
             foreach ($row in $InternalFiles)
@@ -60,26 +60,31 @@ Tnen find the T-log backups needed to bridge the gap up until the RestorePoint
                         $tmpInternalFiles += $NewIf
                     }
                 }
+                else
+                {
+                    $tmpInternalFiles += $row
+                }
             }
             $InternalFiles = $tmpInternalFiles 
 
             $allsqlBackupDetails += $InternalFiles | Where-Object {$_.Type -eq 'Full'} | select-object *,  @{Name="BackupTypeDescription";Expression={"Database"}},  @{Name="BackupType";Expression={"1"}}
             $allsqlBackupDetails += $InternalFiles | Where-Object {$_.Type -eq 'Log'} | select-object *,  @{Name="BackupTypeDescription";Expression={"Transaction Log"}},  @{Name="BackupType";Expression={"2"}}
             $allsqlBackupDetails += $InternalFiles | Where-Object {$_.Type -eq 'Differential'} | select-object *,  @{Name="BackupTypeDescription";Expression={"Database Differential"}},  @{Name="BackupType";Expression={"5"}}
-
         }
         else
         {
     		Write-Verbose "$FunctionName - Read File headers (Read-DBABackupHeader)"		
 			$AllSQLBackupdetails = $InternalFiles | ForEach{if($_.fullname -ne $null){$_.Fullname}else{$_}} | Read-DBAbackupheader -sqlserver $SQLSERVER -SqlCredential $SqlCredential
         }
+
 		Write-Verbose "$FunctionName - $($AllSQLBackupdetails.count) Files to filter"
         $Databases = $AllSQLBackupdetails  | Group-Object -Property Servername, DatabaseName
         Write-Verbose "$FunctionName - $(($Databases | Measure-Object).count) database to process"
 		
 		foreach ($Database in $Databases){
+
             $Results = @()
-            Write-Verbose "$FunctionName - Find Newest Full backup"
+            Write-Verbose "$FunctionName - Find Newest Full backup - $($_.$DatabaseName)"
             $ServerName, $databaseName = $Database.Name.split(',')
             $SQLBackupdetails = $AllSQLBackupdetails | Where-Object {$_.ServerName -eq $ServerName -and $_.DatabaseName -eq $DatabaseName.trim()}
             $Fullbackup = $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq 'Database' -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1

@@ -1,107 +1,113 @@
 [CmdletBinding()]
 param (
-	[string]$Path
+	[string]$Path,
+	[switch]$Beta
 )
 
-$localpath = $localpath = (Get-Module -Name dbatools).ModuleBase
-
-if ($null -eq $localpath)
-{
-	$localpath = "$HOME\Documents\WindowsPowerShell\Modules\dbatools"	
+try {
+	Update-Module dbatools -Erroraction Stop
+	Write-Output "Updated using the PowerShell Gallery"
+	return
+}
+catch {
+	Write-Output "dbatools was not installed by the PowerShell Gallery, continuing with web install."
 }
 
-try
-{
-	if ($Path.length -eq 0)
-	{
-		
-		if ($PSCommandPath.Length -gt 0)
-		{
+$module = Import-Module -Name dbatools -ErrorAction SilentlyContinue -Force
+$localpath = $module.ModuleBase
+
+if ($null -eq $localpath) {
+	$localpath = "$HOME\Documents\WindowsPowerShell\Modules\dbatools"
+}
+else {
+	Write-Output "Updating current install"
+}
+
+try {
+	if (-not $path) {
+		if ($PSCommandPath.Length -gt 0) {
 			$path = Split-Path $PSCommandPath
-			if ($path -match "github")
-			{
+			if ($path -match "github") {
+				Write-Output "Looks like this installer is run from your GitHub Repo, defaulting to psmodulepath"
 				$path = $localpath
 			}
 		}
-		else
-		{
+		else {
 			$path = $localpath
 		}
 	}
 }
-catch
-{
+catch {
 	$path = $localpath
 }
 
-if ($path.length -eq 0)
-{
+if (-not $path -or (Test-Path -Path "$path\.git")) {
 	$path = $localpath
 }
 
 Write-Output "Installing module to $path"
 
-Remove-Module dbatools -ErrorAction SilentlyContinue
-$url = 'https://github.com/sqlcollaborative/dbatools/archive/master.zip'
+Remove-Module -Name dbatools -ErrorAction SilentlyContinue
+
+if ($beta) {
+	$url = 'https://dbatools.io/devzip'
+	$branch = "development"
+}
+else {
+	$url = 'https://dbatools.io/zip'
+	$branch = "master"
+}
 
 $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 $zipfile = "$temp\dbatools.zip"
 
-if (!(Test-Path -Path $path))
-{
-	try
-	{
+if (!(Test-Path -Path $path)) {
+	try {
 		Write-Output "Creating directory: $path"
 		New-Item -Path $path -ItemType Directory | Out-Null
 	}
-	catch
-	{
+	catch {
 		throw "Can't create $Path. You may need to Run as Administrator"
 	}
 }
-else
-{
-	try
-	{
+else {
+	try {
 		Write-Output "Deleting previously installed module"
 		Remove-Item -Path "$path\*" -Force -Recurse
 	}
-	catch
-	{
+	catch {
 		throw "Can't delete $Path. You may need to Run as Administrator"
 	}
 }
 
 Write-Output "Downloading archive from github"
-	try
-	{
-		Invoke-WebRequest $url -OutFile $zipfile
-	}
-	catch
-	{
-		#try with default proxy and usersettings
-		Write-Output "Probably using a proxy for internet access, trying default proxy settings"
-		(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-		Invoke-WebRequest $url -OutFile $zipfile
-	}
-	
-	# Unblock if there's a block
-	Unblock-File $zipfile -ErrorAction SilentlyContinue
-	
-	Write-Output "Unzipping"
-	
-	# Keep it backwards compatible
-	$shell = New-Object -COM Shell.Application
-	$zipPackage = $shell.NameSpace($zipfile)
-	$destinationFolder = $shell.NameSpace($temp)
-	$destinationFolder.CopyHere($zipPackage.Items())
-	
-	Write-Output "Cleaning up"
-	Move-Item -Path "$temp\dbatools-master\*" $path
-	Remove-Item -Path "$temp\dbatools-master"
-	Remove-Item -Path $zipfile
-	
-	Write-Output "Done! Please report any bugs to clemaire@gmail.com."
-	if ((Get-Command -Module dbatools).count -eq 0) { Import-Module "$path\dbatools.psd1" -Force }
-	Get-Command -Module dbatools
-	Write-Output "`n`nIf you experience any function missing errors after update, please restart PowerShell or reload your profile."
+try {
+	Invoke-WebRequest $url -OutFile $zipfile
+}
+catch {
+	#try with default proxy and usersettings
+	Write-Output "Probably using a proxy for internet access, trying default proxy settings"
+	(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+	Invoke-WebRequest $url -OutFile $zipfile
+}
+
+# Unblock if there's a block
+Unblock-File $zipfile -ErrorAction SilentlyContinue
+
+Write-Output "Unzipping"
+
+# Keep it backwards compatible
+$shell = New-Object -ComObject Shell.Application
+$zipPackage = $shell.NameSpace($zipfile)
+$destinationFolder = $shell.NameSpace($temp)
+$destinationFolder.CopyHere($zipPackage.Items())
+
+Write-Output "Cleaning up"
+Move-Item -Path "$temp\dbatools-$branch\*" $path
+Remove-Item -Path "$temp\dbatools-$branch"
+Remove-Item -Path $zipfile
+
+Write-Output "Done! Please report any bugs to dbatools.io/issues or clemaire@gmail.com."
+if ((Get-Command -Module dbatools).count -eq 0) { Import-Module "$path\dbatools.psd1" -Force }
+Get-Command -Module dbatools
+Write-Output "`n`nIf you experience any function missing errors after update, please restart PowerShell or reload your profile."

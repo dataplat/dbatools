@@ -90,11 +90,19 @@ Gets a list of all .bak files on the \\nas\sql share and reads the headers using
 	{
 		$LoopCnt = 1
 		$FunctionName = $FunctionName = (Get-PSCallstack)[0].Command
-		Write-Verbose "$FunctionName - Connecting to $SqlServer"
+
 		try
 		{
-			$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ErrorVariable ConnectError
-			
+			if ($sqlServer -isnot [Microsoft.SqlServer.Management.Smo.SqlSmoObject])
+			{
+					Write-Verbose "$FunctionName - Connecting to $SqlServer"
+					$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential -ErrorVariable ConnectError
+			}
+			else
+			{
+				Write-Verbose "$FunctionName - Reusing connection to $SqlServer"
+				$server = $sqlServer
+			}
 		}
 		catch
 		{

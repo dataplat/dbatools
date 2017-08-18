@@ -1,12 +1,11 @@
-Function Show-SqlWhoIsActive
+Function Invoke-DbaWhoisActive
 {
 <#
 .SYNOPSIS
-Outputs results of Adam Machanic's sp_WhoIsActive to a GridView (default) or DataTable, and installs it if necessary.
+Outputs results of Adam Machanic's sp_WhoIsActive DataTable
 
 .DESCRIPTION
-Output results of Adam Machanic's sp_WhoIsActive to a GridView (default) or DataTable, and installs it if necessary. 
-GridView is good for analysis while DataTable is good for SqlBulkCopy uploads to keep track.
+Output results of Adam Machanic's sp_WhoIsActive
 
 This command was built with Adam's permission. To read more about sp_WhoIsActive, please visit:
 
@@ -14,11 +13,11 @@ Updates: http://sqlblog.com/blogs/adam_machanic/archive/tags/who+is+active/defau
 
 Also, consider donating to Adam if you find this stored procedure helpful: http://tinyurl.com/WhoIsActiveDonate
 
-.PARAMETER SqlServer
+.PARAMETER SqlInstance
 The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 .PARAMETER Database
-The database where sp_WhoIsActive is installed. Defaults to master. If the sp_WhoIsActive is not installed, it will install it for you.
+The database where sp_WhoIsActive is installed. Defaults to master. If the sp_WhoIsActive is not installed, the command will warn and exit.
 
 .PARAMETER Filter
 FiltersBoth inclusive and exclusive
@@ -157,13 +156,14 @@ Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integ
 
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER OutputAs
-The data format of the output, either Out-GridView (default) or datatable
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
 
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages or progress bars
 
 .NOTES
 Tags: Memory
@@ -184,39 +184,37 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .LINK
-https://dbatools.io/Show-SqlWhoIsActive
+https://dbatools.io/Invoke-DbaWhoisActive
 
 .EXAMPLE
-Show-SqlWhoIsActive -SqlServer sqlserver2014a 
+Invoke-DbaWhoisActive -SqlInstance sqlserver2014a 
 
 Execute sp_whoisactive on sqlserver2014a. This command expects sp_WhoIsActive to be in the master database. Logs into the SQL Server with Windows credentials.
 	
 .EXAMPLE   
-Show-SqlWhoIsActive -SqlServer sqlserver2014a -SqlCredential $credential -Database dbatools
+Invoke-DbaWhoisActive -SqlInstance sqlserver2014a -SqlCredential $credential -Database dbatools
 
 Execute sp_whoisactive on sqlserver2014a. This command expects sp_WhoIsActive to be in the dbatools database. Logs into the SQL Server with SQL Authentication.
 
 .EXAMPLE
-Show-SqlWhoIsActive -SqlServer sqlserver2014a -GetAverageTime
+Invoke-DbaWhoisActive -SqlInstance sqlserver2014a -GetAverageTime
 
 Similar to running sp_WhoIsActive @get_avg_time
 
 .EXAMPLE
-Show-SqlWhoIsActive -SqlServer sqlserver2014a -GetOuterCommand -FindBlockLeaders
+Invoke-DbaWhoisActive -SqlInstance sqlserver2014a -GetOuterCommand -FindBlockLeaders
 
 Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 1
 	
 #>
 	
-	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact="High")]
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias('ServerInstance', 'SqlInstance')]
-		[object]$SqlServer,
-		[object]$SqlCredential,
+		[Alias('ServerInstance', 'SqlServer')]
+		[object[]]$SqlInstance,
+		[PsCredential]$SqlCredential,
 		[Alias('As')]
-		[ValidateSet('Datatable', 'GridView')]
-		[string]$OutputAs = 'GridView',
 		[ValidateLength(0, 128)]
 		[string]$Filter,
 		[ValidateSet('Session', 'Program', 'Database', 'Login', 'Host')]
@@ -252,177 +250,107 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 		[string]$DestinationTable = '',
 		[switch]$ReturnSchema,
 		[string]$Schema,
-		[switch]$Help
+		[switch]$Help,
+		[switch]$Silent
 	)
 	
-	DynamicParam { if ($SqlServer) { return (Get-ParamSqlDatabase -SqlServer $SqlServer -SqlCredential $SourceSqlCredential) } }
+	dynamicparam { if ($SqlInstance) { return (Get-ParamSqlDatabase -SqlServer $SqlInstance[0] -SqlCredential $SourceSqlCredential) } }
 	
-	BEGIN
-	{
-		function Get-WindowTitle
-		{
-			$title = "sp_WhoIsActive "
-			foreach ($param in $passedparams)
-			{
-				$sqlparam = $paramdictionary[$param]
-				$value = $localparams[$param]
-				
-				switch ($value)
-				{
-					$true { $value = 1 }
-					$false { $value = 0 }
-				}
-				
-				$title = "$title $sqlparam = $value, "
-			}
-			
-			
-			$title = $title.TrimEnd(", ")
-			return $title
-		}
-		
-		Function Invoke-SpWhoisActive
-		{
-			$sqlconnection = New-Object System.Data.SqlClient.SqlConnection
-			$sqlconnection.ConnectionString = $sourceserver.ConnectionContext.ConnectionString
-			$sqlconnection.Open()
-			
-			if ($database.Length -gt 0)
-			{
-				# database is being returned as something weird. change it to string without using a method then trim.
-				$database = "$database"
-				$database = $database.Trim()
-				$sqlconnection.ChangeDatabase($database)
-			}
-			
-			$sqlcommand = New-Object System.Data.SqlClient.SqlCommand
-			$sqlcommand.CommandType = "StoredProcedure"
-			$sqlcommand.CommandText = "dbo.sp_WhoIsActive"
-			$sqlcommand.Connection = $sqlconnection
-			
-			foreach ($param in $passedparams)
-			{
-				$sqlparam = $paramdictionary[$param]
-				$value = $localparams[$param]
-				
-				switch ($value)
-				{
-					$true { $value = 1 }
-					$false { $value = 0 }
-				}
-				
-				[Void]$sqlcommand.Parameters.AddWithValue($sqlparam, $value)
-			}
-			
-			$datatable = New-Object system.Data.DataSet
-			$dataadapter = New-Object system.Data.SqlClient.SqlDataAdapter($sqlcommand)
-			$dataadapter.fill($datatable) | Out-Null
-			
-			return $datatable
-		}
-		
-		$sourceserver = Connect-SqlServer -SqlServer $sqlserver -SqlCredential $SqlCredential
-		$source = $sourceserver.DomainInstanceName
-		
-		if ($sourceserver.VersionMajor -lt 9)
-		{
-			throw "sp_WhoIsActive is only supported in SQL Server 2005 and above"
-		}
-		
-		$paramdictionary = @{
-			Filter = '@filter'
-			FilterType = '@filter_type'
-			NotFilter = 'not_filter'
-			NotFilterType = '@not_filter_type'
-			ShowOwnSpid = '@show_own_spid'
-			ShowSystemSpids = '@show_system_spids'
-			ShowSleepingSpids = '@show_sleeping_spids'
-			GetFullInnerText = '@get_full_inner_text'
-			GetPlans = '@get_plans'
-			GetOuterCommand = '@get_outer_command'
-			GetTransactionInfo = '@get_transaction_info'
-			GetTaskInfo = '@get_task_info'
-			GetLocks = '@get_locks '
-			GetAverageTime = '@get_avg_time'
-			GetAdditonalInfo = '@get_additional_info'
-			FindBlockLeaders = '@find_block_leaders'
-			DeltaInterval = '@delta_interval'
-			OutputColumnList = '@output_column_list'
-			SortOrder = '@sort_order'
-			FormatOutput = '@format_output '
-			DestinationTable = '@destination_table '
-			ReturnSchema = '@return_schema'
-			Schema = '@schema'
-			Help = '@help'
-		}
-	}
-	
-	PROCESS
-	{
+	begin {
 		$database = $psboundparameters.Database
-		$passedparams = $psboundparameters.Keys | Where-Object { 'SqlServer', 'SqlCredential', 'OutputAs', 'ServerInstance', 'SqlInstance', 'Database' -notcontains $_ }
+		$passedparams = $psboundparameters.Keys | Where-Object { 'Silent','SqlServer', 'SqlCredential', 'OutputAs', 'ServerInstance', 'SqlInstance', 'Database' -notcontains $_ }
 		$localparams = $psboundparameters
+	}
+	
+	process {
 		
-		try
-		{
-			$datatable = Invoke-SpWhoisActive
-		}
-		catch
-		{
-			if ($_.Exception.InnerException -Like "*Could not find*")
-			{
-				Write-Warning "Procedure not found, installing."
-				Write-Warning "The author of this stored procedure recommends deploying this procedure to your master database. `n         You will now be prompted to select a database to deploy this stored procedure to."
-				
-				if ($database.length -gt 0)
-				{
-					$database = Install-SqlWhoisActive -SqlServer $sourceserver -Database $database -OutputDatabaseName
-				}
-				else
-				{
-					$database = Install-SqlWhoisActive -SqlServer $sourceserver -OutputDatabaseName
-				}
-				
-				
-				try
-				{
-					$datatable = Invoke-SpWhoisActive
-				}
-				catch
-				{
-					Write-Exception $_
-					throw "Cannot execute procedure."
-				}
+		foreach ($instance in $sqlinstance) {
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $sqlcredential
 			}
-			else
-			{
-				Write-warning "Invalid query."
+			catch {
+				Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_
+			}
+			
+			if ($server.VersionMajor -lt 9) {
+				throw "sp_WhoIsActive is only supported in SQL Server 2005 and above"
+			}
+			
+			$paramdictionary = @{
+				Filter = '@filter'
+				FilterType = '@filter_type'
+				NotFilter = 'not_filter'
+				NotFilterType = '@not_filter_type'
+				ShowOwnSpid = '@show_own_spid'
+				ShowSystemSpids = '@show_system_spids'
+				ShowSleepingSpids = '@show_sleeping_spids'
+				GetFullInnerText = '@get_full_inner_text'
+				GetPlans = '@get_plans'
+				GetOuterCommand = '@get_outer_command'
+				GetTransactionInfo = '@get_transaction_info'
+				GetTaskInfo = '@get_task_info'
+				GetLocks = '@get_locks '
+				GetAverageTime = '@get_avg_time'
+				GetAdditonalInfo = '@get_additional_info'
+				FindBlockLeaders = '@find_block_leaders'
+				DeltaInterval = '@delta_interval'
+				OutputColumnList = '@output_column_list'
+				SortOrder = '@sort_order'
+				FormatOutput = '@format_output '
+				DestinationTable = '@destination_table '
+				ReturnSchema = '@return_schema'
+				Schema = '@schema'
+				Help = '@help'
+			}
+			
+			Write-Message -Level Verbose -Message "Collecting sp_whoisactive data from server: $instance"
+			
+			try {
+				$sqlconnection = New-Object System.Data.SqlClient.SqlConnection
+				$sqlconnection.ConnectionString = $server.ConnectionContext.ConnectionString
+				$sqlconnection.Open()
+				
+				if ($database.Length -gt 0) {
+					# database is being returned as something weird. change it to string without using a method then trim.
+					$database = "$database"
+					$database = $database.Trim()
+					$sqlconnection.ChangeDatabase($database)
+				}
+				
+				$sqlcommand = New-Object System.Data.SqlClient.SqlCommand
+				$sqlcommand.CommandType = "StoredProcedure"
+				$sqlcommand.CommandText = "dbo.sp_WhoIsActive"
+				$sqlcommand.Connection = $sqlconnection
+				
+				foreach ($param in $passedparams) {
+					$sqlparam = $paramdictionary[$param]
+					$value = $localparams[$param]
+					
+					switch ($value) {
+						$true { $value = 1 }
+						$false { $value = 0 }
+					}
+					
+					[Void]$sqlcommand.Parameters.AddWithValue($sqlparam, $value)
+				}
+				
+				$datatable = New-Object system.Data.DataSet
+				$dataadapter = New-Object system.Data.SqlClient.SqlDataAdapter($sqlcommand)
+				$dataadapter.fill($datatable) | Out-Null
+				$datatable.Tables.Rows
+			}
+			catch {
+				if ($_.Exception.InnerException -Like "*Could not find*") {
+					Stop-Function -Message "sp_whoisactive not found, please install using Install-DbaWhoIsActive." -Continue
+				}
+				else {
+					Stop-Function -Message "Invalid query." -Continue
+				}
 			}
 		}
 	}
-	
-	END
-	{
-		$sourceserver.ConnectionContext.Disconnect()
-		
-		if ($datatable.Tables.Rows.Count -eq 0)
-		{
-			Write-Output "0 results returned"
-			return
-		}
-		
-		if ($OutputAs -eq "DataTable")
-		{
-			return $datatable.Tables
-		}
-		else
-		{
-			$windowtitle = Get-WindowTitle
-			
-			foreach ($table in $datatable.Tables)
-			{
-				$table | Out-GridView -Title $windowtitle
-			}
-		}
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Show-SqlWhoIsActive -CustomMessage "Show-SqlWhoIsActive is no longer supported. Use Invoke-DbaWhoIsActive | Out-GridView for similar results."
 	}
 }

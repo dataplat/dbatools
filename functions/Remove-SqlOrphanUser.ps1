@@ -92,7 +92,7 @@ Will remove from all databases the user OrphanUser EVEN if exists their matching
         [switch]$Force
 	)
 
-    DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer -SqlCredential $SqlCredential } }
+    DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SqlCredential } }
 
 	BEGIN
 	{

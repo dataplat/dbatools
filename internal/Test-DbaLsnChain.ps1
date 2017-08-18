@@ -52,17 +52,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
         return $false
         break;
     }
-    #Check all the backups relate to the full backup
-    
-    #Via RecoveryForkID:
-    #Allow for striped fill backups:
-    $RecoveryForkID = ($FullDBAnchor | Select-Object -First 1).RecoveryForkID
-    if (($FilteredRestoreFiles | Where-Object {$_.RecoveryForkID -ne $RecoveryForkID}).count -gt 0)
-    {
-        Write-Warning "$FunctionName - Multiple RecoveryForkIDs found, not supported"
-        return $false
-        break
-    }
+
     #Via LSN chain:
     $CheckPointLSN = ($FullDBAnchor | Select-Object -First 1).CheckPointLSN
     $FullDBLastLSN = ($FullDBAnchor | Select-Object -First 1).LastLSN 

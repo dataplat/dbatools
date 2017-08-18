@@ -93,6 +93,13 @@ Number of files to split the backup. Default is 3.
 .PARAMETER NoCopyOnly
 By default, Copy-SqlDatabase backups are backed up with COPY_ONLY, which avoids breaking the LSN backup chain. This parameter will set CopyOnly to $false.
 
+.PARAMETER SetSourceOffline
+Sets the Source db to offline after copy
+
+.PARAMETER Silent
+Replaces user friendly yellow warnings with bloody red exceptions of doom!
+Use this if you want the function to throw terminating errors you want to catch.
+
 .NOTES
 Tags: Migration, DisasterRecovery, Backup, Restore
 Author: Chrissy LeMaire (@cl), netnerds.net
@@ -181,7 +188,9 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		[parameter(Position = 21, ParameterSetName = "DbBackup")]
 		[ValidateRange(1, 64)]
 		[int]$NumberFiles = 3,
-        [switch]$NoCopyOnly
+        [switch]$NoCopyOnly,
+        [switch]$SetSourceOffline,
+        [switch]$silent
 	)
 	
 	DynamicParam { if ($source) { return Get-ParamSqlDatabases -SqlServer $source -SqlCredential $SourceSqlCredential -NoSystem } }
@@ -198,7 +207,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			{
 				Write-Progress -Id 1 -Activity "Processing database file structure" -PercentComplete ($databaseProgressbar / $dbcount * 100) -Status "Processing $databaseProgressbar of $dbcount"
 				$dbname = $db.name
-				Write-Verbose $dbname
+				Write-Message -Level Verbose -Message  $dbname
 				
 				$databaseProgressbar++
 				$dbstatus = $db.status.toString()
@@ -352,156 +361,6 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			Write-Progress -id 1 -Activity "Processing database file structure" -Status "Completed" -Completed
 			return $filestructure
 		}
-		# Backup Restore
-		Function Backup-SqlDatabase
-		{
-			[CmdletBinding()]
-			param (
-				[object]$server,
-				[string]$dbname,
-				[string]$backupfile,
-				[int]$numberfiles
-			)
-			
-			$server.ConnectionContext.StatementTimeout = 0
-			$backup = New-Object "Microsoft.SqlServer.Management.Smo.Backup"
-			$backup.Database = $dbname
-			$backup.Action = "Database"
-			$backup.CopyOnly = $CopyOnly
-			$val = 0
-			
-			while ($val -lt $numberfiles)
-			{
-				$device = New-Object "Microsoft.SqlServer.Management.Smo.BackupDeviceItem"
-				$device.DeviceType = "File"
-				$device.Name = $backupfile.Replace(".bak", "-$val.bak")
-				$backup.Devices.Add($device)
-				$val++
-			}
-			
-			$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-				Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
-			}
-			$backup.add_PercentComplete($percent)
-			$backup.PercentCompleteNotification = 1
-			$backup.add_Complete($complete)
-			
-			Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-			Write-Output "Backing up $dbname"
-			
-			try
-			{
-				$backup.SqlBackup($server)
-				Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
-				Write-Output "Backup succeeded"
-				return $true
-			}
-			catch
-			{
-				Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
-				Write-Exception $_
-				return $false
-			}
-		}
-		
-		Function Restore-SqlDatabase
-		{
-			[CmdletBinding()]
-			param (
-				[object]$server,
-				[string]$dbname,
-				[string]$backupfile,
-				[object]$filestructure,
-				[int]$numberfiles
-			)
-			
-			$servername = $server.name
-			$server.ConnectionContext.StatementTimeout = 0
-			$restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
-			
-			if ($WithReplace -or $server.databases[$dbname] -eq $null)
-			{
-				foreach ($file in $filestructure.databases[$dbname].destination.values)
-				{
-					$movefile = New-Object "Microsoft.SqlServer.Management.Smo.RelocateFile"
-					$movefile.LogicalFileName = $file.logical
-					$movefile.PhysicalFileName = $file.physical
-					$null = $restore.RelocateFiles.Add($movefile)
-				}
-			}
-			
-			Write-Output "Restoring $dbname to $servername"
-			
-			try
-			{
-				
-				$percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-					Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
-				}
-				$restore.add_PercentComplete($percent)
-				$restore.PercentCompleteNotification = 1
-				$restore.add_Complete($complete)
-				$restore.ReplaceDatabase = $true
-				$restore.Database = $dbname
-				$restore.Action = "Database"
-				$restore.NoRecovery = $NoRecovery
-				$val = 0
-				$filestodelete = @()
-				
-				while ($val -lt $numberfiles)
-				{
-					$device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-					$device.devicetype = "File"
-					$device.name = $backupfile.Replace(".bak", "-$val.bak")
-					$restore.Devices.Add($device)
-					$filestodelete += $device.name
-					$val++
-				}
-				
-				Write-Progress -id 1 -activity "Restoring $dbname to $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-				$restore.sqlrestore($server)
-				Write-Progress -id 1 -activity "Restoring $dbname to $servername" -status "Complete" -Completed
-				
-				If ($NoBackupCleanup -eq $false)
-				{
-					foreach ($backupfile in $filestodelete)
-					{
-						try
-						{
-							If (Test-Path $backupfile -ErrorAction Stop)
-							{
-								Write-Verbose "Deleting $backupfile"
-								Remove-Item $backupfile -ErrorAction Stop
-							}
-						}
-						catch
-						{
-							try
-							{
-								Write-Verbose "Trying alternate SQL method to delete $backupfile"
-								$sql = "EXEC master.sys.xp_delete_file 0, '$backupfile'"
-								Write-Debug $sql
-								$null = $server.ConnectionContext.ExecuteNonQuery($sql)
-							}
-							catch
-							{
-								Write-Warning "Cannot delete backup file $backupfile"
-								
-								# Set NoBackupCleanup so that there's a warning at the end
-								$NoBackupCleanup = $true
-							}
-						}
-					}
-				}
-				return $true
-			}
-			catch
-			{
-				Write-Warning "Restore failed: $($_.Exception.InnerException.Message)"
-				Write-Exception $_
-				return $false
-			}
-		}
 		
 		# Detach Attach 
 		Function Dismount-SqlDatabase
@@ -517,11 +376,11 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			{
 				try
 				{
-					Write-Warning "Breaking mirror for $dbname"
+					Write-Message -Level Warning -Message  "Breaking mirror for $dbname"
 					$database.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
 					$database.Alter()
 					$database.Refresh()
-					Write-Warning "Could not break mirror for $dbname. Skipping."
+					Write-Message -Level Warning -Message "Could not break mirror for $dbname. Skipping."
 					
 				}
 				catch
@@ -552,7 +411,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			try
 			{
 				$sql = "ALTER DATABASE [$dbname] SET SINGLE_USER WITH ROLLBACK IMMEDIATE"
-				Write-Verbose $sql
+				Write-Message -Level Verbose -Message  $sql
 				$null = $server.ConnectionContext.ExecuteNonQuery($sql)
 				Write-Output "Successfully set $dbname to single-user from $source"
 			}
@@ -564,7 +423,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			try
 			{
 				$sql = "EXEC master.dbo.sp_detach_db N'$dbname'"
-				Write-Verbose $sql
+				Write-Message -Level Verbose -Message  $sql
 				$null = $server.ConnectionContext.ExecuteNonQuery($sql)
 				Write-Output "Successfully detached $dbname from $source"
 			}
@@ -658,16 +517,16 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					}
 					catch
 					{
-						Write-Warning "Start-BitsTransfer did not succeed. Now attempting with Copy-Item - no progress bar will be shown."
+						Write-Message -Level Warning -Message "Start-BitsTransfer did not succeed. Now attempting with Copy-Item - no progress bar will be shown."
 						try
 						{
 							Copy-Item -Path $from -Destination $remotefilename -ErrorAction Stop
 						}
 						catch
 						{
-							Write-Warning "Access denied. This can happen for a number of reasons including issues with cloned disks."
-							Write-Warning "Alternatively, you may need to run PowerShell as Administrator, especially when running on localhost."
-							break
+							Write-Message -Level Warning -Message "Access denied. This can happen for a number of reasons including issues with cloned disks."
+							Stop-Function -Message  "Alternatively, you may need to run PowerShell as Administrator, especially when running on localhost." -Target $from
+							return
 						}
 					}
 				}
@@ -730,14 +589,14 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				else
 				{
 					# add to failed because ATTACH was unsuccessful
-					Write-Warning "Could not attach $dbname."
+					Write-Message -Level Warning -Message "Could not attach $dbname."
 					return "Could not attach database."
 				}
 			}
 			else
 			{
 				# add to failed because DETACH was unsuccessful
-				Write-Warning "Could not detach $dbname."
+				Write-Message -Level Warning -Message "Could not detach $dbname."
 				return "Could not detach database."
 			}
 		}
@@ -779,7 +638,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			{
 				If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
 				{
-					Write-Warning "When running DetachAttach locally on the console, it's likely you'll need to Run As Administrator. Trying anyway."
+					Write-Message -Level Warning -Message  "When running DetachAttach locally on the console, it's likely you'll need to Run As Administrator. Trying anyway."
 				}
 			}
 		}
@@ -791,23 +650,31 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		{
 			if ($(Test-SqlPath -SqlServer $sourceserver -Path $NetworkShare) -eq $false)
 			{
-				Write-Warning "$Source may not be able to access $NetworkShare. Trying anyway."
+				Write-Message -Level Warning -Message "$Source may not be able to access $NetworkShare. Trying anyway."
 			}
 			
 			if ($(Test-SqlPath -SqlServer $destserver -Path $NetworkShare) -eq $false)
 			{
-				Write-Warning "$Destination may not be able to access $NetworkShare. Trying anyway."
+				Write-Message -Level Warning -Message "$Destination may not be able to access $NetworkShare. Trying anyway."
 			}
 			
 			if ($networkshare.StartsWith('\\'))
 			{
-				$shareserver = ($networkshare -split "\\")[2]
-				$hostentry = ([Net.Dns]::GetHostEntry($shareserver)).HostName -split "\."
+                try 
+                {
+				    $shareserver = ($networkshare -split "\\")[2]
+				    $hostentry = ([Net.Dns]::GetHostEntry($shareserver)).HostName -split "\."
 				
-				if ($shareserver -ne $hostentry[0])
-				{
-					Write-Warning "Using CNAME records for the network share may present an issue if an SPN has not been created. Trying anyway. If it doesn't work, use a different (A record) hostname."
-				}
+				    if ($shareserver -ne $hostentry[0])
+				    {
+					    Write-Message -Level Warning -Message "Using CNAME records for the network share may present an issue if an SPN has not been created. Trying anyway. If it doesn't work, use a different (A record) hostname."
+				    }
+                }
+                catch
+                {
+                    Stop-Function -Message "Error validating unc path: $_"
+                    return
+                }
 			}
 		}
 		
@@ -822,7 +689,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		Write-Output "Checking to ensure the source isn't the same as the destination"
 		if ($source -eq $destination)
 		{
-			throw "Source and Destination Sql Servers instances are the same. Quitting."
+			Stop-Function -Message "Source and Destination Sql Servers instances are the same. Quitting."
+            return
 		}
 		
 		if ($NetworkShare.Length -gt 0)
@@ -830,19 +698,20 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			Write-Output "Checking to ensure network path is valid"
 			if (!($NetworkShare.StartsWith("\\")))
 			{
-				throw "Network share must be a valid UNC path (\\server\share)."
+				Stop-Function -Message "Network share must be a valid UNC path (\\server\share)."
+                return
 			}
 			
 			try
 			{
 				if (Test-Path $NetworkShare -ErrorAction Stop)
 				{
-					Write-Verbose "$networkshare share can be accessed."
+					Write-Message -Level Verbose -Message  "$networkshare share can be accessed."
 				}
 			}
 			catch
 			{
-				Write-Warning "$networkshare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
+				Write-Message -Level Warning -Message "$networkshare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
 			}
 			
 		}
@@ -850,22 +719,22 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		Write-Output "Checking to ensure server is not SQL Server 7 or below"
 		if ($sourceserver.versionMajor -lt 8 -and $destserver.versionMajor -lt 8)
 		{
-			throw "This script can only be run on Sql Server 2000 and above. Quitting."
+			Stop-Function -Message  "This script can only be run on Sql Server 2000 and above. Quitting."
 		}
 		
 		Write-Output "Checking to ensure detach/attach is not attempted on SQL Server 2000"
 		if ($destserver.versionMajor -lt 9 -and $DetachAttach)
 		{
-			throw "Detach/Attach not supported when destination Sql Server is version 2000. Quitting."
+			Stop-Function -Message "Detach/Attach not supported when destination Sql Server is version 2000. Quitting."
 		}
 		
 		Write-Output "Checking to ensure SQL Server 2000 migration isn't directly attempted to SQL Server 2012"
 		if ($sourceserver.versionMajor -lt 9 -and $destserver.versionMajor -gt 10)
 		{
-			throw "Sql Server 2000 databases cannot be migrated to Sql Server versions 2012 and above. Quitting."
+			Stop-Function -Message "Sql Server 2000 databases cannot be migrated to Sql Server versions 2012 and above. Quitting."
 		}
 		
-		Write-Verbose "Warning if migration from 2005 to 2012 and above and attach/detach is used."
+		Write-Message -Level Verbose -Message  "Warning if migration from 2005 to 2012 and above and attach/detach is used."
 		if ($sourceserver.versionMajor -eq 9 -and $destserver.versionMajor -gt 9 -and !$BackupRestore -and !$Force -and $DetachAttach)
 		{
 			throw "Backup and restore is the safest method for migrating from Sql Server 2005 to other Sql Server versions.
@@ -875,7 +744,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		if ($sourceserver.collation -ne $destserver.collation)
 		{
 			Write-Output "Warning on different collation"
-			Write-Warning "Collation on $Source, $($sourceserver.collation) differs from the $Destination, $($destserver.collation)."
+			Write-Message -Level Warning -Message "Collation on $Source, $($sourceserver.collation) differs from the $Destination, $($destserver.collation)."
 		}
 		
 		Write-Output "Ensuring user databases exist (counting databases)"
@@ -883,13 +752,13 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		
 		if ($dbtotal -le 4)
 		{
-			throw "No user databases to migrate. Quitting."
+			Stop-Function -Message  "No user databases to migrate. Quitting."
 		}
 		
 		Write-Output "Ensuring destination server version is equal to or greater than source"
 		if ([version]$sourceserver.ResourceVersionString -gt [version]$destserver.ResourceVersionString)
 		{
-			throw "Source Sql Server version build must be <= destination Sql Server for database migration."
+			Stop-Function -Message  "Source Sql Server version build must be <= destination Sql Server for database migration."
 		}
 		
 		# SMO's filestreamlevel is sometimes null
@@ -901,7 +770,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 		Write-Output "Writing warning about filestream being enabled"
 		if ($fswarning)
 		{
-			Write-Warning "FILESTREAM enabled on $source but not $destination. Databases that use FILESTREAM will be skipped."
+			Write-Message -Level Warning -Message "FILESTREAM enabled on $source but not $destination. Databases that use FILESTREAM will be skipped."
 		}
 		
 		if ($DetachAttach -eq $true)
@@ -911,30 +780,32 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			
 			If ((Test-Path $remotesourcepath) -ne $true -and $DetachAttach)
 			{
-				Write-Warning "Can't access remote Sql directories on $source which is required to perform detach/copy/attach."
-				Write-Warning "You can manually try accessing $remotesourcepath to diagnose any issues."
-				Write-Warning "Halting database migration."
+				Write-Message -Level Warning -Message "Can't access remote Sql directories on $source which is required to perform detach/copy/attach."
+				Write-Message -Level Warning -Message "You can manually try accessing $remotesourcepath to diagnose any issues."
+				Stop-Function -Message "Halting database migration."
 				return
 			}
 			
 			$remotedestpath = Join-AdminUNC $destnetbios (Get-SqlDefaultPaths $destserver data)
 			If ((Test-Path $remotedestpath) -ne $true -and $DetachAttach)
 			{
-				Write-Warning "Can't access remote Sql directories on $destination which is required to perform detach/copy/attach."
-				Write-Warning "You can manually try accessing $remotedestpath to diagnose any issues."
-				Write-Warning "Halting database migration."
+				Write-Message -Level Warning -Message "Can't access remote Sql directories on $destination which is required to perform detach/copy/attach."
+				Write-Message -Level Warning -Message "You can manually try accessing $remotedestpath to diagnose any issues."
+				Stop-Function -Message "Halting database migration."
 				return
 			}
 		}
 		
 		if (($Databases -or $Exclude -or $IncludeSupportDbs) -and (!$DetachAttach -and !$BackupRestore))
 		{
-			throw "You did not select a migration method. Please use -BackupRestore or -DetachAttach"
+			Stop-Function -Message  "You did not select a migration method. Please use -BackupRestore or -DetachAttach"
+            return
 		}
 		
 		if ((!$Databases -and !$AllDatabases -and !$IncludeSupportDbs) -and ($DetachAttach -or $BackupRestore))
 		{
-			throw "You did not select any databases to migrate. Please use -AllDatabases or -Databases or -IncludeSupportDbs"
+			Stop-Function -Message  "You did not select any databases to migrate. Please use -AllDatabases or -Databases or -IncludeSupportDbs"
+            return
 		}
 		
 		
@@ -957,7 +828,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 			$null = $databaselist.Add($database)
 		}
 		
-		Write-Verbose "Performing count"
+		Write-Message -Level Verbose -Message  "Performing count"
 		$dbcount = $databaselist.Count
 		
 		Write-Output "Building file structure inventory for $dbcount databases"
@@ -1009,10 +880,10 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					continue
 				}
 				
-				Write-Verbose "Checking for accessibility"
+				Write-Message -Level Verbose -Message  "Checking for accessibility"
 				if ($database.IsAccessible -eq $false)
 				{
-					Write-Warning "Skipping $dbname. Database is inaccessible."
+					Write-Message -Level Warning -Message "Skipping $dbname. Database is inaccessible."
 					continue
 				}
 				
@@ -1022,7 +893,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					
 					if ($fsrows.count -gt 0)
 					{
-						Write-Warning "Skipping $dbname (contains FILESTREAM)"
+						Write-Message -Level Warning -Message "Skipping $dbname (contains FILESTREAM)"
 						continue
 					}
 				}
@@ -1036,11 +907,11 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 					if (!(Test-Path $remotepath)) { throw "Cannot resolve $remotepath. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script." }
 				}
 				
-				Write-Verbose "Checking Availability Group status"
+				Write-Message -Level Verbose -Message  "Checking Availability Group status"
 				if ($database.AvailabilityGroupName.Length -gt 0 -and !$force -and $DetachAttach)
 				{
 					$agname = $database.AvailabilityGroupName
-					Write-Warning "Database is part of an Availability Group ($agname). Use -Force to drop from $agname and migrate. Alternatively, you can use the safer backup/restore method."
+					Write-Message -Level Warning -Message  "Database is part of an Availability Group ($agname). Use -Force to drop from $agname and migrate. Alternatively, you can use the safer backup/restore method."
 					continue
 				}
 				
@@ -1048,25 +919,25 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 				
 				if ($dbstatus.StartsWith("Normal") -eq $false)
 				{
-					Write-Warning "$dbname is not in a Normal state. Skipping."
+					Write-Message -Level Warning -Message "$dbname is not in a Normal state. Skipping."
 					continue
 				}
 				
 				if ($database.ReplicationOptions -ne "None" -and $DetachAttach -eq $true)
 				{
-					Write-Warning "$dbname is part of replication. Skipping."
+					Write-Message -Level Warning -Message "$dbname is part of replication. Skipping."
 					continue
 				}
 				
 				if ($database.IsMirroringEnabled -and !$force -and $DetachAttach)
 				{
-					Write-Warning "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method."
+					Write-Message -Level Warning -Message "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method."
 					continue
 				}
 				
 				if (($destserver.Databases[$dbname] -ne $null) -and !$force -and !$WithReplace)
 				{
-					Write-Warning "Database exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
+					Write-Message -Level Warning -Message "Database exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
 					continue
 				}
 				elseif ($destserver.Databases[$dbname] -ne $null -and $force)
@@ -1078,7 +949,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						
 						if ($dropresult -eq $false)
 						{
-							Write-Warning "Database could not be dropped. Aborting routine for this database"
+							Write-Message -Level Warning -Message "Database could not be dropped. Aborting routine for this database"
 							continue
 						}
 					}
@@ -1108,7 +979,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						
 						if ($result -eq $false)
 						{
-							Write-Warning "Couldn't set database to read-only. Aborting routine for this database"
+							Write-Message -Level Warning -Message "Couldn't set database to read-only. Aborting routine for this database"
 							continue
 						}
 					}
@@ -1121,17 +992,21 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						$filename = "$dbname-$timenow.bak"
 						$backupfile = Join-Path $networkshare $filename
 						
-						$backupresult = Backup-SqlDatabase $sourceserver $dbname $backupfile $numberfiles
+						#$backupresult = Backup-SqlDatabase $sourceserver $dbname $backupfile $numberfiles
 						
+						$backupTmpResult = Backup-DbaDatabase -SqlInstance $sourceserver -Databases $dbname -backupDirectory (Split-Path -Path $backupFile -parent) -FileCount $numberfiles
+						$backupresult = $BackupTmpResult.BackupComplete
 						if ($backupresult -eq $false)
 						{
 							$serviceaccount = $sourceserver.ServiceAccount
-							Write-Warning "Backup Failed. Does Sql Server account $serviceaccount have access to $NetworkShare? Aborting routine for this database"
+							Write-Message -Level Warning -Message "Backup Failed. Does Sql Server account $serviceaccount have access to $NetworkShare? Aborting routine for this database"
 							continue
 						}
 						
-						$restoreresult = Restore-SqlDatabase $destserver $dbname $backupfile $filestructure $numberfiles
-						
+						#$restoreresult = Restore-SqlDatabase $destserver $dbname $backupfile $filestructure $numberfiles
+						Write-Message -Level Verbose -Message  "Resuse = $ReuseSourceFolderStructure"
+						$RestoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlServer $destserver -DatabaseName $dbname -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$norecovery -TrustDbBackupHistory
+						$restoreresult = $RestoreResultTmp.RestoreComplete
 						if ($restoreresult -eq $true)
 						{
 							Write-Output "Successfully restored $dbname to $destination"
@@ -1140,13 +1015,13 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						{
 							if ($ReuseSourceFolderStructure)
 							{
-								Write-Warning "Failed to restore $dbname to $destination. You specified -ReuseSourceFolderStructure. Does the exact same destination directory structure exist?"
-								Write-Warning "Aborting routine for this database"
+								Write-Message -Level Warning -Message "Failed to restore $dbname to $destination. You specified -ReuseSourceFolderStructure. Does the exact same destination directory structure exist?"
+								Write-Message -Level Warning -Message "Aborting routine for this database"
 								continue
 							}
 							else
 							{
-								Write-Warning "Failed to restore $dbname to $destination. Aborting routine for this database."
+								Write-Message -Level Warning -Message "Failed to restore $dbname to $destination. Aborting routine for this database."
 								continue
 							}
 						}
@@ -1208,7 +1083,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 							}
 							else
 							{
-								Write-Warning "Could not reattach $dbname to $source."
+								Write-Message -Level Warning -Message "Could not reattach $dbname to $source."
 							}
 						}
 						
@@ -1219,7 +1094,7 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						}
 						else
 						{
-							Write-Warning "Failed to attach $dbname to $destination. Aborting routine for this database."
+							Write-Message -Level Warning -Message "Failed to attach $dbname to $destination. Aborting routine for this database." 
 							continue
 						}
 					}
@@ -1241,8 +1116,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 							}
 							catch
 							{
-								Write-Warning "Failed to update DatabaseOwnershipChaining for $sourcedbownerchaining on $dbname on $destination"
-								Write-Exception $_
+								Write-Message -Level Warning -Message "Failed to update DatabaseOwnershipChaining for $sourcedbownerchaining on $dbname on $destination" -Silent
+								Stop-Function -Message "Exception: $_" -Continue -Target $destination
 							}
 						}
 					}
@@ -1259,8 +1134,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 							}
 							catch
 							{
-								Write-Warning "Failed to update Trustworthy to $sourcedbtrustworthy for $dbname on $destination"
-								Write-Exception $_
+								Write-Message -Level Warning -Message  "Failed to update Trustworthy to $sourcedbtrustworthy for $dbname on $destination"
+								Stop-Function -Message "Exception: $_" -Continue -Target $destination 
 							}
 						}
 					}
@@ -1277,8 +1152,8 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 							}
 							catch
 							{
-								Write-Warning "Failed to update BrokerEnabled to $sourcedbbrokerenabled for $dbname on $destination"
-								Write-Exception $_
+								Write-Message -Level Warning -Message "Failed to update BrokerEnabled to $sourcedbbrokerenabled for $dbname on $destination"
+								Stop-Function -Message "Exception: $_" -Continue -Target $destination 
 							}
 						}
 					}
@@ -1295,11 +1170,20 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 						}
 						else
 						{
-							Write-Warning "Failed to update ReadOnly status on $dbname"
-							Write-Exception $_
+							Write-Message -Level Warning -Message  "Failed to update ReadOnly status on $dbname"
+							Stop-Function -Message "Exception: $_" -Continue -Target $destination 
 						}
 					}
 				}
+
+                if ($SetSourceOffline -and  $sourceserver.databases[$dbname].status -notlike '*offline*')
+                {
+                    If ($Pscmdlet.ShouldProcess($destination, "Setting $dbname offline on $source"))
+                    {
+                        Stop-DbaProcess -SqlServer $sourceserver -Databases $dbname
+                        Set-DbaDatabaseState -SqlInstance $sourceserver -Credential $SourceSqlCredential -database $dbname -Offline
+                    }
+                }
 				
 				
 				If ($Pscmdlet.ShouldProcess("console", "Showing elapsed time"))
@@ -1318,17 +1202,25 @@ It also includes the support databases (ReportServer, ReportServerTempDb, distri
 	{
 		If ($Pscmdlet.ShouldProcess("console", "Showing migration time elapsed"))
 		{
-			$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
+            if ($null -ne $elapsed)
+            {
+            		
+        	    $totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
 			
-			Write-Output "`nDatabase migration finished"
-			Write-Output "Migration started: $started"
-			Write-Output "Migration completed: $(Get-Date)"
-			Write-Output "Total Elapsed time: $totaltime"
+			    Write-Output "`nDatabase migration finished"
+			    Write-Output "Migration started: $started"
+			    Write-Output "Migration completed: $(Get-Date)"
+			    Write-Output "Total Elapsed time: $totaltime"
 			
-			if ($networkshare.length -gt 0 -and $NoBackupCleanup)
-			{
-				Write-Warning "Backups still exist at $networkshare."
-			}
+			    if ($networkshare.length -gt 0 -and $NoBackupCleanup)
+			    {
+				    Write-Message -Level Warning -Message "Backups still exist at $networkshare."
+			    }
+            }
+            else
+            {
+                Write-output "No work was done, as we stopped during setup phase"
+            }
 		}
 		
 		$sourceserver.ConnectionContext.Disconnect()
