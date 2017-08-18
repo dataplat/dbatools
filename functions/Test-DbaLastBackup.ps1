@@ -360,16 +360,16 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                     elseif ($source -ne $destination -and $lastbackup[0].Path.StartsWith('\\') -eq $false -and !$CopyFile) {
                         Write-Message -Level Verbose -Message "Path not UNC and source does not match destination. Use -CopyFile to move the backup file."
                         $fileexists = "Skipped"
-                        $restoreresult = "Restore not located on shared location"
+                        $success = "Restore not located on shared location"
                         $dbccresult = "Skipped"
                     }
                     elseif (($lastbackup[0].Path | Foreach{Test-DbaSqlPath -SqlInstance $destserver -Path $_}) -eq $false) {
                         Write-Message -Level Verbose -Message "SQL Server cannot find backup"
                         $fileexists = $false
-                        $restoreresult = "Skipped"
+						$success = "Skipped"
                         $dbccresult = "Skipped"
                     }
-                    if ($restoreresult -ne "Skipped" -or $lastbackup[0].Path -like 'http*') {
+                    if ($success -ne "Skipped" -or $lastbackup[0].Path -like 'http*') {
                         Write-Message -Level Verbose -Message "Looking good!"
 						
                         $fileexists = $true
