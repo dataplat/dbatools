@@ -1365,12 +1365,6 @@ The script will show a message that the copy destination has not been supplied a
 					}
 				}
 
-				# Check the primary monitor server
-				#if (([string]$PrimaryMonitorServer -eq '') -or ($PrimaryMonitorServer -eq $null)) {
-				#	Write-Message -Message "Setting monitor server for primary server to $SourceSqlInstance." -Level Output
-				#	$PrimaryMonitorServer = $SourceSqlInstance
-				#}
-
 				# Check the PrimaryMonitorServerSecurityMode if it's SQL Server authentication
 				if ($PrimaryMonitorServerSecurityMode -eq 0) {
 					if ($PrimaryMonitorServerLogin) {
@@ -1388,12 +1382,6 @@ The script will show a message that the copy destination has not been supplied a
 						"SQLSERVER" { 0 } "WINDOWS" { 1 } default { 1 }
 					}
 				}
-
-				# Check the secondary monitor server
-				#if ($SecondaryMonitorServer) {
-				#	Write-Message -Message "Setting secondary monitor server for $DestinationSqlInstance to $SecondaryMonitorServer." -Level Verbose
-				#	$SecondaryMonitorServer = $DestinationSqlInstance
-				#}
 
 				# Check the MonitorServerSecurityMode if it's SQL Server authentication
 				if ($SecondaryMonitorServerSecurityMode -eq 0) {

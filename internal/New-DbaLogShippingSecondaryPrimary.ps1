@@ -161,17 +161,6 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
 		}
 	}
 
-	# Check the MonitorServer
-	#if (-not $MonitorServer) {
-	#	if ($Force) {
-	#		$MonitorServer = $SqlInstance
-	#		Write-Message -Message "Setting monitor server to $MonitorServer." -Level Verbose
-	#	}
-	#	else {
-	#		Stop-Function -Message "The monitor server needs to be set. Use -Force if system name must be used." -InnerErrorRecord $_ -Target $SqlInstance -Continue
-	#	}
-	#}
-
 	# Check of the MonitorServerSecurityMode value is of type string and set the integer value
 	if ($MonitorServerSecurityMode -notin 0, 1) {
 		$MonitorServerSecurityMode = switch ($MonitorServerSecurityMode) {"WINDOWS" { 1 } "SQLSERVER" { 0 } }
