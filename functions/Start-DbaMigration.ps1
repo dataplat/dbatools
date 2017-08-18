@@ -1,222 +1,206 @@
-function Start-DbaMigration
-{
-<# 
-.SYNOPSIS 
-Migrates SQL Server *ALL* databases, logins, database mail profies/accounts, credentials, SQL Agent objects, linked servers, 
-Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
-system triggers and backup devices from one SQL Server to another. 
+function Start-DbaMigration {
+	<# 
+		.SYNOPSIS 
+			Migrates SQL Server *ALL* databases, logins, database mail profies/accounts, credentials, SQL Agent objects, linked servers, 
+			Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
+			system triggers and backup devices from one SQL Server to another. 
 
-For more granular control, please use one of the -No parameters and use the other functions available within the dbatools module.
+			For more granular control, please use one of the -No parameters and use the other functions available within the dbatools module.
 
-Automatically outputs a transcript to disk.
+			Automatically outputs a transcript to disk.
 
-.DESCRIPTION 
+		.DESCRIPTION 
+			Start-DbaMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you're looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:
 
-Start-DbaMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you're looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:
+			All user databases to exclude support databases such as ReportServerTempDB (Use -IncludeSupportDbs for this). Use -NoDatabases to skip.
+			All logins. Use -NoLogins to skip.
+			All database mail objects. Use -NoDatabaseMail
+			All credentials. Use -NoCredentials to skip.
+			All objects within the Job Server (SQL Agent). Use -NoAgentServer to skip.
+			All linked servers. Use -NoLinkedServers to skip.
+			All groups and servers within Central Management Server. Use -NoCentralManagementServer to skip.
+			All SQL Server configuration objects (everything in sp_configure). Use -NoSpConfigure to skip.
+			All user objects in system databases. Use -NoSysDbUserObjects to skip.
+			All system triggers. Use -NoSystemTriggers to skip.
+			All system backup devices. Use -NoBackupDevices to skip.
+			All Audits. Use -NoAudits to skip.
+			All Endpoints. Use -NoEndpoints to skip.
+			All Extended Events. Use -NoExtendedEvents to skip.
+			All Policy Management objects. Use -NoPolicyManagement to skip.
+			All Resource Governor objects. Use -NoResourceGovernor to skip.
+			All Server Audit Specifications. Use -NoServerAuditSpecifications to skip.
+			All Custom Errors (User Defined Messages). Use -NoCustomErrors to skip.
+			Copies All Data Collector collection sets. Does not configure the server. Use -NoDataCollector to skip.
 
-All user databases to exclude support databases such as ReportServerTempDB (Use -IncludeSupportDbs for this). Use -NoDatabases to skip.
-All logins. Use -NoLogins to skip.
-All database mail objects. Use -NoDatabaseMail
-All credentials. Use -NoCredentials to skip.
-All objects within the Job Server (SQL Agent). Use -NoAgentServer to skip.
-All linked servers. Use -NoLinkedServers to skip.
-All groups and servers within Central Management Server. Use -NoCentralManagementServer to skip.
-All SQL Server configuration objects (everything in sp_configure). Use -NoSpConfigure to skip.
-All user objects in system databases. Use -NoSysDbUserObjects to skip.
-All system triggers. Use -NoSystemTriggers to skip.
-All system backup devices. Use -NoBackupDevices to skip.
-All Audits. Use -NoAudits to skip.
-All Endpoints. Use -NoEndpoints to skip.
-All Extended Events. Use -NoExtendedEvents to skip.
-All Policy Management objects. Use -NoPolicyManagement to skip.
-All Resource Governor objects. Use -NoResourceGovernor to skip.
-All Server Audit Specifications. Use -NoServerAuditSpecifications to skip.
-All Custom Errors (User Defined Messages). Use -NoCustomErrors to skip.
-Copies All Data Collector collection sets. Does not configure the server. Use -NoDataCollector to skip.
+			This script provides the ability to migrate databases using detach/copy/attach or backup/restore. SQL Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and SQL Express.
 
-This script provides the ability to migrate databases using detach/copy/attach or backup/restore. SQL Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and SQL Express.
+			By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
 
-By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
+		.PARAMETER Source
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
+		.PARAMETER SourceSqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER Source
-Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-.PARAMETER Destination
-Destination SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			To connect as a different Windows user, run PowerShell as that user.
 
-$scred = Get-Credential, this pass $scred object to the param. 
+		.PARAMETER Destination
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+		.PARAMETER DestinationSqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-$dcred = Get-Credential, this pass this $dcred to the param. 
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER BackupRestore
-Use the a Copy-Only Backup and Restore Method. This parameter requires that you specify -NetworkShare in a valid UNC format (\\server\share)
+		.PARAMETER BackupRestore
+			Use the a Copy-Only Backup and Restore Method. This parameter requires that you specify -NetworkShare in a valid UNC format (\\server\share)
 
-.PARAMETER DetachAttach
-Uses the detach/copy/attach method to perform database migrations. No files are deleted on the source. If the destination attachment fails, the source database will be reattached. File copies are performed over administrative shares (\\server\x$\mssql) using BITS. If a database is being mirrored, the mirror will be broken prior to migration. 
+		.PARAMETER DetachAttach
+			Uses the detach/copy/attach method to perform database migrations. No files are deleted on the source. If the destination attachment fails, the source database will be reattached. File copies are performed over administrative shares (\\server\x$\mssql) using BITS. If a database is being mirrored, the mirror will be broken prior to migration. 
 
-.PARAMETER Reattach
-Reattaches all source databases after DetachAttach migration.
+		.PARAMETER Reattach
+			Reattaches all source databases after DetachAttach migration.
 
-.PARAMETER ReuseSourceFolderStructure
-By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. The same structure will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default SQL structure (MSSQL12.INSTANCE, etc)
+		.PARAMETER ReuseSourceFolderStructure
+			By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. The same structure will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default SQL structure (MSSQL12.INSTANCE, etc)
 
-.PARAMETER NetworkShare
-Specifies the network location for the backup files. The SQL Service service accounts must read/write permission to access this location.
+		.PARAMETER NetworkShare
+			Specifies the network location for the backup files. The SQL Service service accounts must read/write permission to access this location.
 
-.PARAMETER SetSourceReadOnly
-Sets all migrated databases to ReadOnly prior to detach/attach & backup/restore. If -Reattach is used, db is set to read-only after reattach.
+		.PARAMETER SetSourceReadOnly
+			Sets all migrated databases to ReadOnly prior to detach/attach & backup/restore. If -Reattach is used, db is set to read-only after reattach.
 
-.PARAMETER WithReplace
-It's exactly WITH REPLACE. This is useful if you want to stage some complex file paths.
+		.PARAMETER WithReplace
+			It's exactly WITH REPLACE. This is useful if you want to stage some complex file paths.
 
-.PARAMETER NoDatabases
-Skips the database migration.
+		.PARAMETER NoDatabases
+			Skips the database migration.
 
-.PARAMETER NoLogins
-Skips the login migration.
+		.PARAMETER NoLogins
+			Skips the login migration.
 
-.PARAMETER NoAgentServer
-Skips the job server (SQL Agent) migration.
+		.PARAMETER NoAgentServer
+			Skips the job server (SQL Agent) migration.
 
-.PARAMETER NoCredentials
-Skips the credential migration.
+		.PARAMETER NoCredentials
+			Skips the credential migration.
 
-.PARAMETER NoLinkedServers
-Skips the Linked Server migration.
+		.PARAMETER NoLinkedServers
+			Skips the Linked Server migration.
 
-.PARAMETER NoSpConfigure
-Skips the global configuration migration.
+		.PARAMETER NoSpConfigure
+			Skips the global configuration migration.
 
-.PARAMETER NoCentralManagementServer
-Skips the CMS migration.
+		.PARAMETER NoCentralManagementServer
+			Skips the CMS migration.
 
-.PARAMETER NoDatabaseMail
-Skips the database mail migration.
+		.PARAMETER NoDatabaseMail
+			Skips the database mail migration.
 
-.PARAMETER NoSysDbUserObjects
-Skips the import of user objects found in source SQL Server's master, msdb and model databases to the destination.
+		.PARAMETER NoSysDbUserObjects
+			Skips the import of user objects found in source SQL Server's master, msdb and model databases to the destination.
 
-.PARAMETER NoSystemTriggers
-Skips the System Triggers migration.
+		.PARAMETER NoSystemTriggers
+			Skips the System Triggers migration.
 
-.PARAMETER NoBackupDevices
-Skips the backup device migration.
+		.PARAMETER NoBackupDevices
+			Skips the backup device migration.
 
-.PARAMETER NoAudits
-Skips the Audit migration.
+		.PARAMETER NoAudits
+			Skips the Audit migration.
 
-.PARAMETER NoEndpoints
-Skips the Endpoin migration.
+		.PARAMETER NoEndpoints
+			Skips the Endpoint migration.
 
-.PARAMETER NoExtendedEvents
-Skips the Extended Event migration.
+		.PARAMETER NoExtendedEvents
+			Skips the Extended Event migration.
 
-.PARAMETER NoPolicyManagement
-Skips the Policy Management migration.
+		.PARAMETER NoPolicyManagement
+			Skips the Policy Management migration.
 
-.PARAMETER NoResourceGovernor
-Skips the Resource Governor migration.
+		.PARAMETER NoResourceGovernor
+			Skips the Resource Governor migration.
 
-.PARAMETER NoServerAuditSpecifications
-Skips the Server Audit Specification migration.
+		.PARAMETER NoServerAuditSpecifications
+			Skips the Server Audit Specification migration.
 
-.PARAMETER NoCustomErrors
-Skips the Custom Error (User Defined Messages) migration.
+		.PARAMETER NoCustomErrors
+			Skips the Custom Error (User Defined Messages) migration.
 
-.PARAMETER NoDataCollector
-Skips the Data Collector migration.
-	
-.PARAMETER NoSaRename
-Skips renaming of the sa account to match on destination. 
-	
-.PARAMETER DisableJobsOnDestination
-Disables migrated SQL Agent jobs on destination server
-
-.PARAMETER DisableJobsOnSource
-Disables migrated SQL Agent jobs on source server
-
-.PARAMETER Force
-If migrating users, forces drop and recreate of SQL and Windows logins. 
-If migrating databases, deletes existing databases with matching names. 
-If using -DetachAttach, -Force will break mirrors and drop dbs from Availability Groups.
-
-For other migration objects, it will just drop existing items and readd, if -force is supported within the udnerlying function.
-
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
-
-.PARAMETER NoRecovery
-Leaves the databases in No Recovery state to enable further backups to be added
-
-.PARAMETER IncludeSupportDbs
-Migration of ReportServer, ReportServerTempDb, SSIDb, and distribution databases if they exist. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
-
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
-
-.NOTES
-Tags: Migration, DisasterRecovery, Backup, Restore
-Author: Chrissy LeMaire
-Limitations: 	Doesn't cover what it doesn't cover (certificates, etc)
-				SQL Server 2000 login migrations have some limitations (server perms aren't migrated)
-				SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
-				Logins within SQL Server 2012 and above logins cannot be migrated to SQL Server 2008 R2 and below.	
-
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.PARAMETER NoDataCollector
+			Skips the Data Collector migration.
 			
+		.PARAMETER NoSaRename
+			Skips renaming of the sa account to match on destination. 
+			
+		.PARAMETER DisableJobsOnDestination
+			Disables migrated SQL Agent jobs on destination server
 
-.LINK 
-https://dbatools.io/Start-DbaMigration
+		.PARAMETER DisableJobsOnSource
+			Disables migrated SQL Agent jobs on source server
 
-.EXAMPLE   
-Start-DbaMigration -Source sqlserver\instance -Destination sqlcluster -DetachAttach 
+		.PARAMETER Force
+			If migrating users, forces drop and recreate of SQL and Windows logins. 
+			If migrating databases, deletes existing databases with matching names. 
+			If using -DetachAttach, -Force will break mirrors and drop dbs from Availability Groups.
 
-Description
+			For other migration objects, it will just drop existing items and readd, if -force is supported within the udnerlying function.
 
-All databases, logins, job objects and sp_configure options will be migrated from sqlserver\instance to sqlcluster. Databases will be migrated using the detach/copy files/attach method. Dbowner will be updated. User passwords, SIDs, database roles and server roles will be migrated along with the login.
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.EXAMPLE  
-Start-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -SourceSqlCredential $scred -ReuseSourceFolderStructure -DestinationSqlCredential $cred -Force -NetworkShare \\fileserver\share\sqlbackups\Migration -BackupRestore
+		.PARAMETER NoRecovery
+			Leaves the databases in No Recovery state to enable further backups to be added
 
-Migrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration.
+		.PARAMETER IncludeSupportDbs
+			Migration of ReportServer, ReportServerTempDb, SSIDb, and distribution databases if they exist. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
 
-.EXAMPLE
-Start-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -NoDatabases -NoLogins
+		.PARAMETER Confirm 
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-Migrates everything but logins and databases.
+		.NOTES
+			Tags: Migration, DisasterRecovery, Backup, Restore
+			Author: Chrissy LeMaire
+			Limitations: 	Doesn't cover what it doesn't cover (certificates, etc)
+							SQL Server 2000 login migrations have some limitations (server perms aren't migrated)
+							SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
+							Logins within SQL Server 2012 and above logins cannot be migrated to SQL Server 2008 R2 and below.	
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.EXAMPLE
-Start-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly
+		.LINK 
+			https://dbatools.io/Start-DbaMigration
 
-Migrate databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates everything else. 
+		.EXAMPLE   
+			Start-DbaMigration -Source sqlserver\instance -Destination sqlcluster -DetachAttach 
 
-#>	
+			All databases, logins, job objects and sp_configure options will be migrated from sqlserver\instance to sqlcluster. Databases will be migrated using the detach/copy files/attach method. Dbowner will be updated. User passwords, SIDs, database roles and server roles will be migrated along with the login.
+
+		.EXAMPLE  
+			Start-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -SourceSqlCredential $scred -ReuseSourceFolderStructure -DestinationSqlCredential $cred -Force -NetworkShare \\fileserver\share\sqlbackups\Migration -BackupRestore
+
+			Migrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration.
+
+		.EXAMPLE
+			Start-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -NoDatabases -NoLogins
+
+			Migrates everything but logins and databases.
+
+		.EXAMPLE
+			Start-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly
+
+			Migrate databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates everything else. 
+
+	#>	
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Position = 1, Mandatory = $true)]
