@@ -137,368 +137,360 @@ Test-DbaLastBackup -SqlInstance sql2014 -Destination sql2016 -CopyFile -CopyPath
 Copies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.
 
 #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
-    param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer", "Source")]
-        [DbaInstanceParameter[]]$SqlInstance,
-        [Alias("Credential")]
-        [PSCredential]
-        $SqlCredential,
-        [Alias("Databases")]
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
-        [DbaInstanceParameter]$Destination,
-        [object]$DestinationCredential,
-        [string]$DataDirectory,
-        [string]$LogDirectory,
-        [string]$Prefix = "dbatools-testrestore-",
-        [switch]$VerifyOnly,
-        [switch]$NoCheck,
-        [switch]$NoDrop,
-        [switch]$CopyFile,
-        [string]$CopyPath,
-        [int]$MaxMB,
-        [switch]$IncludeCopyOnly,
-        [switch]$IgnoreLogBackup,
+	[CmdletBinding(SupportsShouldProcess = $true)]
+	param (
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[Alias("ServerInstance", "SqlServer", "Source")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[Alias("Credential")]
+		[PSCredential]$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
+		[DbaInstanceParameter]$Destination,
+		[object]$DestinationCredential,
+		[string]$DataDirectory,
+		[string]$LogDirectory,
+		[string]$Prefix = "dbatools-testrestore-",
+		[switch]$VerifyOnly,
+		[switch]$NoCheck,
+		[switch]$NoDrop,
+		[switch]$CopyFile,
+		[string]$CopyPath,
+		[int]$MaxMB,
+		[switch]$IncludeCopyOnly,
+		[switch]$IgnoreLogBackup,
 		[string]$AzureCredential,
-        [switch]$Silent
-    )
+		[switch]$Silent
+	)
 	
-    process {
-        foreach ($instance in $sqlinstance) {
+	process {
+		foreach ($instance in $sqlinstance) {
 			
-            if (-not $destination -or $nodestination) {
-                $nodestination = $true
-                $destination = $instance
-                $DestinationCredential = $SqlCredential
-            }
-			
-            try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $sourceserver = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-			
-            try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
-            }
-            catch {
-                Stop-Function -Message "Failed to connect to: $destination" -Target $destination -Continue
-            }
-			
-            if ($destserver.VersionMajor -lt $sourceserver.VersionMajor) {
-                Stop-Function -Message "$Destination is a lower version than $instance. Backups would be incompatible." -Continue
-            }
-			
-            if ($destserver.VersionMajor -eq $sourceserver.VersionMajor -and $destserver.VersionMinor -lt $sourceserver.VersionMinor) {
-                Stop-Function -Message "$Destination is a lower version than $instance. Backups would be incompatible." -Continue
-            }
-			
-            if ($CopyPath) {
-                $testpath = Test-DbaSqlPath -SqlInstance $destserver -Path $CopyPath
-                if (!$testpath) {
-                    Stop-Function -Message "$destserver cannot access $CopyPath" -Continue
-                }
-            }
-            else {
-                # If not CopyPath is specified, use the destination server default backup directory
-                $copyPath = $destserver.BackupDirectory
-            }
-			
-            if ($instance -ne $destination -and !$CopyFile) {
-                $sourcerealname = $sourceserver.ComputerNetBiosName
-                $destrealname = $destserver.ComputerNetBiosName
-				
-                if ($BackupFolder) {
-                    if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcerealname -ne $destrealname) {
-                        Stop-Function -Message "Backup folder must be a network share if the source and destination servers are not the same." -Continue
-                    }
-                }
-            }
-			
-            $source = $sourceserver.DomainInstanceName
-            $destination = $destserver.DomainInstanceName
-			
-            if ($datadirectory) {
-                if (!(Test-DbaSqlPath -SqlInstance $destserver -Path $datadirectory)) {
-                    $serviceaccount = $destserver.ServiceAccount
-                    Stop-Function -Message "Can't access $datadirectory Please check if $serviceaccount has permissions" -Continue
-                }
-            }
-            else {
-                $datadirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType mdf
-            }
-			
-            if ($logdirectory) {
-                if (!(Test-DbaSqlPath -SqlInstance $destserver -Path $logdirectory)) {
-                    $serviceaccount = $destserver.ServiceAccount
-                    Stop-Function -Message "$Destination can't access its local directory $logdirectory. Please check if $serviceaccount has permissions" -Continue
-                }
-            }
-            else {
-                $logdirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType ldf
-            }
-
-			if ((Test-Bound "AzureCredential") -and (Test-Bound "CopyFile")){
-				Stop-Function -Message "Cannot use copyfile with Azure backups, set to false" -continue
-				$CopyFile = $false 
+			if (-not $destination -or $nodestination) {
+				$nodestination = $true
+				$destination = $instance
+				$DestinationCredential = $SqlCredential
 			}
 			
-            if (!$Database) {
-                $database = $sourceserver.databases.Name | Where-Object Name -ne 'tempdb'
-            }
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$sourceserver = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlCredential
+			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
 			
-            if ($ExcludeDatabase) {
-                $database = $database | Where-Object { $_ -notin $ExcludeDatabase }
-            }
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
+			}
+			catch {
+				Stop-Function -Message "Failed to connect to: $destination" -Target $destination -Continue
+			}
 			
-            if ($Database -or $ExcludeDatabase) {
-                $dblist = $database
+			if ($destserver.VersionMajor -lt $sourceserver.VersionMajor) {
+				Stop-Function -Message "$Destination is a lower version than $instance. Backups would be incompatible." -Continue
+			}
+			
+			if ($destserver.VersionMajor -eq $sourceserver.VersionMajor -and $destserver.VersionMinor -lt $sourceserver.VersionMinor) {
+				Stop-Function -Message "$Destination is a lower version than $instance. Backups would be incompatible." -Continue
+			}
+			
+			if ($CopyPath) {
+				$testpath = Test-DbaSqlPath -SqlInstance $destserver -Path $CopyPath
+				if (!$testpath) {
+					Stop-Function -Message "$destserver cannot access $CopyPath" -Continue
+				}
+			}
+			else {
+				# If not CopyPath is specified, use the destination server default backup directory
+				$copyPath = $destserver.BackupDirectory
+			}
+			
+			if ($instance -ne $destination -and !$CopyFile) {
+				$sourcerealname = $sourceserver.ComputerNetBiosName
+				$destrealname = $destserver.ComputerNetBiosName
 				
-                Write-Message -Level Verbose -Message "Getting recent backup history for $instance"
+				if ($BackupFolder) {
+					if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcerealname -ne $destrealname) {
+						Stop-Function -Message "Backup folder must be a network share if the source and destination servers are not the same." -Continue
+					}
+				}
+			}
+			
+			$source = $sourceserver.DomainInstanceName
+			$destination = $destserver.DomainInstanceName
+			
+			if ($datadirectory) {
+				if (!(Test-DbaSqlPath -SqlInstance $destserver -Path $datadirectory)) {
+					$serviceaccount = $destserver.ServiceAccount
+					Stop-Function -Message "Can't access $datadirectory Please check if $serviceaccount has permissions" -Continue
+				}
+			}
+			else {
+				$datadirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType mdf
+			}
+			
+			if ($logdirectory) {
+				if (!(Test-DbaSqlPath -SqlInstance $destserver -Path $logdirectory)) {
+					$serviceaccount = $destserver.ServiceAccount
+					Stop-Function -Message "$Destination can't access its local directory $logdirectory. Please check if $serviceaccount has permissions" -Continue
+				}
+			}
+			else {
+				$logdirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType ldf
+			}
+			
+			if ((Test-Bound "AzureCredential") -and (Test-Bound "CopyFile")) {
+				Stop-Function -Message "Cannot use copyfile with Azure backups, set to false" -continue
+				$CopyFile = $false
+			}
+			
+			if (!$Database) {
+				$database = $sourceserver.databases.Name | Where-Object Name -ne 'tempdb'
+			}
+			
+			if ($ExcludeDatabase) {
+				$database = $database | Where-Object { $_ -notin $ExcludeDatabase }
+			}
+			
+			if ($Database -or $ExcludeDatabase) {
+				$dblist = $database
 				
-                foreach ($dbname in $dblist) {
-                    if ($dbname -eq 'tempdb') {
+				Write-Message -Level Verbose -Message "Getting recent backup history for $instance"
+				
+				foreach ($dbname in $dblist) {
+					if ($dbname -eq 'tempdb') {
 						Write-Message -Level Verbose -Message "Skipping tempdb"
 						continue
-                    }
+					}
 					
-                    Write-Message -Level Verbose -Message "Processing $dbname"
+					Write-Message -Level Verbose -Message "Processing $dbname"
 					
-                    $copysuccess = $true
-                    $db = $sourceserver.databases[$dbname]
+					$copysuccess = $true
+					$db = $sourceserver.databases[$dbname]
 					
-                    # The db check is needed when the number of databases exceeds 255, then it's no longer auto-populated
-                    if (!$db) {
-                        Stop-Function -Message "$dbname does not exist on $source." -Continue
-                    }
-
-                    $lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly #-raw
-                    if ($CopyFile) {
-                        try {
-                            Write-Message -Level Verbose -Message "Gathering information for file copy"
-                            $removearray = @()
-
-                            if (Test-Bound "IgnoreLogBackup"){
-                                Write-Message -Level Verbose -Message "Skipping Log backups as requested"
-                                $lastbackup = @()
-                                $lastbackup += $full = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastFull #-raw
-                                $diff = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastDiff # -raw 
-                                if ($full.start -le $diff.start){
-                                    $lastbackup += $diff
-                                }									
-                            }
-                            else {
-                                $lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly #-raw
-                            }
-                                
-                            foreach ($backup in $lastbackup) {
-                                foreach ($file in $backup) {
-                                    $filename = Split-Path -Path $file.FullName -Leaf
-                                    Write-Message -Level Verbose -Message "Processing $filename"
-
-                                    $sourcefile = Join-AdminUnc -servername $sourceserver.ComputerNamePhysicalNetBIOS -filepath $file.Path
-                                    
-                                    if ($destserver.ComputerNamePhysicalNetBIOS -ne $env:COMPUTERNAME) {
-                                        $remotedestdirectory = Join-AdminUnc -servername $destserver.ComputerNamePhysicalNetBIOS -filepath $copyPath
-                                    }
-                                    else {
-                                        $remotedestdirectory = $copyPath
-                                    }
-                                    
-                                    $remotedestfile = "$remotedestdirectory\$filename"
-                                    $localdestfile = "$copyPath\$filename"
-                                    Write-Message -Level Verbose -Message "Destination directory is $destdirectory"
-                                    Write-Message -Level Verbose -Message "Destination filename is $remotedestfile"
-                                    
-                                    try {
-                                        Write-Message -Level Verbose -Message "Copying $sourcefile to $remotedestfile"
-                                        Copy-Item -Path $sourcefile -Destination $remotedestfile -ErrorAction Stop
-                                        $backup.Path = $localdestfile
-                                        $backup.FullName = $localdestfile
-                                        $removearray += $remotedestfile
-                                    }
-                                    catch {
-                                        $backup.Path = $sourcefile
-                                        $backup.FullName = $sourcefile
-                                    }
-                                }
-                            }
-                            $copysuccess = $true
-                        }
-                        catch {
-                            Write-Message -Level Warning -Message "Failed to copy backups for $dbname on $instance to $destdirectory - $_"
-                            $copysuccess = $false
-                        }
-                    }
-                    if ($null -eq $lastbackup) {
-                        Write-Message -Level Verbose -Message "No backups exist for this database"
-                        $lastbackup = @{ Path = "No backups exist for this database" }
-                        $fileexists = $false
-                        $restoreresult = "Skipped"
-                        $dbccresult = "Skipped"
-
-                    }
-                    if (!$copysuccess) {
-                        Write-Message -Level Verbose -Message "Failed to copy backups"
-                        $lastbackup = @{ Path = "Failed to copy backups" }
-                        $fileexists = $false
-                        $restoreresult = "Skipped"
-                        $dbccresult = "Skipped"
-                    }
-                    elseif (!($lastbackup | Where-Object { $_.type -eq 'Full' })) {
-                        Write-Message -Level Verbose -Message "No full backup returned from lastbackup"
-                        $lastbackup = @{ Path = "Not found" }
-                        $fileexists = $false
-                        $restoreresult = "Skipped"
-                        $dbccresult = "Skipped"
-                    }
-                    elseif ($source -ne $destination -and $lastbackup[0].Path.StartsWith('\\') -eq $false -and !$CopyFile) {
-                        Write-Message -Level Verbose -Message "Path not UNC and source does not match destination. Use -CopyFile to move the backup file."
-                        $fileexists = "Skipped"
-                        $restoreresult = "Restore not located on shared location"
-                        $dbccresult = "Skipped"
-                    }
-                    elseif (($lastbackup[0].Path | Foreach{Test-DbaSqlPath -SqlInstance $destserver -Path $_}) -eq $false) {
-                        Write-Message -Level Verbose -Message "SQL Server cannot find backup"
-                        $fileexists = $false
-                        $restoreresult = "Skipped"
-                        $dbccresult = "Skipped"
-                    }
-                    if ($restoreresult -ne "Skipped" -or $lastbackup[0].Path -like 'http*') {
-                        Write-Message -Level Verbose -Message "Looking good!"
+					# The db check is needed when the number of databases exceeds 255, then it's no longer auto-populated
+					if (!$db) {
+						Stop-Function -Message "$dbname does not exist on $source." -Continue
+					}
+					
+					$lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly #-raw
+					if ($CopyFile) {
+						try {
+							Write-Message -Level Verbose -Message "Gathering information for file copy"
+							$removearray = @()
+							
+							if (Test-Bound "IgnoreLogBackup") {
+								Write-Message -Level Verbose -Message "Skipping Log backups as requested"
+								$lastbackup = @()
+								$lastbackup += $full = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastFull #-raw
+								$diff = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastDiff # -raw 
+								if ($full.start -le $diff.start) {
+									$lastbackup += $diff
+								}
+							}
+							else {
+								$lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly #-raw
+							}
+							
+							foreach ($backup in $lastbackup) {
+								foreach ($file in $backup) {
+									$filename = Split-Path -Path $file.FullName -Leaf
+									Write-Message -Level Verbose -Message "Processing $filename"
+									
+									$sourcefile = Join-AdminUnc -servername $sourceserver.ComputerNamePhysicalNetBIOS -filepath $file.Path
+									
+									if ($destserver.ComputerNamePhysicalNetBIOS -ne $env:COMPUTERNAME) {
+										$remotedestdirectory = Join-AdminUnc -servername $destserver.ComputerNamePhysicalNetBIOS -filepath $copyPath
+									}
+									else {
+										$remotedestdirectory = $copyPath
+									}
+									
+									$remotedestfile = "$remotedestdirectory\$filename"
+									$localdestfile = "$copyPath\$filename"
+									Write-Message -Level Verbose -Message "Destination directory is $destdirectory"
+									Write-Message -Level Verbose -Message "Destination filename is $remotedestfile"
+									
+									try {
+										Write-Message -Level Verbose -Message "Copying $sourcefile to $remotedestfile"
+										Copy-Item -Path $sourcefile -Destination $remotedestfile -ErrorAction Stop
+										$backup.Path = $localdestfile
+										$backup.FullName = $localdestfile
+										$removearray += $remotedestfile
+									}
+									catch {
+										$backup.Path = $sourcefile
+										$backup.FullName = $sourcefile
+									}
+								}
+							}
+							$copysuccess = $true
+						}
+						catch {
+							Write-Message -Level Warning -Message "Failed to copy backups for $dbname on $instance to $destdirectory - $_"
+							$copysuccess = $false
+						}
+					}
+					if ($null -eq $lastbackup) {
+						Write-Message -Level Verbose -Message "No backups exist for this database"
+						$lastbackup = @{ Path = "No backups exist for this database" }
+						$fileexists = $false
+						$success = $restoreresult = $dbccresult = "Skipped"
+					}
+					if (!$copysuccess) {
+						Write-Message -Level Verbose -Message "Failed to copy backups"
+						$lastbackup = @{ Path = "Failed to copy backups" }
+						$fileexists = $false
+						$success = $restoreresult = $dbccresult =  "Skipped"
+					}
+					elseif (!($lastbackup | Where-Object { $_.type -eq 'Full' })) {
+						Write-Message -Level Verbose -Message "No full backup returned from lastbackup"
+						$lastbackup = @{ Path = "Not found" }
+						$fileexists = $false
+						$success = $restoreresult = $dbccresult = "Skipped"
+					}
+					elseif ($source -ne $destination -and $lastbackup[0].Path.StartsWith('\\') -eq $false -and !$CopyFile) {
+						Write-Message -Level Verbose -Message "Path not UNC and source does not match destination. Use -CopyFile to move the backup file."
+						$fileexists = $dbccresult = "Skipped"
+						$success = $restoreresult = "Restore not located on shared location"
+					}
+					elseif (($lastbackup[0].Path | ForEach-Object{ Test-DbaSqlPath -SqlInstance $destserver -Path $_ }) -eq $false) {
+						Write-Message -Level Verbose -Message "SQL Server cannot find backup"
+						$fileexists = $false
+						$success = $restoreresult = $dbccresult = "Skipped"
+					}
+					if ($restoreresult -ne "Skipped" -or $lastbackup[0].Path -like 'http*') {
+						Write-Message -Level Verbose -Message "Looking good!"
 						
-                        $fileexists = $true
-                        $ogdbname = $dbname
-                        $restorelist = Read-DbaBackupHeader -SqlInstance $destserver -Path $lastbackup[0].Path -AzureCredential $AzureCredential
-                        $mb = $restorelist.BackupSizeMB
+						$fileexists = $true
+						$ogdbname = $dbname
+						$restorelist = Read-DbaBackupHeader -SqlInstance $destserver -Path $lastbackup[0].Path -AzureCredential $AzureCredential
+						$mb = $restorelist.BackupSizeMB
 						
-                        if ($MaxMB -gt 0 -and $MaxMB -lt $mb) {
+						if ($MaxMB -gt 0 -and $MaxMB -lt $mb) {
 							$success = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxMB MB)"
 							$dbccresult = "Skipped"
-                        }
-                        else {
-                            $dbccElapsed = $restoreElapsed = $startRestore = $endRestore = $startDbcc = $endDbcc = $null
+						}
+						else {
+							$dbccElapsed = $restoreElapsed = $startRestore = $endRestore = $startDbcc = $endDbcc = $null
 							
-                            $dbname = "$prefix$dbname"
-                            $destdb = $destserver.databases[$dbname]
+							$dbname = "$prefix$dbname"
+							$destdb = $destserver.databases[$dbname]
 							
-                            if ($destdb) {
-                                Stop-Function -Message "$dbname already exists on $destination - skipping" -Continue
-                            }
+							if ($destdb) {
+								Stop-Function -Message "$dbname already exists on $destination - skipping" -Continue
+							}
 							
-                            if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname")) {
-                                Write-Message -Level Verbose -Message "Performing restore"
-                                $startRestore = Get-Date
-                                if ($verifyonly) {
-                                    $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
-                                }
-                                else {
-                                    $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
-                                }
+							if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname")) {
+								Write-Message -Level Verbose -Message "Performing restore"
+								$startRestore = Get-Date
+								if ($verifyonly) {
+									$restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
+								}
+								else {
+									$restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
+								}
 								
-                                $endRestore = Get-Date
-                                $restorets = New-TimeSpan -Start $startRestore -End $endRestore
-                                $ts = [timespan]::fromseconds($restorets.TotalSeconds)
-                                $restoreElapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
+								$endRestore = Get-Date
+								$restorets = New-TimeSpan -Start $startRestore -End $endRestore
+								$ts = [timespan]::fromseconds($restorets.TotalSeconds)
+								$restoreElapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
 								
-                                if ($restoreresult.RestoreComplete -eq $true) {
-                                    $success = "Success"
-                                }
-                                else {
-                                    $success = "Failure"
-                                }
-                            }
+								if ($restoreresult.RestoreComplete -eq $true) {
+									$success = "Success"
+								}
+								else {
+									$success = "Failure"
+								}
+							}
 							
-                            $destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
+							$destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
 							
-                            if (!$NoCheck -and !$VerifyOnly) {
-                                # shouldprocess is taken care of in Start-DbccCheck
-                                if ($ogdbname -eq "master") {
-                                    $dbccresult = "DBCC CHECKDB skipped for restored master ($dbname) database"
-                                }
-                                else {
-                                    if ($success -eq "Success") {
-                                        Write-Message -Level Verbose -Message "Starting DBCC"
+							if (!$NoCheck -and !$VerifyOnly) {
+								# shouldprocess is taken care of in Start-DbccCheck
+								if ($ogdbname -eq "master") {
+									$dbccresult = "DBCC CHECKDB skipped for restored master ($dbname) database"
+								}
+								else {
+									if ($success -eq "Success") {
+										Write-Message -Level Verbose -Message "Starting DBCC"
 										
-                                        $startDbcc = Get-Date
-                                        $dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname 3>$null
-                                        $endDbcc = Get-Date
+										$startDbcc = Get-Date
+										$dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname 3>$null
+										$endDbcc = Get-Date
 										
-                                        $dbccts = New-TimeSpan -Start $startDbcc -End $endDbcc
-                                        $ts = [timespan]::fromseconds($dbccts.TotalSeconds)
-                                        $dbccElapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
-                                    }
-                                    else {
-                                        $dbccresult = "Skipped"
-                                    }
-                                }
-                            }
+										$dbccts = New-TimeSpan -Start $startDbcc -End $endDbcc
+										$ts = [timespan]::fromseconds($dbccts.TotalSeconds)
+										$dbccElapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
+									}
+									else {
+										$dbccresult = "Skipped"
+									}
+								}
+							}
 							
-                            if ($VerifyOnly) { $dbccresult = "Skipped" }
+							if ($VerifyOnly) { $dbccresult = "Skipped" }
 							
-                            if (!$NoDrop -and $null -ne $destserver.databases[$dbname]) {
-                                if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination")) {
-                                    Write-Message -Level Verbose -Message "Dropping database"
+							if (!$NoDrop -and $null -ne $destserver.databases[$dbname]) {
+								if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination")) {
+									Write-Message -Level Verbose -Message "Dropping database"
 									
-                                    ## Drop the database
-                                    try {
-                                        $removeresult = Remove-SqlDatabase -SqlInstance $destserver -DbName $dbname
-                                        Write-Message -Level Verbose -Message "Dropped $dbname Database on $destination"
-                                    }
-                                    catch {
-                                        $destserver.Databases.Refresh()
-                                        if ($destserver.databases[$dbname]) {
-                                            Write-Message -Level Warning -Message "Failed to Drop database $dbname on $destination"
-                                        }
-                                    }
-                                }
-                            }
+									## Drop the database
+									try {
+										$removeresult = Remove-SqlDatabase -SqlInstance $destserver -DbName $dbname
+										Write-Message -Level Verbose -Message "Dropped $dbname Database on $destination"
+									}
+									catch {
+										$destserver.Databases.Refresh()
+										if ($destserver.databases[$dbname]) {
+											Write-Message -Level Warning -Message "Failed to Drop database $dbname on $destination"
+										}
+									}
+								}
+							}
 							
-                            #Cleanup BackupFiles if -CopyFile and backup was moved to destination
-                            if ($CopyFile) {
-                                Write-Message -Level Verbose -Message "Removing copied backup file from $destination"
-                                try {
-                                    $removearray | Remove-item -ErrorAction Stop
-                                }
-                                catch {
-                                    Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
-                                }
-                            }
+							#Cleanup BackupFiles if -CopyFile and backup was moved to destination
+							if ($CopyFile) {
+								Write-Message -Level Verbose -Message "Removing copied backup file from $destination"
+								try {
+									$removearray | Remove-item -ErrorAction Stop
+								}
+								catch {
+									Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
+								}
+							}
 							
-                            $destserver.Databases.Refresh()
-                            if ($destserver.Databases[$dbname] -and !$NoDrop) {
-                                Write-Message -Level Warning -Message "$dbname was not dropped"
-                            }
-                        }
-                    }
+							$destserver.Databases.Refresh()
+							if ($destserver.Databases[$dbname] -and !$NoDrop) {
+								Write-Message -Level Warning -Message "$dbname was not dropped"
+							}
+						}
+					}
 					
-                    if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
-                        [pscustomobject]@{
-                            SourceServer   = $source
-                            TestServer     = $destination
-                            Database       = $db.name
-                            FileExists     = $fileexists
-                            Size           = [dbasize](($lastbackup.TotalSize | Measure-Object -Sum).Sum)
-                            RestoreResult  = $success
-                            DbccResult     = $dbccresult
-                            RestoreStart   = [dbadatetime]$startRestore
-                            RestoreEnd     = [dbadatetime]$endRestore
-                            RestoreElapsed = $restoreElapsed
-                            DbccStart      = [dbadatetime]$startDbcc
-                            DbccEnd        = [dbadatetime]$endDbcc
-                            DbccElapsed    = $dbccElapsed
-                            BackupDate     = $lastbackup.Start
-                            BackupFiles    = $lastbackup.FullName
-                        }
-                    }
-                }
-            }
-        }
-    }
+					if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
+						[pscustomobject]@{
+							SourceServer    = $source
+							TestServer	    = $destination
+							Database	    = $db.name
+							FileExists	    = $fileexists
+							Size		    = [dbasize](($lastbackup.TotalSize | Measure-Object -Sum).Sum)
+							RestoreResult   = $success
+							DbccResult	    = $dbccresult
+							RestoreStart    = [dbadatetime]$startRestore
+							RestoreEnd	    = [dbadatetime]$endRestore
+							RestoreElapsed  = $restoreElapsed
+							DbccStart	    = [dbadatetime]$startDbcc
+							DbccEnd		    = [dbadatetime]$endDbcc
+							DbccElapsed	    = $dbccElapsed
+							BackupDate	    = $lastbackup.Start
+							BackupFiles	    = $lastbackup.FullName
+						}
+					}
+				}
+			}
+		}
+	}
 }
-
