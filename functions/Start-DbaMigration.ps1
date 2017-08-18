@@ -1,7 +1,7 @@
 function Start-DbaMigration {
 	<# 
 		.SYNOPSIS 
-			Migrates SQL Server *ALL* databases, logins, database mail profies/accounts, credentials, SQL Agent objects, linked servers, 
+			Migrates SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers, 
 			Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
 			system triggers and backup devices from one SQL Server to another. 
 
@@ -152,7 +152,7 @@ function Start-DbaMigration {
 			If migrating databases, deletes existing databases with matching names. 
 			If using -DetachAttach, -Force will break mirrors and drop dbs from Availability Groups.
 
-			For other migration objects, it will just drop existing items and readd, if -force is supported within the udnerlying function.
+			For other migration objects, it will just drop existing items and readd, if -force is supported within the underlying function.
 
 		.PARAMETER WhatIf
 			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
