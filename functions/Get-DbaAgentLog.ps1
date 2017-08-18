@@ -69,7 +69,25 @@
 			
 			if ($LogNumber) {
 				foreach ($number in $lognumber) {
+					try {
 					foreach ($object in $server.JobServer.ReadErrorLog($number)) {
+						Write-Message -Level Verbose -Message "Processing $object"
+						Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.NetName
+						Add-Member -Force -InputObject $object -MemberType NoteProperty InstanceName -value $server.ServiceName
+						Add-Member -Force -InputObject $object -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
+						
+						# Select all of the columns you'd like to show
+						Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, LogDate, ProcessInfo, Text
+						}
+					}
+					catch {
+						Stop-Function -Continue -Target $server -Message "Could not read from SQL Server Agent"
+					}
+				}
+			}
+			else {
+				try {
+					foreach ($object in $server.JobServer.ReadErrorLog()) {
 						Write-Message -Level Verbose -Message "Processing $object"
 						Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.NetName
 						Add-Member -Force -InputObject $object -MemberType NoteProperty InstanceName -value $server.ServiceName
@@ -79,16 +97,8 @@
 						Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, LogDate, ProcessInfo, Text
 					}
 				}
-			}
-			else {
-				foreach ($object in $server.JobServer.ReadErrorLog()) {
-					Write-Message -Level Verbose -Message "Processing $object"
-					Add-Member -Force -InputObject $object -MemberType NoteProperty ComputerName -value $server.NetName
-					Add-Member -Force -InputObject $object -MemberType NoteProperty InstanceName -value $server.ServiceName
-					Add-Member -Force -InputObject $object -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
-					
-					# Select all of the columns you'd like to show
-					Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, LogDate, ProcessInfo, Text
+				catch {
+					Stop-Function -Continue -Target $server -Message "Could not read from SQL Server Agent"
 				}
 			}
 		}
