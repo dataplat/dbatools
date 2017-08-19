@@ -71,7 +71,7 @@ Suppresses all prompts to install but prompts to securely enter your password an
 		[datetime]$StartDate = (Get-Date),
 		[datetime]$ExpirationDate = $StartDate.AddYears(5),
 		[switch]$ActiveForServiceBrokerDialog,
-		[Security.SecureString]$Password = (Read-Host "Password (not required)" -AsSecureString),
+		[Security.SecureString]$Password,
 		[switch]$Silent
 	)
 	

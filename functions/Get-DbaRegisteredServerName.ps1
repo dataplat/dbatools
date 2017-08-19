@@ -18,6 +18,9 @@ function Get-DbaRegisteredServerName {
 		.PARAMETER Group
 			List of groups to filter to in SQL Server Central Management Server. You can specify one or more, comma separated.
 
+		.PARAMETER ExcludeGroup
+			List of groups to filter out. You can specify one or more, comma separated.
+
 		.PARAMETER NoCmsServer
 			Excludes the CMS itself from returning in the output, if pulling NetBiosName, IpAddress, or ServerName.
 			Without this parameter, the CMS will only be included if you do not specify a group.
@@ -92,6 +95,7 @@ function Get-DbaRegisteredServerName {
 		[PSCredential]$SqlCredential,
 		[Alias("Groups")]
 		[object[]]$Group,
+		[object[]]$ExcludeGroup,
 		[switch]$NoCmsServer,
 		[parameter(ParameterSetName = "NetBios")]
 		[switch]$NetBiosName,
@@ -156,8 +160,12 @@ function Get-DbaRegisteredServerName {
 				Stop-Function -Message "Cannot access Central Management Server" -ErrorRecord $_ -Continue
 				return
 			}
-
-			if ($null -ne $Group) {
+			
+			if (Test-Bound -ParameterName ExcludeGroup) {
+				$Group = ($cmsStore.DatabaseEngineServerGroup.ServerGroups | Where-Object Name -notin $ExcludeGroup).Name
+			}
+			
+			if ($Group) {
 				foreach ($currentGroup in $Group) {
 					$cms = Find-CmsGroup -CmsGrp $cmsStore.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
 					if ($null -eq $cms) {
@@ -171,7 +179,7 @@ function Get-DbaRegisteredServerName {
 				$cms = $cmsStore.ServerGroups["DatabaseEngineServerGroup"]
 				$servers += ($cms.GetDescendantRegisteredServers())
 			}
-
+			
 			#Store some information about the CMS's for later use
 			try {
 				$ip = (Resolve-DbaNetworkName $server.Name -Turbo -Silent).IpAddress
@@ -187,21 +195,23 @@ function Get-DbaRegisteredServerName {
 			$cmsServers += $fakeCms
 		}
 	}
-
+	
 	end {
-		# Use Resolve-DbaNetworkName to get IP / ComputerName
-		foreach ($server in $servers) {
-			try {
-				$lookup = Resolve-DbaNetworkName $server.ServerName -Turbo -Silent
-				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $lookup.ComputerName
-				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $lookup.IPAddress
-			}
-			catch {
-				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $null
-				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $null
+		if ($NetBiosName -or $IpAddress) {
+			# Use Resolve-DbaNetworkName to get IP / ComputerName
+			foreach ($server in $servers) {
+				try {
+					$lookup = Resolve-DbaNetworkName $server.ServerName -Turbo -Silent
+					Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $lookup.ComputerName
+					Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $lookup.IPAddress
+				}
+				catch {
+					Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $null
+					Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $null
+				}
 			}
 		}
-
+		
 		$IncludeCmsServer = ($NoCmsServer -eq $false -and $null -eq $Group)
 
 		if ($IpAddress) {
