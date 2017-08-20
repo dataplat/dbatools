@@ -1,16 +1,13 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+
 Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 	Context "Validate parameters" {
 		$paramCount = 3
-		<# 
-			Get commands, Default count = 11
-			Commands with SupportShouldProcess = 13
-		#>
 		$defaultParamCount = 11
 		[object[]]$params = (Get-ChildItem function:\Get-DbaAgHadr).Parameters.Keys
-		$knownParameters = 'SqlInstance', 'Credential', 'AllowException'
+		$knownParameters = 'SqlInstance', 'Credential', 'Silent'
 		it "Should contian our specifc parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}
@@ -19,6 +16,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 		}
 	}
 }
+
 Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
 	$results = Get-DbaAgHadr -SqlInstance $script:instance2
 	Context "Validate output" {
