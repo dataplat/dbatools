@@ -4,11 +4,11 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 	Context "Validate parameters" {
-		$paramCount = 4
-		$defaultParamCount = 13
-		[object[]]$params = (Get-ChildItem function:\Invoke-DbaCycleErrorLog).Parameters.Keys
-		$knownParameters = 'SqlInstance', 'SqlCredential', 'Type', 'Silent'
-		it "Should contain our specific parameters" {
+		$paramCount = 3
+		$defaultParamCount = 11
+		[object[]]$params = (Get-ChildItem function:\Get-DbaAgHadr).Parameters.Keys
+		$knownParameters = 'SqlInstance', 'Credential', 'Silent'
+		it "Should contian our specifc parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}
 		it "Should only contain $paramCount parameters" {
@@ -18,15 +18,11 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 }
 
 Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
-	$results = Invoke-DbaCycleErrorLog -SqlInstance $script:instance1 -Type instance
-
+	$results = Get-DbaAgHadr -SqlInstance $script:instance2
 	Context "Validate output" {
 		it "Should have correct properties" {
-			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,LogType,IsSuccessful,Notes'.Split(',')
+			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,IsHadrEnabled'.Split(',')
 			($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-		}
-		it "Should cycle instance error log" {
-			$results.LogType | Should Be "instance"
 		}
 	}
 }
