@@ -17,6 +17,15 @@ Set-Service -Name 'SQLAgent$sql2016' -StartupType Automatic -WarningAction Silen
 Set-Service -Name SQLBrowser -StartupType Automatic -WarningAction SilentlyContinue
 Start-Service SQLBrowser -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
 
+
+if ($env:SCENARIO) {
+	write-host "Scenario $($env:scenario)"
+	write-host "Main instance $($env:MAIN_INSTANCE)"
+	write-host "Setup scripts $($env:SETUP_SCRIPTS)"
+}
+
+<#
+
 $instances = "sql2016", "sql2008r2sp2"
 
 foreach ($instance in $instances) {
@@ -85,3 +94,4 @@ Write-Output "Executing startup scripts for SQL Server 2016"
 foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2016-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
 	Invoke-Sqlcmd2 -ServerInstance localhost\sql2016 -InputFile $file
 }
+#>
