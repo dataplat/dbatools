@@ -1,11 +1,7 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 # Imports some assemblies
-Write-Output "Importing dbatools"
+Write-Host -Object "Importing dbatools" -ForegroundColor DarkGreen
 Import-Module C:\github\dbatools\dbatools.psd1
-
-# This script spins up two local instances
-$sql2008 = "localhost\sql2008r2sp2"
-$sql2016 = "localhost\sql2016"
 
 Write-Host -Object "Creating migration & backup directories" -ForegroundColor DarkGreen
 New-Item -Path C:\temp -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
