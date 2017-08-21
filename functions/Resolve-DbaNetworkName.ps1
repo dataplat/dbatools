@@ -125,7 +125,7 @@ function Resolve-DbaNetworkName {
 				}
 				
 				if ($fqdn -notmatch "\.") {
-					if ($computer -match "\.") {
+					if ($computer.ComputerName -match "\.") {
 						$dnsdomain = $computer.ComputerName.Substring($computer.ComputerName.IndexOf(".") + 1)
 						$fqdn = "$resolved.$dnsdomain"
 					}
@@ -257,7 +257,12 @@ function Resolve-DbaNetworkName {
 					Write-Message -Level VeryVerbose -Message "No DNS FQDN found. Setting to null"
 					$FullComputerName = $null
 				}
-
+				
+				if ($FullComputerName -ne "." -and $FullComputerName -notmatch "\." -and $conn.Domain -match "\.") {
+					$d = $conn.Domain
+					$FullComputerName = "$FullComputerName.$d"
+				}
+				
 				[PSCustomObject]@{
 					InputName        = $OGComputer
 					ComputerName     = $conn.Name
