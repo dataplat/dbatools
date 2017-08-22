@@ -31,7 +31,7 @@ function Import-DbaSpConfigure {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Path
-			Specifies the path to a SQL script file holding sp_configure queries for each of the settings to be changed.
+			Specifies the path to a SQL script file holding sp_configure queries for each of the settings to be changed. Export-DbaSPConfigure creates a suitable file as its output.
 
 		.PARAMETER Force
 			If this switch is enabled, no version check between Source and Destination is performed. By default, the major and minor versions of Source and Destination must match when copying sp_configure settings.
@@ -41,6 +41,12 @@ function Import-DbaSpConfigure {
 
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
+		.NOTES
+			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0	
 
 		.EXAMPLE
 			Import-DbaSpConfigure sqlserver sqlcluster $SourceSqlCredential $DestinationSqlCredential
