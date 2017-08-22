@@ -29,6 +29,20 @@ function Import-DbaSpConfigure {
 			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
 			To connect as a different Windows user, run PowerShell as that user.
+		
+		.PARAMETER SqlInstance
+			Specifies a SQL Server instance to set up sp_configure values on using a SQL file.
+
+		.PARAMETER SqlCredential
+			Use this SQL credential if you are setting up sp_configure values from a SQL file.
+
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+			$cred = Get-Credential, then pass this $cred to the -SqlCredential parameter.
+
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.	
 
 		.PARAMETER Path
 			Specifies the path to a SQL script file holding sp_configure queries for each of the settings to be changed. Export-DbaSPConfigure creates a suitable file as its output.
