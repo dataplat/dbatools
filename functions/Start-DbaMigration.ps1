@@ -216,7 +216,7 @@ function Start-DbaMigration {
 		[parameter(Position = 5, Mandatory = $true, ParameterSetName = "DbBackup")]
 		[switch]$BackupRestore,
 		[parameter(Position = 6, Mandatory = $true, ParameterSetName = "DbBackup",
-				   HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
+			HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
 		[string]$NetworkShare,
 		[parameter(Position = 7, ParameterSetName = "DbBackup")]
 		[switch]$WithReplace,
@@ -271,17 +271,14 @@ function Start-DbaMigration {
 		[switch]$Force
 	)
 	
-	BEGIN
-	{
+	begin {
 		$docs = [Environment]::GetFolderPath("mydocuments")
 		$transcript = "$docs\dbatools-startmigration-transcript.txt"
 		
-		if (Test-Path $transcript)
-		{
+		if (Test-Path $transcript) {
 			Start-Transcript -Path $transcript -Append
 		}
-		else
-		{
+		else {
 			Start-Transcript -Path $transcript
 		}
 		
@@ -295,335 +292,310 @@ function Start-DbaMigration {
 		$destination = $destserver.DomainInstanceName
 	}
 	
-	PROCESS
-	{
+	process {
 		
-		if ($BackupRestore -eq $false -and $DetachAttach -eq $false -and $NoDatabases -eq $false)
-		{
+		if ($BackupRestore -eq $false -and $DetachAttach -eq $false -and $NoDatabases -eq $false) {
 			throw "You must specify a database migration method (-BackupRestore or -DetachAttach) or -NoDatabases"
 		}
 		
-		if (!$NoSpConfigure)
-		{
-			Write-Output "`n`nMigrating SQL Server Configuration"
-			try
-			{
+		if (!$NoSpConfigure) {
+			Write-Output "`n`nMigrating SQL Server Configuration."
+			try {
 				Copy-DbaSpConfigure -Source $sourceserver -Destination $destserver
 			}
-			catch { Write-Error "Configuration migration reported the following error $($_.Exception.Message) " }
+			catch {
+				Write-Error "Configuration migration reported the following error $($_.Exception.Message)."
+			}
 		}
 		
 		
-		if (!$NoCustomErrors)
-		{
-			Write-Output "`n`nMigrating custom errors (user defined messages)"
-			try
-			{
+		if (!$NoCustomErrors) {
+			Write-Output "`n`nMigrating custom errors (user defined messages)."
+			try {
 				Copy-DbaCustomError -Source $sourceserver -Destination $destserver -Force:$Force
 			}
-			catch { Write-Error "Couldn't copy custom errors." }
+			catch {
+				Write-Error "Couldn't copy custom errors."
+			}
 		}
 		
-		if (!$NoCredentials)
-		{
-			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
-			{
+		if (!$NoCredentials) {
+			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
 				Write-Output "Credentials are only supported in SQL Server 2005 and above. Skipping."
 			}
-			else
-			{
-				Write-Output "`n`nMigrating SQL credentials"
-				try
-				{
+			else {
+				Write-Output "`n`nMigrating SQL credentials."
+				try {
 					Copy-DbaCredential -Source $sourceserver -Destination $destserver -Force:$Force
 				}
-				catch { Write-Error "Credential migration reported the following error $($_.Exception.Message) " }
+				catch {
+					Write-Error "Credential migration reported the following error $($_.Exception.Message)."
+				}
 			}
 		}
 		
-		if (!$NoDatabaseMail)
-		{
-			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
-			{
+		if (!$NoDatabaseMail) {
+			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
 				Write-Output "Database Mail is only supported in SQL Server 2005 and above. Skipping."
 			}
-			else
-			{
-				Write-Output "`n`nMigrating database mail"
-				try
-				{
+			else {
+				Write-Output "`n`nMigrating database mail."
+				try {
 					Copy-DbaDatabaseMail -Source $sourceserver -Destination $destserver -Force:$Force
 				}
-				catch { Write-Error "Database mail migration reported the following error $($_.Exception.Message)" }
+				catch {
+					Write-Error "Database mail migration reported the following error $($_.Exception.Message)."
+				}
 			}
 		}
 		
-		if (!$NoSysDbUserObjects)
-		{
-			Write-Output "`n`nMigrating user objects in system databases (this can take a second)"
-			try
-			{
-				If ($Pscmdlet.ShouldProcess($destination, "Copying user objects."))
-				{
+		if (!$NoSysDbUserObjects) {
+			Write-Output "`n`nMigrating user objects in system databases (this can take a second)."
+			try {
+				If ($Pscmdlet.ShouldProcess($destination, "Copying user objects.")) {
 					Copy-DbaSysDbUserObject -Source $sourceserver -Destination $destserver
 				}
 				
 			}
-			catch { Write-Error "Couldn't copy all user objects in system databases." }
+			catch {
+				Write-Error "Couldn't copy all user objects in system databases."
+			}
 		}
 		
-		if (!$NoCentralManagementServer)
-		{
-			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
-			{
+		if (!$NoCentralManagementServer) {
+			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
 				Write-Output "Central Management Server is only supported in SQL Server 2008 and above. Skipping."
 			}
-			else
-			{
-				Write-Output "`n`nMigrating Central Management Server"
-				try
-				{
+			else {
+				Write-Output "`n`nMigrating Central Management Server."
+				try {
 					Copy-DbaCentralManagementServer -Source $sourceserver -Destination $destserver -Force:$Force
 				}
-				catch
-				{
-					Write-Error "Central Management Server migration reported the following error $($_.Exception.Message)"
+				catch {
+					Write-Error "Central Management Server migration reported the following error $($_.Exception.Message)."
 				}
 			}
 		}
 		
-		if (!$NoBackupDevices)
-		{
-			Write-Output "`n`nMigrating Backup Devices"
-			try
-			{
+		if (!$NoBackupDevices) {
+			Write-Output "`n`nMigrating Backup Devices."
+			try {
 				Copy-DbaBackupDevice -Source $sourceserver -Destination $destserver -Force:$Force
 			}
-			catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
+			catch {
+				Write-Error "Backup device migration reported the following error $($_.Exception.Message)."
+			}
 		}
 		
-		if (!$NoLinkedServers)
-		{
-			Write-Output "`n`nMigrating linked servers"
-			try
-			{
+		if (!$NoLinkedServers) {
+			Write-Output "`n`nMigrating linked servers."
+			try {
 				Copy-DbaLinkedServer -Source $sourceserver -Destination $destserver -Force:$Force
 			}
-			catch { Write-Error "Linked server migration reported the following error $($_.Exception.Message) " }
+			catch {
+				Write-Error "Linked server migration reported the following error $($_.Exception.Message)."
+			}
 		}
 		
-		if (!$NoSystemTriggers)
-		{
-			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
-			{
+		if (!$NoSystemTriggers) {
+			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
 				Write-Output "Server Triggers are only supported in SQL Server 2008 and above. Skipping."
 			}
-			else
-			{
-				Write-Output "`n`nMigrating System Triggers"
-				try
-				{
+			else {
+				Write-Output "`n`nMigrating System Triggers."
+				try {
 					Copy-DbaServerTrigger -Source $sourceserver -Destination $destserver -Force:$Force
 				}
-				catch { Write-Error "System Triggers migration reported the following error $($_.Exception.Message)" }
+				catch {
+					Write-Error "System Triggers migration reported the following error $($_.Exception.Message)."
+				}
 			}
 		}
 		
-		if (!$NoDatabases)
-		{
+		if (!$NoDatabases) {
 			# Test some things
-			if ($networkshare.length -gt 0) { $netshare += "-NetworkShare $NetworkShare" }
-			if (!$DetachAttach -and !$BackupRestore) { throw "You must specify a migration method using -BackupRestore or -DetachAttach." }
+			if ($networkshare.length -gt 0) {
+				$netshare += "-NetworkShare $NetworkShare"
+			}
+			if (!$DetachAttach -and !$BackupRestore) {
+				throw "You must specify a migration method using -BackupRestore or -DetachAttach."
+			}
 			# Do it
-			Write-Output "`nMigrating databases"
-			try
-			{
-				if ($BackupRestore)
-				{
+			Write-Output "`nMigrating databases."
+			try {
+				if ($BackupRestore) {
 					Copy-DbaDatabase -Source $sourceserver -Destination $destserver -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -BackupRestore -NetworkShare $NetworkShare -Force:$Force -NoRecovery:$NoRecovery -WithReplace:$WithReplace -IncludeSupportDbs:$IncludeSupportDbs
 				}
-				else
-				{
+				else {
 					Copy-DbaDatabase -Source $sourceserver -Destination $destserver -AllDatabases -SetSourceReadOnly:$SetSourceReadOnly -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -DetachAttach:$DetachAttach -Reattach:$Reattach -Force:$Force -IncludeSupportDbs:$IncludeSupportDbs
 				}
 			}
-			catch { Write-Error "Database migration reported the following error $($_.Exception.Message)" }
+			catch {
+				Write-Error "Database migration reported the following error $($_.Exception.Message)."
+			}
 		}
 		
 		
-		if (!$NoLogins)
-		{
-			Write-Output "`n`nMigrating logins"
-			try
-			{
-				if ($NoSaRename -eq $false)
-				{
+		if (!$NoLogins) {
+			Write-Output "`n`nMigrating logins."
+			try {
+				if ($NoSaRename -eq $false) {
 					Copy-DbaLogin -Source $sourceserver -Destination $destserver -Force:$Force -SyncSaName
 				}
-				else
-				{
+				else {
 					Copy-DbaLogin -Source $sourceserver -Destination $destserver -Force:$Force
 				}
 			}
-			catch { Write-Error "Login migration reported the following error $($_.Exception.Message) " }
+			catch {
+				Write-Error "Login migration reported the following error $($_.Exception.Message)."
+			}
 		}
 		
-		if (!$NoLogins -and !$NoDatabases -and !$NoRecovery)
-		{
-			Write-Output "`n`nUpdating database owners to match newly migrated logins"
-			try
-			{
+		if (!$NoLogins -and !$NoDatabases -and !$NoRecovery) {
+			Write-Output "`n`nUpdating database owners to match newly migrated logins."
+			try {
 				Update-SqlDbOwner -Source $sourceserver -Destination $destserver
 			}
-			catch { Write-Error "Login migration reported the following error $($_.Exception.Message) " }
+			catch {
+				Write-Error "Login migration reported the following error $($_.Exception.Message)."
+			}
 		}
 		
-		if (!$NoDataCollector)
-		{
-			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
-			{
+		if (!$NoDataCollector) {
+			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
 				Write-Output "Data Collection sets are only supported in SQL Server 2008 and above. Skipping."
 			}
-			else
-			{
-				Write-Output "`n`nMigrating Data Collector collection sets"
-				try
-				{
+			else {
+				Write-Output "`n`nMigrating Data Collector collection sets."
+				try {
 					Copy-DbaSqlDataCollector -Source $sourceserver -Destination $destserver -Force:$Force
 				}
-				catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
+				catch {
+					Write-Error "Job Server migration reported the following error $($_.Exception.Message)."
+				}
 			}
 		}
 		
 		
-		if (!$NoAudits)
-		{
-			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
-			{
+		if (!$NoAudits) {
+			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
 				Write-Output "Server Audit Specifications are only supported in SQL Server 2008 and above. Skipping."
 			}
-			else
-			{
-				Write-Output "`n`nMigrating Audits"
-				try
-				{
+			else {
+				Write-Output "`n`nMigrating Audits."
+				try {
 					Copy-DbaServerAudit -Source $sourceserver -Destination $destserver -Force:$Force
 				}
-				catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
+				catch {
+					Write-Error "Backup device migration reported the following error $($_.Exception.Message)."
+				}
 			}
 		}
 		
-		if (!$NoServerAuditSpecifications)
-		{
-			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
-			{
+		if (!$NoServerAuditSpecifications) {
+			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
 				Write-Output "Server Audit Specifications are only supported in SQL Server 2008 and above. Skipping."
 			}
-			else
-			{
-				Write-Output "`n`nMigrating Server Audit Specifications"
-				try
-				{
+			else {
+				Write-Output "`n`nMigrating Server Audit Specifications."
+				try {
 					Copy-DbaServerAuditSpecification -Source $sourceserver -Destination $destserver -Force:$Force
 				}
-				catch { Write-Error "Server Audit Specification migration reported the following error $($_.Exception.Message)" }
+				catch {
+					Write-Error "Server Audit Specification migration reported the following error $($_.Exception.Message)."
+				}
 			}
 		}
 		
-		if (!$NoEndpoints)
-		{
-			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
-			{
+		if (!$NoEndpoints) {
+			if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
 				Write-Output "Server Endpoints are only supported in SQL Server 2008 and above. Skipping."
 			}
-			else
-			{
-				Write-Output "`n`nMigrating Endpoints"
-				try
-				{
+			else {
+				Write-Output "`n`nMigrating Endpoints."
+				try {
 					Copy-DbaEndpoint -Source $sourceserver -Destination $destserver -Force:$Force
 				}
-				catch { Write-Error "Backup device migration reported the following error $($_.Exception.Message)" }
+				catch {
+					Write-Error "Backup device migration reported the following error $($_.Exception.Message)."
+				}
 			}
 		}
 		
 		
-		if (!$NoPolicyManagement)
-		{
-			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
-			{
+		if (!$NoPolicyManagement) {
+			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
 				Write-Output "Policy Management is only supported in SQL Server 2008 and above. Skipping."
 			}
-			else
-			{
-				Write-Output "`n`nMigrating Policy Management "
-				try
-				{
+			else {
+				Write-Output "`n`nMigrating Policy Management."
+				try {
 					Copy-DbaSqlPolicyManagement -Source $sourceserver -Destination $destserver -Force:$Force
 				}
-				catch { Write-Error "Policy Management migration reported the following error $($_.Exception.Message)" }
+				catch {
+					Write-Error "Policy Management migration reported the following error $($_.Exception.Message)."
+				}
 			}
 		}
 		
-		if (!$NoResourceGovernor)
-		{
-			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10)
-			{
+		if (!$NoResourceGovernor) {
+			if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
 				Write-Output "Resource Governor is only supported in SQL Server 2008 and above. Skipping."
 			}
-			else
-			{
-				Write-Output "`n`nMigrating Resource Governor"
-				try
-				{
+			else {
+				Write-Output "`n`nMigrating Resource Governor."
+				try {
 					Copy-DbaResourceGovernor -Source $sourceserver -Destination $destserver -Force:$Force
 				}
-				catch { Write-Error "Resource Governor migration reported the following error $($_.Exception.Message)" }
+				catch {
+					Write-Error "Resource Governor migration reported the following error $($_.Exception.Message)."
+				}
 			}
 		}
 		
-		if (!$NoExtendedEvents)
-		{
-			if ($sourceserver.versionMajor -lt 11 -or $destserver.versionMajor -lt 11)
-			{
+		if (!$NoExtendedEvents) {
+			if ($sourceserver.versionMajor -lt 11 -or $destserver.versionMajor -lt 11) {
 				Write-Output "Extended Events are only supported in SQL Server 2012 and above. Skipping."
 			}
-			else
-			{
-				Write-Output "`n`nMigrating Extended Events"
-				try
-				{
+			else {
+				Write-Output "`n`nMigrating Extended Events."
+				try {
 					Copy-DbaExtendedEvent -Source $sourceserver -Destination $destserver -Force:$Force
 				}
-				catch { Write-Error "Extended Event migration reported the following error $($_.Exception.Message)" }
+				catch {
+					Write-Error "Extended Event migration reported the following error $($_.Exception.Message)."
+				}
 			}
 		}
 		
-		if (!$NoAgentServer)
-		{
-			Write-Output "`n`nMigrating job server"
-			try
-			{
+		if (!$NoAgentServer) {
+			Write-Output "`n`nMigrating job server."
+			try {
 				Copy-DbaSqlServerAgent -Source $sourceserver -Destination $destserver -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force
 			}
-			catch { Write-Error "Job Server migration reported the following error $($_.Exception.Message) " }
+			catch {
+				Write-Error "Job Server migration reported the following error $($_.Exception.Message)."
+			}
 		}
 		
 	}
 	
-	END
-	{
+	end {
 		$totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
 		
-		if ($sourceserver.ConnectionContext.IsOpen -eq $true) { $sourceserver.ConnectionContext.Disconnect() }
-		if ($destserver.ConnectionContext.IsOpen -eq $true) { $destserver.ConnectionContext.Disconnect() }
+		if ($sourceserver.ConnectionContext.IsOpen -eq $true) {
+			$sourceserver.ConnectionContext.Disconnect()
+		}
+		if ($destserver.ConnectionContext.IsOpen -eq $true) {
+			$destserver.ConnectionContext.Disconnect()
+		}
 		
-        If ($Pscmdlet.ShouldProcess("console", "Showing SQL Server migration finished message")) {
-            Write-Output "`n`nSQL Server migration complete"
-            Write-Output "Migration started: $started"
-            Write-Output "Migration completed: $(Get-Date)"
-            Write-Output "Total Elapsed time: $totaltime"
-            Stop-Transcript
-        }
+		If ($Pscmdlet.ShouldProcess("console", "Showing SQL Server migration finished message")) {
+			Write-Output "`n`nSQL Server migration complete."
+			Write-Output "Migration started: $started"
+			Write-Output "Migration completed: $(Get-Date)"
+			Write-Output "Total Elapsed time: $totaltime"
+			Stop-Transcript
+		}
 	}
 }
