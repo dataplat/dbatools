@@ -25,7 +25,8 @@ $TestsRunGroups = @{
 		'Mount-DbaDatabase',
 		'Remove-DbaDatabase',
 		'Restore-DbaDatabase',
-		'Set-DbaSpConfigure'
+		'Set-DbaSpConfigure',
+		'Test-DbaIdentityUsage'
 	)
 	# run on scenario 2016
 	"2016" = @(
@@ -48,7 +49,6 @@ $TestsRunGroups = @{
 		'Remove-DbaDatabaseSnapshot',
 		'Restore-DbaFromDatabaseSnapshot',
 		'Test-DbaDbCompression',
-		'Test-DbaIdentityUsage',
 		'Test-DbaLastBackup'
 	)
 	# do not run on appveyor
