@@ -25,6 +25,7 @@ $TestsRunGroups = @{
 		'Mount-DbaDatabase',
 		'Remove-DbaDatabase',
 		'Restore-DbaDatabase',
+		'Set-DbaDatabaseState',
 		'Set-DbaSpConfigure'
 	)
 	# run on scenario 2016
@@ -47,7 +48,6 @@ $TestsRunGroups = @{
 		'New-DbaSsisCatalog',
 		'Remove-DbaDatabaseSnapshot',
 		'Restore-DbaFromDatabaseSnapshot',
-		'Set-DbaDatabaseState',
 		'Set-DbaDbQueryStoreOptions',
 		'Test-DbaDbCompression',
 		'Test-DbaIdentityUsage',
