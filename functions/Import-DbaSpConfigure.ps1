@@ -81,13 +81,21 @@ function Import-DbaSpConfigure {
 	#>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
+		[Parameter(ParameterSetName = "ServerCopy")]
 		[DbaInstanceParameter]$Source,
+		[Parameter(ParameterSetName = "ServerCopy")]
 		[DbaInstanceParameter]$Destination,
+		[Parameter(ParameterSetName = "ServerCopy")]
 		[PSCredential]$SourceSqlCredential,
+		[Parameter(ParameterSetName = "ServerCopy")]
 		[PSCredential]$DestinationSqlCredential,
+		[Parameter(ParameterSetName = "FromFile")]
 		[Alias("ServerInstance", "SqlServer")]
+		[Parameter(ParameterSetName = "FromFile")]
 		[DbaInstanceParameter]$SqlInstance,
+		[Parameter(ParameterSetName = "FromFile")]
 		[string]$Path,
+		[Parameter(ParameterSetName = "FromFile")]
 		[PSCredential]$SqlCredential,
 		[switch]$Force
 		
