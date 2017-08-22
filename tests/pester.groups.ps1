@@ -47,7 +47,6 @@ $TestsRunGroups = @{
 		'New-DbaSsisCatalog',
 		'Remove-DbaDatabaseSnapshot',
 		'Restore-DbaFromDatabaseSnapshot',
-		'Set-DbaDbQueryStoreOptions',
 		'Test-DbaDbCompression',
 		'Test-DbaIdentityUsage',
 		'Test-DbaLastBackup'
