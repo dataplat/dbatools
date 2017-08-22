@@ -7,11 +7,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
 		if ($env:appveyor) {
 			Get-Service | Where-Object { $_.DisplayName -match 'SQL Server (SQL2016)' } | Restart-Service -Force
-			do {
-				Start-Sleep 1
-				$null = (& sqlcmd -S $script:instance1 -b -Q "select 1" -d master)
-			}
-			while ($lastexitcode -ne 0 -and $t++ -lt 10)
 			
 			do {
 				Start-Sleep 1
