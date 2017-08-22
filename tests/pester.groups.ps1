@@ -25,7 +25,6 @@ $TestsRunGroups = @{
 		'Mount-DbaDatabase',
 		'Remove-DbaDatabase',
 		'Restore-DbaDatabase',
-		'Set-DbaDatabaseState',
 		'Set-DbaSpConfigure'
 	)
 	# run on scenario 2016
