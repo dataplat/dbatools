@@ -46,13 +46,14 @@ function Set-DbaAgHadr {
 
 			Sets Hadr service to disabled for the instance dev1 on sq2012
 	#>
-	[CmdletBinding(SupportsShouldProcess = $true)]
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$Credential,
 		[boolean]$Enabled,
+		[switch]$Force,
 		[switch]$Silent
 	)
 	begin {
@@ -66,61 +67,69 @@ function Set-DbaAgHadr {
 	process {
 		if (Test-FunctionInterrupt) { return }
 		foreach ($instance in $SqlInstance) {
+			$computer = $instance.ComputerName
+			$instanceName = $instance.InstanceName
 
+			$restartIt = $false
+			$noChange = $false
+
+			if ($instance.InstanceName -eq 'MSSQLSERVER') {
+				$agentService = 'SQLSERVERAGENT'
+			}
+			else {
+				$agentService = "SQLAgent`$$instanceName"
+			}
 			try {
-				$computer = $instance.ComputerName
-				$instanceName = $instance.InstanceName
-				$computerName = (Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential).FullComputerName
-				Write-Message -Level Verbose -Message "Attempting to connect to $computer"
-				$currentState = Invoke-ManagedComputerCommand -ComputerName $computerName -ScriptBlock { $wmi.Services[$args[0]] | Select-Object IsHadrEnabled } -ArgumentList $instanceName -Credential $Credential
+				Write-Message -Level Verbose -Message "Checking current Hadr setting for $computer"
+				$computerFullName = (Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -Silent).FullComputerName
+				$currentState = Get-DbaAgHadr -SqlInstance $instance
 			}
 			catch {
-				Stop-Function -Message "Failure connecting to $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+				Stop-Function -Message "Failure to pull current state of Hadr setting on $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-			Write-Message -Level Output -Message "Enabled = $Enabled"
-			Write-Message -Level Output -Message "IsHadr Enabled = $($currentState.IsHadrEnabled)"
-			$noChange = $false
-			if ($currentState.IsHadrEnabled -eq $true -and $Enabled -eq 1) {
-				Write-Message -Level Warning -Message "Hadr is already enabled on $($instance.FullName)"
+
+			$isHadrEnabled = $currentState.IsHadrEnabled
+			Write-Message -Level InternalComment -Message "$isntance Hadr current value: $isHadrEnabled"
+
+			if ($isHadrEnabled -eq $true -and $Enabled -eq 1) {
+				Write-Message -Level Warning -Message "Hadr is already enabled for instance: $($instance.FullName)"
 				$noChange = $true
 				continue
 			}
-			if ($currentState.IsHadrEnabled -eq $false -and $Enabled -eq 0) {
-				Write-Message -Level Warning -Message "Hadr is already disabled on $($instance.FullName)"
+			if ($isHadrEnabled -eq $false -and $Enabled -eq 0) {
+				Write-Message -Level Warning -Message "Hadr is already disabled for instance: $($instance.FullName)"
 				$noChange = $true
 				continue
 			}
 
-			if ($currentState.IsHadrEnabled -eq $true -and $Enabled -eq 0) {
-				if ($PSCmdlet.ShouldProcess($instance, "Disabling Hadr.")) {
-					$scriptBlock = {
-						$instanceName = $args[0]
-						$hadrSet = $args[1]
+			$scriptBlock = {
+				$instanceName = $args[0]
+				$agentName = $args[1]
+				$hadrSet = $args[2]
+				$force = $args[3]
 
-						$sqlService = $wmi.Services[$instanceName]
-						if ($sqlService -eq $true) {
-							$sqlService.ChangeHadrServiceSetting($hadrSet)
-						}
+				$wmi.Services[$instanceName].ChangeHadrServiceSetting($hadrSet)
+				if ($force) {
+					$wmi.Services[$instanceName].Stop()
+					Start-Sleep -Seconds 8
+					$wmi.Services[$instanceName].Start()
+
+					if ($wmi.Services[$agentName].ServiceState -ne 'Running') {
+						$wmi.Services[$agentName].Start()
 					}
-					Invoke-ManagedComputerCommand -ComputerName $resolvedComputer -ScriptBlock $scriptBlock -ArgumentList $instanceName, $Enabled
 				}
 			}
-			if ($currentState.IsHadrEnabled -eq $false -and $Enabled -eq 1) {
-				if ($PSCmdlet.ShouldProcess("$instance", "Enabling Hadr.")) {
-					$scriptBlock = {
-						$instanceName = $args[0]
-						$hadrSet = $args[1]
 
-						$sqlService = $wmi.Services[$instanceName]
-						Write-Host "Hadr Current state: $($sqlService.IsHadrEnabled)"
-						if ($sqlService -eq $true) {
-							$sqlService.ChangeHadrServiceSetting($hadrSet)
-							$sqlService.Stop()
-							Start-Sleep -Seconds 8
-							$sqlService.Start()
-						}
-					}
-					Invoke-ManagedComputerCommand -ComputerName $resolvedComputer -ScriptBlock $scriptBlock -ArgumentList $instanceName, $Enabled
+			if ($isHadrEnabled -eq $true -and $Enabled -eq 0) {
+				if ($PSCmdlet.ShouldProcess($instance, "Changing Hadr from $isHadrEnabled to $Enabled for $instance.")) {
+					if ($Force) { $restartIt = $true }
+					Invoke-ManagedComputerCommand -ComputerName $computerFullName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $instanceName, $agentService, $Enabled, $restartIt
+				}
+			}
+			if ($isHadrEnabled -eq $false -and $Enabled -eq 1) {
+				if ($PSCmdlet.ShouldProcess("$instance", "Changing Hadr from $isHadrEnabled to $Enabled for $instance.")) {
+					if ($Force) { $restartIt = $true }
+					Invoke-ManagedComputerCommand -ComputerName $computerFullName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $instanceName, $agentService, $Enabled, $restartIt
 				}
 			}
 		}
