@@ -127,7 +127,7 @@ function Copy-DbaSqlServerAgent {
 		$copyAgentPropStatus = [pscustomobject]@{
 			SourceServer      = $sourceServer.Name
 			DestinationServer = $destServer.Name
-			Type              = "Agent Properites"
+			Type              = "Agent Properties"
 			Status            = $null
 			Notes             = $null
 			DateTime          = [DbaDateTime](Get-Date)
