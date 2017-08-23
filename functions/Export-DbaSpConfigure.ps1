@@ -1,67 +1,66 @@
-function Export-DbaSpConfigure
-{
-<#
-.SYNOPSIS
- Exports advanced sp_configure global configuration options to sql file.
+function Export-DbaSpConfigure {
+	<#
+		.SYNOPSIS
+			Exports advanced sp_configure global configuration options to sql file.
 
-.DESCRIPTION
-Exports advanced sp_configure global configuration options to sql file.
+		.DESCRIPTION
+			Exports advanced sp_configure global configuration options to sql file.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+		.PARAMETER SqlInstance 
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2005 or higher.
 
-$scred = Get-Credential, this pass $scred object to the param. 
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-.PARAMETER SqlInstance
-The SQL Server that you're connecting to.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.PARAMETER Path
-The Path to the SQL File
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER Path
+			Specifies the path to a file which will contain the sp_configure queries necessary to replicate the configuration settings on another instance. This file is suitable for input into Import-DbaSPConfigure.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER Whatif
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.NOTES
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.	
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-.EXAMPLE
-Export-DbaSpConfigure $sourceserver -Path C:\temp\sp_configure.sql
+		.NOTES
+			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0	
 
-Exports the SPConfigure on sourceserver to the file C:\temp\sp_configure.sql
+		.EXAMPLE
+			Export-DbaSpConfigure sourceserver -Path C:\temp\sp_configure.sql
 
-.OUTPUTS
-File to disk, and string path.
+			Exports the SPConfigure settings on sourceserver to the file C:\temp\sp_configure.sql
 
-#>
+		.OUTPUTS
+			File to disk, and string path.
+
+	#>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance","SqlServer")]
+		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
 		[string]$Path,
 		[PSCredential]$SqlCredential
 	)
 	
-	BEGIN
-	{
+	begin {
 		$server = Connect-SqlInstance $sqlinstance $SqlCredential
 		
-		if ($server.versionMajor -lt 9) { "Windows 2000 not supported for sp_configure export."; break }
+		if ($server.versionMajor -lt 9) {
+			Write-Error "Windows 2000 is not supported for sp_configure export."
+			break
+		}
 		
-		if ($path.length -eq 0)
-		{
+		if ($path.length -eq 0) {
 			$timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
 			$mydocs = [Environment]::GetFolderPath('MyDocuments')
 			$path = "$mydocs\$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
@@ -69,15 +68,17 @@ File to disk, and string path.
 	
 	}
 	
-	PROCESS
-		{
-		try { Set-Content -Path $path "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE" }
-		catch { throw "Can't write to $path" }
+	process {
+		try {
+			Set-Content -Path $path "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE"
+		}
+		catch {
+			throw "Can't write to $path"
+		}
 		
 		$server.Configuration.ShowAdvancedOptions.ConfigValue = $true
 		$server.Configuration.Alter($true)
-		foreach ($sourceprop in $server.Configuration.Properties)
-		{
+		foreach ($sourceprop in $server.Configuration.Properties) {
 			$displayname = $sourceprop.DisplayName
 			$configvalue = $sourceprop.ConfigValue
 			Add-Content -Path $path "EXEC sp_configure '$displayname' , $configvalue;"
@@ -89,13 +90,12 @@ File to disk, and string path.
 		return $path
 	}
 	
-	END
-	{
+	end {
 		$server.ConnectionContext.Disconnect()
 		
-        If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
-            Write-Output "Server configuration export finished"
-        }
+		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
+			Write-Output "Server configuration export finished"
+		}
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Export-SqlSpConfigure
 	}
 }
