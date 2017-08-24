@@ -506,6 +506,6 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
     } # Process
 	
     end {
-        Write-Message -Message "Finished changing job(s)." -Level Verbose
+        Write-Message -Message "Finished changing job(s)." -Level Output
     }
 }

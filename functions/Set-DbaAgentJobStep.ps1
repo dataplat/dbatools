@@ -344,6 +344,6 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 	} # process
 	
 	end {
-		Write-Message -Message "Finished changing job step(s)" -Level Verbose
+		Write-Message -Message "Finished changing job step(s)" -Level Output
 	}
 }
