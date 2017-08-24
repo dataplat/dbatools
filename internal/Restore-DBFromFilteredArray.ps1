@@ -87,7 +87,7 @@ Function Restore-DBFromFilteredArray {
             if (($ScriptOnly -eq $true) -or ($verifyonly -eq $true)) {
                 Write-Message -Level Verbose -Message "No need to close db for this operation"
             }
-            elseIf ($WithReplace -eq $true -and $VerifyOnly -eq $false) {
+            elseIf ($ReplaceDatabase -eq $true -and $VerifyOnly -eq $false) {
                 if ($Pscmdlet.ShouldProcess("Killing processes in $dbname on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
                     try {
                         Write-Message -Level Verbose -Message "Set $DbName single_user to kill processes"
@@ -161,7 +161,7 @@ Function Restore-DBFromFilteredArray {
                     }
 
                 }
-                else {
+                elseif ($ReplaceDatabase -ne $True) {
                     Write-Message -Level Veryverbose -Message "Bombing out created on $sqlinstance"
                     #Stop-Function -message "Destination File $File  exists on $SqlInstance" -Target $file -Category 'DeviceError' -silent $true
 					Stop-Function -message "Destination File $File  exists on $SqlInstance" -Target $file -Category 'DeviceError' -silent $true
