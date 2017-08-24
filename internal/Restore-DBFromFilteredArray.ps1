@@ -204,7 +204,8 @@ Function Restore-DBFromFilteredArray {
                     Write-Message -Level Verbose -Message "Moving $($File.PhysicalName)"
                     $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
                     $MoveFile.LogicalFileName = $File.LogicalName
-                    $filename, $extension = (Split-Path $file.PhysicalName -leaf).split('.')
+                    $Extension = ($file.PhysicalName.split('.'))[-1]
+                    $Filename  = $file.PhysicalName -replace ".$extension",""
                     if ($ReplaceDbNameInFile) {
                         $Filename = $filename -replace $OldDatabaseName, $dbname
                     }
