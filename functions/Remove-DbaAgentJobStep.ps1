@@ -89,7 +89,7 @@ Remove the job step from the job on multiple servers using pipeline
 			# Try connecting to the instance
 			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
 			try {
-				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+				$Server = Connect-DbaSqlServer -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
