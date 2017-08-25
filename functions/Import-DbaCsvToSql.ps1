@@ -1,6 +1,5 @@
-Function Import-DbaCsvToSql
-{
-<# 
+function Import-DbaCsvToSql {
+	<# 
 .SYNOPSIS
 Efficiently imports very large (and small) CSV files into SQL Server using only the .NET Framework and PowerShell.
 
@@ -151,11 +150,11 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 	Param (
 		[string[]]$Csv,
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance","SqlServer")]
+		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
 		[object]$SqlCredential,
 		[string]$Table,
-        [string]$Schema = "dbo",
+		[string]$Schema = "dbo",
 		[switch]$Truncate,
 		[string]$Delimiter = ",",
 		[switch]$FirstRowColumns,
@@ -179,30 +178,24 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		[string]$SqlCredentialPath
 	)
 	
-	DynamicParam
-	{
+	DynamicParam {
 		
-		if ($SqlInstance.length -gt 0)
-		{
+		if ($SqlInstance.length -gt 0) {
 			# Auto populate database list from specified sqlserver
 			$paramconn = New-Object System.Data.SqlClient.SqlConnection
 			
-			if ($SqlCredentialPath.length -gt 0)
-			{
+			if ($SqlCredentialPath.length -gt 0) {
 				$SqlCredential = Import-CliXml $SqlCredentialPath
 			}
 			
-			if ($SqlCredential.count -eq 0 -or $SqlCredential -eq $null)
-			{
+			if ($SqlCredential.count -eq 0 -or $SqlCredential -eq $null) {
 				$paramconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;"
 			}
-			else
-			{
+			else {
 				$paramconn.ConnectionString = "Data Source=$SqlInstance;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);"
 			}
 			
-			try
-			{
+			try {
 				$paramconn.Open()
 				$sql = "select name from master.dbo.sysdatabases"
 				$paramcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $paramconn, $null)
@@ -213,8 +206,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 				$null = $paramconn.Close()
 				$null = $paramconn.Dispose()
 			}
-			catch
-			{
+			catch {
 				# But if the routine fails, at least let them specify a database manually
 				$databaselist = ""
 			}
@@ -228,8 +220,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			$dbattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
 			$dbattributes.Add($attributes)
 			# If a list of databases were returned, populate the parameter set
-			if ($databaselist.length -gt 0)
-			{
+			if ($databaselist.length -gt 0) {
 				$dbvalidationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $databaselist
 				$dbattributes.Add($dbvalidationset)
 			}
@@ -240,11 +231,9 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		}
 	}
 	
-	Begin
-	{
-		Function Parse-OleQuery
-		{
-	<#
+	begin {
+		function Parse-OleQuery {
+			<#
 		.SYNOPSIS
 		Tests to ensure query is valid. This will be used for the GUI.
 
@@ -268,26 +257,25 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 				
 			)
 			
-			if ($query.ToLower() -notmatch "\bcsv\b")
-			{
+			if ($query.ToLower() -notmatch "\bcsv\b") {
 				return "SQL statement must contain the word 'csv'."
 			}
 			
-			try
-			{
+			try {
 				$datasource = Split-Path $csv[0]
 				$tablename = (Split-Path $csv[0] -leaf).Replace(".", "#")
-				switch ($FirstRowColumns)
-				{
-					$true { $FirstRowColumns = "Yes" }
-					$false { $FirstRowColumns = "No" }
+				switch ($FirstRowColumns) {
+					$true {
+						$FirstRowColumns = "Yes"
+					}
+					$false {
+						$FirstRowColumns = "No"
+					}
 				}
-				if ($provider -ne $null)
-				{
+				if ($provider -ne $null) {
 					$connstring = "Provider=$provider;Data Source=$datasource;Extended Properties='text';"
 				}
-				else
-				{
+				else {
 					$connstring = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$datasource;Extended Properties='text';"
 				}
 				
@@ -302,12 +290,12 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 				$conn.Dispose()
 				return $true
 			}
-			catch { return $false }
+			catch { return $false
+			}
 		}
 		
-		Function Test-SqlConnection
-		{
-	<#
+		function Test-SqlConnection {
+			<#
 		.SYNOPSIS
 		Uses System.Data.SqlClient to gather list of user databases.
 
@@ -321,39 +309,38 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 	 #>
 			param (
 				[Parameter(Mandatory = $true)]
-				[Alias("ServerInstance","SqlServer")]
+				[Alias("ServerInstance", "SqlServer")]
 				[DbaInstanceParameter]$SqlInstance,
 				[object]$SqlCredential
 			)
 			$testconn = New-Object System.Data.SqlClient.SqlConnection
-			if ($SqlCredential.count -eq 0)
-			{
+			if ($SqlCredential.count -eq 0) {
 				$testconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3"
 			}
-			else
-			{
+			else {
 				$testconn.ConnectionString = "Data Source=$SqlInstance;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3"
 			}
-			try
-			{
+			try {
 				$testconn.Open()
 				$testconn.Close()
 				$testconn.Dispose()
 				return $true
 			}
-			catch
-			{
+			catch {
 				$message = $_.Exception.Message.ToString()
 				Write-Verbose $message
-				if ($message -match "A network") { $message = "Can't connect to $SqlInstance." }
-				elseif ($message -match "Login failed for user") { $message = "Login failed for $username." }
+				if ($message -match "A network") {
+					$message = "Can't connect to $SqlInstance."
+				}
+				elseif ($message -match "Login failed for user") {
+					$message = "Login failed for $username."
+				}
 				return $message
 			}
 		}
 		
-		Function Get-SqlDatabases
-		{
-	<#
+		function Get-SqlDatabases {
+			<#
 		.SYNOPSIS
 		Uses System.Data.SqlClient to gather list of user databases.
 
@@ -367,21 +354,18 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 	 #>
 			param (
 				[Parameter(Mandatory = $true)]
-				[Alias("ServerInstance","SqlServer")]
+				[Alias("ServerInstance", "SqlServer")]
 				[DbaInstanceParameter]$SqlInstance,
 				[object]$SqlCredential
 			)
 			$paramconn = New-Object System.Data.SqlClient.SqlConnection
-			if ($SqlCredential.count -eq 0)
-			{
+			if ($SqlCredential.count -eq 0) {
 				$paramconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3"
 			}
-			else
-			{
+			else {
 				$paramconn.ConnectionString = "Data Source=$SqlInstance;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3"
 			}
-			try
-			{
+			try {
 				$paramconn.Open()
 				$sql = "select name from master.dbo.sysdatabases where dbid > 4 order by name"
 				$paramcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $paramconn, $null)
@@ -393,12 +377,13 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 				$null = $paramconn.Dispose()
 				return $databaselist
 			}
-			catch { throw "Cannot access $SqlInstance" }
+			catch {
+				throw "Cannot access $SqlInstance"
+			}
 		}
 		
-		Function Get-SqlTables
-		{
-	<#
+		function Get-SqlTables {
+			<#
 		.SYNOPSIS
 		Uses System.Data.SqlClient to gather list of user databases.
 
@@ -412,23 +397,20 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 	 #>
 			param (
 				[Parameter(Mandatory = $true)]
-				[Alias("ServerInstance","SqlServer")]
+				[Alias("ServerInstance", "SqlServer")]
 				[DbaInstanceParameter]$SqlInstance,
 				[string]$Database,
 				[object]$SqlCredential
 			)
 			$tableconn = New-Object System.Data.SqlClient.SqlConnection
-			if ($SqlCredential.count -eq 0)
-			{
+			if ($SqlCredential.count -eq 0) {
 				$tableconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3"
 			}
-			else
-			{
+			else {
 				$username = ($SqlCredential.UserName).TrimStart("\")
 				$tableconn.ConnectionString = "Data Source=$SqlInstance;User Id=$username; Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3"
 			}
-			try
-			{
+			try {
 				$tableconn.Open()
 				$sql = "select name from $database.sys.tables order by name"
 				$tablecmd = New-Object System.Data.SqlClient.SqlCommand($sql, $tableconn, $null)
@@ -440,12 +422,13 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 				$null = $tableconn.Dispose()
 				return $tablelist
 			}
-			catch { return }
+			catch {
+				return
+			}
 		}
 		
-		Function Get-Columns
-		{
-		<#
+		function Get-Columns {
+			<#
 			.SYNOPSIS
 			TextFieldParser will be used instead of an OleDbConnection.
 			This is because the OleDbConnection driver may not exist on x64.
@@ -472,14 +455,14 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			$columnparser.SetDelimiters($Delimiter)
 			$rawcolumns = $columnparser.ReadFields()
 			
-			if ($FirstRowColumns -eq $true)
-			{
+			if ($FirstRowColumns -eq $true) {
 				$columns = ($rawcolumns | ForEach-Object { $_ -Replace '"' } | Select-Object -Property @{ Name = "name"; Expression = { "[$_]" } }).name
 			}
-			else
-			{
+			else {
 				$columns = @()
-				foreach ($number in 1..$rawcolumns.count) { $columns += "[column$number]" }
+				foreach ($number in 1..$rawcolumns.count) {
+					$columns += "[column$number]"
+				}
 			}
 			
 			$columnparser.Close()
@@ -487,9 +470,8 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			return $columns
 		}
 		
-		Function Get-ColumnText
-		{
-		<#
+		function Get-ColumnText {
+			<#
 			.SYNOPSIS
 			Returns an array of data, which can later be parsed for potential datatypes.
 
@@ -518,9 +500,8 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			return $datatext
 		}
 		
-		Function Write-Schemaini
-		{
-		<#
+		function Write-Schemaini {
+			<#
 			.SYNOPSIS
 			Unfortunately, passing delimiter within the OleDBConnection connection string is unreliable, so we'll use schema.ini instead. The default delimiter in Windows changes depending on country, so we'll do this for every delimiter, even commas.
 			
@@ -557,12 +538,10 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			)
 			
 			$movedschemainis = @{ }
-			foreach ($file in $csv)
-			{
+			foreach ($file in $csv) {
 				$directory = Split-Path $file
 				$schemaexists = Test-Path "$directory\schema.ini"
-				if ($schemaexists -eq $true)
-				{
+				if ($schemaexists -eq $true) {
 					$newschemaname = "$env:TEMP\$(Split-Path $file -leaf)-schema.ini"
 					$movedschemainis.Add($newschemaname, "$directory\schema.ini")
 					Move-Item "$directory\schema.ini" $newschemaname -Force
@@ -576,19 +555,29 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 				$index = 0
 				$olecolumns = ($columns | ForEach-Object { $_ -Replace "\[|\]", '"' })
 				
-				foreach ($datatype in $columntext)
-				{
+				foreach ($datatype in $columntext) {
 					$olecolumnname = $olecolumns[$index]
 					$index++
 					
-					try { [System.Guid]::Parse($datatype) | Out-Null; $isguid = $true }
-					catch { $isguid = $false }
+					try { [System.Guid]::Parse($datatype) | Out-Null; $isguid = $true
+					}
+					catch {
+						$isguid = $false
+					}
 					
-					if ($isguid -eq $true) { $oledatatype = "Text" }
-					elseif ([int64]::TryParse($datatype, [ref]0) -eq $true) { $oledatatype = "Long" }
-					elseif ([double]::TryParse($datatype, [ref]0) -eq $true) { $oledatatype = "Double" }
-					elseif ([datetime]::TryParse($datatype, [ref]0) -eq $true) { $oledatatype = "Text" }
-					else { $oledatatype = "Memo" }
+					if ($isguid -eq $true) { $oledatatype = "Text"
+					}
+					elseif ([int64]::TryParse($datatype, [ref]0) -eq $true) { $oledatatype = "Long"
+					}
+					elseif ([double]::TryParse($datatype, [ref]0) -eq $true) {
+						$oledatatype = "Double"
+					}
+					elseif ([datetime]::TryParse($datatype, [ref]0) -eq $true) {
+						$oledatatype = "Text"
+					}
+					else {
+						$oledatatype = "Memo"
+					}
 					
 					Add-Content -Path "$directory\schema.ini" -Value "Col$($index)`=$olecolumnname $oledatatype"
 				}
@@ -596,9 +585,8 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			return $movedschemainis
 		}
 		
-		Function New-SqlTable
-		{
-		<#
+		function New-SqlTable {
+			<#
 			.SYNOPSIS
 			Creates new Table using existing SqlCommand.
 			
@@ -625,26 +613,34 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			# Get SQL datatypes by best guess on first data row
 			$sqldatatypes = @(); $index = 0
 			
-			foreach ($column in $columntext)
-			{
+			foreach ($column in $columntext) {
 				$sqlcolumnname = $Columns[$index]
 				$index++
 				
 				# bigint, float, and datetime are more accurate, but it didn't work
 				# as often as it should have, so we'll just go for a smaller datatype
-				if ([int64]::TryParse($column, [ref]0) -eq $true) { $sqldatatype = "varchar(255)" }
-				elseif ([double]::TryParse($column, [ref]0) -eq $true) { $sqldatatype = "varchar(255)" }
-				elseif ([datetime]::TryParse($column, [ref]0) -eq $true) { $sqldatatype = "varchar(255)" }
-				else { $sqldatatype = "varchar(MAX)" }
+				if ([int64]::TryParse($column, [ref]0) -eq $true) {
+					$sqldatatype = "varchar(255)"
+				}
+				elseif ([double]::TryParse($column, [ref]0) -eq $true) {
+					$sqldatatype = "varchar(255)"
+				}
+				elseif ([datetime]::TryParse($column, [ref]0) -eq $true) {
+					$sqldatatype = "varchar(255)"
+				}
+				else {
+					$sqldatatype = "varchar(MAX)"
+				}
 				
 				$sqldatatypes += "$sqlcolumnname $sqldatatype"
 			}
 			
 			$sql = "BEGIN CREATE TABLE [$schema].[$table] ($($sqldatatypes -join ' NULL,')) END"
 			$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
-			try { $null = $sqlcmd.ExecuteNonQuery() }
-			catch
-			{
+			try {
+				$null = $sqlcmd.ExecuteNonQuery()
+			}
+			catch {
 				$errormessage = $_.Exception.Message.ToString()
 				throw "Failed to execute $sql. `nDid you specify the proper delimiter? `n$errormessage"
 			}
@@ -686,40 +682,48 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		Add-Type -ReferencedAssemblies 'System.Data.dll' -TypeDefinition $source -ErrorAction SilentlyContinue
 	}
 	
-	Process
-	{
+	Process {
 		# Supafast turbo mode requires a table lock, or it's just regular fast
-		if ($turbo -eq $true) { $tablelock = $true }
+		if ($turbo -eq $true) {
+			$tablelock = $true
+		}
 		
 		# The query parameter requires OleDB which is invoked by the "safe" variable
 		# Actually, a select could be performed on the datatable used in StreamReader, too.
 		# Maybe that will be done later.
-		if ($query -ne "select * from csv") { $safe = $true }
+		if ($query -ne "select * from csv") {
+			$safe = $true
+		}
 		
-		if ($first -gt 0 -and $query -ne "select * from csv")
-		{
+		if ($first -gt 0 -and $query -ne "select * from csv") {
 			throw "Cannot use both -Query and -First. If a query is necessary, use TOP $first within your SQL statement."
 		}
 		
 		# In order to support -First in both Streamreader, and OleDb imports, the query must be modified slightly.
-		if ($first -gt 0) { $query = "select top $first * from csv" }
+		if ($first -gt 0) {
+			$query = "select top $first * from csv"
+		}
 		
 		# If shell switch occured, and encrypted SQL credentials were written to disk, create $SqlCredential 
-		if ($SqlCredentialPath.length -gt 0)
-		{
+		if ($SqlCredentialPath.length -gt 0) {
 			$SqlCredential = Import-CliXml $SqlCredentialPath
 		}
 		
 		# Get Database string from RuntimeDefinedParameter if required
-		if ($database -isnot [string]) { $database = $PSBoundParameters.Database }
-		if ($database.length -eq 0) { throw "You must specify a database." }
+		if ($database -isnot [string]) {
+			$database = $PSBoundParameters.Database
+		}
+		if ($database.length -eq 0) {
+			throw "You must specify a database."
+		}
 		
 		# Check to ensure a Windows account wasn't used as a SQL Credential
-		if ($SqlCredential.count -gt 0 -and $SqlCredential.UserName -like "*\*") { throw "Only SQL Logins can be used as a SqlCredential." }
+		if ($SqlCredential.count -gt 0 -and $SqlCredential.UserName -like "*\*") {
+			throw "Only SQL Logins can be used as a SqlCredential."
+		}
 		
 		# If no CSV was specified, prompt the user to select one.
-		if ($csv.length -eq 0)
-		{
+		if ($csv.length -eq 0) {
 			$fd = New-Object System.Windows.Forms.OpenFileDialog
 			$fd.InitialDirectory = [environment]::GetFolderPath("MyDocuments")
 			$fd.Filter = "CSV Files (*.csv;*.tsv;*.txt)|*.csv;*.tsv;*.txt"
@@ -727,44 +731,51 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			$fd.MultiSelect = $true
 			$null = $fd.showdialog()
 			$csv = $fd.filenames
-			if ($csv.length -eq 0) { throw "No CSV file selected." }
+			if ($csv.length -eq 0) {
+				throw "No CSV file selected."
+			}
 		}
-		else
-		{
-			foreach ($file in $csv)
-			{
+		else {
+			foreach ($file in $csv) {
 				$exists = Test-Path $file
-				if ($exists -eq $false) { throw "$file does not exist" }
+				if ($exists -eq $false) {
+					throw "$file does not exist"
+				}
 			}
 		}
 		
 		# Resolve the full path of each CSV
 		$resolvedcsv = @()
-		foreach ($file in $csv) { $resolvedcsv += (Resolve-Path $file).Path }
+		foreach ($file in $csv) {
+			$resolvedcsv += (Resolve-Path $file).Path
+		}
 		$csv = $resolvedcsv
 		
 		# UniqueIdentifier kills OLE DB / SqlBulkCopy imports. Check to see if destination table contains this datatype. 
-		if ($safe -eq $true)
-		{
+		if ($safe -eq $true) {
 			$sqlcheckconn = New-Object System.Data.SqlClient.SqlConnection
-			if ($SqlCredential.count -eq 0 -or $SqlCredential -eq $null)
-			{
+			if ($SqlCredential.count -eq 0 -or $SqlCredential -eq $null) {
 				$sqlcheckconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3; Initial Catalog=master"
 			}
-			else
-			{
+			else {
 				$username = ($SqlCredential.UserName).TrimStart("\")
 				$sqlcheckconn.ConnectionString = "Data Source=$SqlInstance;User Id=$username; Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3; Initial Catalog=master"
 			}
 			
-			try { $sqlcheckconn.Open() }
-			catch { throw $_.Exception }
+			try {
+				$sqlcheckconn.Open()
+			}
+			catch {
+				throw $_.Exception
+			}
 			
 			# Ensure database exists
 			$sql = "select count(*) from master.dbo.sysdatabases where name = '$database'"
 			$sqlcheckcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlcheckconn)
 			$dbexists = $sqlcheckcmd.ExecuteScalar()
-			if ($dbexists -eq $false) { throw "Database does not exist on $SqlInstance" }
+			if ($dbexists -eq $false) {
+				throw "Database does not exist on $SqlInstance"
+			}
 			
 			# Change database after the fact, because if db doesn't exist, the login would fail.	
 			$sqlcheckconn.ChangeDatabase($database)
@@ -776,40 +787,42 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			$sqlcolumns = New-Object System.Data.DataTable
 			$sqlcolumns.load($sqlcheckcmd.ExecuteReader("CloseConnection"))
 			$sqlcheckconn.Dispose()
-			if ($sqlcolumns.datatype -contains "UniqueIdentifier")
-			{
+			if ($sqlcolumns.datatype -contains "UniqueIdentifier") {
 				throw "UniqueIdentifier not supported by OleDB/SqlBulkCopy. Query and Safe cannot be supported."
 			}
 		}
 		
-		if ($safe -eq $true)
-		{
+		if ($safe -eq $true) {
 			# Check for drivers. First, ACE (Access) if file is smaller than 2GB, then JET
 			# ACE doesn't handle files larger than 2gb. What gives?
-			foreach ($file in $csv)
-			{
+			foreach ($file in $csv) {
 				$filesize = (Get-ChildItem $file).Length / 1GB
-				if ($filesize -gt 1.99) { $jetonly = $true }
+				if ($filesize -gt 1.99) {
+					$jetonly = $true
+				}
 			}
 			
-			if ($jetonly -ne $true) { $provider = (New-Object System.Data.OleDb.OleDbEnumerator).GetElements() | Where-Object { $_.SOURCES_NAME -like "Microsoft.ACE.OLEDB.*" } }
+			if ($jetonly -ne $true) {
+				$provider = (New-Object System.Data.OleDb.OleDbEnumerator).GetElements() | Where-Object { $_.SOURCES_NAME -like "Microsoft.ACE.OLEDB.*" }
+			}
 			
-			if ($provider -eq $null)
-			{
+			if ($provider -eq $null) {
 				$provider = (New-Object System.Data.OleDb.OleDbEnumerator).GetElements() | Where-Object { $_.SOURCES_NAME -like "Microsoft.Jet.OLEDB.*" }
 			}
 			
 			# If a suitable provider cannot be found (If x64 and Access hasn't been installed) 
 			# switch to x86, because it natively supports JET
-			if ($provider -ne $null)
-			{
-				if ($provider -is [system.array]) { $provider = $provider[$provider.GetUpperBound(0)].SOURCES_NAME }
-				else { $provider = $provider.SOURCES_NAME }
+			if ($provider -ne $null) {
+				if ($provider -is [system.array]) {
+					$provider = $provider[$provider.GetUpperBound(0)].SOURCES_NAME
+				}
+				else {
+					$provider = $provider.SOURCES_NAME
+				}
 			}
 			
 			# If a provider doesn't exist, it is necessary to switch to x86 which natively supports JET.
-			if ($provider -eq $null)
-			{
+			if ($provider -eq $null) {
 				# While Install-Module takes care of installing modules to x86 and x64, Import-Module doesn't.
 				# Because of this, the Module must be exported, written to file, and imported in the x86 shell.
 				$definition = (Get-Command Import-DbaCsvToSql).Definition
@@ -823,23 +836,25 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 				# Put switches back into proper format
 				$switches = @()
 				$options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default", "Truncate", "FirstRowColumns", "Safe"
-				foreach ($option in $options)
-				{
+				foreach ($option in $options) {
 					$optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
-					if ($optionValue -eq $true) { $switches += "-$option" }
+					if ($optionValue -eq $true) {
+						$switches += "-$option"
+					}
 				}
 				
 				# Perform the actual switch, which removes any registered Import-DbaCsvToSql modules
 				# Then imports, and finally re-executes the command. 
 				$csv = $csv -join ","; $switches = $switches -join " "
-				if ($SqlCredential.count -gt 0)
-				{
+				if ($SqlCredential.count -gt 0) {
 					$SqlCredentialPath = "$env:TEMP\sqlcredential.xml"
 					Export-CliXml -InputObject $SqlCredential $SqlCredentialPath
 				}
 				$command = "Import-DbaCsvToSql -Csv $csv -SqlInstance '$SqlInstance'-Database '$database' -Table '$table' -Delimiter '$Delimiter' -First $First -Query '$query' -Batchsize $BatchSize -NotifyAfter $NotifyAfter $switches -shellswitch"
 				
-				if ($SqlCredentialPath.length -gt 0) { $command += " -SqlCredentialPath $SqlCredentialPath" }
+				if ($SqlCredentialPath.length -gt 0) {
+					$command += " -SqlCredentialPath $SqlCredentialPath"
+				}
 				Write-Verbose "Switching to x86 shell, then switching back."
 				&"$env:windir\syswow64\windowspowershell\v1.0\powershell.exe" "$command"
 				return
@@ -847,78 +862,71 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		}
 		
 		# Do the first few lines contain the specified delimiter?
-		foreach ($file in $csv)
-		{
+		foreach ($file in $csv) {
 			try { $firstfewlines = Get-Content $file -First 3 -ErrorAction Stop }
 			catch { throw "$file is in use." }
-			foreach ($line in $firstfewlines)
-			{
-				if (($line -match $delimiter) -eq $false) { throw "Delimiter $delimiter not found in first row of $file." }
+			foreach ($line in $firstfewlines) {
+				if (($line -match $delimiter) -eq $false) {
+					throw "Delimiter $delimiter not found in first row of $file."
+				}
 			}
 		}
 		
 		# If more than one csv specified, check to ensure number of columns match
-		if ($csv -is [system.array])
-		{
+		if ($csv -is [system.array]) {
 			$numberofcolumns = ((Get-Content $csv[0] -First 1 -ErrorAction Stop) -Split $delimiter).Count
 			
-			foreach ($file in $csv)
-			{
+			foreach ($file in $csv) {
 				$firstline = Get-Content $file -First 1 -ErrorAction Stop
 				$newnumcolumns = ($firstline -Split $Delimiter).Count
-				if ($newnumcolumns -ne $numberofcolumns) { throw "Multiple csv file mismatch. Do both use the same delimiter and have the same number of columns?" }
+				if ($newnumcolumns -ne $numberofcolumns) {
+					throw "Multiple csv file mismatch. Do both use the same delimiter and have the same number of columns?"
+				}
 			}
 		}
 		
 		# Automatically generate Table name if not specified, then prompt user to confirm
-		if ($table.length -eq 0)
-		{
+		if ($table.length -eq 0) {
 			$table = [IO.Path]::GetFileNameWithoutExtension($csv[0])
             
-            #Count the dots in the file name.
-            #1 dot, treat it as schema.table naming
-            #2 or more dots, really should catch it as bad practice, but the rest of the script appears to let it pass
-            if (($table.ToCharArray() | ?{$_ -eq '.'} | Measure-Object).count -gt 0)
-            {
-                if (($schema -ne $table.Split('.')[0]) -and ($schema -ne 'dbo'))
-                {
-                    $title = "Conflicting schema names specified"
-                    $message = "Please confirm which schema you want to use."
-                    $schemaA = New-Object System.Management.Automation.Host.ChoiceDescription "&A - $schema", "Use schema name $schema for import."
-		            $schemaB = New-Object System.Management.Automation.Host.ChoiceDescription "&B - $($table.Split('.')[0])", "Use schema name $($table.Split('.')[0]) for import."
-		            $options = [System.Management.Automation.Host.ChoiceDescription[]]($schemaA, $schemaB)
-			        $result = $host.ui.PromptForChoice($title, $message, $options, 0)
-                    if ($result -eq 1)
-                    {
-                        $schema = $table.Split('.')[0]
-                        $tmparray = $table.split('.')
-                        $table = $tmparray[1..$tmparray.Length] -join '.'
-                    }
-                }
+			#Count the dots in the file name.
+			#1 dot, treat it as schema.table naming
+			#2 or more dots, really should catch it as bad practice, but the rest of the script appears to let it pass
+			if (($table.ToCharArray() | Where-Object {$_ -eq '.'} | Measure-Object).count -gt 0) {
+				if (($schema -ne $table.Split('.')[0]) -and ($schema -ne 'dbo')) {
+					$title = "Conflicting schema names specified"
+					$message = "Please confirm which schema you want to use."
+					$schemaA = New-Object System.Management.Automation.Host.ChoiceDescription "&A - $schema", "Use schema name $schema for import."
+					$schemaB = New-Object System.Management.Automation.Host.ChoiceDescription "&B - $($table.Split('.')[0])", "Use schema name $($table.Split('.')[0]) for import."
+					$options = [System.Management.Automation.Host.ChoiceDescription[]]($schemaA, $schemaB)
+					$result = $host.ui.PromptForChoice($title, $message, $options, 0)
+					if ($result -eq 1) {
+						$schema = $table.Split('.')[0]
+						$tmparray = $table.split('.')
+						$table = $tmparray[1..$tmparray.Length] -join '.'
+					}
+				}
 
-            } 
-            else 
-            {
-                $title = "Table name not specified."
-		        $message = "Would you like to use the automatically generated name: $table"
-		        $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Uses table name $table for import."
-		        $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Allows you to specify an alternative table name."
-		        $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-			    $result = $host.ui.PromptForChoice($title, $message, $options, 0)
-			    if ($result -eq 1)
-		        {
-			        do { $table = Read-Host "Please enter a table name" }
-			            while ($table.Length -eq 0)
-			        }
+			} 
+			else {
+				$title = "Table name not specified."
+				$message = "Would you like to use the automatically generated name: $table"
+				$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Uses table name $table for import."
+				$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Allows you to specify an alternative table name."
+				$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+				$result = $host.ui.PromptForChoice($title, $message, $options, 0)
+				if ($result -eq 1) {
+					do {
+						$table = Read-Host "Please enter a table name"
+					}
+					while ($table.Length -eq 0)
+				}
                 
-            }
-            }
+			}
+		}
 
-
-		
 		# If the shell has switched, decode the $query string.
-		if ($shellswitch -eq $true)
-		{
+		if ($shellswitch -eq $true) {
 			$bytes = [System.Convert]::FromBase64String($Query)
 			$query = [System.Text.Encoding]::UTF8.GetString($bytes)
 			$csv = $csv -Split ","
@@ -927,22 +935,19 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		# Create columns based on first data row of first csv.
 		Write-Output "[*] Calculating column names and datatypes"
 		$columns = Get-Columns -Csv $Csv -Delimiter $Delimiter -FirstRowColumns $FirstRowColumns
-		if ($columns.count -gt 255 -and $safe -eq $true)
-		{
+		if ($columns.count -gt 255 -and $safe -eq $true) {
 			throw "CSV must contain fewer than 256 columns."
 		}
 		
 		$columntext = Get-ColumnText -Csv $Csv -Delimiter $Delimiter
 		
 		# OLEDB method requires extra checks
-		if ($safe -eq $true)
-		{
+		if ($safe -eq $true) {
 			# Advanced SQL queries may not work (SqlBulkCopy likes a 1 to 1 mapping), so warn the user.
 			if ($Query -match "GROUP BY" -or $Query -match "COUNT") { Write-Warning "Script doesn't really support the specified query. This probably won't work, but will be attempted anyway." }
 			
 			# Check for proper SQL syntax, which for the purposes of this module must include the word "table"
-			if ($query.ToLower() -notmatch "\bcsv\b")
-			{
+			if ($query.ToLower() -notmatch "\bcsv\b") {
 				throw "SQL statement must contain the word 'csv'. Please see this module's documentation for more details."
 			}
 			
@@ -953,22 +958,28 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		}
 		
 		# Display SQL Server Login info
-		if ($sqlcredential.count -gt 0) { $username = "SQL login $($SqlCredential.UserName)" }
-		else { $username = "Windows login $(whoami)" }
+		if ($sqlcredential.count -gt 0) {
+			$username = "SQL login $($SqlCredential.UserName)"
+		}
+		else {
+			$username = "Windows login $(whoami)"
+		}
 		# Open Connection to SQL Server
 		Write-Output "[*] Logging into $SqlInstance as $username"
 		$sqlconn = New-Object System.Data.SqlClient.SqlConnection
-		if ($SqlCredential.count -eq 0)
-		{
+		if ($SqlCredential.count -eq 0) {
 			$sqlconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3; Initial Catalog=master"
 		}
-		else
-		{
+		else {
 			$sqlconn.ConnectionString = "Data Source=$SqlInstance;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3; Initial Catalog=master"
 		}
 		
-		try { $sqlconn.Open() }
-		catch { throw "Could not open SQL Server connection. Is $SqlInstance online?" }
+		try {
+			$sqlconn.Open()
+		}
+		catch {
+			throw "Could not open SQL Server connection. Is $SqlInstance online?"
+		}
 		
 		# Everything will be contained within 1 transaction, even creating a new table if required
 		# and truncating the table, if specified.
@@ -978,27 +989,32 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		$sql = "select count(*) from master.dbo.sysdatabases where name = '$database'"
 		$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 		$dbexists = $sqlcmd.ExecuteScalar()
-		if ($dbexists -eq $false) { throw "Database does not exist on $SqlInstance" }
+		if ($dbexists -eq $false) {
+			throw "Database does not exist on $SqlInstance"
+		}
 		Write-Output "[*] Database exists"
 		
 		$sqlconn.ChangeDatabase($database)
 
-        # Enure Schema exists
-        $sql = "select count(*) from $database.sys.schemas where name='$schema'"
-        $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+		# Enure Schema exists
+		$sql = "select count(*) from $database.sys.schemas where name='$schema'"
+		$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 		$schemaexists = $sqlcmd.ExecuteScalar()
         
-        # If Schema doesn't exist create it
-        # Defaulting to dbo.
-        if ($schemaexists -eq $false)
-        {
-            Write-Output "[*] Creating schema $schema"
+		# If Schema doesn't exist create it
+		# Defaulting to dbo.
+		if ($schemaexists -eq $false) {
+			Write-Output "[*] Creating schema $schema"
 			$sql = "CREATE SCHEMA [$schema] AUTHORIZATION dbo"
 			$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
-			try { $null = $sqlcmd.ExecuteNonQuery() }
-			catch { Write-Warning "Could not create $schema" }
+			try {
+				$null = $sqlcmd.ExecuteNonQuery()
+			}
+			catch {
+				Write-Warning "Could not create $schema"
+			}
 
-        }
+		}
 
 		
 		# Ensure table exists
@@ -1008,31 +1024,34 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		
 		# Create the table if required. Remember, this will occur within a transaction, so if the script fails, the
 		# new table will no longer exist.
-		if ($tablexists -eq $false)
-		{
+		if ($tablexists -eq $false) {
 			Write-Output "[*] Table does not exist"
 			Write-Output "[*] Creating table"
 			New-SqlTable -Csv $Csv -Delimiter $Delimiter -Columns $columns -ColumnText $columntext -SqlConn $sqlconn -Transaction $transaction
 		}
-		else { Write-Output "[*] Table exists" }
+		else {
+			Write-Output "[*] Table exists"
+		}
 		
 		# Truncate if specified. Remember, this will occur within a transaction, so if the script fails, the
 		# truncate will not be committed.
-		if ($truncate -eq $true)
-		{
+		if ($truncate -eq $true) {
 			Write-Output "[*] Truncating table"
 			$sql = "TRUNCATE TABLE [$schema].[$table]"
 			$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
-			try { $null = $sqlcmd.ExecuteNonQuery() }
-			catch { Write-Warning "Could not truncate $schema.$table" }
+			try {
+				$null = $sqlcmd.ExecuteNonQuery()
+			}
+			catch {
+				Write-Warning "Could not truncate $schema.$table"
+			}
 		}
 		
 		# Get columns for column mapping
-		if ($columnMappings -eq $null)
-		{
+		if ($columnMappings -eq $null) {
 			$olecolumns = ($columns | ForEach-Object { $_ -Replace "\[|\]" })
 			$sql = "select name from sys.columns where object_id = object_id('$schema.$table') order by column_id"
-            $sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
+			$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 			$sqlcolumns = New-Object System.Data.DataTable
 			$sqlcolumns.Load($sqlcmd.ExecuteReader())
 		}
@@ -1041,45 +1060,48 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 		
 		# Process each CSV file specified
-		foreach ($file in $csv)
-		{
+		foreach ($file in $csv) {
 			
 			# Dynamically set NotifyAfter if it wasn't specified
-			if ($notifyAfter -eq 0)
-			{
-				if ($resultcount -is [int]) { $notifyafter = $resultcount/10 }
-				else { $notifyafter = 50000 }
+			if ($notifyAfter -eq 0) {
+				if ($resultcount -is [int]) {
+					$notifyafter = $resultcount / 10
+				}
+				else {
+					$notifyafter = 50000
+				}
 			}
 			
 			# Setup bulk copy
 			Write-Output "[*] Starting bulk copy for $(Split-Path $file -Leaf)"
 			
 			# Setup bulk copy options
-
-
 			$bulkCopyOptions = @()
 			$options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default", "Truncate"
-			foreach ($option in $options)
-			{
+			foreach ($option in $options) {
 				$optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
-				if ($optionValue -eq $true) { $bulkCopyOptions += "$option" }
+				if ($optionValue -eq $true) {
+					$bulkCopyOptions += "$option"
+				}
 			}
 			$bulkCopyOptions = $bulkCopyOptions -join " & "
 			
 			# Create SqlBulkCopy using default options, or options specified in command line.
-			if ($bulkCopyOptions.count -gt 1) { $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($oleconnstring, $bulkCopyOptions, $transaction) }
-			else { $bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, "Default", $transaction) }
+			if ($bulkCopyOptions.count -gt 1) {
+				$bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($oleconnstring, $bulkCopyOptions, $transaction)
+			}
+			else {
+				$bulkcopy = New-Object Data.SqlClient.SqlBulkCopy($sqlconn, "Default", $transaction)
+			}
 			
 			$bulkcopy.DestinationTableName = "[$schema].[$table]"
 			$bulkcopy.bulkcopyTimeout = 0
 			$bulkCopy.BatchSize = $BatchSize
 			$bulkCopy.NotifyAfter = $NotifyAfter
 			
-			if ($safe -eq $true)
-			{
+			if ($safe -eq $true) {
 				# Setup bulkcopy mappings
-				for ($columnid = 0; $columnid -lt $sqlcolumns.rows.count; $columnid++)
-				{
+				for ($columnid = 0; $columnid -lt $sqlcolumns.rows.count; $columnid++) {
 					$null = $bulkCopy.ColumnMappings.Add($olecolumns[$columnid], $sqlcolumns.rows[$columnid].ItemArray[0])
 				}
 				
@@ -1102,31 +1124,36 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 				$olecmd.Connection = $oleconn
 				$olecmd.CommandText = $sql
 				
-				try { $oleconn.Open() }
-				catch { throw "Could not open OLEDB connection." }
+				try {
+					$oleconn.Open()
+				}
+				catch {
+					throw "Could not open OLEDB connection."
+				}
 				
 				# Attempt to get the number of results so that a nice progress bar can be displayed.
 				# This takes extra time, and files over 100MB take too long, so just skip them.
-				if ($sql -match "GROUP BY") { "Query contains GROUP BY clause. Skipping result count." }
-				else { Write-Output "[*] Determining total rows to be copied. This may take a few seconds." }
+				if ($sql -match "GROUP BY") {
+					"Query contains GROUP BY clause. Skipping result count."
+				}
+				else {
+					Write-Output "[*] Determining total rows to be copied. This may take a few seconds."
+				}
 				
-				if ($sql -match "\bselect top\b")
-				{
-					try
-					{
+				if ($sql -match "\bselect top\b") {
+					try {
 						$split = $sql -split "\bselect top \b"
 						$resultcount = [int]($split[1].Trim().Split()[0])
 						Write-Output "[*] Attempting to fetch $resultcount rows"
 					}
-					catch { Write-Warning "Couldn't determine total rows to be copied." }
+					catch {
+						Write-Warning "Couldn't determine total rows to be copied."
+					}
 				}
-				elseif ($sql -notmatch "GROUP BY")
-				{
+				elseif ($sql -notmatch "GROUP BY") {
 					$filesize = (Get-ChildItem $file).Length / 1MB
-					if ($filesize -lt 100)
-					{
-						try
-						{
+					if ($filesize -lt 100) {
+						try {
 							$split = $sql -split "\bfrom\b"
 							$sqlcount = "select count(*) from $($split[1])"
 							# Setup the OleDBCommand
@@ -1136,30 +1163,30 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 							$resultcount = [int]($olecmd.ExecuteScalar())
 							Write-Output "[*] $resultcount rows will be copied"
 						}
-						catch { Write-Warning "Couldn't determine total rows to be copied" }
+						catch {
+							Write-Warning "Couldn't determine total rows to be copied"
+						}
 					}
-					else
-					{
+					else {
 						Write-Output "[*] File is too large for efficient result count; progress bar will not be shown."
 					}
 				}
 			}
 			
 			# Write to server :D
-			try
-			{
-				if ($safe -ne $true)
-				{
+			try {
+				if ($safe -ne $true) {
 					# Check to ensure batchsize isn't equal to 0												
-					if ($batchsize -eq 0)
-					{
+					if ($batchsize -eq 0) {
 						write-warning "Invalid batchsize for this operation. Increasing to 50k"
 						$batchsize = 50000
 					}
 					
 					# Open the text file from disk 
 					$reader = New-Object System.IO.StreamReader($file)
-					if ($FirstRowColumns -eq $true) { $null = $reader.readLine() }
+					if ($FirstRowColumns -eq $true) {
+						$null = $reader.readLine()
+					}
 					
 					# Create the reusable datatable. Columns will be genereated using info from SQL.
 					$datatable = New-Object System.Data.DataTable
@@ -1173,8 +1200,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 					$sqlcolumns = New-Object System.Data.DataTable
 					$sqlcolumns.load($sqlcmd.ExecuteReader())
 					
-					foreach ($sqlcolumn in $sqlcolumns)
-					{
+					foreach ($sqlcolumn in $sqlcolumns) {
 						$datacolumn = $datatable.Columns.Add()
 						$colname = $sqlcolumn.colname
 						$datacolumn.AllowDBNull = $sqlcolumn.is_nullable
@@ -1185,28 +1211,36 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 						# The following data types can sometimes cause issues when they are null
 						# so we will treat them differently
 						$convert = "bigint", "DateTimeOffset", "UniqueIdentifier", "smalldatetime", "datetime"
-						if ($convert -notcontains $sqlcolumn.datatype -and $turbo -ne $true)
-						{
+						if ($convert -notcontains $sqlcolumn.datatype -and $turbo -ne $true) {
 							$null = $bulkCopy.ColumnMappings.Add($datacolumn.ColumnName, $sqlcolumn.colname)
 						}
 					}
 					# For the columns that cause trouble, we'll add an additional column to the datatable 
 					# which will perform a conversion.
 					# Setting $column.datatype alone doesn't work as well as setting+converting.
-					if ($turbo -ne $true)
-					{
+					if ($turbo -ne $true) {
 						$calcolumns = $sqlcolumns | Where-Object { $convert -contains $_.datatype }
-						foreach ($calcolumn in $calcolumns)
-						{
+						foreach ($calcolumn in $calcolumns) {
 							$colname = $calcolumn.colname
 							$null = $newcolumn = $datatable.Columns.Add()
 							$null = $newcolumn.ColumnName = "computed$colname"
-							switch ($calcolumn.datatype)
-							{
-								"bigint" { $netdatatype = "System.Int64"; $newcolumn.Datatype = [int64] }
-								"DateTimeOffset" { $netdatatype = "System.DateTimeOffset"; $newcolumn.Datatype = [DateTimeOffset] }
-								"UniqueIdentifier" { $netdatatype = "System.Guid"; $newcolumn.Datatype = [Guid] }
-								{ "smalldatetime", "datetime" -contains $_ } { $netdatatype = "System.DateTime"; $newcolumn.Datatype = [DateTime] }
+							switch ($calcolumn.datatype) {
+								"bigint" {
+									$netdatatype = "System.Int64";
+									$newcolumn.Datatype = [int64]
+								}
+								"DateTimeOffset" {
+									$netdatatype = "System.DateTimeOffset";
+									$newcolumn.Datatype = [DateTimeOffset]
+								}
+								"UniqueIdentifier" {
+									$netdatatype = "System.Guid";
+									$newcolumn.Datatype = [Guid]
+								}
+								{"smalldatetime", "datetime" -contains $_ } {
+									$netdatatype = "System.DateTime";
+									$newcolumn.Datatype = [DateTime]
+								}
 							}
 							# Use a data column expression to facilitate actual conversion
 							$null = $newcolumn.Expression = "Convert($colname, $netdatatype)"
@@ -1218,85 +1252,73 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 					$quoted = $false
 					$checkline = Get-Content $file -Last 1
 					$checkcolumns = $checkline.Split($delimiter)
-					foreach ($checkcolumn in $checkcolumns)
-					{
-						if ($checkcolumn.StartsWith('"') -and $checkcolumn.EndsWith('"')) { $quoted = $true }
+					foreach ($checkcolumn in $checkcolumns) {
+						if ($checkcolumn.StartsWith('"') -and $checkcolumn.EndsWith('"')) {
+							$quoted = $true
+						}
 					}
 					
-					if ($quoted -eq $true)
-					{
+					if ($quoted -eq $true) {
 						Write-Warning "The CSV file appears quote identified. This may take a little longer."
 						# Thanks for this, Chris! http://www.schiffhauer.com/c-split-csv-values-with-a-regular-expression/
 						$pattern = "((?<=`")[^`"]*(?=`"($delimiter|$)+)|(?<=$delimiter|^)[^$delimiter`"]*(?=$delimiter|$))"
 					}
-					if ($turbo -eq $true -and $first -eq 0)
-					{
-						while (($line = $reader.ReadLine()) -ne $null)
-						{
+					if ($turbo -eq $true -and $first -eq 0) {
+						while (($line = $reader.ReadLine()) -ne $null) {
 							$i++
-							if ($quoted -eq $true)
-							{
+							if ($quoted -eq $true) {
 								$null = $datatable.Rows.Add(($line.TrimStart('"').TrimEnd('"')) -Split "`"$delimiter`"")
 							}
-							else { $row = $datatable.Rows.Add($line.Split($delimiter)) }
+							else {
+								$row = $datatable.Rows.Add($line.Split($delimiter))
+							}
 							
-							if (($i % $batchsize) -eq 0)
-							{
+							if (($i % $batchsize) -eq 0) {
 								$bulkcopy.WriteToServer($datatable)
 								Write-Output "[*] $i rows have been inserted in $([math]::Round($elapsed.Elapsed.TotalSeconds, 2)) seconds"
 								$datatable.Clear()
 							}
 						}
 					}
-					else
-					{
+					else {
 						if ($turbo -eq $true -and $first -gt 0) { Write-Warning "Using -First makes turbo a smidge slower." }
 						# Start import!
-						while (($line = $reader.ReadLine()) -ne $null)
-						{
+						while (($line = $reader.ReadLine()) -ne $null) {
 							$i++
-							try
-							{
-								if ($quoted -eq $true)
-								{
+							try {
+								if ($quoted -eq $true) {
 									$row = $datatable.Rows.Add(($line.TrimStart('"').TrimEnd('"')) -Split $pattern)
 								}
-								else { $row = $datatable.Rows.Add($line.Split($delimiter)) }
+								else {
+									$row = $datatable.Rows.Add($line.Split($delimiter))
+								}
 							}
-							catch
-							{
+							catch {
 								$row = $datatable.NewRow()
-								try
-								{
+								try {
 									$tempcolumn = $line.Split($delimiter)
 									$colnum = 0
-									foreach ($column in $tempcolumn)
-									{
-										if ($column.length -ne 0)
-										{
+									foreach ($column in $tempcolumn) {
+										if ($column.length -ne 0) {
 											$row.item($colnum) = $column
 										}
-										else
-										{
+										else {
 											$row.item($colnum) = [DBnull]::Value
 										}
 										$colnum++
 									}
 									$newrow = $datatable.Rows.Add($row)
 								}
-								catch
-								{
+								catch {
 									Write-Warning "The following line ($i) is causing issues:"
 									Write-Output $line.Replace($delimiter, "`n")
 									
-									if ($quoted -eq $true)
-									{
+									if ($quoted -eq $true) {
 										Write-Warning "The import has failed, likely because the quoted data was a little too inconsistent. Try using the -Safe parameter."
 									}
 									
 									Write-Verbose "Column datatypes:"
-									foreach ($c in $datatable.columns)
-									{
+									foreach ($c in $datatable.columns) {
 										Write-Verbose "$($c.columnname) = $($c.datatype)"
 									}
 									Write-Error $_.Exception.Message
@@ -1304,61 +1326,57 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 								}
 							}
 							
-							if (($i % $batchsize) -eq 0 -or $i -eq $first)
-							{
+							if (($i % $batchsize) -eq 0 -or $i -eq $first) {
 								$bulkcopy.WriteToServer($datatable)
 								Write-Output "[*] $i rows have been inserted in $([math]::Round($elapsed.Elapsed.TotalSeconds, 2)) seconds"
 								$datatable.Clear()
-								if ($i -eq $first) { break }
+								if ($i -eq $first) {
+									break
+								}
 							}
 						}
 					}
 					# Add in all the remaining rows since the last clear 
-					if ($datatable.Rows.Count -gt 0)
-					{
+					if ($datatable.Rows.Count -gt 0) {
 						$bulkcopy.WriteToServer($datatable)
 						$datatable.Clear()
 					}
 				}
-				else
-				{
+				else {
 					# Add rowcount output
-					$bulkCopy.Add_SqlRowscopied({
-						$script:totalrows = $args[1].RowsCopied
-						if ($resultcount -is [int])
-						{
-							$percent = [int](($script:totalrows/$resultcount) * 100)
-							$timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 2)
-							Write-Progress -id 1 -activity "Inserting $resultcount rows" -percentcomplete $percent `
-										   -status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
-						}
-						else
-						{
-							Write-Host "$($script:totalrows) rows copied in $([math]::Round($elapsed.Elapsed.TotalSeconds, 2)) seconds"
-						}
-					})
+					$bulkCopy.Add_SqlRowscopied( {
+							$script:totalrows = $args[1].RowsCopied
+							if ($resultcount -is [int]) {
+								$percent = [int](($script:totalrows / $resultcount) * 100)
+								$timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 2)
+								Write-Progress -id 1 -activity "Inserting $resultcount rows" -percentcomplete $percent `
+									-status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
+							}
+							else {
+								Write-Host "$($script:totalrows) rows copied in $([math]::Round($elapsed.Elapsed.TotalSeconds, 2)) seconds"
+							}
+						})
 					
 					$bulkCopy.WriteToServer($olecmd.ExecuteReader("SequentialAccess"))
-					if ($resultcount -is [int]) { Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Complete" -Completed }
+					if ($resultcount -is [int]) {
+						Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Complete" -Completed
+					}
 					
 				}
 				$completed = $true
 			}
-			catch
-			{
+			catch {
 				# If possible, give more information about common errors.
 				if ($resultcount -is [int]) { Write-Progress -id 1 -activity "Inserting $resultcount rows" -status "Failed" -Completed }
 				$errormessage = $_.Exception.Message.ToString()
 				$completed = $false
-				if ($errormessage -like "*for one or more required parameters*")
-				{
+				if ($errormessage -like "*for one or more required parameters*") {
 					
 					Write-Error "Looks like your SQL syntax may be invalid. `nCheck the documentation for more information or start with a simple -Query 'select top 10 * from csv'"
 					Write-Error "Valid CSV columns are $columns"
 					
 				}
-				elseif ($errormessage -match "invalid column length")
-				{
+				elseif ($errormessage -match "invalid column length") {
 					
 					# Get more information about malformed CSV input
 					$pattern = @("\d+")
@@ -1371,21 +1389,17 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 					$column = $datatable.name
 					$length = $datatable.max_length
 					
-					if ($safe -eq $true)
-					{
+					if ($safe -eq $true) {
 						Write-Warning "Column $index ($column) contains data with a length greater than $length"
 						Write-Warning "SqlBulkCopy makes it pretty much impossible to know which row caused the issue, but it's somewhere after row $($script:totalrows)."
 					}
 				}
-				elseif ($errormessage -match "does not allow DBNull" -or $errormessage -match "The given value of type")
-				{
+				elseif ($errormessage -match "does not allow DBNull" -or $errormessage -match "The given value of type") {
 					
-					if ($tablexists -eq $false)
-					{
+					if ($tablexists -eq $false) {
 						Write-Error "Looks like the datatype prediction didn't work out. Please create the table manually with proper datatypes then rerun the import script."
 					}
-					else
-					{
+					else {
 						$sql = "select name from sys.columns where object_id = object_id('$table') order by column_id"
 						$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
 						$datatable = New-Object System.Data.DataTable
@@ -1398,8 +1412,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 						Write-Output "[*] CSV order: $olecolumns`n"
 						Write-Output "[*] SQL order: $($datatable.rows.name -join ', ')`n"
 						Write-Output "[*] If this is the case, you can reorder columns by using the -Query parameter or execute the import against a view.`n"
-						if ($safe -eq $false)
-						{
+						if ($safe -eq $false) {
 							Write-Output "[*] You can also try running this import using the -Safe parameter, which handles quoted text well.`n"
 						}
 						Write-Error "`n$errormessage"
@@ -1407,8 +1420,7 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 					
 					
 				}
-				elseif ($errormessage -match "Input string was not in a correct format" -or $errormessage -match "The given ColumnName")
-				{
+				elseif ($errormessage -match "Input string was not in a correct format" -or $errormessage -match "The given ColumnName") {
 					Write-Warning "CSV contents may be malformed."
 					Write-Error $errormessage
 				}
@@ -1416,23 +1428,19 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 			}
 		}
 		
-		if ($completed -eq $true)
-		{
+		if ($completed -eq $true) {
 			# "Note: This count does not take into consideration the number of rows actually inserted when Ignore Duplicates is set to ON."
 			$null = $transaction.Commit()
 			
-			if ($safe -eq $false)
-			{
+			if ($safe -eq $false) {
 				Write-Output "[*] $i total rows copied"
 			}
-			else
-			{
+			else {
 				$total = [System.Data.SqlClient.SqlBulkCopyExtension]::RowsCopiedCount($bulkcopy)
 				Write-Output "[*] $total total rows copied"
 			}
 		}
-		else
-		{
+		else {
 			Write-Output "[*] Transaction rolled back."
 			Write-Output "[*] (Was the proper parameter specified? Is the first row the column name?)."
 		}
@@ -1442,46 +1450,46 @@ Triggers are fired for all rows. Note that this does slightly slow down the impo
 		Write-Output "[*] Total Elapsed Time for bulk insert: $totaltime seconds"
 	}
 	
-	End
-	{
+	End {
 		# Close everything just in case & ignore errors
-		try
-		{
+		try {
 			$null = $sqlconn.close(); $null = $sqlconn.Dispose(); $null = $oleconn.close;
 			$null = $olecmd.Dispose(); $null = $oleconn.Dispose(); $null = $bulkCopy.close();
 			$null = $bulkcopy.dispose(); $null = $reader.close; $null = $reader.dispose()
 		}
-		catch { }
+		catch {
+
+		}
 		
 		# Delete all the temp files
-		if ($SqlCredentialPath.length -gt 0)
-		{
-			if ((Test-Path $SqlCredentialPath) -eq $true)
-			{
+		if ($SqlCredentialPath.length -gt 0) {
+			if ((Test-Path $SqlCredentialPath) -eq $true) {
 				$null = cmd /c "del $SqlCredentialPath"
 			}
 		}
 		
-        if ($shellswitch -eq $false -and $safe -eq $true) {
-            # Delete new schema files
-            Write-Verbose "Removing automatically generated schema.ini"
-            foreach ($file in $csv) {
-                $directory = Split-Path $file
-                $null = cmd /c "del $directory\schema.ini" | Out-Null
-            }
+		if ($shellswitch -eq $false -and $safe -eq $true) {
+			# Delete new schema files
+			Write-Verbose "Removing automatically generated schema.ini"
+			foreach ($file in $csv) {
+				$directory = Split-Path $file
+				$null = cmd /c "del $directory\schema.ini" | Out-Null
+			}
 			
-            # If a shell switch occured, delete the temporary module file.
-            if ((Test-Path "$env:TEMP\Import-DbaCsvToSql.psm1") -eq $true) { cmd /c "del $env:TEMP\Import-DbaCsvToSql.psm1" | Out-Null }
+			# If a shell switch occured, delete the temporary module file.
+			if ((Test-Path "$env:TEMP\Import-DbaCsvToSql.psm1") -eq $true) {
+				cmd /c "del $env:TEMP\Import-DbaCsvToSql.psm1" | Out-Null
+			}
 			
-            # Move original schema.ini's back if they existed
-            if ($movedschemainis.count -gt 0) {
-                foreach ($item in $movedschemainis) {
-                    Write-Verbose "Moving $($item.keys) back to $($item.values)"
-                    $null = cmd /c "move $($item.keys) $($item.values)"
-                }
-            }
-            Write-Output "[*] Finished at $(Get-Date)"
-        }
+			# Move original schema.ini's back if they existed
+			if ($movedschemainis.count -gt 0) {
+				foreach ($item in $movedschemainis) {
+					Write-Verbose "Moving $($item.keys) back to $($item.values)"
+					$null = cmd /c "move $($item.keys) $($item.values)"
+				}
+			}
+			Write-Output "[*] Finished at $(Get-Date)"
+		}
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Import-CsvToSql
 	}
 }
