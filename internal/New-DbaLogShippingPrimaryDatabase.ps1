@@ -37,6 +37,9 @@ Is the network path to the backup directory on the primary server.
 Is the length of time, in minutes, after the last backup before a threshold_alert error is raised.
 The default is 60.
 
+.PARAMETER CompressBackup
+Enables the use of backup compression
+
 .PARAMETER ThressAlert
 Is the length of time, in minutes, when the alert is to be raised when the backup threshold is exceeded.
 The default is 14,420.
@@ -122,11 +125,11 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 
 		[int]$BackupThreshold = 60,
 
+		[switch]$CompressBackup,
+
 		[int]$ThressAlert = 14420,
 
 		[int]$HistoryRetention = 14420,
-
-		[switch]$CompressBackup,
 
 		[string]$MonitorServer,
 
@@ -165,13 +168,19 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 	}
 
 	# Check the backup compression
-	if ($CompressBackup) {
-		$BackupCompression = 1
+	if ($CompressBackup -eq $true) {
 		Write-Message -Message "Setting backup compression to 1." -Level Verbose
+		$BackupCompression = 1
 	}
-	else {
-		$BackupCompression = 0
+	elseif($CompressBackup -eq $false){
 		Write-Message -Message "Setting backup compression to 0." -Level Verbose
+		$BackupCompression = 0
+	}
+	elseif(-not $CompressBackup) {
+		$defaultCompression = (Get-DbaSpConfigure -SqlInstance $SqlInstance -ConfigName DefaultBackupCompression).ConfiguredValue
+		Write-Message -Message "Setting backup compression to default value $defaultCompression." -Level Verbose
+		$BackupCompression = $defaultCompression
+		
 	}
 
 	# Check of the MonitorServerSecurityMode value is of type string and set the integer value
@@ -244,7 +253,7 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
             ,@primary_id = @LS_PrimaryId OUTPUT "
 
 	# Check the MonitorServerSecurityMode if it's SQL Server authentication
-	if ($MonitorServerSecurityMode -eq 0) {
+	if ($MonitorServer -and $MonitorServerSecurityMode -eq 0 ) {
 		$Query += ",@monitor_server_login = N'$MonitorLogin'
             ,@monitor_server_password = N'$MonitorPassword' "
 	}
