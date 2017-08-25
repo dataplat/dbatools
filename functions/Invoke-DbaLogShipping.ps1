@@ -760,12 +760,12 @@ The script will show a message that the copy destination has not been supplied a
 		# Check the backup compression
 		if ($CompressBackup) {
 			Write-Message -Message "Setting backup compression to 1." -Level Verbose
-			[int]$BackupCompression = 1
+			[bool]$BackupCompression = 1
 		}
 		else {
-			$backupServerSetting = (Get-DbaSpConfigure -SqlInstance SourceSqlInstance -ConfigName DefaultBackupCompression).ConfiguredValue
+			$backupServerSetting = (Get-DbaSpConfigure -SqlInstance $SourceSqlInstance -ConfigName DefaultBackupCompression).ConfiguredValue
 			Write-Message -Message "Setting backup compression to default server setting $backupServerSetting." -Level Verbose
-			[int]$BackupCompression = $backupServerSetting
+			[bool]$BackupCompression = $backupServerSetting
 		}
 
 		# Set the database mode
@@ -1376,7 +1376,7 @@ The script will show a message that the copy destination has not been supplied a
 				}
 
 				# Check the primary monitor server
-				if ($Force -and -not($PrimaryMonitorServer) -or (([string]$PrimaryMonitorServer -eq '') -or ($PrimaryMonitorServer -eq $null))) {
+				if ($Force -and (-not$PrimaryMonitorServer -or [string]$PrimaryMonitorServer -eq '' -or $PrimaryMonitorServer -eq $null)) {
 					Write-Message -Message "Setting monitor server for primary server to $SourceSqlInstance." -Level Output
 					$PrimaryMonitorServer = $SourceSqlInstance
 				}
@@ -1400,9 +1400,9 @@ The script will show a message that the copy destination has not been supplied a
 				}
 
 				# Check the secondary monitor server
-				if ($SecondaryMonitorServer) {
-					Write-Message -Message "Setting secondary monitor server for $DestinationSqlInstance to $SecondaryMonitorServer." -Level Verbose
-					$SecondaryMonitorServer = $DestinationSqlInstance
+				if ($Force -and (-not $SecondaryMonitorServer -or [string]$SecondaryMonitorServer -eq '' -or $SecondaryMonitorServer -eq $null)) {
+					Write-Message -Message "Setting secondary monitor server for $DestinationSqlInstance to $SourceSqlInstance." -Level Verbose
+					$SecondaryMonitorServer = $SourceSqlInstance
 				}
 
 				# Check the MonitorServerSecurityMode if it's SQL Server authentication
@@ -1545,7 +1545,7 @@ The script will show a message that the copy destination has not been supplied a
 							-BackupRetention $BackupRetention `
 							-BackupShare $DatabaseBackupNetworkPath `
 							-BackupThreshold $BackupThreshold `
-							-CompressBackup:$CompressBackup `
+							-CompressBackup:$BackupCompression `
 							-HistoryRetention $HistoryRetention `
 							-MonitorServer $PrimaryMonitorServer `
 							-MonitorServerSecurityMode $PrimaryMonitorServerSecurityMode `
