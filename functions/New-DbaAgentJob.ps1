@@ -397,7 +397,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 	}
 	
 	end {
-		Write-Message -Message "Finished creating job(s)." -Level Output
+		Write-Message -Message "Finished creating job(s)." -Level Verbose
 	}
 	
 }
