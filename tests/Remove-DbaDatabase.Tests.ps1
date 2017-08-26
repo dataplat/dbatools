@@ -36,4 +36,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore | Should Be $null
         }
 	}
+    Context "Should remove restoring database and return useful errors if it cannot." {
+		It "Should remove a non system database." {
+			Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
+			Get-DbaProcess -SqlInstance $script:instance1 -Database singlerestore | Stop-DbaProcess
+			Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -WithReplace -NoRecovery
+            (Connect-DbaSqlServer -SqlInstance $script:instance1).Databases['singlerestore'].IsAccessible | Should Be $false
+            Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
+            Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore | Should Be $null
+    }
+    }
 }

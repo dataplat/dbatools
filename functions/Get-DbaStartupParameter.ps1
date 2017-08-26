@@ -69,7 +69,7 @@ Function Get-DbaStartupParameter {
                 $instanceName = $instance.InstanceName
                 $ogInstance = $instance.FullSmoName
                 
-                $computerName = (Resolve-DbaNetworkName -ComputerName $computerName).ComputerName
+                $computerName = (Resolve-DbaNetworkName -ComputerName $computerName).FullComputerName
                 
                 Write-Message -Level Verbose -message "Attempting to connect to $computerName"
                 

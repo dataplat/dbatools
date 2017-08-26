@@ -35,7 +35,7 @@ function Install-DbaMaintenanceSolution {
         You can choose to install the complete solution (All) or only one of:  Backup / IntegrityCheck / IndexOptimize
 
     .PARAMETER InstallJobs
-        Create SQL Agent Jobs. Valid options are: 'Create', 'Delete', 'Skip'
+        Create SQL Agent Jobs
         
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -151,7 +151,7 @@ function Install-DbaMaintenanceSolution {
             }
             
             if ($CleanupTime -ne 0 -and $InstallJobs -eq $false) {
-                Write-Message -Level Output -Message  "CleanupTime $CleanupTime value will be ignored because you chose not to create SQL Agent Jobs"
+                Write-Message -Level Output -Message "CleanupTime $CleanupTime value will be ignored because you chose not to create SQL Agent Jobs"
             }
     
             # Required
@@ -280,7 +280,7 @@ function Install-DbaMaintenanceSolution {
                 $null = $db.Query($CleanupQuery)
                                 
                 # Remove Ola's Jobs                     
-                if ($InstallJobs) {
+                if ($InstallJobs -and $ReplaceExisting) {
                     Write-Message -Level Output -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution"
                     $jobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
                     if ($jobs) {

@@ -1,93 +1,97 @@
 function Measure-DbaBackupThroughput {
-<#
-.SYNOPSIS
-Determines how quickly SQL Server is backing up databases to media.
+	<#
+		.SYNOPSIS
+			Determines how quickly SQL Server is backing up databases to media.
 
-.DESCRIPTION
-Returns backup history details for some or all databases on a SQL Server. 
+		.DESCRIPTION
+			Returns backup history details for one or more databases on a SQL Server. 
 
-Output looks like this
-SqlInstance     : sql2016
-Database        : SharePoint_Config
-AvgThroughputMB : 1.07
-AvgSizeMB       : 24.17
-AvgDuration     : 00:00:01.1000000
-MinThroughputMB : 0.02
-MaxThroughputMB : 2.26
-MinBackupDate   : 8/6/2015 10:22:01 PM
-MaxBackupDate   : 6/19/2016 12:57:45 PM
-BackupCount     : 10
+			Output looks like this:
+			SqlInstance     : sql2016
+			Database        : SharePoint_Config
+			AvgThroughputMB : 1.07
+			AvgSizeMB       : 24.17
+			AvgDuration     : 00:00:01.1000000
+			MinThroughputMB : 0.02
+			MaxThroughputMB : 2.26
+			MinBackupDate   : 8/6/2015 10:22:01 PM
+			MaxBackupDate   : 6/19/2016 12:57:45 PM
+			BackupCount     : 10
 
-.PARAMETER SqlInstance
-SqlInstance name or SMO object representing the SQL Server to connect to.
-This can be a collection and receive pipeline input.
+		.PARAMETER SqlInstance
+			The SQL Server instance.
 
-.PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, current Windows login will be used.
+        .PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto-populated from the server
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.PARAMETER Type
-By default, this command measures the speed of Full backups. You can also specify Log or Differential.
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Since
-Datetime object used to narrow the results to a date
+		.PARAMETER Database
+			The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Last
-Measure only the last backup
+		.PARAMETER ExcludeDatabase
+			The database(s) to exclude. Options for this list are auto-populated from the server.
 
-.PARAMETER DeviceType
-Filters the backup set by this DeviceType. It takes well-known types ('Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device') as well as custom integers (bring your own types)
+		.PARAMETER Type
+			By default, this command measures the speed of Full backups. Valid options are "Full", "Log" and "Differential".
 
-.PARAMETER Silent
-Replaces user friendly yellow warnings with bloody red exceptions of doom!
-Use this if you want the function to throw terminating errors you want to catch.
+		.PARAMETER Since
+			 All backups taken on or after the point in time represented by this datetime object will be processed.
 
-.NOTES
-Tags: DisasterRecovery, Backup, Databases
+		.PARAMETER Last
+			If this switch is enabled, only the last backup will be measured.
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+		.PARAMETER DeviceType
+			Specifies one or more DeviceTypes to use in filtering backup sets. Valid values are "Disk", "Permanent Disk Device", "Tape", "Permanent Tape Device", "Pipe", "Permanent Pipe Device" and "Virtual Device", as well as custom integers for your own DeviceTypes.
 
-.LINK
-https://dbatools.io/Measure-DbaBackupThroughput
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
 
-.EXAMPLE
-Measure-DbaBackupThroughput -SqlInstance sql2016
+		.NOTES
+			Tags: DisasterRecovery, Backup, Databases
 
-Parses every backup in msdb's backuphistory for stats on all databases
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.EXAMPLE
-Measure-DbaBackupThroughput -SqlInstance sql2016 -Database AdventureWorks2014
+		.LINK
+			https://dbatools.io/Measure-DbaBackupThroughput
 
-Parses every backup in msdb's backuphistory for stats on AdventureWorks2014
-	
-.EXAMPLE
-Measure-DbaBackupThroughput -SqlInstance sql2005 -Last
+		.EXAMPLE
+			Measure-DbaBackupThroughput -SqlInstance sql2016
 
-Processes the last full, diff and log backups every backup for all databases on sql2005
-	
-.EXAMPLE
-Measure-DbaBackupThroughput -SqlInstance sql2005 -Last -Type Log
-	
-Processes the last log backups every backup for all databases on sql2005
+			Parses every backup in msdb's backuphistory for stats on all databases.
 
-.EXAMPLE
-Measure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-7)
-	
-Gets backup calculations for the last week
-	
-.EXAMPLE
-Measure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-365) -Database bigoldb
-	
-Gets backup calculations, limited to the last year and only the bigoldb database
+		.EXAMPLE
+			Measure-DbaBackupThroughput -SqlInstance sql2016 -Database AdventureWorks2014
 
-#>
+			Parses every backup in msdb's backuphistory for stats on AdventureWorks2014.
+			
+		.EXAMPLE
+			Measure-DbaBackupThroughput -SqlInstance sql2005 -Last
+
+			Processes the last full, diff and log backups every backup for all databases on sql2005.
+			
+		.EXAMPLE
+			Measure-DbaBackupThroughput -SqlInstance sql2005 -Last -Type Log
+			
+			Processes the last log backups every backup for all databases on sql2005.
+
+		.EXAMPLE
+			Measure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-7)
+			
+			Gets backup calculations for the last week.
+			
+		.EXAMPLE
+			Measure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-365) -Database bigoldb
+			
+			Gets backup calculations, limited to the last year and only the bigoldb database
+
+	#>
 	[CmdletBinding()]
 	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
@@ -109,7 +113,7 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 	process {
 		foreach ($instance in $SqlInstance) {
 			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance"
+				Write-Message -Level Verbose -Message "Connecting to $instance."
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
@@ -128,7 +132,7 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 			}
 			
 			foreach ($db in $DatabaseCollection) {
-				Write-Message -Level VeryVerbose -Message "Retrieving history for $db"
+				Write-Message -Level VeryVerbose -Message "Retrieving history for $db."
 				$allhistory = @()
 				
 				# Splatting didn't work
@@ -154,7 +158,7 @@ Gets backup calculations, limited to the last year and only the bigoldb database
 					$allhistory += $history | Select-Object ComputerName, InstanceName, SqlInstance, Database, MBps, TotalSize, Start, End
 				}
 				
-				Write-Message -Level VeryVerbose -Message "Calculating averages for $db"
+				Write-Message -Level VeryVerbose -Message "Calculating averages for $db."
 				foreach ($db in ($allhistory | Sort-Object Database | Group-Object Database)) {
 					
 					$measuremb = $db.Group.MBps | Measure-Object -Average -Minimum -Maximum
