@@ -151,6 +151,6 @@ Removes the job from multiple servers using pipe line
     } # process
 
     end {
-        Write-Message -Message "Finished removing jobs(s)." -Level Output
+        Write-Message -Message "Finished removing jobs(s)." -Level Verbose
     }
 }
