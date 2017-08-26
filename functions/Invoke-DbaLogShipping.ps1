@@ -612,7 +612,7 @@ The script will show a message that the copy destination has not been supplied a
 		# Try connecting to the instance
 		Write-Message -Message "Attempting to connect to source Sql Server $SourceSqlInstance.." -Level Output
 		try {
-			$SourceServer = Connect-DbaSqlServer -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential
+			$SourceServer = Connect-SqlInstance -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential
 		}
 		catch {
 			Stop-Function -Message "Could not connect to Sql Server instance $SourceSqlInstance" -InnerErrorRecord $_ -Target $SourceSqlInstance 
@@ -622,7 +622,7 @@ The script will show a message that the copy destination has not been supplied a
 		# Try connecting to the instance
 		Write-Message -Message "Attempting to connect to destination Sql Server $DestinationSqlInstance.." -Level Output
 		try {
-			$DestinationServer = Connect-DbaSqlServer -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential
+			$DestinationServer = Connect-SqlInstance -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential
 		}
 		catch {
 			Stop-Function -Message "Could not connect to Sql Server instance $DestinationSqlInstance" -InnerErrorRecord $_ -Target $DestinationSqlInstance 
@@ -1697,6 +1697,6 @@ The script will show a message that the copy destination has not been supplied a
 	}
 
 	end {
-		Write-Message -Message "Finished setting up log shipping." -Level Output
+		Write-Message -Message "Finished setting up log shipping." -Level Verbose
 	}
 }
