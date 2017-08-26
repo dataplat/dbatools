@@ -12,36 +12,45 @@ function Import-DbaCsvToSql {
 
 			The Query parameter will be used to import only the data returned from a SQL Query executed against the CSV file(s). This function supports a number of bulk copy options. Please see parameter list for details.
 
-			THIS CODE IS PROVIDED "AS IS", WITH NO WARRANTIES.
-
 		.PARAMETER CSV
-			Required. The location of the CSV file(s) to be imported. Multiple files are allowed, so long as they are formatted similarly. If no CSV file is specified, a Dialog box will appear.
+			Specifies path to the CSV file(s) to be imported. Multiple files may be imported if they are formatted similarly.
+			
+			If no file is specified, a dialog box will appear to select your file(s).
 
 		.PARAMETER FirstRowColumns
-			Optional. This parameter specifies whether the first row contains column names. If the first row does not contain column names and -Query is specified, use field names "column1, column2, column3" and so on.
+			If this switch is enabled, the first row in the file will be used as column names for the data being imported.
+			
+			If the first row does not contain column names and -Query is specified, use field names "column1, column2, column3" and so on.
 
 		.PARAMETER Delimiter
-			Optional. If you do not pass a Delimiter, then a comma will be used. Valid Delimiters include: tab "`t", pipe "|", semicolon ";", and space " ".
+			Specifies the delimiter used in the imported file(s). If no delimiter is specified, comma is assumed.
+			
+			Valid delimiters are '`t`, '|', ';',' ' and ',' (tab, pipe, semicolon, space, and comma).
 
-		.PARAMETER SqlInstance
-			Required. The destination SQL Server.
-
+        .PARAMETER SqlInstance
+            The SQL Server Instance to import data into.
+        
 		.PARAMETER SqlCredential
-			Connect to SQL Server using specified SQL Login credentials.
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
+
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Database
-			Required. The name of the database where the CSV will be imported into. This parameter is auto-populated using the -SqlInstance and -SqlCredential (optional) parameters. 
+			Specifies the name of the database the CSV will be imported into. Options for this this parameter are  auto-populated from the server.
 
 		.PARAMETER Schema
-			The schema in which the SQL table or view where CSV will be imported into resides.
-			Default is dbo
+			Specifies the schema in which the SQL table or view where CSV will be imported into resides. Default is dbo
 
-			If a schema name is not specified, and a CSV with multiple . (ie; something.data.csv) then this will be interpreted as a request to import into a table [data] in the schema [something]
+			If a schema name is not specified, and a CSV name with multiple dots is specified (ie; something.data.csv) then this will be interpreted as a request to import into a table [data] in the schema [something].
 
 			If a schema does not currently exist, it will be created, after a prompt to confirm this. Authorization will be set to dbo by default
 
 		.PARAMETER Table
-			SQL table or view where CSV will be imported into. 
+			Specifies the SQL table or view where CSV will be imported into. 
 
 			If a table name is not specified, the table name will be automatically determined from the filename, and a prompt will appear to confirm the table name.
 
@@ -50,58 +59,62 @@ function Import-DbaCsvToSql {
 			If the automatically generated table datatypes do not work for you, please create the table prior to import.
 
 		.PARAMETER Truncate
-			Truncate table prior to import.
+			If this switch is enabled, the destination table will be truncated prior to import.
 
 		.PARAMETER Safe
-			Optional. By default, Import-DbaCsvToSql uses StreamReader for imports. StreamReader is super fast, but may not properly parse some files. 
+			If this switch is enabled, OleDb is used to import the records. By default, Import-DbaCsvToSql uses StreamReader for imports. StreamReader is super fast, but may not properly parse some files. 
 
-			Safe uses OleDb to import the records, it's slower, but more predictable when it comes to parsing CSV files. A schema.ini is automatically generated for best results. If schema.ini currently exists in the directory, it will be moved to a temporary location, then moved back.
+			When using OleDb the import will be slower but more predictable when it comes to parsing CSV files. A schema.ini is automatically generated for best results. If schema.ini currently exists in the directory, it will be moved to a temporary location, then moved back.
 
 			OleDB also enables the script to use the -Query parameter, which enables you to import specific subsets of data within a CSV file. OleDB imports at up to 21,000 rows/sec.
 
 		.PARAMETER Turbo
-			Optional. Cannot be used in conjunction with -Query.
+			If this switch is enabled, a Table Lock will be created for the import to make the import run as fast as possible. Depending upon the number of columns and datatypes, this may be over 90,000 records per second.
+			
+			This switch cannot be used in conjunction with -Query.
 
 			Remember the Turbo button? This one actually works. Turbo is mega fast, but may not handle some datatypes as well as other methods. 
 
-			If your CSV file is rather vanilla and doesn't have a ton of NULLs, Turbo may work well for you.  Note: Turbo mode uses a Table Lock.
+			If your CSV file is rather vanilla and doesn't have a ton of NULLs, Turbo may work well for you.
 
-			StreamReader/Turbo imports at up to 90,000 rows/sec (well, 93,000 locally for a 19 column file so, really, the number may be over 100,000 rows/sec for tables with only a couple columns using optimized datatypes).
-			
 		.PARAMETER First
-			Only import first X rows. Count starts at the top of the file, but skips the first row if FirstRowColumns was specified.
+			Specifies the number of rows to import. If this parameter is omitted, the entire file is imported. Row counts start at the top of the file, but skip the first row if -FirstRowColumns is specified.
 
 			Use -Query if you need advanced First (TOP) functionality.
 
 		.PARAMETER Query
-			Optional. Cannot be used in conjunction with -Turbo or -First. When Query is specified, the slower import method, OleDb, will be used.
-
-			If you want to import just the results of a specific query from your CSV file, use this parameter. To make command line queries easy, this module will convert the word "csv" to the actual CSV formatted table name. If the FirstRowColumns switch is not used, the query should use column1, column2, column3, etc.
+			Specifies a query to execute against the CSV data to select/modify the data being imported.
+			
+			To make command line queries easy, this module will convert the word "csv" to the actual CSV formatted table name. If the FirstRowColumns switch is not used, the query should use column1, column2, column3, etc.
+			
+			Cannot be used in conjunction with -Turbo or -First. When -Query is specified, the slower import method, OleDb, will be used.
 
 		.PARAMETER NotifyAfter
-			Sets the option to show the notification after so many rows of import
+			Specifies the import row count interval for reporting progress. A notification will be shown after each group of this many rows has been imported.
 
 		.PARAMETER BatchSize
-			The batchsize for the import defaults to 5000
-
-			Example: select column1, column2, column3 from csv where column2 > 5
-			Example: select distinct artist from csv
-			Example: select top 100 artist, album from csv where category = 'Folk'
-
-			See EXAMPLES for more example syntax.
+			Specifies the batch size for the import. Defaults to 5000.
 
 		.PARAMETER TableLock
-			SqlBulkCopy option. Per Microsoft "Obtain a bulk update lock for the duration of the bulk copy operation. When not 
-			specified, row locks are used." TableLock is automatically used when Turbo is specified.
+			If this switch is enabled, the SqlBulkCopy option to acquire a table lock will be used. This is automatically used if -Turbo is enabled.
+			
+			Per Microsoft "Obtain a bulk update lock for the duration of the bulk copy operation. When not 
+			specified, row locks are used."
 				
 		.PARAMETER CheckConstraints
-			SqlBulkCopy option. Per Microsoft "Check constraints while data is being inserted. By default, constraints are not checked."
+			If this switch is enabled, the SqlBulkCopy option to check constraints will be used.
+			
+			Per Microsoft "Check constraints while data is being inserted. By default, constraints are not checked."
 
 		.PARAMETER FireTriggers
-			SqlBulkCopy option. Per Microsoft "When specified, cause the server to fire the insert triggers for the rows being inserted into the database."
+			If this switch is enabled, the SqlBulkCopy option to allow insert triggers to be executed will be used.
+			
+			Per Microsoft "When specified, cause the server to fire the insert triggers for the rows being inserted into the database."
 
 		.PARAMETER KeepIdentity
-			SqlBulkCopy option. Per Microsoft "Preserve source identity values. When not specified, identity values are assigned by the destination."
+			If this switch is enabled, the SqlBulkCopy option to keep identity values from the source will be used.
+			
+			Per Microsoft "Preserve source identity values. When not specified, identity values are assigned by the destination."
 
 		.PARAMETER KeepNulls
 			SqlBulkCopy option. Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
@@ -156,6 +169,7 @@ function Import-DbaCsvToSql {
 		[string]$Table,
 		[string]$Schema = "dbo",
 		[switch]$Truncate,
+		[ValidateSet("`t", "|", ";", " ", ",")]
 		[string]$Delimiter = ",",
 		[switch]$FirstRowColumns,
 		[parameter(ParameterSetName = "reader")]
@@ -165,7 +179,7 @@ function Import-DbaCsvToSql {
 		[int]$First = 0,
 		[parameter(ParameterSetName = "ole")]
 		[string]$Query = "select * from csv",
-		[int]$BatchSize = 50000,
+		[int]$BatchSize = 5000,
 		[int]$NotifyAfter,
 		[switch]$TableLock,
 		[switch]$CheckConstraints,
@@ -286,7 +300,8 @@ function Import-DbaCsvToSql {
 				$conn.Dispose()
 				return $true
 			}
-			catch { return $false
+			catch {
+				return $false
 			}
 		}
 		
@@ -520,7 +535,6 @@ function Import-DbaCsvToSql {
 					Col3="Price" Double
 					
 					Returns an array of existing schema files that have been moved, if any.
-						
 			 #>
 			param (
 				[Parameter(Mandatory = $true)]
@@ -556,15 +570,18 @@ function Import-DbaCsvToSql {
 					$olecolumnname = $olecolumns[$index]
 					$index++
 					
-					try { [System.Guid]::Parse($datatype) | Out-Null; $isguid = $true
+					try {
+						[System.Guid]::Parse($datatype) | Out-Null; $isguid = $true
 					}
 					catch {
 						$isguid = $false
 					}
 					
-					if ($isguid -eq $true) { $oledatatype = "Text"
+					if ($isguid -eq $true) {
+						$oledatatype = "Text"
 					}
-					elseif ([int64]::TryParse($datatype, [ref]0) -eq $true) { $oledatatype = "Long"
+					elseif ([int64]::TryParse($datatype, [ref]0) -eq $true) {
+						$oledatatype = "Long"
 					}
 					elseif ([double]::TryParse($datatype, [ref]0) -eq $true) {
 						$oledatatype = "Double"
@@ -1325,7 +1342,7 @@ function Import-DbaCsvToSql {
 							
 							if (($i % $batchsize) -eq 0 -or $i -eq $first) {
 								$bulkcopy.WriteToServer($datatable)
-								Write-Output "[*] $i rows have been inserted in $([math]::Round($elapsed.Elapsed.TotalSeconds, 2)) seconds"
+								Write-Output "[*] $i rows have been inserted in $([math]::Round($elapsed.Elapsed.TotalSeconds, 2)) seconds."
 								$datatable.Clear()
 								if ($i -eq $first) {
 									break
@@ -1350,7 +1367,7 @@ function Import-DbaCsvToSql {
 									-status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
 							}
 							else {
-								Write-Host "$($script:totalrows) rows copied in $([math]::Round($elapsed.Elapsed.TotalSeconds, 2)) seconds"
+								Write-Host "$($script:totalrows) rows copied in $([math]::Round($elapsed.Elapsed.TotalSeconds, 2)) seconds."
 							}
 						})
 					
@@ -1369,8 +1386,8 @@ function Import-DbaCsvToSql {
 				$completed = $false
 				if ($errormessage -like "*for one or more required parameters*") {
 					
-					Write-Error "Looks like your SQL syntax may be invalid. `nCheck the documentation for more information or start with a simple -Query 'select top 10 * from csv'"
-					Write-Error "Valid CSV columns are $columns"
+					Write-Error "Looks like your SQL syntax may be invalid. `nCheck the documentation for more information or start with a simple -Query 'select top 10 * from csv'."
+					Write-Error "Valid CSV columns are $columns."
 					
 				}
 				elseif ($errormessage -match "invalid column length") {
@@ -1403,7 +1420,7 @@ function Import-DbaCsvToSql {
 						$datatable.Load($sqlcmd.ExecuteReader())
 						$olecolumns = ($columns | ForEach-Object { $_ -Replace "\[|\]" }) -join ', '
 						Write-Warning "Datatype mismatch."
-						Write-Output "[*] This is sometimes caused by null handling in SqlBulkCopy, quoted data, or the first row being column names and not data (-FirstRowColumns)"
+						Write-Output "[*] This is sometimes caused by null handling in SqlBulkCopy, quoted data, or the first row being column names and not data (-FirstRowColumns)."
 						Write-Output "[*] This could also be because the data types don't match or the order of the columns within the CSV/SQL statement "
 						Write-Output "[*] do not line up with the order of the table within the SQL Server.`n"
 						Write-Output "[*] CSV order: $olecolumns`n"
@@ -1467,7 +1484,7 @@ function Import-DbaCsvToSql {
 		
 		if ($shellswitch -eq $false -and $safe -eq $true) {
 			# Delete new schema files
-			Write-Verbose "Removing automatically generated schema.ini"
+			Write-Verbose "Removing automatically generated schema.ini."
 			foreach ($file in $csv) {
 				$directory = Split-Path $file
 				$null = cmd /c "del $directory\schema.ini" | Out-Null
@@ -1481,7 +1498,7 @@ function Import-DbaCsvToSql {
 			# Move original schema.ini's back if they existed
 			if ($movedschemainis.count -gt 0) {
 				foreach ($item in $movedschemainis) {
-					Write-Verbose "Moving $($item.keys) back to $($item.values)"
+					Write-Verbose "Moving $($item.keys) back to $($item.values)."
 					$null = cmd /c "move $($item.keys) $($item.values)"
 				}
 			}
