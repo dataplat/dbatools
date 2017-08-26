@@ -133,7 +133,7 @@ The parameter works as a prefix where the name of the database will be added to 
 The default is "LSBackup_[databasename]"
 
 .PARAMETER CopyRetention
-The copy retention period in minutes. Default is 4320 / 72 hours
+The copy retention period in minutes. Default is 4320 / 72 hours.
 
 .PARAMETER CopySchedule
 Name of the backup schedule created for the copy job.
@@ -200,7 +200,7 @@ This setting is default.
 
 .PARAMETER PrimaryMonitorServer
 Is the name of the monitor server for the primary server.
-The default is the name of the primary sql server.
+If Monitor server is not provided then none will be configured
 
 .PARAMETER PrimaryMonitorCredential
 Allows you to login to enter a secure credential. Only needs to be used when the PrimaryMonitorServerSecurityMode is 0 or "sqlserver" 
@@ -664,7 +664,7 @@ The script will show a message that the copy destination has not been supplied a
 		}
 
 		# Check the backup network path
-		if (-not ((Test-Path $BackupNetworkPath -PathType Container -IsValid -Credential $SourceCredential) -and (Get-Item $BackupNetworkPath).PSProvider.Name -eq 'FileSystem')) {
+		if ((Test-DbaSqlPath -Path $BackupNetworkPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true){
 			Stop-Function -Message "Backup network path $BackupNetworkPath is not valid or can't be reached." -Target $SourceSqlInstance 
 			return
 		}
@@ -679,7 +679,8 @@ The script will show a message that the copy destination has not been supplied a
 			$CopyDestinationFolder = "$($DestinationServer.Settings.BackupDirectory)\Logshipping"
 
 			# Check to see if the path already exists
-			if (Test-Path $CopyDestinationFolder -Credential $DestinationCredential) {
+            
+			if (Test-DbaSqlPath -Path $CopyDestinationFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) {
 				Write-Message -Message "Copy destination $CopyDestinationFolder already exists" -Level Verbose
 			}
 			else {
@@ -707,7 +708,7 @@ The script will show a message that the copy destination has not been supplied a
 								}
 								# If the server is local and the credential is set
 								elseif ($DestinationCredential) {
-									Invoke-Command2 -ScriptBlock -Credential $DestinationCredential {
+									Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
 										Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
 										New-Item -Path $CopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
 									}
@@ -744,7 +745,7 @@ The script will show a message that the copy destination has not been supplied a
 				} # else not force
 			} # if test path copy destination
 		} # if not copy destination
-		elseif (-not ((Test-Path $CopyDestinationFolder -PathType Container -IsValid -Credential $DestinationCredential) -and (Get-Item $CopyDestinationFolder).PSProvider.Name -eq 'FileSystem')) {
+		elseif ((Test-DbaSqlPath -Path $CopyDestinationFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
 			Stop-Function -Message "Copy destination folder $CopyDestinationFolder is not valid or can't be reached." -Target $DestinationSqlInstance 
 			return
 		}
@@ -1092,13 +1093,15 @@ The script will show a message that the copy destination has not been supplied a
 				}
 				Write-Message -Message "Backup network path set to $DatabaseBackupNetworkPath." -Level Verbose
 
-
 				# Checking if the database network path exists
-				if (-not (Test-Path -Path $DatabaseBackupNetworkPath -Credential $SourceCredential)) {
+				if ((Test-DbaSqlPath -Path $DatabaseBackupNetworkPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
 					# To to create the backup directory for the database 
 					try {
 						Write-Message -Message "Backup network path not found. Trying to create it.." -Level Verbose
-						New-Item $DatabaseBackupNetworkPath -ItemType Directory -Credential $SourceCredential | Out-Null
+                        Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+						    Write-Message -Message "Creating backup folder $DatabaseBackupNetworkPath" -Level Verbose
+							New-Item -Path $DatabaseBackupNetworkPath -ItemType Directory -Credential $SourceCredential -Force:$Force | Out-Null
+                        }
 					}
 					catch {
 						Stop-Function -Message "Something went wrong creating the directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
@@ -1203,11 +1206,14 @@ The script will show a message that the copy destination has not been supplied a
 						Write-Message -Message "Restore log folder set to $DatabaseRestoreLogFolder" -Level Verbose
 
 						# Check if the restore data folder exists
-						if (-not (Test-Path -Path $DatabaseRestoreDataFolder -Credential $DestinationCredential)) {
+						if ((Test-DbaSqlPath  -Path $DatabaseRestoreDataFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential)-ne $true) {
 							if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore data folder on $DestinationServerName")) {
 								# Try creating the data folder
 								try {
-									New-Item $DatabaseRestoreDataFolder -ItemType Directory -Credential $DestinationCredential | Out-Null
+                                    Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+						                Write-Message -Message "Creating data folder $DatabaseRestoreDataFolder" -Level Verbose
+							            New-Item -Path $DatabaseRestoreDataFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                                    }
 								}
 								catch {
 									Stop-Function -Message "Something went wrong creating the restore data directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
@@ -1216,12 +1222,14 @@ The script will show a message that the copy destination has not been supplied a
 						}
 
 						# Check if the restore log folder exists
-						if (-not (Test-Path $DatabaseRestoreLogFolder -Credential $DestinationCredential)) {
+						if ((Test-DbaSqlPath  -Path $DatabaseRestoreLogFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential)-ne $true) {
 							if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore log folder on $DestinationServerName")) {
 								# Try creating the log folder
 								try {
-									Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
-									New-Item $DatabaseRestoreLogFolder -ItemType Directory -Credential $DestinationCredential | Out-Null
+                                    Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+						               Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
+							            New-Item -Path $DatabaseRestoreLogFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                                    }
 								}
 								catch {
 									Stop-Function -Message "Something went wrong creating the restore log directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
@@ -1235,7 +1243,7 @@ The script will show a message that the copy destination has not been supplied a
 
 					# Chech if the full backup patk can be reached
 					if ($FullBackupPath) {
-						if (-not (Test-Path -Path $FullBackupPath -Credential $DestinationCredential)) {
+						if ((Test-DbaSqlPath -Path $FullBackupPath -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
 							Stop-Function -Message ("The path to the full backup could not be reached. Check the path and/or the crdential. `n$($_.Exception.Message)") -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
 						}
 					} 
@@ -1252,7 +1260,7 @@ The script will show a message that the copy destination has not been supplied a
 								Stop-Function -Message "The last full backup is not located on shared location. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
 							}
 							# Test the path to the backup
-							elseif (-not (Test-Path $LastBackup.Path -Credential $SourceCredential)) {
+							elseif ((Test-DbaSqlPath -Path $LastBackup.Path -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
 								Stop-Function -Message "The full backup could not be found on $($LastBackup.Path). Check path and/or credentials. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
 							}
 							else {
@@ -1294,11 +1302,13 @@ The script will show a message that the copy destination has not been supplied a
 				}
 
 				# Check if the copy destination folder exists
-				if (-not (Test-Path -Path $DatabaseCopyDestinationFolder -Credential $DestinationCredential)) {
-					Write-Message -Message "Copy destination folder $DatabaseCopyDestinationFolder not found. Trying to create it.. ." -Level Verbose
+				if ((Test-DbaSqlPath -Path $DatabaseCopyDestinationFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
 					if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating copy destination folder on $DestinationServerName")) {
 						try {
-							New-Item $DatabaseCopyDestinationFolder -ItemType Directory -Credential $DestinationCredential | Out-Null
+                                Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+						            Write-Message -Message "Copy destination folder $DatabaseCopyDestinationFolder not found. Trying to create it.. ." -Level Verbose
+							        New-Item -Path $DatabaseCopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+                                }
 						}
 						catch {
 							Stop-Function -Message "Something went wrong creating the database copy destination folder. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $DestinationServerName -Continue
@@ -1355,12 +1365,6 @@ The script will show a message that the copy destination has not been supplied a
 					}
 				}
 
-				# Check the primary monitor server
-				if (($PrimaryMonitorServer) -or ([string]$PrimaryMonitorServer -eq '') -or ($PrimaryMonitorServer -eq $null)) {
-					Write-Message -Message "Setting monitor server for primary server to $SourceSqlInstance." -Level Output
-					$PrimaryMonitorServer = $SourceSqlInstance
-				}
-
 				# Check the PrimaryMonitorServerSecurityMode if it's SQL Server authentication
 				if ($PrimaryMonitorServerSecurityMode -eq 0) {
 					if ($PrimaryMonitorServerLogin) {
@@ -1377,12 +1381,6 @@ The script will show a message that the copy destination has not been supplied a
 					$SecondaryMonitorServerSecurityMode = switch ($SecondaryMonitorServerSecurityMode) {
 						"SQLSERVER" { 0 } "WINDOWS" { 1 } default { 1 }
 					}
-				}
-
-				# Check the secondary monitor server
-				if ($SecondaryMonitorServer) {
-					Write-Message -Message "Setting secondary monitor server for $DestinationSqlInstance to $SecondaryMonitorServer." -Level Verbose
-					$SecondaryMonitorServer = $DestinationSqlInstance
 				}
 
 				# Check the MonitorServerSecurityMode if it's SQL Server authentication
@@ -1516,22 +1514,37 @@ The script will show a message that the copy destination has not been supplied a
 					try {
 
 						Write-Message -Message "Configuring logshipping for primary database" -Level Output
-
-						New-DbaLogShippingPrimaryDatabase -SqlInstance $SourceSqlInstance `
-							-SqlCredential $SourceSqlCredential `
-							-Database $db `
-							-BackupDirectory $DatabaseBackupLocalPath `
-							-BackupJob $DatabaseBackupJob `
-							-BackupRetention $BackupRetention `
-							-BackupShare $DatabaseBackupNetworkPath `
-							-BackupThreshold $BackupThreshold `
-							-CompressBackup:$CompressBackup `
-							-HistoryRetention $HistoryRetention `
-							-MonitorServer $PrimaryMonitorServer `
-							-MonitorServerSecurityMode $PrimaryMonitorServerSecurityMode `
-							-MonitorCredential $PrimaryMonitorCredential `
-							-ThresholdAlertEnabled:$PrimaryThresholdAlertEnabled `
-							-Force:$Force 
+                        if($PrimaryMonitorServer) {
+						    New-DbaLogShippingPrimaryDatabase -SqlInstance $SourceSqlInstance `
+						    	-SqlCredential $SourceSqlCredential `
+						    	-Database $db `
+						    	-BackupDirectory $DatabaseBackupLocalPath `
+						    	-BackupJob $DatabaseBackupJob `
+						    	-BackupRetention $BackupRetention `
+						    	-BackupShare $DatabaseBackupNetworkPath `
+						    	-BackupThreshold $BackupThreshold `
+						    	-CompressBackup:$CompressBackup `
+						    	-HistoryRetention $HistoryRetention `
+						    	-MonitorServer $PrimaryMonitorServer `
+						    	-MonitorServerSecurityMode $PrimaryMonitorServerSecurityMode `
+						    	-MonitorCredential $PrimaryMonitorCredential `
+						    	-ThresholdAlertEnabled:$PrimaryThresholdAlertEnabled `
+						    	-Force:$Force 
+                        }
+                        else {
+                        	New-DbaLogShippingPrimaryDatabase -SqlInstance $SourceSqlInstance `
+						    	-SqlCredential $SourceSqlCredential `
+						    	-Database $db `
+						    	-BackupDirectory $DatabaseBackupLocalPath `
+						    	-BackupJob $DatabaseBackupJob `
+						    	-BackupRetention $BackupRetention `
+						    	-BackupShare $DatabaseBackupNetworkPath `
+						    	-BackupThreshold $BackupThreshold `
+						    	-CompressBackup:$CompressBackup `
+						    	-HistoryRetention $HistoryRetention `
+						    	-ThresholdAlertEnabled:$PrimaryThresholdAlertEnabled `
+						    	-Force:$Force 
+                        }
                         
 						# Check if the backup job needs to be enabled or disabled
 						if ($BackupScheduleDisabled) {
@@ -1582,20 +1595,33 @@ The script will show a message that the copy destination has not been supplied a
 					try {
 
 						Write-Message -Message "Configuring logshipping from secondary database $SecondaryDatabase to primary database $db." -Level Output
-
-						New-DbaLogShippingSecondaryPrimary -SqlInstance $DestinationSqlInstance `
-							-SqlCredential $DestinationSqlCredential `
-							-BackupSourceDirectory $DatabaseBackupNetworkPath `
-							-BackupDestinationDirectory $DatabaseCopyDestinationFolder `
-							-CopyJob $DatabaseCopyJob `
-							-FileRetentionPeriod $BackupRetention `
-							-MonitorServer $SecondaryMonitorServer `
-							-MonitorServerSecurityMode $SecondaryMonitorServerSecurityMode `
-							-MonitorCredential $SecondaryMonitorCredential `
-							-PrimaryServer $SourceSqlInstance `
-							-PrimaryDatabase $db `
-							-RestoreJob $DatabaseRestoreJob `
-							-Force:$Force
+                        if($SecondaryMonitorServer) {
+						    New-DbaLogShippingSecondaryPrimary -SqlInstance $DestinationSqlInstance `
+							    -SqlCredential $DestinationSqlCredential `
+							    -BackupSourceDirectory $DatabaseBackupNetworkPath `
+							    -BackupDestinationDirectory $DatabaseCopyDestinationFolder `
+							    -CopyJob $DatabaseCopyJob `
+							    -FileRetentionPeriod $BackupRetention `
+							    -MonitorServer $SecondaryMonitorServer `
+							    -MonitorServerSecurityMode $SecondaryMonitorServerSecurityMode `
+							    -MonitorCredential $SecondaryMonitorCredential `
+							    -PrimaryServer $SourceSqlInstance `
+							    -PrimaryDatabase $db `
+							    -RestoreJob $DatabaseRestoreJob `
+							    -Force:$Force
+                        }
+                        else {
+                        	New-DbaLogShippingSecondaryPrimary -SqlInstance $DestinationSqlInstance `
+							    -SqlCredential $DestinationSqlCredential `
+							    -BackupSourceDirectory $DatabaseBackupNetworkPath `
+							    -BackupDestinationDirectory $DatabaseCopyDestinationFolder `
+							    -CopyJob $DatabaseCopyJob `
+							    -FileRetentionPeriod $BackupRetention `
+							    -PrimaryServer $SourceSqlInstance `
+							    -PrimaryDatabase $db `
+							    -RestoreJob $DatabaseRestoreJob `
+							    -Force:$Force
+                        }
 
 						Write-Message -Message "Create copy job schedule $DatabaseCopySchedule" -Level Output
 
@@ -1680,3 +1706,7 @@ The script will show a message that the copy destination has not been supplied a
 		Write-Message -Message "Finished setting up log shipping." -Level Output
 	}
 }
+
+
+
+

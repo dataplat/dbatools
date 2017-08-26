@@ -33,7 +33,7 @@ The length of time, in minutes, that a backup file is retained on the secondary 
 The default is 14420.
 
 .PARAMETER MonitorServer
-Is the name of the monitor server. The default is the secondary server.
+Is the name of the monitor server. If no monitor is provided then it will not be configured.
 
 .PARAMETER MonitorServerLogin
 Is the username of the account used to access the monitor server. 
@@ -114,7 +114,6 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
 		[System.Management.Automation.PSCredential]
 		$MonitorCredential,
 
-		[Parameter(Mandatory = $true)]
 		[ValidateSet(0, "sqlserver", 1, "windows")]
 		[object]$MonitorServerSecurityMode = 1,
 
@@ -162,17 +161,6 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
 		}
 	}
 
-	# Check the MonitorServer
-	if (-not $MonitorServer) {
-		if ($Force) {
-			$MonitorServer = $SqlInstance
-			Write-Message -Message "Setting monitor server to $MonitorServer." -Level Verbose
-		}
-		else {
-			Stop-Function -Message "The monitor server needs to be set. Use -Force if system name must be used." -InnerErrorRecord $_ -Target $SqlInstance -Continue
-		}
-	}
-
 	# Check of the MonitorServerSecurityMode value is of type string and set the integer value
 	if ($MonitorServerSecurityMode -notin 0, 1) {
 		$MonitorServerSecurityMode = switch ($MonitorServerSecurityMode) {"WINDOWS" { 1 } "SQLSERVER" { 0 } }
@@ -203,26 +191,45 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
 	}
 
 	# Set up the query
-	$Query = "
-        DECLARE @LS_Secondary__CopyJobId AS uniqueidentifier
-        DECLARE @LS_Secondary__RestoreJobId	AS uniqueidentifier
-        DECLARE @LS_Secondary__SecondaryId AS uniqueidentifier 
-        EXEC master.dbo.sp_add_log_shipping_secondary_primary 
-                @primary_server = N'$PrimaryServer' 
-                ,@primary_database = N'$PrimaryDatabase' 
-                ,@backup_source_directory = N'$BackupSourceDirectory' 
-                ,@backup_destination_directory = N'$BackupDestinationDirectory' 
-                ,@copy_job_name = N'$CopyJob' 
-                ,@restore_job_name = N'$RestoreJob' 
-                ,@file_retention_period = $FileRetentionPeriod 
-                ,@monitor_server = N'$MonitorServer' 
-                ,@monitor_server_security_mode = $($MonitorServerSecurityMode)
-                ,@copy_job_id = @LS_Secondary__CopyJobId
-                ,@restore_job_id = @LS_Secondary__RestoreJobId
+    if($MonitorServer) {
+	    $Query = "
+            DECLARE @LS_Secondary__CopyJobId AS uniqueidentifier
+            DECLARE @LS_Secondary__RestoreJobId	AS uniqueidentifier
+            DECLARE @LS_Secondary__SecondaryId AS uniqueidentifier 
+            EXEC master.dbo.sp_add_log_shipping_secondary_primary 
+                    @primary_server = N'$PrimaryServer' 
+                    ,@primary_database = N'$PrimaryDatabase' 
+                    ,@backup_source_directory = N'$BackupSourceDirectory' 
+                    ,@backup_destination_directory = N'$BackupDestinationDirectory' 
+                    ,@copy_job_name = N'$CopyJob' 
+                    ,@restore_job_name = N'$RestoreJob' 
+                    ,@file_retention_period = $FileRetentionPeriod 
+                    ,@monitor_server = N'$MonitorServer' 
+                    ,@monitor_server_security_mode = $($MonitorServerSecurityMode)
+                    ,@copy_job_id = @LS_Secondary__CopyJobId
+                    ,@restore_job_id = @LS_Secondary__RestoreJobId
                 ,@secondary_id = @LS_Secondary__SecondaryId OUTPUT "
+    }
+    else {
+        $Query = "
+            DECLARE @LS_Secondary__CopyJobId AS uniqueidentifier
+            DECLARE @LS_Secondary__RestoreJobId	AS uniqueidentifier
+            DECLARE @LS_Secondary__SecondaryId AS uniqueidentifier 
+            EXEC master.dbo.sp_add_log_shipping_secondary_primary 
+                    @primary_server = N'$PrimaryServer' 
+                    ,@primary_database = N'$PrimaryDatabase' 
+                    ,@backup_source_directory = N'$BackupSourceDirectory' 
+                    ,@backup_destination_directory = N'$BackupDestinationDirectory' 
+                    ,@copy_job_name = N'$CopyJob' 
+                    ,@restore_job_name = N'$RestoreJob' 
+                    ,@file_retention_period = $FileRetentionPeriod 
+                    ,@copy_job_id = @LS_Secondary__CopyJobId
+                    ,@restore_job_id = @LS_Secondary__RestoreJobId
+                ,@secondary_id = @LS_Secondary__SecondaryId OUTPUT " 
+    }
     
 	# Check the MonitorServerSecurityMode if it's SQL Server authentication
-	if ($MonitorServerSecurityMode -eq 0) {
+	if ($MonitorServer -and $MonitorServerSecurityMode -eq 0) {
 		$Query += ",@monitor_server_login = N'$MonitorLogin'
             ,@monitor_server_password = N'$MonitorPassword' "
 	}

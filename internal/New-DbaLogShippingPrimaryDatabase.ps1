@@ -43,7 +43,7 @@ The default is 14420.
 
 .PARAMETER MonitorServer
 Is the name of the monitor server.
-The default is the name of the primary server.
+If Monitor server is not provided then none will be configured
 
 .PARAMETER MonitorCredential
 Allows you to login to enter a secure credential. 
@@ -174,18 +174,6 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 		Write-Message -Message "Setting monitor server security mode to $MonitorServerSecurityMode." -Level Verbose
 	}
 
-	# Check the MonitorServer
-	if (-not $MonitorServer) {
-		if ($Force) {
-			$MonitorServer = $SqlInstance
-			Write-Message -Message "Setting monitor server to $MonitorServer." -Level Verbose
-		}
-		else {
-			Stop-Function -Message "The monitor server needs to be set. Use -Force if system name must be used." -InnerErrorRecord $_ -Target $SqlInstance 
-			return
-		}
-	}
-
 	# Check the MonitorServerSecurityMode if it's SQL Server authentication
 	if ($MonitorServerSecurityMode -eq 0 -and -not $MonitorCredential) {
 		Stop-Function -Message "The MonitorServerCredential cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $SqlInstance 
@@ -220,26 +208,45 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 	}
 
 	# Set the log shipping primary
-	$Query = "
-        DECLARE @LS_BackupJobId AS uniqueidentifier;
-        DECLARE @LS_PrimaryId AS uniqueidentifier;
-        EXEC master.dbo.sp_add_log_shipping_primary_database 
-            @database = N'$Database'
-            ,@backup_directory = N'$BackupDirectory'
-            ,@backup_share = N'$BackupShare'
-            ,@backup_job_name = N'$BackupJob'
-            ,@backup_retention_period = $BackupRetention
-            ,@backup_compression = $BackupCompression
-            ,@monitor_server = N'$MonitorServer '
-            ,@monitor_server_security_mode = $MonitorServerSecurityMode
-            ,@backup_threshold = $BackupThreshold
-            ,@threshold_alert_enabled = $ThresholdAlertEnabled
-            ,@history_retention_period = $HistoryRetention
-            ,@backup_job_id = @LS_BackupJobId OUTPUT
-            ,@primary_id = @LS_PrimaryId OUTPUT "
+    if($MonitorServer){
+	    $Query = "
+            DECLARE @LS_BackupJobId AS uniqueidentifier;
+            DECLARE @LS_PrimaryId AS uniqueidentifier;
+            EXEC master.dbo.sp_add_log_shipping_primary_database 
+                @database = N'$Database'
+                ,@backup_directory = N'$BackupDirectory'
+                ,@backup_share = N'$BackupShare'
+                ,@backup_job_name = N'$BackupJob'
+                ,@backup_retention_period = $BackupRetention
+                ,@backup_compression = $BackupCompression
+                ,@monitor_server = N'$MonitorServer'
+                ,@monitor_server_security_mode = $MonitorServerSecurityMode
+                ,@backup_threshold = $BackupThreshold
+                ,@threshold_alert_enabled = $ThresholdAlertEnabled
+                ,@history_retention_period = $HistoryRetention
+                ,@backup_job_id = @LS_BackupJobId OUTPUT
+                ,@primary_id = @LS_PrimaryId OUTPUT "
+    }
+    else {
+    	$Query = "
+            DECLARE @LS_BackupJobId AS uniqueidentifier;
+            DECLARE @LS_PrimaryId AS uniqueidentifier;
+            EXEC master.dbo.sp_add_log_shipping_primary_database 
+                @database = N'$Database'
+                ,@backup_directory = N'$BackupDirectory'
+                ,@backup_share = N'$BackupShare'
+                ,@backup_job_name = N'$BackupJob'
+                ,@backup_retention_period = $BackupRetention
+                ,@backup_compression = $BackupCompression
+                ,@backup_threshold = $BackupThreshold
+                ,@threshold_alert_enabled = $ThresholdAlertEnabled
+                ,@history_retention_period = $HistoryRetention
+                ,@backup_job_id = @LS_BackupJobId OUTPUT
+                ,@primary_id = @LS_PrimaryId OUTPUT "
+    }
 
 	# Check the MonitorServerSecurityMode if it's SQL Server authentication
-	if ($MonitorServerSecurityMode -eq 0) {
+	if ($MonitorServer -and $MonitorServerSecurityMode -eq 0) {
 		$Query += ",@monitor_server_login = N'$MonitorLogin'
             ,@monitor_server_password = N'$MonitorPassword' "
 	}
