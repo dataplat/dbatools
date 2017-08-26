@@ -93,7 +93,7 @@ function Import-DbaCsvToSql {
 			Specifies the import row count interval for reporting progress. A notification will be shown after each group of this many rows has been imported.
 
 		.PARAMETER BatchSize
-			Specifies the batch size for the import. Defaults to 5000.
+			Specifies the batch size for the import. Defaults to 50000.
 
 		.PARAMETER TableLock
 			If this switch is enabled, the SqlBulkCopy option to acquire a table lock will be used. This is automatically used if -Turbo is enabled.
@@ -117,7 +117,9 @@ function Import-DbaCsvToSql {
 			Per Microsoft "Preserve source identity values. When not specified, identity values are assigned by the destination."
 
 		.PARAMETER KeepNulls
-			SqlBulkCopy option. Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
+			If this switch is enabled, the SqlBulkCopy option to keep NULL values in the table will be used.
+			
+			Per Microsoft "Preserve null values in the destination table regardless of the settings for default values. When not specified, null values are replaced by default values where applicable."
 
 		.NOTES
 			Tags: Migration
@@ -179,7 +181,7 @@ function Import-DbaCsvToSql {
 		[int]$First = 0,
 		[parameter(ParameterSetName = "ole")]
 		[string]$Query = "select * from csv",
-		[int]$BatchSize = 5000,
+		[int]$BatchSize = 50000,
 		[int]$NotifyAfter,
 		[switch]$TableLock,
 		[switch]$CheckConstraints,
