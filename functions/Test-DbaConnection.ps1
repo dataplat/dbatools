@@ -8,7 +8,7 @@ function Test-DbaConnection {
             Tests the connection to a single instance and shows the output.
         
         .PARAMETER SqlInstance
-            The SQL Server Instance to test connection against
+            The SQL Server Instance to test connection against.
         
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
