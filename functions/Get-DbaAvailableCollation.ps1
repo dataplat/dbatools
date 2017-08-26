@@ -96,12 +96,14 @@ function Get-DbaAvailableCollation {
 
 			$availableCollations = $server.EnumCollations()
 			foreach ($collation in $availableCollations) {
-				Add-Member -InputObject $collation -Force -MemberType NoteProperty -Name Instance -Value $Instance
-				Add-Member -InputObject $collation -Force -MemberType NoteProperty -Name CodePageName -Value (Get-CodePageDescription $collation.CodePage)
-				Add-Member -InputObject $collation -Force -MemberType NoteProperty -Name LocaleName -Value (Get-LocaleDescription $collation.LocaleID)
+				Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name ComputerName -value $server.NetName
+				Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+				Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+				Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name CodePageName -Value (Get-CodePageDescription $collation.CodePage)
+				Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name LocaleName -Value (Get-LocaleDescription $collation.LocaleID)
 			}
-
-			Select-DefaultView -InputObject $availableCollations -Property Instance, Name, CodePage, CodePageName, LocaleID, LocaleName, Description
+			
+			Select-DefaultView -InputObject $availableCollations -Property ComputerName, InstanceName, SqlInstance, Name, CodePage, CodePageName, LocaleID, LocaleName, Description
 		} 
 	} 
 }
