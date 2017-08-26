@@ -124,6 +124,9 @@ function Import-DbaCsvToSql {
 		.NOTES
 			Tags: Migration
 			Author: Chrissy LeMaire (@cl), netnerds.net
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 		.LINK 
 			https://blog.netnerds.net/2015/09/Import-DbaCsvtosql-super-fast-csv-to-sql-server-import-powershell-module/
@@ -131,7 +134,7 @@ function Import-DbaCsvToSql {
 		.EXAMPLE   
 			Import-DbaCsvToSql -Csv C:\temp\housing.csv -SqlInstance sql001 -Database markets
 
-			Imports the entire *comma delimited* housing.csv to the SQL "markets" database on a SQL Server named sql001.
+			Imports the entire comma-delimited housing.csv to the SQL "markets" database on a SQL Server named sql001.
 
 			Since a table name was not specified, the table name is automatically determined from filename as "housing" and a prompt will appear to confirm table name.
 
@@ -140,7 +143,7 @@ function Import-DbaCsvToSql {
 		.EXAMPLE   
 			Import-DbaCsvToSql -Csv .\housing.csv -SqlInstance sql001 -Database markets -Table housing -First 100000 -Safe -Delimiter "`t" -FirstRowColumns
 
-			Imports the first 100,000 rows of the tab delimited housing.csv file to the "housing" table in the "markets" database on a SQL Server named sql001. Since Safe was specified, the OleDB method will be used for the bulk import. It's assumed Safe was used because the first attempt without -Safe resulted in an import error. The first row is skipped, as it contains column names.
+			Imports the first 100,000 rows of the tab delimited housing.csv file to the "housing" table in the "markets" database on a SQL Server named sql001. Since -Safe was specified, the OleDB method will be used for the bulk import. The first row is skipped, as it contains column names.
 
 		.EXAMPLE
 			Import-DbaCsvToSql -csv C:\temp\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter "|" -Turbo
@@ -698,8 +701,8 @@ function Import-DbaCsvToSql {
 		Add-Type -ReferencedAssemblies 'System.Data.dll' -TypeDefinition $source -ErrorAction SilentlyContinue
 	}
 	
-	Process {
-		# Supafast turbo mode requires a table lock, or it's just regular fast
+	process {
+		# turbo mode requires a table lock, or it's just regular fast
 		if ($turbo -eq $true) {
 			$tablelock = $true
 		}
@@ -960,7 +963,9 @@ function Import-DbaCsvToSql {
 		# OLEDB method requires extra checks
 		if ($safe -eq $true) {
 			# Advanced SQL queries may not work (SqlBulkCopy likes a 1 to 1 mapping), so warn the user.
-			if ($Query -match "GROUP BY" -or $Query -match "COUNT") { Write-Warning "Script doesn't really support the specified query. This probably won't work, but will be attempted anyway." }
+			if ($Query -match "GROUP BY" -or $Query -match "COUNT") {
+				Write-Warning "Script doesn't really support the specified query. This probably won't work, but will be attempted anyway."
+			}
 			
 			# Check for proper SQL syntax, which for the purposes of this module must include the word "table"
 			if ($query.ToLower() -notmatch "\bcsv\b") {
@@ -1032,7 +1037,6 @@ function Import-DbaCsvToSql {
 
 		}
 
-		
 		# Ensure table exists
 		$sql = "select count(*) from $database.sys.tables where name = '$table' and schema_id=schema_id('$schema')"
 		$sqlcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $sqlconn, $transaction)
