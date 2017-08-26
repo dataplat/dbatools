@@ -37,11 +37,11 @@ foreach ($instance in $instances) {
 	$Tcp.Alter()
 	 
 	Write-Output "Starting $instance"
-	Restart-DbaSqlService -InstanceName $instance -Type SqlServer -WarningAction SilentlyContinue
+	Restart-DbaSqlService -InstanceName $instance -Type Engine -WarningAction SilentlyContinue
 	
 	if ($instance -eq "sql2016") {
 		Write-Output "Starting Agent for $instance"
-		Restart-DbaSqlService -InstanceName $instance -Type SqlAgent -WarningAction SilentlyContinue
+		Restart-DbaSqlService -InstanceName $instance -Type Agent -WarningAction SilentlyContinue
 	}
 }
 
@@ -49,7 +49,7 @@ $server = Connect-DbaSqlServer -SqlInstance localhost\SQL2008R2SP2
 $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 $server.Configuration.Alter()
 $null = Set-DbaStartupParameter -SqlInstance localhost\SQL2008R2SP2 -TraceFlagsOverride -TraceFlags 7806 -Confirm:$false -ErrorAction SilentlyContinue
-Restart-DbaSqlService -InstanceName SQL2008R2SP2 -Type SqlServer -WarningAction SilentlyContinue
+Restart-DbaSqlService -InstanceName SQL2008R2SP2 -Type Engine -WarningAction SilentlyContinue
 $server = Connect-DbaSqlServer -SqlInstance localhost\SQL2008R2SP2
 $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 $server.Configuration.Alter()
