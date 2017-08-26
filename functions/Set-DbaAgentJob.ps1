@@ -261,7 +261,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
             # Try connecting to the instance
             Write-Message -Message "Attempting to connect to $instance" -Level Verbose
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-DbaSqlServer -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -276,10 +276,10 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                 else {
                     # Get the job
                     try {
-                        $smojob = $server.JobServer.Jobs[$j]
+                        $currentjob = $server.JobServer.Jobs[$j]
 						
                         # Refresh the object
-                        $smoJob.Refresh()
+                        $currentjob.Refresh()
                     }
                     catch {
                         Stop-Function -Message "Something went wrong retrieving the job. `n$($_.Exception.Message)" -Target $j -InnerErrorRecord $_ -Continue
@@ -289,7 +289,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     # Settings the options for the job
                     if ($NewName) {
                         Write-Message -Message "Setting job name to $NewName" -Level Verbose
-                        $smojob.Rename($NewName)
+                        $currentjob.Rename($NewName)
                     }
 					
                     if ($Schedule) {
@@ -301,7 +301,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 							
                                 # Add schedule to job
                                 Write-Message -Message "Adding schedule id $sID to job" -Level Verbose
-                                $smojob.AddSharedSchedule($sID)
+                                $currentjob.AddSharedSchedule($sID)
                             }
                             else {
                                 Stop-Function -Message "Schedule $s cannot be found on instance $instance" -Target $s -Continue
@@ -317,7 +317,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                             if ($Server.JobServer.SharedSchedules.ID -contains $sID) {
                                 # Add schedule to job
                                 Write-Message -Message "Adding schedule id $sID to job" -Level Verbose
-                                $smojob.AddSharedSchedule($sID)
+                                $currentjob.AddSharedSchedule($sID)
                                 
                             }
                             else {
@@ -328,29 +328,29 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 
                     if ($Enabled) {
                         Write-Message -Message "Setting job to enabled" -Level Verbose
-                        $smojob.IsEnabled = $true
+                        $currentjob.IsEnabled = $true
                     }
 					
                     if ($Disabled) {
                         Write-Message -Message "Setting job to disabled" -Level Verbose
-                        $smojob.IsEnabled = $false
+                        $currentjob.IsEnabled = $false
                     }
 					
                     if ($Description) {
                         Write-Message -Message "Setting job description to $Description" -Level Verbose
-                        $smojob.Description = $Description
+                        $currentjob.Description = $Description
                     }
 					
                     if ($StartStepId) {
                         # Get the job steps
-                        $smojobSteps = $smojob.JobSteps
+                        $currentjobSteps = $currentjob.JobSteps
 						
                         # Check if there are any job steps
-                        if ($smojobSteps.Count -ge 1) {
+                        if ($currentjobSteps.Count -ge 1) {
                             # Check if the start step id value is one of the job steps in the job
-                            if ($smojobSteps.ID -contains $StartStepId) {
+                            if ($currentjobSteps.ID -contains $StartStepId) {
                                 Write-Message -Message "Setting job start step id to $StartStepId" -Level Verbose
-                                $smojob.StartStepID = $StartStepId
+                                $currentjob.StartStepID = $StartStepId
                             }
                             else {
                                 Write-Message -Message "The step id is not present in job $j on instance $instance" -Warning
@@ -365,14 +365,14 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 					
                     if ($Category) {
                         Write-Message -Message "Setting job category to $Category" -Level Verbose
-                        $smojob.Category = $Category
+                        $currentjob.Category = $Category
                     }
 					
                     if ($OwnerLogin) {
                         # Check if the login name is present on the instance
                         if ($Server.Logins.Name -contains $OwnerLogin) {
                             Write-Message -Message "Setting job owner login name to $OwnerLogin" -Level Verbose
-                            $smojob.OwnerLoginName = $OwnerLogin
+                            $currentjob.OwnerLoginName = $OwnerLogin
                         }
                         else {
                             Stop-Function -Message "The given owner log in name $OwnerLogin does not exist on instance $instance" -Target $instance -Continue
@@ -381,23 +381,23 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 					
                     if ($EventLogLevel) {
                         Write-Message -Message "Setting job event log level to $EventlogLevel" -Level Verbose
-                        $smojob.EventLogLevel = $EventLogLevel
+                        $currentjob.EventLogLevel = $EventLogLevel
                     }
 					
                     if ($EmailLevel) {
                         # Check if the notifiction needs to be removed
                         if ($EmailLevel -eq 0) {
                             # Remove the operator
-                            $smojob.OperatorToEmail = $null
+                            $currentjob.OperatorToEmail = $null
 							
                             # Remove the notification
-                            $smojob.EmailLevel = $EmailLevel
+                            $currentjob.EmailLevel = $EmailLevel
                         }
                         else {
                             # Check if either the operator e-mail parameter is set or the operator is set in the job
-                            if ($EmailOperator -or $smojob.OperatorToEmail) {
+                            if ($EmailOperator -or $currentjob.OperatorToEmail) {
                                 Write-Message -Message "Setting job e-mail level to $EmailLevel" -Level Verbose
-                                $smojob.EmailLevel = $EmailLevel
+                                $currentjob.EmailLevel = $EmailLevel
                             }
                             else {
                                 Stop-Function -Message "Cannot set e-mail level $EmailLevel without a valid e-mail operator name" -Target $instance -Continue
@@ -409,16 +409,16 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                         # Check if the notifiction needs to be removed
                         if ($NetsendLevel -eq 0) {
                             # Remove the operator
-                            $smojob.OperatorToNetSend = $null
+                            $currentjob.OperatorToNetSend = $null
 							
                             # Remove the notification
-                            $smojob.NetSendLevel = $NetsendLevel
+                            $currentjob.NetSendLevel = $NetsendLevel
                         }
                         else {
                             # Check if either the operator netsend parameter is set or the operator is set in the job
-                            if ($NetsendOperator -or $smojob.OperatorToNetSend) {
+                            if ($NetsendOperator -or $currentjob.OperatorToNetSend) {
                                 Write-Message -Message "Setting job netsend level to $NetsendLevel" -Level Verbose
-                                $smojob.NetSendLevel = $NetsendLevel
+                                $currentjob.NetSendLevel = $NetsendLevel
                             }
                             else {
                                 Stop-Function -Message "Cannot set netsend level $NetsendLevel without a valid netsend operator name" -Target $instance -Continue
@@ -430,16 +430,16 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                         # Check if the notifiction needs to be removed
                         if ($PageLevel -eq 0) {
                             # Remove the operator
-                            $smojob.OperatorToPage = $null
+                            $currentjob.OperatorToPage = $null
 							
                             # Remove the notification
-                            $smojob.PageLevel = $PageLevel
+                            $currentjob.PageLevel = $PageLevel
                         }
                         else {
                             # Check if either the operator pager parameter is set or the operator is set in the job
-                            if ($PageOperator -or $smojob.OperatorToPage) {
+                            if ($PageOperator -or $currentjob.OperatorToPage) {
                                 Write-Message -Message "Setting job pager level to $PageLevel" -Level Verbose
-                                $smojob.PageLevel = $PageLevel
+                                $currentjob.PageLevel = $PageLevel
                             }
                             else {
                                 Stop-Function -Message "Cannot set page level $PageLevel without a valid netsend operator name" -Target $instance -Continue
@@ -452,7 +452,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                         # Check if the operator name is present
                         if ($Server.JobServer.Operators.Name -contains $EmailOperator) {
                             Write-Message -Message "Setting job e-mail operator to $EmailOperator" -Level Verbose
-                            $smojob.OperatorToEmail = $EmailOperator
+                            $currentjob.OperatorToEmail = $EmailOperator
                         }
                         else {
                             Stop-Function -Message "The e-mail operator name $EmailOperator does not exist on instance $instance. Exiting.." -Target $j -Continue
@@ -463,7 +463,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                         # Check if the operator name is present
                         if ($Server.JobServer.Operators.Name -contains $NetsendOperator) {
                             Write-Message -Message "Setting job netsend operator to $NetsendOperator" -Level Verbose
-                            $smojob.OperatorToNetSend = $NetsendOperator
+                            $currentjob.OperatorToNetSend = $NetsendOperator
                         }
                         else {
                             Stop-Function -Message "The netsend operator name $NetsendOperator does not exist on instance $instance. Exiting.." -Target $j -Continue
@@ -474,7 +474,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                         # Check if the operator name is present
                         if ($Server.JobServer.Operators.Name -contains $PageOperator) {
                             Write-Message -Message "Setting job pager operator to $PageOperator" -Level Verbose
-                            $smojob.OperatorToPage = $PageOperator
+                            $currentjob.OperatorToPage = $PageOperator
                         }
                         else {
                             Stop-Function -Message "The page operator name $PageOperator does not exist on instance $instance. Exiting.." -Target $instance -Continue
@@ -483,7 +483,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 					
                     if ($DeleteLevel) {
                         Write-Message -Message "Setting job delete level to $DeleteLevel" -Level Verbose
-                        $smojob.DeleteLevel = $DeleteLevel
+                        $currentjob.DeleteLevel = $DeleteLevel
                     }
                     #endregion job options
 					
@@ -493,12 +493,12 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                             Write-Message -Message ("Changing the job") -Level Verbose
 							
                             # Change the job
-                            $smojob.Alter()
+                            $currentjob.Alter()
                         }
                         catch {
                             Stop-Function -Message "Something went wrong changing the job. `n$($_.Exception.Message)" -Target $instance -Continue
                         }
-                        Get-DbaAgentJob -SqlInstance $server | Where-Object Name -eq $smojob.name
+                        Get-DbaAgentJob -SqlInstance $server | Where-Object Name -eq $currentjob.name
                     }
                 }
             } # foreach object job
@@ -506,6 +506,6 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
     } # Process
 	
     end {
-        Write-Message -Message "Finished changing job(s)." -Level Verbose
+		Write-Message -Message "Finished changing job(s)" -Level Verbose
     }
 }
