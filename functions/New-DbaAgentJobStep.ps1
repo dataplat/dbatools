@@ -199,7 +199,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 			# Try connecting to the instance
 			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
 			try {
-				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+				$Server = Connect-DbaSqlServer -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -384,7 +384,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 	} # process
 	
 	end {
-		Write-Message -Message "Finished creating job step(s)." -Level Verbose
+		Write-Message -Message "Finished creating job step(s)." -Level Output
 	}
 }
 
