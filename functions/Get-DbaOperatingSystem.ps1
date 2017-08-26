@@ -39,7 +39,7 @@ function Get-DbaOperatingSystem {
 	[CmdletBinding()]
 	param (
 		[Parameter(ValueFromPipeline = $true)]
-		[Alias("cn","host","Server")]
+		[Alias("cn", "host", "Server")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential]$Credential,
 		[switch]$Silent
@@ -49,29 +49,65 @@ function Get-DbaOperatingSystem {
 			Write-Message -Level Verbose -Message "Attempting to connect to $computer"
 			$server = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential
 
-			$computerResolved = $server.ComputerName
+			$computerResolved = $server.FullComputerName
 
 			if (!$computerResolved) {
 				Write-Message -Level Warning -Message "Unable to resolve hostname of $computer. Skipping."
 				continue
 			}
-
-			if (Test-Bound "Credential") {
-				$os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved -Credential $Credential
-				$tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved -Credential $Credential
-				$powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved -Credential $Credential | Select-Object ElementName, InstanceId, IsActive
+			
+			try {
+				$psVersion = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock { $PSVersionTable.PSVersion }
 			}
-			else {
-				$os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved
-				$tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved
-				$powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved | Select-Object ElementName, InstanceId, IsActive
+			catch {
+				Stop-Function -Message "Failure collecting PowerShell version on $computer" -Target $computer -ErrorRecord $_
+				return
+			}
+
+			try {
+				if (Test-Bound "Credential") {
+					$os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved -Credential $Credential -Silent
+				}
+				else {
+					$os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved -Silent
+				}
+			}
+			catch {
+				Stop-Function -Message "Failure collecting OS information on $computer" -Target $computer -ErrorRecord $_
+				return
+			}
+
+			try {
+				if (Test-Bound "Credential") {
+					$tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved -Credential $Credential -Silent
+				}
+				else {
+					$tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved -Silent
+				}
+			}
+			catch {
+				Stop-Function -Message "Failure collecting TimeZone information on $computer" -Target $computer -ErrorRecord $_
+				return
+			}
+
+			try {
+				if (Test-Bound "Credential") {
+					$powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved -Credential $Credential -Silent | Select-Object ElementName, InstanceId, IsActive
+				}
+				else {
+					$powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved -Silent | Select-Object ElementName, InstanceId, IsActive
+				}
+			}
+			catch {
+				Stop-Function -Message "Failure collecting PowerPlan information on $computer" -Target $computer -ErrorRecord $_
+				return
 			}
 
 			$activePowerPlan = ($powerPlan | Where-Object IsActive).ElementName -join ','
 			$language = Get-Language $os.OSLanguage
 			
 			[PSCustomObject]@{
-				ComputerName             = $computer.ComputerName
+				ComputerName             = $computerResolved
 				Manufacturer             = $os.Manufacturer
 				Organization             = $os.Organization
 				Architecture             = $os.OSArchitecture
@@ -80,6 +116,7 @@ function Get-DbaOperatingSystem {
 				InstallDate              = [DbaDateTime]$os.InstallDate
 				LastBootTime             = [DbaDateTime]$os.LastBootUpTime
 				LocalDateTime            = [DbaDateTime]$os.LocalDateTime
+				PowerShellVersion        = "$($psVersion.Major).$($psVersion.Minor)"
 				TimeZone                 = $tz.Caption
 				TimeZoneStandard         = $tz.StandardName
 				TimeZoneDaylight         = $tz.DaylightName
@@ -100,7 +137,7 @@ function Get-DbaOperatingSystem {
 				CodeSet                  = $os.CodeSet
 				CountryCode              = $os.CountryCode
 				Locale                   = $os.Locale
-		} | Select-DefaultView -ExcludeProperty CodeSet, CountryCode, Locale, LanguageAlias
+			} | Select-DefaultView -ExcludeProperty CodeSet, CountryCode, Locale, LanguageAlias
 		}
 	}
 }

@@ -191,16 +191,17 @@ srv0042 D:\                                                               0     
 			{
 				$SqlInstances = @()
 				$FailedToGetServiceInformation = $false
+                		$IsSqlEngineService = { $_.DisplayName -like 'SQL Server (*' -or $_.Name -eq 'MSSQLSERVER' -or $_.DisplayName -like 'MSSQL$*' }
 				try
 				{
-					$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
+                    			$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object $IsSqlEngineService
 				}
 				catch
 				{
 					Write-Verbose "$FunctionName - Cannot retrieve service information from $server using Get-Service. Trying WMI"
 					try
 					{
-						$sqlservices = Get-WmiObject Win32_Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
+						$sqlservices = Get-WmiObject Win32_Service -ComputerName $ipaddr | Where-Object $IsSqlEngineService
 					}
 					catch
 					{
@@ -209,10 +210,11 @@ srv0042 D:\                                                               0     
 					}
 				}
 				
-        foreach ($service in $sqlservices)
-        {
-          $instance = $service.DisplayName.Replace('SQL Server (', '')
-          $instance = $instance.TrimEnd(')')
+				foreach ($service in $sqlservices)
+				{
+					$instance = $service.DisplayName.Replace('SQL Server (', '')
+					$instance = $instance.TrimEnd(')')
+					$instance = $instance.Replace('MSSQL$', '')
 					
           if ($instance -eq 'MSSQLSERVER')
           {

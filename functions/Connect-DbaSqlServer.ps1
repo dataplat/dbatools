@@ -1,10 +1,10 @@
-Function Connect-DbaSqlServer {
+function Connect-DbaSqlServer {
     <#
     .SYNOPSIS
-        Creates an efficient SMO SQL Server object.
+        Creates a robust SMO SQL Server object.
 
     .DESCRIPTION
-        This command is efficient because it initializes properties that do not cause enumeration by default. It also supports both Windows and SQL Server authentication methods, and detects which to use based upon the provided credentials. 
+        This command is robust because it initializes properties that do not cause enumeration by default. It also supports both Windows and SQL Server authentication methods, and detects which to use based upon the provided credentials. 
 
         By default, this command also sets the connection's ApplicationName property  to "dbatools PowerShell module - dbatools.io - custom connection". If you're doing anything that requires profiling, you can look for this client name.
 
@@ -164,128 +164,126 @@ Function Connect-DbaSqlServer {
 
         Connects with ReadOnly ApplicationIntent.	
 #>	
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $true)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter]$SqlInstance,
-        [Alias("SqlCredential")]
-        [PSCredential]$Credential,
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter]$SqlInstance,
+		[Alias("SqlCredential")]
+		[PSCredential]$Credential,
 		[object[]]$Database,
-        [string]$AccessToken,
-        [ValidateSet('ReadOnly', 'ReadWrite')]
+		[string]$AccessToken,
+		[ValidateSet('ReadOnly', 'ReadWrite')]
 		[string]$ApplicationIntent,
-        [string]$BatchSeparator,
-        [string]$ClientName = "dbatools PowerShell module - dbatools.io - custom connection",
-        [int]$ConnectTimeout,
-        [switch]$EncryptConnection,
-        [string]$FailoverPartner,
-        [switch]$IsActiveDirectoryUniversalAuth,
-        [int]$LockTimeout,
-        [int]$MaxPoolSize,
-        [int]$MinPoolSize,
-        [switch]$MultipleActiveResultSets,
-        [switch]$MultiSubnetFailover,
-        [ValidateSet('TcpIp', 'NamedPipes', 'Multiprotocol', 'AppleTalk', 'BanyanVines', 'Via', 'SharedMemory', 'NWLinkIpxSpx')]
-        [string]$NetworkProtocol,
-        [switch]$NonPooledConnection,
-        [int]$PacketSize,
-        [int]$PooledConnectionLifetime,
-        [ValidateSet('CaptureSql', 'ExecuteAndCaptureSql', 'ExecuteSql')]
-        [string]$SqlExecutionModes,
-        [int]$StatementTimeout,
-        [switch]$TrustServerCertificate,
-        [string]$WorkstationId,
-        [string]$AppendConnectionString
-    )
+		[string]$BatchSeparator,
+		[string]$ClientName = "dbatools PowerShell module - dbatools.io - custom connection",
+		[int]$ConnectTimeout,
+		[switch]$EncryptConnection,
+		[string]$FailoverPartner,
+		[switch]$IsActiveDirectoryUniversalAuth,
+		[int]$LockTimeout,
+		[int]$MaxPoolSize,
+		[int]$MinPoolSize,
+		[switch]$MultipleActiveResultSets,
+		[switch]$MultiSubnetFailover,
+		[ValidateSet('TcpIp', 'NamedPipes', 'Multiprotocol', 'AppleTalk', 'BanyanVines', 'Via', 'SharedMemory', 'NWLinkIpxSpx')]
+		[string]$NetworkProtocol,
+		[switch]$NonPooledConnection,
+		[int]$PacketSize,
+		[int]$PooledConnectionLifetime,
+		[ValidateSet('CaptureSql', 'ExecuteAndCaptureSql', 'ExecuteSql')]
+		[string]$SqlExecutionModes,
+		[int]$StatementTimeout,
+		[switch]$TrustServerCertificate,
+		[string]$WorkstationId,
+		[string]$AppendConnectionString
+	)
 	
-
-	
-    PROCESS {
-        if ($SqlInstance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
+	process {
+		if ($SqlInstance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
 			
-            if ($SqlInstance.ConnectionContext.IsOpen -eq $false) {
-                $SqlInstance.ConnectionContext.Connect()
-            }
-            return $SqlInstance
-        }
+			if ($SqlInstance.ConnectionContext.IsOpen -eq $false) {
+				$SqlInstance.ConnectionContext.Connect()
+			}
+			return $SqlInstance
+		}
 		
-        $server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlInstance
+		$server = New-Object Microsoft.SqlServer.Management.Smo.Server $SqlInstance
 		
-        if ($AppendConnectionString) {
-            $connstring = $server.ConnectionContext.ConnectionString
-            $server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
-            $server.ConnectionContext.Connect()
-        }
-        else {
+		if ($AppendConnectionString) {
+			$connstring = $server.ConnectionContext.ConnectionString
+			$server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
+			$server.ConnectionContext.Connect()
+		}
+		else {
 			
-            $server.ConnectionContext.ApplicationName = $ClientName
+			$server.ConnectionContext.ApplicationName = $ClientName
 			
-            if ($AccessToken) { $server.ConnectionContext.AccessToken = $AccessToken }
-            if ($ApplicationIntent) { $server.ConnectionContext.ApplicationIntent = $ApplicationIntent }
-            if ($BatchSeparator) { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
-            if ($ConnectTimeout) { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
-            if ($Database) { $server.ConnectionContext.DatabaseName = $Database }
-            if ($EncryptConnection) { $server.ConnectionContext.EncryptConnection = $true }
-            if ($IsActiveDirectoryUniversalAuth) { $server.ConnectionContext.IsActiveDirectoryUniversalAuth = $true }
-            if ($LockTimeout) { $server.ConnectionContext.LockTimeout = $LockTimeout }
-            if ($MaxPoolSize) { $server.ConnectionContext.MaxPoolSize = $MaxPoolSize }
-            if ($MinPoolSize) { $server.ConnectionContext.MinPoolSize = $MinPoolSize }
-            if ($MultipleActiveResultSets) { $server.ConnectionContext.MultipleActiveResultSets = $true }
-            if ($NetworkProtocol) { $server.ConnectionContext.NetworkProtocol = $NetworkProtocol }
-            if ($NonPooledConnection) { $server.ConnectionContext.NonPooledConnection = $true }
-            if ($PacketSize) { $server.ConnectionContext.PacketSize = $PacketSize }
-            if ($PooledConnectionLifetime) { $server.ConnectionContext.PooledConnectionLifetime = $PooledConnectionLifetime }
-            if ($StatementTimeout) { $server.ConnectionContext.StatementTimeout = $StatementTimeout }
-            if ($SqlExecutionModes) { $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes }
-            if ($TrustServerCertificate) { $server.ConnectionContext.TrustServerCertificate = $true }
-            if ($WorkstationId) { $server.ConnectionContext.WorkstationId = $WorkstationId }
+			if ($AccessToken) { $server.ConnectionContext.AccessToken = $AccessToken }
+			if ($BatchSeparator) { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
+			if ($ConnectTimeout) { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
+			if ($Database) { $server.ConnectionContext.DatabaseName = $Database }
+			if ($EncryptConnection) { $server.ConnectionContext.EncryptConnection = $true }
+			if ($IsActiveDirectoryUniversalAuth) { $server.ConnectionContext.IsActiveDirectoryUniversalAuth = $true }
+			if ($LockTimeout) { $server.ConnectionContext.LockTimeout = $LockTimeout }
+			if ($MaxPoolSize) { $server.ConnectionContext.MaxPoolSize = $MaxPoolSize }
+			if ($MinPoolSize) { $server.ConnectionContext.MinPoolSize = $MinPoolSize }
+			if ($MultipleActiveResultSets) { $server.ConnectionContext.MultipleActiveResultSets = $true }
+			if ($NetworkProtocol) { $server.ConnectionContext.NetworkProtocol = $NetworkProtocol }
+			if ($NonPooledConnection) { $server.ConnectionContext.NonPooledConnection = $true }
+			if ($PacketSize) { $server.ConnectionContext.PacketSize = $PacketSize }
+			if ($PooledConnectionLifetime) { $server.ConnectionContext.PooledConnectionLifetime = $PooledConnectionLifetime }
+			if ($StatementTimeout) { $server.ConnectionContext.StatementTimeout = $StatementTimeout }
+			if ($SqlExecutionModes) { $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes }
+			if ($TrustServerCertificate) { $server.ConnectionContext.TrustServerCertificate = $true }
+			if ($WorkstationId) { $server.ConnectionContext.WorkstationId = $WorkstationId }
 			
-            $connstring = $server.ConnectionContext.ConnectionString
-            if ($MultiSubnetFailover) { $connstring = "$connstring;MultiSubnetFailover=True" }
-            if ($FailoverPartner) { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
+			$connstring = $server.ConnectionContext.ConnectionString
+			if ($MultiSubnetFailover) { $connstring = "$connstring;MultiSubnetFailover=True" }
+			if ($FailoverPartner) { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
+			if ($ApplicationIntent) { $connstring = "$connstring;ApplicationIntent=$ApplicationIntent" }
 			
-            if ($connstring -ne $server.ConnectionContext.ConnectionString) {
-                $server.ConnectionContext.ConnectionString = $connstring
-            }
+			if ($connstring -ne $server.ConnectionContext.ConnectionString) {
+				$server.ConnectionContext.ConnectionString = $connstring
+			}
 			
-            try {
-                if ($Credential.username -ne $null) {
-                    $username = ($Credential.username).TrimStart("\")
+			try {
+				if ($Credential.username -ne $null) {
+					$username = ($Credential.username).TrimStart("\")
 					
-                    if ($username -like "*\*") {
-                        $username = $username.Split("\")[1]
-                        $authtype = "Windows Authentication with Credential"
-                        $server.ConnectionContext.LoginSecure = $true
-                        $server.ConnectionContext.ConnectAsUser = $true
-                        $server.ConnectionContext.ConnectAsUserName = $username
-                        $server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
-                    }
-                    else {
-                        $authtype = "SQL Authentication"
-                        $server.ConnectionContext.LoginSecure = $false
-                        $server.ConnectionContext.set_Login($username)
-                        $server.ConnectionContext.set_SecurePassword($Credential.Password)
-                    }
-                }
+					if ($username -like "*\*") {
+						$username = $username.Split("\")[1]
+						$authtype = "Windows Authentication with Credential"
+						$server.ConnectionContext.LoginSecure = $true
+						$server.ConnectionContext.ConnectAsUser = $true
+						$server.ConnectionContext.ConnectAsUserName = $username
+						$server.ConnectionContext.ConnectAsUserPassword = ($Credential).GetNetworkCredential().Password
+					}
+					else {
+						$authtype = "SQL Authentication"
+						$server.ConnectionContext.LoginSecure = $false
+						$server.ConnectionContext.set_Login($username)
+						$server.ConnectionContext.set_SecurePassword($Credential.Password)
+					}
+				}
 				
-                $server.ConnectionContext.Connect()
-            }
-            catch {
-                $message = $_.Exception.InnerException.InnerException
-                $message = $message.ToString()
-                $message = ($message -Split '-->')[0]
-                $message = ($message -Split 'at System.Data.SqlClient')[0]
-                $message = ($message -Split 'at System.Data.ProviderBase')[0]
-                throw "Can't connect to $SqlInstance`: $message "
-            }
+				$server.ConnectionContext.Connect()
+			}
+			catch {
+				$message = $_.Exception.InnerException.InnerException
+				$message = $message.ToString()
+				$message = ($message -Split '-->')[0]
+				$message = ($message -Split 'at System.Data.SqlClient')[0]
+				$message = ($message -Split 'at System.Data.ProviderBase')[0]
+				throw "Can't connect to $SqlInstance`: $message "
+			}
 			
-        }
+		}
 		
-		$loadedsmoversion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
+		$loadedSmoVersion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
 		
-		if ($loadedsmoversion) {
-			$loadedsmoversion = $loadedsmoversion | ForEach-Object {
+		if ($loadedSmoVersion) {
+			$loadedSmoVersion = $loadedSmoVersion | ForEach-Object {
 				if ($_.Location -match "__") {
 					((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0]
 				}
@@ -295,7 +293,7 @@ Function Connect-DbaSqlServer {
 			}
 		}
 		
-		if ($loadedsmoversion -ge 11) {
+		if ($loadedSmoVersion -ge 11) {
 			if ($server.VersionMajor -eq 8) {
 				# 2000
 				$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Version')
@@ -315,5 +313,5 @@ Function Connect-DbaSqlServer {
 			}
 		}
 		return $server
-    }
+	}
 }

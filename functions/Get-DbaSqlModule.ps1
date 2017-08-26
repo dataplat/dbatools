@@ -1,5 +1,5 @@
 ﻿Function Get-DbaSqlModule {
-<# 
+  <# 
 	.SYNOPSIS 
 	Displays all objects in sys.sys_modules after specified modification date.  Works on SQL Server 2008 and above.
 	
@@ -39,66 +39,65 @@
 	.NOTES 
 	Author: Brandon Abshire, netnerds.net
 	Tags: StoredProcedure, Trigger
-	dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-	Copyright (C) 2016 Chrissy LeMaire
-	This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	
+	Website: https://dbatools.io
+	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 	
 	.LINK 
-	https://dbatools.io/Get-DbaModule
+	https://dbatools.io/Get-DbaSqlModule
 	
 	.EXAMPLE   
-	Get-DbaModule -SqlServer sql2008, sqlserver2012
-	Return all modules for servers sql2008 and sqlserver2012 sorted by Database, Modify_Date ASC
+	Get-DbaSqlModule -SqlServer sql2008, sqlserver2012
+	Return all modules for servers sql2008 and sqlserver2012 sorted by Database, Modify_Date ASC.
 	
 	.EXAMPLE   
-	Get-DbaModule -SqlServer sql2008, sqlserver2012 | Select *
-	Shows hidden definition column (informative wall of text)
+	Get-DbaSqlModule -SqlServer sql2008, sqlserver2012 | Select *
+	Shows hidden definition column (informative wall of text).
 	
 	.EXAMPLE   
-	Get-DbaModule -SqlServer sql2008 -Database TestDB -ModifiedSince "01/01/2017 10:00:00 AM"
-	Return all modules on server sql2008 for only the TestDB database with a modified date after 01/01/2017 10:00:00 AM
+	Get-DbaSqlModule -SqlServer sql2008 -Database TestDB -ModifiedSince "01/01/2017 10:00:00 AM"
+	Return all modules on server sql2008 for only the TestDB database with a modified date after 01/01/2017 10:00:00 AM.
 	
 	.EXAMPLE   
-	Get-DbaModule -SqlServer sql2008 -Type View, Trigger, ScalarFunction
-	Return all modules on server sql2008 for all databases that are triggers, views or scalar functions
+	Get-DbaSqlModule -SqlServer sql2008 -Type View, Trigger, ScalarFunction
+	Return all modules on server sql2008 for all databases that are triggers, views or scalar functions.
 #>
-	[CmdletBinding()]
-	Param (
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[Alias("Credential")]
-		[PSCredential]$SqlCredential,
-		[Alias("Databases")]
-		[object[]]$Database,
-		[object[]]$ExcludeDatabase,
-		[datetime]$ModifiedSince = "01/01/1900",
-		[ValidateSet("View", "TableValuedFunction", "DefaultConstraint", "StoredProcedure", "Rule", "InlineTableValuedFunction", "Trigger", "ScalarFunction")]
-		[string[]]$Type,
-		[switch]$NoSystemDb,
-		[switch]$NoSystemObjects,
-		[switch]$Silent
-	)
+  [CmdletBinding()]
+  Param (
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+    [Alias("ServerInstance", "SqlServer")]
+    [DbaInstanceParameter[]]$SqlInstance,
+    [Alias("Credential")]
+    [PSCredential]$SqlCredential,
+    [Alias("Databases")]
+    [object[]]$Database,
+    [object[]]$ExcludeDatabase,
+    [datetime]$ModifiedSince = "01/01/1900",
+    [ValidateSet("View", "TableValuedFunction", "DefaultConstraint", "StoredProcedure", "Rule", "InlineTableValuedFunction", "Trigger", "ScalarFunction")]
+    [string[]]$Type,
+    [switch]$NoSystemDb,
+    [switch]$NoSystemObjects,
+    [switch]$Silent
+  )
 	
-	begin {
+  begin {
 		
-		$types = @()
+    $types = @()
 		
-		foreach ($t in $type) {
-			if ($t -eq "View") { $types += "VIEW" }
-			if ($t -eq "TableValuedFunction") { $types += "SQL_TABLE_VALUED_FUNCTION" }
-			if ($t -eq "DefaultConstraint") { $types += "DEFAULT_CONSTRAINT" }
-			if ($t -eq "StoredProcedure") { $types += "SQL_STORED_PROCEDURE" }
-			if ($t -eq "Rule") { $types += "RULE" }
-			if ($t -eq "InlineTableValuedFunction") { $types += "SQL_INLINE_TABLE_VALUED_FUNCTION" }
-			if ($t -eq "Trigger") { $types += "SQL_TRIGGER" }
-			if ($t -eq "ScalarFunction") { $types += "SQL_SCALAR_FUNCTION" }
-		}
+    foreach ($t in $type) {
+      if ($t -eq "View") { $types += "VIEW" }
+      if ($t -eq "TableValuedFunction") { $types += "SQL_TABLE_VALUED_FUNCTION" }
+      if ($t -eq "DefaultConstraint") { $types += "DEFAULT_CONSTRAINT" }
+      if ($t -eq "StoredProcedure") { $types += "SQL_STORED_PROCEDURE" }
+      if ($t -eq "Rule") { $types += "RULE" }
+      if ($t -eq "InlineTableValuedFunction") { $types += "SQL_INLINE_TABLE_VALUED_FUNCTION" }
+      if ($t -eq "Trigger") { $types += "SQL_TRIGGER" }
+      if ($t -eq "ScalarFunction") { $types += "SQL_SCALAR_FUNCTION" }
+    }
 		
 		
-		$sql = "SELECT  DB_NAME() AS DatabaseName,
+    $sql = "SELECT  DB_NAME() AS DatabaseName,
         so.name AS ModuleName,
         so.object_id ,
         SCHEMA_NAME(so.schema_id) AS SchemaName ,
@@ -113,62 +112,62 @@
 		FROM sys.sql_modules sm
         LEFT JOIN sys.objects so ON sm.object_id = so.object_id
         WHERE so.modify_date >= '$($ModifiedSince)'"
-		if ($NoSystemObjects) {
-			$sql += "`n AND so.is_ms_shipped = 0"
-		}
-		if ($Type) {
-			$sqltypes = $types -join "','"
-			$sql += " AND type_desc in ('$sqltypes')"
-		}
-		$sql += "`n ORDER BY so.modify_date"
-	}
+    if ($NoSystemObjects) {
+      $sql += "`n AND so.is_ms_shipped = 0"
+    }
+    if ($Type) {
+      $sqltypes = $types -join "','"
+      $sql += " AND type_desc in ('$sqltypes')"
+    }
+    $sql += "`n ORDER BY so.modify_date"
+  }
 	
-	process {
-		foreach ($instance in $SqlInstance) {
-			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
+  process {
+    foreach ($instance in $SqlInstance) {
+      try {
+        Write-Message -Level Verbose -Message "Connecting to $instance"
+        $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
+      }
+      catch {
+        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+      }
 			
-			$databases = Get-DbaDatabase -SqlInstance $server
+      $databases = Get-DbaDatabase -SqlInstance $server
 			
-			if ($Database) {
-				$databases = $databases | Where-Object Name -In $Database
-			}
-			if ($ExcludeDatabase) {
-				$databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
-			}
+      if ($Database) {
+        $databases = $databases | Where-Object Name -In $Database
+      }
+      if ($ExcludeDatabase) {
+        $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
+      }
 			
 			
-			foreach ($db in $databases) {
+      foreach ($db in $databases) {
 				
-				Write-Message -Level Verbose -Message "Processing $db on $instance"
+        Write-Message -Level Verbose -Message "Processing $db on $instance"
 				
-				if ($db.IsAccessible -eq $false) {
-					Stop-Function -Message "The database $db is not accessible. Skipping database." -Target $db -Continue
-				}
+        if ($db.IsAccessible -eq $false) {
+          Stop-Function -Message "The database $db is not accessible. Skipping database." -Target $db -Continue
+        }
 				
-				foreach ($row in $server.Query($sql,$db.name)) {
-					[PSCustomObject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						Database = $row.DatabaseName
-						Name = $row.ModuleName
-						ObjectID = $row.object_id
-						SchemaName = $row.SchemaName
-						Type = $row.type_desc
-						CreateDate = $row.create_date
-						ModifyDate = $row.modify_date
-						IsMsShipped   = $row.is_ms_shipped
-						ExecIsStartUp   = $row.startup
-						Definition = $row.definition
-					} | Select-DefaultView -ExcludeProperty Definition
-				}
-			}
-		}
-	}
+        foreach ($row in $server.Query($sql, $db.name)) {
+          [PSCustomObject]@{
+            ComputerName  = $server.NetName
+            InstanceName  = $server.ServiceName
+            SqlInstance   = $server.DomainInstanceName
+            Database      = $row.DatabaseName
+            Name          = $row.ModuleName
+            ObjectID      = $row.object_id
+            SchemaName    = $row.SchemaName
+            Type          = $row.type_desc
+            CreateDate    = $row.create_date
+            ModifyDate    = $row.modify_date
+            IsMsShipped   = $row.is_ms_shipped
+            ExecIsStartUp = $row.startup
+            Definition    = $row.definition
+          } | Select-DefaultView -ExcludeProperty Definition
+        }
+      }
+    }
+  }
 }

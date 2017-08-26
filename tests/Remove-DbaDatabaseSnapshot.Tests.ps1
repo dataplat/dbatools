@@ -2,7 +2,6 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-
 # Targets only instance2 because it's the only one where Snapshots can happen
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
@@ -37,6 +36,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			{ Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 *> $null } | Should Not Throw "You must specify"
 		}
 	}
+	
 	Context "Operations on snapshots" {
 		BeforeEach {
 			$needed = @()
