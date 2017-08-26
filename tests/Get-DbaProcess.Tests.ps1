@@ -6,8 +6,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Testing Get-DbaProcess results" {
 		$results = Get-DbaProcess -SqlInstance $script:instance1
 		
-		It "matches self as a login" {
-			$results.Login -match $env:username | Should Be $true
+		It "matches self as a login at least once" {
+			$matching = $results | Where-Object Login -match $env:username
+			$matching.Length | Should BeGreaterThan 0
 		}
 		
 		$results = Get-DbaProcess -SqlInstance $script:instance1 -Program 'dbatools PowerShell module - dbatools.io'
