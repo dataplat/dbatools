@@ -1,10 +1,10 @@
-Function Update-DBASqlServiceStatus {
+Function Update-ServiceStatus {
 <#
     .SYNOPSIS
-    Internal function. Sends start/stop request to a SQL Server service.
+    Internal function. Sends start/stop request to a SQL Server service and wait for the result.
 
     .DESCRIPTION
-    Accepts objects from Get-DBASqlService and performs a corresponding action.
+    Accepts objects from Get-DbaSqlService and performs a corresponding action.
 
     .PARAMETER Credential
     Credential object used to connect to the computer as a different user.
@@ -13,13 +13,19 @@ Function Update-DBASqlServiceStatus {
     How long to wait for the start/stop request completion before moving on.
     
     .PARAMETER ServiceCollection
-    A collection of services from Get-DBASqlService
+    A collection of services from Get-DbaSqlService
     
     .PARAMETER Action
     Start or stop.
     
     .PARAMETER Silent
-    Supress all the output from the function.
+    Use this switch to disable any kind of verbose messages
+		
+		.PARAMETER WhatIf
+		Shows what would happen if the cmdlet runs. The cmdlet is not run.
+		
+		.PARAMETER Confirm
+		Prompts you for confirmation before running the cmdlet.
 
     .NOTES
     Author: Kirill Kravtsov ( @nvarscar )
@@ -29,13 +35,26 @@ Function Update-DBASqlServiceStatus {
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
     You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
-
+    
+    .EXAMPLE
+    $serviceCollection = Get-DbaSqlService -ComputerName sql1
+    Update-ServiceStatus -ServiceCollection $serviceCollection -Action 'stop' -Timeout 30
+    Update-ServiceStatus -ServiceCollection $serviceCollection -Action 'start' -Timeout 30
+    
+    Restarts SQL services on sql1
+    
+    .EXAMPLE
+    $serviceCollection = Get-DbaSqlService -ComputerName sql1
+    $credential = Get-Credential
+    Update-ServiceStatus -ServiceCollection $serviceCollection -Action 'stop' -Timeout 0 -Credential $credential
+    
+    Stops SQL services on sql1 and waits indefinitely for them to stop. Uses $credential to authorize on the server.
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param(
-	[parameter(ValueFromPipeline = $true, Mandatory = $true)]
+		[parameter(ValueFromPipeline = $true, Mandatory = $true)]
 		[object[]]$ServiceCollection,
-	[parameter(Mandatory = $true)]
+		[parameter(Mandatory = $true)]
 		[string[]]$Action,
 		[int]$Timeout = 30,
 		[PSCredential] $Credential,
@@ -53,19 +72,28 @@ Function Update-DBASqlServiceStatus {
 		#Prepare the service control script block
 		$svcControlBlock = {
 			Param (
-			$server,
-			$service,
-			$action,
-			$timeout = 30,
-			$credential
+				$server,
+				$service,
+				$action,
+				$timeout = 30,
+				$credential
 			)
 			#Get WMI service object
 			$svcParam = "name='$service'"
 			$svc = Get-WmiObject Win32_Service -ComputerName $server -filter $svcParam -Credential $credential
 			#Perform $action
-			if ($action -eq 'start') { $x = $svc.StartService() }
-			elseif ($action -eq 'stop') { $x = $svc.StopService() }
-			if ($x.ReturnValue -ne 0) {return $x.ReturnValue}
+			if ($action -eq 'start') { 
+				$x = $svc.StartService() 
+				$desiredState = 'Running'
+				$undesiredState = 'Stopped'
+			}
+			elseif ($action -eq 'stop') { 
+				$x = $svc.StopService() 
+				$desiredState = 'Stopped'
+				$undesiredState = 'Running'
+			}
+			#If command was not accepted
+			if ($x.ReturnValue -ne 0) { return $x.ReturnValue }
 			$StartTime = Get-Date
 			#Wait for the service to complete the action until timeout
 			while ($true -and $x.ReturnValue -eq 0) {
@@ -76,12 +104,17 @@ Function Update-DBASqlServiceStatus {
 					throw $_
 					break
 				}
-				if ($action -eq 'start' -and $svc.State -eq 'Running') { return 0 }
-				elseif ($action -eq 'stop' -and $svc.State -eq 'Stopped') { return 0 }
+				#Succeeded
+				if ($svc.State -eq $desiredState) { return 0 }
+				#Failed after being in the Pending state
+				if ($pending -and $svc.State -eq $undesiredState) { return -2 }
+				#Timed out
 				if ($timeout -gt 0 -and ((Get-Date) - $StartTime).TotalSeconds -gt $timeout) { 
 					return -1
 				}
-				start-sleep 1
+				#Still pending
+				if ($svc.State -like '*Pending') { $pending = $true }
+				Start-Sleep 1
 			}
 		}
 	}
@@ -89,9 +122,9 @@ Function Update-DBASqlServiceStatus {
 	process {
 		$jobCollection = @()
 		#Get priorities on which the service startup/shutdown order is based
-		$servicePriorityCollection = $ServiceCollection.ServicePriority | Select-Object -unique | Sort-Object -Property @{Expression={[int]$_}; Descending = $action -eq 'start'}
+		$servicePriorityCollection = $ServiceCollection.ServicePriority | Select-Object -unique | Sort-Object -Property @{ Expression={ [int]$_ }; Descending = $action -eq 'start' }
 		foreach ($priority in $servicePriorityCollection) {
-			foreach ($service in ($ServiceCollection | Where-Object { $_.ServicePriority -eq $priority }) ) {
+			foreach ($service in ($ServiceCollection | Where-Object { $_.ServicePriority -eq $priority })) {
 				if ('dbatools.DbaSqlService' -in $service.PSObject.TypeNames) {
 					if ($Pscmdlet.ShouldProcess("Sending $action request to service $($service.ServiceName) on $($service.ComputerName)")) {
 						Write-Message -Level Verbose -Message "Attempting to $action service $($service.ServiceName) on $server."
@@ -114,6 +147,7 @@ Function Update-DBASqlServiceStatus {
 			    	try {
 			    		$jobResult = $job | Receive-Job -ErrorAction Stop
 				    	switch ($jobResult) {
+				    		-2 { Write-Message -Level Warning -Silent $Silent -FunctionName $callerName -Message "The service $($job.ServiceName) on $($job.ComputerName) failed to $action." }
 				    		-1 { Write-Message -Level Warning -Silent $Silent -FunctionName $callerName -Message "The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) has timed out." }
 				    		0 { switch ($action) { stop { $actionText = 'stopped' }; start { $actionText = 'started' } } 
 				    			Write-Message -Level Output -Silent $Silent -FunctionName $callerName -Message "Service $($job.ServiceName) on $($job.ComputerName) was successfully $actionText." 
