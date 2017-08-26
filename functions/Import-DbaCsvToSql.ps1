@@ -251,200 +251,6 @@ function Import-DbaCsvToSql {
 	}
 	
 	begin {
-		function Parse-OleQuery {
-			<#
-				.SYNOPSIS
-					Tests to ensure query is valid. This will be used for the GUI.
-
-				.EXAMPLE
-					Parse-OleQuery -Csv sqlservera -Query $query -FirstRowColumns $FirstRowColumns -delimiter $delimiter
-	 #>
-			param (
-				[string]$Provider,
-				[Parameter(Mandatory = $true)]
-				[string[]]$csv,
-				[Parameter(Mandatory = $true)]
-				[string]$Query,
-				[Parameter(Mandatory = $true)]
-				[bool]$FirstRowColumns,
-				[Parameter(Mandatory = $true)]
-				[string]$delimiter
-				
-			)
-			
-			if ($query.ToLower() -notmatch "\bcsv\b") {
-				return "SQL statement must contain the word 'csv'."
-			}
-			
-			try {
-				$datasource = Split-Path $csv[0]
-				$tablename = (Split-Path $csv[0] -leaf).Replace(".", "#")
-				switch ($FirstRowColumns) {
-					$true {
-						$FirstRowColumns = "Yes"
-					}
-					$false {
-						$FirstRowColumns = "No"
-					}
-				}
-				if ($provider -ne $null) {
-					$connstring = "Provider=$provider;Data Source=$datasource;Extended Properties='text';"
-				}
-				else {
-					$connstring = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$datasource;Extended Properties='text';"
-				}
-				
-				$conn = New-Object System.Data.OleDb.OleDbconnection $connstring
-				$conn.Open()
-				$sql = $Query -replace "\bcsv\b", " [$tablename]"
-				$cmd = New-Object System.Data.OleDB.OleDBCommand
-				$cmd.Connection = $conn
-				$cmd.CommandText = $sql
-				$null = $cmd.ExecuteReader()
-				$cmd.Dispose()
-				$conn.Dispose()
-				return $true
-			}
-			catch {
-				return $false
-			}
-		}
-		
-		function Test-SqlConnection {
-			<#
-			.SYNOPSIS
-				Uses System.Data.SqlClient to gather list of user databases.
-
-			.EXAMPLE
-				$SqlCredential = Get-Credential
-
-				Get-SqlDatabases -SqlInstance sqlservera -SqlCredential $SqlCredential
-			
-			.OUTPUTS
-				Array of user databases
-				
-	 #>
-			param (
-				[Parameter(Mandatory = $true)]
-				[Alias("ServerInstance", "SqlServer")]
-				[DbaInstanceParameter]$SqlInstance,
-				[object]$SqlCredential
-			)
-			$testconn = New-Object System.Data.SqlClient.SqlConnection
-			if ($SqlCredential.count -eq 0) {
-				$testconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3"
-			}
-			else {
-				$testconn.ConnectionString = "Data Source=$SqlInstance;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3"
-			}
-			try {
-				$testconn.Open()
-				$testconn.Close()
-				$testconn.Dispose()
-				return $true
-			}
-			catch {
-				$message = $_.Exception.Message.ToString()
-				Write-Verbose $message
-				if ($message -match "A network") {
-					$message = "Can't connect to $SqlInstance."
-				}
-				elseif ($message -match "Login failed for user") {
-					$message = "Login failed for $username."
-				}
-				return $message
-			}
-		}
-		
-		function Get-SqlDatabases {
-			<#
-				.SYNOPSIS
-					Uses System.Data.SqlClient to gather list of user databases.
-
-				.EXAMPLE
-					$SqlCredential = Get-Credential
-	
-					Get-SqlDatabases -SqlInstance sqlservera -SqlCredential $SqlCredential
-				
-				.OUTPUTS
-					Array of user databases				
-	 		#>
-			param (
-				[Parameter(Mandatory = $true)]
-				[Alias("ServerInstance", "SqlServer")]
-				[DbaInstanceParameter]$SqlInstance,
-				[object]$SqlCredential
-			)
-			$paramconn = New-Object System.Data.SqlClient.SqlConnection
-			if ($SqlCredential.count -eq 0) {
-				$paramconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3"
-			}
-			else {
-				$paramconn.ConnectionString = "Data Source=$SqlInstance;User Id=$($SqlCredential.UserName); Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3"
-			}
-			try {
-				$paramconn.Open()
-				$sql = "select name from master.dbo.sysdatabases where dbid > 4 order by name"
-				$paramcmd = New-Object System.Data.SqlClient.SqlCommand($sql, $paramconn, $null)
-				$datatable = New-Object System.Data.DataTable
-				[void]$datatable.Load($paramcmd.ExecuteReader())
-				$databaselist = $datatable.rows.name
-				$null = $paramcmd.Dispose()
-				$null = $paramconn.Close()
-				$null = $paramconn.Dispose()
-				return $databaselist
-			}
-			catch {
-				throw "Cannot access $SqlInstance"
-			}
-		}
-		
-		function Get-SqlTables {
-			<#
-				.SYNOPSIS
-					Uses System.Data.SqlClient to gather list of user databases.
-
-				.EXAMPLE
-					$SqlCredential = Get-Credential
-					
-					Get-SqlTables -SqlInstance sqlservera -Database mydb -SqlCredential $SqlCredential
-				
-				.OUTPUTS
-					Array of tables
-						
-	 		#>
-			param (
-				[Parameter(Mandatory = $true)]
-				[Alias("ServerInstance", "SqlServer")]
-				[DbaInstanceParameter]$SqlInstance,
-				[string]$Database,
-				[object]$SqlCredential
-			)
-			$tableconn = New-Object System.Data.SqlClient.SqlConnection
-			if ($SqlCredential.count -eq 0) {
-				$tableconn.ConnectionString = "Data Source=$SqlInstance;Integrated Security=True;Connection Timeout=3"
-			}
-			else {
-				$username = ($SqlCredential.UserName).TrimStart("\")
-				$tableconn.ConnectionString = "Data Source=$SqlInstance;User Id=$username; Password=$($SqlCredential.GetNetworkCredential().Password);Connection Timeout=3"
-			}
-			try {
-				$tableconn.Open()
-				$sql = "select name from $database.sys.tables order by name"
-				$tablecmd = New-Object System.Data.SqlClient.SqlCommand($sql, $tableconn, $null)
-				$datatable = New-Object System.Data.DataTable
-				[void]$datatable.Load($tablecmd.ExecuteReader())
-				$tablelist = $datatable.rows.name
-				$null = $tablecmd.Dispose()
-				$null = $tableconn.Close()
-				$null = $tableconn.Dispose()
-				return $tablelist
-			}
-			catch {
-				return
-			}
-		}
-		
 		function Get-Columns {
 			<#
 				.SYNOPSIS
@@ -1154,7 +960,7 @@ function Import-DbaCsvToSql {
 				# Attempt to get the number of results so that a nice progress bar can be displayed.
 				# This takes extra time, and files over 100MB take too long, so just skip them.
 				if ($sql -match "GROUP BY") {
-					"Query contains GROUP BY clause. Skipping result count."
+					Write-Warning -Message "Query contains GROUP BY clause. Skipping result count."
 				}
 				else {
 					Write-Output "[*] Determining total rows to be copied. This may take a few seconds."
@@ -1279,7 +1085,7 @@ function Import-DbaCsvToSql {
 					}
 					
 					if ($quoted -eq $true) {
-						Write-Warning "The CSV file appears quote identified. This may take a little longer."
+						Write-Warning "The CSV file appears to use quoted identifiers. This may take a little longer."
 						# Thanks for this, Chris! http://www.schiffhauer.com/c-split-csv-values-with-a-regular-expression/
 						$pattern = "((?<=`")[^`"]*(?=`"($delimiter|$)+)|(?<=$delimiter|^)[^$delimiter`"]*(?=$delimiter|$))"
 					}
@@ -1295,13 +1101,13 @@ function Import-DbaCsvToSql {
 							
 							if (($i % $batchsize) -eq 0) {
 								$bulkcopy.WriteToServer($datatable)
-								Write-Output "[*] $i rows have been inserted in $([math]::Round($elapsed.Elapsed.TotalSeconds, 2)) seconds"
+								Write-Output "[*] $i rows have been inserted in $([math]::Round($elapsed.Elapsed.TotalSeconds, 2)) seconds."
 								$datatable.Clear()
 							}
 						}
 					}
 					else {
-						if ($turbo -eq $true -and $first -gt 0) { Write-Warning "Using -First makes turbo a smidge slower." }
+						if ($turbo -eq $true -and $first -gt 0) { Write-Warning -Message "Using -First makes turbo a little slower." }
 						# Start import!
 						while (($line = $reader.ReadLine()) -ne $null) {
 							$i++
@@ -1369,8 +1175,7 @@ function Import-DbaCsvToSql {
 							if ($resultcount -is [int]) {
 								$percent = [int](($script:totalrows / $resultcount) * 100)
 								$timetaken = [math]::Round($elapsed.Elapsed.TotalSeconds, 2)
-								Write-Progress -id 1 -activity "Inserting $resultcount rows" -percentcomplete $percent `
-									-status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
+								Write-Progress -id 1 -activity "Inserting $resultcount rows" -percentcomplete $percent -status ([System.String]::Format("Progress: {0} rows ({1}%) in {2} seconds", $script:totalrows, $percent, $timetaken))
 							}
 							else {
 								Write-Host "$($script:totalrows) rows copied in $([math]::Round($elapsed.Elapsed.TotalSeconds, 2)) seconds."
@@ -1392,8 +1197,8 @@ function Import-DbaCsvToSql {
 				$completed = $false
 				if ($errormessage -like "*for one or more required parameters*") {
 					
-					Write-Error "Looks like your SQL syntax may be invalid. `nCheck the documentation for more information or start with a simple -Query 'select top 10 * from csv'."
-					Write-Error "Valid CSV columns are $columns."
+					Write-Error -Message "Looks like your SQL syntax may be invalid. `nCheck the documentation for more information or start with a simple -Query 'select top 10 * from csv'."
+					Write-Error -Message "Valid CSV columns are $columns."
 					
 				}
 				elseif ($errormessage -match "invalid column length") {
@@ -1410,7 +1215,7 @@ function Import-DbaCsvToSql {
 					$length = $datatable.max_length
 					
 					if ($safe -eq $true) {
-						Write-Warning "Column $index ($column) contains data with a length greater than $length"
+						Write-Warning "Column $index ($column) contains data with a length greater than $length."
 						Write-Warning "SqlBulkCopy makes it pretty much impossible to know which row caused the issue, but it's somewhere after row $($script:totalrows)."
 					}
 				}
