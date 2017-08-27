@@ -18,6 +18,11 @@
         /// <summary>
         /// A live smo server object was bound
         /// </summary>
-        Server
+        Server,
+
+        /// <summary>
+        /// A Central Management Server RegisteredServer SMO object was bound
+        /// </summary>
+        RegisteredServer
     }
 }
