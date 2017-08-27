@@ -1,7 +1,7 @@
 ﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-
+<#
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
 		if ($env:appveyor) {
@@ -98,3 +98,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		}
 	}
 }
+#>
