@@ -80,11 +80,10 @@ function Get-DbaRoleMember {
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $Instance"
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Write-Warning "Failed to connect to $instance"
-				continue
+				Stop-Function -Message "Failure connecting to $Instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			if ($IncludeServerLevel) {
