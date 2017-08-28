@@ -100,7 +100,9 @@ function Get-DbaRoleMember {
 					$irMembers = $instRole.EnumServerRoleMembers()
 					ForEach ($irMem in $irMembers) {
 						[PSCustomObject]@{
-							SQLInstance = $instance
+							ComputerName = $server.NetName
+							InstanceName = $server.ServiceName
+							SqlInstance = $server.DomainInstanceName
 							Database    = $null
 							Role        = $instRole.Name
 							Member      = $irMem.ToString()
@@ -137,7 +139,9 @@ function Get-DbaRoleMember {
 					$dbMembers = $dbRole.EnumMembers()
 					ForEach ($dbMem in $dbMembers) {
 						[PSCustomObject]@{
-							SqlInstance = $instance
+							ComputerName = $server.NetName
+							InstanceName = $server.ServiceName
+							SqlInstance = $server.DomainInstanceName
 							Database    = $db.Name
 							Role        = $dbRole.Name
 							Member      = $dbMem.ToString()
