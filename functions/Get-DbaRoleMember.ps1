@@ -85,7 +85,7 @@ function Get-DbaRoleMember {
 			catch {
 				Stop-Function -Message "Failure connecting to $Instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-
+			$defaults = 'ComputerName','InstanceName','SqlInstance','Database','Role','Member'
 			if ($IncludeServerLevel) {
 				Write-Message -Level Verbose -Message "Server Role Members included"
 				$instRoles = $null
@@ -94,19 +94,26 @@ function Get-DbaRoleMember {
 				if ($NoFixedRole) {
 					$instRoles = $instRoles | Where-Object IsFixedRole -eq $false
 				}
-				ForEach ($instRole in $instRoles) {
+				foreach ($instRole in $instRoles) {
 					Write-Message -Level Verbose -Message "Getting Server Role Members for $instRole on $instance"
-					$irMembers = $null
-					$irMembers = $instRole.EnumServerRoleMembers()
-					ForEach ($irMem in $irMembers) {
-						[PSCustomObject]@{
-							ComputerName = $server.NetName
-							InstanceName = $server.ServiceName
-							SqlInstance = $server.DomainInstanceName
-							Database    = $null
-							Role        = $instRole.Name
-							Member      = $irMem.ToString()
-						}
+					$irMembers = $instRole.EnumMemberNames()
+					foreach ($irMem in $irMembers) {
+						Add-Member -Force -InputObject $instRole -MemberType NoteProperty -Name Member -Value $irMem
+
+						Add-Member -Force -InputObject $instRole -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+						Add-Member -Force -InputObject $instRole -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+						Add-Member -Force -InputObject $instRole -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+						Add-Member -Force -InputObject $instRole -MemberType NoteProperty -Name Database -Value $null
+
+						Select-DefaultView -InputObject $instRole -Property $defaults
+						# [PSCustomObject]@{
+						# 	ComputerName = $server.NetName
+						# 	InstanceName = $server.ServiceName
+						# 	SqlInstance = $server.DomainInstanceName
+						# 	Database    = $null
+						# 	Role        = $instRole.Name
+						# 	Member      = $irMem.ToString()
+						# }
 					}
 				}
 			}
@@ -137,15 +144,24 @@ function Get-DbaRoleMember {
 				foreach ($dbRole in $dbRoles) {
 					Write-Message -Level Verbose -Message "Getting Database Role Members for $dbRole in $db on $instance"
 					$dbMembers = $dbRole.EnumMembers()
-					ForEach ($dbMem in $dbMembers) {
-						[PSCustomObject]@{
-							ComputerName = $server.NetName
-							InstanceName = $server.ServiceName
-							SqlInstance = $server.DomainInstanceName
-							Database    = $db.Name
-							Role        = $dbRole.Name
-							Member      = $dbMem.ToString()
-						}
+					foreach ($dbMem in $dbMembers) {
+						Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name Member -Value $dbMem
+
+						Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+						Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+						Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+						Add-Member -Force -InputObject $dbRole -MemberType NoteProperty -Name Database -Value $db.Name
+
+						Select-DefaultView -InputObject $dbRole -Property $defaults
+
+						# [PSCustomObject]@{
+						# 	ComputerName = $server.NetName
+						# 	InstanceName = $server.ServiceName
+						# 	SqlInstance = $server.DomainInstanceName
+						# 	Database    = $db.Name
+						# 	Role        = $dbRole.Name
+						# 	Member      = $dbMem.ToString()
+						# }
 					}
 				}
 			}
