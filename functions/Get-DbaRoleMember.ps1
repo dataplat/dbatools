@@ -87,7 +87,7 @@ function Get-DbaRoleMember {
 			}
 
 			if ($IncludeServerLevel) {
-				Write-Message -Level Verbose -Message"Server Role Members included"
+				Write-Message -Level Verbose -Message "Server Role Members included"
 				$instRoles = $null
 				Write-Message -Level Verbose -Message "Getting Server Roles on $instance"
 				$instRoles = $server.Roles
