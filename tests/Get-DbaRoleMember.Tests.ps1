@@ -19,7 +19,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 		#>
 		$paramCount = 7
 		$defaultParamCount = 11
-		[object[]]$params = (Get-ChildItem function:\Get-DbaAgReplica).Parameters.Keys
+		[object[]]$params = (Get-ChildItem function:\Get-DbaRoleMember).Parameters.Keys
 		$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeServerLevel', 'NoFixedRole', 'Silent'
 		it "Should contain our specific parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -40,7 +40,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 # Get-DbaNoun
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Context "Command actually works" {
-		$results = Get-DbaRoleMember -ComputerName $script:instance1 -IncludeServerLevel
+		$results = Get-DbaRoleMember -SqlInstance $script:instance1 -IncludeServerLevel
 		it "Should have correct properties" {
 			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,Role,Member'.Split(',')
 			($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
