@@ -175,6 +175,8 @@ namespace Sqlcollaborative.Dbatools.Parameter
                             return DbaInstanceInputType.Server;
                         case "microsoft.sqlserver.management.smo.linkedserver":
                             return DbaInstanceInputType.Linked;
+                        case "microsoft.sqlserver.management.registeredservers.registeredserver":
+                            return DbaInstanceInputType.RegisteredServer;
                         default:
                             return DbaInstanceInputType.Default;
                     }
@@ -444,6 +446,26 @@ namespace Sqlcollaborative.Dbatools.Parameter
                             if (!String.IsNullOrEmpty((string)tempInput.Properties["DNSHostName"].Value))
                                 _ComputerName = (string)tempInput.Properties["DNSHostName"].Value;
                         }
+                    }
+                    catch (Exception e)
+                    {
+                        throw new PSArgumentException("Failed to interpret input as Instance: " + Input, e);
+                    }
+                    break;
+                case "microsoft.sqlserver.management.registeredservers.registeredserver":
+                    try
+                    {
+                        //Pass the ServerName property of the SMO object to the string constrtuctor, 
+                        //so we don't have to re-invent the wheel on instance name / port parsing
+                        DbaInstanceParameter parm =
+                            new DbaInstanceParameter((string) tempInput.Properties["ServerName"].Value);
+                        _ComputerName = parm.ComputerName;
+
+                        if (parm.InstanceName != "MSSQLSERVER")
+                            _InstanceName = parm.InstanceName;
+
+                        if (parm.Port != 1433)
+                            _Port = parm.Port;
                     }
                     catch (Exception e)
                     {
