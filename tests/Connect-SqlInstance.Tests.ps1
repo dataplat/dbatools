@@ -27,9 +27,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     $newLogin = New-Object Microsoft.SqlServer.Management.Smo.Login($server, $login)
     $newLogin.LoginType = "SqlLogin"
     $newLogin.Create($password)
-
-
-    #Invoke-SqlCmd -SqlInstance $script:instance1 -Query "CREATE LOGIN $login WITH PASSWORD "
     
     Context "Connect with a new login" {
         It "Should login with newly created Sql Login (also tests credential login) and get instance name" {
@@ -41,7 +38,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results = Invoke-SqlCmd -ServerInstance $script:instance1 -Query "IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$login') EXEC sp_who '$login'"
             $results | Should Not BeNullOrEmpty
             foreach ($spid in $results.spid) {
-                { Invoke-SqlCmd -ServerInstance $script:instance1 -Query "kill $spid" } | Should Not Throw
+                { Invoke-SqlCmd -ServerInstance $script:instance1 -Query "kill $spid" -ErrorAction Stop} | Should Not Throw
             }
         }
     }
