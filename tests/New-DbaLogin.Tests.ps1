@@ -23,9 +23,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	foreach ($instance in $servers) {
 		foreach ($login in $logins) {
 			if ($l = Get-DbaLogin -SqlInstance $instance -Login $login) {
-				$results = Invoke-SqlCmd -ConnectionString $instance.ConnectionContext.ConnectionString -Query "IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$login') EXEC sp_who '$login'"
+				$results = $instance.Query("IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$login') EXEC sp_who '$login'")
 				foreach ($spid in $results.spid) {
-					Invoke-SqlCmd -ConnectionString $instance.ConnectionContext.ConnectionString -Query "kill $spid"
+					$null = $instance.Query("kill $spid")
 				}
 				if ($c = $l.EnumCredentials()) {
 					$l.DropCredential($c)
@@ -154,10 +154,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$cred = New-Object System.Management.Automation.PSCredential ("tester", $securePassword)
 			$s = Connect-SqlInstance -SqlInstance $script:instance1 -SqlCredential $cred
 			$s.Name | Should Be $script:instance1
-			$results = Invoke-SqlCmd -ServerInstance $script:instance1 -Query "IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$($cred.UserName)') EXEC sp_who '$($cred.UserName)'"
+			$results = $server1.Query("IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$($cred.UserName)') EXEC sp_who '$($cred.UserName)'")
 			$results | Should Not BeNullOrEmpty
 			foreach ($spid in $results.spid) {
-				{ Invoke-SqlCmd -ServerInstance $script:instance1 -Query "kill $spid" -ErrorAction Stop} | Should Not Throw
+				{ Invoke-SqlCmd2 -ServerInstance $script:instance1 -Query "kill $spid" -ErrorAction Stop} | Should Not Throw
 			}
 		}
 	}
@@ -172,9 +172,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	foreach ($instance in $servers) {
 		foreach ($login in $logins) {
 			if ($l = Get-DbaLogin -SqlInstance $instance -Login $login) {
-				$results = Invoke-SqlCmd -ConnectionString $instance.ConnectionContext.ConnectionString -Query "IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$login') EXEC sp_who '$login'"
+				$results = $instance.Query("IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$login') EXEC sp_who '$login'")
 				foreach ($spid in $results.spid) {
-					Invoke-SqlCmd -ConnectionString $instance.ConnectionContext.ConnectionString -Query "kill $spid"
+					$null = $instance.Query("kill $spid")
 				}
 				if ($c = $l.EnumCredentials()) {
 					$l.DropCredential($c)
