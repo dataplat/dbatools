@@ -23,7 +23,7 @@ function Get-DbaUptime {
 		.PARAMETER WindowsCredential
 			Allows you to authenticate to Windows servers using alternate credentials.
 
-			$wincred = Get-Credential, then pass $scred object to the -WindowsCredential parameter.
+			$wincred = Get-Credential, then pass $wincred object to the -WindowsCredential parameter.
 			
 		.PARAMETER SqlOnly
 			Excludes the Windows server information
