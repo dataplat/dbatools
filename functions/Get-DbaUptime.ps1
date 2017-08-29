@@ -50,7 +50,7 @@ function Get-DbaUptime {
 			Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress instance on host winserver  and the default instance on host sql2016
 			
 		.EXAMPLE   
-			Get-DbaRegisteredServerName -SqlInstance sql2014 | Get-DbaUptime 
+			Get-DbaRegisteredServer -SqlInstance sql2014 | Get-DbaUptime 
 
 			Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for every server listed in the Central Management Server on sql2014
 			
