@@ -108,13 +108,13 @@ Function Get-DbaSqlService {
 			if ($Server.ComputerName) {
 				$Computer = $server.ComputerName
 				Write-Message -Level Verbose -Message "Getting SQL Server namespace on $Computer"
-				$namespace = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
-				Where-Object { (Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue).count -gt 0 } |
+				$namespace = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue -Credential $credential |
+				Where-Object { (Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue -Credential $credential).count -gt 0 } |
 				Sort-Object Name -Descending | Select-Object -First 1
 				if ($namespace.Name) {
 					Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer"
 					try {
-						$services = Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE $TypeClause" -ErrorAction SilentlyContinue
+						$services = Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE $TypeClause" -ErrorAction SilentlyContinue -Credential $credential
 						Write-Message -Level Verbose -Silent $Silent -Message "Creating output objects"
 						ForEach ($service in $services) {
 							Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $service.HostName

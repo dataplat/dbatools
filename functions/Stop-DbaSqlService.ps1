@@ -26,6 +26,9 @@ Function Stop-DbaSqlService {
     
     .PARAMETER ServiceCollection
     A collection of services from Get-DbaSqlService
+
+    .PARAMETER Force
+		Use this switch to stop dependent services before proceeding with the specified service
     
     .PARAMETER Silent
 		Use this switch to disable any kind of verbose messages
@@ -81,21 +84,40 @@ Function Stop-DbaSqlService {
 		[parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Service")]
 		[object[]]$ServiceCollection,
 		[int]$Timeout = 30,
-		[PSCredential]$Credential,
+    [PSCredential]$Credential,
+    [switch]$Force,
 		[switch]$Silent
 	)
 	begin {
 		$processArray = @()
 		if ($PsCmdlet.ParameterSetName -eq "Server") {
-			$serviceCollection = Get-DbaSqlService @PSBoundParameters
-		}
+      $serviceParams = @{ ComputerName = $ComputerName }
+      if ($InstanceName) { $serviceParams.InstanceName = $InstanceName }
+      if ($Type) { $serviceParams.Type = $Type }
+      if ($Credential) { $serviceParams.Credential = $Credential }
+      if ($Silent) { $serviceParams.Silent = $Silent }
+      $serviceCollection = Get-DbaSqlService @serviceParams
+    }
 	}
 	process {
 		#Get all the objects from the pipeline before proceeding
 		$processArray += $serviceCollection
 	}
 	end {
-		$processArray = $processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) }
+    foreach ($service in $processArray) {
+      if ($Force -and $service.ServiceType -eq 'Engine' -and !($processArray | Where-Object { $_.ServiceType -eq 'Agent' -and $_.ServiceName -eq $service.ServiceName -and $_.ComputerName -eq $service.ComputerName })) {
+        #Construct parameters to call Get-DbaSqlService
+        $serviceParams = @{ 
+          ComputerName = $service.ComputerName 
+          InstanceName = $service.InstanceName
+          Type = 'Agent'
+        }
+        if ($Credential) { $serviceParams.Credential = $Credential }
+        if ($Silent) { $serviceParams.Silent = $Silent }
+        $processArray += Get-DbaSqlService @serviceParams
+      }
+    }
+    $processArray = $processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) }
 		if ($processArray) {
 			Update-ServiceStatus -ServiceCollection $processArray -Action 'stop' -Timeout $Timeout -Silent $Silent
 		}
