@@ -116,8 +116,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		It "Should retain its same properties" {
 			
-			$login1 = Get-Dbalogin -SqlInstance $server1 -login tester
-			$login2 = Get-Dbalogin -SqlInstance $server2 -login tester
+			$login1 = Get-Dbalogin -SqlInstance $script:instance1 -login tester
+			$login2 = Get-Dbalogin -SqlInstance $script:instance2 -login tester
 			
 			$login2 | Should Not BeNullOrEmpty
 			
@@ -134,8 +134,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		It "Should not have same properties because of the overrides" {
 			
-			$login1 = Get-Dbalogin -SqlInstance $server1 -login claudio
-			$login2 = Get-Dbalogin -SqlInstance $server2 -login port
+			$login1 = Get-Dbalogin -SqlInstance $script:instance1 -login claudio
+			$login2 = Get-Dbalogin -SqlInstance $script:instance2 -login port
 			
 			$login2 | Should Not BeNullOrEmpty
 			
@@ -188,6 +188,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	$server1.Credentials[$credLogin].Drop()
 	$server1.Databases['master'].Certificates[$certificateName].Drop()
 	if (!$mkey) {
-		$null = Remove-DbaDatabaseMasterKey -SqlInstance $server1 -Database master -Confirm:$false
+		$null = Remove-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database master -Confirm:$false
 	}
 }
