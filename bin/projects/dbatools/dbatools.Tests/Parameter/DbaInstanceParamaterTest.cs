@@ -29,30 +29,6 @@ namespace Sqlcollaborative.Dbatools.Parameter
         }
 
         /// <summary>
-        /// Checks that [localhost\instancename] is treated as a localhost connection
-        /// </summary>
-        [TestMethod]
-        public void TestBracketedName()
-        {
-            var dbaInstanceParamater = new DbaInstanceParameter("[computerName]");
-
-            Assert.AreEqual("computerName", dbaInstanceParamater.FullName);
-            Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
-        }
-
-        /// <summary>
-        /// Checks that [localhost\instancename] is treated as a localhost connection
-        /// </summary>
-        [TestMethod]
-        public void TestBracketedNameWithInstance()
-        {
-            var dbaInstanceParamater = new DbaInstanceParameter("[computerName\\sql2008r2sp2]");
-
-            Assert.AreEqual("computerName\\sql2008r2sp2", dbaInstanceParamater.FullName);
-            Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
-        }
-
-        /// <summary>
         /// Checks that . is treated as a localhost connection
         /// </summary>
         [TestMethod]
