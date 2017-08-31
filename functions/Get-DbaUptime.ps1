@@ -134,7 +134,7 @@ function Get-DbaUptime {
 				Select-DefaultView -InputObject $rtn -ExcludeProperty WindowsBootTime, WindowsUptime, SinceWindowsBoot
 			}
 			else {
-				Select-DefaultView -InputObject $rtn -Property ($rtn|get-member -MemberType NoteProperty|select-object -ExpandProperty name)
+				Select-DefaultView -InputObject $rtn -Property ($rtn | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)
 			}
 		}
 	}
