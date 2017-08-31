@@ -73,10 +73,10 @@ function Get-DbaUptime {
 	
 	begin {
 		$nowutc = (Get-Date).ToUniversalTime()
-		$WindowsOnly = $false;
 	}
 	process {
 		foreach ($instance in $SqlInstance) {
+            $SqlOnly = $false;
 			if ($instance.Gettype().FullName -eq [System.Management.Automation.PSCustomObject] ) {
 				$servername = $instance.SqlInstance
 			}
@@ -84,7 +84,7 @@ function Get-DbaUptime {
 				$servername = $instance.NetName
 			}
 			else {
-				$servername = $instance
+				$servername = $instance.ComputerName;
 			}
 
 			try {
@@ -94,7 +94,7 @@ function Get-DbaUptime {
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-			Write-Message -Level Verbose -Message "Getting Start times for $servername"
+			Write-Message -Level Verbose -Message "Getting start times for $servername"
 			#Get tempdb creation date
 			$SQLStartTime = $server.Databases["tempdb"].CreateDate
 			$SQLUptime = New-TimeSpan -Start $SQLStartTime.ToUniversalTime() -End $nowutc
@@ -104,7 +104,7 @@ function Get-DbaUptime {
 
 			try {
 				Write-Message -Level Verbose -Message "Getting WinBootTime via CimInstance for $servername"
-				$WinBootTime = (Get-DbaOperatingSystem -ComputerName $windowsServerName -Credential $WindowsCredential -ErrorAction SilentlyContinue).LastBootUpTime
+				$WinBootTime = (Get-DbaOperatingSystem -ComputerName $windowsServerName -Credential $WindowsCredential -ErrorAction SilentlyContinue).LastBootTime
 				$WindowsUptime = New-TimeSpan -start $WinBootTime.ToUniversalTime() -end $nowutc
 				$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
 			}
@@ -118,7 +118,7 @@ function Get-DbaUptime {
 					$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
 				}
 				catch {
-					$WindowsOnly = $true;
+					$SqlOnly = $true;
 					Stop-Function -Message "Failure getting WinBootTime" -ErrorRecord $_ -Target $instance -Continue
 				}
 			}
@@ -135,11 +135,11 @@ function Get-DbaUptime {
 				SinceWindowsBoot = $WindowsUptimeString
 			}
 
-			if ($WindowsOnly) {
-				Select-DefaultView -InputObject $rtn -ExcludeProperty WindowsBootTime, WindowsUptime, SinceWindowsBoot
+			if ($SqlOnly) {
+				Select-DefaultView -InputObject $rtn -ExcludeProperty WindowsBootTime,WindowsUptime,SinceWindowsBoot
 			}
 			else {
-				Select-DefaultView -InputObject $rtn
+				Select-DefaultView -InputObject $rtn -Property ($rtn|get-member -MemberType NoteProperty|select-object -ExpandProperty name)
 			}
 		}
 	}
