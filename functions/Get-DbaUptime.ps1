@@ -25,12 +25,6 @@ function Get-DbaUptime {
 
 			$wincred = Get-Credential, then pass $wincred object to the -WindowsCredential parameter.
 			
-		.PARAMETER SqlOnly
-			Excludes the Windows server information
-
-		.PARAMETER WindowsOnly
-			Excludes the SQL server information
-
 		.PARAMETER Silent
 			If this switch is enabled, the internal messaging functions will be silenced.
 
@@ -71,10 +65,6 @@ function Get-DbaUptime {
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer", "ComputerName")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[parameter(ParameterSetName = "Sql")]
-		[Switch]$SqlOnly,
-		[parameter(ParameterSetName = "Windows")]
-		[Switch]$WindowsOnly,
 		[Alias("Credential")]
 		[PSCredential]$SqlCredential,
 		[PSCredential]$WindowsCredential,
@@ -96,80 +86,51 @@ function Get-DbaUptime {
 				$servername = $instance
 			}
 
-			if ($WindowsOnly -ne $true) {
-				try {
-					Write-Message -Level Verbose -Message "Connecting to $instance"
-					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-				}
-				catch {
-					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-				}
-				Write-Message -Level Verbose -Message "Getting Start times for $servername"
-				#Get tempdb creation date
-				$SQLStartTime = $server.Databases["tempdb"].CreateDate
-				$SQLUptime = New-TimeSpan -Start $SQLStartTime.ToUniversalTime() -End $nowutc
-				$SQLUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($SQLUptime.Days), $($SQLUptime.Hours), $($SQLUptime.Minutes), $($SQLUptime.Seconds)
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
+			Write-Message -Level Verbose -Message "Getting Start times for $servername"
+			#Get tempdb creation date
+			$SQLStartTime = $server.Databases["tempdb"].CreateDate
+			$SQLUptime = New-TimeSpan -Start $SQLStartTime.ToUniversalTime() -End $nowutc
+			$SQLUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($SQLUptime.Days), $($SQLUptime.Hours), $($SQLUptime.Minutes), $($SQLUptime.Seconds)
 			
-			if ($SqlOnly -ne $true) {
-				$WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $WindowsCredential).FullComputerName
+			$WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $WindowsCredential).FullComputerName
 
+			try {
+				Write-Message -Level Verbose -Message "Getting WinBootTime via CimInstance for $servername"
+				$WinBootTime = (Get-DbaOperatingSystem -ComputerName $windowsServerName -Credential $WindowsCredential -ErrorAction SilentlyContinue).LastBootUpTime
+				$WindowsUptime = New-TimeSpan -start $WinBootTime.ToUniversalTime() -end $nowutc
+				$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
+			}
+			catch {
 				try {
-					Write-Message -Level Verbose -Message "Getting WinBootTime via CimInstance for $servername"
-					$WinBootTime = (Get-DbaOperatingSystem -ComputerName $windowsServerName -Credential $WindowsCredential -ErrorAction SilentlyContinue).LastBootUpTime
+					Write-Message -Level Verbose -Message "Getting WinBootTime via CimInstance DCOM"
+					$CimOption = New-CimSessionOption -Protocol DCOM
+					$CimSession = New-CimSession -Credential:$WindowsCredential -ComputerName $WindowsServerName -SessionOption $CimOption
+					$WinBootTime = ($CimSession | Get-CimInstance -ClassName Win32_OperatingSystem).LastBootUpTime
 					$WindowsUptime = New-TimeSpan -start $WinBootTime.ToUniversalTime() -end $nowutc
 					$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
 				}
 				catch {
-					try {
-						Write-Message -Level Verbose -Message "Getting WinBootTime via CimInstance DCOM"
-						$CimOption = New-CimSessionOption -Protocol DCOM
-						$CimSession = New-CimSession -Credential:$WindowsCredential -ComputerName $WindowsServerName -SessionOption $CimOption
-						$WinBootTime = ($CimSession | Get-CimInstance -ClassName Win32_OperatingSystem).LastBootUpTime
-						$WindowsUptime = New-TimeSpan -start $WinBootTime.ToUniversalTime() -end $nowutc
-						$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
-					}
-					catch {
-						Stop-Function -Message "Failure getting WinBootTime" -ErrorRecord $_ -Target $instance -Continue
-					}
+					Stop-Function -Message "Failure getting WinBootTime" -ErrorRecord $_ -Target $instance -Continue
 				}
+			}
 				
-				if ($null -eq $WinBootTime) {
-					#Skip the windows results as they'll either be garbage or not there.
-					$SqlOnly = $true
-				}
-			}
-			
-			if ($SqlOnly -eq $true) {
-				[PSCustomObject]@{
-					ComputerName  = $server.NetName
-					InstanceName  = $server.ServiceName
-					SqlServer     = $server.Name
-					SqlUptime     = $SQLUptime
-					SqlStartTime  = $SQLStartTime
-					SinceSqlStart = $SQLUptimeString
-				}
-			}
-			elseif ($WindowsOnly -eq $true) {
-				[PSCustomObject]@{
-					ComputerName     = $WindowsServerName
-					WindowsUptime    = $WindowsUptime
-					WindowsBootTime  = $WinBootTime
-					SinceWindowsBoot = $WindowsUptimeString
-				}
-			}
-			else {
-				[PSCustomObject]@{
-					ComputerName     = $WindowsServerName
-					InstanceName     = $server.ServiceName
-					SqlServer        = $server.Name
-					SqlUptime        = $SQLUptime
-					WindowsUptime    = $WindowsUptime
-					SqlStartTime     = $SQLStartTime
-					WindowsBootTime  = $WinBootTime
-					SinceSqlStart    = $SQLUptimeString
-					SinceWindowsBoot = $WindowsUptimeString
-				}
+			[PSCustomObject]@{
+				ComputerName     = $WindowsServerName
+				InstanceName     = $server.ServiceName
+				SqlServer        = $server.Name
+				SqlUptime        = $SQLUptime
+				WindowsUptime    = $WindowsUptime
+				SqlStartTime     = $SQLStartTime
+				WindowsBootTime  = $WinBootTime
+				SinceSqlStart    = $SQLUptimeString
+				SinceWindowsBoot = $WindowsUptimeString
 			}
 		}
 	}
