@@ -50,11 +50,6 @@ function Get-DbaUptime {
 			Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for the sqlexpress instance on host winserver  and the default instance on host sql2016
 			
 		.EXAMPLE   
-			Get-DbaUptime -SqlInstance sqlserver2014a, sql2016 -SqlOnly
-
-			Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string for the sqlexpress instance on host winserver  and the default instance on host sql2016
-
-		.EXAMPLE   
 			Get-DbaRegisteredServerName -SqlInstance sql2014 | Get-DbaUptime 
 
 			Returns an object with SQL Server start time, uptime as TimeSpan object, uptime as a string, and Windows host boot time, host uptime as TimeSpan objects and host uptime as a string for every server listed in the Central Management Server on sql2014
@@ -76,7 +71,7 @@ function Get-DbaUptime {
 	}
 	process {
 		foreach ($instance in $SqlInstance) {
-            $SqlOnly = $false;
+			$SqlOnly = $false;
 			if ($instance.Gettype().FullName -eq [System.Management.Automation.PSCustomObject] ) {
 				$servername = $instance.SqlInstance
 			}
@@ -136,7 +131,7 @@ function Get-DbaUptime {
 			}
 
 			if ($SqlOnly) {
-				Select-DefaultView -InputObject $rtn -ExcludeProperty WindowsBootTime,WindowsUptime,SinceWindowsBoot
+				Select-DefaultView -InputObject $rtn -ExcludeProperty WindowsBootTime, WindowsUptime, SinceWindowsBoot
 			}
 			else {
 				Select-DefaultView -InputObject $rtn -Property ($rtn|get-member -MemberType NoteProperty|select-object -ExpandProperty name)
