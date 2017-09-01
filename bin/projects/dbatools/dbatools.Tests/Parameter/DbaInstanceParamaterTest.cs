@@ -53,7 +53,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
         }
 
         /// <summary>
-        /// Checks that . is treated as a localhost connection
+        /// Checks that ::1 is treated as a localhost connection
         /// </summary>
         [TestMethod]
         public void TestLocalhostIPv6Constructor()
