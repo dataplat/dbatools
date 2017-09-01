@@ -113,12 +113,11 @@ function Get-DbaUptime {
 					$WindowsUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($WindowsUptime.Days), $($WindowsUptime.Hours), $($WindowsUptime.Minutes), $($WindowsUptime.Seconds)
 				}
 				catch {
-					$SqlOnly = $true;
 					Stop-Function -Message "Failure getting WinBootTime" -ErrorRecord $_ -Target $instance -Continue
 				}
 			}
 				
-			$rtn = [PSCustomObject]@{
+			[PSCustomObject]@{
 				ComputerName     = $WindowsServerName
 				InstanceName     = $server.ServiceName
 				SqlServer        = $server.Name
@@ -128,13 +127,6 @@ function Get-DbaUptime {
 				WindowsBootTime  = $WinBootTime
 				SinceSqlStart    = $SQLUptimeString
 				SinceWindowsBoot = $WindowsUptimeString
-			}
-
-			if ($SqlOnly) {
-				Select-DefaultView -InputObject $rtn -ExcludeProperty WindowsBootTime, WindowsUptime, SinceWindowsBoot
-			}
-			else {
-				Select-DefaultView -InputObject $rtn -Property ($rtn | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)
 			}
 		}
 	}
