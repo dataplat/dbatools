@@ -268,6 +268,8 @@ namespace Sqlcollaborative.Dbatools.Parameter
                 {
                     throw new ArgumentException(String.Format("Failed to interpret named pipe path notation: {0} | {1}", InputObject, e.Message), e);
                 }
+
+                return;
             }
 
             // Connection String interpretation
