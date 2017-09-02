@@ -243,7 +243,8 @@ namespace Sqlcollaborative.Dbatools.Parameter
                 return;
             }
 
-            string tempString = Name;
+            string tempString = Name.Trim();
+            tempString = Regex.Replace(tempString, @"^\[(.*)\]$", "$1");
 
             // Handle and clear protocols. Otherwise it'd make port detection unneccessarily messy
             if (Regex.IsMatch(tempString, "^TCP:", RegexOptions.IgnoreCase))
