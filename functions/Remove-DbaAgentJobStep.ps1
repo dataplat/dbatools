@@ -134,6 +134,6 @@ Remove the job step from the job on multiple servers using pipeline
 	} # process
 	
 	end {
-		Write-Message -Message "Finished removing the jobs step(s)" -Level Output
+		Write-Message -Message "Finished removing the jobs step(s)" -Level Verbose
 	}
 }
