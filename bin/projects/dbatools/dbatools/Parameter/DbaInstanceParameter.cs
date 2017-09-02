@@ -252,6 +252,25 @@ namespace Sqlcollaborative.Dbatools.Parameter
             string tempString = Name.Trim();
             tempString = Regex.Replace(tempString, @"^\[(.*)\]$", "$1");
 
+            // Named Pipe path notation interpretation
+            if (Regex.IsMatch(tempString, @"^\\\\[^\\]+\\pipe\\([^\\]+\\){0,1}sql\\query$", RegexOptions.IgnoreCase))
+            {
+                try
+                {
+                    _NetworkProtocol = SqlConnectionProtocol.NP;
+
+                    _ComputerName = Regex.Match(tempString, @"^\\\\([^\\]+)\\").Groups[1].Value;
+
+                    if (Regex.IsMatch(tempString, @"\\MSSQL\$[^\\]+\\", RegexOptions.IgnoreCase))
+                        _InstanceName = Regex.Match(tempString, @"\\MSSQL\$([^\\]+)\\", RegexOptions.IgnoreCase).Groups[1].Value;
+                }
+                catch (Exception e)
+                {
+                    throw new ArgumentException(String.Format("Failed to interpret named pipe path notation: {0} | {1}", InputObject, e.Message), e);
+                }
+            }
+
+            // Connection String interpretation
             try
             {
                 System.Data.SqlClient.SqlConnectionStringBuilder connectionString = new System.Data.SqlClient.SqlConnectionStringBuilder(tempString);
