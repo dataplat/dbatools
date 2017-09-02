@@ -122,6 +122,7 @@ function Connect-SqlInstance {
 	}
 	
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $ConvertedSqlInstance.FullSmoName
+	if ($ConvertedSqlInstance.IsConnectionString) { $server.ConnectionContext.ConnectionString = $ConvertedSqlInstance.InputObject }
 	$server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
 	
 	try {
