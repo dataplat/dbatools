@@ -1,73 +1,70 @@
 function Remove-DbaAgentJob {
     <#
-        .SYNOPSIS 
-            Remove-DbaAgentJob removes a job.
+.SYNOPSIS 
+Remove-DbaAgentJob removes a job.
 
-        .DESCRIPTION
-            Remove-DbaAgentJob removes a a job in the SQL Server Agent.
+.DESCRIPTION
+Remove-DbaAgentJob removes a a job in the SQL Server Agent.
 
-		.PARAMETER SqlInstance
-			The SQL Server instance. Server version must be SQL Server version 2012 or higher.
+.PARAMETER SqlInstance
+SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-		.PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted).
-        
-        .PARAMETER Job
-            The name of the job. Can be null if the the job id is being used.
+.PARAMETER SqlCredential
+Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+To connect as a different Windows user, run PowerShell as that user.
 
-        .PARAMETER KeepHistory
-            Specifies to keep the history for the job. By default is history is deleted.
+.PARAMETER Job
+The name of the job. Can be null if the the job id is being used.
 
-        .PARAMETER KeepUnusedSchedule
-            Specifies to keep the schedules attached to this job if they are not attached to any other job. 
-            By default the unused schedule is deleted.
+.PARAMETER KeepHistory
+Specifies to keep the history for the job. By default is history is deleted.
 
-		.PARAMETER WhatIf
-			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+.PARAMETER KeepUnusedSchedule
+Specifies to keep the schedules attached to this job if they are not attached to any other job. 
+By default the unused schedule is deleted.
 
-		.PARAMETER Confirm
-			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+.PARAMETER WhatIf
+Shows what would happen if the command were to run. No actions are actually performed.
 
-		.PARAMETER Silent
-			If this switch is enabled, the internal messaging functions will be silenced.
+.PARAMETER Confirm
+Prompts you for confirmation before executing any changing operations within the command.
 
-        .NOTES 
-            Original Author: Sander Stad (@sqlstad, sqlstad.nl)
-            Tags: Agent, Job
-                
-            Website: https://dbatools.io
-            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
 
-        .LINK
-            https://dbatools.io/Remove-DbaAgentJob
+.NOTES 
+Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+Tags: Agent, Job
+	
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-        .EXAMPLE   
-            Remove-DbaAgentJob -SqlInstance sql1 -Job Job1
+.LINK
+https://dbatools.io/Remove-DbaAgentJob
 
-            Removes the job from the instance with the name Job1.
+.EXAMPLE   
+Remove-DbaAgentJob -SqlInstance sql1 -Job Job1
+Removes the job from the instance with the name Job1
 
-        .EXAMPLE   
-            Remove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepHistory
+.EXAMPLE   
+Remove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepHistory
+Removes the job but keeps the history
 
-            Removes the job but keeps the history.
+.EXAMPLE   
+Remove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepUnusedSchedule
+Removes the job but keeps the unused schedules
 
-        .EXAMPLE   
-            Remove-DbaAgentJob -SqlInstance sql1 -Job Job1 -KeepUnusedSchedule
+.EXAMPLE   
+Remove-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1 
+Removes the job from multiple servers
 
-            Removes the job but keeps the unused schedules.
+.EXAMPLE   
+sql1, sql2, sql3 | Remove-DbaAgentJob -Job Job1 
+Removes the job from multiple servers using pipe line
 
-        .EXAMPLE   
-            Remove-DbaAgentJob -SqlInstance sql1, sql2, sql3 -Job Job1 
-
-            Removes the job from multiple servers.
-
-        .EXAMPLE   
-            sql1, sql2, sql3 | Remove-DbaAgentJob -Job Job1 
-
-            Removes the job from multiple servers using pipe line
-
-    #>
+#>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 
     param(
@@ -99,7 +96,7 @@ function Remove-DbaAgentJob {
             # Try connecting to the instance
             Write-Message -Message "Attempting to connect to $instance" -Level Verbose
             try {
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                $server = Connect-DbaSqlServer -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -154,6 +151,6 @@ function Remove-DbaAgentJob {
     } # process
 
     end {
-        Write-Message -Message "Finished removing jobs(s)." -Level Output
+        Write-Message -Message "Finished removing jobs(s)." -Level Verbose
     }
 }
