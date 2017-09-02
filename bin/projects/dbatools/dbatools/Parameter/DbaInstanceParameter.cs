@@ -262,6 +262,8 @@ namespace Sqlcollaborative.Dbatools.Parameter
                 _NetworkProtocol = tempParam.NetworkProtocol;
 
                 IsConnectionString = true;
+
+                return;
             }
             catch { }
 
