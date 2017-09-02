@@ -145,6 +145,12 @@ namespace Sqlcollaborative.Dbatools.Parameter
         }
 
         /// <summary>
+        /// Whether the input is a connection string
+        /// </summary>
+        [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+        public bool IsConnectionString;
+
+        /// <summary>
         /// The original object passed to the parameter class.
         /// </summary>
         [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
@@ -245,6 +251,19 @@ namespace Sqlcollaborative.Dbatools.Parameter
 
             string tempString = Name.Trim();
             tempString = Regex.Replace(tempString, @"^\[(.*)\]$", "$1");
+
+            try
+            {
+                System.Data.SqlClient.SqlConnectionStringBuilder connectionString = new System.Data.SqlClient.SqlConnectionStringBuilder(tempString);
+                DbaInstanceParameter tempParam = new DbaInstanceParameter(connectionString.DataSource);
+                _ComputerName = tempParam.ComputerName;
+                if (tempParam.InstanceName != "MSSQLSERVER") { _InstanceName = tempParam.InstanceName; }
+                if (tempParam.Port != 1433) { _Port = tempParam.Port; }
+                _NetworkProtocol = tempParam.NetworkProtocol;
+
+                IsConnectionString = true;
+            }
+            catch { }
 
             // Handle and clear protocols. Otherwise it'd make port detection unneccessarily messy
             if (Regex.IsMatch(tempString, "^TCP:", RegexOptions.IgnoreCase))
