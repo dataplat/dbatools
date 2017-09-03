@@ -70,15 +70,13 @@ function Set-DbaAgHadr {
 			$computer = $instance.ComputerName
 			$instanceName = $instance.InstanceName
 
-			$restartIt = $false
 			$noChange = $false
 
-			if ($instance.InstanceName -eq 'MSSQLSERVER') {
-				$agentService = 'SQLSERVERAGENT'
+			switch ($instance.InstanceName) {
+				'MSSQLSERVER' { $agentName = 'SQLSERVERAGENT' }
+				default { $agentName = "SQLAgent`$$instanceName" }
 			}
-			else {
-				$agentService = "SQLAgent`$$instanceName"
-			}
+
 			try {
 				Write-Message -Level Verbose -Message "Checking current Hadr setting for $computer"
 				$computerFullName = (Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -Silent).FullComputerName
@@ -89,7 +87,7 @@ function Set-DbaAgHadr {
 			}
 
 			$isHadrEnabled = $currentState.IsHadrEnabled
-			Write-Message -Level InternalComment -Message "$isntance Hadr current value: $isHadrEnabled"
+			Write-Message -Level InternalComment -Message "$instance Hadr current value: $isHadrEnabled"
 
 			if ($isHadrEnabled -eq $true -and $Enabled -eq 1) {
 				Write-Message -Level Warning -Message "Hadr is already enabled for instance: $($instance.FullName)"
@@ -102,36 +100,44 @@ function Set-DbaAgHadr {
 				continue
 			}
 
-			$scriptBlock = {
-				$instanceName = $args[0]
-				$agentName = $args[1]
-				$hadrSet = $args[2]
-				$force = $args[3]
+			# $scriptBlock = {
+			# 	$instanceName = $args[0]
+			# 	$agentName = $args[1]
+			# 	$hadrSet = $args[2]
+			# 	$force = $args[3]
 
-				$wmi.Services[$instanceName].ChangeHadrServiceSetting($hadrSet)
-				if ($force) {
-					$wmi.Services[$instanceName].Stop()
-					Start-Sleep -Seconds 8
-					$wmi.Services[$instanceName].Start()
+			# 	$wmi.Services[$instanceName].ChangeHadrServiceSetting($hadrSet)
+			# 	if ($force) {
+			# 		$wmi.Services[$instanceName].Stop()
+			# 		Start-Sleep -Seconds 8
+			# 		$wmi.Services[$instanceName].Start()
 
-					if ($wmi.Services[$agentName].ServiceState -ne 'Running') {
-						$wmi.Services[$agentName].Start()
+			# 		if ($wmi.Services[$agentName].ServiceState -ne 'Running') {
+			# 			$wmi.Services[$agentName].Start()
+			# 		}
+			# 	}
+			# }
+			$sqlwmi = new-object ('Microsoft.SqlServer.Management.Smo.WMI.ManagedComputer') $computerFullName
+			$sqlService = $sqlwmi.Services[$instanceName]
+			$agentService = $sqlwmi.Services[$agentService]
+
+			if ($noChange -eq $false) {
+				if ($PSCmdlet.ShouldProcess($instance,"Changing Hadr from $isHadrEnabled to $Enabled for $instance")) {
+					$sqlService.ChangeHadrServiceSetting($Enabled)
+				}
+				if (Test-Bound 'Force') {
+					if ($PSCmdlet.ShouldProcess($instance,"Force provided, restarting Engine and Agent service for $instance on $computerFullName")) {
+						try {
+							<# have to call it twice until command is fixed #>
+							Stop-DbaSqlService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent,Engine
+							Start-DbaSqlService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent,Engine
+						}
+						catch {
+							Stop-Function -Message "Issue restarting $instance" -Target $instance -Continue
+						}
 					}
 				}
 			}
-
-			if ($isHadrEnabled -eq $true -and $Enabled -eq 0) {
-				if ($PSCmdlet.ShouldProcess($instance, "Changing Hadr from $isHadrEnabled to $Enabled for $instance.")) {
-					if ($Force) { $restartIt = $true }
-					Invoke-ManagedComputerCommand -ComputerName $computerFullName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $instanceName, $agentService, $Enabled, $restartIt
-				}
-			}
-			if ($isHadrEnabled -eq $false -and $Enabled -eq 1) {
-				if ($PSCmdlet.ShouldProcess("$instance", "Changing Hadr from $isHadrEnabled to $Enabled for $instance.")) {
-					if ($Force) { $restartIt = $true }
-					Invoke-ManagedComputerCommand -ComputerName $computerFullName -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $instanceName, $agentService, $Enabled, $restartIt
-				}
-			}
-		}
+		} # foreach instance
 	}
 }
