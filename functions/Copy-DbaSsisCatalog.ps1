@@ -109,11 +109,11 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
             param (
                 [Object]$Computer
             )
-            $result = Get-Service -ComputerName $Computer -Name msdts*
+	    $result = Get-DbaSqlService -ComputerName $Computer | Where-Object Servicename -like "MsDts*"
             if ($result.Count -gt 0) {
                 $running = $false
                 foreach ($service in $result) {
-                    if (!$service.Status -eq "Running") {
+                    if (!$service.State -eq "Running") {
                         Write-Warning "Service $($service.DisplayName) was found on the destination, but is currently not running."
                     }
                     else {

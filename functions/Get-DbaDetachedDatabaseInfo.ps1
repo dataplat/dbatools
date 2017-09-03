@@ -1,58 +1,47 @@
-Function Get-DbaDetachedDatabaseInfo
-{
-<#  
-.SYNOPSIS  
-Get detailed information about detached SQL Server database files.
+function Get-DbaDetachedDatabaseInfo {
+	<#  
+		.SYNOPSIS  
+			Get detailed information about detached SQL Server database files.
 
-.DESCRIPTION
-This script gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure. 
-	
-"Data files" and "Log file" report the structure of the data and log files as they were when the database was detached. "Database version" is the comptability level.
+		.DESCRIPTION
+			Gathers the following information from detached database files: database name, SQL Server version (compatibility level), collation, and file structure. 
+			
+			"Data files" and "Log file" report the structure of the data and log files as they were when the database was detached. "Database version" is the compatibility level.
 
-MDF files are most easily read by using a SQL Server to interpret them. Because of this, you must specify a SQL Server and the path must be relative to the SQL Server.
+			MDF files are most easily read by using a SQL Server to interpret them. Because of this, you must specify a SQL Server and the path must be relative to the SQL Server.
 
-.PARAMETER SqlInstance
-An online SQL Server is required to parse the information within the detached database file. Note that this script will not attach the file, it will simply use SQL Server to read its contents.
- 
-.PARAMETER Path 
-The path to the MDF file. This path must be readable by the SQL Server service account. Ideally, the MDF will be located on the SQL Server itself, or on a network share to which the SQL Server service account has access. 
+		.PARAMETER SqlInstance 
+			Source SQL Server. This instance must be online and is required to parse the information contained with in the detached database file.
+			
+			This function will not attach the database file, it will only use SQL Server to read its contents.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-$cred = Get-Credential, this pass this $cred to the SqlCredential parameter. 
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.NOTES
-Tags: DisasterRecovery
-Author: Chrissy LeMaire (@cl), netnerds.net
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+			To connect as a different Windows user, run PowerShell as that user.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+		.PARAMETER Path 
+			Specifies the path to the MDF file to be read. This path must be readable by the SQL Server service account. Ideally, the MDF will be located on the SQL Server itself, or on a network share to which the SQL Server service account has access. 
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+		.NOTES
+			Tags: DisasterRecovery
+			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0	
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
- 
-.LINK 
-https://dbatools.io/Get-DbaDetachedDatabaseInfo
- 
-.EXAMPLE    
-Get-DbaDetachedDatabaseInfo -SqlInstance sql2016 -Path M:\Archive\mydb.mdf
-	
-SQL Server is required to process offilne MDF files. The abvoe example reutrns information about the detached database file, M:\Archive\mydb.mdf. This path is relative to the SQL Server "sql2016".
- #>	
+		.LINK 
+			https://dbatools.io/Get-DbaDetachedDatabaseInfo
+		
+		.EXAMPLE    
+			Get-DbaDetachedDatabaseInfo -SqlInstance sql2016 -Path M:\Archive\mydb.mdf
+			
+			Returns information about the detached database file M:\Archive\mydb.mdf using the SQL Server instance sql2016. The M drive is relative to the SQL Server instance.
+	 #>	
 	
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
@@ -65,10 +54,8 @@ SQL Server is required to process offilne MDF files. The abvoe example reutrns i
 		[PSCredential]$SqlCredential
 	)
 	
-	BEGIN
-	{
-		Function Get-MdfFileInfo
-		{
+	begin {
+		function Get-MdfFileInfo {
 			$datafiles = New-Object System.Collections.Specialized.StringCollection
 			$logfiles = New-Object System.Collections.Specialized.StringCollection
 			
@@ -77,25 +64,21 @@ SQL Server is required to process offilne MDF files. The abvoe example reutrns i
 			
 			$exists = Test-DbaSqlPath $server $Path
 			
-			if ($exists -eq $false)
-			{
-				throw "$servername cannot access the file $path. Does the file exist and does the service account ($serviceaccount) have accesss to the path?"
+			if ($exists -eq $false) {
+				throw "$servername cannot access the file $path. Does the file exist and does the service account ($serviceaccount) have access to the path?"
 			}
 			
-			try
-			{
+			try {
 				$detachedDatabaseInfo = $server.DetachedDatabaseInfo($path)
 				$dbname = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Database name" }).Value
 				$exactdbversion = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Database version" }).Value
 				$collationid = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Collation" }).Value
 			}
-			catch
-			{
+			catch {
 				throw "$servername cannot read the file $path. Is the database detached?"
 			}
 			
-			switch ($exactdbversion)
-			{
+			switch ($exactdbversion) {
 				852 { $dbversion = "SQL Server 2016" }
 				829 { $dbversion = "SQL Server 2016 Prerelease" }
 				782 { $dbversion = "SQL Server 2014" }
@@ -114,58 +97,50 @@ SQL Server is required to process offilne MDF files. The abvoe example reutrns i
 			
 			$collationsql = "SELECT name FROM fn_helpcollations() where collationproperty(name, N'COLLATIONID')  = $collationid"
 			
-			try
-			{
+			try {
 				$dataset = $server.databases['master'].ExecuteWithResults($collationsql)
 				$collation = "$($dataset.Tables[0].Rows[0].Item(0))"
 			}
-			catch
-			{
+			catch {
 				$collation = $collationid
 			}
 			
 			if ($collation.length -eq 0) { $collation = $collationid }
 			
-			try
-			{
-				foreach ($file in $server.EnumDetachedDatabaseFiles($path))
-				{
+			try {
+				foreach ($file in $server.EnumDetachedDatabaseFiles($path)) {
 					$datafiles += $file
 				}
 				
-				foreach ($file in $server.EnumDetachedLogFiles($path))
-				{
+				foreach ($file in $server.EnumDetachedLogFiles($path)) {
 					$logfiles += $file
 				}
 			}
-			catch
-			{
+			catch {
 				throw "$servername unable to enumerate database or log structure information for $path"
 			}
 			
 			$mdfinfo = [pscustomobject]@{
-				Name = $dbname
-				Version = $dbversion
+				Name         = $dbname
+				Version      = $dbversion
 				ExactVersion = $exactdbversion
-				Collation = $collation
-				DataFiles = $datafiles
-				LogFiles = $logfiles
+				Collation    = $collation
+				DataFiles    = $datafiles
+				LogFiles     = $logfiles
 			}
 			
 			return $mdfinfo
 		}
 	}
 	
-	PROCESS
-	{
+	process {
 		
 		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		$mdfinfo = Get-MdfFileInfo $server $path
 		
 	}
 	
-	END
-	{
+	end {
 		$server.ConnectionContext.Disconnect()
 		return $mdfinfo
 	}
