@@ -3,13 +3,16 @@
 function Test-DbaConnection {
 	<#
 		.SYNOPSIS
-			Exported function. Tests a the connection to a single instance and shows the output.
+			Tests the connection to a single instance.
 
 		.DESCRIPTION
-			Tests a the connection to a single instance and shows the output.
+			Tests the ability to connect to an SQL Server instance outputting information about the server and instance.
 
 		.PARAMETER SqlInstance
-			The SQL Server Instance to test connection against
+			The SQL Server Instance to test connection
+
+		.PARAMETER Credential
+			Credential object used to connect to the Computer as a different user
 
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -23,52 +26,32 @@ function Test-DbaConnection {
 			Use this if you want the function to throw terminating errors you want to catch.
 
 		.EXAMPLE
-			Test-DbaConnection sql01
+			Test-DbaConnection sql2016b
 
-			Sample output:
-
-			Local PowerShell Enviornment
-
-			Windows    : 10.0.10240.0
-			PowerShell : 5.0.10240.16384
-			CLR        : 4.0.30319.42000
-			SMO        : 13.0.0.0
-			DomainUser : True
-			RunAsAdmin : False
-
-			SQL Server Connection Information
-
-			ServerName         : sql01
-			BaseName           : sql01
-			InstanceName       : (Default)
-			AuthType           : Windows Authentication (Trusted)
-			ConnectingAsUser   : ad\dba
+			ComputerName       : SQL2016B
+			InstanceName       : MSSQLSERVER
+			SqlInstance        : sql2016b
+			IsDefault          : True
+			AuthType           : Windows Authentication
+			ConnectingAsUser   : meltonlab\meltonadmin
 			ConnectSuccess     : True
-			SqlServerVersion   : 12.0.2370
-			AddlConnectInfo    : N/A
-			RemoteServer       : True
-			IPAddress          : 10.0.1.4
-			NetBIOSname        : SQLSERVER2014A
-			RemotingAccessible : True
-			Pingable           : True
-			DefaultSQLPortOpen : True
-			RemotingPortOpen   : True
+			SqlServerVersion   : 13.0.1601
+			DefaultSqlPortOpen : N/A
+			IPAddress          : 10.2.2.50
+			NetBIOSname        : SQL2016B.meltonlab.com
+			DomainName         : meltonlab.com
+			IsPingable         : True
+			IsRemote           : True
+			RemotingAccessible :
+			RemotingPortOpen   :
 
 		.NOTES
-			Tags: CIM
+			Tags: CIM, Test, Connection
 			Original Author: Chrissy LeMaire
-			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-			Copyright (C) 2016 Chrissy LeMaire
-			This program is free software: you can redistribute it and/or modify
-			it under the terms of the GNU General Public License as published by
-			the Free Software Foundation, either version 3 of the License, or
-			(at your option) any later version.
-			This program is distributed in the hope that it will be useful,
-			but WITHOUT ANY WARRANTY; without even the implied warranty of
-			MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-			GNU General Public License for more details.
-			You should have received a copy of the GNU General Public License
-			along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 	#>
 		[CmdletBinding()]
 		param (
@@ -83,7 +66,7 @@ function Test-DbaConnection {
 			foreach ($instance in $SqlInstance) {
 				# Get local enviornment
 				Write-Message -Level Verbose -Message "Getting local enivornment information"
-				$localinfo = [pscustomobject]@{
+				$localInfo = [pscustomobject]@{
 					Windows = [environment]::OSVersion.Version.ToString()
 					PowerShell = $PSVersionTable.PSversion.ToString()
 					CLR = $PSVersionTable.CLRVersion.ToString()
@@ -110,7 +93,7 @@ function Test-DbaConnection {
 						FQDN             :
 						FullComputerName :
 					 #>
-					$resolved = Resolve-DbaNetworkName -ComputerName $instance.ComputerName -Credential $SqlCredential
+					$resolved = Resolve-DbaNetworkName -ComputerName $instance.ComputerName -Credential $Credential
 				}
 				catch {
 					Stop-Function -Message "Unable to resolve server information" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
@@ -135,13 +118,13 @@ function Test-DbaConnection {
 					}
 					catch { $remotingport = $false }
 
-					Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name RemotingPortOpen -Value $remotingport
+					Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name RemotingPortOpen -Value $remotingport
 				}
 
 				# Test Connection first using Test-Connection which requires ICMP access then failback to tcp if pings are blocked
 				Write-Message -Level Verbose -Message "Testing ping to $($instance.ComputerName)"
 				$pingable = Test-Connection -ComputerName $instance.ComputerName -Count 1 -Quiet
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name IsPingable -Value $pingable
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name IsPingable -Value $pingable
 
 				# SQL Server connection
 				if ($instance -eq "(Default)") {
@@ -156,10 +139,10 @@ function Test-DbaConnection {
 					catch {
 						$sqlport = $false
 					}
-					Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name DefaultSqlPortOpen -Value $sqlport
+					Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name DefaultSqlPortOpen -Value $sqlport
 				}
 				else {
-					Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name DefaultSqlPortOpen -Value "N/A"
+					Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name DefaultSqlPortOpen -Value "N/A"
 				}
 
 				try {
@@ -178,25 +161,25 @@ function Test-DbaConnection {
 				else {
 					$authType = "SQL Authentication"
 				}
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name ComputerName -Value $resolved.ComputerName
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name InstanceName -Value $instance.InstanceName
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name SqlInstance -Value $instance.FullSmoName
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name ComputerName -Value $resolved.ComputerName
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name InstanceName -Value $instance.InstanceName
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name SqlInstance -Value $instance.FullSmoName
 
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name ConnectingAsUser -Value $username
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name AuthType -Value $authType
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name ConnectSuccess -Value $connectSuccess
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name SqlServerVersion -Value $server.Version
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name ConnectingAsUser -Value $username
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name AuthType -Value $authType
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name ConnectSuccess -Value $connectSuccess
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name SqlServerVersion -Value $server.Version
 
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name LocalWindows -Value $localinfo.Windows
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name LocalPowerShell -Value $localinfo.PowerShell
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name LocalCLR -Value $localinfo.CLR
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name LocalSMOVersion -Value $localinfo.SMO
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name LocalDomainUser -Value $localinfo.DomainUser
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name LocalRunAsAdmin -Value $localinfo.RunAsAdmin
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name LocalWindows -Value $localInfo.Windows
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name LocalPowerShell -Value $localInfo.PowerShell
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name LocalCLR -Value $localInfo.CLR
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name LocalSMOVersion -Value $localInfo.SMO
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name LocalDomainUser -Value $localInfo.DomainUser
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name LocalRunAsAdmin -Value $localInfo.RunAsAdmin
 
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name IPAddress -Value $resolved.IPAddress
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name NetBiosName -Value $resolved.FullComputerName
-				Add-Member -Force -InputObject $serverinfo -MemberType NoteProperty -Name DomainName -Value $resolved.Domain
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name IPAddress -Value $resolved.IPAddress
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name NetBiosName -Value $resolved.FullComputerName
+				Add-Member -Force -InputObject $serverInfo -MemberType NoteProperty -Name DomainName -Value $resolved.Domain
 
 				$defaults = 'ComputerName', 'InstanceName', 'SqlInstance',
 					'IsDefault','AuthType', 'ConnectingAsUser', 'ConnectSuccess',
