@@ -119,7 +119,7 @@ function Set-DbaAgHadr {
 			# }
 			$sqlwmi = new-object ('Microsoft.SqlServer.Management.Smo.WMI.ManagedComputer') $computerFullName
 			$sqlService = $sqlwmi.Services[$instanceName]
-			$agentService = $sqlwmi.Services[$agentService]
+			$agentService = $sqlwmi.Services[$agentName]
 
 			if ($noChange -eq $false) {
 				if ($PSCmdlet.ShouldProcess($instance,"Changing Hadr from $isHadrEnabled to $Enabled for $instance")) {
