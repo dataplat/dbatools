@@ -138,7 +138,7 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
 		$ServerSecondary = Connect-DbaSqlServer -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
 	catch {
-		Stop-Function -Message "Could not connect to Sql Server instance" -Target $SqlInstance -Continue
+		Stop-Function -Message "Could not connect to Sql Server instance"  -InnerErrorRecord $_ -Target $SqlInstance -Continue
 	}
 
 	# Try connecting to the instance
@@ -147,30 +147,25 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
 		$ServerPrimary = Connect-DbaSqlServer -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
 	}
 	catch {
-		Stop-Function -Message "Could not connect to Sql Server instance" -Target $PrimaryServer -Continue
+		Stop-Function -Message "Could not connect to Sql Server instance"  -InnerErrorRecord $_ -Target $PrimaryServer -Continue
 	}
 
 	# Check if the backup UNC path is correct and reachable
 	if ([bool]([uri]$BackupDestinationDirectory).IsUnc -and $BackupDestinationDirectory -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {
-		Stop-Function -Message "The backup destination path should be formatted in the form \\server\share." -InnerErrorRecord $_ -Target $SqlInstance
+		Stop-Function -Message "The backup destination path should be formatted in the form \\server\share." -Target $SqlInstance
 		return
 	}
 	else {
 		if (-not ((Test-Path $BackupDestinationDirectory -PathType Container -IsValid) -and ((Get-Item $BackupDestinationDirectory).PSProvider.Name -eq 'FileSystem'))) {
-			Stop-Function -Message "The backup destination path is not valid or can't be reached." -InnerErrorRecord $_ -Target $SqlInstance
+			Stop-Function -Message "The backup destination path is not valid or can't be reached." -Target $SqlInstance
 			return
 		}
 	}
 
 	# Check the MonitorServer
-	if (-not $MonitorServer) {
-		if ($Force) {
-			$MonitorServer = $SqlInstance
-			Write-Message -Message "Setting monitor server to $MonitorServer." -Level Verbose
-		}
-		else {
-			Stop-Function -Message "The monitor server needs to be set. Use -Force if system name must be used." -InnerErrorRecord $_ -Target $SqlInstance -Continue
-		}
+	if ($Force -and -not $MonitorServer) {
+		$MonitorServer = $SqlInstance
+		Write-Message -Message "Setting monitor server to $MonitorServer." -Level Verbose
 	}
 
 	# Check of the MonitorServerSecurityMode value is of type string and set the integer value
@@ -181,7 +176,7 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
 
 	# Check the MonitorServerSecurityMode if it's SQL Server authentication
 	if ($MonitorServerSecurityMode -eq 0 -and -not $MonitorCredential) {
-		Stop-Function -Message "The MonitorServerCredential cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $SqlInstance -Continue
+		Stop-Function -Message "The MonitorServerCredential cannot be empty when using SQL Server authentication." -Target $SqlInstance -Continue
 		return
 	}
 	elseif ($MonitorServerSecurityMode -eq 0 -and $MonitorCredential) {
@@ -191,14 +186,14 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
 
 		# Check if the user is in the database
 		if ($ServerSecondary.Databases['master'].Users.Name -notcontains $MonitorLogin) {
-			Stop-Function -Message "User $MonitorLogin for monitor login must be in the master database." -InnerErrorRecord $_ -Target $SqlInstance -Continue
+			Stop-Function -Message "User $MonitorLogin for monitor login must be in the master database." -Target $SqlInstance -Continue
 			return
 		}
 	}
 
 	# Check if the database is present on the primary sql server
 	if ($ServerPrimary.Databases.Name -notcontains $PrimaryDatabase) {
-		Stop-Function -Message "Database $PrimaryDatabase is not available on instance $PrimaryServer" -InnerErrorRecord $_ -Target $PrimaryServer -Continue
+		Stop-Function -Message "Database $PrimaryDatabase is not available on instance $PrimaryServer" -Target $PrimaryServer -Continue
 		return
 	}
 
@@ -214,15 +209,19 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
                 ,@backup_destination_directory = N'$BackupDestinationDirectory' 
                 ,@copy_job_name = N'$CopyJob' 
                 ,@restore_job_name = N'$RestoreJob' 
-                ,@file_retention_period = $FileRetentionPeriod 
-                ,@monitor_server = N'$MonitorServer' 
-                ,@monitor_server_security_mode = $($MonitorServerSecurityMode)
-                ,@copy_job_id = @LS_Secondary__CopyJobId
+				,@file_retention_period = $FileRetentionPeriod 
+				,@copy_job_id = @LS_Secondary__CopyJobId
                 ,@restore_job_id = @LS_Secondary__RestoreJobId
                 ,@secondary_id = @LS_Secondary__SecondaryId OUTPUT "
+	
+	if($MonitorServer){
+     	$Query += ",@monitor_server = N'$MonitorServer' 
+				,@monitor_server_security_mode = $($MonitorServerSecurityMode) "
+	}
+	
     
 	# Check the MonitorServerSecurityMode if it's SQL Server authentication
-	if ($MonitorServerSecurityMode -eq 0) {
+	if ($MonitorServerSecurityMode -eq 0 -and $MonitorServer) {
 		$Query += ",@monitor_server_login = N'$MonitorLogin'
             ,@monitor_server_password = N'$MonitorPassword' "
 	}
