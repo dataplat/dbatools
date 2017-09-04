@@ -5,8 +5,8 @@ function Invoke-Sqlcmd2
         Runs a T-SQL script.
 
     .DESCRIPTION
-        Runs a T-SQL script. Invoke-Sqlcmd2 runs the whole scipt and only captures the first selected result set, such as the output of PRINT statements when -verbose parameter is specified.
-        Paramaterized queries are supported.
+        Runs a T-SQL script. Invoke-Sqlcmd2 runs the whole script and only captures the first selected result set, such as the output of PRINT statements when -verbose parameter is specified.
+        Parameterized queries are supported.
 
         Help details below borrowed from Invoke-Sqlcmd
 
@@ -292,7 +292,7 @@ function Invoke-Sqlcmd2
     {
         if ($InputFile)
         {
-            $filePath = $(Resolve-Path $InputFile).path
+            $filePath = $(Resolve-Path $InputFile).ProviderPath
             $Query =  [System.IO.File]::ReadAllText("$filePath")
         }
 
