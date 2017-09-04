@@ -22,6 +22,9 @@ function Set-DbaAgHadr {
 
 		.PARAMETER Confirm
 			Prompts you for confirmation before executing any changing operations within the command.
+	
+		.PARAMETER Force
+			Will restart SQL Server and SQL Server Agent service to apply the change.
 
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
@@ -37,14 +40,14 @@ function Set-DbaAgHadr {
 			https://dbatools.io/Set-DbaAgHadr
 
 		.EXAMPLE
-			Set-DbaAgHadr -SqlInstance sql2016 -Enabled 1
+			Set-DbaAgHadr -SqlInstance sql2016 -Enabled 1 -Force
 
-			Sets Hadr service to enabled for the instance sql2016
+			Sets Hadr service to enabled for the instance sql2016, and restart the service to apply the change.
 
 		.EXAMPLE
-			Set-DbaAgHadr -SqlInstance sql2012\dev1 Enabled 0
+			Set-DbaAgHadr -SqlInstance sql2012\dev1 Enabled 0 -Force
 
-			Sets Hadr service to disabled for the instance dev1 on sq2012
+			Sets Hadr service to disabled for the instance dev1 on sq2012, and restart the service to apply the change.
 	#>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param (
