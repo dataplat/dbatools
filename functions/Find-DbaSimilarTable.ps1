@@ -98,7 +98,9 @@ Searches AdventureWorks database and lists all tables/views with its correspondi
     )
 
     begin {
-        $sql = "WITH ColCountsByTable
+        $everyServerVwCount = 0
+
+        $sqlSelect = "WITH ColCountsByTable
                 AS
                 (
                       SELECT
@@ -107,21 +109,12 @@ Searches AdventureWorks database and lists all tables/views with its correspondi
                             c.TABLE_NAME,
                             COUNT(1) AS Column_Count
                       FROM INFORMATION_SCHEMA.COLUMNS c
-                      /*
-                      --Plug in the schema and table name to get similar views/tables just for one or more tables
-                      WHERE
-                            c.TABLE_SCHEMA = 'TransactionPreProcessing'
-                            AND c.TABLE_NAME IN ('PreStagingTransaction')
-                      */
                       GROUP BY
                             c.TABLE_CATALOG,
                             c.TABLE_SCHEMA,
                             c.TABLE_NAME
                 )
                 SELECT
-                    SERVERPROPERTY('MachineName') AS ComputerName,
-                    ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-                    SERVERPROPERTY('ServerName') AS SqlInstance,
                       100 * COUNT(c2.COLUMN_NAME) /*Matching_Column_Count*/ / MIN(ColCountsByTable.Column_Count) /*Column_Count*/ AS MatchPercent,
                       DENSE_RANK() OVER(ORDER BY c.TABLE_CATALOG, c.TABLE_SCHEMA, c.TABLE_NAME) TableNameRankInDB,
                       c.TABLE_CATALOG AS DatabaseName,
@@ -147,13 +140,12 @@ Searches AdventureWorks database and lists all tables/views with its correspondi
                             ON t.TABLE_NAME != c2.TABLE_NAME
                                   AND c.COLUMN_NAME = c2.COLUMN_NAME
                       LEFT JOIN INFORMATION_SCHEMA.TABLES t2
-                            ON c2.TABLE_NAME = t2.TABLE_NAME
-                WHERE
-                    1 = 1 
-                    --<<TableTypeCondition>>-- 
-                    --<<SchemaNameCondition>>-- 
-                    --<<TableNameCondition>>-- 
-                    
+                            ON c2.TABLE_NAME = t2.TABLE_NAME"
+
+        $sqlWhere = " 
+                WHERE "
+
+        $sqlGroupBy = "
                 GROUP BY
                       c.TABLE_CATALOG,
                       c.TABLE_SCHEMA,
@@ -162,32 +154,77 @@ Searches AdventureWorks database and lists all tables/views with its correspondi
                       c2.TABLE_CATALOG,
                       c2.TABLE_SCHEMA,
                       c2.TABLE_NAME,
-	                  t2.TABLE_TYPE 
+	                  t2.TABLE_TYPE "
+
+        $sqlHaving = "
                 HAVING
-                    /*Match_Percent should be greater than 0!*/
-                    100 * COUNT(c2.COLUMN_NAME) /*Matching_Column_Count*/ / MIN(ColCountsByTable.Column_Count) /*Column_Count*/  > 0
-                    --<<MatchPercentThreshold>>--
+                    /*Match_Percent should be greater than 0 at minimum!*/
+                    "
+
+        $sqlOrderBy = "
                 ORDER BY
                       MatchPercent DESC"
         
-        $everyservervwcount = 0
+
+        $sql = ''
+		$wherearray = @()
+				
+		if ($ExcludeViews) {				
+			$wherearray += " (t.TABLE_TYPE <> 'VIEW' AND t2.TABLE_TYPE <> 'VIEW') "
+		}
+
+        if ($SchemaName) {
+            $wherearray += (" (c.TABLE_SCHEMA = '{0}') " -f $SchemaName.Replace("'","''"))  #Replace single quotes with two single quotes!                                     
+        }
+
+        if ($TableName) {
+            $wherearray += (" (c.TABLE_NAME = '{0}') " -f $TableName.Replace("'","''"))     #Replace single quotes with two single quotes!
+                                        
+        }
+        
+        if ($wherearray.length -gt 0) {
+			$sqlWhere = "$sqlWhere " + ($wherearray -join " AND ")
+		}
+        else {
+            $sqlWhere = ""
+        }
+        
+        
+        $matchThreshold = 0
+        if ($MatchPercentThreshold) {
+            $matchThreshold = $MatchPercentThreshold
+        }
+        else {
+            $matchThreshold = 0            
+        }
+
+        $sqlHaving += (" (100 * COUNT(c2.COLUMN_NAME) / MIN(ColCountsByTable.Column_Count) >= {0}) " -f $matchThreshold)
+        
+
+
+        $sql = "$sqlSelect $sqlWhere $sqlGroupBy $sqlHaving $sqlOrderBy"
+
+        Write-Message -Level Debug -Message $sql
+
     }
+
     process {
         foreach ($Instance in $SqlInstance) {
-            try {
-                Write-Message -Level Verbose -Message "Connecting to $Instance"
-                $server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Write-Message -Level Warning -Message "Failed to connect to: $Instance"
-                continue
-            }
 
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
+			
+
+            #Use IsAccessible instead of Status -eq 'normal' because databases that are on readable secondaries for AG or mirroring replicas will cause errors to be thrown
             if ($IncludeSystemDatabases) {
-                $dbs = $server.Databases | Where-Object { $_.Status -eq "normal" }
+                $dbs = $server.Databases | Where-Object { $_.IsAccessible -eq $true }
             }
             else {
-                $dbs = $server.Databases | Where-Object { $_.Status -eq "normal" -and $_.IsSystemObject -eq $false }
+                $dbs = $server.Databases | Where-Object { $_.IsAccessible -eq $true -and $_.IsSystemObject -eq $false }
             }
 
             if ($Database) {
@@ -198,50 +235,47 @@ Searches AdventureWorks database and lists all tables/views with its correspondi
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
 
-            if ($ExcludeViews) {
-                $sql = $sql -replace '--<<TableTypeCondition>>--', " AND (t.TABLE_TYPE <> 'VIEW' AND t2.TABLE_TYPE <> 'VIEW') "
-            }
 
-            if ($SchemaName) {
-                $sql = $sql -replace '--<<SchemaNameCondition>>--', `
-                                        (" AND (c.TABLE_SCHEMA = '{0}') " -f $SchemaName.Replace("'","''"))  #Replace single quotes with two single quotes!                                     
-            }
-
-            if ($TableName) {
-                $sql = $sql -replace '--<<TableNameCondition>>--', `
-                                        (" AND (c.TABLE_NAME = '{0}') " -f $TableName.Replace("'","''"))     #Replace single quotes with two single quotes!                                     
-            }
-
-            if ($MatchPercentThreshold) {
-                $sql = $sql -replace '--<<MatchPercentThreshold>>--', `
-                                        (" AND (100 * COUNT(c2.COLUMN_NAME) / MIN(ColCountsByTable.Column_Count) >= '{0}') " -f $MatchPercentThreshold)
-            }
-
-            Write-Message -Level Debug -Message $sql
-
-            $totalcount = 0
-            $dbcount = $dbs.count
+            $totalCount = 0
+            $dbCount = $dbs.count
             foreach ($db in $dbs) {
                 
                 Write-Message -Level Verbose -Message "Searching on database $db"
-                    
-                $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'DatabaseName', 'MatchPercent', 'TableNameRankInDB', 'SchemaName', 'TableName', 'TableType', 'ColumnCount', 'MatchingDatabaseName', 'MatchingSchemaName', 'MatchingTableName', 'MatchingTableType', 'MatchingColumnCount'
 
-                $rows = $db.ExecuteWithResults($sql).Tables.Rows
+                $rows = $db.Query($sql)
+                
+                foreach($row in $rows)
+                {
+                    [PSCustomObject]@{
+                            ComputerName         = $server.NetName
+                            InstanceName         = $server.ServiceName
+                            SqlInstance          = $server.DomainInstanceName
+                            DatabaseName         = $row.DatabaseName
+                            MatchPercent         = $row.MatchPercent
+                            TableNameRankInDB    = $row.TableNameRankInDB
+                            SchemaName           = $row.SchemaName
+                            TableName            = $row.TableName
+                            TableType            = $row.TableType
+                            ColumnCount          = $row.ColumnCount
+                            MatchingDatabaseName = $row.MatchingDatabaseName
+                            MatchingSchemaName   = $row.MatchingSchemaName
+                            MatchingTableName    = $row.MatchingTableName
+                            MatchingTableType    = $row.MatchingTableType
+                            MatchingColumnCount  = $row.MatchingColumnCount                            
+                        }
+                }
 
-                Select-DefaultView -InputObject $rows -Property $props
+                $vwCount = $vwCount + $rows.Count
+                $totalCount = $totalCount + $rows.Count
+                $everyServerVwCount = $everyServerVwCount + $rows.Count
 
-                $vwcount = $vwcount + $rows.Count
-                $totalcount = $totalcount + $rows.Count
-                $everyservervwcount = $everyservervwcount + $rows.Count
-
-                Write-Message -Level Verbose -Message "Found $vwcount tables/views in $db"
+                Write-Message -Level Verbose -Message "Found $vwCount tables/views in $db"
             }
 
-            Write-Message -Level Verbose -Message "Found $totalcount total tables/views in $dbcount databases"
+            Write-Message -Level Verbose -Message "Found $totalCount total tables/views in $dbCount databases"
         }
     }
     end {
-        Write-Message -Level Verbose -Message "Found $everyservervwcount total tables/views"
+        Write-Message -Level Verbose -Message "Found $everyServerVwCount total tables/views"
     }
 }
