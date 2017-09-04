@@ -183,7 +183,7 @@
 			if ($missingProxy.Count -gt 0 -and $proxyNames.Count -gt 0) {
 				$missingProxy = ($missingProxy | Sort-Object | Get-Unique) -join ", "
 				$copyJobStatus.Status = "Skipped"
-				$copyJobStatus.Notes = "Job is dependent on proxy $($proxNames[0])"
+				$copyJobStatus.Notes = "Job is dependent on proxy $($proxyNames[0])"
 				$copyJobStatus
 				Write-Message -Level Warning -Message "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobName]."
 				continue
