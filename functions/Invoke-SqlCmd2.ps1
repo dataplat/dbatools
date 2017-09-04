@@ -288,17 +288,16 @@ function Invoke-Sqlcmd2
         $SQLConnection
     )
 
-    Begin
+    begin
     {
-        if ($InputFile)
-        {
+        if ($InputFile) {
             $filePath = $(Resolve-Path $InputFile).ProviderPath
             $Query =  [System.IO.File]::ReadAllText("$filePath")
         }
 
         Write-Verbose "Running Invoke-Sqlcmd2 with ParameterSet '$($PSCmdlet.ParameterSetName)'.  Performing query '$Query'"
 
-        If($As -eq "PSObject")
+        if ($As -eq "PSObject")
         {
             #This code scrubs DBNulls.  Props to Dave Wyatt
             $cSharp = @'
@@ -331,99 +330,78 @@ function Invoke-Sqlcmd2
                 }
 '@
 
-            Try
-            {
+            try {
                 Add-Type -TypeDefinition $cSharp -ReferencedAssemblies 'System.Data','System.Xml' -ErrorAction stop
             }
-            Catch
-            {
-                If(-not $_.ToString() -like "*The type name 'DBNullScrubber' already exists*")
-                {
-                    Write-Warning "Could not load DBNullScrubber.  Defaulting to DataRow output: $_"
+            catch {
+                if (-not $_.ToString() -like "*The type name 'DBNullScrubber' already exists*") {
+                    Write-Warning "Could not load DBNullScrubber.  Defaulting to DataRow output: $_."
                     $As = "Datarow"
                 }
             }
         }
 
         #Handle existing connections
-        if($PSBoundParameters.ContainsKey('SQLConnection'))
-        {
-            if($SQLConnection.State -notlike "Open")
-            {
-                Try
-                {
-                    Write-Verbose "Opening connection from '$($SQLConnection.State)' state"
+        if ($PSBoundParameters.ContainsKey('SQLConnection')) {
+            if ($SQLConnection.State -notlike "Open") {
+                try {
+                    Write-Verbose "Opening connection from '$($SQLConnection.State)' state."
                     $SQLConnection.Open()
                 }
-                Catch
-                {
-                    Throw $_
+                catch {
+                    throw $_
                 }
             }
 
-            if($Database -and $SQLConnection.Database -notlike $Database)
-            {
-                Try
-                {
-                    Write-Verbose "Changing SQLConnection database from '$($SQLConnection.Database)' to $Database"
+            if ($Database -and $SQLConnection.Database -notlike $Database) {
+                try {
+                    Write-Verbose "Changing SQLConnection database from '$($SQLConnection.Database)' to $Database."
                     $SQLConnection.ChangeDatabase($Database)
                 }
-                Catch
-                {
-                    Throw "Could not change Connection database '$($SQLConnection.Database)' to $Database`: $_"
+                catch {
+                    throw "Could not change Connection database '$($SQLConnection.Database)' to $Database`: $_"
                 }
             }
 
-            if($SQLConnection.state -like "Open")
-            {
+            if ($SQLConnection.state -like "Open") {
                 $ServerInstance = @($SQLConnection.DataSource)
             }
-            else
-            {
-                Throw "SQLConnection is not open"
+            else {
+                throw "SQLConnection is not open"
             }
         }
 
     }
-    Process
-    {
-        foreach($SQLInstance in $ServerInstance)
-        {
-            Write-Verbose "Querying ServerInstance '$SQLInstance'"
+    process {
+        foreach($SQLInstance in $ServerInstance) {
+            Write-Verbose "Querying ServerInstance '$SQLInstance'."
 
-            if($PSBoundParameters.Keys -contains "SQLConnection")
-            {
+            if($PSBoundParameters.Keys -contains "SQLConnection") {
                 $Conn = $SQLConnection
             }
-            else
-            {
-                if ($Credential)
-                {
+            else {
+                if ($Credential) {
                     $ConnectionString = "Server={0};Database={1};User ID={2};Password=`"{3}`";Trusted_Connection=False;Connect Timeout={4};Encrypt={5}" -f $SQLInstance,$Database,$Credential.UserName,$Credential.GetNetworkCredential().Password,$ConnectionTimeout,$Encrypt
                 }
-                else
-                {
+                else {
                     $ConnectionString = "Server={0};Database={1};Integrated Security=True;Connect Timeout={2};Encrypt={3}" -f $SQLInstance,$Database,$ConnectionTimeout,$Encrypt
                 }
 
                 $conn = New-Object System.Data.SqlClient.SQLConnection
                 $conn.ConnectionString = $ConnectionString
-                Write-Debug "ConnectionString $ConnectionString"
+                Write-Debug "ConnectionString $ConnectionString."
 
-                Try
-                {
+                try {
                     $conn.Open()
                 }
-                Catch
-                {
+                catch {
                     Write-Error $_
                     continue
                 }
             }
 
             #Following EventHandler is used for PRINT and RAISERROR T-SQL statements. Executed when -Verbose parameter specified by caller
-            if ($PSBoundParameters.Verbose)
-            {
+            if ($PSBoundParameters.Verbose) {
                 $conn.FireInfoMessageEventOnUserErrors=$false # Shiyang, $true will change the SQL exception to information
                 $handler = [System.Data.SqlClient.SqlInfoMessageEventHandler] { Write-Verbose "$($_)" }
                 $conn.add_InfoMessage($handler)
@@ -432,102 +410,107 @@ function Invoke-Sqlcmd2
             $cmd = New-Object system.Data.SqlClient.SqlCommand($Query,$conn)
             $cmd.CommandTimeout=$QueryTimeout
 
-            if ($SqlParameters -ne $null)
-            {
+            if ($SqlParameters -ne $null) {
                 $SqlParameters.GetEnumerator() |
                     ForEach-Object {
-                        If ($_.Value -ne $null)
-                        { $cmd.Parameters.AddWithValue($_.Key, $_.Value) }
-                        Else
-                        { $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value) }
+                        if ($_.Value -ne $null) {
+							$cmd.Parameters.AddWithValue($_.Key, $_.Value)
+						}
+                        else {
+							$cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
+						}
                     } > $null
             }
 
             $ds = New-Object system.Data.DataSet
             $da = New-Object system.Data.SqlClient.SqlDataAdapter($cmd)
 
-            Try
-            {
+            try {
                 [void]$da.fill($ds)
             }
-            Catch [System.Data.SqlClient.SqlException] # For SQL exception
-            {
+            catch [System.Data.SqlClient.SqlException] { # For SQL exception
                 $Err = $_
-
-                Write-Verbose "Capture SQL Error"
-
-                if ($PSBoundParameters.Verbose) {Write-Verbose "SQL Error:  $Err"} #Shiyang, add the verbose output of exception
+                Write-Verbose "Capture SQL Error."
+				if ($PSBoundParameters.Verbose) {
+					Write-Verbose "SQL Error:  $Err."
+			 	} #Shiyang, add the verbose output of exception
 
                 switch ($ErrorActionPreference.tostring())
                 {
-                    {'SilentlyContinue','Ignore' -contains $_} {}
-                    'Stop' {     Throw $Err }
-                    'Continue' { Throw $Err}
-                    Default {    Throw $Err}
+                    {'SilentlyContinue','Ignore' -contains $_} {
+
+					}
+                    'Stop' {
+						throw $Err
+					}
+					'Continue' {
+						throw $Err
+					}
+					default {
+						throw $Err
+					}
                 }
             }
-            Catch # For other exception
-            {
-                Write-Verbose "Capture Other Error"  
-
+            catch { # For other exception
+                Write-Verbose "Capture Other Error." 
                 $Err = $_
 
-                if ($PSBoundParameters.Verbose) {Write-Verbose "Other Error:  $Err"} 
+				if ($PSBoundParameters.Verbose) {
+					Write-Verbose "Other Error:  $Err."
+				} 
 
                 switch ($ErrorActionPreference.tostring())
                 {
-                    {'SilentlyContinue','Ignore' -contains $_} {}
-                    'Stop' {     Throw $Err}
-                    'Continue' { Throw $Err}
-                    Default {    Throw $Err}
+                    {'SilentlyContinue','Ignore' -contains $_} {
+
+					}
+                    'Stop' {
+						throw $Err
+					}
+                    'Continue' {
+						throw $Err
+					}
+					default {
+						throw $Err
+					}
                 }
             }
-            Finally
+            finally
             {
                 #Close the connection
-                if(-not $PSBoundParameters.ContainsKey('SQLConnection'))
-                {
+                if (-not $PSBoundParameters.ContainsKey('SQLConnection')) {
                     $conn.Close()
                 }               
             }
 
-            if($AppendServerInstance)
-            {
+            if ($AppendServerInstance) {
                 #Basics from Chad Miller
                 $Column =  New-Object Data.DataColumn
                 $Column.ColumnName = "ServerInstance"
                 $ds.Tables[0].Columns.Add($Column)
-                Foreach($row in $ds.Tables[0])
-                {
+                Foreach($row in $ds.Tables[0]) {
                     $row.ServerInstance = $SQLInstance
                 }
             }
 
-            switch ($As)
-            {
-                'DataSet'
-                {
-                    $ds
+            switch ($As) {
+                'DataSet' {
+					$ds
                 }
-                'DataTable'
-                {
+                'DataTable' {
                     $ds.Tables
                 }
-                'DataRow'
-                {
+                'DataRow' {
                     $ds.Tables[0]
                 }
-                'PSObject'
-                {
+                'PSObject' {
                     #Scrub DBNulls - Provides convenient results you can use comparisons with
                     #Introduces overhead (e.g. ~2000 rows w/ ~80 columns went from .15 Seconds to .65 Seconds - depending on your data could be much more!)
-                    foreach ($row in $ds.Tables[0].Rows)
-                    {
+                    foreach ($row in $ds.Tables[0].Rows) {
                         [DBNullScrubber]::DataRowToPSObject($row)
                     }
                 }
-                'SingleValue'
-                {
+                'SingleValue' {
                     $ds.Tables[0] | Select-Object -ExpandProperty $ds.Tables[0].Columns[0].ColumnName
                 }
             }
