@@ -8,31 +8,38 @@ function Get-DbaRegisteredServerName {
 			of the servers. You can specify -FullObject to return the full SMO object, -IpAddress for only the
 			IPv4 Addresses of the server, and -NetBiosName for only the ComputerName.
 
-		.PARAMETER SqlInstance
-			SQL Server name or SMO object representing the SQL Server to connect to.
-			This can be a collection to allow the function to be executed against multiple SQL Server instances.
+
+		.PARAMETER SQLInstance
+			SQL Server instance(s) to connect to.
 
 		.PARAMETER SqlCredential
-			SqlCredential object to connect as. If not specified, current Windows login will be used.
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
+
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Group
-			List of groups to filter to in SQL Server Central Management Server. You can specify one or more, comma separated.
+			Specifies one or more groups to include from SQL Server Central Management Server.
 
 		.PARAMETER ExcludeGroup
-			List of groups to filter out. You can specify one or more, comma separated.
+			Specifies one or more Central Management Server groups to exclude.
 
 		.PARAMETER NoCmsServer
-			Excludes the CMS itself from returning in the output, if pulling NetBiosName, IpAddress, or ServerName.
-			Without this parameter, the CMS will only be included if you do not specify a group.
+			If this switch is enabled, the CMS itself is excluded from the output when using NetBiosName,IpAddress or ServerName.
+			
+			If this switch is not enabled, the CMS will only be included if you do not specify a group.
 
 		.PARAMETER FullObject
-			Returns the full SMO RegisteredServer object for each server. This will not return an object for the CMS Server.
+			If this switch is enabled, the full SMO RegisteredServer object is returned for each server. An object for the CMS Server will not be returned.
 
 		.PARAMETER NetBiosName
-			Returns just the NetBios names of each server.
+			If this switch is enabled, only the NetBIOS name of each server will be returned.
 
 		.PARAMETER IpAddress
-			Returns just the IP addresses of each server.
+			If this switch is enabled, only the IP address(s) of each server will be returned.
 
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
@@ -50,12 +57,12 @@ function Get-DbaRegisteredServerName {
 		.EXAMPLE
 			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a
 
-			Gets a list of server names from the CMS on sqlserver2014a, using Windows Credentials
+			Gets a list of server names from the CMS on sqlserver2014a using Windows Credentials.
 
 		.EXAMPLE
 			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -SqlCredential $credential
 
-			Gets a list of server names from the CMS on sqlserver2014a, using SQL Authentication
+			Gets a list of server names from the CMS on sqlserver2014a using SQL Authentication.
 
 		.EXAMPLE
 			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -Group HR, Accounting
@@ -65,28 +72,29 @@ function Get-DbaRegisteredServerName {
 		.EXAMPLE
 			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -NoCmsServer
 
-			Gets a list of server names from the CMS on sqlserver2014a, but excludes the CMS server name.
+			Gets a list of server names from the CMS on sqlserver2014a, but excludes the CMS server from the results.
 
 		.EXAMPLE
 			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -Group HR\Development
 
-			Returns a list of server names in the HR and sub-group Development from the CMS on sqlserver2014a
+			Returns a list of server names in the group Development under the HR group on the CMS on sqlserver2014a
 
 		.EXAMPLE
 			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -IpAddress
 
-			Gets a list of the IP Addresses for servers in the CMS on sqlserver2014a, using Windows Credentials
+			Gets a list of the IP Addresses for servers in the CMS on sqlserver2014a using Windows Credentials.
 
 		.EXAMPLE
 			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -NetBiosName
 
-			Gets a list of the NetBIOS names of the servers in the CMS on sqlserver2014a, using Windows Credentials
+			Gets a list of the NetBIOS names of the servers in the CMS on sqlserver2014a using Windows Credentials.
 
 		.EXAMPLE
 			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -FullObject
 
-			Returns the full SMO RegisteredServer object for servers in the CMS on sqlserver2014a, using Windows Credentials
+			Returns the full SMO RegisteredServer object for servers in the CMS on sqlserver2014a using Windows Credentials.
 	#>
+	[OutputType([object[]])]
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -107,14 +115,16 @@ function Get-DbaRegisteredServerName {
 	)
 	process {
 		if ($NoCmsServer -and $FullObject) {
-			Write-Message -Level Verbose -Message ("-NoCmsServer is not valid in combination with -FullObject, ignoring. " + `
-					"-FullObject does not return an entry for the CMS itself.")
+			Write-Message -Level Verbose -Message ("-NoCmsServer is not valid in combination with -FullObject, ignoring. -FullObject does not return an entry for the CMS itself.")
 		}
 
-		if (Test-FunctionInterrupt) { return }
+		if (Test-FunctionInterrupt) {
+			return
+		}
 
 		# see notes at Get-ParamSqlCmsGroups
 		function Find-CmsGroup {
+			[OutputType([object[]])]
 			[cmdletbinding()]
 			param(
 				$CmsGrp,
@@ -145,7 +155,7 @@ function Get-DbaRegisteredServerName {
 		$cmsServers = @()
 		foreach ($instance in $SqlInstance) {
 			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance"
+				Write-Message -Level Verbose -Message "Connecting to $instance."
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				$sqlConnection = $server.ConnectionContext.SqlConnectionObject
 			}
@@ -157,7 +167,7 @@ function Get-DbaRegisteredServerName {
 				$cmsStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlConnection)
 			}
 			catch {
-				Stop-Function -Message "Cannot access Central Management Server" -ErrorRecord $_ -Continue
+				Stop-Function -Message "Cannot access Central Management Server." -ErrorRecord $_ -Continue
 				return
 			}
 			
@@ -169,7 +179,7 @@ function Get-DbaRegisteredServerName {
 				foreach ($currentGroup in $Group) {
 					$cms = Find-CmsGroup -CmsGrp $cmsStore.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
 					if ($null -eq $cms) {
-						Write-Message -Level Output -Message "No groups found matching that name"
+						Write-Message -Level Output -Message "No groups found matching that name."
 						continue
 					}
 					$servers += ($cms.GetDescendantRegisteredServers())
@@ -180,7 +190,7 @@ function Get-DbaRegisteredServerName {
 				$servers += ($cms.GetDescendantRegisteredServers())
 			}
 			
-			#Store some information about the CMS's for later use
+			#Store some information about the CMSs for later use
 			try {
 				$ip = (Resolve-DbaNetworkName $server.Name -Turbo -Silent).IpAddress
 			}
