@@ -572,7 +572,7 @@ function Import-DbaCsvToSql {
 		# Resolve the full path of each CSV
 		$resolvedcsv = @()
 		foreach ($file in $csv) {
-			$resolvedcsv += (Resolve-Path $file).Path
+			$resolvedcsv += (Resolve-Path $file).ProviderPath
 		}
 		$csv = $resolvedcsv
 		
