@@ -1,4 +1,4 @@
-﻿Function Get-DbaPolicy {
+Function Get-DbaPolicy {
 <#
 	.SYNOPSIS
 	Returns polices from policy based management from an instance.
@@ -12,9 +12,12 @@
 	.PARAMETER SqlCredential
 	SqlCredential object to connect as. If not specified, current Windows login will be used.
 
+	.PARAMETER Policy
+	Filters results to only show specific policy
+
 	.PARAMETER Category
 	Filters results to only show policies in the category selected
-
+	
 	.PARAMETER IncludeSystemObject
 	By default system objects are filtered out. Use this parameter to INCLUDE them .
 
@@ -55,7 +58,8 @@
 		[Alias("Credential")]
 		[PSCredential][System.Management.Automation.CredentialAttribute()]
 		$SqlCredential,
-		[string]$Category,
+		[string[]]$Policy,
+		[string[]]$Category,
 		[switch]$IncludeSystemObject,
 		[switch]$Silent
 	)
@@ -65,35 +69,42 @@
 			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$sqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $server.ConnectionContext.SqlConnectionObject
-			
-			# DMF is the Declarative Management Framework, Policy Based Management's old name
-			$store = New-Object Microsoft.SqlServer.Management.DMF.PolicyStore $sqlStoreConnection
+			try {
+				$sqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $server.ConnectionContext.SqlConnectionObject
+				# DMF is the Declarative Management Framework, Policy Based Management's old name
+				$store = New-Object Microsoft.SqlServer.Management.DMF.PolicyStore $sqlStoreConnection
+			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
+			}
 			
 			$allpolicies = $store.Policies
 			
-			if (!$IncludeSystemObject) {
+			if (-not $IncludeSystemObject) {
 				$allpolicies = $allpolicies | Where-Object { $_.IsSystemObject -eq 0 }
 			}
 			
 			if ($Category) {
-				$allpolicies = $allpolicies | Where-Object { $_.PolicyCategory -eq $Category }
+				$allpolicies = $allpolicies | Where-Object { $_.PolicyCategory -in $Category }
 			}
 			
-			foreach ($policy in $allpolicies) {
-				Write-Message -Level Verbose -Message "Processing $policy"
-				Add-Member -Force -InputObject $policy -MemberType NoteProperty ComputerName -value $server.NetName
-				Add-Member -Force -InputObject $policy -MemberType NoteProperty InstanceName -value $server.ServiceName
-				Add-Member -Force -InputObject $policy -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
+			if ($Policy) {
+				$allpolicies = $allpolicies | Where-Object { $_.Name -in $Policy }
+			}
+			
+			foreach ($currentpolicy in $allpolicies) {
+				Write-Message -Level Verbose -Message "Processing $currentpolicy"
+				Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty ComputerName -value $server.NetName
+				Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty InstanceName -value $server.ServiceName
+				Add-Member -Force -InputObject $currentpolicy -MemberType NoteProperty SqlInstance -value $server.DomainInstanceName
 				
-				# Select all of the columns you'd like to show
-				Select-DefaultView -InputObject $policy -Property ComputerName, InstanceName, SqlInstance, Name, PolicyCategory, Condition, Enabled, HelpLink, HelpText, Description
+				Select-DefaultView -InputObject $currentpolicy -ExcludeProperty HelpText, HelpLink, Urn, Properties, Metadata, Parent, IdentityKey, HasScript, PolicyEvaluationStarted, ConnectionProcessingStarted, TargetProcessed, ConnectionProcessingFinished, PolicyEvaluationFinished, PropertyMetadataChanged, PropertyChanged
 			}
 		}
 	}
