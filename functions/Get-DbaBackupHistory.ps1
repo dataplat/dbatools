@@ -329,7 +329,7 @@ function Get-DbaBackupHistory {
 					if ($DeviceTypeFilter) {
 						$DevTypeFilterWhere = "AND mediafamily.device_type $DeviceTypeFilterRight"
 					}
-					$sql = "
+					$sql += "
 								SELECT
 									a.BackupSetRank,
 									a.Server,
@@ -412,8 +412,7 @@ function Get-DbaBackupHistory {
 								ORDER BY a.Type;
 								"
 				}
-				
-				#$sql = $sql -join "; "
+				$sql = $sql -join "; "
 			}
 			else {
 				if ($Force -eq $true) {
