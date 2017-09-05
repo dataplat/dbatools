@@ -1,86 +1,80 @@
 function Test-DbaMigrationConstraint {
 	<#
-	.SYNOPSIS
-		Show if you can migrate the database(s) between the servers.
+		.SYNOPSIS
+			Show if you can migrate the database(s) between the servers.
 
-	.DESCRIPTION
-		When you want to migrate from a higher edition to a lower one there are some features that can't be used.
-		This function will validate if you have any of this features in use and will report to you.
-		The validation will be made ONLY on on SQL Server 2008 or higher using the 'sys.dm_db_persisted_sku_features' dmv.
+		.DESCRIPTION
+			When you want to migrate from a higher edition to a lower one there are some features that can't be used.
+			This function will validate if you have any of this features in use and will report to you.
+			The validation will be made ONLY on on SQL Server 2008 or higher using the 'sys.dm_db_persisted_sku_features' dmv.
 
-		This function only validate SQL Server 2008 versions or higher.
-		The editions supported by this function are:
-			- Enterprise
-			- Developer
-			- Evaluation
-			- Standard
-			- Express
+			This function only validate SQL Server 2008 versions or higher.
+			The editions supported by this function are:
+				- Enterprise
+				- Developer
+				- Evaluation
+				- Standard
+				- Express
 
-		Take into account the new features introduced on SQL Server 2016 SP1 for all versions. More information at https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/
+			Take into account the new features introduced on SQL Server 2016 SP1 for all versions. More information at https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/
 
-		The -Database parameter is auto-populated for command-line completion.
+			The -Database parameter is auto-populated for command-line completion.
 
-	.PARAMETER Source
-		Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			.PARAMETER Source
+				Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-	.PARAMETER SourceSqlCredential
-		Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			.PARAMETER SourceSqlCredential
+				Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-	.PARAMETER Destination
-		Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+				$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-	.PARAMETER DestinationSqlCredential
-		Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+				Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-		$dcred = Get-Credential, this pass this $dcred to the param.
+				To connect as a different Windows user, run PowerShell as that user.
 
-		Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+			.PARAMETER Destination
+				Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
-	.PARAMETER Database
-		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+			.PARAMETER DestinationSqlCredential
+				Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-	.PARAMETER ExcludeDatabase
-		The database(s) to exclude - this list is auto-populated from the server
+				$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-	.PARAMETER WhatIf
-		Shows what would happen if the command were to run. No actions are actually performed.
+				Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-	.PARAMETER Confirm
-		Prompts you for confirmation before executing any changing operations within the command.
+				To connect as a different Windows user, run PowerShell as that user.
 
-		$scred = Get-Credential, this pass $scred object to the param.
+		.PARAMETER Database
+			The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-		Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+		.PARAMETER ExcludeDatabase
+			The database(s) to exclude. Options for this list are auto-populated from the server.
 
-	.NOTES
-		Tags: Migration
+		.NOTES
+			Tags: Migration
 
-		Author: Claudio Silva (@ClaudioESSilva)
-		Website: https://dbatools.io
-		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+			Author: Claudio Silva (@ClaudioESSilva)
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-	.LINK
-		https://dbatools.io/Test-DbaMigrationConstraint
+		.LINK
+			https://dbatools.io/Test-DbaMigrationConstraint
 
-	.EXAMPLE
-		Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster
+		.EXAMPLE
+			Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster
 
-		Description
+			All databases on sqlserver2014a will be verified for features in use that can't be supported on sqlcluster.
 
-		All databases will be verified for features in use that can't be supported on the destination server
+		.EXAMPLE
+			Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred
 
-	.EXAMPLE
-		Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -SqlCredential $cred
+			All databases will be verified for features in use that can't be supported on the destination server. SQL credentials are used to authenticate against sqlserver2014 and Windows Authentication is used for sqlcluster.
 
-		Description
-
-		All databases will be verified for features in use that can't be supported on the destination server using SQL credentials for sqlserver2014a
-		and Windows credentials for sqlcluster.
-
-	.EXAMPLE
-		Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Database db1
-		Only db1 database will be verified for features in use that can't be supported on the destination server
+		.EXAMPLE
+			Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Database db1
+			
+			Only db1 database will be verified for features in use that can't be supported on the destination server.
 	#>
 	[CmdletBinding(DefaultParameterSetName = "DbMigration")]
 	Param (
@@ -109,13 +103,19 @@ function Test-DbaMigrationConstraint {
 			1674378470 = SQL Database
 		#>
 
-		$editions = @{"Enterprise" = 10; "Developer" = 10; "Evaluation" = 10; "Standard" = 5; "Express" = 1}
+		$editions = @{
+			"Enterprise" = 10;
+			"Developer" = 10;
+			"Evaluation" = 10;
+			"Standard"   = 5;
+			"Express" = 1
+		}
 		$notesCanMigrate = "Database can be migrated."
 		$notesCannotMigrate = "Database cannot be migrated."
 	}
 	process {
 
-		Write-Output "Attempting to connect to Sql Servers.."
+		Write-Output "Attempting to connect to Sql Servers."
 		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
@@ -161,7 +161,7 @@ function Test-DbaMigrationConstraint {
 						$dbName = $db.Name
 					}
 
-					Write-Verbose "Checking database: '$dbName'"
+					Write-Verbose "Checking database '$dbName'."
 
 					if ($dbstatus.Contains("Offline") -eq $false) {
 						[long]$destVersionNumber = $($destserver.VersionString).Replace(".", "")
@@ -257,9 +257,9 @@ function Test-DbaMigrationConstraint {
 			}
 			else {
 				#SQL Server 2005 or under
-				Write-Warning "This validation will not be made on versions lower than SQL Server 2008 (v10)"
-				Write-Verbose "Source server version: $($sourceserver.versionMajor)"
-				Write-Verbose "Destination server version: $($destserver.versionMajor)"
+				Write-Warning "This validation will not be made on versions lower than SQL Server 2008 (v10)."
+				Write-Verbose "Source server version: $($sourceserver.versionMajor)."
+				Write-Verbose "Destination server version: $($destserver.versionMajor)."
 			}
 		}
 		else {
