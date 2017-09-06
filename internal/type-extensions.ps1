@@ -19,7 +19,7 @@ Update-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server -MemberName 
 		$Database = "master"
 	)
 	
-	else { $this.Databases[$Database].ExecuteNonQuery($Command) }
+	$this.Databases[$Database].ExecuteNonQuery($Command)
 } -ErrorAction Ignore
 
 Update-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Database -MemberName Query -MemberType ScriptMethod -Value {
@@ -38,5 +38,5 @@ Update-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Database -MemberNam
 		$Command
 	)
 	
-	else { $this.ExecuteNonQuery($Command) }
+	$this.ExecuteNonQuery($Command)
 } -ErrorAction Ignore
