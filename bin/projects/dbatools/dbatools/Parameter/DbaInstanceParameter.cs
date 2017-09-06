@@ -242,6 +242,9 @@ namespace Sqlcollaborative.Dbatools.Parameter
         {
             InputObject = Name;
 
+            if (Name == "")
+                throw new ArgumentException("Bloody hell! Don't give me an empty string for an instance name!");
+
             if (Name == ".")
             {
                 _ComputerName = Name;
