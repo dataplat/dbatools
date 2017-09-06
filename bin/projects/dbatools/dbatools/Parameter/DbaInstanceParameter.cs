@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
 using Sqlcollaborative.Dbatools.Connection;
+using Sqlcollaborative.Dbatools.Exceptions;
 using Sqlcollaborative.Dbatools.Utility;
 
 namespace Sqlcollaborative.Dbatools.Parameter
@@ -243,7 +244,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
             InputObject = Name;
 
             if (Name == "")
-                throw new ArgumentException("Bloody hell! Don't give me an empty string for an instance name!");
+                throw new BloodyHellGiveMeSomethingToWorkWithException("Bloody hell! Don't give me an empty string for an instance name!", "DbaInstanceParameter");
 
             if (Name == ".")
             {
