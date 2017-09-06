@@ -59,6 +59,7 @@
     <Compile Include="Connection\ConnectionHost.cs" />
     <Compile Include="Database\Dependency.cs" />
     <Compile Include="dbaSystem\SystemHost.cs" />
+    <Compile Include="Exceptions\BloodyHellGiveMeSomethingToWorkWithException.cs" />
     <Compile Include="Parameter\DbaCredentialParameter.cs" />
     <Compile Include="TypeConversion\DbaCredentialParameterConverter.cs" />
     <Compile Include="Utility\CredentialPrompt.cs" />
