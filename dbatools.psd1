@@ -352,7 +352,8 @@
 		'Get-DbaAvailableCollation',
 		'Get-DbaUserLevelPermission',
 		'Get-DbaAgHadr',
-		'Get-DbaPolicy'
+		'Get-DbaPolicy',
+		'Find-DbaSimilarTable'
 	)
 	
 	# Cmdlets to export from this module
