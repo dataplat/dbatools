@@ -219,7 +219,7 @@ function Get-FilteredRestoreFile {
  
                 Write-Message -Level Verbose -Message "Got a Full/Diff backups, now find all Tlogs needed"
                 $AllTlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} 
-                $Filteredlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.FirstRecoveryForkID -eq $Fullbackup.FirstRecoveryForkID -and $_.LastLSN -gt $TlogStartLSN -and $_.BackupStartDate -lt $RestoreTime}
+                $Filteredlogs = $SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log' -and $_.FirstRecoveryForkID -eq $Fullbackup.FirstRecoveryForkID -and $_.LastLSN -ge $TlogStartLSN -and $_.BackupStartDate -lt $RestoreTime}
                 # -and $_.BackupStartDate -ge $LogStartDate
                 $GroupedLogs = $FilteredLogs | Group-Object -Property LastLSN, FirstLSN
                 $Tlogs = @()
