@@ -120,7 +120,15 @@
 			$credentialName = $proxyAccount.CredentialName
 			$copyAgentProxyAccountStatus.Name = $credentialName
 			$copyAgentProxyAccountStatus.Type = "Credential"
-			if ($null -eq $destServer.Credentials[$CredentialName]) {
+			
+			try {
+				$credentialtest = $destServer.Credentials[$CredentialName]
+			}
+			catch {
+				# don't care
+			}
+			
+			if ($null -eq $credentialtest) {
 				$copyAgentProxyAccountStatus.Status = "Skipped"
 				$copyAgentProxyAccountStatus
 				Write-Message -Level Warning -Message "Associated credential account, $CredentialName, does not exist on $destination. Skipping migration of $proxyName."
