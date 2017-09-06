@@ -108,7 +108,7 @@
 					Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 					Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name Database -value $db.Name
 
-					$defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'ObjectId', 'CreateDate', 
+					$defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'ID as ObjectId', 'CreateDate', 
 						'DateLastModified', 'Name', 'ImplementationType', 'Startup'
 					Select-DefaultView -InputObject $proc -Property $defaults
                 }
