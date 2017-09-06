@@ -136,6 +136,7 @@ function Copy-DbaSqlServerAgent {
 				$sql = $sourceAgent.Script() | Out-String
 				$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
 				$sql = $sql -replace [Regex]::Escape("@errorlog_file="), [Regex]::Escape("--@errorlog_file=")
+				$sql = $sql -replace [Regex]::Escape("@auto_start="), [Regex]::Escape("--@auto_start=")
 				Write-Message -Level Debug -Message $sql
 				$null = $destServer.Query($sql)
 
@@ -147,7 +148,7 @@ function Copy-DbaSqlServerAgent {
 				$copyAgentPropStatus.Notes = $_.Exception.Message
 				$copyAgentPropStatus
 
-				Stop-Function -Message "Issue copying agent properties." -Target $destination -ErrorRecord $_
+				Stop-Function -Message "Issue copying agent properties. This happens sometimes, moving on." -Target $destination
 			}
 		}
 	}
