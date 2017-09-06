@@ -26,24 +26,28 @@ function Test-DbaConnection {
 			Use this if you want the function to throw terminating errors you want to catch.
 
 		.EXAMPLE
-			Test-DbaConnection sql2016b
+			Test-DbaConnection SQL2016
 
-			ComputerName       : SQL2016B
-			InstanceName       : MSSQLSERVER
-			SqlInstance        : sql2016b
-			IsDefault          : True
-			AuthType           : Windows Authentication
-			ConnectingAsUser   : meltonlab\meltonadmin
-			ConnectSuccess     : True
-			SqlServerVersion   : 13.0.1601
-			DefaultSqlPortOpen : N/A
-			IPAddress          : 10.2.2.50
-			NetBIOSname        : SQL2016B.meltonlab.com
-			DomainName         : meltonlab.com
-			IsPingable         : True
-			IsRemote           : True
-			RemotingAccessible :
-			RemotingPortOpen   :
+			ComputerName         : SQL2016
+			InstanceName         : MSSQLSERVER
+			SqlInstance          : sql2016
+			SqlVersion           : 13.0.4001
+			ConnectingAsUser     : BASE\ctrlb
+			ConnectSuccess       : True
+			AuthType             : Windows Authentication
+			AuthScheme           : KERBEROS
+			TcpPort              : 1433
+			IPAddress            : 10.2.1.5
+			NetBiosName          : sql2016.base.local
+			IsPingable           : True
+			PSRemotingAccessible : True
+			DomainName           : base.local
+			LocalWindows         : 10.0.15063.0
+			LocalPowerShell      : 5.1.15063.502
+			LocalCLR             : 4.0.30319.42000
+			LocalSMOVersion      : 13.0.0.0
+			LocalDomainUser      : True
+			LocalRunAsAdmin      : False
 
 		.NOTES
 			Tags: CIM, Test, Connection
@@ -73,11 +77,6 @@ function Test-DbaConnection {
 				SMO	     = ((([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }).FullName -Split ", ")[1]).TrimStart("Version=")
 				DomainUser = $env:computername -ne $env:USERDOMAIN
 				RunAsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
-			}
-			
-			$serverInfo = [pscustomobject]@{
-				IsDefault  = if ($instance.Type -eq 'Default') { $true } else { $false }
-				IsRemote   = [DbaValidate]::IsLocalHost($env:computername)
 			}
 			
 			try {
