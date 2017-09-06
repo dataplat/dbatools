@@ -190,8 +190,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	
     Context "Properly restores an instance using ola-style backups" {
         $results = Get-ChildItem $script:appeyorlabrepo\sql2008-backups | Restore-DbaDatabase -SqlInstance $script:instance1
-        It "Restored files count should be 30" {
-            $results.DatabaseName.Count | Should Be 15
+        It "Restored files count should be 27" {
+            $results.DatabaseName.Count | Should Be 27
         }
         It "Should return successful restore" {
             ($results.RestoreComplete -contains $false) | Should Be $false

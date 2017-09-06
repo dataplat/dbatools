@@ -175,6 +175,8 @@ namespace Sqlcollaborative.Dbatools.Parameter
                             return DbaInstanceInputType.Server;
                         case "microsoft.sqlserver.management.smo.linkedserver":
                             return DbaInstanceInputType.Linked;
+                        case "microsoft.sqlserver.management.registeredservers.registeredserver":
+                            return DbaInstanceInputType.RegisteredServer;
                         default:
                             return DbaInstanceInputType.Default;
                     }
@@ -244,12 +246,12 @@ namespace Sqlcollaborative.Dbatools.Parameter
             string tempString = Name;
 
             // Handle and clear protocols. Otherwise it'd make port detection unneccessarily messy
-            if (Regex.IsMatch(tempString, "^TCP:", RegexOptions.IgnoreCase))
+            if (Regex.IsMatch(tempString, "^TCP:", RegexOptions.IgnoreCase)) //TODO: Use case insinsitive String.BeginsWith()
             {
                 _NetworkProtocol = SqlConnectionProtocol.TCP;
                 tempString = tempString.Substring(4);
             }
-            if (Regex.IsMatch(tempString, "^NP:", RegexOptions.IgnoreCase))
+            if (Regex.IsMatch(tempString, "^NP:", RegexOptions.IgnoreCase)) // TODO: Use case insinsitive String.BeginsWith()
             {
                 _NetworkProtocol = SqlConnectionProtocol.NP;
                 tempString = tempString.Substring(3);
@@ -342,7 +344,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
 
                 else
                 {
-                    throw new PSArgumentException("Failed to parse instance name: " + Name);
+                    throw new PSArgumentException(string.Format("Failed to parse instance name: {0}. Computer Name: {1}, Instance {2}", Name, tempComputerName, tempInstanceName));
                 }
             }
 
@@ -444,6 +446,26 @@ namespace Sqlcollaborative.Dbatools.Parameter
                             if (!String.IsNullOrEmpty((string)tempInput.Properties["DNSHostName"].Value))
                                 _ComputerName = (string)tempInput.Properties["DNSHostName"].Value;
                         }
+                    }
+                    catch (Exception e)
+                    {
+                        throw new PSArgumentException("Failed to interpret input as Instance: " + Input, e);
+                    }
+                    break;
+                case "microsoft.sqlserver.management.registeredservers.registeredserver":
+                    try
+                    {
+                        //Pass the ServerName property of the SMO object to the string constrtuctor, 
+                        //so we don't have to re-invent the wheel on instance name / port parsing
+                        DbaInstanceParameter parm =
+                            new DbaInstanceParameter((string) tempInput.Properties["ServerName"].Value);
+                        _ComputerName = parm.ComputerName;
+
+                        if (parm.InstanceName != "MSSQLSERVER")
+                            _InstanceName = parm.InstanceName;
+
+                        if (parm.Port != 1433)
+                            _Port = parm.Port;
                     }
                     catch (Exception e)
                     {

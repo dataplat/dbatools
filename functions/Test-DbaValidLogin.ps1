@@ -1,64 +1,68 @@
-Function Test-DbaValidLogin {
+function Test-DbaValidLogin {
 	<#
-.SYNOPSIS
-Test-DbaValidLogin finds any logins on SQL instance that are AD logins with either disabled AD user accounts or ones that no longer exist
+		.SYNOPSIS
+			Test-DbaValidLogin finds any logins on SQL instance that are AD logins with either disabled AD user accounts or ones that no longer exist
 
-.DESCRIPTION
-The purpose of this function is to find SQL Server logins that are used by active directory users that are either disabled or removed from the domain. It allows you to
-keep your logins accurate and up to date by removing accounts that are no longer needed.
+		.DESCRIPTION
+			The purpose of this function is to find SQL Server logins that are used by active directory users that are either disabled or removed from the domain. It allows you to keep your logins accurate and up to date by removing accounts that are no longer needed.
 
-.PARAMETER SqlInstance
-SQL instance to check. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+		.PARAMETER SqlInstance
+			The SQL Server instance you're checking logins on. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER Login
-Filters the results to only the login you wish - this list is auto-populated from the server.
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.PARAMETER ExcludeLogin
-Excludes any login you pass into it from the results - this list is auto-populated from the server.
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.PARAMETER FilterBy
-By default the function returns both Logins and Groups. you can use the FilterBy parameter to only return Groups (GroupsOnly) or Logins (LoginsOnly)
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER IgnoreDomains
-By default we traverse all domains in the forest and all trusted domains. You can exclude domains by adding them to the IgnoreDomains
+		.PARAMETER Login
+			Specifies a list of logins to include in the results. Options for this list are auto-populated from the server.
 
-.PARAMETER Detailed
-Returns a more detailed result, showing if the login on SQL Server is enabled or disabled and what type of account it is in AD
+		.PARAMETER ExcludeLogin
+			Specifies a list of logins to exclude from the results. Options for this list are auto-populated from the server.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+		.PARAMETER FilterBy
+			Specifies the object types to return. By default, both Logins and Groups are returned. Valid options for this parameter are 'GroupsOnly' and 'LoginsOnly'.
 
-.NOTES
-Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
-Author: Chrissy LeMaire (@cl), netnerds.net
+		.PARAMETER IgnoreDomains
+			Specifies a list of Active Directory domains to ignore. By default, all domains in the forest as well as all trusted domains are traversed.
+			
+		.PARAMETER Detailed
+			If this switch is enabled, more detailed results are returned. This includes the Active Directory account type and whether the login on SQL Server is enabled or disabled.
 
-dWebsite: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
 
+		.NOTES
+			Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
+			Author: Chrissy LeMaire (@cl), netnerds.net
 
-.LINK
-https://dbatools.io/Test-DbaValidLogin
+			dWebsite: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.EXAMPLE
-Test-DbaValidLogin -SqlInstance Dev01
+		.LINK
+			https://dbatools.io/Test-DbaValidLogin
 
-Tests all logins in the domain ran from (check $env:domain) that are either disabled or do not exist
+		.EXAMPLE
+			Test-DbaValidLogin -SqlInstance Dev01
 
-.EXAMPLE
-Test-DbaValidLogin -SqlInstance Dev01 -FilterBy GroupsOnly -Detailed
+			Tests all logins in the current Active Directory domain that are either disabled or do not exist on the SQL Server instance Dev01
 
-Tests all Active directory groups that have logins on Dev01 returning a detailed view.
+		.EXAMPLE
+			Test-DbaValidLogin -SqlInstance Dev01 -FilterBy GroupsOnly -Detailed
 
-.EXAMPLE
-Test-DbaValidLogin -SqlInstance Dev01 -ExcludeDomains subdomain
+			Tests all Active Directory groups that have logins on Dev01, returning a detailed view.
 
-Tests all logins excluding any that are from the subdomain Domain
+		.EXAMPLE
+			Test-DbaValidLogin -SqlInstance Dev01 -ExcludeDomains subdomain
 
-#>
+			Tests all logins excluding any that are from the subdomain Domain
+
+	#>
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
@@ -81,7 +85,7 @@ Tests all logins excluding any that are from the subdomain Domain
 			Write-Message -Message ("Excluding logins for domains " + ($IgnoreDomains -join ',')) -Level Verbose
 		}
 		if ($Detailed) {
-			Write-Message -Message "Detailed is deprecated and will be removed in dbatools 1.0" -Once "DetailedDeprecation" -Level Warning
+			Write-Message -Message "Detailed is deprecated and will be removed in dbatools 1.0." -Once "DetailedDeprecation" -Level Warning
 		}
 
 		$MappingRaw = @{
@@ -114,7 +118,7 @@ Tests all logins excluding any that are from the subdomain Domain
 		foreach ($instance in $SqlInstance) {
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-				Write-Message -Message "Connected to: $instance" -Level Verbose
+				Write-Message -Message "Connected to: $instance." -Level Verbose
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -134,15 +138,15 @@ Tests all logins excluding any that are from the subdomain Domain
 			}
 			switch ($FilterBy) {
 				"LoginsOnly" {
-					Write-Message -Message "Search restricted to logins" -Level Verbose
+					Write-Message -Message "Search restricted to logins." -Level Verbose
 					$windowslogins = $allwindowsloginsgroups | Where-Object { $_.LoginType -eq 'WindowsUser' }
 				}
 				"GroupsOnly" {
-					Write-Message -Message "Search restricted to groups" -Level Verbose
+					Write-Message -Message "Search restricted to groups." -Level Verbose
 					$windowsGroups = $allwindowsloginsgroups | Where-Object { $_.LoginType -eq 'WindowsGroup' }
 				}
 				"None" {
-					Write-Message -Message "Search both logins and groups" -Level Verbose
+					Write-Message -Message "Search both logins and groups." -Level Verbose
 					$windowslogins = $allwindowsloginsgroups | Where-Object { $_.LoginType -eq 'WindowsUser' }
 					$windowsGroups = $allwindowsloginsgroups | Where-Object { $_.LoginType -eq 'WindowsGroup' }
 				}
@@ -152,10 +156,10 @@ Tests all logins excluding any that are from the subdomain Domain
 				$loginsid = $login.Sid -join ''
 				$domain, $username = $adlogin.Split("\")
 				if ($domain.toUpper() -in $IgnoreDomainsNormalized) {
-					Write-Message -Message "Skipping Login $adlogin" -Level Verbose
+					Write-Message -Message "Skipping Login $adlogin." -Level Verbose
 					continue
 				}
-				Write-Message -Message "Parsing Login $adlogin" -Level Verbose
+				Write-Message -Message "Parsing Login $adlogin." -Level Verbose
 				$exists = $false
 				try {
 					$u = Get-DbaADObject -ADObject $adlogin -Type User -Silent
@@ -165,13 +169,13 @@ Tests all logins excluding any that are from the subdomain Domain
 						$exists = $true
 					}
 					if ($foundsid -ne $loginsid) {
-						Write-Message -Message "SID mismatch detected for $adlogin" -Level Warning
-						Write-Message -Message "SID mismatch detected for $adlogin (MSSQL: $loginsid, AD: $foundsid)" -Level Debug
+						Write-Message -Message "SID mismatch detected for $adlogin." -Level Warning
+						Write-Message -Message "SID mismatch detected for $adlogin (MSSQL: $loginsid, AD: $foundsid)." -Level Debug
 						$exists = $false
 					}
 				}
 				catch {
-					Write-Message -Message "AD Searcher Error for $username" -Level Warning
+					Write-Message -Message "AD Searcher Error for $username." -Level Warning
 				}
 				
 				$UAC = $founduser.Properties.userAccountControl
@@ -236,10 +240,10 @@ Tests all logins excluding any that are from the subdomain Domain
 				$loginsid = $login.Sid -join ''
 				$domain, $groupname = $adlogin.Split("\")
 				if ($domain.toUpper() -in $IgnoreDomainsNormalized) {
-					Write-Message -Message "Skipping Login $adlogin" -Level Verbose
+					Write-Message -Message "Skipping Login $adlogin." -Level Verbose
 					continue
 				}
-				Write-Message -Message "Parsing Login $adlogin on $server" -Level Verbose
+				Write-Message -Message "Parsing Login $adlogin on $server." -Level Verbose
 				$exists = $false
 				if ($true) {
 					$u = Get-DbaADObject -ADObject $adlogin -Type Group -Silent
@@ -249,8 +253,8 @@ Tests all logins excluding any that are from the subdomain Domain
 					}
 					$foundsid = $founduser.objectSid.Value -join ''
 					if ($foundsid -ne $loginsid) {
-						Write-Message -Message "SID mismatch detected for $adlogin" -Level Warning
-						Write-Message -Message "SID mismatch detected for $adlogin (MSSQL: $loginsid, AD: $foundsid)" -Level Debug
+						Write-Message -Message "SID mismatch detected for $adlogin." -Level Warning
+						Write-Message -Message "SID mismatch detected for $adlogin (MSSQL: $loginsid, AD: $foundsid)." -Level Debug
 						$exists = $false
 					}
 				}
