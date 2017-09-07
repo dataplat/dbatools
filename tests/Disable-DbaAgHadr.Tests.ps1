@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 	Context "Validate parameters" {
-		$paramCount = 5
+		$paramCount = 4
 		<# 
 			Get commands, Default count = 11
 			Commands with SupportShouldProcess = 13
