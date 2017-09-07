@@ -429,98 +429,114 @@ namespace Sqlcollaborative.Dbatools.Parameter
         /// <summary>
         /// Creates a DBA Instance parameter from any object
         /// </summary>
-        /// <param name="Input">Object to parse</param>
-        public DbaInstanceParameter(object Input)
+        /// <param name="input">Object to parse</param>
+        public DbaInstanceParameter(object input)
         {
-            InputObject = Input;
-            PSObject tempInput = new PSObject(Input);
-            string typeName = "";
+            InputObject = input;
+            PSObject tempInput = new PSObject(input);
 
-            try { typeName = tempInput.TypeNames[0].ToLower(); }
-            catch
+            var inputType = input.GetType();
+            var smoServerType = System.Type.GetType("Microsoft.SqlServer.Management.Smo.Server");
+            var smoLinkedServerType = System.Type.GetType("Microsoft.SqlServer.Management.Smo.LinkedServer");
+            var adComputerType = System.Type.GetType("Microsoft.ActiveDirectory.Management.ADComputer");
+            var registeredServerType = System.Type.GetType("Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer");
+
+            if (smoServerType.IsAssignableFrom(inputType))
+                try
+                {
+                    if (tempInput.Properties["NetName"] != null)
+                    {
+                        _ComputerName = (string)tempInput.Properties["NetName"].Value;
+                    }
+                    else
+                    {
+                        _ComputerName =
+                            (new DbaInstanceParameter((string)tempInput.Properties["DomainInstanceName"].Value))
+                            .ComputerName;
+                    }
+                    _InstanceName = (string)tempInput.Properties["InstanceName"].Value;
+                    PSObject tempObject = new PSObject(tempInput.Properties["ConnectionContext"].Value);
+
+                    string tempConnectionString = (string)tempObject.Properties["ConnectionString"].Value;
+                    tempConnectionString = tempConnectionString.Split(';')[0].Split('=')[1].Trim().Replace(" ", "");
+
+                    if (Regex.IsMatch(tempConnectionString, @",\d{1,5}$") &&
+                        (tempConnectionString.Split(',').Length == 2))
+                    {
+                        try
+                        {
+                            Int32.TryParse(tempConnectionString.Split(',')[1], out _Port);
+                        }
+                        catch (Exception e)
+                        {
+                            throw new PSArgumentException(
+                                "Failed to parse port number on connection string: " + tempConnectionString, e);
+                        }
+                        if (_Port > 65535)
+                        {
+                            throw new PSArgumentException("Failed to parse port number on connection string: " +
+                                                          tempConnectionString);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new PSArgumentException(
+                        "Failed to interpret input as Instance: " + input + " : " + e.Message, e);
+                }
+            else if (smoLinkedServerType.IsAssignableFrom(inputType))
             {
-                throw new PSArgumentException("Failed to interpret input as Instance: " + Input);
+                try
+                {
+                    _ComputerName = (string)tempInput.Properties["Name"].Value;
+                }
+                catch (Exception e)
+                {
+                    throw new PSArgumentException("Failed to interpret input as Instance: " + input, e);
+                }
             }
-
-            typeName = typeName.Replace("Deserialized.", "");
-
-            switch (typeName)
+            else if (adComputerType.IsAssignableFrom(inputType))
             {
-                case "microsoft.sqlserver.management.smo.server":
-                    try
-                    {
-                        if (tempInput.Properties["NetName"] != null) { _ComputerName = (string)tempInput.Properties["NetName"].Value; }
-                        else { _ComputerName = (new DbaInstanceParameter((string)tempInput.Properties["DomainInstanceName"].Value)).ComputerName; }
-                        _InstanceName = (string)tempInput.Properties["InstanceName"].Value;
-                        PSObject tempObject = new PSObject(tempInput.Properties["ConnectionContext"].Value);
+                try
+                {
+                    _ComputerName = (string)tempInput.Properties["Name"].Value;
 
-                        string tempConnectionString = (string)tempObject.Properties["ConnectionString"].Value;
-                        tempConnectionString = tempConnectionString.Split(';')[0].Split('=')[1].Trim().Replace(" ", "");
+                    // We prefer using the dnshostname whenever possible
+                    if (tempInput.Properties["DNSHostName"].Value != null)
+                    {
+                        if (!String.IsNullOrEmpty((string)tempInput.Properties["DNSHostName"].Value))
+                            _ComputerName = (string)tempInput.Properties["DNSHostName"].Value;
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new PSArgumentException("Failed to interpret input as Instance: " + input, e);
+                }
+            }
+            else if (registeredServerType.IsAssignableFrom(inputType))
+            {
+                try
+                {
+                    //Pass the ServerName property of the SMO object to the string constrtuctor, 
+                    //so we don't have to re-invent the wheel on instance name / port parsing
+                    DbaInstanceParameter parm =
+                        new DbaInstanceParameter((string)tempInput.Properties["ServerName"].Value);
+                    _ComputerName = parm.ComputerName;
 
-                        if (Regex.IsMatch(tempConnectionString, @",\d{1,5}$") && (tempConnectionString.Split(',').Length == 2))
-                        {
-                            try { Int32.TryParse(tempConnectionString.Split(',')[1], out _Port); }
-                            catch (Exception e)
-                            {
-                                throw new PSArgumentException("Failed to parse port number on connection string: " + tempConnectionString, e);
-                            }
-                            if (_Port > 65535) { throw new PSArgumentException("Failed to parse port number on connection string: " + tempConnectionString); }
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        throw new PSArgumentException("Failed to interpret input as Instance: " + Input + " : " + e.Message, e);
-                    }
-                    break;
-                case "microsoft.sqlserver.management.smo.linkedserver":
-                    try
-                    {
-                        _ComputerName = (string)tempInput.Properties["Name"].Value;
-                    }
-                    catch (Exception e)
-                    {
-                        throw new PSArgumentException("Failed to interpret input as Instance: " + Input, e);
-                    }
-                    break;
-                case "microsoft.activedirectory.management.adcomputer":
-                    try
-                    {
-                        _ComputerName = (string)tempInput.Properties["Name"].Value;
+                    if (parm.InstanceName != "MSSQLSERVER")
+                        _InstanceName = parm.InstanceName;
 
-                        // We prefer using the dnshostname whenever possible
-                        if (tempInput.Properties["DNSHostName"].Value != null)
-                        {
-                            if (!String.IsNullOrEmpty((string)tempInput.Properties["DNSHostName"].Value))
-                                _ComputerName = (string)tempInput.Properties["DNSHostName"].Value;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        throw new PSArgumentException("Failed to interpret input as Instance: " + Input, e);
-                    }
-                    break;
-                case "microsoft.sqlserver.management.registeredservers.registeredserver":
-                    try
-                    {
-                        //Pass the ServerName property of the SMO object to the string constrtuctor, 
-                        //so we don't have to re-invent the wheel on instance name / port parsing
-                        DbaInstanceParameter parm =
-                            new DbaInstanceParameter((string) tempInput.Properties["ServerName"].Value);
-                        _ComputerName = parm.ComputerName;
-
-                        if (parm.InstanceName != "MSSQLSERVER")
-                            _InstanceName = parm.InstanceName;
-
-                        if (parm.Port != 1433)
-                            _Port = parm.Port;
-                    }
-                    catch (Exception e)
-                    {
-                        throw new PSArgumentException("Failed to interpret input as Instance: " + Input, e);
-                    }
-                    break;
-                default:
-                    throw new PSArgumentException("Failed to interpret input as Instance: " + Input);
+                    if (parm.Port != 1433)
+                        _Port = parm.Port;
+                }
+                catch (Exception e)
+                {
+                    throw new PSArgumentException("Failed to interpret input as Instance: " + input, e);
+                }
+            }
+            else
+            {
+                throw new PSArgumentException("Failed to interpret input as Instance: " + input);
             }
         }
         #endregion Constructors
