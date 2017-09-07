@@ -27,3 +27,5 @@ This module has been documented in its entirety pretty much, using Markdown, at 
 To skip right to the documentation, [visit the functions page](https://dbatools.io/functions/) or you can start with the [getting started](https://dbatools.io/getting-started/) page.
 
 We're preparing for our 1.0 release and will offer more documentation once it's complete. Sorry the [getting started](https://dbatools.io/getting-started) is lacking at the moment - we're working on it!
+
+Test change
