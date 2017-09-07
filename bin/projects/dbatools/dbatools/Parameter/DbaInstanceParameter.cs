@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
 using Sqlcollaborative.Dbatools.Connection;
+using Sqlcollaborative.Dbatools.Exceptions;
 using Sqlcollaborative.Dbatools.Utility;
 
 namespace Sqlcollaborative.Dbatools.Parameter
@@ -145,6 +146,12 @@ namespace Sqlcollaborative.Dbatools.Parameter
         }
 
         /// <summary>
+        /// Whether the input is a connection string
+        /// </summary>
+        [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
+        public bool IsConnectionString;
+
+        /// <summary>
         /// The original object passed to the parameter class.
         /// </summary>
         [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
@@ -236,6 +243,9 @@ namespace Sqlcollaborative.Dbatools.Parameter
         {
             InputObject = Name;
 
+            if (Name == "")
+                throw new BloodyHellGiveMeSomethingToWorkWithException("Bloody hell! Don't give me an empty string for an instance name!", "DbaInstanceParameter");
+
             if (Name == ".")
             {
                 _ComputerName = Name;
@@ -243,7 +253,44 @@ namespace Sqlcollaborative.Dbatools.Parameter
                 return;
             }
 
-            string tempString = Name;
+            string tempString = Name.Trim();
+            tempString = Regex.Replace(tempString, @"^\[(.*)\]$", "$1");
+
+            // Named Pipe path notation interpretation
+            if (Regex.IsMatch(tempString, @"^\\\\[^\\]+\\pipe\\([^\\]+\\){0,1}sql\\query$", RegexOptions.IgnoreCase))
+            {
+                try
+                {
+                    _NetworkProtocol = SqlConnectionProtocol.NP;
+
+                    _ComputerName = Regex.Match(tempString, @"^\\\\([^\\]+)\\").Groups[1].Value;
+
+                    if (Regex.IsMatch(tempString, @"\\MSSQL\$[^\\]+\\", RegexOptions.IgnoreCase))
+                        _InstanceName = Regex.Match(tempString, @"\\MSSQL\$([^\\]+)\\", RegexOptions.IgnoreCase).Groups[1].Value;
+                }
+                catch (Exception e)
+                {
+                    throw new ArgumentException(String.Format("Failed to interpret named pipe path notation: {0} | {1}", InputObject, e.Message), e);
+                }
+
+                return;
+            }
+
+            // Connection String interpretation
+            try
+            {
+                System.Data.SqlClient.SqlConnectionStringBuilder connectionString = new System.Data.SqlClient.SqlConnectionStringBuilder(tempString);
+                DbaInstanceParameter tempParam = new DbaInstanceParameter(connectionString.DataSource);
+                _ComputerName = tempParam.ComputerName;
+                if (tempParam.InstanceName != "MSSQLSERVER") { _InstanceName = tempParam.InstanceName; }
+                if (tempParam.Port != 1433) { _Port = tempParam.Port; }
+                _NetworkProtocol = tempParam.NetworkProtocol;
+
+                IsConnectionString = true;
+
+                return;
+            }
+            catch { }
 
             // Handle and clear protocols. Otherwise it'd make port detection unneccessarily messy
             if (Regex.IsMatch(tempString, "^TCP:", RegexOptions.IgnoreCase)) //TODO: Use case insinsitive String.BeginsWith()

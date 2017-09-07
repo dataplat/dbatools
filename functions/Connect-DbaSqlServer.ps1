@@ -168,7 +168,7 @@ function Connect-DbaSqlServer {
 	param (
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+		[DbaInstanceParameter]$SqlInstance,
 		[Alias("SqlCredential")]
 		[PSCredential]$Credential,
 		[object[]]$Database,
