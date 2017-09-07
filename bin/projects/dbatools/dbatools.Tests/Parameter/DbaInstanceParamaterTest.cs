@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Sqlcollaborative.Dbatools.Connection;
 
 namespace Sqlcollaborative.Dbatools.Parameter
 {
@@ -13,7 +14,31 @@ namespace Sqlcollaborative.Dbatools.Parameter
             var dbaInstanceParamater = new DbaInstanceParameter("someMachine");
 
             Assert.AreEqual("someMachine", dbaInstanceParamater.FullName);
+            Assert.AreEqual("someMachine", dbaInstanceParamater.FullSmoName);
+            Assert.AreEqual(SqlConnectionProtocol.Any, dbaInstanceParamater.NetworkProtocol);
             Assert.IsFalse(dbaInstanceParamater.IsLocalHost);
+            Assert.IsFalse(dbaInstanceParamater.IsConnectionString);
+        }
+
+        [ExpectedException(typeof(ArgumentException), "Bloody hell! Don't give me an empty string for an instance name!")]
+        [TestMethod]
+        public void TestEmptyString()
+        {
+            var dbaInstanceParamater = new DbaInstanceParameter("\t");
+        }
+
+        [TestMethod]
+        public void TestConnectionString()
+        {
+            var dbaInstanceParamater = new DbaInstanceParameter("Server=tcp:server.database.windows.net;Database=myDataBase;User ID =[LoginForDb]@[serverName]; Password = myPassword; Trusted_Connection = False;Encrypt = True; ");
+            Assert.IsTrue(dbaInstanceParamater.IsConnectionString);
+        }
+
+        [TestMethod]
+        public void TestConnectionStringBadKey()
+        {
+            var dbaInstanceParamater = new DbaInstanceParameter("Server=tcp:server.database.windows.net;Database=myDataBase;Trusted_Connection = True;Wrong=true");
+            Assert.IsTrue(dbaInstanceParamater.IsConnectionString);
         }
 
         /// <summary>
@@ -26,6 +51,10 @@ namespace Sqlcollaborative.Dbatools.Parameter
 
             Assert.AreEqual("localhost\\sql2008r2sp2", dbaInstanceParamater.FullName);
             Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
+            Assert.AreEqual("localhost\\sql2008r2sp2", dbaInstanceParamater.FullSmoName);
+            Assert.AreEqual(SqlConnectionProtocol.Any, dbaInstanceParamater.NetworkProtocol);
+            Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
+            Assert.IsFalse(dbaInstanceParamater.IsConnectionString);
         }
 
         /// <summary>
@@ -38,6 +67,10 @@ namespace Sqlcollaborative.Dbatools.Parameter
 
             Assert.AreEqual(".", dbaInstanceParamater.FullName);
             Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
+            Assert.AreEqual("NP:.", dbaInstanceParamater.FullSmoName);
+            Assert.AreEqual(SqlConnectionProtocol.NP, dbaInstanceParamater.NetworkProtocol);
+            Assert.IsTrue(dbaInstanceParamater.IsLocalHost);
+            Assert.IsFalse(dbaInstanceParamater.IsConnectionString);
         }
 
         /// <summary>

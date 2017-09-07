@@ -149,7 +149,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
         /// Whether the input is a connection string
         /// </summary>
         [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
-        public bool IsConnectionString;
+        public bool IsConnectionString { get; }
 
         /// <summary>
         /// The original object passed to the parameter class.
@@ -243,8 +243,8 @@ namespace Sqlcollaborative.Dbatools.Parameter
         {
             InputObject = Name;
 
-            if (Name == "")
-                throw new BloodyHellGiveMeSomethingToWorkWithException("Bloody hell! Don't give me an empty string for an instance name!", "DbaInstanceParameter");
+            if (string.IsNullOrWhiteSpace(Name))
+                throw new ArgumentException("Bloody hell! Don't give me an empty string for an instance name!", "Name");
 
             if (Name == ".")
             {
@@ -279,18 +279,25 @@ namespace Sqlcollaborative.Dbatools.Parameter
             // Connection String interpretation
             try
             {
-                System.Data.SqlClient.SqlConnectionStringBuilder connectionString = new System.Data.SqlClient.SqlConnectionStringBuilder(tempString);
+                System.Data.SqlClient.SqlConnectionStringBuilder connectionString =
+                    new System.Data.SqlClient.SqlConnectionStringBuilder(tempString);
                 DbaInstanceParameter tempParam = new DbaInstanceParameter(connectionString.DataSource);
                 _ComputerName = tempParam.ComputerName;
-                if (tempParam.InstanceName != "MSSQLSERVER") { _InstanceName = tempParam.InstanceName; }
-                if (tempParam.Port != 1433) { _Port = tempParam.Port; }
+                if (tempParam.InstanceName != "MSSQLSERVER")
+                {
+                    _InstanceName = tempParam.InstanceName;
+                }
+                if (tempParam.Port != 1433)
+                {
+                    _Port = tempParam.Port;
+                }
                 _NetworkProtocol = tempParam.NetworkProtocol;
 
                 IsConnectionString = true;
 
                 return;
             }
-            catch { }
+            catch (ArgumentException){} // We probably want the KeyNotFoundException and FormatException to bubble up to the user
 
             // Handle and clear protocols. Otherwise it'd make port detection unneccessarily messy
             if (Regex.IsMatch(tempString, "^TCP:", RegexOptions.IgnoreCase)) //TODO: Use case insinsitive String.BeginsWith()
