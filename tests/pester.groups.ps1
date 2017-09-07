@@ -11,6 +11,7 @@ $TestsRunGroups = @{
 		'Get-DbaComputerSystem',
 		'Get-DbaDatabase',
 		'Get-DbaDatabaseEncryption',
+		'Get-DbaDbStoredProcedure',
 		'Get-DbaLogin',
 		'Get-DbaOperatingSystem',
 		'Get-DbaProcess',
