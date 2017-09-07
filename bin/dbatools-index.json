@@ -419,6 +419,14 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaSysDbUserObject $sourceServer $destserver\r\n\r\nCopies user objects from source to destination\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Disable-DbaAgHadr",
+        "Description":  "In order to build an AG a cluster has to be built and then the Hadr enabled for the SQL Server\nservice. This function disables that feature for the SQL Server service.",
+        "Synopsis":  "Disables the Hadr service setting on the specified SQL Server.",
+        "Name":  "Disable-DbaAgHadr",
+        "Links":  "https://dbatools.io/Disable-DbaAgHadr",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eDisable-DbaAgHadr -SqlInstance sql2016 -Force\r\n\r\nSets Hadr service to enabled for the instance sql2016, and restart the service to apply the change.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eDisable-DbaAgHadr -SqlInstance sql2012\\dev1 -Force\r\n\r\nSets Hadr service to disabled for the instance dev1 on sq2012, and restart the service to apply the change.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Disable-DbaForceNetworkEncryption",
         "Description":  "Disables Force Encryption for a SQL Server instance. Note that this requires access to the Windows Server, not the SQL instance itself.\n\nThis setting is found in Configuration Manager.",
         "Tags":  "Certificate",
@@ -435,6 +443,14 @@
         "Name":  "Dismount-DbaDatabase",
         "Links":  "https://dbatools.io/Dismount-DbaDatabase",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eDetach-DbaDatabase -SqlInstance sql2016b -Database SharePoint_Config, WSS_Logging\r\n\r\nDetaches SharePoint_Config and WSS_Logging from sql2016b\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016b -Database \u0027PerformancePoint Service \r\nApplication_10032db0fa0041df8f913f558a5dc0d4\u0027 | Detach-DbaDatabase -Force\r\n\r\nDetaches \u0027PerformancePoint Service Application_10032db0fa0041df8f913f558a5dc0d4\u0027 from sql2016b. Since Force was \r\nspecified, if the database is part of mirror, the mirror will be broken prior to detaching.\r\n\r\nIf the database is part of an Availability Group, it will first be dropped prior to detachment.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabase -SqlInstance sql2016b -Database WSS_Logging | Detach-DbaDatabase -Force -WhatIf\r\n\r\nShows what would happen if the command were to execute (without actually executing the detach/break/remove commands).\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Enable-DbaAgHadr",
+        "Description":  "In order to build an AG a cluster has to be built and then the Hadr enabled for the SQL Server\nservice. This function enables that feature for the SQL Server service.",
+        "Synopsis":  "Enables the Hadr service setting on the specified SQL Server.",
+        "Name":  "Enable-DbaAgHadr",
+        "Links":  "https://dbatools.io/Enable-DbaAgHadr",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eEnable-DbaAgHadr -SqlInstance sql2016 -Force\r\n\r\nSets Hadr service to enabled for the instance sql2016, and restart the service to apply the change.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eEnable-DbaAgHadr -SqlInstance sql2012\\dev1 -Force\r\n\r\nSets Hadr service to disabled for the instance dev1 on sq2012, and restart the service to apply the change.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Enable-DbaForceNetworkEncryption",
