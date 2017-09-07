@@ -31,14 +31,30 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 # Get-DbaNoun
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+	BeforeAll {
+		$server = Connect-DbaSqlServer -SqlInstance $script:instance1
+		$random = Get-Random
+		$procName = "dbatools_getdbsp"
+		$dbname = "dbatoolsci_getdbsp$random"
+		$server.Query("CREATE DATABASE $dbname")
+		$server.Databases[$dbname].ExecuteNonQuery("CREATE PROCEDURE $procName AS SELECT 1")
+	}
+	
+	AfterAll {
+		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase
+	}
+
 	Context "Command actually works" {
-		$results = Get-DbaDbStoredProcedure -SqlInstance $script:instance1 -Database master -ExcludeSystemSp
+		$results = Get-DbaDbStoredProcedure -SqlInstance $script:instance1 -Database $dbname -ExcludeSystemSp
 		it "Should have standard properties" {
 			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance'.Split(',')
 			($results[0].PsObject.Properties.Name | Where-Object {$_ -in $ExpectedProps} | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 		}
 
-		It "Should exclude system stored procedure" {
+		It "Should include test procedure: $procName" {
+			($results | Where-Object Name -eq $procName).Name | Should Be $procName
+		}
+		It "Should exclude system procedures" {
 			($results | Where-Object Name -eq 'sp_helpdb') | Should Be $null
 		}
 	}
