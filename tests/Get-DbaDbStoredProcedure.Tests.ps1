@@ -32,10 +32,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 # Get-DbaNoun
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Context "Command actually works" {
-		$results = Get-DbaDbStoredProcedure -SqlInstance $script:instance1 -ExcludeSystemSp
-		it "Should have correct properties" {
-			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,Schema,ObjectId,CreateDate,DateLastModified,Name,ImplementationType,Startup'.Split(',')
-			($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+		$results = Get-DbaDbStoredProcedure -SqlInstance $script:instance1 -Database master -ExcludeSystemSp
+		it "Should have standard properties" {
+			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance'.Split(',')
+			($results[0].PsObject.Properties.Name | Where-Object {$_ -in $ExpectedProps} | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 		}
 
 		It "Should exclude system stored procedure" {
