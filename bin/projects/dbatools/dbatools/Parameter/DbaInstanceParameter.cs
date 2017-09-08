@@ -149,7 +149,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
         /// Whether the input is a connection string
         /// </summary>
         [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
-        public bool IsConnectionString { get; }
+        public bool IsConnectionString { get; private set; } //TODO: figure out how to not limit ourselves to .NET 4.0
 
         /// <summary>
         /// The original object passed to the parameter class.
