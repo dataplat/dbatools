@@ -82,12 +82,12 @@ namespace Sqlcollaborative.Dbatools.TabExpansion
         /// <summary>
         /// Whether asynchronous TEPP updating should be disabled
         /// </summary>
-        public static bool TeppAsyncDisabled = false;
+        public static bool TeppAsyncDisabled = true;
 
         /// <summary>
         /// Whether synchronous TEPP updating should be disabled
         /// </summary>
-        public static bool TeppSyncDisabled = true;
+        public static bool TeppSyncDisabled = false;
 
         /// <summary>
         /// The interval in which asynchronous TEPP cache updates are performed
