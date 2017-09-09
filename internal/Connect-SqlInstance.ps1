@@ -36,15 +36,46 @@ function Connect-SqlInstance {
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[object]$SqlInstance,
-		[object]$SqlCredential,
-		[switch]$ParameterConnection,
-		[switch]$RegularUser = $true,
+		[object]
+		$SqlInstance,
+		
+		[object]
+		$SqlCredential,
+		
+		[switch]
+		$ParameterConnection,
+		
+		[switch]
+		$RegularUser = $true,
+		
 		# let's see how this goes
 
-		[int]$MinimumVersion
+		
+		[int]
+		$MinimumVersion
 	)
 	
+	#region Utility functions
+	function Invoke-TEPPCacheUpdate {
+		[CmdletBinding()]
+		Param (
+			[System.Management.Automation.ScriptBlock]
+			$ScriptBlock
+		)
+		
+		try {
+			[ScriptBlock]::Create($scriptBlock).Invoke()
+		}
+		catch {
+			# If the SQL Server version doesn't support the feature, we ignore it and silently continue
+			if ($_.Exception.InnerException.InnerException.GetType().FullName -eq "Microsoft.SqlServer.Management.Sdk.Sfc.InvalidVersionEnumeratorException") {
+				return
+			}
+			
+			throw
+		}
+	}
+	#endregion Utility functions
 	
 	#region Ensure Credential integrity
     <#
@@ -99,7 +130,7 @@ function Connect-SqlInstance {
 		if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
 			$FullSmoName = $ConvertedSqlInstance.FullSmoName.ToLower()
 			foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
-				[ScriptBlock]::Create($scriptBlock).Invoke()
+				Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
 			}
 		}
 		return $server
@@ -221,7 +252,7 @@ function Connect-SqlInstance {
 	if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
 		$FullSmoName = $ConvertedSqlInstance.FullSmoName.ToLower()
 		foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
-			[ScriptBlock]::Create($scriptBlock).Invoke()
+			Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
 		}
 	}
 	
