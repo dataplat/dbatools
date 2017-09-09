@@ -29,7 +29,7 @@ function Find-DbaDuplicateIndex {
 				IsFiltered (When 2008+)
 			
         .PARAMETER SqlInstance
-            The SQL Server you want to run the test on.
+			The SQL Server you want to check for duplicate indexes.
         
         .PARAMETER SqlCredential
  			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
