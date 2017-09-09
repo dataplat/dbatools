@@ -297,7 +297,14 @@ namespace Sqlcollaborative.Dbatools.Parameter
 
                 return;
             }
-            catch (ArgumentException){} // We probably want the KeyNotFoundException and FormatException to bubble up to the user
+            catch (ArgumentException ex)
+            {
+                //TODO: I guess this is a problem for non-english versions of windows.
+                if (ex.Message.StartsWith("Keyword not supported:"))
+                {
+                    throw;
+                }
+            }
 
             // Handle and clear protocols. Otherwise it'd make port detection unneccessarily messy
             if (Regex.IsMatch(tempString, "^TCP:", RegexOptions.IgnoreCase)) //TODO: Use case insinsitive String.BeginsWith()
