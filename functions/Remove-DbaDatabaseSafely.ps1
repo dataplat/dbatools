@@ -23,7 +23,7 @@ function Remove-DbaDatabaseSafely {
 		.PARAMETER Destination
 			If specified, Agent jobs will be created on this server. By default, the jobs will be created on the server specified by SqlInstance. You must have sysadmin access and the server must be SQL Server 2000 or higher. The SQL Agent service will be started if it is not already running.
 
-		.PARAMETER DestinationSqlCredential
+		.PARAMETER DestinationCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
