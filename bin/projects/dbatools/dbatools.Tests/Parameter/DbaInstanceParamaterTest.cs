@@ -34,11 +34,18 @@ namespace Sqlcollaborative.Dbatools.Parameter
             Assert.IsTrue(dbaInstanceParamater.IsConnectionString);
         }
 
+        [ExpectedException(typeof(ArgumentException))]
         [TestMethod]
         public void TestConnectionStringBadKey()
         {
-            var dbaInstanceParamater = new DbaInstanceParameter("Server=tcp:server.database.windows.net;Database=myDataBase;Trusted_Connection = True;Wrong=true");
-            Assert.IsTrue(dbaInstanceParamater.IsConnectionString);
+            new DbaInstanceParameter("Server=tcp:server.database.windows.net;Database=myDataBase;Trusted_Connection = True;Wrong=true");
+        }
+
+        [ExpectedException(typeof(FormatException))]
+        [TestMethod]
+        public void TestConnectionStringBadValue()
+        {
+            new DbaInstanceParameter("Server=tcp:server.database.windows.net;Database=myDataBase;Trusted_Connection=weird");
         }
 
         /// <summary>

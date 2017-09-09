@@ -9,7 +9,7 @@ namespace Sqlcollaborative.Dbatools.Exceptions
     /// <summary>
     /// An exception that is thrown by parameter classes when given empty input
     /// </summary>
-    public class BloodyHellGiveMeSomethingToWorkWithException : Exception
+    public class BloodyHellGiveMeSomethingToWorkWithException : ArgumentException
     {
         /// <summary>
         /// The parameter class that did the throwing
