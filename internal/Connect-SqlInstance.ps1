@@ -99,7 +99,7 @@ function Connect-SqlInstance {
 		if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
 			$FullSmoName = $ConvertedSqlInstance.FullSmoName.ToLower()
 			foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
-				$ExecutionContext.InvokeCommand.InvokeScript($false, $scriptBlock, $null, $null)
+				[ScriptBlock]::Create($scriptBlock).Invoke()
 			}
 		}
 		return $server
@@ -221,7 +221,7 @@ function Connect-SqlInstance {
 	if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
 		$FullSmoName = $ConvertedSqlInstance.FullSmoName.ToLower()
 		foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
-			$ExecutionContext.InvokeCommand.InvokeScript($false, $scriptBlock, $null, $null)
+			[ScriptBlock]::Create($scriptBlock).Invoke()
 		}
 	}
 	
