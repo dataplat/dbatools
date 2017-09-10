@@ -1,111 +1,99 @@
 function Set-DbaTempDbConfiguration {
-<#
-.SYNOPSIS
-Sets tempdb data and log files according to best practices.
+	<#
+		.SYNOPSIS
+			Sets tempdb data and log files according to best practices.
 
-.DESCRIPTION
-Function to calculate tempdb size and file configurations based on passed parameters, calculated values, and Microsoft
-best practices. User must declare SQL Server to be configured and total data file size as mandatory values. Function will
-then calculate number of data files based on logical cores on the target host and create evenly sized data files based
-on the total data size declared by the user, with a log file 25% of the total data file size. Other parameters can adjust 
-the settings as the user desires (such as different file paths, number of data files, and log file size). The function will
-not perform any functions that would shrink or delete data files. If a user desires this, they will need to reduce tempdb
-so that it is "smaller" than what the function will size it to before running the function.
+		.DESCRIPTION
+			Calculates tempdb size and file configurations based on passed parameters, calculated values, and Microsoft best practices. User must declare SQL Server to be configured and total data file size as mandatory values. Function then calculates the number of data files based on logical cores on the target host and create evenly sized data files based on the total data size declared by the user, with a log file 25% of the total data file size.
+			
+			Other parameters can adjust the settings as the user desires (such as different file paths, number of data files, and log file size). No functions that shrink or delete data files are performed. If you wish to do this, you will need to resize tempdb so that it is "smaller" than what the function will size it to before running the function.
 
-.NOTES 
-Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
+		.NOTES 
+			Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+			Copyright (C) 2016 Chrissy LeMaire
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+        .PARAMETER SqlInstance
+            The SQL Server Instance to connect to.
+        
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER SqlInstance
-SQLServer name or SMO object representing the SQL Server to connect to
+		.PARAMETER DataFileCount
+			Specifies the number of data files to create. If this number is not specified, the number of logical cores of the host will be used.
 
-.PARAMETER SqlCredential
-PSCredential object to connect under. If not specified, current Windows login will be used.
+		.PARAMETER DataFileSizeMB
+			Specifies the total data file size in megabytes. This is distributed across the total number of data files.
 
-.PARAMETER DataFileCount
-Integer of number of datafiles to create. If not specified, function will use logical cores of host.
+		.PARAMETER LogFileSizeMB
+			Specifies the log file size in megabytes. If not specified, this will be set to 25% of total data file size.
 
-.PARAMETER DataFileSizeMB
-Total data file size in megabytes
+		.PARAMETER DataFileGrowthMB
+			Specifies the growth amount for the data file(s) in megabytes. The default is 512 MB.
 
-.PARAMETER LogFileSizeMB
-Log file size in megabytes. If not specified, function will use 25% of total data file size.
+		.PARAMETER LogFileGrowthMB
+			Specifies the growth amount for the log file in megabytes. The default is 512 MB.
 
-.PARAMETER DataFileGrowthMB
-Growth size for the data file(s) in megabytes. The default is 512 MB.
+		.PARAMETER DataPath 
+			Specifies the filesystem path in which to create the tempdb data files. If not specified, current tempdb location will be used.
 
-.PARAMETER LogFileGrowthMB
-Growth size for the log file in megabytes. The default is 512 MB.
+		.PARAMETER LogPath
+			Specifies the filesystem path in which to create the tempdb log file. If not specified, current tempdb location will be used.
 
-.PARAMETER DataPath 
-File path to create tempdb data files in. If not specified, current tempdb location will be used.
+		.PARAMETER OutputScriptOnly
+			If this switch is enabled, only the T-SQL script to change the tempdb configuration is created and output.
 
-.PARAMETER LogPath
-File path to create tempdb log file in. If not specified, current tempdb location will be used.
+		.PARAMETER OutFile
+			Specifies the filesystem path into which the generated T-SQL script will be saved.
 
-.PARAMETER OutputScriptOnly
-Switch to generate script for tempdb configuration.
+		.PARAMETER DisableGrowth
+			If this switch is enabled, the tempdb files will be configured to not grow. This overrides -DataFileGrowthMB and -LogFileGrowthMB.
 
-.PARAMETER OutFile
-Path to file to save the generated script for tempdb configuration
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.PARAMETER DisableGrowth
-Switch to disable the tempdb files to grow. 
-Overrules the parameters DataFileGrowthMB and LogFileGrowthMB.
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-.PARAMETER WhatIf
-Switch to generate configuration object.
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+		.LINK
+			https://dbatools.io/Set-DbaTempDbConfiguration
 
-.PARAMETER Silent
-Whether the silent switch was set in the calling function.
-If true, it will write errors, if any, but not write to the screen without explicit override using -Debug or -Verbose.
-If false, it will print a warning if in warning mode. It will also be willing to write a message to the screen, if the level is within the range configured for that.
+		.EXAMPLE
+			Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000
 
-.LINK
-https://dbatools.io/Set-DbaTempDbConfiguration
+			Creates tempdb with a number of data files equal to the logical cores where each file is equal to 1000MB divided by the number of logical cores, with a log file of 250MB.
 
-.EXAMPLE
-Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000
+		.EXAMPLE
+			Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -DataFileCount 8
 
-Creates tempdb with a number of datafiles equal to the logical cores where
-each one is equal to 1000MB divided by number of logical cores and a log file
-of 250MB
+			Creates tempdb with 8 data files, each one sized at 125MB, with a log file of 250MB.
 
-.EXAMPLE
-Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -DataFileCount 8
+		.EXAMPLE
+			Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly
 
-Creates tempdb with a number of datafiles equal to the logical cores where
-each one is equal to 125MB and a log file of 250MB
+			Provides a SQL script output to configure tempdb according to the passed parameters.
 
-.EXAMPLE
-Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly
+		.EXAMPLE
+			Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -DisableGrowth
 
-Provides a SQL script output to configure tempdb according to the passed parameters
+			Disables the growth for the data and log files.
 
-.EXAMPLE
-Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -DisableGrowth
+		.EXAMPLE
+			Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly
 
-Disables the growth for the data and log files
-
-.EXAMPLE
-Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly
-
-Returns PSObject representing tempdb configuration.
-#>
+			Returns the T-SQL script representing tempdb configuration.
+	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
@@ -138,10 +126,14 @@ Returns PSObject representing tempdb configuration.
 	
 	process {
 		
-		if (Test-FunctionInterrupt) { return }
+		if (Test-FunctionInterrupt) {
+			return
+		}
 		
 		$cores = $server.Processors
-		if ($cores -gt 8) { $cores = 8 }
+		if ($cores -gt 8) {
+			$cores = 8
+		}
 		
 		#Set DataFileCount if not specified. If specified, check against best practices. 
 		if (-not $DataFileCount) {
@@ -155,8 +147,8 @@ Returns PSObject representing tempdb configuration.
 			Write-Message -Message "Data file count set explicitly: $DataFileCount" -Level Verbose
 		}
 		
-		$DataFilesizeSingleMB = $([Math]::Floor($DataFileSizeMB/$DataFileCount))
-		Write-Message -Message "Single data file size (MB): $DataFilesizeSingleMB" -Level Verbose
+		$DataFilesizeSingleMB = $([Math]::Floor($DataFileSizeMB / $DataFileCount))
+		Write-Message -Message "Single data file size (MB): $DataFilesizeSingleMB." -Level Verbose
 		
 		if ($DataPath) {
 			if ((Test-DbaSqlPath -SqlInstance $server -Path $DataPath) -eq $false) {
@@ -169,7 +161,7 @@ Returns PSObject representing tempdb configuration.
 			$DataPath = Split-Path $Filepath
 		}
 		
-		Write-Message -Message "Using data path: $datapath" -Level Verbose
+		Write-Message -Message "Using data path: $datapath." -Level Verbose
 		
 		if ($LogPath) {
 			if ((Test-DbaSqlPath -SqlInstance $server -Path $LogPath) -eq $false) {
@@ -181,7 +173,7 @@ Returns PSObject representing tempdb configuration.
 			$Filepath = $server.Databases['tempdb'].ExecuteWithResults('SELECT physical_name as FileName FROM sys.database_files WHERE file_id = 2').Tables[0].Rows[0].FileName
 			$LogPath = Split-Path $Filepath
 		}
-		Write-Message -Message "Using log path: $LogPath" -Level Verbose
+		Write-Message -Message "Using log path: $LogPath." -Level Verbose
 		
 		# Check if the file growth needs to be disabled
 		if ($DisableGrowth) {
@@ -189,7 +181,7 @@ Returns PSObject representing tempdb configuration.
 			$LogFileGrowthMB = 0
 		}
 		
-		$LogSizeMBActual = if (-not $LogFileSizeMB) { $([Math]::Floor($DataFileSizeMB/4)) }
+		$LogSizeMBActual = if (-not $LogFileSizeMB) { $([Math]::Floor($DataFileSizeMB / 4)) }
 
 		# Check current tempdb. Throw an error if current tempdb is larger than config.
 		$CurrentFileCount = $server.Databases['tempdb'].ExecuteWithResults('SELECT count(1) as FileCount FROM sys.database_files WHERE type=0').Tables[0].Rows[0].FileCount
@@ -233,7 +225,7 @@ Returns PSObject representing tempdb configuration.
 		}
 		
 		if (-not $LogFileSizeMB) {
-			$LogFileSizeMB = [Math]::Floor($DataFileSizeMB/4)
+			$LogFileSizeMB = [Math]::Floor($DataFileSizeMB / 4)
 		}
 		
 		$logfile = $server.Databases['tempdb'].ExecuteWithResults("SELECT name, physical_name as FileName FROM sys.database_files WHERE file_id = 2").Tables[0].Rows[0];
@@ -242,7 +234,7 @@ Returns PSObject representing tempdb configuration.
 		$NewPath = "$LogPath\$Filename"
 		$sql += "ALTER DATABASE tempdb MODIFY FILE(name=$LogicalName,filename='$NewPath',size=$LogFileSizeMB MB,filegrowth=$LogFileGrowthMB);"
 		
-		Write-Message -Message "SQL Statement to resize tempdb" -Level Verbose
+		Write-Message -Message "SQL Statement to resize tempdb." -Level Verbose
 		Write-Message -Message ($sql -join "`n`n") -Level Verbose
 		
 		if ($OutputScriptOnly) {
@@ -252,26 +244,26 @@ Returns PSObject representing tempdb configuration.
 			$sql | Set-Content -Path $OutFile
 		}
 		else {
-			If ($Pscmdlet.ShouldProcess($SqlInstance, "Executing query and informing that a restart is required.")) {
+			if ($Pscmdlet.ShouldProcess($SqlInstance, "Executing query and informing that a restart is required.")) {
 				try {
 					$server.Databases['master'].ExecuteNonQuery($sql)
-					Write-Message -Level Verbose -Message "tempdb successfully reconfigured"
+					Write-Message -Level Verbose -Message "tempdb successfully reconfigured."
 					
 					[PSCustomObject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						DataFileCount = $DataFileCount
-						DataFileSizeMB = $DataFileSizeMB
+						ComputerName         = $server.NetName
+						InstanceName         = $server.ServiceName
+						SqlInstance          = $server.DomainInstanceName
+						DataFileCount        = $DataFileCount
+						DataFileSizeMB       = $DataFileSizeMB
 						SingleDataFileSizeMB = $DataFilesizeSingleMB
-						LogSizeMB = $LogSizeMBActual
-						DataPath = $DataPath
-						LogPath = $LogPath
-						DataFileGrowthMB = $DataFileGrowthMB
-						LogFileGrowthMB = $LogFileGrowthMB
+						LogSizeMB            = $LogSizeMBActual
+						DataPath             = $DataPath
+						LogPath              = $LogPath
+						DataFileGrowthMB     = $DataFileGrowthMB
+						LogFileGrowthMB      = $LogFileGrowthMB
 					}
 					
-					Write-Message -Level Output -Message "tempdb reconfigured. You must restart the SQL Service for settings to take effect"
+					Write-Message -Level Output -Message "tempdb reconfigured. You must restart the SQL Service for settings to take effect."
 				}
 				catch {
 					# write-exception writes the full exception to file
@@ -284,4 +276,4 @@ Returns PSObject representing tempdb configuration.
 	end { 
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Set-SqlTempDbConfiguration
 	}
-	}
+}
