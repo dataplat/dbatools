@@ -109,7 +109,7 @@ function Remove-DbaOrphanUser {
 	process {
 
 		foreach ($Instance in $SqlInstance) {
-			Write-Message -Level Verbose -Message "Attempting to connect to $Instance"
+			Write-Message -Level Verbose -Message "Attempting to connect to $Instance."
 			try {
 				$server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $SqlCredential
 			}
@@ -152,17 +152,17 @@ function Remove-DbaOrphanUser {
 						#if SQL 2012 or higher only validate databases with ContainmentType = NONE
 						if ($server.versionMajor -gt 10) {
 							if ($db.ContainmentType -ne [Microsoft.SqlServer.Management.Smo.ContainmentType]::None) {
-								Write-Message -Level Warnig -Message "Database '$db' is a contained database. Contained databases can't have orphaned users. Skipping validation."
+								Write-Message -Level Warning -Message "Database '$db' is a contained database. Contained databases can't have orphaned users. Skipping validation."
 								Continue
 							}
 						}
 
 						if ($StackSource -eq "Repair-DbaOrphanUser") {
-							Write-Message -Level Verbose -Message "Call origin: Repair-DbaOrphanUser"
+							Write-Message -Level Verbose -Message "Call origin: Repair-DbaOrphanUser."
 							#Will use collection from parameter ($User)
 						}
 						else {
-							Write-Message -Level Verbose -Message "Validating users on database $db"
+							Write-Message -Level Verbose -Message "Validating users on database $db."
 
 							if ($User.Count -eq 0) {
 								#the third validation will remove from list sql users without login. The rule here is Sid with length higher than 16
@@ -181,7 +181,7 @@ function Remove-DbaOrphanUser {
 						}
 
 						if ($User.Count -gt 0) {
-							Write-Message -Level Verbose -Message "Orphan users found"
+							Write-Message -Level Verbose -Message "Orphan users found."
 							foreach ($dbuser in $User) {
 								$SkipUser = $false
 
@@ -216,7 +216,7 @@ function Remove-DbaOrphanUser {
 												On sql server 2008 or lower the EnumObjects method does not accept empty parameter.
 												0x1FFFFFFF is the way we can say we want everything known by those versions
 
-												When it is an higer version we can use empty to get all
+												When it is an higher version we can use empty to get all
 											#>
 											if ($server.versionMajor -lt 11) {
 												$NumberObjects = ($db.EnumObjects(0x1FFFFFFF) | Where-Object { $_.Schema -eq $sch.Name } | Measure-Object).Count
@@ -243,7 +243,7 @@ function Remove-DbaOrphanUser {
 													}
 												}
 												else {
-													Write-Message -Level Warning -Message "Schema '$($sch.Name)' owned by user $($dbuser.Name) have $NumberObjects underlying objects. If you want to change the schemas' owner to 'dbo' and drop the user anyway, use -Force parameter. Skipping user '$dbuser'"
+													Write-Message -Level Warning -Message "Schema '$($sch.Name)' owned by user $($dbuser.Name) have $NumberObjects underlying objects. If you want to change the schemas' owner to 'dbo' and drop the user anyway, use -Force parameter. Skipping user '$dbuser'."
 													$SkipUser = $true
 													break
 												}
