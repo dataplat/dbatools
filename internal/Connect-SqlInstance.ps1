@@ -35,21 +35,11 @@ function Connect-SqlInstance {
 	
 	[CmdletBinding()]
 	param (
-		[Parameter(Mandatory = $true)]
-		[object]
-		$SqlInstance,
-		
-		[object]
-		$SqlCredential,
-		
-		[switch]
-		$ParameterConnection,
-		
-		[switch]
-		$RegularUser = $true,
-		
-		[int]
-		$MinimumVersion
+		[Parameter(Mandatory = $true)][object]$SqlInstance,
+		[object]$SqlCredential,
+		[switch]$ParameterConnection,
+		[switch]$RegularUser = $true,
+		[int]$MinimumVersion
 	)
 	
 	#region Utility functions
