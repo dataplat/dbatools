@@ -72,12 +72,12 @@ function Set-DbaTempDbConfiguration {
 		.EXAMPLE
 			Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000
 
-			Creates tempdb with a number of datafiles equal to the logical cores where each file is equal to 1000MB divided by the number of logical cores, with a log file of 250MB.
+			Creates tempdb with a number of data files equal to the logical cores where each file is equal to 1000MB divided by the number of logical cores, with a log file of 250MB.
 
 		.EXAMPLE
 			Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -DataFileCount 8
 
-			Creates tempdb with 8 datafiles, each one sized at 125MB, with a log file of 250MB.
+			Creates tempdb with 8 data files, each one sized at 125MB, with a log file of 250MB.
 
 		.EXAMPLE
 			Set-DbaTempDbConfiguration -SqlInstance localhost -DataFileSizeMB 1000 -OutputScriptOnly
