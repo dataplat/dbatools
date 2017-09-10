@@ -1,89 +1,94 @@
 function Remove-DbaOrphanUser {
 	<#
-.SYNOPSIS
-Drop orphan users with no existing login to map
+		.SYNOPSIS
+			Drop orphan users with no existing login to map
 
-.DESCRIPTION
-An orphan user is defined by a user that does not have their matching login. (Login property = "").
-If user is the owner of the schema with the same name and if if the schema does not have any underlying objects the schema will be dropped.
-If user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be changed to 'dbo'. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.
-If exists a login to map the drop will not be performed unless you specify the -Force parameter (only when calling from Repair-DbaOrphanUser.
+		.DESCRIPTION
+			An orphan user is defined by a user that does not have their matching login. (Login property = "").
+			
+			If user is the owner of the schema with the same name and if if the schema does not have any underlying objects the schema will be dropped.
+			
+			If user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be changed to 'dbo'. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.
+			
+			If exists a login to map the drop will not be performed unless you specify the -Force parameter (only when calling from Repair-DbaOrphanUser.
 
-.PARAMETER SqlInstance
-The SQL Server instance.
+        .PARAMETER SqlInstance
+            The SQL Server Instance to connect to.
+        
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+		.PARAMETER Database
+			Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto-populated from the server
+		.PARAMETER ExcludeDatabase
+			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server
 
-.PARAMETER User
-List of users to remove
+		.PARAMETER User
+			Specifies the list of users to remove.
 
-.PARAMETER Force
-If exists any schema which owner is the User, this will force the change of the owner to 'dbo'.
-If exists a login to map the drop will not be performed unless you specify this parameter.
+		.PARAMETER Force
+			If this switch is enabled:
+				If exists any schema which owner is the User, this will force the change of the owner to 'dbo'.
+				If exists a login to map the drop will not be performed unless you specify this parameter.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-.PARAMETER Silent
-Replaces user friendly yellow warnings with bloody red exceptions of doom!
-Use this if you want the function to throw terminating errors you want to catch.
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
 
-.NOTES
-Tags: Orphan, Databases
-Author: Claudio Silva (@ClaudioESSilva)
+		.NOTES
+			Tags: Orphan, Databases
+			Author: Claudio Silva (@ClaudioESSilva)
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.LINK
-https://dbatools.io/Remove-DbaOrphanUser
+		.LINK
+			https://dbatools.io/Remove-DbaOrphanUser
 
-.EXAMPLE
-Remove-DbaOrphanUser -SqlInstance sql2005
+		.EXAMPLE
+			Remove-DbaOrphanUser -SqlInstance sql2005
 
-Will find and drop all orphan users without matching login of all databases present on server 'sql2005'
+			Finds and drops all orphan users without matching Logins in all databases present on server 'sql2005'.
 
-.EXAMPLE
-Remove-DbaOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred
+		.EXAMPLE
+			Remove-DbaOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred
 
-Will find and drop all orphan users without matching login of all databases present on server 'sqlserver2014a'. Will be verified using SQL credentials.
+			Finds and drops all orphan users without matching Logins in all databases present on server 'sqlserver2014a'. SQL Server authentication will be used in connecting to the server.
 
-.EXAMPLE
-Remove-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1, db2 -Force
+		.EXAMPLE
+			Remove-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1, db2 -Force
 
-Will find all and drop orphan users even if exists their matching login on both db1 and db2 databases.
+			Finds and drops orphan users even if they have a matching Login on both db1 and db2 databases.
 
-.EXAMPLE
-Remove-DbaOrphanUser -SqlInstance sqlserver2014a -ExcludeDatabase db1, db2 -Force
+		.EXAMPLE
+			Remove-DbaOrphanUser -SqlInstance sqlserver2014a -ExcludeDatabase db1, db2 -Force
 
-Will finall all and drop orphan users even if exist their matching login from all databases except db1 and db2.
+			Finds and drops orphan users even if they have a matching Login from all databases except db1 and db2.
 
-.EXAMPLE
-Remove-DbaOrphanUser -SqlInstance sqlserver2014a -User OrphanUser
+		.EXAMPLE
+			Remove-DbaOrphanUser -SqlInstance sqlserver2014a -User OrphanUser
 
-Will remove from all databases the user OrphanUser only if not have their matching login
+			Removes user OrphanUser from all databases only if there is no matching login.
 
-.EXAMPLE
-Remove-DbaOrphanUser -SqlInstance sqlserver2014a -User OrphanUser -Force
+		.EXAMPLE
+			Remove-DbaOrphanUser -SqlInstance sqlserver2014a -User OrphanUser -Force
 
-Will remove from all databases the user OrphanUser EVEN if exists their matching login. First will change any schema that it owns to 'dbo'.
+			Removes user OrphanUser from all databases even if they have a matching Login. Any schema that the user owns will change ownership to dbo.
 
-#>
+	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
