@@ -52,17 +52,17 @@ function Repair-DbaOrphanUser {
 		.EXAMPLE
 			Repair-DbaOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred
 
-			Finds and repair all orphan users of all databases present on server 'sqlserver2014a'. SQL credentials are used to authenticate to the server.
+			Finds and repair all orphan users in all databases present on server 'sqlserver2014a'. SQL credentials are used to authenticate to the server.
 
 		.EXAMPLE
 			Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1, db2
 
-			Finds and repairs all orphan users on both db1 and db2 databases.
+			Finds and repairs all orphan users in both db1 and db2 databases.
 
 		.EXAMPLE
 			Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1 -Users OrphanUser
 
-			Finds and repairs user 'OrphanUser' on 'db1' database
+			Finds and repairs user 'OrphanUser' in 'db1' database.
 
 		.EXAMPLE
 			Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Users OrphanUser
@@ -72,7 +72,7 @@ function Repair-DbaOrphanUser {
 		.EXAMPLE
 			Repair-DbaOrphanUser -SqlInstance sqlserver2014a -RemoveNotExisting
 
-			Finds all orphan users of all databases present on server 'sqlserver2014a'. Removes all users that does not have their matching logins.
+			Finds all orphan users of all databases present on server 'sqlserver2014a'. Removes all users that do not have  matching Logins.
 
 		.NOTES
 			Tags: Orphan
