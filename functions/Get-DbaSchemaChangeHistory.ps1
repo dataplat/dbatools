@@ -31,7 +31,7 @@ function Get-DbaSchemaChangeHistory {
 	
 	.NOTES
 	Tags: Migration, Backup, Databases
-	Original Author: Stuart Moore (@napalmgram - http://stuart-moore.com)
+	Author: Stuart Moore (@napalmgram - http://stuart-moore.com)
 	
 	Website: https://dbatools.io
 	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
