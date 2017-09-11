@@ -154,7 +154,7 @@ function New-DbaAgentSchedule {
 		[ValidateSet('Once','Daily','Weekly','Monthly','MonthlyRelative','AgentStart','IdleComputer')]
 		[object]$FrequencyType,
 		[ValidateSet('EveryDay','Weekdays','Weekend','Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday')]
-		[object]$FrequencyInterval,
+		[object[]]$FrequencyInterval,
 		[ValidateSet('Time','Seconds','Minutes','Hours')]
 		[object]$FrequencySubdayType,
 		[int]$FrequencySubdayInterval,
@@ -176,6 +176,8 @@ function New-DbaAgentSchedule {
 			return
 		}
 
+		[int]$Interval = 0
+
 		# Translate FrequencyType value from string to the integer value
 		if (!$FrequencyType -or $FrequencyType) {
 			[int]$FrequencyType =
@@ -187,7 +189,7 @@ function New-DbaAgentSchedule {
 					"MonthlyRelative" { 32 }
 					"AgentStart" { 64 }
 					"IdleComputer" { 128 }
-					default { 0 }
+					default { 1 }
 				}
 		}
 
@@ -199,24 +201,7 @@ function New-DbaAgentSchedule {
 					"Seconds" { 2 }
 					"Minutes" { 4 }
 					"Hours" { 8 }
-					default { 0 }
-				}
-		}
-		# Translate FrequencyInterval value from string to the integer value
-		if (!$FrequencyInterval -or $FrequencyInterval) {
-			[int]$FrequencyInterval =
-				switch ($FrequencyInterval) {
-					 "Sunday" { 1 }
-					 "Monday" { 2 } 
-					 "Tuesday" { 4 }
-					 "Wednesday" { 8 } 
-					 "Thursday" { 16 }
-					 "Friday" { 32 }
-					 "Saturday" { 64 }
-					 "Weekdays" { 62 }
-					 "Weekend" { 65 }
-					 "EveryDay" { 127 }
-					default { 0 }
+					default { 1 }
 				}
 		}
 
@@ -233,13 +218,13 @@ function New-DbaAgentSchedule {
 			}
 
 		# Check if the interval is valid
-		if (($FrequencyType -eq "Minutes") -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
-			Stop-Function -Message "The $FrequencyType requires a frequency interval to be between 1 and 365." -Target $SqlInstance
+		if (($FrequencyType -in 4, "Daily") -and (($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365) -and -not $FrequencyInterval -eq "EveryDay")) {
+			Stop-Function -Message "The frequency interval $FrequencyInterval requires a frequency interval to be between 1 and 365." -Target $SqlInstance
 			return
 		}
 
 		# Check if the recurrence factor is set for weekly or monthly interval
-		if (($FrequencyType -in 8, 16) -and $FrequencyRecurrenceFactor -lt 1) {
+		if (($FrequencyType -in 16) -and $FrequencyRecurrenceFactor -lt 1) {
 			if ($Force) {
 				$FrequencyRecurrenceFactor = 1
 				Write-Message -Message "Recurrence factor not set for weekly or monthly interval. Setting it to $FrequencyRecurrenceFactor." -Level Verbose
@@ -251,17 +236,30 @@ function New-DbaAgentSchedule {
 		}
 
 		# Check the subday interval
-		if (($FrequencySubdayType -in 2, 4) -and (-not ($FrequencySubdayInterval -ge 1 -or $FrequencySubdayInterval -le 59))) {
+		if (($FrequencySubdayType -in 2, "Seconds", 4, "Minutes") -and (-not ($FrequencySubdayInterval -ge 1 -or $FrequencySubdayInterval -le 59))) {
 			Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 59 when subday type is 'Seconds' or 'Minutes'" -Target $SqlInstance
 			return
 		}
-		elseif (($FrequencySubdayType -eq 8) -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
+		elseif (($FrequencySubdayType -eq 8, "Hours") -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
 			Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 23 when subday type is 'Hours'" -Target $SqlInstance
 			return
 		}
 
+		# If the FrequencyInterval is set for the daily FrequencyType
+		if ($FrequencyType -in 4, 'Daily') {
+			# Create the interval to hold the value(s)
+			[int]$Interval = 0
+
+			# Create the interval to hold the value(s)
+			switch($FrequencyInterval){
+				"EveryDay"{ $Interval = 1}
+				default {$Interval = 1 }
+			}
+			
+		}
+
 		# If the FrequencyInterval is set for the weekly FrequencyType
-		if ($FrequencyType -in 4, 8) {
+		if ($FrequencyType -in 8, 'Weekly') {
 			# Create the interval to hold the value(s)
 			[int]$Interval = 0
 
@@ -288,6 +286,7 @@ function New-DbaAgentSchedule {
 					62 { $Interval = 62 }
 					65 { $Interval = 65 }
 					127 {$Interval = 127 }
+					default { $Interval = 0 }
 				}
 			}
 		}
@@ -421,7 +420,7 @@ function New-DbaAgentSchedule {
 			# Try connecting to the instance
 			Write-Message -Message "Attempting to connect to $instance" -Level Output
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+				$server = Connect-DbaSqlServer -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -474,7 +473,7 @@ function New-DbaAgentSchedule {
 							$JobSchedule.IsEnabled = $true
 						}
 
-						if ($Interval -ge 1) {
+						if ($Interval -ge 0) {
 							Write-Message -Message "Setting job schedule frequency interval to $Interval" -Level Verbose
 							$JobSchedule.FrequencyInterval = $Interval
 						}
@@ -539,7 +538,8 @@ function New-DbaAgentSchedule {
 								Write-Message -Message "Job schedule created with UID $($JobSchedule.ScheduleUid)" -Level Verbose
 							}
 							catch {
-								Stop-Function -Message "Something went wrong adding the schedule." -Target $instance -ErrorRecord $_ -Continue
+								Stop-Function -Message "Something went wrong adding the schedule." -Target $instance -ErrorRecord $_ #-Continue
+								
 							}
 
 							# Output the job schedule
@@ -550,80 +550,80 @@ function New-DbaAgentSchedule {
 			} # end if job
 			else {
 				# Create the schedule
-				$schedule = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobSchedule($Server.JobServer, $Schedule)
+				$JobSchedule = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobSchedule($Server.JobServer, $Schedule)
 
 				#region job schedule options
 				if ($Disabled) {
 					Write-Message -Message "Setting job schedule to disabled" -Level Verbose
-					$schedule.IsEnabled = $false
+					$JobSchedule.IsEnabled = $false
 				}
 				else {
 					Write-Message -Message "Setting job schedule to enabled" -Level Verbose
-					$schedule.IsEnabled = $true
+					$JobSchedule.IsEnabled = $true
 				}
 
 				if ($Interval -ge 1) {
 					Write-Message -Message "Setting job schedule frequency interval to $Interval" -Level Verbose
-					$schedule.FrequencyInterval = $Interval
+					$JobSchedule.FrequencyInterval = $Interval
 				}
 
 				if ($FrequencyType -ge 1) {
 					Write-Message -Message "Setting job schedule frequency to $FrequencyType" -Level Verbose
-					$schedule.FrequencyTypes = $FrequencyType
+					$JobSchedule.FrequencyTypes = $FrequencyType
 				}
 
 				if ($FrequencySubdayType -ge 1) {
 					Write-Message -Message "Setting job schedule frequency subday type to $FrequencySubdayType" -Level Verbose
-					$schedule.FrequencySubDayTypes = $FrequencySubdayType
+					$JobSchedule.FrequencySubDayTypes = $FrequencySubdayType
 				}
 
 				if ($FrequencySubdayInterval -ge 1) {
 					Write-Message -Message "Setting job schedule frequency subday interval to $FrequencySubdayInterval" -Level Verbose
-					$schedule.FrequencySubDayInterval = $FrequencySubdayInterval
+					$JobSchedule.FrequencySubDayInterval = $FrequencySubdayInterval
 				}
 
 				if (($FrequencyRelativeInterval -ge 1) -and ($FrequencyType -eq 32)) {
 					Write-Message -Message "Setting job schedule frequency relative interval to $FrequencyRelativeInterval" -Level Verbose
-					$schedule.FrequencyRelativeIntervals = $FrequencyRelativeInterval
+					$JobSchedule.FrequencyRelativeIntervals = $FrequencyRelativeInterval
 				}
 
 				if (($FrequencyRecurrenceFactor -ge 1) -and ($FrequencyType -in 8, 16, 32)) {
 					Write-Message -Message "Setting job schedule frequency recurrence factor to $FrequencyRecurrenceFactor" -Level Verbose
-					$schedule.FrequencyRecurrenceFactor = $FrequencyRecurrenceFactor
+					$JobSchedule.FrequencyRecurrenceFactor = $FrequencyRecurrenceFactor
 				}
 
 				if ($StartDate) {
 					$StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
 					Write-Message -Message "Setting job schedule start date to $StartDate" -Level Verbose
-					$schedule.ActiveStartDate = $StartDate
+					$JobSchedule.ActiveStartDate = $StartDate
 				}
 
 				if ($EndDate) {
 					$EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
 					Write-Message -Message "Setting job schedule end date to $EndDate" -Level Verbose
-					$schedule.ActiveEndDate = $EndDate
+					$JobSchedule.ActiveEndDate = $EndDate
 				}
 
 				if ($StartTime) {
 					$StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
 					Write-Message -Message "Setting job schedule start time to $StartTime" -Level Verbose
-					$schedule.ActiveStartTimeOfDay = $StartTime
+					$JobSchedule.ActiveStartTimeOfDay = $StartTime
 				}
 
 				if ($EndTime) {
 					$EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
 					Write-Message -Message "Setting job schedule end time to $EndTime" -Level Verbose
-					$schedule.ActiveEndTimeOfDay = $EndTime
+					$JobSchedule.ActiveEndTimeOfDay = $EndTime
 				}
 
 				# Create the schedule
 				if ($PSCmdlet.ShouldProcess($SqlInstance, "Adding the schedule $schedule on $instance")) {
 					try {
-						Write-Message -Message "Adding the schedule $schedule on instance $instance" -Level Output
+						Write-Message -Message "Adding the schedule $JobSchedule on instance $instance" -Level Output
 
-						$schedule.Create()
+						$JobSchedule.Create()
 
-						Write-Message -Message "Job schedule created with UID $($schedule.ScheduleUid)" -Level Verbose
+						Write-Message -Message "Job schedule created with UID $($JobSchedule.ScheduleUid)" -Level Verbose
 					}
 					catch {
 						Stop-Function -Message "Something went wrong adding the schedule." -Target $instance -ErrorRecord $_ -Continue
@@ -635,4 +635,8 @@ function New-DbaAgentSchedule {
 			}
 		} # foreach object instance
 	} #process
+
+	end {
+		Write-Message -Message "Finished creating job schedule(s)." -Level Output
+	}
 }
