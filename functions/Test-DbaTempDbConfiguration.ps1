@@ -5,7 +5,7 @@ function Test-DbaTempDbConfiguration {
 
 		.DESCRIPTION
 			Evaluates tempdb against a set of rules to match best practices. The rules are:
-			
+
 			* TF 1118 enabled - Is Trace Flag 1118 enabled (See KB328551).
 			* File Count - Does the count of data files in tempdb match the number of logical cores, up to 8?
 			* File Growth - Are any files set to have percentage growth? Best practice is all files have an explicit growth value.
@@ -14,9 +14,9 @@ function Test-DbaTempDbConfiguration {
 
 			Other rules can be added at a future date.
 
-	    .PARAMETER SqlInstance
-            The SQL Server Instance to connect to. SQL Server 2005 and higher are supported.
-        
+		.PARAMETER SqlInstance
+			The SQL Server Instance to connect to. SQL Server 2005 and higher are supported.
+
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
@@ -26,10 +26,11 @@ function Test-DbaTempDbConfiguration {
 
 			To connect as a different Windows user, run PowerShell as that user.
 
-		.PARAMETER Detailed
-			If this switch is enabled, all test results will be displayed. By default, only those results which do not match best practices are displayed.
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
+			Tags: tempdb, configuration
 			Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
 			Based off of Amit Bannerjee's (@banerjeeamit) Get-TempDB function (https://github.com/amitmsft/SqlOnAzureVM/blob/master/Get-TempdbFiles.ps1)
 
@@ -46,38 +47,34 @@ function Test-DbaTempDbConfiguration {
 			Checks tempdb on the localhost machine.
 
 		.EXAMPLE
-			Test-DbaTempDbConfiguration -SqlInstance localhost -Detailed
+			Test-DbaTempDbConfiguration -SqlInstance localhost | Select-Object *
 
 			Checks tempdb on the localhost machine. All rest results are shown.
-
 	#>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[DbaInstance[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
-		[Switch]$Detailed
+		[switch]$Silent
 	)
-
 	begin {
 		$result = @()
-		
 	}
-
 	process {
-		foreach ($servername in $SqlInstance) {
-			Write-Verbose "Connecting to $servername."
-			$server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
-
-			if ($server.versionMajor -lt 9) {
-				Write-Warning "This function does not support versions lower than SQL Server 2005 (v9). Skipping server '$servername'."
-				continue
+		foreach ($instance in $SqlInstance) {
+			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			#test for TF 1118
 			if ($server.VersionMajor -ge 13) {
-				$notes = 'SQL 2016 has this functionality enabled by default'
+				$notes = 'SQL Server 2016 has this functionality enabled by default'
 				# DBA May have changed setting. May need to check.
 				$value = [PSCustomObject]@{
 					ComputerName   = $server.NetName
@@ -89,12 +86,11 @@ function Test-DbaTempDbConfiguration {
 				}
 			}
 			else {
-				$sql = "dbcc traceon (3604);dbcc tracestatus (-1)"
-				$tfcheck = $server.Databases['tempdb'].ExecuteWithResults($sql).Tables[0].TraceFlag
+				$sql = "DBCC TRACEON (3604);DBCC TRACESTATUS(-1)"
+				$tfcheck = $server.Databases['tempdb'].Query($sql)
 				$notes = 'KB328551 describes how TF 1118 can benefit performance.'
 
-				if (($tfcheck -join ',').Contains('1118')) {
-
+				if (($tfcheck.TraceFlag -join ',').Contains('1118')) {
 					$value = [PSCustomObject]@{
 						ComputerName   = $server.NetName
 						InstanceName   = $server.ServiceName
@@ -123,19 +119,18 @@ function Test-DbaTempDbConfiguration {
 				$isBestPractice = $true
 			}
 
-			$value | Add-Member -Force -MemberType NoteProperty -Name IsBestpractice -Value $isBestPractice
+			$value | Add-Member -Force -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
 			$value | Add-Member -Force -MemberType NoteProperty -Name Notes -Value $notes
 			$result += $value
-			Write-Verbose "TF 1118 evaluated"
+			Write-Message -Level Verbose -Message "TF 1118 evaluated"
 
 			#get files and log files
-			$datafiles = $server.Databases['tempdb'].ExecuteWithResults("SELECT physical_name as FileName, max_size as MaxSize, CASE WHEN is_percent_growth = 1 THEN 'Percent' ELSE 'KB' END as GrowthType from sys.database_files WHERE type_desc = 'ROWS'").Tables[0]
-			$logfiles = $server.Databases['tempdb'].ExecuteWithResults("SELECT physical_name as FileName, max_size as MaxSize, CASE WHEN is_percent_growth = 1 THEN 'Percent' ELSE 'KB' END as GrowthType from sys.database_files WHERE type_desc = 'LOG'").Tables[0]
-
-			Write-Verbose "TempDB file objects gathered"
+			$tempdbFiles = Get-DbaDatabaseFile -SqlInstance $server -Database tempdb
+			$datafiles = $tempdbFiles | Where-Object Type -ne 1
+			$logfiles = $tempdbFiles | Where-Object Type -eq 1
+			Write-Message -Level Verbose -Message "TempDB file objects gathered"
 
 			$cores = $server.Processors
-
 			if ($cores -gt 8) {
 				$cores = 8
 			}
@@ -146,7 +141,7 @@ function Test-DbaTempDbConfiguration {
 				SqlInstance    = $server.DomainInstanceName
 				Rule           = 'File Count'
 				Recommended    = $cores
-				CurrentSetting = $datafiles.Rows.Count
+				CurrentSetting = $datafiles.Count
 			}
 
 			if ($value.Recommended -ne $value.CurrentSetting -and $null -ne $value.Recommended) {
@@ -156,15 +151,15 @@ function Test-DbaTempDbConfiguration {
 				$isBestPractice = $true
 			}
 
-			$value | Add-Member -Force -MemberType NoteProperty -Name IsBestpractice -Value $isBestPractice
+			$value | Add-Member -Force -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
 			$value | Add-Member -Force -MemberType NoteProperty -Name Notes -Value 'Microsoft recommends that the number of tempdb data files is equal to the number of logical cores up to 8.'
 			$result += $value
 
-			Write-Verbose "File counts evaluated."
+			Write-Message -Level Verbose -Message "File counts evaluated."
 
 			#test file growth
-			$percdata = $datafiles | Where-Object { $_.GrowthType -ne 'KB' } | Measure-Object
-			$perclog = $logfiles  | Where-Object { $_.GrowthType -ne 'KB' } | Measure-Object
+			$percdata = $datafiles | Where-Object GrowthType -ne 'KB' | Measure-Object
+			$perclog = $logfiles  | Where-Object GrowthType -ne 'KB' | Measure-Object
 
 			$totalcount = $percdata.count + $perclog.count
 			if ($totalcount -gt 0) {
@@ -190,14 +185,14 @@ function Test-DbaTempDbConfiguration {
 				$isBestPractice = $true
 			}
 
-			$value | Add-Member -Force -MemberType NoteProperty -Name IsBestpractice -Value $isBestPractice
+			$value | Add-Member -Force -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
 			$value | Add-Member -Force -MemberType NoteProperty -Name Notes -Value 'Set grow with explicit values, not by percent.'
 			$result += $value
 
-			Write-Verbose "File growth settings evaluated."
+			Write-Message -Level Verbose -Message "File growth settings evaluated."
 			#test file Location
 
-			$cdata = ($datafiles | Where-Object { $_.FileName -like 'C:*' } | Measure-Object).Count + ($logfiles | Where-Object { $_.FileName -like 'C:*' } | Measure-Object).Count
+			$cdata = ($datafiles | Where-Object PhysicalName -like 'C:*' | Measure-Object).Count + ($logfiles | Where-Object PhysicalName -like 'C:*' | Measure-Object).Count
 			if ($cdata -gt 0) {
 				$cdata = $true
 			}
@@ -221,14 +216,14 @@ function Test-DbaTempDbConfiguration {
 				$isBestPractice = $true
 			}
 
-			$value | Add-Member -Force -MemberType NoteProperty -Name IsBestpractice -Value $isBestPractice
+			$value | Add-Member -Force -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
 			$value | Add-Member -Force -MemberType NoteProperty -Name Notes -Value "Do not place your tempdb files on C:\."
 			$result += $value
 
-			Write-Verbose "File locations evaluated."
+			Write-Message -Level Verbose -Message "File locations evaluated."
 
 			#Test growth limits
-			$growthlimits = ($datafiles | Where-Object { $_.MaxSize -gt 0 } | Measure-Object).Count + ($logfiles | Where-Object { $_.MaxSize -gt 0 } | Measure-Object).Count
+			$growthlimits = ($datafiles | Where-Object MaxSize -gt 0 | Measure-Object).Count + ($logfiles | Where-Object MaxSize -gt 0 | Measure-Object).Count
 			if ($growthlimits -gt 0) {
 				$growthlimits = $true
 			}
@@ -252,28 +247,17 @@ function Test-DbaTempDbConfiguration {
 				$isBestPractice = $true
 			}
 
-			$value | Add-Member -Force -MemberType NoteProperty -Name IsBestpractice -Value $isBestPractice
+			$value | Add-Member -Force -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
 			$value | Add-Member -Force -MemberType NoteProperty -Name Notes -Value "Consider setting your tempdb files to unlimited growth."
 			$result += $value
 
-			Write-Verbose "MaxSize values evaluated."
+			Write-Message -Level Verbose -Message "MaxSize values evaluated."
+
+			Select-DefaultView -InputObject $result -Property ComputerName, InstanceName, SqlInstance, Rule, Recommended, IsBestPractice
 		}
 	}
 
 	end {
-		if ($Detailed) {
-			return $result
-		}
-		else {
-			$failed = $result | Where-Object { $_.isBestPractice -eq $false }
-			if ($null -eq $failed) {
-				Write-Output "All tests passed! tempdb is properly optimized."
-			}
-			else {
-				return $failed
-			}
-		}
-		
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlTempDbConfiguration
 	}
 }
