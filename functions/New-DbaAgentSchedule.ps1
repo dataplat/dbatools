@@ -550,80 +550,80 @@ function New-DbaAgentSchedule {
 			} # end if job
 			else {
 				# Create the schedule
-				$schedule = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobSchedule($Server.JobServer, $Schedule)
+				$JobSchedule = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobSchedule($Server.JobServer, $Schedule)
 
 				#region job schedule options
 				if ($Disabled) {
 					Write-Message -Message "Setting job schedule to disabled" -Level Verbose
-					$schedule.IsEnabled = $false
+					$JobSchedule.IsEnabled = $false
 				}
 				else {
 					Write-Message -Message "Setting job schedule to enabled" -Level Verbose
-					$schedule.IsEnabled = $true
+					$JobSchedule.IsEnabled = $true
 				}
 
 				if ($Interval -ge 1) {
 					Write-Message -Message "Setting job schedule frequency interval to $Interval" -Level Verbose
-					$schedule.FrequencyInterval = $Interval
+					$JobSchedule.FrequencyInterval = $Interval
 				}
 
 				if ($FrequencyType -ge 1) {
 					Write-Message -Message "Setting job schedule frequency to $FrequencyType" -Level Verbose
-					$schedule.FrequencyTypes = $FrequencyType
+					$JobSchedule.FrequencyTypes = $FrequencyType
 				}
 
 				if ($FrequencySubdayType -ge 1) {
 					Write-Message -Message "Setting job schedule frequency subday type to $FrequencySubdayType" -Level Verbose
-					$schedule.FrequencySubDayTypes = $FrequencySubdayType
+					$JobSchedule.FrequencySubDayTypes = $FrequencySubdayType
 				}
 
 				if ($FrequencySubdayInterval -ge 1) {
 					Write-Message -Message "Setting job schedule frequency subday interval to $FrequencySubdayInterval" -Level Verbose
-					$schedule.FrequencySubDayInterval = $FrequencySubdayInterval
+					$JobSchedule.FrequencySubDayInterval = $FrequencySubdayInterval
 				}
 
 				if (($FrequencyRelativeInterval -ge 1) -and ($FrequencyType -eq 32)) {
 					Write-Message -Message "Setting job schedule frequency relative interval to $FrequencyRelativeInterval" -Level Verbose
-					$schedule.FrequencyRelativeIntervals = $FrequencyRelativeInterval
+					$JobSchedule.FrequencyRelativeIntervals = $FrequencyRelativeInterval
 				}
 
 				if (($FrequencyRecurrenceFactor -ge 1) -and ($FrequencyType -in 8, 16, 32)) {
 					Write-Message -Message "Setting job schedule frequency recurrence factor to $FrequencyRecurrenceFactor" -Level Verbose
-					$schedule.FrequencyRecurrenceFactor = $FrequencyRecurrenceFactor
+					$JobSchedule.FrequencyRecurrenceFactor = $FrequencyRecurrenceFactor
 				}
 
 				if ($StartDate) {
 					$StartDate = $StartDate.Insert(6, '-').Insert(4, '-')
 					Write-Message -Message "Setting job schedule start date to $StartDate" -Level Verbose
-					$schedule.ActiveStartDate = $StartDate
+					$JobSchedule.ActiveStartDate = $StartDate
 				}
 
 				if ($EndDate) {
 					$EndDate = $EndDate.Insert(6, '-').Insert(4, '-')
 					Write-Message -Message "Setting job schedule end date to $EndDate" -Level Verbose
-					$schedule.ActiveEndDate = $EndDate
+					$JobSchedule.ActiveEndDate = $EndDate
 				}
 
 				if ($StartTime) {
 					$StartTime = $StartTime.Insert(4, ':').Insert(2, ':')
 					Write-Message -Message "Setting job schedule start time to $StartTime" -Level Verbose
-					$schedule.ActiveStartTimeOfDay = $StartTime
+					$JobSchedule.ActiveStartTimeOfDay = $StartTime
 				}
 
 				if ($EndTime) {
 					$EndTime = $EndTime.Insert(4, ':').Insert(2, ':')
 					Write-Message -Message "Setting job schedule end time to $EndTime" -Level Verbose
-					$schedule.ActiveEndTimeOfDay = $EndTime
+					$JobSchedule.ActiveEndTimeOfDay = $EndTime
 				}
 
 				# Create the schedule
 				if ($PSCmdlet.ShouldProcess($SqlInstance, "Adding the schedule $schedule on $instance")) {
 					try {
-						Write-Message -Message "Adding the schedule $schedule on instance $instance" -Level Output
+						Write-Message -Message "Adding the schedule $JobSchedule on instance $instance" -Level Output
 
-						$schedule.Create()
+						$JobSchedule.Create()
 
-						Write-Message -Message "Job schedule created with UID $($schedule.ScheduleUid)" -Level Verbose
+						Write-Message -Message "Job schedule created with UID $($JobSchedule.ScheduleUid)" -Level Verbose
 					}
 					catch {
 						Stop-Function -Message "Something went wrong adding the schedule." -Target $instance -ErrorRecord $_ -Continue
