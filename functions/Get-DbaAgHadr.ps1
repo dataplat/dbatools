@@ -16,6 +16,7 @@ function Get-DbaAgHadr {
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
+			Tags: DisasterRecovery, AG, AvailabilityGroup
 			Original Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
 
 			Website: https://dbatools.io
@@ -52,9 +53,9 @@ function Get-DbaAgHadr {
 				Stop-Function -Message "Failure connecting to $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			[PSCustomObject]@{
-				ComputerName = $computerName
-				InstanceName = $instanceName
-				SqlInstance = $instance.FullName
+				ComputerName  = $computerName
+				InstanceName  = $instanceName
+				SqlInstance   = $instance.FullName
 				IsHadrEnabled = $currentState.IsHadrEnabled
 			}
 		}
