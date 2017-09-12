@@ -49,7 +49,7 @@ function Copy-DbaBackupDevice {
 
 		.NOTES
 			Tags: Migration, DisasterRecovery, Backup
-			Original Author: Chrissy LeMaire (@cl), netnerds.net
+			Author: Chrissy LeMaire (@cl), netnerds.net
 			Requires: sysadmin access on SQL Servers
 
 			Website: https://dbatools.io
