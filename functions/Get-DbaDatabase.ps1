@@ -76,7 +76,7 @@
 
 		.NOTES
 			Tags: Database
-			Original Author: Garry Bargsley (@gbargsley | http://blog.garrybargsley.com)
+			Author: Garry Bargsley (@gbargsley | http://blog.garrybargsley.com)
             Author: Klaas Vandenberghe ( @PowerDbaKlaas )
             Author: Simone Bizzotto ( @niphlod )
 

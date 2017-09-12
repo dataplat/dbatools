@@ -25,7 +25,7 @@ Use this switch to disable any kind of verbose messages
 
 .NOTES
 Tags: CIM 
-Original Author: Mitchell Hamann (@SirCaptainMitch), mitchellhamann.com
+Author: Mitchell Hamann (@SirCaptainMitch), mitchellhamann.com
 	
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

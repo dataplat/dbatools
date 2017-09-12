@@ -25,7 +25,7 @@ function Export-DbaDiagnosticQuery {
 
 		.NOTES
 			Tags: Query
-			Original Author: André Kamman (@AndreKamman), http://clouddba.io
+			Author: André Kamman (@AndreKamman), http://clouddba.io
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

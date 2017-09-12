@@ -70,7 +70,7 @@ function Find-DbaDuplicateIndex {
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES 
-			Original Author: Claudio Silva (@ClaudioESSilva)
+			Author: Claudio Silva (@ClaudioESSilva)
 			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 			Copyright (C) 2016 Chrissy LeMaire
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0

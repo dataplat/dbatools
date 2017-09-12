@@ -36,7 +36,7 @@
 	
 	.NOTES
 		Tags: Logging
-		Original Author: Drew Furgiuele
+		Author: Drew Furgiuele
 		Editor: Friedrich "Fred" Weinmann
 		Website: https://dbatools.io
 		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

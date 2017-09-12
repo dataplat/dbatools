@@ -17,7 +17,7 @@ function Get-DbaOperatingSystem {
 
 		.NOTES
 			Tags: ServerInfo, OperatingSystem
-			Original Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
+			Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
 
 			Website: https: //dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

@@ -9,7 +9,7 @@ function Set-DbaTempDbConfiguration {
 			Other parameters can adjust the settings as the user desires (such as different file paths, number of data files, and log file size). No functions that shrink or delete data files are performed. If you wish to do this, you will need to resize tempdb so that it is "smaller" than what the function will size it to before running the function.
 
 		.NOTES 
-			Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
+			Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
 			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 			Copyright (C) 2016 Chrissy LeMaire

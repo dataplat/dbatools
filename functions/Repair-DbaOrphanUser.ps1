@@ -76,7 +76,7 @@ function Repair-DbaOrphanUser {
 
 		.NOTES
 			Tags: Orphan
-			Original Author: Claudio Silva (@ClaudioESSilva)
+			Author: Claudio Silva (@ClaudioESSilva)
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
