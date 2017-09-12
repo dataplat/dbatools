@@ -31,7 +31,7 @@ function Test-DbaTempDbConfiguration {
 
 		.NOTES
 			Tags: tempdb, configuration
-			Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
+			Author: Michael Fal (@Mike_Fal), http://mikefal.net
 			Based off of Amit Bannerjee's (@banerjeeamit) Get-TempDB function (https://github.com/amitmsft/SqlOnAzureVM/blob/master/Get-TempdbFiles.ps1)
 
 			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

@@ -54,7 +54,7 @@
 		Returns database files and free space information for the db1 and db2 on localhost.
 	
 	.NOTES
-		Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
+		Author: Michael Fal (@Mike_Fal), http://mikefal.net
 		Website: https://dbatools.io
 		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0

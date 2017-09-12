@@ -101,7 +101,7 @@ function New-DbaAgentSchedule {
 
 		.NOTES
 			Tags: Agent, Job, Job Step
-			Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+			Author: Sander Stad (@sqlstad, sqlstad.nl)
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

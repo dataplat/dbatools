@@ -36,7 +36,7 @@
 		If this switch is enabled, the internal messaging functions will be silenced.
 
 	.NOTES
-        Original Author: Fred Winmann (@FredWeinmann)
+        Author: Fred Winmann (@FredWeinmann)
         Tags: ComputerManagement
 
         Website: https://dbatools.io
