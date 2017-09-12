@@ -28,7 +28,7 @@ function Enable-DbaAgHadr {
 
 		.NOTES
 			Tags: DisasterRecovery, AG, AvailabilityGroup
-			Original Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
+			Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

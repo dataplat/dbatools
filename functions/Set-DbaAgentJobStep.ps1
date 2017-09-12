@@ -93,7 +93,7 @@ Use this switch to disable any kind of verbose messages
 The force parameter will ignore some errors in the parameters and assume defaults.
 
 .NOTES 
-Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Step
 	
 Website: https://dbatools.io

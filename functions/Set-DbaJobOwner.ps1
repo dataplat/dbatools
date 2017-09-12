@@ -14,7 +14,7 @@ function Set-DbaJobOwner {
 
 		.NOTES
 			Tags: Agent, Job
-			Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
+			Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

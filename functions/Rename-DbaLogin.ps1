@@ -36,7 +36,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 
 .NOTES 
 Tags: Login
-Original Author: Mitchell Hamann (@SirCaptainMitch)
+Author: Mitchell Hamann (@SirCaptainMitch)
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
