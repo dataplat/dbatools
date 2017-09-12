@@ -6,7 +6,6 @@ function Get-DbaRegisteredServer {
 		.DESCRIPTION
 			Returns an array of servers found in the CMS.
 
-<<<<<<< HEAD
 		.PARAMETER SQLInstance
 			SQL Server instance(s) to connect to.
 
@@ -24,21 +23,6 @@ function Get-DbaRegisteredServer {
 
 		.PARAMETER ExcludeGroup
 			Specifies one or more Central Management Server groups to exclude.
-=======
-		.PARAMETER SqlInstance
-			SQL Server name or SMO object representing the SQL Server to connect to.
-			This can be a collection to allow the function to be executed against multiple SQL Server instances.
-
-		.PARAMETER SqlCredential
-			SqlCredential object to connect as. If not specified, current Windows login will be used.
-
-		.PARAMETER Group
-			List of groups to filter to in SQL Server Central Management Server. You can specify one or more, comma separated.
-			You can specify a sub-group path with a forward slash (e.g. "group1/subgroup1a")
-
-		.PARAMETER ExcludeGroup
-			List of groups to filter out. You can specify one or more, comma separated.
->>>>>>> 4cbb8cdd8262905d00a68a2678866f9a0f22262a
 
 		.PARAMETER ExcludeCmsServer
 			Filters out the CMS you are connected to. This does a full match of the value passed in to `-SqlInstance`
@@ -62,17 +46,10 @@ function Get-DbaRegisteredServer {
 		.EXAMPLE
 			Get-DbaRegisteredServer -SqlInstance sqlserver2014a
 
-<<<<<<< HEAD
 			Gets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.
 
 		.EXAMPLE
 			Get-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName
-=======
-			Gets a list of servers from the CMS on sqlserver2014a, using Windows Credentials
-
-		.EXAMPLE
-			Get-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential
->>>>>>> 4cbb8cdd8262905d00a68a2678866f9a0f22262a
 
 			Returns only the server names from the CMS on sqlserver2014a, using SQL Authentication
 
@@ -100,10 +77,7 @@ function Get-DbaRegisteredServer {
 	)
 	begin {
 		function Find-CmsGroup {
-<<<<<<< HEAD
 			[OutputType([object[]])]
-=======
->>>>>>> 4cbb8cdd8262905d00a68a2678866f9a0f22262a
 			[cmdletbinding()]
 			param(
 				$CmsGrp,
@@ -132,13 +106,9 @@ function Get-DbaRegisteredServer {
 	}
 
 	process {
-<<<<<<< HEAD
 		if (Test-FunctionInterrupt) { 
 			return 
 		}
-=======
-		if (Test-FunctionInterrupt) { return }
->>>>>>> 4cbb8cdd8262905d00a68a2678866f9a0f22262a
 
 		$servers = @()
 		foreach ($instance in $SqlInstance) {
@@ -146,11 +116,7 @@ function Get-DbaRegisteredServer {
 				$cmsStore = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential -Silent:$Silent
 			}
 			catch {
-<<<<<<< HEAD
 				Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
-=======
-				Stop-Function -Message "Cannot access Central Management Server '$instance'" -ErrorRecord $_ -Continue
->>>>>>> 4cbb8cdd8262905d00a68a2678866f9a0f22262a
 				return
 			}
 
@@ -162,11 +128,7 @@ function Get-DbaRegisteredServer {
 				foreach ($currentGroup in $Group) {
 					$cms = Find-CmsGroup -CmsGrp $cmsStore.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
 					if ($null -eq $cms) {
-<<<<<<< HEAD
 						Write-Message -Level Output -Message "No groups found matching that name on instance '$instance'."
-=======
-						Write-Message -Level Output -Message "No groups found matching that name on instance '$instance'"
->>>>>>> 4cbb8cdd8262905d00a68a2678866f9a0f22262a
 						continue
 					}
 					$servers += ($cms.GetDescendantRegisteredServers())
