@@ -37,7 +37,10 @@ Function Stop-DbaSqlService {
 		Shows what would happen if the cmdlet runs. The cmdlet is not run.
 		
 		.PARAMETER Confirm
-		Prompts you for confirmation before running the cmdlet.
+    Prompts you for confirmation before running the cmdlet.
+    
+		.PARAMETER Force
+		Will stop dependent SQL Server agents when stopping Engine services.
 
     .NOTES
     Author: Kirill Kravtsov( @nvarscar )
@@ -70,6 +73,11 @@ Function Stop-DbaSqlService {
     Stop-DbaSqlService -ComputerName $MyServers -Type SSRS
 
     Stops the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
+    
+    .EXAMPLE
+    Stop-DbaSqlService -ComputerName sql1 -Type Engine -Force
+
+    Stops SQL Server database engine services on sql1 forcing dependent SQL Server Agent services to stop as well.
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess = $true)]
@@ -104,8 +112,9 @@ Function Stop-DbaSqlService {
 		$processArray += $serviceCollection
 	}
 	end {
+    $processArray = [array]($processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) })
     foreach ($service in $processArray) {
-      if ($Force -and $service.ServiceType -eq 'Engine' -and !($processArray | Where-Object { $_.ServiceType -eq 'Agent' -and $_.ServiceName -eq $service.ServiceName -and $_.ComputerName -eq $service.ComputerName })) {
+      if ($Force -and $service.ServiceType -eq 'Engine' -and !($processArray | Where-Object { $_.ServiceType -eq 'Agent' -and $_.InstanceName -eq $service.InstanceName -and $_.ComputerName -eq $service.ComputerName })) {
         #Construct parameters to call Get-DbaSqlService
         $serviceParams = @{ 
           ComputerName = $service.ComputerName 
@@ -114,13 +123,12 @@ Function Stop-DbaSqlService {
         }
         if ($Credential) { $serviceParams.Credential = $Credential }
         if ($Silent) { $serviceParams.Silent = $Silent }
-        $processArray += Get-DbaSqlService @serviceParams
+        $processArray += @(Get-DbaSqlService @serviceParams)
       }
     }
-    $processArray = $processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) }
 		if ($processArray) {
 			Update-ServiceStatus -ServiceCollection $processArray -Action 'stop' -Timeout $Timeout -Silent $Silent
 		}
-		else { Write-Message -Level Warning -Silent $Silent -Message "No SQL Server services found with current parameters." }
+		else { Stop-Function -Silent $Silent -Message "No SQL Server services found with current parameters." -Category ObjectNotFound }
 	}
 }

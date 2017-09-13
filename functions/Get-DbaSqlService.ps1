@@ -58,10 +58,14 @@ Function Get-DbaSqlService {
     
     .EXAMPLE
     $services = Get-DbaSqlService -ComputerName sql1 -Type Agent,Engine
-    $services | Foreach-Object { $_.ChangeStartMode('Manual') }
+    $services.ChangeStartMode('Manual')
 
     Gets the SQL Server related services of types Sql Agent and DB Engine on computer sql1 and changes their startup mode to 'Manual'.
 
+	.EXAMPLE
+	(Get-DbaSqlService sql1 -Type Engine).Restart($true)
+
+	Calls a Restart method for each Engine service on computer sql1 with -Force option.
 #>
 	[CmdletBinding()]
 	Param (
@@ -77,7 +81,6 @@ Function Get-DbaSqlService {
 	)
 	
 	BEGIN {
-		
 		#Dictionary to transform service type IDs into the names from Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer.Services.Type
 		$ServiceIdMap = @(
 			@{ Name = "Engine"; Id = 1 },
@@ -108,13 +111,19 @@ Function Get-DbaSqlService {
 			if ($Server.ComputerName) {
 				$Computer = $server.ComputerName
 				Write-Message -Level Verbose -Message "Getting SQL Server namespace on $Computer"
-				$namespace = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue -Credential $credential |
-				Where-Object { (Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -Query "SELECT * FROM SqlService" -ErrorAction SilentlyContinue -Credential $credential).count -gt 0 } |
-				Sort-Object Name -Descending | Select-Object -First 1
-				if ($namespace.Name) {
-					Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer"
-					try {
-						$services = Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE $TypeClause" -ErrorAction SilentlyContinue -Credential $credential
+				$namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue -Credential $credential | Sort-Object Name -Descending
+				if ($namespaces) {
+					ForEach ($namespace in $namespaces) {
+						try {
+							Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer."
+							$services = Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE $TypeClause" -ErrorAction SilentlyContinue -Credential $credential
+						}
+						catch {
+							Write-Message -Level Verbose -Silent $Silent -Message "Failed to acquire services from namespace $($namespace.Name)."
+						}
+						if ($services) { break }
+					}
+					if ($services) {
 						Write-Message -Level Verbose -Silent $Silent -Message "Creating output objects"
 						ForEach ($service in $services) {
 							Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $service.HostName
@@ -148,37 +157,42 @@ Function Get-DbaSqlService {
 								#Add other properties and methods
 								Add-Member -Force -InputObject $service -NotePropertyName InstanceName -NotePropertyValue $instance
 								Add-Member -Force -InputObject $service -NotePropertyName ServicePriority -NotePropertyValue $priority
-								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name Stop -Value { Stop-DbaSqlService -ServiceCollection $this }
-								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name Start -Value { Start-DbaSqlService -ServiceCollection $this }
-								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name Restart -Value { Restart-DbaSqlService -ServiceCollection $this }
-								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name ChangeStartMode -Value {
+								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Stop" -Value { 
+									Param ([bool]$Force = $false)
+									Stop-DbaSqlService -ServiceCollection $this -Force:$Force
+								}
+								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Start" -Value { Start-DbaSqlService -ServiceCollection $this }
+								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Restart" -Value { 
+									Param ([bool]$Force = $false)
+									Restart-DbaSqlService -ServiceCollection $this -Force:$Force 
+								}
+								Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "ChangeStartMode" -Value {
 									Param (
 										[parameter(Mandatory = $true)]
 										[string]$Mode
 									)
 									$supportedModes = @("Automatic", "Manual", "Disabled")
 									if ($Mode -notin $supportedModes) { 
-										Write-Message -Level Warning -Message ("Incorrect mode '$Mode'. Use one of the following values: {0}" -f ($supportedModes -join ' | ')) -Silent $false -FunctionName 'Get-DbaSqlService'
+										Stop-Function -Message ("Incorrect mode '$Mode'. Use one of the following values: {0}" -f ($supportedModes -join ' | ')) -Silent $false -FunctionName 'Get-DbaSqlService'
 										Return
 									}
 									Set-ServiceStartMode -ServiceCollection $this -Mode $Mode -ErrorAction Stop
 									$this.StartMode = $Mode
 								}
-							
 								Select-DefaultView -InputObject $service -Property ComputerName, ServiceName, ServiceType, InstanceName, DisplayName, State, StartMode -TypeName DbaSqlService
 							}
 						}
 					}
-					catch {
-						Write-Message -Level Warning -Message "No Sql Services found on $Computer"
+					else {
+						Stop-Function -Silent $Silent -Message "No Sql Services found on $Computer" -Continue
 					}
 				}
 				else {
-					Write-Message -Level Warning -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up."
+					Stop-Function -Silent $Silent -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up." -Continue
 				}
 			}
 			else {
-				Write-Message -Level Warning -Message "Failed to connect to $Computer"
+				Stop-Function -Silent $Silent -Message "Failed to connect to $Computer" -Continue
 			}
 		}
 	}

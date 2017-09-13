@@ -75,17 +75,13 @@ Function Update-ServiceStatus {
 				$server,
 				$service,
 				$action,
-				$timeout = 30,
+				$timeout,
 				$credential
 			)
-			#Get WMI service object
-			
-			#Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query
-			#$svc = Get-WmiObject Win32_Service -ComputerName $server -filter $svcParam -Credential $credential
 			
 			#Perform $action
 			$svcPath = "Win32_Service.Name='$service'"
-			if ($action -eq 'start') { 
+			if ($action -in 'start','restart') { 
 				$methodName = 'StartService'
 				$desiredState = 'Running'
 				$undesiredState = 'Stopped'
@@ -96,11 +92,9 @@ Function Update-ServiceStatus {
 				$undesiredState = 'Running'
 			}
 			$x = Invoke-WmiMethod -path $svcPath -name $methodName -ComputerName $server -Credential $credential
+			$result = [psobject](@{} | Select-Object ExitCode, ServiceState)
 			#If command was not accepted
-			if ($x.ReturnValue -ne 0) { return $x.ReturnValue }
-			$StartTime = Get-Date
-			#Wait for the service to complete the action until timeout
-			while ($true -and $x.ReturnValue -eq 0) {
+			if ($x.ReturnValue -ne 0) { 
 				try {
 					$svc = Get-DbaCmObject -ComputerName $server -Namespace "root\cimv2" -query "SELECT State FROM Win32_Service WHERE name = '$service'" -Credential $credential
 				}
@@ -108,45 +102,59 @@ Function Update-ServiceStatus {
 					throw $_
 					break
 				}
-				#Succeeded
-				if ($svc.State -eq $desiredState) { return 0 }
-				#Failed after being in the Pending state
-				if ($pending -and $svc.State -eq $undesiredState) { return -2 }
-				#Timed out
-				if ($timeout -gt 0 -and ((Get-Date) - $StartTime).TotalSeconds -gt $timeout) { 
-					return -1
-				}
-				#Still pending
-				if ($svc.State -like '*Pending') { $pending = $true }
-				Start-Sleep -Milliseconds 100
+				$result.ExitCode = $x.ReturnValue
+				$result.ServiceState = $svc.State
 			}
+			else {
+				$startTime = Get-Date
+				#Wait for the service to complete the action until timeout
+				while ($true) {
+					try {
+						$svc = Get-DbaCmObject -ComputerName $server -Namespace "root\cimv2" -query "SELECT State FROM Win32_Service WHERE name = '$service'" -Credential $credential
+					}
+					catch {
+						throw $_
+						break
+					}
+					$result.ServiceState = $svc.State
+					#Succeeded
+					if ($svc.State -eq $desiredState) { $result.ExitCode = 0; break }
+					#Failed after being in the Pending state
+					if ($pending -and $svc.State -eq $undesiredState) { $result.ExitCode = -2; break }
+					#Timed out
+					if ($timeout -gt 0 -and ((Get-Date) - $startTime).TotalSeconds -gt $timeout) { $result.ExitCode = -1; break	}
+					#Still pending
+					if ($svc.State -like '*Pending') { $pending = $true }
+					Start-Sleep -Milliseconds 100
+				}
+			}
+			$result
 		}
-		$actionText = switch ($action) { stop { 'stopped' }; start { 'started' } } 
+
+		$actionText = switch ($action) { stop { 'stopped' }; start { 'started' }; restart { 'restarted' } } 
 	}
 	
 	process {
 		$jobCollection = @()
 		#Get priorities on which the service startup/shutdown order is based
-		$servicePriorityCollection = $ServiceCollection.ServicePriority | Select-Object -unique | Sort-Object -Property @{ Expression={ [int]$_ }; Descending = $action -eq 'start' }
+		$servicePriorityCollection = $ServiceCollection.ServicePriority | Select-Object -unique | Sort-Object -Property @{ Expression={ [int]$_ }; Descending = $action -ne 'stop' }
 		foreach ($priority in $servicePriorityCollection) {
 			foreach ($service in ($ServiceCollection | Where-Object { $_.ServicePriority -eq $priority })) {
 				if ('dbatools.DbaSqlService' -in $service.PSObject.TypeNames) {
 					if (($service.State -eq 'Running' -and $action -eq 'start') -or ($service.State -eq 'Stopped' -and $action -eq 'stop')) {
-						Add-Member -Force -InputObject $service -NotePropertyName Status -NotePropertyValue 'Failed'
+						Add-Member -Force -InputObject $service -NotePropertyName Status -NotePropertyValue 'Successful'
 						Add-Member -Force -InputObject $service -NotePropertyName Message -NotePropertyValue "The service is already $actionText, no action required"
 						Select-DefaultView -InputObject $service -Property ComputerName, ServiceName, State, Status, Message
-						#Stop-Function -Silent $Silent -FunctionName $callerName -Message ("The service $($service.ServiceName) on $($service.ComputerName) is already $actionText, no action required") -Category ConnectionError -Target $service -Continue
 					}
-					elseif ($service.StartMode -eq 'Disabled' -and $action -eq 'start') {
+					elseif ($service.StartMode -eq 'Disabled' -and $action -in 'start','restart') {
 						Add-Member -Force -InputObject $service -NotePropertyName Status -NotePropertyValue 'Failed'
-						Add-Member -Force -InputObject $service -NotePropertyName Message -NotePropertyValue "The service is disabled and cannot be started"
+						Add-Member -Force -InputObject $service -NotePropertyName Message -NotePropertyValue "The service is disabled and cannot be $actionText"
 						Select-DefaultView -InputObject $service -Property ComputerName, ServiceName, State, Status, Message
-						#Stop-Function -Silent $Silent -FunctionName $callerName -Message ("The service $($service.ServiceName) on $($service.ComputerName) is disabled and cannot be started") -Category ConnectionError -Target $service -Continue
 					}
 					else {
 						if ($Pscmdlet.ShouldProcess("Sending $action request to service $($service.ServiceName) on $($service.ComputerName)")) {
-							Write-Message -Level Verbose -Message "Attempting to $action service $($service.ServiceName) on $server."
 							#Start a job per each service 
+							Write-Message -Level Verbose -Message "Sending $action request to service $($service.ServiceName) on $($service.ComputerName) with timeout $Timeout"
 							$job = Start-Job -ScriptBlock $svcControlBlock -ArgumentList $service.computerName, $service.ServiceName, $action, $Timeout, $credential
 							#Add more properties to the job so that we could distinct them
 							Add-Member -Force -InputObject $job -NotePropertyName ServiceName -NotePropertyValue $service.ServiceName
@@ -156,7 +164,8 @@ Function Update-ServiceStatus {
 					}
 				}
 				else {
-					Write-Message -Level Critical -Message "Unknown object in pipeline - make sure to use Get-DBAService cmdlet"
+					Stop-Function -FunctionName $callerName -Message "Unknown object in pipeline - make sure to use Get-DbaSqlService cmdlet" -Silent $Silent
+					Return
 				}
 			}
 	    if ($Pscmdlet.ShouldProcess("Waiting for the services to $action")) {
@@ -165,30 +174,22 @@ Function Update-ServiceStatus {
 			    foreach ($job in ($jobCollection | Where-Object { $_.State -ne "Running" -and $_.HasMoreData -eq $true })) {
 			    	try {
 						$jobResult = $job | Receive-Job -ErrorAction Stop
+						#Find a corresponding service object
 						$outObject = $ServiceCollection | Where-Object { $_.ServiceName -eq $job.ServiceName -and $_.ComputerName -eq $job.ComputerName }
-						$status = switch ($jobResult) {
+						$status = switch ($jobResult.ExitCode) {
 							0 { 'Successful' }
 							default { 'Failed' }
 						}
 						Add-Member -Force -InputObject $outObject -NotePropertyName Status -NotePropertyValue $status
-						$message = switch ($jobResult) {
+						$message = switch ($jobResult.ExitCode) {
 				    		-2 { "The service failed to $action." }
-				    		-1 { "The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) has timed out." }
-				    		0  { "Service $($job.ServiceName) on $($job.ComputerName) was successfully $actionText." }
-				    		default { "The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) returned the following error: " + (Get-DBASQLServiceErrorMessage $jobResult) }
+				    		-1 { "The attempt to $action the service has timed out." }
+				    		0  { "Service was successfully $actionText." }
+				    		default { "The attempt to $action the service returned the following error: " + (Get-DBASQLServiceErrorMessage $jobResult.ExitCode) }
 						}
 						Add-Member -Force -InputObject $outObject -NotePropertyName Message -NotePropertyValue $message
-						$outObject.State = (Get-DbaCmObject -ComputerName $job.ComputerName -Namespace "root\cimv2" -query "SELECT State FROM Win32_Service WHERE name = '$($job.ServiceName)'" -Credential $credential).State
-						<#
-						switch ($jobResult) {
-				    		-2 { Stop-Function -Silent $Silent -FunctionName $callerName -Message "The service $($job.ServiceName) on $($job.ComputerName) failed to $action." -Target $job -Continue }
-				    		-1 { Stop-Function -Silent $Silent -FunctionName $callerName -Message "The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) has timed out." -Target $job -Continue }
-				    		0  { Write-Message -Level Output -Silent $Silent -FunctionName $callerName -Message "Service $($job.ServiceName) on $($job.ComputerName) was successfully $actionText." }
-				    		default { Stop-Function -Silent $Silent -FunctionName $callerName -Message ("The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) returned the following error: " + (Get-DBASQLServiceErrorMessage $jobResult)) -Target $job -Continue}
-						}
-						#>
+						if ($jobResult.ServiceState) { $outObject.State = $jobResult.ServiceState }
 						Select-DefaultView -InputObject $outObject -Property ComputerName, ServiceName, State, Status, Message
-
 				    }
 				    catch {
 						Stop-Function -Silent $Silent -FunctionName $callerName -Message ("The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) returned the following error: " + $_.Exception.Message) -Category ConnectionError -ErrorRecord $_ -Target $job -Continue

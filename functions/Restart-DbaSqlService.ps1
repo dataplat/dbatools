@@ -34,7 +34,10 @@ Function Restart-DbaSqlService {
 		Shows what would happen if the cmdlet runs. The cmdlet is not run.
 		
 		.PARAMETER Confirm
-		Prompts you for confirmation before running the cmdlet.
+    Prompts you for confirmation before running the cmdlet.
+    
+    .PARAMETER Force
+		Will stop dependent SQL Server agents when stopping Engine services.
 
     .NOTES
     Author: Kirill Kravtsov( @nvarscar )
@@ -67,6 +70,11 @@ Function Restart-DbaSqlService {
     Restart-DbaSqlService -ComputerName $MyServers -Type SSRS
 
     Restarts the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
+    
+    .EXAMPLE
+    Restart-DbaSqlService -ComputerName sql1 -Type Engine -Force
+
+    Restarts SQL Server database engine services on sql1 forcing dependent SQL Server Agent services to restart as well.
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess = $true)]
@@ -82,12 +90,18 @@ Function Restart-DbaSqlService {
 		[object[]]$ServiceCollection,
 		[int]$Timeout = 30,
 		[PSCredential]$Credential,
-		[switch]$Silent
+    [switch]$Force,
+    [switch]$Silent
 	)
 	begin {
 		$processArray = @()
 		if ($PsCmdlet.ParameterSetName -eq "Server") {
-			$serviceCollection = Get-DbaSqlService @PSBoundParameters
+			$serviceParams = @{ ComputerName = $ComputerName }
+      if ($InstanceName) { $serviceParams.InstanceName = $InstanceName }
+      if ($Type) { $serviceParams.Type = $Type }
+      if ($Credential) { $serviceParams.Credential = $Credential }
+      if ($Silent) { $serviceParams.Silent = $Silent }
+      $serviceCollection = Get-DbaSqlService @serviceParams
 		}
 	}
 	process {
@@ -95,11 +109,31 @@ Function Restart-DbaSqlService {
 		$processArray += $serviceCollection
 	}
 	end {
-		$processArray = $processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) }
+    $processArray = [array]($processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) })
+    foreach ($service in $processArray) {
+      if ($Force -and $service.ServiceType -eq 'Engine' -and !($processArray | Where-Object { $_.ServiceType -eq 'Agent' -and $_.InstanceName -eq $service.InstanceName -and $_.ComputerName -eq $service.ComputerName })) {
+        Write-Message -Level Verbose -Message "Adding Agent service to the list for service $($service.ServiceName) on $($service.ComputerName), since -Force has been specified"
+        #Construct parameters to call Get-DbaSqlService
+        $serviceParams = @{ 
+          ComputerName = $service.ComputerName 
+          InstanceName = $service.InstanceName
+          Type = 'Agent'
+        }
+        if ($Credential) { $serviceParams.Credential = $Credential }
+        if ($Silent) { $serviceParams.Silent = $Silent }
+        $processArray += @(Get-DbaSqlService @serviceParams)
+      }
+    }
 		if ($processArray) {
-			Update-ServiceStatus -ServiceCollection $processArray -Action 'stop' -Timeout $Timeout -Silent $Silent
-			Update-ServiceStatus -ServiceCollection $processArray -Action 'start' -Timeout $Timeout -Silent $Silent
+      $services = Update-ServiceStatus -ServiceCollection $processArray -Action 'stop' -Timeout $Timeout -Silent $Silent
+      foreach ($service in ($services | Where-Object { $_.Status -eq 'Failed'})) {
+        $service
+      }
+      $services = $services | Where-Object { $_.Status -eq 'Successful'}
+      if ($services) {
+        Update-ServiceStatus -ServiceCollection $services -Action 'restart' -Timeout $Timeout -Silent $Silent
+      }
 		}
-		else { Write-Message -Level Warning -Silent $Silent -Message "No SQL Server services found with current parameters." }
+		else { Stop-Function -Silent $Silent -Message "No SQL Server services found with current parameters." }
 	}
 }
