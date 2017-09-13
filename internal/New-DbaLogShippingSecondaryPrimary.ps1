@@ -71,7 +71,7 @@ The force parameter will ignore some errors in the parameters and assume default
 It will also remove the any present schedules with the same name for the specific job.
 
 .NOTES 
-Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Log shippin, primary database, secondary database
 	
 Website: https://dbatools.io

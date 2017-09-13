@@ -45,7 +45,7 @@ function Get-JobList {
 
 		Returns any Job object where job is not job_3_upload or job_3_download on sql2016
 	.NOTES
-		Original Author: Shawn Melton (@wsmelton)
+		Author: Shawn Melton (@wsmelton)
 
 		Website: https://dbatools.io
 		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

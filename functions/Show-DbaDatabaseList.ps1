@@ -1,20 +1,20 @@
-Function Show-DbaDatabaseList {
+function Show-DbaDatabaseList {
 	<#
 		.SYNOPSIS
-			Shows a list of databases in a GUI
+			Shows a list of databases in a GUI.
 			
 		.DESCRIPTION
-			Shows a list of databases in a GUI. Returns a simple string. Hitting cancel returns null.
+			Shows a list of databases in a GUI. Returns a string holding the name of the selected database. Hitting cancel returns null.
 			
-		.PARAMETER SqlInstance
-			The SQL Server instance.
-
-        .PARAMETER SqlCredential
+        .PARAMETER SqlInstance
+            The SQL Server Instance to connect to..
+        
+		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
 			To connect as a different Windows user, run PowerShell as that user.		
 		
@@ -25,7 +25,7 @@ Function Show-DbaDatabaseList {
 			Header text displayed above the database listing. Default is "Select the database:".
 			
 		.PARAMETER DefaultDb
-			Specify a database to have selected by default when the window appears
+			Specify a database to have selected when the window appears.
 
 		.NOTES
 			Website: https://dbatools.io
@@ -57,13 +57,15 @@ Function Show-DbaDatabaseList {
 		[string]$DefaultDb
 	)
 	
-	BEGIN
-	{
-		try { Add-Type -AssemblyName PresentationFramework }
-		catch { throw "Windows Presentation Framework required but not installed" }
+	begin {
+		try {
+			Add-Type -AssemblyName PresentationFramework
+		}
+		catch {
+			throw "Windows Presentation Framework required but not installed"
+		}
 		
-		Function Add-TreeItem
-		{
+		function Add-TreeItem {
 			Param (
 				[string]$name,
 				[object]$parent,
@@ -83,8 +85,7 @@ Function Show-DbaDatabaseList {
 			$textblock.Text = $name
 			$childitem.Tag = $name
 			
-			if ($name -eq $DefaultDb)
-			{
+			if ($name -eq $DefaultDb) {
 				$childitem.IsSelected = $true
 				$script:selected = $name
 			}
@@ -96,8 +97,7 @@ Function Show-DbaDatabaseList {
 			[void]$parent.Items.Add($childitem)
 		}
 	
-		Function Convert-b64toimg
-		{
+		function Convert-b64toimg {
 			param ($base64)
 			
 			$bitmap = New-Object System.Windows.Media.Imaging.BitmapImage
@@ -115,8 +115,7 @@ Function Show-DbaDatabaseList {
 		$sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SourceSqlCredential
 	}
 	
-	PROCESS
-	{
+	process {
 		# Create XAML form in Visual Studio, ensuring the ListView looks chromeless 
 		[xml]$xaml = "<Window 
 		xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' 
@@ -158,28 +157,30 @@ Function Show-DbaDatabaseList {
 		$childitem.Header = $stackpanel
 		$databaseParent = $treeview.Items.Add($childitem)
 		
-		try { $databases = $sourceserver.databases.name }
-		catch { return }
+		try {
+			$databases = $sourceserver.databases.name
+		}
+		catch {
+			return
+		}
 		
-		foreach ($database in $databases)
-		{
+		foreach ($database in $databases) {
 			Add-TreeItem -Name $database -Parent $childitem -Tag $nameSpace
 		}
 		
-		$okbutton.Add_Click({
+		$okbutton.Add_Click( {
 				$window.Close()
 				$script:okay = $true
 			})
 		
-		$cancelbutton.Add_Click({
+		$cancelbutton.Add_Click( {
 				$script:selected = $null
 				$window.Close()
 			})
 		
-		$window.Add_SourceInitialized({
+		$window.Add_SourceInitialized( {
 				[System.Windows.RoutedEventHandler]$Event = {
-					if ($_.OriginalSource -is [System.Windows.Controls.TreeViewItem])
-					{
+					if ($_.OriginalSource -is [System.Windows.Controls.TreeViewItem]) {
 						$script:selected = $_.OriginalSource.Tag
 					}
 				}
@@ -189,10 +190,8 @@ Function Show-DbaDatabaseList {
 		$null = $window.ShowDialog()
 	}
 	
-	END
-	{
-		if ($script:selected.length -gt 0 -and $script:okay -eq $true)
-		{
+	end {
+		if ($script:selected.length -gt 0 -and $script:okay -eq $true) {
 			return $script:selected
 		}
 		
