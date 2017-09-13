@@ -57,7 +57,7 @@
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Force
-			If this switch is enabled, the Category will be dropped and recreated on Destination.i
+			If this switch is enabled, the Category will be dropped and recreated on Destination.
 
 		.PARAMETER Silent
 			If this switch is enabled, the internal messaging functions will be silenced.
@@ -77,12 +77,12 @@
 		.EXAMPLE
 			Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster
 
-			Copies all operator categories from sqlserver2014a to sqlcluster, using Windows credentials. If operator categories with the same name exist on sqlcluster, they will be skipped.
+			Copies all operator categories from sqlserver2014a to sqlcluster using Windows authentication. If operator categories with the same name exist on sqlcluster, they will be skipped.
 
 		.EXAMPLE
 			Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -OperatorCategory PSOperator -SourceSqlCredential $cred -Force
 
-			Copies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+			Copies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster using SQL credentials to authenticate to sqlserver2014a and Windows credentials for sqlcluster. If a operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 		.EXAMPLE
 			Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force

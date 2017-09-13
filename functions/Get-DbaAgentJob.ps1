@@ -26,7 +26,7 @@ FUNCTION Get-DbaAgentJob {
 
 		.NOTES
 			Tags: Job, Agent
-			Original Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
+			Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

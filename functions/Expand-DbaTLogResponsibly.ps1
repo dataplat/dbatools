@@ -97,7 +97,7 @@ function Expand-DbaTLogResponsibly {
             Tags: Storage, Backup
             This script uses Get-DbaDiskSpace dbatools command to get the TLog's drive free space
             
-            Original Author: Claudio Silva (@ClaudioESSilva)
+            Author: Claudio Silva (@ClaudioESSilva)
             Requires: ALTER DATABASE permission
             Limitations: Freespace cannot be validated on the directory where the log file resides in SQL Server 2005.
 

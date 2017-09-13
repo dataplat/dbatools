@@ -54,7 +54,7 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 
 .NOTES
 Tags: Migration, SSIS
-Original Author: Phil Schwartz (philschwartz.me, @pschwartzzz)
+Author: Phil Schwartz (philschwartz.me, @pschwartzzz)
 	
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire

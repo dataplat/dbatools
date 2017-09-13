@@ -27,7 +27,7 @@ function Get-DbaAgListener {
 
         .NOTES
             Tags: DisasterRecovery, AG, AvailabilityGroup, Replica
-            Original Author: Viorel Ciucu (@viorelciucu)
+            Author: Viorel Ciucu (@viorelciucu)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
