@@ -1,5 +1,5 @@
 Function Restart-DbaSqlService {
-<#
+	<#
     .SYNOPSIS
     Restarts SQL Server services on a computer. 
 
@@ -90,18 +90,18 @@ Function Restart-DbaSqlService {
 		[object[]]$ServiceCollection,
 		[int]$Timeout = 30,
 		[PSCredential]$Credential,
-    [switch]$Force,
-    [switch]$Silent
+		[switch]$Force,
+		[switch]$Silent
 	)
 	begin {
 		$processArray = @()
 		if ($PsCmdlet.ParameterSetName -eq "Server") {
 			$serviceParams = @{ ComputerName = $ComputerName }
-      if ($InstanceName) { $serviceParams.InstanceName = $InstanceName }
-      if ($Type) { $serviceParams.Type = $Type }
-      if ($Credential) { $serviceParams.Credential = $Credential }
-      if ($Silent) { $serviceParams.Silent = $Silent }
-      $serviceCollection = Get-DbaSqlService @serviceParams
+			if ($InstanceName) { $serviceParams.InstanceName = $InstanceName }
+			if ($Type) { $serviceParams.Type = $Type }
+			if ($Credential) { $serviceParams.Credential = $Credential }
+			if ($Silent) { $serviceParams.Silent = $Silent }
+			$serviceCollection = Get-DbaSqlService @serviceParams
 		}
 	}
 	process {
@@ -109,30 +109,30 @@ Function Restart-DbaSqlService {
 		$processArray += $serviceCollection
 	}
 	end {
-    $processArray = [array]($processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) })
-    foreach ($service in $processArray) {
-      if ($Force -and $service.ServiceType -eq 'Engine' -and !($processArray | Where-Object { $_.ServiceType -eq 'Agent' -and $_.InstanceName -eq $service.InstanceName -and $_.ComputerName -eq $service.ComputerName })) {
-        Write-Message -Level Verbose -Message "Adding Agent service to the list for service $($service.ServiceName) on $($service.ComputerName), since -Force has been specified"
-        #Construct parameters to call Get-DbaSqlService
-        $serviceParams = @{ 
-          ComputerName = $service.ComputerName 
-          InstanceName = $service.InstanceName
-          Type = 'Agent'
-        }
-        if ($Credential) { $serviceParams.Credential = $Credential }
-        if ($Silent) { $serviceParams.Silent = $Silent }
-        $processArray += @(Get-DbaSqlService @serviceParams)
-      }
-    }
+		$processArray = [array]($processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) })
+		foreach ($service in $processArray) {
+			if ($Force -and $service.ServiceType -eq 'Engine' -and !($processArray | Where-Object { $_.ServiceType -eq 'Agent' -and $_.InstanceName -eq $service.InstanceName -and $_.ComputerName -eq $service.ComputerName })) {
+				Write-Message -Level Verbose -Message "Adding Agent service to the list for service $($service.ServiceName) on $($service.ComputerName), since -Force has been specified"
+				#Construct parameters to call Get-DbaSqlService
+				$serviceParams = @{ 
+					ComputerName = $service.ComputerName 
+					InstanceName = $service.InstanceName
+					Type         = 'Agent'
+				}
+				if ($Credential) { $serviceParams.Credential = $Credential }
+				if ($Silent) { $serviceParams.Silent = $Silent }
+				$processArray += @(Get-DbaSqlService @serviceParams)
+			}
+		}
 		if ($processArray) {
-      $services = Update-ServiceStatus -ServiceCollection $processArray -Action 'stop' -Timeout $Timeout -Silent $Silent
-      foreach ($service in ($services | Where-Object { $_.Status -eq 'Failed'})) {
-        $service
-      }
-      $services = $services | Where-Object { $_.Status -eq 'Successful'}
-      if ($services) {
-        Update-ServiceStatus -ServiceCollection $services -Action 'restart' -Timeout $Timeout -Silent $Silent
-      }
+			$services = Update-ServiceStatus -ServiceCollection $processArray -Action 'stop' -Timeout $Timeout -Silent $Silent
+			foreach ($service in ($services | Where-Object { $_.Status -eq 'Failed'})) {
+				$service
+			}
+			$services = $services | Where-Object { $_.Status -eq 'Successful'}
+			if ($services) {
+				Update-ServiceStatus -ServiceCollection $services -Action 'restart' -Timeout $Timeout -Silent $Silent
+			}
 		}
 		else { Stop-Function -Silent $Silent -Message "No SQL Server services found with current parameters." }
 	}

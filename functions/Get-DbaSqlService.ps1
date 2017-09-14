@@ -1,5 +1,5 @@
 Function Get-DbaSqlService {
-<#
+	<#
     .SYNOPSIS
     Gets the SQL Server related services on a computer. 
 
@@ -90,7 +90,7 @@ Function Get-DbaSqlService {
 			@{ Name = "SSAS"; Id = 5 },
 			@{ Name = "SSRS"; Id = 6 },
 			@{ Name = "Browser"; Id = 7 },
-			@{ Name = "Unknown"; Id =  8 }
+			@{ Name = "Unknown"; Id = 8 }
 		)
 		if ($Type) {
 			$TypeClause = ""
@@ -149,7 +149,7 @@ Function Get-DbaSqlService {
 							}
 							$priority = switch ($service.ServiceType) {
 								"Agent" { 200 }
-								"Engine"{ 300 }
+								"Engine" { 300 }
 								default { 100 }
 							}
 							#If only specific instances are selected
