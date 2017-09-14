@@ -62,10 +62,10 @@ Function Get-DbaSqlService {
 
     Gets the SQL Server related services of types Sql Agent and DB Engine on computer sql1 and changes their startup mode to 'Manual'.
 
-	.EXAMPLE
-	(Get-DbaSqlService sql1 -Type Engine).Restart($true)
+		.EXAMPLE
+		(Get-DbaSqlService sql1 -Type Engine).Restart($true)
 
-	Calls a Restart method for each Engine service on computer sql1 with -Force option.
+		Calls a Restart method for each Engine service on computer sql1 with -Force option.
 #>
 	[CmdletBinding()]
 	Param (
