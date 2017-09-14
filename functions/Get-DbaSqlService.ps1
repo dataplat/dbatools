@@ -1,71 +1,71 @@
 Function Get-DbaSqlService {
-	<#
-    .SYNOPSIS
-    Gets the SQL Server related services on a computer. 
+<#
+	.SYNOPSIS
+	Gets the SQL Server related services on a computer. 
 
-    .DESCRIPTION
-    Gets the SQL Server related services on one or more computers.
+	.DESCRIPTION
+	Gets the SQL Server related services on one or more computers.
 
-    Requires Local Admin rights on destination computer(s).
+	Requires Local Admin rights on destination computer(s).
 
-    .PARAMETER ComputerName
-    The SQL Server (or server in general) that you're connecting to. This command handles named instances.
+	.PARAMETER ComputerName
+	The SQL Server (or server in general) that you're connecting to. This command handles named instances.
 
-    .PARAMETER InstanceName
-    Only returns services that belong to the specific instances.
-    
-    .PARAMETER Credential
-    Credential object used to connect to the computer as a different user.
-    
-    .PARAMETER Type
-    Use -Type to collect only services of the desired SqlServiceType.
-    Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
+	.PARAMETER InstanceName
+	Only returns services that belong to the specific instances.
+	
+	.PARAMETER Credential
+	Credential object used to connect to the computer as a different user.
+	
+	.PARAMETER Type
+	Use -Type to collect only services of the desired SqlServiceType.
+	Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
 
-    .PARAMETER Silent
-		Use this switch to disable any kind of verbose messages
-    
-    .NOTES
-    Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+	.PARAMETER Silent
+	Use this switch to disable any kind of verbose messages
+	
+	.NOTES
+	Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
-    dbatools PowerShell module (https://dbatools.io)
-    Copyright (C) 2016 Chrissy LeMaire
-    This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-    You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+	dbatools PowerShell module (https://dbatools.io)
+	Copyright (C) 2016 Chrissy LeMaire
+	This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
-    .LINK
-    https://dbatools.io/Get-DbaSqlService
+	.LINK
+	https://dbatools.io/Get-DbaSqlService
 
-    .EXAMPLE
-    Get-DbaSqlService -ComputerName sqlserver2014a
+	.EXAMPLE
+	Get-DbaSqlService -ComputerName sqlserver2014a
 
-    Gets the SQL Server related services on computer sqlserver2014a.
+	Gets the SQL Server related services on computer sqlserver2014a.
 
-    .EXAMPLE   
-    'sql1','sql2','sql3' | Get-DbaSqlService
+	.EXAMPLE   
+	'sql1','sql2','sql3' | Get-DbaSqlService
 
-    Gets the SQL Server related services on computers sql1, sql2 and sql3.
+	Gets the SQL Server related services on computers sql1, sql2 and sql3.
 
-    .EXAMPLE
-    Get-DbaSqlService -ComputerName sql1,sql2 | Out-Gridview
+	.EXAMPLE
+	Get-DbaSqlService -ComputerName sql1,sql2 | Out-Gridview
 
-    Gets the SQL Server related services on computers sql1 and sql2, and shows them in a grid view.
+	Gets the SQL Server related services on computers sql1 and sql2, and shows them in a grid view.
 
-    .EXAMPLE
-    Get-DbaSqlService -ComputerName $MyServers -Type SSRS
+	.EXAMPLE
+	Get-DbaSqlService -ComputerName $MyServers -Type SSRS
 
-    Gets the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
-    
-    .EXAMPLE
-    $services = Get-DbaSqlService -ComputerName sql1 -Type Agent,Engine
-    $services.ChangeStartMode('Manual')
+	Gets the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
+	
+	.EXAMPLE
+	$services = Get-DbaSqlService -ComputerName sql1 -Type Agent,Engine
+	$services.ChangeStartMode('Manual')
 
-    Gets the SQL Server related services of types Sql Agent and DB Engine on computer sql1 and changes their startup mode to 'Manual'.
+	Gets the SQL Server related services of types Sql Agent and DB Engine on computer sql1 and changes their startup mode to 'Manual'.
 
-		.EXAMPLE
-		(Get-DbaSqlService sql1 -Type Engine).Restart($true)
+	.EXAMPLE
+	(Get-DbaSqlService sql1 -Type Engine).Restart($true)
 
-		Calls a Restart method for each Engine service on computer sql1 with -Force option.
+	Calls a Restart method for each Engine service on computer sql1 with -Force option.
 #>
 	[CmdletBinding()]
 	Param (
