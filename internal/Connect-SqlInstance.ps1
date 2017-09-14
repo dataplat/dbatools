@@ -66,7 +66,7 @@ function Connect-SqlInstance {
 			}
 			#>
 			else {
-				Write-Message -Level Warning -Message "Failed TEPP Caching: $($s | Select-String '"(.*?)"' | ForEach-Object { $_.Matches[0].Groups[1].Value })" -ErrorRecord $_ -Silent $true
+				Write-Message -Level Warning -Message "Failed TEPP Caching: $($scriptBlock.ToString() | Select-String '"(.*?)"' | ForEach-Object { $_.Matches[0].Groups[1].Value })" -ErrorRecord $_ 3>$null
 			}
 		}
 	}
