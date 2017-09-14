@@ -1,5 +1,5 @@
 Function Update-ServiceStatus {
-<#
+	<#
     .SYNOPSIS
     Internal function. Sends start/stop request to a SQL Server service and wait for the result.
 
@@ -81,7 +81,7 @@ Function Update-ServiceStatus {
 			
 			#Perform $action
 			$svcPath = "Win32_Service.Name='$service'"
-			if ($action -in 'start','restart') { 
+			if ($action -in 'start', 'restart') { 
 				$methodName = 'StartService'
 				$desiredState = 'Running'
 				$undesiredState = 'Stopped'
@@ -137,7 +137,7 @@ Function Update-ServiceStatus {
 	process {
 		$jobCollection = @()
 		#Get priorities on which the service startup/shutdown order is based
-		$servicePriorityCollection = $ServiceCollection.ServicePriority | Select-Object -unique | Sort-Object -Property @{ Expression={ [int]$_ }; Descending = $action -ne 'stop' }
+		$servicePriorityCollection = $ServiceCollection.ServicePriority | Select-Object -unique | Sort-Object -Property @{ Expression = { [int]$_ }; Descending = $action -ne 'stop' }
 		foreach ($priority in $servicePriorityCollection) {
 			foreach ($service in ($ServiceCollection | Where-Object { $_.ServicePriority -eq $priority })) {
 				if ('dbatools.DbaSqlService' -in $service.PSObject.TypeNames) {
@@ -146,7 +146,7 @@ Function Update-ServiceStatus {
 						Add-Member -Force -InputObject $service -NotePropertyName Message -NotePropertyValue "The service is already $actionText, no action required"
 						Select-DefaultView -InputObject $service -Property ComputerName, ServiceName, State, Status, Message
 					}
-					elseif ($service.StartMode -eq 'Disabled' -and $action -in 'start','restart') {
+					elseif ($service.StartMode -eq 'Disabled' -and $action -in 'start', 'restart') {
 						Add-Member -Force -InputObject $service -NotePropertyName Status -NotePropertyValue 'Failed'
 						Add-Member -Force -InputObject $service -NotePropertyName Message -NotePropertyValue "The service is disabled and cannot be $actionText"
 						Select-DefaultView -InputObject $service -Property ComputerName, ServiceName, State, Status, Message
@@ -168,35 +168,35 @@ Function Update-ServiceStatus {
 					Return
 				}
 			}
-	    if ($Pscmdlet.ShouldProcess("Waiting for the services to $action")) {
-	    	#Get job execution results
-		    while ($jobCollection | Where-Object { $_.HasMoreData -eq $true }) {
-			    foreach ($job in ($jobCollection | Where-Object { $_.State -ne "Running" -and $_.HasMoreData -eq $true })) {
-			    	try {
-						$jobResult = $job | Receive-Job -ErrorAction Stop
-						#Find a corresponding service object
-						$outObject = $ServiceCollection | Where-Object { $_.ServiceName -eq $job.ServiceName -and $_.ComputerName -eq $job.ComputerName }
-						$status = switch ($jobResult.ExitCode) {
-							0 { 'Successful' }
-							default { 'Failed' }
+			if ($Pscmdlet.ShouldProcess("Waiting for the services to $action")) {
+				#Get job execution results
+				while ($jobCollection | Where-Object { $_.HasMoreData -eq $true }) {
+					foreach ($job in ($jobCollection | Where-Object { $_.State -ne "Running" -and $_.HasMoreData -eq $true })) {
+						try {
+							$jobResult = $job | Receive-Job -ErrorAction Stop
+							#Find a corresponding service object
+							$outObject = $ServiceCollection | Where-Object { $_.ServiceName -eq $job.ServiceName -and $_.ComputerName -eq $job.ComputerName }
+							$status = switch ($jobResult.ExitCode) {
+								0 { 'Successful' }
+								default { 'Failed' }
+							}
+							Add-Member -Force -InputObject $outObject -NotePropertyName Status -NotePropertyValue $status
+							$message = switch ($jobResult.ExitCode) {
+								-2 { "The service failed to $action." }
+								-1 { "The attempt to $action the service has timed out." }
+								0 { "Service was successfully $actionText." }
+								default { "The attempt to $action the service returned the following error: " + (Get-DBASQLServiceErrorMessage $jobResult.ExitCode) }
+							}
+							Add-Member -Force -InputObject $outObject -NotePropertyName Message -NotePropertyValue $message
+							if ($jobResult.ServiceState) { $outObject.State = $jobResult.ServiceState }
+							Select-DefaultView -InputObject $outObject -Property ComputerName, ServiceName, State, Status, Message
 						}
-						Add-Member -Force -InputObject $outObject -NotePropertyName Status -NotePropertyValue $status
-						$message = switch ($jobResult.ExitCode) {
-				    		-2 { "The service failed to $action." }
-				    		-1 { "The attempt to $action the service has timed out." }
-				    		0  { "Service was successfully $actionText." }
-				    		default { "The attempt to $action the service returned the following error: " + (Get-DBASQLServiceErrorMessage $jobResult.ExitCode) }
+						catch {
+							Stop-Function -Silent $Silent -FunctionName $callerName -Message ("The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) returned the following error: " + $_.Exception.Message) -Category ConnectionError -ErrorRecord $_ -Target $job -Continue
 						}
-						Add-Member -Force -InputObject $outObject -NotePropertyName Message -NotePropertyValue $message
-						if ($jobResult.ServiceState) { $outObject.State = $jobResult.ServiceState }
-						Select-DefaultView -InputObject $outObject -Property ComputerName, ServiceName, State, Status, Message
-				    }
-				    catch {
-						Stop-Function -Silent $Silent -FunctionName $callerName -Message ("The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) returned the following error: " + $_.Exception.Message) -Category ConnectionError -ErrorRecord $_ -Target $job -Continue
-				    }
-			    }
-			    Start-Sleep -Milliseconds 50
-			  }
+					}
+					Start-Sleep -Milliseconds 50
+				}
 			}
 		}
 	}
