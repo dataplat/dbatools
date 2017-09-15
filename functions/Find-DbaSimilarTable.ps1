@@ -46,7 +46,7 @@ The minimum percentage of column names that should match between the matching an
 Use this switch to disable any kind of verbose messages
 
 .NOTES
-Original Author: Jana Sattainathan (@SQLJana - http://sqljana.wordpress.com)
+Author: Jana Sattainathan (@SQLJana - http://sqljana.wordpress.com)
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

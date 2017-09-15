@@ -30,7 +30,7 @@ function Get-DbaUptime {
 
 		.NOTES
 			Tags: CIM
-			Original Author: Stuart Moore (@napalmgram), stuart-moore.com
+			Author: Stuart Moore (@napalmgram), stuart-moore.com
 			
 			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 			Copyright (C) 2016 Chrissy LeMaire

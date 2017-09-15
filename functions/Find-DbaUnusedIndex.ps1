@@ -48,7 +48,7 @@ function Find-DbaUnusedIndex {
 
 		.NOTES
 			Tags: Indexes
-			Original Author: Aaron Nelson (@SQLvariant), SQLvariant.com
+			Author: Aaron Nelson (@SQLvariant), SQLvariant.com
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
