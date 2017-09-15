@@ -31,7 +31,7 @@ function Get-DbaLogin {
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
-			Original Author: Mitchell Hamann (@SirCaptainMitch)
+			Author: Mitchell Hamann (@SirCaptainMitch)
 			Author: Klaas Vandenberghe (@powerdbaklaas)
 
 			Website: https://dbatools.io

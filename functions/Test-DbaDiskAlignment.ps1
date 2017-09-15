@@ -71,7 +71,7 @@ Function Test-DbaDiskAlignment
         Get WMI Disk Information - http://powershell.com/cs/media/p/7937.aspx
         Thanks to jbruns2010!
         
-        Original Author: Constantine Kokkinos (https://constantinekokkinos.com, @mobileck)
+        Author: Constantine Kokkinos (https://constantinekokkinos.com, @mobileck)
         
         dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com,)
         Copyright (C) 2016 Chrissy Lemaire

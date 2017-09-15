@@ -25,7 +25,7 @@ If SqlCredential is not specified, Windows authentication will be used.
 Use this switch to disable any kind of verbose messages
 
 .NOTES 
-Original author: Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)
+Author: Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0

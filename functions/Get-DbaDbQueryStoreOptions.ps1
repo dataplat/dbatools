@@ -26,7 +26,7 @@ Use this switch to disable any kind of verbose messages
 
 .NOTES
 Tags: QueryStore
-Original Author: Enrico van de Laar ( @evdlaar )
+Author: Enrico van de Laar ( @evdlaar )
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
 Website: https://dbatools.io

@@ -47,7 +47,7 @@ function Sync-DbaSqlLoginPermission {
 
 		.NOTES
 			Tags: Migration, Login
-			Original Author: Chrissy LeMaire (@cl), netnerds.net
+			Author: Chrissy LeMaire (@cl), netnerds.net
 			Requires: sysadmin access on SQL Servers
 			Limitations: Does not support Application Roles yet
 

@@ -1,119 +1,116 @@
 function Find-DbaDuplicateIndex {
-<#
-.SYNOPSIS
-Find duplicate and overlapping indexes
+	<#
+		.SYNOPSIS
+			Find duplicate and overlapping indexes.
 
-.DESCRIPTION
-This command will help you to find duplicate and overlapping indexes on a database or a list of databases
+		.DESCRIPTION
+			This command will help you to find duplicate and overlapping indexes on a database or a list of databases.
 
-When 2008+ filtered property also come to comparison
-Also tells how much space you can save by dropping the index.
-We show the type of compression so you can make a more considered decision.
-For now only supported for CLUSTERED and NONCLUSTERED indexes
+			On SQL Server 2008 and higher, the IsFiltered property will also be checked
 
-You can select the indexes you want to drop on the gridview and by click OK the drop statement will be generated.
+			Also tells how much space you can save by dropping the index.
 
-Output:
-	TableName
-	IndexName
-	KeyCols
-	IncludedCols
-	IndexSizeMB
-	IndexType
-	CompressionDesc (When 2008+)
-	NumberRows
-	IsDisabled
-	IsFiltered (When 2008+)
-	
-.PARAMETER SqlInstance
-The SQL Server instance.
+			We show the type of compression so you can make a more considered decision.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			For now only supports CLUSTERED and NONCLUSTERED indexes.
 
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+			You can select the indexes you want to drop on the gridview and when clicking OK, the DROP statement will be generated.
 
-Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+			Output:
+				TableName
+				IndexName
+				KeyCols
+				IncludedCols
+				IndexSizeMB
+				IndexType
+				CompressionDesc (When 2008+)
+				NumberRows
+				IsDisabled
+				IsFiltered (When 2008+)
+			
+        .PARAMETER SqlInstance
+			The SQL Server you want to check for duplicate indexes.
+        
+        .PARAMETER SqlCredential
+ 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+			$cred = Get-Credential, then pass $cred object to the -SqlCredential parameter.
 
-.PARAMETER IncludeOverlapping
-Allows to see indexes partial duplicate. 
-Example: If first key column is the same but one index has included columns and the other not, this will be shown.
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.PARAMETER FilePath
-The file to write to.
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER NoClobber
-Do not overwrite file
-	
-.PARAMETER Append
-Append to file
+		.PARAMETER Database
+			The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Force
-Instead of export or output the script, it runs performing the drop instruction
+		.PARAMETER IncludeOverlapping
+			If this switch is enabled, indexes which are partially duplicated will be returned. 
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+			Example: If the first key column is the same between two indexes, but one has included columns and the other not, this will be shown.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER FilePath
+			Specifies the path of a file to write the DROP statements to.
 
-.NOTES 
-Original Author: Claudio Silva (@ClaudioESSilva)
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.PARAMETER NoClobber
+			If this switch is enabled, the output file will not be overwritten.
+			
+		.PARAMETER Append
+			If this switch is enabled, content will be appended to the output file.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.PARAMETER Force
+			If this switch is enabled, the DROP statement(s) will be executed instead of being written to the output file.
 
-.LINK
-https://dbatools.io/Find-DbaDuplicateIndex
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
 
-.EXAMPLE
-Find-DbaDuplicateIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql
+		.NOTES 
+			Author: Claudio Silva (@ClaudioESSilva)
+			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+			Copyright (C) 2016 Chrissy LeMaire
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-Exports SQL for the duplicate indexes in server "sql2005" chosen on grid-view and writes them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
+		.LINK
+			https://dbatools.io/Find-DbaDuplicateIndex
 
-.EXAMPLE
-Find-DbaDuplicateIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql -Append
+		.EXAMPLE
+			Find-DbaDuplicateIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql
 
-Exports SQL for the duplicate indexes in server "sql2005" chosen on grid-view and writes/appends them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
-	
-.EXAMPLE   
-Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -SqlCredential $cred
-	
-Will find exact duplicate indexes on all user databases present on sqlserver2014a will be verified using SQL credentials. 
-	
-.EXAMPLE   
-Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -Database db1, db2
+			Generates SQL statements to drop the selected duplicate indexes in server "sql2005" and writes them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
 
-Will find exact duplicate indexes on both db1 and db2 databases
+		.EXAMPLE
+			Find-DbaDuplicateIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql -Append
 
-.EXAMPLE   
-Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -IncludeOverlapping
+			Generates SQL statements to drop the selected duplicate indexes and writes/appends them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
+			
+		.EXAMPLE   
+			Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -SqlCredential $cred
+				
+			Finds exact duplicate indexes on all user databases present on sqlserver2014a, using SQL authentication.
+			
+		.EXAMPLE   
+			Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -Database db1, db2
 
-Will find exact duplicate or overlapping indexes on all user databases 
-	
-#>
+			Finds exact duplicate indexes on the db1 and db2 databases.
+
+		.EXAMPLE   
+			Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -IncludeOverlapping
+
+			Finds both duplicate and overlapping indexes on all user databases.
+			
+	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
-        [Alias("Databases")]
+		[Alias("Databases")]
 		[object[]]$Database,
 		[switch]$IncludeOverlapping,
 		[Alias("OutFile", "Path")]
@@ -485,77 +482,62 @@ Will find exact duplicate or overlapping indexes on all user databases
 		$sqlGO = "GO`r`n"
 		$sqlFinalGO = "GO`r`n`r`n"
 
-		if ($FilePath.Length -gt 0)
-		{
+		if ($FilePath.Length -gt 0) {
 			$directory = Split-Path $FilePath
 			$exists = Test-Path $directory
 			
-			if ($exists -eq $false)
-			{
-				throw "Parent directory $directory does not exist"
+			if ($exists -eq $false) {
+				throw "Parent directory $directory does not exist."
 			}
 		}
 
-		Write-Output "Attempting to connect to Sql Server.."
+		Write-Output "Attempting to connect to Sql Server."
 		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
 	process {
-		if ($server.versionMajor -lt 9)
-		{
-			throw "This function does not support versions lower than SQL Server 2005 (v9)"
+		if ($server.versionMajor -lt 9) {
+			throw "This function does not support versions lower than SQL Server 2005 (v9)."
 		}
 
-		if ($pipedatabase.Length -gt 0)
-		{
+		if ($pipedatabase.Length -gt 0) {
 			$Source = $pipedatabase[0].parent.name
 			$database = $pipedatabase.name
 		}
 
-		if ($database.Count -eq 0)
-		{
+		if ($database.Count -eq 0) {
 			$database = ($server.Databases | Where-Object {$_.isSystemObject -eq 0 -and $_.Status -ne "Offline"}).Name
 		}
 
-		if ($database.Count -gt 0)
-		{
-			foreach ($db in $database)
-			{
-				try
-				{
-					Write-Output "Getting indexes from database '$db'"
+		if ($database.Count -gt 0) {
+			foreach ($db in $database) {
+				try {
+					Write-Output "Getting indexes from database '$db'."
 
-					$query = if ($server.versionMajor -eq 9)
-							 {
-								if ($IncludeOverlapping){$overlappingQuery2005} else {$exactDuplicateQuery2005}
-							 }
-							 else 
-							 {
-								if ($IncludeOverlapping) {$overlappingQuery} else {$exactDuplicateQuery}
-							 }
+					$query = if ($server.versionMajor -eq 9) {
+						if ($IncludeOverlapping) {$overlappingQuery2005} else {$exactDuplicateQuery2005}
+					}
+					else {
+						if ($IncludeOverlapping) {$overlappingQuery} else {$exactDuplicateQuery}
+					}
 
 					$duplicatedindex = $server.Databases[$db].ExecuteWithResults($query)
 
 					$scriptGenerated = $false
 
-					if ($duplicatedindex.Tables[0].Rows.Count -gt 0)
-					{
-						if ($Force)
-						{
+					if ($duplicatedindex.Tables[0].Rows.Count -gt 0) {
+						if ($Force) {
 							$indexesToDrop = $duplicatedindex.Tables[0] | Out-GridView -Title "Duplicate Indexes on $($db) database - Choose indexes to DROP! (-Force was specified)" -PassThru
 						}
-						else
-						{
+						else {
 							$indexesToDrop = $duplicatedindex.Tables[0] | Out-GridView -Title "Duplicate Indexes on $($db) database - Choose indexes to generate DROP script" -PassThru
 						}
 
 						#When only 1 line selected, the count does not work
-						if ($indexesToDrop.Count -gt 0 -or !([string]::IsNullOrEmpty($indexesToDrop)))
-						{
+						if ($indexesToDrop.Count -gt 0 -or !([string]::IsNullOrEmpty($indexesToDrop))) {
 							#reset to #Yes
 							$result = 0
 
-							if ($duplicatedindex.Tables[0].Rows.Count -eq $indexesToDrop.Count)
-							{
+							if ($duplicatedindex.Tables[0].Rows.Count -eq $indexesToDrop.Count) {
 								$title = "Indexes to drop on databases '$db':"
 								$message = "You will generate drop statements to all indexes.`r`nPerhaps you want to keep at least one.`r`nDo you wish to generate the script anyway? (Y/N)"
 								$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
@@ -564,42 +546,35 @@ Will find exact duplicate or overlapping indexes on all user databases
 								$result = $host.ui.PromptForChoice($title, $message, $options, 0)
 							}
 
-							if ($result -eq 0) #default OR answer = YES
-							{
+							if ($result -eq 0) {
+								#default OR answer = YES
 								$sqlDropScript = "/*`r`n"
 								$sqlDropScript += "`tScript generated @ $(Get-Date -format "yyyy-MM-dd HH:mm:ss.ms")`r`n"
 								$sqlDropScript += "`tDatabase: $($db)`r`n"
-								$sqlDropScript += if (!$IncludeOverlapping)
-												  {
-													"`tConfirm that you have choosen the right indexes before execute the drop script`r`n"
-												  }
-												  else
-												  {
-													"`tChoose wisely when dropping a partial duplicate index. You may want to check index usage before drop it.`r`n"
-												  }
+								$sqlDropScript += if (!$IncludeOverlapping) {
+									"`tConfirm that you have chosen the right indexes before execute the drop script`r`n"
+								}
+								else {
+									"`tChoose wisely when dropping a partial duplicate index. You may want to check index usage before drop it.`r`n"
+								}
 								$sqlDropScript += "*/`r`n"
 
-								foreach ($index in $indexesToDrop)
-								{
-									if ($FilePath.Length -gt 0)
-									{
+								foreach ($index in $indexesToDrop) {
+									if ($FilePath.Length -gt 0) {
 										Write-Output "Exporting $($index.TableName).$($index.IndexName)"
 									}
 
-									if ($Force)
-									{
+									if ($Force) {
 										$sqlDropScript += "USE [$($index.DatabaseName)]`r`n"
 										$sqlDropScript += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
 										$sqlDropScript += "    DROP INDEX $($index.TableName).$($index.IndexName)`r`n`r`n"
 
-										if ($Pscmdlet.ShouldProcess($db, "Dropping index '$($index.IndexName)' on table '$($index.TableName)' using -Force"))
-										{
+										if ($Pscmdlet.ShouldProcess($db, "Dropping index '$($index.IndexName)' on table '$($index.TableName)' using -Force")) {
 											$server.Databases[$db].ExecuteNonQuery($sqlDropScript) | Out-Null
 											Write-Output "Index '$($index.IndexName)' on table '$($index.TableName)' dropped"
 										}
 									}
-									else
-									{
+									else {
 										$sqlDropScript += "USE [$($index.DatabaseName)]`r`n"
 										$sqlDropScript += $sqlGO
 										$sqlDropScript += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
@@ -608,14 +583,11 @@ Will find exact duplicate or overlapping indexes on all user databases
 									}
 								}
 
-								if (!$Force)
-								{
-									if ($FilePath.Length -gt 0)
-									{
+								if (!$Force) {
+									if ($FilePath.Length -gt 0) {
 										$sqlDropScript | Out-File -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
 									}
-									else
-									{
+									else {
 										Write-Output $sqlDropScript
 									}
 									$scriptGenerated = $true
@@ -623,34 +595,29 @@ Will find exact duplicate or overlapping indexes on all user databases
 
 								
 							}
-							else #answer = no
-							{
-								Write-Warning "Script will not be generated for database '$db'"
+							else {
+								#answer = no
+								Write-Warning "Script will not be generated for database '$db'."
 							}
 						}
 					}
-					else
-					{
+					else {
 						Write-Output "No duplicate indexes found!"
 					}
 				}
-				catch
-				{
+				catch {
 					throw $_
 				}
 			}
 
-			if ($scriptGenerated)
-			{
+			if ($scriptGenerated) {
 				Write-Warning "Confirm the generated script before execute!"
 			}
-			if ($FilePath.Length -gt 0)
-			{
-				Write-Output "Script generated to $FilePath"
+			if ($FilePath.Length -gt 0) {
+				Write-Output "Script generated to $FilePath."
 			}
 		}
-		else
-		{
+		else {
 			Write-Output "There are no databases to analyse."
 		}
 	}

@@ -44,7 +44,7 @@
 
 		.NOTES
 			Tags: Job, Agent
-			Original Author: Klaas Vandenberghe ( @PowerDbaKlaas )
+			Author: Klaas Vandenberghe ( @PowerDbaKlaas )
 			Editor: niphlod
 
 			Website: https://dbatools.io

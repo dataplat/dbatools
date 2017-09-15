@@ -20,7 +20,7 @@
 
 		.NOTES
 			Tags: Trace, Flag
-			Original Author: Kevin Bullen (@sqlpadawan)
+			Author: Kevin Bullen (@sqlpadawan)
 
 			References:  https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-traceon-trace-flags-transact-sql
 

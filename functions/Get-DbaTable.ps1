@@ -33,7 +33,7 @@ Use this switch to disable any kind of verbose messages
 
 .NOTES
 Tags: Database, Tables
-Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

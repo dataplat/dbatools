@@ -51,7 +51,7 @@ function Resolve-DbaNetworkName {
 
 		.NOTES
 			Tags: Network, Resolve
-			Original Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+			Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 			Editor: niphlod
 			
 			Website: https://dbatools.io
