@@ -68,7 +68,7 @@ Sets the Power Plan to the custom power plan called "Maximum Performance". Skips
 	{
 		if ($CustomPowerPlan.Length -gt 0) { $PowerPlan = $CustomPowerPlan }
 		
-		function Set-DbaPowerPlan
+		Function Set-DbaPowerPlan
 		{
 			try
 			{
