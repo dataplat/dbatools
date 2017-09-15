@@ -6,6 +6,8 @@ function Test-DbaDiskAllocation {
 		.DESCRIPTION
 			Checks all disks on a computer for disk allocation units that match best practice recommendations. If one server is checked, only $true or $false is returned. If multiple servers are checked, each server's name and an IsBestPractice field are returned.
 			
+			Specify -Detailed for details.
+			
 			References:
 			https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx - "The performance question here is usually not one of correlation per the formula, but whether the cluster size ..has been explicitly defined at 64 KB, which is a best practice for SQL Server."
 			
@@ -19,6 +21,9 @@ function Test-DbaDiskAllocation {
 			
 		.PARAMETER SqlCredential
 			If you want to use SQL Server Authentication to connect.
+
+		.PARAMETER Detailed
+			If this switch is enabled, detailed output is produced.
 
 		.PARAMETER WhatIf
 			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -46,6 +51,11 @@ function Test-DbaDiskAllocation {
 			Scans all disks on server sqlserver2014a for best practice allocation unit size.
 
 		.EXAMPLE   
+			Test-DbaDiskAllocation -ComputerName sqlserver2014 -Detailed
+			
+			Scans all disks on server sqlserver2014a for allocation unit size and returns detailed results for each.
+			
+		.EXAMPLE   
 			Test-DbaDiskAllocation -ComputerName sqlserver2014a -NoSqlCheck
 
 			Scans all disks not hosting SQL Server data or log files on server sqlserver2014a for best practice allocation unit size.
@@ -58,10 +68,15 @@ function Test-DbaDiskAllocation {
 		[object[]]$ComputerName,
 		[switch]$NoSqlCheck,
 		[object]$SqlCredential,
+		[switch]$Detailed,
 		[switch]$Silent
 	)
 	
 	begin {
+		if ($Detailed) {
+			Write-Message -Level Warning -Message "Detailed is deprecated and will be removed in dbatools 1.0."
+		}
+		
 		$sessionoptions = New-CimSessionOption -Protocol DCOM
 		
 		function Get-AllDiskAllocation {
