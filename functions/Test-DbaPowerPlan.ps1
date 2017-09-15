@@ -21,9 +21,6 @@ function Test-DbaPowerPlan {
 		.PARAMETER CustomPowerPlan
 			If your organization uses a custom power plan that's considered best practice, specify it here.
 
-		.PARAMETER Detailed
-			If this switch is enabled, a detailed list will be returned. This parameter will be removed in 1.0.
-
 		.PARAMETER Silent 
 			If this switch is enabled, the internal messaging functions will be silenced.
 
@@ -46,12 +43,6 @@ function Test-DbaPowerPlan {
 			Test-DbaPowerPlan -ComputerName sqlserver2014a -CustomPowerPlan 'Maximum Performance'
 
 			Checks the Power Plan settings for sqlserver2014a and indicates whether or not it is set to the custom plan "Maximum Performance".
-
-		.EXAMPLE
-			Test-DbaPowerPlan -ComputerName sqlserver2014a -Detailed
-
-			Returns detailed information about the Power Plans on sqlserver2014a.
-
 	#>
 	param (
 		[parameter(ValueFromPipeline = $true)]
@@ -59,15 +50,10 @@ function Test-DbaPowerPlan {
 		[string[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential]$Credential,
 		[string]$CustomPowerPlan,
-		[switch]$Detailed,
 		[switch]$Silent
 	)
 	
 	begin {
-		if ($Detailed) {
-			Write-Message -Level Warning -Message "Detailed is deprecated and will be removed in dbatools 1.0"
-		}
-		
 		$bpPowerPlan = [PSCustomObject]@{
 			InstanceID  = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
 			ElementName = $null
