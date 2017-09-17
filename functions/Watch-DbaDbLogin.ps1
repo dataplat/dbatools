@@ -115,13 +115,23 @@ function Watch-DbaDbLogin {
 		<#
 			Get servers to query from Central Management Server or File
 		#>
-		$servers = @()
 		if ($SqlCms) {
-			$servers = Get-DbaRegisteredServerName -SqlInstance $SqlCms -SqlCredential $SqlCredential
+			try {
+				$servers = Get-DbaRegisteredServerName -SqlInstance $SqlCms -SqlCredential $SqlCredential -Silent
+			}
+			catch {
+				Write-Warning "The CMS server, $SqlCms, was not accessible."
+				return
+			}
 		}
-
-		if ($ServersFromFile) {
-			$servers = Get-Content $ServersFromFile
+		if (Test-Bound 'ServersFromFile') {
+			if (Test-Path $ServersFromFile) {
+				$servers = Get-Content $ServersFromFile
+			}
+			else {
+				Write-Warning "$ServersFromFile was not found."
+				return
+			}
 		}
 
 		<#
@@ -172,7 +182,6 @@ function Watch-DbaDbLogin {
 	}
 
 	end {
-		Write-Output "Script completed"
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Watch-SqlDbLogin
 	}
 	<#
