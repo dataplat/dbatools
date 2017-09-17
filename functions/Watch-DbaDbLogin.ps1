@@ -78,12 +78,14 @@ function Watch-DbaDbLogin {
 		[string]$SqlCms,
 		# File with one server per line
 
-		[string]$ServersFromFile
+		[string]$ServersFromFile,
+		[switch]$Silent
 	)
 
 	process {
-		if ([string]::IsNullOrEmpty($SqlCms) -and [string]::IsNullOrEmpty($ServersFromFile)) {
-			throw "You must specify a server list source using -SqlCms or -ServersFromFile"
+		if (Test-Bound 'SqlCms','ServersFromFile' -Not) {
+			Stop-Function -Message "You must specify a server list source using -SqlCms or -ServersFromFile"
+			return
 		}
 
 		<#
@@ -120,7 +122,7 @@ function Watch-DbaDbLogin {
 				$servers = Get-DbaRegisteredServerName -SqlInstance $SqlCms -SqlCredential $SqlCredential -Silent
 			}
 			catch {
-				Write-Warning "The CMS server, $SqlCms, was not accessible."
+				Stop-Function -Message "The CMS server, $SqlCms, was not accessible." -Target $SqlCms -ErrorRecord $_
 				return
 			}
 		}
@@ -129,7 +131,7 @@ function Watch-DbaDbLogin {
 				$servers = Get-Content $ServersFromFile
 			}
 			else {
-				Write-Warning "$ServersFromFile was not found."
+				Stop-Function -Message "$ServersFromFile was not found." -Target $ServersFromFile
 				return
 			}
 		}
