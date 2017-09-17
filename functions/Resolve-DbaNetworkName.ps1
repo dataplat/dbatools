@@ -193,10 +193,9 @@ function Resolve-DbaNetworkName {
 						}
 						Write-Message -Level VeryVerbose -Message "Getting computer information from $RemoteComputer"
 						$ScBlock = {
-							$reg = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine, [Microsoft.Win32.RegistryView]::Default)
-							$key = $reg.OpenSubKey("SYSTEM\CurrentControlSet\services\Tcpip\Parameters")
+							$IPGProps = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
 							return [pscustomobject]@{
-								'DNSDomain' = $key.GetValue("Domain")
+								'DNSDomain' = $IPGProps.DomainName
 							}
 						}
 						if (Test-Bound "Credential") {
