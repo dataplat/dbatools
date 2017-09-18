@@ -4,7 +4,7 @@ function Watch-DbaDbLogin {
 			Tracks SQL Server logins: which host they came from, what database they're using, and what program is being used to log in.
 
 		.DESCRIPTION
-			Watch-DbaDbLogin uses SQL Server process enumeration to track logins in a SQL Server table. This is helpful when you need to migrate a SQL Server and update connection strings, but have inadequate documentation on which servers/applications are logging into your SQL instance.
+			Watch-DbaDbLogin uses SQL Server DMVs to track logins into a SQL Server table. This is helpful when you need to migrate a SQL Server and update connection strings, but have inadequate documentation on which servers/applications are logging into your SQL instance.
 
 			Running this script every 5 minutes for a week should give you a sufficient idea about database and login usage.
 
@@ -14,23 +14,19 @@ function Watch-DbaDbLogin {
 		.PARAMETER SqlCms
 			Specifies a Central Management Server to query for a list of servers to watch.
 
-		.PARAMETER SqlCmsGroups
-			This is an auto-populated array that contains your Central Management Server top-level groups. You can use one or many groups.
-
-			If -SqlCmsGroups is not specified, the Watch-DbaDbLogin script will run against all servers in your Central Management Server.
-
 		.PARAMETER ServersFromFile
 			Specifies a file containing a list of servers to watch. This file must contain one server name per line.
 
 		.PARAMETER Database
-			The name of the Watch database. By default, this is DatabaseLogins.
+			The name of the Watch database.
 
 		.PARAMETER Table
-			The name of the Watch table. By default, this is DbLogins.
+			The name of the Watch table. By default, this is DbaTools-WatchDbLogins.
 
 		.PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted).
 
+			To use:
 			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
 			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
@@ -60,7 +56,7 @@ function Watch-DbaDbLogin {
 			A list of servers is gathered from the file sqlservers.txt in the current directory. Using this list, the script enumerates all the processes and gathers login information and saves it to the table Dblogins in the CentralAudit database on SQL Server sqlcluster.
 
 		.EXAMPLE
-			Watch-DbaDbLogin -SqlInstance sqlserver -SqlCms SqlCms1 -SqlCmsGroups SQL2014Clusters -SqlCredential $cred
+			Watch-DbaDbLogin -SqlInstance sqlserver -SqlCms SqlCms1 -SqlCredential $cred
 
 			A list of servers is generated using database instance names within the SQL2014Clusters group on the Central Management Server SqlCms1. Using this list, the script enumerates all the processes and gathers login information and saves it to the table Dblogins in the DatabaseLogins database on sqlserver.
 
@@ -70,46 +66,32 @@ function Watch-DbaDbLogin {
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstance]$SqlInstance,
-		[object[]]$Database = "DatabaseLogins",
-		[string]$Table = "DbLogins",
+		[object]$Database,
+		[string]$Table = "DbaTools-WatchDbLogins",
 		[PSCredential]$SqlCredential,
+
 		# Central Management Server
-
 		[string]$SqlCms,
-		# File with one server per line
 
+		# File with one server per line
 		[string]$ServersFromFile,
 		[switch]$Silent
 	)
 
 	process {
-		if (Test-Bound 'SqlCms','ServersFromFile' -Not) {
+		if (Test-Bound 'SqlCms', 'ServersFromFile' -Not) {
 			Stop-Function -Message "You must specify a server list source using -SqlCms or -ServersFromFile"
 			return
 		}
 
-		<#
-			Setup datatable & bulk copy
-		#>
-
-		if ($SqlCredential.UserName) {
-			$username = $SqlCredential.Username
-			$password = $SqlCredential.GetNetworkCredential().Password
-			$connectionstring = "Data Source=$SqlInstance;Initial Catalog=$Database;User Id=$username;Password=$password;"
+		Write-Message -Level Verbose -Message "Attempting to connect to $SqlInstance"
+		try {
+			Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
+			$serverDest = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 		}
-		else {
-			$connectionstring = "Data Source=$SqlInstance;Integrated Security=true;Initial Catalog=$Database;"
+		catch {
+			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
 		}
-
-		$bulkcopy = New-Object ("Data.SqlClient.SqlBulkCopy") $connectionstring
-		$bulkcopy.DestinationTableName = $Table
-
-		$datatable = New-Object "System.Data.DataTable"
-		$null = $datatable.Columns.Add("SQLServer")
-		$null = $datatable.Columns.Add("LoginName")
-		$null = $datatable.Columns.Add("Host")
-		$null = $datatable.Columns.Add("DbName")
-		$null = $datatable.Columns.Add("Program")
 
 		$systemdbs = "master", "msdb", "model", "tempdb"
 		$excludedPrograms = "Microsoft SQL Server Management Studio - Query", "SQL Management"
@@ -139,15 +121,14 @@ function Watch-DbaDbLogin {
 		<#
 			Process each server
 		#>
-
 		foreach ($instance in $servers) {
-			Write-Output "Attempting to connect to $instance."
+			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
 			}
 			catch {
-				Write-Error "Can't connect to $instance. Skipping.";
-				continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			if (!(Test-SqlSa $server)) {
@@ -155,61 +136,34 @@ function Watch-DbaDbLogin {
 				continue
 			}
 
-			$procs = $server.EnumProcesses() | Where-Object { $_.Host -ne $sourceserver.ComputerNamePhysicalNetBIOS -and ![string]::IsNullOrEmpty($_.Host) }
-			$procs = $procs | Where-Object { $systemdbs -notcontains $_.Database -and $excludedPrograms -notcontains $_.Program } | Select-Object Login, Host, Database, Program
+			$sql = "
+			SELECT
+				s.login_time AS [LoginTime]
+				, s.login_name AS [Login]
+				, ISNULL(s.host_name,N'') AS [Host]
+				, ISNULL(s.program_name,N'') AS [Program]
+				, ISNULL(r.database_id,N'') AS [DatabaseId]
+				, ISNULL(DB_NAME(r.database_id),N'') AS [Database]
+				, CAST(~s.is_user_process AS bit) AS [IsSystem]
+				, CaptureTime = (SELECT GETDATE())
+			FROM sys.dm_exec_sessions AS s
+			LEFT OUTER JOIN sys.dm_exec_requests AS r
+				ON r.session_id = s.session_id"
+			Write-Message -Level Debug -Message $sql
 
-			foreach ($p in $procs) {
-				$row = $datatable.NewRow()
-				$row.itemarray = $server.name, $p.Login, $p.Host, $p.Database, $p.Program
-				$datatable.Rows.Add($row)
+			$procs = $server.Query($sql) | Where-Object { $_.Host -ne $sourceserver.ComputerNamePhysicalNetBIOS -and ![string]::IsNullOrEmpty($_.Host) }
+			$procs = $procs | Where-Object { $systemdbs -notcontains $_.Database -and $excludedPrograms -notcontains $_.Program }
+
+			if ($procs.Count -gt 0) {
+				$procs | Select-Object LoginTime, Login, Host, Program, DatabaseId, Database, IsSystem, CaptureTime | Out-DbaDataTable | Write-DbaDataTable -SqlInstance $serverDest -Database $Database -Table $Table -AutoCreateTable
+				Write-Output "Added process information for $instance to datatable."
 			}
-			$server.ConnectionContext.Disconnect()
-			Write-Output "Added process information for $instance to datatable."
-		}
-
-		<#
-			Write to $Table in $Database on $SqlInstance
-		#>
-
-		try {
-			$bulkcopy.WriteToServer($datatable)
-			if ($datatable.rows.count -eq 0) {
-				Write-Warning "Nothing done."
+			else {
+				Write-message -Level Verbose -Message "No data returned for $instance."
 			}
-			$bulkcopy.Close()
-			Write-Output "Updated $Table in $Database on $SqlInstance with $($datatable.rows.count) rows."
 		}
-		catch { Write-Error "Could not update $Table in $Database on $SqlInstance. Do the database and table exist and do you have access?" }
-
 	}
-
 	end {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Watch-SqlDbLogin
 	}
-	<#
-	---- SQL database and table ----
-
-		CREATE DATABASE DatabaseLogins
-		GO
-		USE DatabaseLogins
-		GO
-			CREATE TABLE [dbo].[DbLogins](
-			[SQLServer] varchar(128),
-			[LoginName] varchar(128),
-			[Host] varchar(128),
-			[DbName] varchar(128),
-			[Program] varchar(256),
-			[Timestamp] datetime default getdate(),
-		)
-	-- Create Unique Clustered Index with IGNORE_DUPE_KEY=ON to avoid duplicates
-		CREATE UNIQUE CLUSTERED INDEX [ClusteredIndex-Combo] ON [dbo].[DbLogins]
-			(
-			[SQLServer] ASC,
-			[LoginName] ASC,
-			[Host] ASC,
-			[DbName] ASC,
-			[Program] ASC
-		) WITH (IGNORE_DUP_KEY = ON)
-		GO
-	#>
 }
