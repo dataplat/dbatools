@@ -36,7 +36,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 	The below examples are by no means set in stone and there are already
 		a number of test that you can pull examples from in how they are done.
 #>
-
+<#
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	$testFile = 'C:\temp\Servers.txt'
 	$tableName = 'dbatoolsciwatchdblogin'
@@ -59,3 +59,4 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		}
 	}
 }
+#>
