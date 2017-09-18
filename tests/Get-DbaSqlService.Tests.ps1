@@ -1,11 +1,14 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+. "..\internal\Connect-SqlInstance.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	
 	Context "Command actually works" {
-		$results = Get-DbaSqlService -ComputerName $instances
+		$instanceName = (Connect-SqlInstance -SqlInstance $script:instance1).ServiceName
+		
+		$results = Get-DbaSqlService -ComputerName $script:instance1
 		
 		It "shows some services" {
 			$results.DisplayName | Should Not Be $null
@@ -19,15 +22,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			}
 		}
 		
-		$results = Get-DbaSqlService -ComputerName $script:instance1 -InstanceName $script:instance1 -Type Agent
+
+		$results = Get-DbaSqlService -ComputerName $script:instance1 -InstanceName $instanceName -Type Agent
 		
 		It "shows services from a specific instance" {
 			foreach ($result in $results) {
-				$result.ServiceType| Should Be "SqlAgent" 
+				$result.ServiceType| Should Be "Agent" 
 			}
 		}
 				
-		$services = Get-DbaSqlService -ComputerName $instances -Type Agent
+		$services = Get-DbaSqlService -ComputerName $script:instance1 -Type Agent -InstanceName $instanceName
 		
 		It "sets startup mode of the services to 'Manual'" {
 			foreach ($service in $services) {
@@ -35,7 +39,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			}
 		}
 		
-		$results = Get-DbaSqlService -ComputerName $instances -Type Agent
+		$results = Get-DbaSqlService -ComputerName $script:instance1 -Type Agent -InstanceName $instanceName 
 		
 		It "verifies that startup mode of the services is 'Manual'" {
 			foreach ($result in $results) {
@@ -43,7 +47,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			}
 		}
 		
-		$services = Get-DbaSqlService -ComputerName $instances -Type Agent
+		$services = Get-DbaSqlService -ComputerName $script:instance1 -Type Agent -InstanceName $instanceName 
 		
 		It "sets startup mode of the services to 'Automatic'" {
 			foreach ($service in $services) {
@@ -51,7 +55,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			}
 		}
 		
-		$results = Get-DbaSqlService -ComputerName $instances -Type Agent
+		$results = Get-DbaSqlService -ComputerName $script:instance1 -Type Agent -InstanceName $instanceName 
 			
 		It "verifies that startup mode of the services is 'Automatic'" {
 			foreach ($result in $results) {
