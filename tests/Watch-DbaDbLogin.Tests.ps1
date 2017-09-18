@@ -38,19 +38,19 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 #>
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-	BeforeAll {
-		$testFile = 'C:\temp\Servers.txt'
-		if (Test-Path $testFile) {
-			Remove-Item $testFile -Force
-		}
-		$script:instance1 | Out-File -Path C:\temp\Servers.txt
+	$testFile = 'C:\temp\Servers.txt'
+	$tableName = 'dbatoolsciwatchdblogin'
+	$databaseName = 'master'
+	if (Test-Path $testFile) {
+		Remove-Item $testFile -Force
 	}
-
+	$script:instance1, $script:instance2 | Out-File $testFile
+	AfterAll {
+		$null = (Connect-DbaSqlServer -SqlInstance $script:instance1).Query("DROP TABLE $tableName",$databaseName)
+	}
 	Context "Command actually works" {
-		$tableName = 'dbatoolsci-watchdblogin'
-		$databaseName = 'tempdb'
 		Watch-DbaDbLogin -SqlInstance $script:instance1 -Database $databaseName -Table $tableName -ServersFromFile $testFile -Silent
-		$result = Get-DbaTable -SqlInstance $script:instance1 -Database $databaseName -Table $tableName
+		$result = Get-DbaTable -SqlInstance $script:instance1 -Database $databaseName -Table $tableName -IncludeSystemDBs
 		It "Should have created table $tableName in database $databaseName" {
 			$result.Name | Should Be $tableName
 		}
