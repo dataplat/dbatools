@@ -33,6 +33,9 @@ function Watch-DbaDbLogin {
 
 			To connect as a different Windows user, run PowerShell as that user.
 
+        .PARAMETER Silent
+            If this switch is enabled, the internal messaging functions will be silenced.
+
 		.NOTES
 			Tags: Login
 			Author: Chrissy LeMaire (@cl), netnerds.net
