@@ -19,7 +19,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			}
 		}
 		
-		$results = Get-DbaSqlService -ComputerName $script:instance1 -InstanceName MSSQLSERVER -Type Agent
+		$results = Get-DbaSqlService -ComputerName $script:instance1 -InstanceName $script:instance1 -Type Agent
 		
 		It "shows services from a specific instance" {
 			foreach ($result in $results) {
