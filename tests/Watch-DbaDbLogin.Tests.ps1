@@ -46,7 +46,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	}
 	$script:instance1, $script:instance2 | Out-File $testFile
 	AfterAll {
-		$null = (Connect-DbaSqlServer -SqlInstance $script:instance1).Query("DROP TABLE $tableName",$databaseName)
+		$null = (Connect-DbaSqlServer -SqlInstance $script:instance1).Databases[$databaseName].Query("DROP TABLE $tableName")
 	}
 	Context "Command actually works" {
 		Watch-DbaDbLogin -SqlInstance $script:instance1 -Database $databaseName -Table $tableName -ServersFromFile $testFile -Silent
