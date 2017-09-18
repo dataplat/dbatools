@@ -105,7 +105,7 @@ function Get-DbaRegisteredServer {
 		if ($ResolveNetworkName) {
 			$defaults += 'ComputerName', 'FQDN', 'IPAddress'
 		}
-		$defaults = 'Name', 'ServerName', 'Description', 'ServerType', 'SecureConnectionString', 'ConnectionString'
+		$defaults += 'Name', 'ServerName', 'Description', 'ServerType', 'SecureConnectionString'
 		
 	}
 	
@@ -155,20 +155,21 @@ function Get-DbaRegisteredServer {
 			
 			if ($ResolveNetworkName) {
 				try {
-					$lookup = Resolve-DbaNetworkName $server.ServerName
+					$lookup = Resolve-DbaNetworkName $server.ServerName -Turbo
 					Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $lookup.ComputerName
 					Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $lookup.FQDN
 					Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $lookup.IPAddress
 				}
 				catch {
 					try {
-						$lookup = Resolve-DbaNetworkName $server.ServerName -Turbo
+						$lookup = Resolve-DbaNetworkName $server.ServerName
 						Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $lookup.ComputerName
 						Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $lookup.FQDN
 						Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $lookup.IPAddress
 					} catch {}
 				}
 			}
+			Add-Member -Force -InputObject $server -MemberType ScriptMethod -Name ToString -Value { $this.ServerName }
 			Select-DefaultView -InputObject $server -Property $defaults
 		}
 	}
