@@ -8,8 +8,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Command actually works" {
 		
 		$instanceName = (Connect-SqlInstance -SqlInstance $script:instance1).ServiceName
-		Write-Host $instanceName
-		Write-Host $script:instance1
 		It "restarts some services" {
 			$services = Restart-DbaSqlService -ComputerName $script:instance1 -InstanceName $instanceName -Type Agent
 			$services | Should Not Be $null
