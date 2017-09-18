@@ -1,70 +1,54 @@
 ﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-
+<#
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Parameters validation" {
 		BeforeAll {
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance1
+			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
 			$db1 = "dbatoolsci_dbsetstate_online"
 			$server.Query("CREATE DATABASE $db1")
 		}
 		AfterAll {
-			Remove-DbaDatabase -SqlInstance $script:instance1 -Database $db1
+			Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1
 		}
 		It "Stops if no Database or AllDatabases" {
-			{ Set-DbaDatabaseState -SqlInstance $script:instance1 -Silent } | Should Throw "You must specify"
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Silent } | Should Throw "You must specify"
 		}
 		It "Is nice by default" {
-			{ Set-DbaDatabaseState -SqlInstance $script:instance1 *> $null } | Should Not Throw "You must specify"
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 *> $null } | Should Not Throw "You must specify"
 		}
 		It "Errors out when multiple 'access' params are passed with Silent" {
-			{ Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1 -SingleUser -RestrictedUser -Silent } | Should Throw "You can only specify one of: -SingleUser,-RestrictedUser,-MultiUser"
-			{ Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1 -MultiUser -RestrictedUser -Silent } | Should Throw "You can only specify one of: -SingleUser,-RestrictedUser,-MultiUser"
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -SingleUser -RestrictedUser -Silent } | Should Throw "You can only specify one of: -SingleUser,-RestrictedUser,-MultiUser"
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -MultiUser -RestrictedUser -Silent } | Should Throw "You can only specify one of: -SingleUser,-RestrictedUser,-MultiUser"
 		}
 		It "Errors out when multiple 'access' params are passed without Silent" {
-			{ Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1 -SingleUser -RestrictedUser *> $null } | Should Not Throw
-			{ Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1 -MultiUser -RestrictedUser *> $null } | Should Not Throw
-			$result = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1 -SingleUser -RestrictedUser *> $null
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -SingleUser -RestrictedUser *> $null } | Should Not Throw
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -MultiUser -RestrictedUser *> $null } | Should Not Throw
+			$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -SingleUser -RestrictedUser *> $null
 			$result | Should Be $null
 		}
 		It "Errors out when multiple 'status' params are passed with Silent" {
-			{ Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1 -Offline -Online -Silent } | Should Throw "You can only specify one of: -Online,-Offline,-Emergency,-Detached"
-			{ Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1 -Emergency -Online -Silent } | Should Throw "You can only specify one of: -Online,-Offline,-Emergency,-Detached"
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Offline -Online -Silent } | Should Throw "You can only specify one of: -Online,-Offline,-Emergency,-Detached"
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Emergency -Online -Silent } | Should Throw "You can only specify one of: -Online,-Offline,-Emergency,-Detached"
 		}
 		It "Errors out when multiple 'status' params are passed without Silent" {
-			{ Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1 -Offline -Online *> $null } | Should Not Throw
-			{ Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1 -Emergency -Online *> $null } | Should Not Throw
-			$result = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1 -Offline -Online *> $null
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Offline -Online *> $null } | Should Not Throw
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Emergency -Online *> $null } | Should Not Throw
+			$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Offline -Online *> $null
 			$result | Should Be $null
 		}
 		It "Errors out when multiple 'rw' params are passed with Silent" {
-			{ Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1 -ReadOnly -ReadWrite -Silent } | Should Throw "You can only specify one of: -ReadOnly,-ReadWrite"
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -ReadOnly -ReadWrite -Silent } | Should Throw "You can only specify one of: -ReadOnly,-ReadWrite"
 		}
 		It "Errors out when multiple 'rw' params are passed without Silent" {
-			{ Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1 -ReadOnly -ReadWrite *> $null } | Should Not Throw
-			$result = Set-DbaDatabaseState -SqlInstance $script:instance1 -Database $db1 -ReadOnly -ReadWrite *> $null
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -ReadOnly -ReadWrite *> $null } | Should Not Throw
+			$result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -ReadOnly -ReadWrite *> $null
 			$result | Should Be $null
 		}
 	}
 	Context "Operations on databases" {
 		BeforeAll {
-			
-			if ($env:appveyor) {
-				Get-Service | Where-Object { $_.DisplayName -match 'SQL Server (SQL2016)' } | Restart-Service -Force
-				do {
-					Start-Sleep 1
-					$null = (& sqlcmd -S $script:instance1 -b -Q "select 1" -d master)
-				}
-				while ($lastexitcode -ne 0 -and $t++ -lt 10)
-				
-				do {
-					Start-Sleep 1
-					$null = (& sqlcmd -S $script:instance2 -b -Q "select 1" -d master)
-				}
-				while ($lastexitcode -ne 0 -and $s++ -lt 10)
-			}
-			Start-Sleep -Seconds 3
 			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
 			$db1 = "dbatoolsci_dbsetstate_online"
 			$db2 = "dbatoolsci_dbsetstate_offline"
@@ -189,3 +173,4 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 	}
 }
+#>

@@ -32,7 +32,7 @@ The force parameter will ignore some errors in the parameters and assume default
 It will also remove the any present schedules with the same name for the specific job.
 
 .NOTES 
-Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Step, Schedule
 	
 Website: https://dbatools.io
@@ -89,7 +89,7 @@ Remove the schedule on multiple servers using pipe line
 			# Try connecting to the instance
 			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+				$server = Connect-DbaSqlServer -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -InnerErrorRecord $_ -Continue

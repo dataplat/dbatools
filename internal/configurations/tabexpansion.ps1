@@ -4,5 +4,5 @@ Set-DbaConfig -Name 'TabExpansion.UpdateTimeout' -Value (New-TimeSpan -Minutes 3
 
 # Disable the management cache entire
 Set-DbaConfig -Name 'TabExpansion.Disable' -Value $false -Default -DisableHandler -Description 'Globally disables all TEPP functionality by dbatools'
-Set-DbaConfig -Name 'TabExpansion.Disable.Asynchronous' -Value $false -Default -DisableHandler -Description 'Globally disables asynchronous TEPP updates in the background'
-Set-DbaConfig -Name 'TabExpansion.Disable.Synchronous' -Value $true -Default -DisableHandler -Description 'Globally disables synchronous TEPP updates, performed whenever connecting o the server. If this is not disabled, it will only perform updates that are fast to perform, in order to minimize performance impact. This may lead to some TEPP functionality loss if asynchronous updates are disabled.'
+Set-DbaConfig -Name 'TabExpansion.Disable.Asynchronous' -Value $true -Default -DisableHandler -Description 'Globally disables asynchronous TEPP updates in the background'
+Set-DbaConfig -Name 'TabExpansion.Disable.Synchronous' -Value $false -Default -DisableHandler -Description 'Globally disables synchronous TEPP updates, performed whenever connecting o the server. If this is not disabled, it will only perform updates that are fast to perform, in order to minimize performance impact. This may lead to some TEPP functionality loss if asynchronous updates are disabled.'

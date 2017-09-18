@@ -75,6 +75,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$result | Should Not Be $null
 		}
 		It "Detaches the database correctly" {
+			$null = Stop-DbaProcess -SqlInstance $script:instance2 -Database $db1
 			$result = Dismount-DbaDatabase -SqlInstance $script:instance2 -Database $db1
 			$result = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1
 			$result | Should Be $null

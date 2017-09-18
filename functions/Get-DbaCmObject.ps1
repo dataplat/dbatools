@@ -56,7 +56,7 @@
 		It will use the credewntials stored in $cred to connect, unless they are known to not work, in which case they will default to windows credentials (unless another default has been set).
 	
 	.NOTES
-		Original Author: Fred Winmann (@FredWeinmann)
+		Author: Fred Winmann (@FredWeinmann)
 		Tags: ComputerManagement
 		
 		Website: https://dbatools.io

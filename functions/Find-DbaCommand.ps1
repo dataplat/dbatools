@@ -32,7 +32,7 @@ function Find-DbaCommand {
 
 		.NOTES
 			Tags: Find,Help,Command
-			Original Author: Simone Bizzotto
+			Author: Simone Bizzotto
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

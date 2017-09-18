@@ -5,7 +5,12 @@
  - [ ] New feature (non-breaking change, adds functionality)
  - [ ] Breaking change (effects multiple commands or functionality)
  - [ ] Ran manual Pester test and has passed (`.\tests\manual.pester.ps1)
+ - [ ] Adding code coverage to existing functionality
  - [ ] Pester test is included
+ - [ ] Nunit test is included
+ - [ ] Documentation
+ - [ ] Build system
+ 
 <!-- Below this line you can erase anything that is not applicable -->
 ### Purpose
 <!-- What is the purpose or goal of this PR? (doesn't have to be an essay) --> 
