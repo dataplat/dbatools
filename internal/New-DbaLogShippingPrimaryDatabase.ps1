@@ -37,6 +37,13 @@ Is the network path to the backup directory on the primary server.
 Is the length of time, in minutes, after the last backup before a threshold_alert error is raised.
 The default is 60.
 
+.PARAMETER CompressBackup
+Enables the use of backup compression
+
+.PARAMETER ThressAlert
+Is the length of time, in minutes, when the alert is to be raised when the backup threshold is exceeded.
+The default is 14,420.
+
 .PARAMETER HistoryRetention
 Is the length of time in minutes in which the history will be retained.
 The default is 14420.
@@ -72,7 +79,7 @@ The force parameter will ignore some errors in the parameters and assume default
 It will also remove the any present schedules with the same name for the specific job.
 
 .NOTES 
-Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Log shippin, primary database
 	
 Website: https://dbatools.io
@@ -118,9 +125,11 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 
 		[int]$BackupThreshold = 60,
 
-		[int]$HistoryRetention = 14420,
-
 		[switch]$CompressBackup,
+
+		[int]$ThressAlert = 14420,
+
+		[int]$HistoryRetention = 14420,
 
 		[string]$MonitorServer,
 
@@ -148,24 +157,30 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 
 	# Check if the backup UNC path is correct and reachable
 	if ([bool]([uri]$BackupShare).IsUnc -and $BackupShare -notmatch '^\\(?:\\[^<>:`"/\\|?*]+)+$') {
-		Stop-Function -Message "The backup share path $BackupShare should be formatted in the form \\server\share." -InnerErrorRecord $_ -Target $SqlInstance
+		Stop-Function -Message "The backup share path $BackupShare should be formatted in the form \\server\share." -Target $SqlInstance
 		return
 	}
 	else {
 		if (-not ((Test-Path $BackupShare -PathType Container -IsValid) -and ((Get-Item $BackupShare).PSProvider.Name -eq 'FileSystem'))) {
-			Stop-Function -Message "The backup share path $BackupShare is not valid or can't be reached." -InnerErrorRecord $_ -Target $SqlInstance
+			Stop-Function -Message "The backup share path $BackupShare is not valid or can't be reached." -Target $SqlInstance
 			return
 		}
 	}
 
 	# Check the backup compression
-	if ($CompressBackup) {
-		$BackupCompression = 1
+	if ($CompressBackup -eq $true) {
 		Write-Message -Message "Setting backup compression to 1." -Level Verbose
+		$BackupCompression = 1
 	}
-	else {
-		$BackupCompression = 0
+	elseif($CompressBackup -eq $false){
 		Write-Message -Message "Setting backup compression to 0." -Level Verbose
+		$BackupCompression = 0
+	}
+	elseif(-not $CompressBackup) {
+		$defaultCompression = (Get-DbaSpConfigure -SqlInstance $SqlInstance -ConfigName DefaultBackupCompression).ConfiguredValue
+		Write-Message -Message "Setting backup compression to default value $defaultCompression." -Level Verbose
+		$BackupCompression = $defaultCompression
+		
 	}
 
 	# Check of the MonitorServerSecurityMode value is of type string and set the integer value
@@ -175,20 +190,14 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 	}
 
 	# Check the MonitorServer
-	if (-not $MonitorServer) {
-		if ($Force) {
-			$MonitorServer = $SqlInstance
-			Write-Message -Message "Setting monitor server to $MonitorServer." -Level Verbose
-		}
-		else {
-			Stop-Function -Message "The monitor server needs to be set. Use -Force if system name must be used." -InnerErrorRecord $_ -Target $SqlInstance 
-			return
-		}
+	if ($Force -and -not $MonitorServer) {
+		$MonitorServer = $SqlInstance
+		Write-Message -Message "Setting monitor server to $MonitorServer." -Level Verbose
 	}
 
 	# Check the MonitorServerSecurityMode if it's SQL Server authentication
 	if ($MonitorServerSecurityMode -eq 0 -and -not $MonitorCredential) {
-		Stop-Function -Message "The MonitorServerCredential cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $SqlInstance 
+		Stop-Function -Message "The MonitorServerCredential cannot be empty when using SQL Server authentication." -Target $SqlInstance 
 		return
 	}
 	elseif ($MonitorServerSecurityMode -eq 0 -and $MonitorCredential) {
@@ -198,14 +207,14 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 
 		# Check if the user is in the database
 		if ($server.Databases['master'].Users.Name -notcontains $MonitorLogin) {
-			Stop-Function -Message "User $MonitorLogin for monitor login must be in the master database." -InnerErrorRecord $_ -Target $SqlInstance 
+			Stop-Function -Message "User $MonitorLogin for monitor login must be in the master database." -Target $SqlInstance 
 			return
 		}
 	}
 
 	# Check if the database is present on the source sql server
 	if ($server.Databases.Name -notcontains $Database) {
-		Stop-Function -Message "Database $Database is not available on instance $SqlInstance" -InnerErrorRecord $_ -Target $SqlInstance 
+		Stop-Function -Message "Database $Database is not available on instance $SqlInstance" -Target $SqlInstance 
 		return
 	}
 
@@ -229,17 +238,22 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
             ,@backup_share = N'$BackupShare'
             ,@backup_job_name = N'$BackupJob'
             ,@backup_retention_period = $BackupRetention
-            ,@backup_compression = $BackupCompression
-            ,@monitor_server = N'$MonitorServer '
-            ,@monitor_server_security_mode = $MonitorServerSecurityMode
-            ,@backup_threshold = $BackupThreshold
-            ,@threshold_alert_enabled = $ThresholdAlertEnabled
+			,@backup_compression = $BackupCompression"
+	
+	if($MonitorServer){
+            $Query += ",@monitor_server = N'$MonitorServer'
+			,@monitor_server_security_mode = $MonitorServerSecurityMode
+			,@threshold_alert = $ThressAlert
+			,@threshold_alert_enabled = $ThresholdAlertEnabled"
+	}
+
+	$Query +=",@backup_threshold = $BackupThreshold
             ,@history_retention_period = $HistoryRetention
             ,@backup_job_id = @LS_BackupJobId OUTPUT
             ,@primary_id = @LS_PrimaryId OUTPUT "
 
 	# Check the MonitorServerSecurityMode if it's SQL Server authentication
-	if ($MonitorServerSecurityMode -eq 0) {
+	if ($MonitorServer -and $MonitorServerSecurityMode -eq 0 ) {
 		$Query += ",@monitor_server_login = N'$MonitorLogin'
             ,@monitor_server_password = N'$MonitorPassword' "
 	}

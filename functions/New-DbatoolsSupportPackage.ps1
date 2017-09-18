@@ -28,7 +28,7 @@
     Use this if you want the function to throw terminating errors you want to catch.
 
     .NOTES
-	Original Author: Fred Weinmann (@FredWeinmann)
+	Author: Fred Weinmann (@FredWeinmann)
 	Tags: Debug
 
 	Website: https://dbatools.io

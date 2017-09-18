@@ -80,7 +80,7 @@ The force parameter will ignore some errors in the parameters and assume default
 It will also remove the any present schedules with the same name for the specific job.
 
 .NOTES 
-Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Log shippin, secondary database
 	
 Website: https://dbatools.io
@@ -170,12 +170,12 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 
 	# Check if the database is present on the primary sql server
 	if ($ServerPrimary.Databases.Name -notcontains $PrimaryDatabase) {
-		Stop-Function -Message "Database $PrimaryDatabase is not available on instance $PrimaryServer" -InnerErrorRecord $_ -Target $PrimaryServer -Continue
+		Stop-Function -Message "Database $PrimaryDatabase is not available on instance $PrimaryServer" -Target $PrimaryServer -Continue
 	}
 
 	# Check if the database is present on the primary sql server
 	if ($ServerSecondary.Databases.Name -notcontains $SecondaryDatabase) {
-		Stop-Function -Message "Database $SecondaryDatabase is not available on instance $ServerSecondary" -InnerErrorRecord $_ -Target $SqlInstance -Continue
+		Stop-Function -Message "Database $SecondaryDatabase is not available on instance $ServerSecondary" -Target $SqlInstance -Continue
 	}
 
 	# Check the restore mode

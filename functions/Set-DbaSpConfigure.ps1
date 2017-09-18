@@ -38,7 +38,7 @@
 
 		.NOTES 
 			Tags: SpConfigure
-			Original Author: Nic Cain, https://sirsql.net/
+			Author: Nic Cain, https://sirsql.net/
 			
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

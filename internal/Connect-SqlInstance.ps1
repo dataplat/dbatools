@@ -35,16 +35,42 @@ function Connect-SqlInstance {
 	
 	[CmdletBinding()]
 	param (
-		[Parameter(Mandatory = $true)]
-		[object]$SqlInstance,
+		[Parameter(Mandatory = $true)][object]$SqlInstance,
 		[object]$SqlCredential,
 		[switch]$ParameterConnection,
 		[switch]$RegularUser = $true,
-		# let's see how this goes
-
 		[int]$MinimumVersion
 	)
 	
+	#region Utility functions
+	function Invoke-TEPPCacheUpdate {
+		[CmdletBinding()]
+		Param (
+			[System.Management.Automation.ScriptBlock]
+			$ScriptBlock
+		)
+		
+		try {
+			[ScriptBlock]::Create($scriptBlock).Invoke()
+		}
+		catch {
+			# If the SQL Server version doesn't support the feature, we ignore it and silently continue
+			if ($_.Exception.InnerException.InnerException.GetType().FullName -eq "Microsoft.SqlServer.Management.Sdk.Sfc.InvalidVersionEnumeratorException") {
+				return
+			}
+			
+			if ($ENV:APPVEYOR_BUILD_FOLDER -or ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::DeveloperMode)) { throw }
+			<#
+			elseif ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::DevelopmentBranch) {
+				Write-Message -Level Warning -Message "Failed TEPP Caching: $($s | Select-String '"(.*?)"' | ForEach-Object { $_.Matches[0].Groups[1].Value })" -ErrorRecord $_ -Silent $false
+			}
+			#>
+			else {
+				Write-Message -Level Warning -Message "Failed TEPP Caching: $($scriptBlock.ToString() | Select-String '"(.*?)"' | ForEach-Object { $_.Matches[0].Groups[1].Value })" -ErrorRecord $_ 3>$null
+			}
+		}
+	}
+	#endregion Utility functions
 	
 	#region Ensure Credential integrity
     <#
@@ -99,7 +125,7 @@ function Connect-SqlInstance {
 		if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
 			$FullSmoName = $ConvertedSqlInstance.FullSmoName.ToLower()
 			foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
-				$ExecutionContext.InvokeCommand.InvokeScript($false, $scriptBlock, $null, $null)
+				Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
 			}
 		}
 		return $server
@@ -123,6 +149,7 @@ function Connect-SqlInstance {
 	
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $ConvertedSqlInstance.FullSmoName
 	$server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
+	if ($ConvertedSqlInstance.IsConnectionString) { $server.ConnectionContext.ConnectionString = $ConvertedSqlInstance.InputObject }
 	
 	try {
 		if ($SqlCredential.Username -ne $null) {
@@ -220,7 +247,7 @@ function Connect-SqlInstance {
 	if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
 		$FullSmoName = $ConvertedSqlInstance.FullSmoName.ToLower()
 		foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
-			$ExecutionContext.InvokeCommand.InvokeScript($false, $scriptBlock, $null, $null)
+			Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
 		}
 	}
 	

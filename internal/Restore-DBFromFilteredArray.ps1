@@ -87,11 +87,11 @@ Function Restore-DBFromFilteredArray {
             if (($ScriptOnly -eq $true) -or ($verifyonly -eq $true)) {
                 Write-Message -Level Verbose -Message "No need to close db for this operation"
             }
-            elseIf ($WithReplace -eq $true -and $VerifyOnly -eq $false) {
+            elseIf ($ReplaceDatabase -eq $true -and $VerifyOnly -eq $false) {
                 if ($Pscmdlet.ShouldProcess("Killing processes in $dbname on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
                     try {
                         Write-Message -Level Verbose -Message "Set $DbName single_user to kill processes"
-                        Stop-DbaProcess -SqlInstance $Server -Databases $Dbname -WarningAction Silentlycontinue
+                        Stop-DbaProcess -SqlInstance $Server -Database $Dbname -WarningAction Silentlycontinue
                         if ($Continue -eq $false) {
                             $server.Query("Alter database $DbName set offline with rollback immediate; alter database $DbName set restricted_user; Alter database $DbName set online with rollback immediate",'master')
                         }
@@ -161,7 +161,7 @@ Function Restore-DBFromFilteredArray {
                     }
 
                 }
-                else {
+                elseif ($ReplaceDatabase -ne $True) {
                     Write-Message -Level Veryverbose -Message "Bombing out created on $sqlinstance"
                     #Stop-Function -message "Destination File $File  exists on $SqlInstance" -Target $file -Category 'DeviceError' -silent $true
 					Stop-Function -message "Destination File $File  exists on $SqlInstance" -Target $file -Category 'DeviceError' -silent $true
@@ -204,7 +204,8 @@ Function Restore-DBFromFilteredArray {
                     Write-Message -Level Verbose -Message "Moving $($File.PhysicalName)"
                     $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
                     $MoveFile.LogicalFileName = $File.LogicalName
-                    $filename, $extension = (Split-Path $file.PhysicalName -leaf).split('.')
+                    $Extension = ($file.PhysicalName.split('.'))[-1]
+                    $Filename  = (split-path $file.PhysicalName -leaf) -replace ".$extension",""
                     if ($ReplaceDbNameInFile) {
                         $Filename = $filename -replace $OldDatabaseName, $dbname
                     }
