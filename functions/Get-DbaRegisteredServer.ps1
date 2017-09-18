@@ -6,17 +6,11 @@ function Get-DbaRegisteredServer {
 		.DESCRIPTION
 			Returns an array of servers found in the CMS.
 
-		.PARAMETER SQLInstance
-			SQL Server instance(s) to connect to.
+		.PARAMETER SqlInstance
+			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-		.PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
-
-			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-			To connect as a different Windows user, run PowerShell as that user.
+	.PARAMETER SqlCredential
+			SqlCredential object to connect as. If not specified, current Windows login will be used.
 
 		.PARAMETER Group
 			Specifies one or more groups to include from SQL Server Central Management Server.
@@ -28,13 +22,15 @@ function Get-DbaRegisteredServer {
 			Filters out the CMS you are connected to. This does a full match of the value passed in to `-SqlInstance`
 			and the ServerName property of the CMS registration.
 
+		.PARAMETER ResolveNetworkName
+			Also return the NetBIOS name and IP addresses(s) of each server.
+	
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
-			Original Author (from Get-DbaRegsiteredServerName): Chrissy LeMaire (@cl)
 			Author: Bryan Hamby (@galador)
-			Tags: RegisteredServer,CMS
+			Tags: RegisteredServer, CMS
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -63,9 +59,9 @@ function Get-DbaRegisteredServer {
 
 			Returns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a
 	#>
-	[CmdletBinding(DefaultParameterSetName = "Default")]
+	[CmdletBinding()]
 	param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
@@ -73,6 +69,7 @@ function Get-DbaRegisteredServer {
 		[object[]]$Group,
 		[object[]]$ExcludeGroup,
 		[switch]$ExcludeCmsServer,
+		[switch]$ResolveNetworkName,
 		[switch]$Silent
 	)
 	begin {
@@ -103,8 +100,15 @@ function Get-DbaRegisteredServer {
 			}
 			return $results
 		}
+		
+		$defaults = @()
+		if ($ResolveNetworkName) {
+			$defaults += 'ComputerName', 'FQDN', 'IPAddress'
+		}
+		$defaults = 'Name', 'ServerName', 'Description', 'ServerType', 'SecureConnectionString', 'ConnectionString'
+		
 	}
-
+	
 	process {
 		if (Test-FunctionInterrupt) { 
 			return 
@@ -143,17 +147,33 @@ function Get-DbaRegisteredServer {
 				$servers = ($servers | Where-Object { $_.ServerName -ne $instance})
 			}
 		}
-
+		
 		foreach ($server in $servers) {
-			try {
-				$lookup = Resolve-DbaNetworkName $server.ServerName -Turbo -Silent
-				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $lookup.ComputerName
-				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $lookup.IPAddress -PassThru
+			Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $null
+			Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $null
+			Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $null
+			
+			if ($ResolveNetworkName) {
+				try {
+					$lookup = Resolve-DbaNetworkName $server.ServerName
+					Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $lookup.ComputerName
+					Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $lookup.FQDN
+					Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $lookup.IPAddress
+				}
+				catch {
+					try {
+						$lookup = Resolve-DbaNetworkName $server.ServerName -Turbo
+						Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $lookup.ComputerName
+						Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $lookup.FQDN
+						Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $lookup.IPAddress
+					} catch {}
+				}
 			}
-			catch {
-				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $null
-				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $null -PassThru
-			}
+			Select-DefaultView -InputObject $server -Property $defaults
 		}
+	}
+	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Test-DbaRegisteredServerName
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlRegisteredServerName
 	}
 }
