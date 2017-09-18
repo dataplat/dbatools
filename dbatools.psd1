@@ -108,7 +108,7 @@
 		'Watch-DbaDbLogin',
 		'Expand-DbaTLogResponsibly',
 		'Test-DbaMigrationConstraint',
-		'Get-DbaRegisteredServerName',
+		'Get-DbaRegisteredServer',
 		'Test-DbaNetworkLatency',
 		'Find-DbaDuplicateIndex',
 		'Show-DbaServerFileSystem',
@@ -436,7 +436,8 @@
 	'Get-DbaDatabaseFreeSpace',
 	'Invoke-DbaSqlcmd',
 	'Get-DbaQueryStoreConfig',
-	'Set-DbaQueryStoreConfig'
+	'Set-DbaQueryStoreConfig',
+	'Get-DbaRegisteredServerName'
 	
 	
 	# List of all modules packaged with this module
