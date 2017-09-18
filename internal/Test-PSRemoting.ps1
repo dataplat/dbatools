@@ -1,37 +1,37 @@
 #requires -version 3.0
  
-Function Test-PSRemoting {
+function Test-PSRemoting {
 <#
 Jeff Hicks
 https://www.petri.com/test-network-connectivity-powershell-test-connection-cmdlet
 #>
   [cmdletbinding()]
- 
-  Param(
+  param(
     [Parameter(Position=0,Mandatory,HelpMessage = "Enter a computername",ValueFromPipeline)]
     [ValidateNotNullorEmpty()]
     [string]$Computername,
-    $Credential = [System.Management.Automation.PSCredential]::Empty
+    $Credential = [System.Management.Automation.PSCredential]::Empty,
+	[switch]$Silent
   )
  
-  Begin {
-    Write-Message -Level Verbose -Message "Starting $($MyInvocation.Mycommand)"
+  begin {
+  	Write-Message -Level Verbose -Message "Starting $($MyInvocation.Mycommand)"
   } #begin
  
-  Process {
+  process {
     Write-Message -Level Verbose -Message "Testing $computername"
-    Try {
+    try {
       $r = Test-WSMan -ComputerName $Computername -Credential $Credential -Authentication Default -ErrorAction Stop
       $True 
     }
-    Catch {
+    catch {
       Stop-Function -Message "Remote testing failed for computer $ComputerName" -Target $ComputerName -ErrorRecord $_ -Continue
       return $false
     }
     
   } #Process
  
-  End {
+  end {
     Write-Message -Level Verbose -Message "Ending $($MyInvocation.Mycommand)"
   } #end
  
