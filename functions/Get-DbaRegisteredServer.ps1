@@ -9,7 +9,7 @@ function Get-DbaRegisteredServer {
 		.PARAMETER SqlInstance
 			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-	.PARAMETER SqlCredential
+		.PARAMETER SqlCredential
 			SqlCredential object to connect as. If not specified, current Windows login will be used.
 
 		.PARAMETER Group
