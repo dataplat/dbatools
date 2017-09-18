@@ -1,42 +1,50 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
+. "..\internal\Connect-SqlInstance.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	
 	Context "Command actually works" {
 		
-		It "stops some services" {
-			{ Stop-DbaSqlService -ComputerName $instances -Type Agent } | Should Not Throw
-			$services = Get-DbaSqlService -ComputerName $instances -Type Agent
-			foreach ($service in $services) {
-				$service.State | Should Be 'Stopped'
-			}
+		$server = Connect-SqlInstance -SqlInstance $script:instance1
+		$instanceName = $server.ServiceName
+		$computerName = $server.NetName
+
+		
+		#Stop services using native cmdlets
+		if ($instanceName -eq 'MSSQLSERVER') {
+			$serviceName = "SQLSERVERAGENT"
 		}
+		else {
+			$serviceName = "SqlAgent`$$instanceName"
+		}
+		Get-Service -ComputerName $computerName -Name $serviceName | Stop-Service -WarningAction SilentlyContinue | Out-Null
 		
 		It "starts the services back" {
-			{ Start-DbaSqlService -ComputerName $instances -Type Agent } | Should Not Throw
-			$services = Get-DbaSqlService -ComputerName $instances -Type Agent
+			$services = Start-DbaSqlService -ComputerName $script:instance1 -Type Agent -InstanceName $instanceName
+			$services | Should Not Be $null
 			foreach ($service in $services) {
 				$service.State | Should Be 'Running'
+				$service.Status | Should Be 'Successful'
 			}
 		}
 		
-		$server = Connect-DbaSqlServer -SqlInstance $script:instance1
-		
-		It "stops some services through pipeline" {
-			{ Get-DbaSqlService -ComputerName $instances -InstanceName $server.ServiceName -Type Agent,Engine | Stop-DbaSqlService } | Should Not Throw
-			$services = Get-DbaSqlService -ComputerName $instances -InstanceName $server.ServiceName -Type Agent,Engine
-			foreach ($service in $services) {
-				$service.State | Should Be 'Stopped'
-			}
+		#Stop services using native cmdlets
+		if ($instanceName -eq 'MSSQLSERVER') {
+			$serviceName = "SQLSERVERAGENT", "MSSQLSERVER"
 		}
+		else {
+			$serviceName = "SqlAgent`$$instanceName", "MsSql`$$instanceName"
+		}
+		foreach ($sn in $servicename) { Get-Service -ComputerName $computerName -Name $sn | Stop-Service -WarningAction SilentlyContinue | Out-Null }
 		
 		It "starts the services back through pipeline" {
-			{ Get-DbaSqlService -ComputerName $instances -InstanceName $server.ServiceName -Type Agent,Engine | Start-DbaSqlService } | Should Not Throw
-			$services = Get-DbaSqlService -ComputerName $instances -InstanceName $server.ServiceName -Type Agent,Engine
+			$services = Get-DbaSqlService -ComputerName $script:instance1 -InstanceName $instanceName -Type Agent, Engine | Start-DbaSqlService
+			$services | Should Not Be $null
 			foreach ($service in $services) {
 				$service.State | Should Be 'Running'
+				$service.Status | Should Be 'Successful'
 			}
 		}
 	}
