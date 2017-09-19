@@ -116,7 +116,7 @@ Function Restore-DBFromFilteredArray {
                 if ($File.BackupPath -notlike "http*") {
                     Write-Message -Level Verbose -Message "Checking $($File.BackupPath) exists"
                     if ((Test-DbaSqlPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $File.BackupPath) -eq $false) {
-                        Write-Message -Level VeryVerbose "$($File.backupPath) is missing"
+                        Write-Message -Level VeryVerbose -Message "$($File.backupPath) is missing"
                         $MissingFiles += $File.BackupPath
                     }
                 }
