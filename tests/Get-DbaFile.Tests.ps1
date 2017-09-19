@@ -11,7 +11,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$server.Query("CREATE DATABASE $db")
 		}
 		AfterAll {
-			$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db | Remove-DbaDatabase
+			$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db | Remove-DbaDatabase -Confirm:$false
 		}
 		
 		$results = Get-DbaFile -SqlInstance $script:instance2
