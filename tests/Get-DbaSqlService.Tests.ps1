@@ -1,7 +1,7 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "..\internal\Connect-SqlInstance.ps1"
+. "$PSScriptRoot\..\internal\Connect-SqlInstance.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	
@@ -16,7 +16,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		$results = Get-DbaSqlService -ComputerName $script:instance1 -Type Agent
 		
-		It "shows only one type of service" {
+		It "shows only one service type" {
 			foreach ($result in $results) {
 				$result.DisplayName -match "Agent" | Should Be $true
 			}
@@ -25,10 +25,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
 		$results = Get-DbaSqlService -ComputerName $script:instance1 -InstanceName $instanceName -Type Agent
 		
-		It "shows services from a specific instance" {
-			foreach ($result in $results) {
-				$result.ServiceType| Should Be "Agent" 
-			}
+		It "shows a service from a specific instance" {
+			$results.ServiceType| Should Be "Agent" 
 		}
 				
 		$services = Get-DbaSqlService -ComputerName $script:instance1 -Type Agent -InstanceName $instanceName
