@@ -27,7 +27,8 @@ function Enable-DbaAgHadr {
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
-			Original Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
+			Tags: DisasterRecovery, AG, AvailabilityGroup
+			Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -90,14 +91,14 @@ function Enable-DbaAgHadr {
 			$sqlService = $sqlwmi.Services[$instanceName]
 
 			if ($noChange -eq $false) {
-				if ($PSCmdlet.ShouldProcess($instance,"Changing Hadr from $isHadrEnabled to $Enabled for $instance")) {
+				if ($PSCmdlet.ShouldProcess($instance, "Changing Hadr from $isHadrEnabled to $Enabled for $instance")) {
 					$sqlService.ChangeHadrServiceSetting($Enabled)
 				}
 				if (Test-Bound 'Force') {
-					if ($PSCmdlet.ShouldProcess($instance,"Force provided, restarting Engine and Agent service for $instance on $computerFullName")) {
+					if ($PSCmdlet.ShouldProcess($instance, "Force provided, restarting Engine and Agent service for $instance on $computerFullName")) {
 						try {
-							Stop-DbaSqlService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent,Engine
-							Start-DbaSqlService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent,Engine
+							Stop-DbaSqlService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
+							Start-DbaSqlService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
 						}
 						catch {
 							Stop-Function -Message "Issue restarting $instance" -Target $instance -Continue
@@ -109,9 +110,9 @@ function Enable-DbaAgHadr {
 				[PSCustomObject]@{
 					ComputerName = $computerFullName
 					InstanceName = $instanceName
-					SqlInstance = $instance.FullSmoName
+					SqlInstance  = $instance.FullSmoName
 					HadrPrevious = $currentState.IsHadrEnabled
-					HadrCurrent = $newState.IsHadrEnabled
+					HadrCurrent  = $newState.IsHadrEnabled
 				}
 			}
 		} # foreach instance

@@ -23,7 +23,7 @@ function Get-DbaAgReplica {
 
 		.NOTES
 			Tags: DisasterRecovery, AG, AvailabilityGroup, Replica
-			Original Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
+			Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

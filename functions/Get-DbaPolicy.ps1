@@ -25,7 +25,7 @@ Function Get-DbaPolicy {
 	If this switch is enabled, the internal messaging functions will be silenced. 
 
 	.NOTES
-	Original Author: Stephen Bennett (https://sqlnotesfromtheunderground.wordpress.com/)
+	Author: Stephen Bennett (https://sqlnotesfromtheunderground.wordpress.com/)
 	Tags: Policy, PoilcyBasedManagement
 
 	Website: https://dbatools.io

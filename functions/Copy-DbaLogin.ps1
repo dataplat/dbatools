@@ -498,16 +498,6 @@ function Copy-DbaLogin {
 			}
 		}
 
-		if ($Login) {
-			$LoginParms += @{ 'Logins' = $Login }
-		}
-		elseif ($ExcludeLogin) {
-			$LoginParms += @{ 'Exclude' = $ExcludeLogin }
-		}
-		else {
-			$Login = $sourceServer.Logins.Name
-		}
-
 		return $serverParms
 	}
 	
@@ -518,12 +508,12 @@ function Copy-DbaLogin {
 		}
 
 		if ($SyncOnly) {
-			Sync-DbaSqlLoginPermission -Source $sourceServer -Destination $destServer $loginparms
+			Sync-DbaSqlLoginPermission -Source $sourceServer -Destination $destServer -Login $Login -ExcludeLogin $ExcludeLogin
 			return
 		}
 
 		if ($OutFile) {
-			Export-SqlLogin -SqlInstance $sourceServer -FilePath $OutFile $loginparms
+			Export-DbaLogin -SqlInstance $sourceServer -FilePath $OutFile -Login $Login -ExcludeLogin $ExcludeLogin
 			return
 		}
 
@@ -533,16 +523,16 @@ function Copy-DbaLogin {
 
 		Copy-Login -sourceserver $sourceServer -destserver $destServer -Login $Login -Exclude $ExcludeLogin -Force $force
 
-		$sa = $sourceServer.Logins | Where-Object id -eq 1
-		$destSa = $destServer.Logins | Where-Object id -eq 1
-		$saName = $sa.Name
-
-		if ($saName -ne $destSa.name -and $SyncSaName) {
-			Write-Message -Level Verbose -Message "Changing sa username to match source ($saName)."
-
-			if ($Pscmdlet.ShouldProcess($destination, "Changing sa username to match source ($saName)")) {
-				$destSa.Rename($saName)
-				$destSa.Alter()
+		if ($SyncSaName) {
+			$sa = $sourceServer.Logins | Where-Object id -eq 1
+			$destSa = $destServer.Logins | Where-Object id -eq 1
+			$saName = $sa.Name
+			if ($saName -ne $destSa.name) {
+				Write-Message -Level Verbose -Message "Changing sa username to match source ($saName)."
+				if ($Pscmdlet.ShouldProcess($destination, "Changing sa username to match source ($saName)")) {
+					$destSa.Rename($saName)
+					$destSa.Alter()
+				}
 			}
 		}
 	}

@@ -13,7 +13,7 @@ function Test-DbaDatabaseOwner {
 		Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
 
 	.NOTES
-		Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
+		Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
 		Website: https://dbatools.io
 		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

@@ -33,7 +33,7 @@ By default system databases are ignored but you can include them within the sear
 Use this switch to disable any kind of verbose messages
 
 .NOTES
-Original Author: Cláudio Silva (@ClaudioESSilva)
+Author: Cláudio Silva (@ClaudioESSilva)
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

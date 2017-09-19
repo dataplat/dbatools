@@ -48,7 +48,7 @@ function Export-DbaUser {
 
 		.NOTES
 			Tags: User, Export
-			Original Author: Claudio Silva (@ClaudioESSilva)
+			Author: Claudio Silva (@ClaudioESSilva)
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

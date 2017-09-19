@@ -1,73 +1,80 @@
 Function Restart-DbaSqlService {
 <#
-    .SYNOPSIS
-    Restarts SQL Server services on a computer. 
+	.SYNOPSIS
+	Restarts SQL Server services on a computer. 
 
-    .DESCRIPTION
-    Restarts the SQL Server related services on one or more computers. Will follow SQL Server service dependencies.
+	.DESCRIPTION
+	Restarts the SQL Server related services on one or more computers. Will follow SQL Server service dependencies.
 
-    Requires Local Admin rights on destination computer(s).
+	Requires Local Admin rights on destination computer(s).
 
-    .PARAMETER ComputerName
-    The SQL Server (or server in general) that you're connecting to. This command handles named instances.
+	.PARAMETER ComputerName
+	The SQL Server (or server in general) that you're connecting to. This command handles named instances.
 
-    .PARAMETER InstanceName
-    Only affects services that belong to the specific instances.
-    
-    .PARAMETER Credential
-    Credential object used to connect to the computer as a different user.
-    
-    .PARAMETER Type
-    Use -Type to collect only services of the desired SqlServiceType.
-    Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
-    
-    .PARAMETER Timeout
-    How long to wait for the start/stop request completion before moving on. Specify 0 to wait indefinitely.
-    
-    .PARAMETER ServiceCollection
-    A collection of services from Get-DbaSqlService
-    
-    .PARAMETER Silent
-		Use this switch to disable any kind of verbose messages
-		
-		.PARAMETER WhatIf
-		Shows what would happen if the cmdlet runs. The cmdlet is not run.
-		
-		.PARAMETER Confirm
-		Prompts you for confirmation before running the cmdlet.
+	.PARAMETER InstanceName
+	Only affects services that belong to the specific instances.
 
-    .NOTES
-    Author: Kirill Kravtsov( @nvarscar )
+	.PARAMETER Credential
+	Credential object used to connect to the computer as a different user.
 
-    dbatools PowerShell module (https://dbatools.io)
-    Copyright (C) 2017 Chrissy LeMaire
-    This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-    You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+	.PARAMETER Type
+	Use -Type to collect only services of the desired SqlServiceType.
+	Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
 
-    .LINK
-    https://dbatools.io/Restart-DbaSqlService
+	.PARAMETER Timeout
+	How long to wait for the start/stop request completion before moving on. Specify 0 to wait indefinitely.
 
-    .EXAMPLE
-    Restart-DbaSqlService -ComputerName sqlserver2014a
+	.PARAMETER ServiceCollection
+	A collection of services from Get-DbaSqlService
 
-    Restarts the SQL Server related services on computer sqlserver2014a.
+	.PARAMETER Silent
+	Use this switch to disable any kind of verbose messages
 
-    .EXAMPLE   
-    'sql1','sql2','sql3'| Get-DbaSqlService | Restart-DbaSqlService
+	.PARAMETER WhatIf
+	Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
-    Gets the SQL Server related services on computers sql1, sql2 and sql3 and restarts them.
+	.PARAMETER Confirm
+	Prompts you for confirmation before running the cmdlet.
 
-    .EXAMPLE
-    Restart-DbaSqlService -ComputerName sql1,sql2 -Instance MSSQLSERVER
+	.PARAMETER Force
+	Will stop dependent SQL Server agents when stopping Engine services.
 
-    Restarts the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.
+	.NOTES
+	Author: Kirill Kravtsov( @nvarscar )
 
-    .EXAMPLE
-    Restart-DbaSqlService -ComputerName $MyServers -Type SSRS
+	dbatools PowerShell module (https://dbatools.io)
+	Copyright (C) 2017 Chrissy LeMaire
+	This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+	You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
-    Restarts the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
+	.LINK
+	https://dbatools.io/Restart-DbaSqlService
 
+	.EXAMPLE
+	Restart-DbaSqlService -ComputerName sqlserver2014a
+
+	Restarts the SQL Server related services on computer sqlserver2014a.
+
+	.EXAMPLE   
+	'sql1','sql2','sql3'| Get-DbaSqlService | Restart-DbaSqlService
+
+	Gets the SQL Server related services on computers sql1, sql2 and sql3 and restarts them.
+
+	.EXAMPLE
+	Restart-DbaSqlService -ComputerName sql1,sql2 -Instance MSSQLSERVER
+
+	Restarts the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.
+
+	.EXAMPLE
+	Restart-DbaSqlService -ComputerName $MyServers -Type SSRS
+
+	Restarts the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
+
+	.EXAMPLE
+	Restart-DbaSqlService -ComputerName sql1 -Type Engine -Force
+
+	Restarts SQL Server database engine services on sql1 forcing dependent SQL Server Agent services to restart as well.
 #>
 	[CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess = $true)]
 	Param (
@@ -82,12 +89,18 @@ Function Restart-DbaSqlService {
 		[object[]]$ServiceCollection,
 		[int]$Timeout = 30,
 		[PSCredential]$Credential,
+		[switch]$Force,
 		[switch]$Silent
 	)
 	begin {
 		$processArray = @()
 		if ($PsCmdlet.ParameterSetName -eq "Server") {
-			$serviceCollection = Get-DbaSqlService @PSBoundParameters
+			$serviceParams = @{ ComputerName = $ComputerName }
+			if ($InstanceName) { $serviceParams.InstanceName = $InstanceName }
+			if ($Type) { $serviceParams.Type = $Type }
+			if ($Credential) { $serviceParams.Credential = $Credential }
+			if ($Silent) { $serviceParams.Silent = $Silent }
+			$serviceCollection = Get-DbaSqlService @serviceParams
 		}
 	}
 	process {
@@ -95,11 +108,31 @@ Function Restart-DbaSqlService {
 		$processArray += $serviceCollection
 	}
 	end {
-		$processArray = $processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) }
-		if ($processArray) {
-			Update-ServiceStatus -ServiceCollection $processArray -Action 'stop' -Timeout $Timeout -Silent $Silent
-			Update-ServiceStatus -ServiceCollection $processArray -Action 'start' -Timeout $Timeout -Silent $Silent
+		$processArray = [array]($processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) })
+		foreach ($service in $processArray) {
+			if ($Force -and $service.ServiceType -eq 'Engine' -and !($processArray | Where-Object { $_.ServiceType -eq 'Agent' -and $_.InstanceName -eq $service.InstanceName -and $_.ComputerName -eq $service.ComputerName })) {
+				Write-Message -Level Verbose -Message "Adding Agent service to the list for service $($service.ServiceName) on $($service.ComputerName), since -Force has been specified"
+				#Construct parameters to call Get-DbaSqlService
+				$serviceParams = @{ 
+					ComputerName = $service.ComputerName 
+					InstanceName = $service.InstanceName
+					Type         = 'Agent'
+				}
+				if ($Credential) { $serviceParams.Credential = $Credential }
+				if ($Silent) { $serviceParams.Silent = $Silent }
+				$processArray += @(Get-DbaSqlService @serviceParams)
+			}
 		}
-		else { Write-Message -Level Warning -Silent $Silent -Message "No SQL Server services found with current parameters." }
+		if ($processArray) {
+			$services = Update-ServiceStatus -ServiceCollection $processArray -Action 'stop' -Timeout $Timeout -Silent $Silent
+			foreach ($service in ($services | Where-Object { $_.Status -eq 'Failed'})) {
+				$service
+			}
+			$services = $services | Where-Object { $_.Status -eq 'Successful'}
+			if ($services) {
+				Update-ServiceStatus -ServiceCollection $services -Action 'restart' -Timeout $Timeout -Silent $Silent
+			}
+		}
+		else { Stop-Function -Silent $Silent -Message "No SQL Server services found with current parameters." }
 	}
 }
