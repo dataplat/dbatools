@@ -52,13 +52,11 @@
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$sqlconnection = $server.ConnectionContext.SqlConnectionObject
-			
 			try {
-				$store = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection)
+				$store = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
 			}
 			catch {
-				Stop-Function -Message "Cannot access Central Management Server on $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+				Stop-Function -Message "Cannot access Central Management Server on $instance." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			Add-Member -Force -InputObject $store -MemberType NoteProperty -Name ComputerName -value $server.NetName
