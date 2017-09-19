@@ -146,7 +146,7 @@ Function Restore-DBFromFilteredArray {
             foreach ($File in ($RestorePoints.Files.filelist.PhysicalName | Sort-Object -Unique)) {
                 Write-Message -Level VeryVerbose -Message "File = $file"
                 if ((Test-DbaSqlPath -Path $File -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential) -ne $true) {
-                    Write-Message -Level VeryVerbose "File doesn't exist, check for parent folder"
+                    Write-Message -Level VeryVerbose -Message "File doesn't exist, check for parent folder"
                     if ((Test-DbaSqlPath -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential) -ne $true) {
                         Write-Message -Level debug -Message "$(Split-Path -Path $File -Parent) does not exist on $sqlinstance"
                         if ((New-DbaSqlDirectory -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential).Created -ne $true) {
