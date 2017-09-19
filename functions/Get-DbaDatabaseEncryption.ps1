@@ -25,7 +25,7 @@ function Get-DbaDatabaseEncryption {
 		Use this switch to disable any kind of verbose messages.
 		
 	.NOTES 
-		Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+		Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 		Website: https://dbatools.io
 		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0

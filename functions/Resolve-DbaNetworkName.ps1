@@ -51,7 +51,7 @@ function Resolve-DbaNetworkName {
 
 		.NOTES
 			Tags: Network, Resolve
-			Original Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+			Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 			Editor: niphlod
 			
 			Website: https://dbatools.io
@@ -77,9 +77,9 @@ function Resolve-DbaNetworkName {
 			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, DNSDomain, Domain, DNSHostEntry, FQDN, DNSHostEntry  for the SQL instance sql2016\sqlexpress and sql2014
 
 		.EXAMPLE
-			Get-DbaRegisteredServerName -SqlInstance sql2014 | Resolve-DbaNetworkName
+			Get-DbaRegisteredServer -SqlInstance sql2014 | Resolve-DbaNetworkName
 
-			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaRegisteredServerName
+			Returns a custom object displaying InputName, ComputerName, IPAddress, DNSHostName, Domain, FQDN for all SQL Servers returned by Get-DbaRegisteredServer
 	#>
 	[CmdletBinding()]
 	param (
@@ -193,10 +193,9 @@ function Resolve-DbaNetworkName {
 						}
 						Write-Message -Level VeryVerbose -Message "Getting computer information from $RemoteComputer"
 						$ScBlock = {
-							$reg = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine, [Microsoft.Win32.RegistryView]::Default)
-							$key = $reg.OpenSubKey("SYSTEM\CurrentControlSet\services\Tcpip\Parameters")
+							$IPGProps = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
 							return [pscustomobject]@{
-								'DNSDomain' = $key.GetValue("Domain")
+								'DNSDomain' = $IPGProps.DomainName
 							}
 						}
 						if (Test-Bound "Credential") {

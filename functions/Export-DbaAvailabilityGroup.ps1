@@ -1,69 +1,69 @@
 function Export-DbaAvailabilityGroup {
 	<#
-.SYNOPSIS
-Exports SQL Server Availability Groups to a T-SQL file. 
+		.SYNOPSIS
+		Exports SQL Server Availability Groups to a T-SQL file. 
 
-.DESCRIPTION
-Exports SQL Server Availability Groups creation scripts to a T-SQL file. This is a function that is not available in SSMS.
+		.DESCRIPTION
+		Exports SQL Server Availability Groups creation scripts to a T-SQL file. This is a function that is not available in SSMS.
 
-.PARAMETER SqlInstance
-The SQL Server instance name. SQL Server 2012 and above supported.
+		.PARAMETER SqlInstance
+		The SQL Server instance name. SQL Server 2012 and above supported.
 
-.PARAMETER FilePath
-The directory name where the output files will be written. A sub directory with the format 'ServerName$InstanceName' will be created. A T-SQL scripts named 'AGName.sql' will be created under this subdirectory for each scripted Availability Group.
+		.PARAMETER FilePath
+		The directory name where the output files will be written. A sub directory with the format 'ServerName$InstanceName' will be created. A T-SQL scripts named 'AGName.sql' will be created under this subdirectory for each scripted Availability Group.
 
-.PARAMETER AvailabilityGroups
-Specify which Availability Groups to export (Dynamic Param)
+		.PARAMETER AvailabilityGroups
+		Specify which Availability Groups to export (Dynamic Param)
 
-.PARAMETER NoClobber
-Do not overwrite existing export files.
+		.PARAMETER NoClobber
+		Do not overwrite existing export files.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+		.PARAMETER SqlCredential
+		Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+		$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
 
-SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+		SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER WhatIf
-Shows you what it'd output if you were to run the command
-	
-.PARAMETER Confirm
-Confirms each step/line of output
-	
-.NOTES 
-Author: Chris Sommer (@cjsommer), cjsommmer.com
+		.PARAMETER WhatIf
+		Shows you what it'd output if you were to run the command
+			
+		.PARAMETER Confirm
+		Confirms each step/line of output
+			
+		.NOTES
+		Tags: DisasterRecovery, AG, AvailabilityGroup
+		Author: Chris Sommer (@cjsommer), cjsommmer.com
 
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+		dbatools PowerShell module (https://dbatools.io)
+		Copyright (C) 2016 Chrissy LeMaire
+		This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+		You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
-.LINK
-https://dbatools.io/Export-DbaAvailabilityGroup
+		.LINK
+		https://dbatools.io/Export-DbaAvailabilityGroup
 
-.EXAMPLE
-Export-DbaAvailabilityGroup -SqlInstance sql2012
+		.EXAMPLE
+		Export-DbaAvailabilityGroup -SqlInstance sql2012
 
-Exports all Availability Groups from SQL server "sql2012". Output scripts are written to the Documents\SqlAgExports directory by default.
-	
-.EXAMPLE
-Export-DbaAvailabilityGroup -SqlInstance sql2012 -FilePath C:\temp\availability_group_exports
+		Exports all Availability Groups from SQL server "sql2012". Output scripts are written to the Documents\SqlAgExports directory by default.
+			
+		.EXAMPLE
+		Export-DbaAvailabilityGroup -SqlInstance sql2012 -FilePath C:\temp\availability_group_exports
 
-Exports all Availability Groups from SQL server "sql2012". Output scripts are written to the C:\temp\availability_group_exports directory.
+		Exports all Availability Groups from SQL server "sql2012". Output scripts are written to the C:\temp\availability_group_exports directory.
 
-.EXAMPLE
-Export-DbaAvailabilityGroup -SqlInstance sql2012 -FilePath 'C:\dir with spaces\availability_group_exports' -AvailabilityGroups AG1,AG2
+		.EXAMPLE
+		Export-DbaAvailabilityGroup -SqlInstance sql2012 -FilePath 'C:\dir with spaces\availability_group_exports' -AvailabilityGroups AG1,AG2
 
-Exports Availability Groups AG1 and AG2 from SQL server "sql2012". Output scripts are written to the C:\dir with spaces\availability_group_exports directory.
+		Exports Availability Groups AG1 and AG2 from SQL server "sql2012". Output scripts are written to the C:\dir with spaces\availability_group_exports directory.
 
-.EXAMPLE
-Export-DbaAvailabilityGroup -SqlInstance sql2014 -FilePath C:\temp\availability_group_exports -NoClobber
+		.EXAMPLE
+		Export-DbaAvailabilityGroup -SqlInstance sql2014 -FilePath C:\temp\availability_group_exports -NoClobber
 
-Exports all Availability Groups from SQL server "sql2014". Output scripts are written to the C:\temp\availability_group_exports directory. If the export file already exists it will not be overwritten.
-
-#>
+		Exports all Availability Groups from SQL server "sql2014". Output scripts are written to the C:\temp\availability_group_exports directory. If the export file already exists it will not be overwritten.
+	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]

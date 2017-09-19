@@ -10,45 +10,47 @@ function Find-DbaUnusedIndex {
 			We show the type of compression so you can make a more considered decision.
 			For now only supported for CLUSTERED and NONCLUSTERED indexes
 
-			You can select the indexes you want to drop on the gridview and by click OK the drop statement will be generated.
+			You can select the indexes you want to drop on the gridview and by clicking OK the drop statement will be generated.
 
-		.PARAMETER SqlInstance
-			The SQL Server instance.
+        .PARAMETER SqlInstance
+			The SQL Server you want to check for unused indexes.
+        
+        .PARAMETER SqlCredential
+ 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-		.PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			$cred = Get-Credential, then pass $cred object to the -SqlCredential parameter.
 
-			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Database
-			The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+			The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
 		.PARAMETER ExcludeDatabase
-			The database(s) to exclude - this list is auto-populated from the server
+			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
 		.PARAMETER FilePath
-			The filepath of the file to write to.
+			Specifies the path of a file to write the DROP statements to.
 
 		.PARAMETER NoClobber
-			Do not overwrite file
-
+			If this switch is enabled, the output file will not be overwritten.
+			
 		.PARAMETER Append
-			Append to file
+			If this switch is enabled, content will be appended to the output file.
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Indexes
-			Original Author: Aaron Nelson (@SQLvariant), SQLvariant.com
+			Author: Aaron Nelson (@SQLvariant), SQLvariant.com
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -60,27 +62,27 @@ function Find-DbaUnusedIndex {
 		.EXAMPLE
 			Find-DbaUnusedIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-UnusedIndexes.sql
 
-			Exports SQL for the Unused indexes in server "sql2005" chosen on grid-view and writes them to the file "C:\temp\sql2005-UnusedIndexes.sql"
+			Generates the SQL statements to drop the selected unused indexes on server "sql2005". The statements are written to the file "C:\temp\sql2005-UnusedIndexes.sql"
 
 		.EXAMPLE
 			Find-DbaUnusedIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-UnusedIndexes.sql -Append
 
-			Exports SQL for the Unused indexes in server "sql2005" chosen on grid-view and writes/appends them to the file "C:\temp\sql2005-UnusedIndexes.sql"
+			Generates the SQL statements to drop the selected unused indexes on server "sql2005". The statements are written to the file "C:\temp\sql2005-UnusedIndexes.sql", appending if the file already exists.
 
 		.EXAMPLE
 			Find-DbaUnusedIndex -SqlInstance sqlserver2016 -SqlCredential $cred
 
-			Will find exact Unused indexes on all user databases present on sqlserver2016 will be verified using SQL credentials.
+			Generates the SQL statements to drop the selected unused indexes on server "sqlserver2016", using SQL Authentication to connect to the database.
 
 		.EXAMPLE
 			Find-DbaUnusedIndex -SqlInstance sqlserver2016 -Database db1, db2
 
-			Will find exact Unused indexes on both db1 and db2 databases
+			Generates the SQL Statement to to drop selected indexes in databases db1 & db2 on server "sqlserver2016".
 
 		.EXAMPLE
 			Find-DbaUnusedIndex -SqlInstance sqlserver2016
 
-			Will find exact Unused indexes on all user databases
+			Generates the SQL statements to drop selected indexes on all user databases.
 	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
@@ -120,7 +122,9 @@ function Find-DbaUnusedIndex {
 				AND i.type_desc NOT IN ('HEAP', 'CLUSTERED COLUMNSTORE')"
 
 		if ($FilePath.Length -gt 0) {
-			if ($FilePath -notlike "*\*") { $FilePath = ".\$FilePath" }
+			if ($FilePath -notlike "*\*") {
+				$FilePath = ".\$FilePath"
+			}
 			$directory = Split-Path $FilePath
 			$exists = Test-Path $directory
 
@@ -130,14 +134,14 @@ function Find-DbaUnusedIndex {
 			}
 		}
 
-		Write-Message -Level Output -Message "Attempting to connect to Sql Server.."
+		Write-Message -Level Output -Message "Attempting to connect to Sql Server."
 		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
 	process {
 		if (Test-FunctionInterrupt) { return }
 
 		if ($server.VersionMajor -lt 9) {
-			Stop-Function -Message "This function does not support versions lower than SQL Server 2005 (v9)"
+			Stop-Function -Message "This function does not support versions lower than SQL Server 2005 (v9)."
 			return
 		}
 
@@ -178,13 +182,15 @@ function Find-DbaUnusedIndex {
 
 		if ($database.Count -gt 0) {
 			foreach ($db in $database) {
-				if ($ExcludeDatabase -contains $db -or $null -eq $server.Databases[$db]) { continue }
+				if ($ExcludeDatabase -contains $db -or $null -eq $server.Databases[$db]) {
+					continue
+				}
 				if ($server.Databases[$db].IsAccessible -eq $false) {
 					Write-Message -Level Warning -Message "Database [$db] is not accessible."
 					continue
 				}
 				try {
-					Write-Message -Level Output -Message "Getting indexes from database '$db'"
+					Write-Message -Level Output -Message "Getting indexes from database '$db'."
 
 					$sql = $unusedQuery
 
@@ -214,7 +220,7 @@ function Find-DbaUnusedIndex {
 								$sqlout = "/*`r`n"
 								$sqlout += "`tScript generated @ $(Get-Date -format "yyyy-MM-dd HH:mm:ss.ms")`r`n"
 								$sqlout += "`tDatabase: $($db)`r`n"
-								$sqlout += "`tConfirm that you have choosen the right indexes before execute the drop script`r`n"
+								$sqlout += "`tConfirm that you have chosen the right indexes before execute the drop script`r`n"
 								$sqlout += "*/`r`n"
 
 								foreach ($index in $indexesToDrop) {
@@ -265,7 +271,9 @@ function Find-DbaUnusedIndex {
 		}
 	}
 	end {
-		if (Test-FunctionInterrupt) { return }
+		if (Test-FunctionInterrupt) {
+			return
+		}
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlUnusedIndex
 	}
 }

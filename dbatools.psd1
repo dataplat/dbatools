@@ -11,7 +11,7 @@
 	RootModule			    = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion		    = '0.9.40'
+	ModuleVersion		    = '0.9.46'
 	
 	# ID used to uniquely identify this module
 	GUID				    = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -108,7 +108,7 @@
 		'Watch-DbaDbLogin',
 		'Expand-DbaTLogResponsibly',
 		'Test-DbaMigrationConstraint',
-		'Get-DbaRegisteredServerName',
+		'Get-DbaRegisteredServer',
 		'Test-DbaNetworkLatency',
 		'Find-DbaDuplicateIndex',
 		'Show-DbaServerFileSystem',
@@ -353,7 +353,9 @@
 		'Get-DbaUserLevelPermission',
 		'Get-DbaAgHadr',
 		'Get-DbaPolicy',
-		'Find-DbaSimilarTable'
+		'Find-DbaSimilarTable',
+		'Disable-DbaAgHadr',
+		'Enable-DbaAgHadr'
 	)
 	
 	# Cmdlets to export from this module
@@ -434,7 +436,8 @@
 	'Get-DbaDatabaseFreeSpace',
 	'Invoke-DbaSqlcmd',
 	'Get-DbaQueryStoreConfig',
-	'Set-DbaQueryStoreConfig'
+	'Set-DbaQueryStoreConfig',
+	'Get-DbaRegisteredServerName'
 	
 	
 	# List of all modules packaged with this module
@@ -479,8 +482,8 @@
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUiMkSo6enNId5Hu68GUYD6w8g
-# 73CggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUGuSWauVke8+i7y05AE+eHBA/
+# TCOggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -611,22 +614,22 @@
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUJwfr/sa/MzTymhChCoT0kqNq+1kwDQYJKoZIhvcNAQEBBQAE
-# ggEAEmryZohVmStsIgCCU0yPDt3G3HL+AWuDKYIwEc2qYPG02HNaGsYDVC5qr06z
-# ldtdo9PlAUuYvFy4lBUZDEdysp2l2oeuaW3xOpgbb49iPq7ifugD9Dgmkz4JF8Jn
-# zaasbFGY+9mauogSvFZle6lUZKsbDPNlE8OjKxZadsteNh1ZCuy24Q2+AI5ZsCmc
-# dev4t96AMWTWpq8DZtPFMSVqsYjVltoOqc7qNxEDBYWj2SMzvq5VHbL1cELKEJux
-# q81esddeHyUajT2vnNyUjK/KfMFpq/UpvyUiPSr2fG7XHSD3I86MpddD+RKNucfx
-# gzWs+DuTBL34nmH2bZC9c6tFyqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUHVbE5wY+Xn5BrzqPqCRCyQMqBaMwDQYJKoZIhvcNAQEBBQAE
+# ggEAYnhBHOVjtetMJUpzDdKLXbH2FIg2UuuTmof/UMj6k1EZZSAlrT/eNzUIIsIw
+# ycW4ViigNEYrAyJNoci8ysazwcIaYOTt8DeuxV2ASnsS4uSPP17+gRvENYdIqoQr
+# GIynJJxdgTVVnqulDgNMbGJSLZdUTqxEe12jz2wvOVDORouVTg2mG7HEjwr+6X5d
+# BCoYQXy5wVqLchExLbrTaHLwkR6HQBkpvkiFwYmCw1a3ghThdejqUuF+A6eRHpkB
+# xe2bYBMYQpAWmqtA6pQnbTrvw09sSPlf8y6frczAZvixZgiZYt3HyXLauLnnK66o
+# Kfy9TaMrvEaS2jPyTPHWi97/kKGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwOTA2MTU1ODA2WjAj
-# BgkqhkiG9w0BCQQxFgQUyKfM8vhY24Rh6D3Rc0viGkPSw6gwDQYJKoZIhvcNAQEB
-# BQAEggEAe9G9lWPOsFUIwKjutqq7Lw4UzAzuYKh0d8D9hv5oqNuOa31QU9asHz33
-# sR96Yj7qaTKbLJEwEffxMrROf9wHzuiZrk9stCJ5F/wAY23rp0C2SXGoUqeDMbjE
-# LSNStIbq+I7ZHJtS7QMtZfkofd0bXpcflt2KAQOTdDwbC8Xjsi0pMgUE90k+6Y+Q
-# gE9oYBjXifcUpYZFlFg00TnxVxwITiS07xdtXm5yqJ6ngPvvcP6Zld5mXRUV8Xfn
-# HZxvu5nsMlT1o7yzfLyIH/KABYVckIeEgImBoAKd3KzMXUCya7P+5c6Jrm3a3FU7
-# BpeyZeurTZ+TDpCvL/qJX6+hK4tnoQ==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwOTE5MTUzMTU5WjAj
+# BgkqhkiG9w0BCQQxFgQUyLFAXR+iNdAMc8qGOe4if0eP1TUwDQYJKoZIhvcNAQEB
+# BQAEggEAPM37CLRsZx2AwPa+YTMjJngKTS29RaWKdZVMbnwSiVeQurT6VP0kejNJ
+# M7Os6wQCbi8jh85K3M9Z7faiAACImn8taMBqlBrdt+0mYl9v35MQS75LM5otjRV3
+# Cf2lcmLIaPbHi2nB0IQeGymKcbUf8sxQ0wGNzrXkSdS7n2RYHTqZqtYIikeH7cdD
+# Q+LkqWRLS/MiOqGfBQ8qp94KMWd4wJ1bSfNB7xPlAQn7vpXTeDm+2DxQ/3EoqFT9
+# SwkIJIvydo/Vo96sq9i6KHSo/iHNEtiKjOEAEl53Krz2WXpXz/83wr7Y+FGJszqy
+# xB2nIv0Ljwj0x+OkdyxmNelr61Eh0A==
 # SIG # End signature block

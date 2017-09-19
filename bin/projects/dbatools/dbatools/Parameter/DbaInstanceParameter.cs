@@ -244,7 +244,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
             InputObject = Name;
 
             if (string.IsNullOrWhiteSpace(Name))
-                throw new ArgumentException("Bloody hell! Don't give me an empty string for an instance name!", "Name");
+                throw new BloodyHellGiveMeSomethingToWorkWithException("Please provide an instance name", "DbaInstanceParameter");
 
             if (Name == ".")
             {
@@ -299,8 +299,13 @@ namespace Sqlcollaborative.Dbatools.Parameter
             }
             catch (ArgumentException ex)
             {
-                //TODO: I guess this is a problem for non-english versions of windows.
-                if (ex.Message.StartsWith("Keyword not supported:"))
+                string name = "unknown";
+                try
+                {
+                    name = ex.TargetSite.GetParameters()[0].Name;
+                }
+                catch { }
+                if (name == "keyword")
                 {
                     throw;
                 }

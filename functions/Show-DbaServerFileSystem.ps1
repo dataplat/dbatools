@@ -1,20 +1,20 @@
-Function Show-DbaServerFileSystem {
+function Show-DbaServerFileSystem {
 	<#
 		.SYNOPSIS
-			Shows file system on remote SQL Server and returns the directory name of the directory you select.
+			Shows file system on remote SQL Server in a local GUI and returns the selected directory name
 			
 		.DESCRIPTION
-			Similar to the remote file system popup you see when browsing a remote SQL Server in SQL Server Management Studio, this command allows you to traverse the remote SQL Server's file structure.
+			Similar to the remote file system popup you see when browsing a remote SQL Server in SQL Server Management Studio, this function allows you to traverse the remote SQL Server's file structure.
 
 			Show-DbaServerFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.
 			
-		.PARAMETER SqlInstance
-			The SQL Server instance.
-
+        .PARAMETER SqlInstance
+			The SQL Server whose filesystem you want to view.
+        
         .PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+ 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+			$cred = Get-Credential, then pass $cred object to the -SqlCredential parameter.
 
 			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
@@ -38,15 +38,15 @@ Function Show-DbaServerFileSystem {
 		.EXAMPLE
 			Show-DbaServerFileSystem -SqlInstance sqlserver2014a
 		
-			Shows a GUI list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected path.
+			Shows a list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected path.
 			
 		.EXAMPLE   
 			Show-DbaServerFileSystem -Source sqlserver2014a -SqlCredential $cred
 			
-			Shows a GUI list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected path.
+			Shows a list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected path.
 		
 	#>
-    [CmdletBinding(SupportsShouldProcess)]
+	[CmdletBinding(SupportsShouldProcess)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
@@ -54,14 +54,16 @@ Function Show-DbaServerFileSystem {
 		[object]$SqlCredential
 	)
 	
-	BEGIN
-	{
-		try { Add-Type -AssemblyName PresentationFramework }
-		catch { throw "Windows Presentation Framework required but not installed" }
+	begin {
+		try {
+			Add-Type -AssemblyName PresentationFramework
+		}
+		catch {
+			throw "Windows Presentation Framework required but not installed."
+		}
 		
-		Function Add-TreeItem
-		{
-			Param (
+		function Add-TreeItem {
+			param (
 				[string]$name,
 				[object]$parent,
 				[string]$tag
@@ -80,15 +82,13 @@ Function Show-DbaServerFileSystem {
 			$image.Width = 20
 			$image.Stretch = "Fill"
 			
-			if ($name.length -eq 1)
-			{
+			if ($name.length -eq 1) {
 				$image.Source = $diskicon
 				$textblock.Text = "$name`:"
 				$childitem.Tag = "$name`:"
 				
 			}
-			else
-			{
+			else {
 				$image.Source = $foldericon
 				$textblock.Text = $name
 				$childitem.Tag = "$tag\$name"
@@ -103,29 +103,29 @@ Function Show-DbaServerFileSystem {
 			[void]$parent.Items.Add($childitem)
 		}
 		
-		Function Get-SubDirectory
-		{
+		function Get-SubDirectory {
 			Param (
 				[string]$nameSpace,
 				[object]$treeviewItem
 			)
 			
 			$textbox.Text = $nameSpace
-			try { $dirs = $sourceserver.EnumDirectories($nameSpace) }
-			catch { return }
+			try {
+				$dirs = $sourceserver.EnumDirectories($nameSpace)
+			}
+			catch {
+				return
+			}
 			$subdirs = $dirs.Name
 			
-			foreach ($subdir in $subdirs)
-			{
-				if (!$subdir.StartsWith("$") -and $subdir -ne 'System Volume Information')
-				{
+			foreach ($subdir in $subdirs) {
+				if (!$subdir.StartsWith("$") -and $subdir -ne 'System Volume Information') {
 					Add-TreeItem -Name $subdir -Parent $treeviewItem -Tag $nameSpace
 				}
 			}
 		}
 		
-		Function Convert-b64toimg
-		{
+		function Convert-b64toimg {
 			param ($base64)
 			
 			$bitmap = New-Object System.Windows.Media.Imaging.BitmapImage
@@ -143,8 +143,7 @@ Function Show-DbaServerFileSystem {
 		$sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SourceSqlCredential
 	}
 	
-	PROCESS
-	{		
+	process {		
 		# Create XAML form in Visual Studio, ensuring the ListView looks chromeless 
 		[xml]$xaml = '<Window 
 		xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" 
@@ -167,19 +166,21 @@ Function Show-DbaServerFileSystem {
 		
 		$xaml.SelectNodes("//*[@Name]") | ForEach-Object { Set-Variable -Name ($_.Name) -Value $window.FindName($_.Name) -Scope Script }
 		
-		try { $drives = ($sourceserver.EnumAvailableMedia()).Name }
-		catch { throw "No access to remote SQL Server files" }
+		try {
+			$drives = ($sourceserver.EnumAvailableMedia()).Name
+		}
+		catch {
+			throw "No access to remote SQL Server files."
+		}
 		
-		foreach ($drive in $drives)
-		{
+		foreach ($drive in $drives) {
 			$drive = $drive.Replace(":", "")
 			Add-TreeItem -Name $drive -Parent $treeview -Tag $drive
 		}
 		
-		$window.Add_SourceInitialized({
+		$window.Add_SourceInitialized( {
 				[System.Windows.RoutedEventHandler]$Event = {
-					if ($_.OriginalSource -is [System.Windows.Controls.TreeViewItem])
-					{
+					if ($_.OriginalSource -is [System.Windows.Controls.TreeViewItem]) {
 						$treeviewItem = $_.OriginalSource
 						$treeviewItem.items.clear()
 						Get-SubDirectory -NameSpace $treeviewItem.Tag -TreeViewItem $treeviewItem
@@ -189,11 +190,11 @@ Function Show-DbaServerFileSystem {
 				$treeview.AddHandler([System.Windows.Controls.TreeViewItem]::SelectedEvent, $Event)
 			})
 		
-		$okbutton.Add_Click({
+		$okbutton.Add_Click( {
 				$window.Close()
 			})
 		
-		$cancelbutton.Add_Click({
+		$cancelbutton.Add_Click( {
 				$textbox.Text = $null
 				$window.Close()
 			})
@@ -201,11 +202,9 @@ Function Show-DbaServerFileSystem {
 		$null = $window.ShowDialog()
 	}
 	
-	END
-	{
+	end {
 		
-		if ($textbox.Text.length -gt 0)
-		{
+		if ($textbox.Text.length -gt 0) {
 			$drive = $textbox.Text + '\'
 			return $drive
 		}

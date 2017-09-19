@@ -2,6 +2,7 @@
 using System.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Sqlcollaborative.Dbatools.Connection;
+using Sqlcollaborative.Dbatools.Exceptions;
 
 namespace Sqlcollaborative.Dbatools.Parameter
 {
@@ -20,7 +21,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
             Assert.IsFalse(dbaInstanceParamater.IsConnectionString);
         }
 
-        [ExpectedException(typeof(ArgumentException), "Bloody hell! Don't give me an empty string for an instance name!")]
+        [ExpectedException(typeof(BloodyHellGiveMeSomethingToWorkWithException), "Bloody hell! Don't give me an empty string for an instance name!")]
         [TestMethod]
         public void TestEmptyString()
         {

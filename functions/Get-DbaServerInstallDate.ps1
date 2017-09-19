@@ -25,7 +25,7 @@ Use this switch to disable any kind of verbose messages
 
 .NOTES
 Tags: CIM 
-Original Author: Mitchell Hamann (@SirCaptainMitch), mitchellhamann.com
+Author: Mitchell Hamann (@SirCaptainMitch), mitchellhamann.com
 	
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -55,7 +55,7 @@ Get-DbaServerInstallDate -SqlInstance sqlserver2014a, sql2016 -IncludeWindows
 Returns an object with the Windows Install date and the SQL install date as a string. 
 
 .EXAMPLE   
-Get-DbaRegisteredServerName -SqlInstance sql2014 | Get-DbaServerInstallDate
+Get-DbaRegisteredServer -SqlInstance sql2014 | Get-DbaServerInstallDate
 
 Returns an object with SQL Instance install date as a string for every server listed in the Central Management Server on sql2014
 	

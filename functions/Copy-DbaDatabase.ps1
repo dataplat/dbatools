@@ -111,7 +111,7 @@ function Copy-DbaDatabase {
 
 		.NOTES
 			Tags: Migration, DisasterRecovery, Backup, Restore
-			Original Author: Chrissy LeMaire (@cl), netnerds.net
+			Author: Chrissy LeMaire (@cl), netnerds.net
 			Requires: sysadmin access on SQL Servers
 			Limitations: Doesn't cover what it doesn't cover (replication, certificates, etc)
 						SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
