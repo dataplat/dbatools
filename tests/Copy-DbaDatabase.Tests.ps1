@@ -10,12 +10,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		$DBNameAttachDetach = "dbatoolsci_detachattach"
 		# cleanup
 		foreach ($instance in $Instances) {
-			Remove-DbaDatabase -SqlInstance $instance -Confirm:$false -Database $DBNameBackupRestore,$DBNameAttachDetach
+			Remove-DbaDatabase -Confirm:$false -SqlInstance $instance -Database $DBNameBackupRestore,$DBNameAttachDetach
 		}
 	}
 	AfterAll {
 		foreach ($instance in $Instances) {
-			Remove-DbaDatabase -SqlInstance $instance -Confirm:$false -Database $DBNameBackupRestore,$DBNameAttachDetach
+			Remove-DbaDatabase -Confirm:$false -SqlInstance $instance -Database $DBNameBackupRestore,$DBNameAttachDetach
 		}
 	}
 	
@@ -49,7 +49,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	foreach ($instance in $Instances) {
-		Remove-DbaDatabase -SqlInstance $instance -Confirm:$false -Database $DBNameBackupRestore
+		Remove-DbaDatabase -Confirm:$false -SqlInstance $instance -Database $DBNameBackupRestore
 	}
 	
 	Context "Detach, copies and attaches database successfully." {
