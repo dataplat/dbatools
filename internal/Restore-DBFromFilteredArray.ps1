@@ -253,7 +253,7 @@ Function Restore-DBFromFilteredArray {
                 break
             }
             $LogicalFileMovesString = $LogicalFileMoves -Join ", `n"
-            Write-Message -Level VeryVerbose -Message "$LogicalFileMovesString"
+            Write-Message -Level VeryVerbose -Message "Logical File Move string: $LogicalFileMovesString"
 
             if ($MaxTransferSize) {
                 $Restore.MaxTransferSize = $MaxTransferSize
