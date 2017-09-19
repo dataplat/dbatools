@@ -50,7 +50,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		}
 		AfterAll {
 			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2,$db3 -Force
-			Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2,$db3
+			Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1,$db2,$db3
 		}
 
 		if ($setupright) {
