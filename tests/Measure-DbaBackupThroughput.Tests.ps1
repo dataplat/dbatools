@@ -12,7 +12,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 			$null = Get-DbaDatabase -SqlInstance $server -Database $db | Backup-DbaDatabase
 		}
 		AfterAll {
-			$null = Get-DbaDatabase -SqlInstance $server -Database $db | Remove-DbaDatabase
+			$null = Get-DbaDatabase -SqlInstance $server -Database $db | Remove-DbaDatabase -Confirm:$false
 		}
 		
 		$results = Measure-DbaBackupThroughput -SqlInstance $server -Database $db
