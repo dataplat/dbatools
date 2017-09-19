@@ -58,6 +58,11 @@ Prompts then removes the databases containeddb and mydb on SQL Server sql2016
 Remove-DbaDatabase -SqlInstance sql2016 -Database containeddb -Confirm:$false
 
 Does not prompt and swiftly removes containeddb on SQL Server sql2016
+
+.EXAMPLE
+Get-DbaDatabase -SqlInstance server\instance -ExcludeAllSystemDb | Remove-DbaDatabase
+
+Removes all the user databases from server\instance
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', DefaultParameterSetName= "Default")]
 	Param (
