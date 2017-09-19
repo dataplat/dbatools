@@ -55,13 +55,25 @@ Lists the default trace information on the sql2016 SQL Server.
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				return
 			}
-			
+            
+            if ($IsDefault) {
+                try {
+                   $sql = "Select * from sys.traces where is_default = 1"
+					$server.Query($sql) 
+                }
+                catch {
+					Stop-Function -Message "Error returned from SQL Server: $_" -Target $server -InnerErrorRecord $_
+                }
+            }
+            else {
 				try {
-					$server
+                    $sql = "Select * from sys.traces"
+					$server.Query($sql)
 				}
 				catch {
 					Stop-Function -Message "Error returned from SQL Server: $_" -Target $server -InnerErrorRecord $_
-				}
+                }
+            }
 			}
         }
 }
