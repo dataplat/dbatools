@@ -1,5 +1,5 @@
 Function Update-ServiceStatus {
-<#
+	<#
 	.SYNOPSIS
 	Internal function. Sends start/stop request to a SQL Server service and wait for the result.
 
@@ -134,10 +134,14 @@ Function Update-ServiceStatus {
 		}
 
 		$actionText = switch ($action) { stop { 'stopped' }; start { 'started' }; restart { 'restarted' } } 
+		#Create Runspace pool, min - 1, max - 50 sessions
+		$runspacePool = [runspacefactory]::CreateRunspacePool(1, 50)
+		$runspacePool.Open()
 	}
 	
 	process {
-		$jobCollection = @()
+		$threads = @()
+
 		#Get priorities on which the service startup/shutdown order is based
 		$servicePriorityCollection = $ServiceCollection.ServicePriority | Select-Object -unique | Sort-Object -Property @{ Expression = { [int]$_ }; Descending = $action -ne 'stop' }
 		foreach ($priority in $servicePriorityCollection) {
@@ -155,13 +159,30 @@ Function Update-ServiceStatus {
 					}
 					else {
 						if ($Pscmdlet.ShouldProcess("Sending $action request to service $($service.ServiceName) on $($service.ComputerName)")) {
-							#Start a job per each service 
+							#Create parameters hastable
+							$argsRunPool = @{ 
+								server     = $service.computerName
+								service    = $service.ServiceName
+								action     = $action
+								timeout    = $Timeout
+								credential = $Credential
+							}
 							Write-Message -Level Verbose -Message "Sending $action request to service $($service.ServiceName) on $($service.ComputerName) with timeout $Timeout"
-							$job = Start-Job -ScriptBlock $svcControlBlock -ArgumentList $service.computerName, $service.ServiceName, $action, $Timeout, $credential
-							#Add more properties to the job so that we could distinct them
-							Add-Member -Force -InputObject $job -NotePropertyName ServiceName -NotePropertyValue $service.ServiceName
-							Add-Member -Force -InputObject $job -NotePropertyName ComputerName -NotePropertyValue $service.ComputerName
-							$jobCollection += $job
+							#Create new runspace thread
+							$thread = [powershell]::Create()
+							$thread.RunspacePool = $runspacePool
+							$thread.AddScript($svcControlBlock) | Out-Null
+							$thread.AddParameters($argsRunPool) | Out-Null
+							#Start the thread
+							$handle = $thread.BeginInvoke()
+							$threads += [pscustomobject]@{
+								handle       = $handle
+								thread       = $thread
+								serviceName  = $service.ServiceName
+								computerName = $service.ComputerName
+								isRetrieved  = $false
+								started      = Get-Date
+							}
 						}
 					}
 				}
@@ -172,14 +193,30 @@ Function Update-ServiceStatus {
 			}
 			if ($Pscmdlet.ShouldProcess("Waiting for the services to $action")) {
 				#Get job execution results
-				while ($jobCollection | Where-Object { $_.HasMoreData -eq $true }) {
-					foreach ($job in ($jobCollection | Where-Object { $_.State -ne "Running" -and $_.HasMoreData -eq $true })) {
-						try {
-							$jobResult = $job | Receive-Job -ErrorAction Stop
+				while ($threads | Where-Object { $_.isRetrieved -eq $false }) {
+					foreach ($thread in ($threads | Where-Object { $_.isRetrieved -eq $false })) {
+						if ($thread.Handle.IsCompleted -eq $true) {
+							Write-Message -Level Verbose -Message "Processing runspace thread results from service $($thread.ServiceName) on $($thread.ComputerName)"
+							$jobResult = $null
+							try {
+								$jobResult = $thread.thread.EndInvoke($thread.handle)
+							}
+							catch {
+								Write-Message -Level Verbose -Message ("Could not return data from the runspace thread: " + $_.Exception.Message)
+							}
+							$thread.isRetrieved = $true
+							if ($thread.thread.HadErrors) { 
+								Stop-Function -Silent $Silent -FunctionName $callerName -Message ("The attempt to $action the service $($thread.ServiceName) on $($thread.ComputerName) returned the following error: " + ($thread.thread.Streams.Error.Exception.Message -join ' ')) -Category ConnectionError -ErrorRecord $thread.thread.Streams.Error -Target $thread -Continue
+							}
+							elseif (!$jobResult) {
+								Stop-Function -Silent $Silent -FunctionName $callerName -Message ("The attempt to $action the service $($thread.ServiceName) on $($thread.ComputerName) did not return any results") -Category ConnectionError -ErrorRecord $_ -Target $thread -Continue
+							}
 							#Find a corresponding service object
-							$outObject = $ServiceCollection | Where-Object { $_.ServiceName -eq $job.ServiceName -and $_.ComputerName -eq $job.ComputerName }
+							$outObject = $ServiceCollection | Where-Object { $_.ServiceName -eq $thread.serviceName -and $_.ComputerName -eq $thread.computerName }
+							#Set additional properties
 							$status = switch ($jobResult.ExitCode) {
 								0 { 'Successful' }
+								10 { 'Successful '} #Already running - FullText service is started automatically
 								default { 'Failed' }
 							}
 							Add-Member -Force -InputObject $outObject -NotePropertyName Status -NotePropertyValue $status
@@ -191,15 +228,34 @@ Function Update-ServiceStatus {
 							}
 							Add-Member -Force -InputObject $outObject -NotePropertyName Message -NotePropertyValue $message
 							if ($jobResult.ServiceState) { $outObject.State = $jobResult.ServiceState }
+							#Dispose of the thread
+							$thread.thread.Dispose()
+
 							Select-DefaultView -InputObject $outObject -Property ComputerName, ServiceName, State, Status, Message
 						}
-						catch {
-							Stop-Function -Silent $Silent -FunctionName $callerName -Message ("The attempt to $action the service $($job.ServiceName) on $($job.ComputerName) returned the following error: " + $_.Exception.Message) -Category ConnectionError -ErrorRecord $_ -Target $job -Continue
+						elseif ($Timeout -gt 0 -and ((Get-Date) - $thread.started).TotalSeconds -gt $Timeout) {
+							#Session has timed out - return failure and stop the thread
+
+							$thread.isRetrieved = $true
+							$outObject = $ServiceCollection | Where-Object { $_.ServiceName -eq $thread.serviceName -and $_.ComputerName -eq $thread.computerName }
+							#Set additional properties
+							Add-Member -Force -InputObject $outObject -NotePropertyName Status -NotePropertyValue 'Failed'
+							Add-Member -Force -InputObject $outObject -NotePropertyName Message -NotePropertyValue "The attempt to $action the service has timed out."
+							$outObject.State = 'Unknown'
+							#Stop and dispose of the thread
+							$thread.thread.Stop()
+							$thread.thread.Dispose()
+
+							Select-DefaultView -InputObject $outObject -Property ComputerName, ServiceName, State, Status, Message
 						}
 					}
 					Start-Sleep -Milliseconds 50
 				}
 			}
 		}
+	}
+	end {
+		#Close the runspace pool
+		$runspacePool.Close()
 	}
 }
