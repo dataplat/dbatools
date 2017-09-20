@@ -370,7 +370,7 @@ function Write-DbaDataTable {
 				return
 			}
 			else {
-				if ($schema -notin $server.Databases[0].Schemas.Name) {
+				if ($schema -notin $db.Schemas.Name) {
 					Stop-Function -Message "Schema does not exist."
 					return
 				}
