@@ -1,4 +1,4 @@
-function Watch-DbaUpdate {
+Function Watch-DbaUpdate {
 	<# 
 		.SYNOPSIS 
 			Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once per release.
@@ -9,7 +9,7 @@ function Watch-DbaUpdate {
 			Anyone know how to make it clickable so that it opens an URL?
 
 		.NOTES
-			Tags: JustForFun, Module
+			Tags: JustForFun
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -23,50 +23,58 @@ function Watch-DbaUpdate {
 			Watches the gallery for updates to dbatools.
 	#>	
 
-	process {
-		if (([Environment]::OSVersion).Version.Major -lt 10) {
+	PROCESS
+	{
+		if (([Environment]::OSVersion).Version.Major -lt 10)
+		{
 			Write-Warning "This command only supports Windows 10 and higher."
 			return
 		}
 		
-		if ($null -eq (Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue)) {
+		if ($null -eq (Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue))
+		{
 			Install-DbaWatchUpdate
 		}
 		
 		# leave this in for the scheduled task
 		$module = Get-Module -Name dbatools
 		
-		if (!$module) {
+		if (!$module)
+		{
 			Import-Module dbatools
 			$module = Get-Module -Name dbatools
 		}
 		
-		$galleryVersion = (Find-Module -Name dbatools -Repository PSGallery).Version
-		$localVersion = $module.Version
+		$galleryversion = (Find-Module -Name dbatools -Repository PSGallery).Version
+		$localversion = $module.Version
 		
-		if ($galleryVersion -le $localVersion) { return }
+		if ($galleryversion -le $localversion) { return }
 		
 		$file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
 		
 		$new = [pscustomobject]@{
-			NotifyVersion = $galleryVersion
+			NotifyVersion = $galleryversion
 		}
 		
 		# now that notifications stay until they are checked, we just have to keep
 		# track of the last version we notified about
 		
-		if (Test-Path $file) {
+		if (Test-Path $file)
+		{
 			$old = Import-Clixml -Path $file -ErrorAction SilentlyContinue
 			
-			if ($galleryVersion -gt $old.NotifyVersion) {
+			if ($galleryversion -gt $old.NotifyVersion)
+			{
 				Export-Clixml -InputObject $new -Path $file
 				Show-Notification
 			}
 		}
-		else {
+		else
+		{
 			$directory = Split-Path $file
 			
-			if (!(Test-Path $directory)) {
+			if (!(Test-Path $directory))
+			{
 				$null = New-Item -ItemType Directory -Path $directory
 			}
 			

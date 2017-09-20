@@ -7,7 +7,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		BeforeAll {
 			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
 			$dbname = "dbatoolsci_findme"
-			Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+			Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase
 			$server.Query("CREATE DATABASE $dbname")
 			$result = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
 			if ($result.count -ne 0) {
@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			}
 		}
 		AfterAll {
-			Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+			Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase
 		}
 		$null = Detach-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
 		$results = Find-DbaOrphanedFile -SqlInstance $script:instance2

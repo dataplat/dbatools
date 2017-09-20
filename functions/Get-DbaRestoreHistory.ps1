@@ -61,7 +61,7 @@ Get-DbaRestoreHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs | 
 Adds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and makes the output pretty
 
 .EXAMPLE   
-Get-DbaRegisteredServer -SqlInstance sql2016 | Get-DbaRestoreHistory
+Get-DbaRegisteredServerName -SqlInstance sql2016 | Get-DbaRestoreHistory
 
 Returns database restore information for every database on every server listed in the Central Management Server on sql2016
 	
