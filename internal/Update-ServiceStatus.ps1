@@ -134,8 +134,11 @@ Function Update-ServiceStatus {
 		}
 
 		$actionText = switch ($action) { stop { 'stopped' }; start { 'started' }; restart { 'restarted' } } 
+		#Setup initial session state
+		$InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+		$InitialSessionState.ImportPSModule((get-module dbatools).modulebase + '\dbatools.psd1')
 		#Create Runspace pool, min - 1, max - 50 sessions
-		$runspacePool = [runspacefactory]::CreateRunspacePool(1, 50)
+		$runspacePool = [runspacefactory]::CreateRunspacePool(1, 50, $InitialSessionState, $Host)
 		$runspacePool.Open()
 	}
 	
@@ -202,11 +205,13 @@ Function Update-ServiceStatus {
 								$jobResult = $thread.thread.EndInvoke($thread.handle)
 							}
 							catch {
+								$jobError = $_
 								Write-Message -Level Verbose -Message ("Could not return data from the runspace thread: " + $_.Exception.Message)
 							}
 							$thread.isRetrieved = $true
 							if ($thread.thread.HadErrors) { 
-								Stop-Function -Silent $Silent -FunctionName $callerName -Message ("The attempt to $action the service $($thread.ServiceName) on $($thread.ComputerName) returned the following error: " + ($thread.thread.Streams.Error.Exception.Message -join ' ')) -Category ConnectionError -ErrorRecord $thread.thread.Streams.Error -Target $thread -Continue
+								if (!$jobError) { $jobError = $thread.thread.Streams.Error }
+								Stop-Function -Silent $Silent -FunctionName $callerName -Message ("The attempt to $action the service $($thread.ServiceName) on $($thread.ComputerName) returned the following error: " + ($jobError.Exception.Message -join ' ')) -Category ConnectionError -ErrorRecord $thread.thread.Streams.Error -Target $thread -Continue
 							}
 							elseif (!$jobResult) {
 								Stop-Function -Silent $Silent -FunctionName $callerName -Message ("The attempt to $action the service $($thread.ServiceName) on $($thread.ComputerName) did not return any results") -Category ConnectionError -ErrorRecord $_ -Target $thread -Continue
