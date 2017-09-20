@@ -4,13 +4,13 @@ function Test-DbaLastBackup {
 Quickly and easily tests the last set of full backups for a server
 
 .DESCRIPTION
-Restores all or some of the latest backups and performs a DBCC CHECKTABLE
+Restores all or some of the latest backups and performs a DBCC CHECKDB
 
 1. Gathers information about the last full backups
 2. Restores the backps to the Destination with a new name. If no Destination is specified, the originating SqlServer wil be used.
 3. The database is restored as "dbatools-testrestore-$databaseName" by default, but you can change dbatools-testrestore to whatever you would like using -Prefix
 4. The internal file names are also renamed to prevent conflicts with original database
-5. A DBCC CHECKTABLE is then performed
+5. A DBCC CHECKDB is then performed
 6. And the test database is finally dropped
 
 .PARAMETER SqlInstance
@@ -51,7 +51,7 @@ The command uses the SQL Server's default log directory for all restores. Use th
 Do not perform the actual restore. Just perform a VERIFYONLY
 
 .PARAMETER NoCheck
-Skip DBCC CHECKTABLE
+Skip DBCC CHECKDB
 
 .PARAMETER NoDrop
 Do not drop newly created test database
@@ -104,14 +104,14 @@ https://dbatools.io/Test-DbaLastBackup
 .EXAMPLE 
 Test-DbaLastBackup -SqlInstance sql2016
 
-Determines the last full backup for ALL databases, attempts to restore all databases (with a different name and file structure), then performs a DBCC CHECKTABLE
+Determines the last full backup for ALL databases, attempts to restore all databases (with a different name and file structure), then performs a DBCC CHECKDB
 
 Once the test is complete, the test restore will be dropped
 
 .EXAMPLE 
 Test-DbaLastBackup -SqlInstance sql2016 -Database master
 
-Determines the last full backup for master, attempts to restore it, then performs a DBCC CHECKTABLE
+Determines the last full backup for master, attempts to restore it, then performs a DBCC CHECKDB
 
 .EXAMPLE 
 Test-DbaLastBackup -SqlInstance sql2016 -Database model, master -VerifyOnly
@@ -119,7 +119,7 @@ Test-DbaLastBackup -SqlInstance sql2016 -Database model, master -VerifyOnly
 .EXAMPLE 
 Test-DbaLastBackup -SqlInstance sql2016 -NoCheck -NoDrop
 
-Skips the DBCC CHECKTABLE check. This can help speed up the tests but makes it less tested. NoDrop means that the test restores will remain on the server.
+Skips the DBCC CHECKDB check. This can help speed up the tests but makes it less tested. NoDrop means that the test restores will remain on the server.
 
 .EXAMPLE 
 Test-DbaLastBackup -SqlInstance sql2016 -DataDirectory E:\bigdrive -LogDirectory L:\bigdrive -MaxMB 10240
