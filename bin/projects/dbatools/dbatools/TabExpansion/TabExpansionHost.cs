@@ -82,12 +82,12 @@ namespace Sqlcollaborative.Dbatools.TabExpansion
         /// <summary>
         /// Whether asynchronous TEPP updating should be disabled
         /// </summary>
-        public static bool TeppAsyncDisabled = true;
+        public static bool TeppAsyncDisabled = false;
 
         /// <summary>
         /// Whether synchronous TEPP updating should be disabled
         /// </summary>
-        public static bool TeppSyncDisabled = false;
+        public static bool TeppSyncDisabled = true;
 
         /// <summary>
         /// The interval in which asynchronous TEPP cache updates are performed
@@ -97,7 +97,7 @@ namespace Sqlcollaborative.Dbatools.TabExpansion
         /// <summary>
         /// After this timespan of no requests to a server, the updates to its cache are disabled.
         /// </summary>
-        public static TimeSpan TeppUpdateTimeout = new TimeSpan(0, 30, 0);
+        public static TimeSpan TeppUpdateTimeout = new TimeSpan(0, 0, 30);
         #endregion Configuration
 
         #region Updater
