@@ -355,7 +355,8 @@
 		'Get-DbaPolicy',
 		'Find-DbaSimilarTable',
 		'Disable-DbaAgHadr',
-		'Enable-DbaAgHadr'
+		'Enable-DbaAgHadr',
+		'Get-DbaTraceFile'
 	)
 	
 	# Cmdlets to export from this module
