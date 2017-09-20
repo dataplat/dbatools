@@ -1,15 +1,11 @@
 ﻿$scriptBlock = {
 	#region Utility Functions
 	function Get-PriorityServer {
-		$res = [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::InstanceAccess.Values | Where-Object -Property LastUpdate -LT (New-Object System.DateTime(1, 1, 1, 1, 1, 1))
-		$res | Export-Csv "C:\temp\debug-priority.csv"
-		$res
+		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::InstanceAccess.Values | Where-Object -Property LastUpdate -LT (New-Object System.DateTime(1, 1, 1, 1, 1, 1))
 	}
 	
 	function Get-ActionableServer {
-		$res = [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::InstanceAccess.Values | Where-Object -Property LastUpdate -LT ((Get-Date) - ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppUpdateInterval)) | Where-Object -Property LastUpdate -GT ((Get-Date) - ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppUpdateTimeout))
-		$res | Export-Csv "C:\temp\debug-regular.csv"
-		$res
+		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::InstanceAccess.Values | Where-Object -Property LastUpdate -LT ((Get-Date) - ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppUpdateInterval)) | Where-Object -Property LastUpdate -GT ((Get-Date) - ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppUpdateTimeout))
 	}
 	
 	function Update-TeppCache {
@@ -32,7 +28,6 @@
 					$server.ConnectionContext.Connect()
 				}
 				catch {
-					Write-Message -Level Warning -Message "Failed to connect in order to update the Tepp Cache" -ErrorRecord $_ -Silent $true
 					continue
 				}
 				
@@ -47,6 +42,8 @@
 					# Workaround to avoid stupid issue with scriptblock from different runspace
 					[ScriptBlock]::Create($scriptBlock).Invoke()
 				}
+				
+				$server.ConnectionContext.Disconnect()
 				
 				$instance.LastUpdate = Get-Date
 			}
