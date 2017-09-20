@@ -6,15 +6,15 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	
 	Context "Command actually works" {
-		$instanceName = (Connect-SqlInstance -SqlInstance $script:instance1).ServiceName
+		$instanceName = (Connect-SqlInstance -SqlInstance $script:instance2).ServiceName
 		
-		$results = Get-DbaSqlService -ComputerName $script:instance1
+		$results = Get-DbaSqlService -ComputerName $script:instance2
 		
 		It "shows some services" {
 			$results.DisplayName | Should Not Be $null
 		}
 		
-		$results = Get-DbaSqlService -ComputerName $script:instance1 -Type Agent
+		$results = Get-DbaSqlService -ComputerName $script:instance2 -Type Agent
 		
 		It "shows only one service type" {
 			foreach ($result in $results) {
@@ -23,42 +23,34 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		
 
-		$results = Get-DbaSqlService -ComputerName $script:instance1 -InstanceName $instanceName -Type Agent
+		$results = Get-DbaSqlService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent
 		
 		It "shows a service from a specific instance" {
 			$results.ServiceType| Should Be "Agent" 
 		}
 				
-		$services = Get-DbaSqlService -ComputerName $script:instance1 -Type Agent -InstanceName $instanceName
+		$service = Get-DbaSqlService -ComputerName $script:instance2 -Type Agent -InstanceName $instanceName
 		
-		It "sets startup mode of the services to 'Manual'" {
-			foreach ($service in $services) {
-				{ $service.ChangeStartMode('Manual') } | Should Not Throw
-			}
+		It "sets startup mode of the service to 'Manual'" {
+			{ $service.ChangeStartMode('Manual') } | Should Not Throw
 		}
 		
-		$results = Get-DbaSqlService -ComputerName $script:instance1 -Type Agent -InstanceName $instanceName 
+		$results = Get-DbaSqlService -ComputerName $script:instance2 -Type Agent -InstanceName $instanceName 
 		
-		It "verifies that startup mode of the services is 'Manual'" {
-			foreach ($result in $results) {
-				$result.StartMode | Should Be 'Manual'
-			}
+		It "verifies that startup mode of the service is 'Manual'" {
+			$results.StartMode | Should Be 'Manual'
 		}
 		
-		$services = Get-DbaSqlService -ComputerName $script:instance1 -Type Agent -InstanceName $instanceName 
+		$service = Get-DbaSqlService -ComputerName $script:instance2 -Type Agent -InstanceName $instanceName 
 		
-		It "sets startup mode of the services to 'Automatic'" {
-			foreach ($service in $services) {
-				{ $service.ChangeStartMode('Automatic') } | Should Not Throw
-			}
+		It "sets startup mode of the service to 'Automatic'" {
+			{ $service.ChangeStartMode('Automatic') } | Should Not Throw
 		}
 		
-		$results = Get-DbaSqlService -ComputerName $script:instance1 -Type Agent -InstanceName $instanceName 
+		$results = Get-DbaSqlService -ComputerName $script:instance2 -Type Agent -InstanceName $instanceName 
 			
-		It "verifies that startup mode of the services is 'Automatic'" {
-			foreach ($result in $results) {
-				$result.StartMode | Should Be 'Automatic'
-			}
+		It "verifies that startup mode of the service is 'Automatic'" {
+			$results.StartMode | Should Be 'Automatic'
 		}
 	}
 }
