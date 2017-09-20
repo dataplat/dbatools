@@ -1,42 +1,42 @@
 function Get-DbaTraceFile {
 	<#
-.SYNOPSIS
-Gets a list of trace file(s) from specied SQL Server Instance
+		.SYNOPSIS
+		Gets a list of trace file(s) from specied SQL Server Instance
 
-.DESCRIPTION
-This function returns a list of Trace Files on a SQL Server Instance and identify the default Trace File
+		.DESCRIPTION
+		This function returns a list of Trace Files on a SQL Server Instance and identify the default Trace File
 
-.PARAMETER SqlInstance
-A SQL Server instance to connect to
+		.PARAMETER SqlInstance
+		A SQL Server instance to connect to
 
-.PARAMETER SqlCredential
-A credeial to use to conect to the SQL Instance rather than using Windows Authentication
+		.PARAMETER SqlCredential
+		A credeial to use to conect to the SQL Instance rather than using Windows Authentication
 
-.PARAMETER Default
-Switch that will only return the information for the default system trace
+		.PARAMETER Default
+		Switch that will only return the information for the default system trace
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-	
-.NOTES
-Tags: Security, Trace
+		.PARAMETER Silent
+		Use this switch to disable any kind of verbose messages
+			
+		.NOTES
+		Tags: Security, Trace
 
-Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
+		Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+		Website: https://dbatools.io
+		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.EXAMPLE
-Get-DbaTraceFile -SqlInstance sql2016 
+		.EXAMPLE
+		Get-DbaTraceFile -SqlInstance sql2016 
 
-Lists all the tracefiles on the sql2016 SQL Server.
-	
-.EXAMPLE
-Get-DbaTraceFile -SqlInstance sql2016 -Default
+		Lists all the tracefiles on the sql2016 SQL Server.
+			
+		.EXAMPLE
+		Get-DbaTraceFile -SqlInstance sql2016 -Default
 
-Lists the default trace information on the sql2016 SQL Server. 
-	
+		Lists the default trace information on the sql2016 SQL Server. 
+			
 #>
 	[CmdletBinding()]
 	Param (
@@ -50,7 +50,7 @@ Lists the default trace information on the sql2016 SQL Server.
 	
 	process {
 		
-		foreach ($instance in $sqlinstance) {
+		foreach ($instance in $SqlInstance) {
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
 			}
