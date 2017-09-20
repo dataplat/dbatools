@@ -6,7 +6,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
 		$dbs = $testlastbackup, "dbatoolsci_lildb", "dbatoolsci_testrestore", "dbatoolsci_singlerestore"
-		$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbs | Remove-DbaDatabase -Confirm:$false
+		$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbs | Remove-DbaDatabase
 		$server = Connect-DbaSqlServer -SqlInstance $script:instance2
 		$random = Get-Random
 		$testlastbackup = "dbatoolsci_testlastbackup$random"
@@ -22,9 +22,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	AfterAll {
 		# these for sure
-		Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbs | Remove-DbaDatabase -Confirm:$false
+		Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbs | Remove-DbaDatabase
 		# those just in case test-dbalastbackup didn't cooperate
-		Get-DbaDatabase -SqlInstance $script:instance2 | Where-Object Name -like 'dbatools-testrestore-dbatoolsci_*' | Remove-DbaDatabase -Confirm:$false
+		Get-DbaDatabase -SqlInstance $script:instance2 | Where-Object Name -like 'dbatools-testrestore-dbatoolsci_*' | Remove-DbaDatabase
 		# see "Restores using a specific path"
 		Get-ChildItem -Path C:\Temp\dbatools-testrestore-dbatoolsci_singlerestore* | Remove-Item
 	}

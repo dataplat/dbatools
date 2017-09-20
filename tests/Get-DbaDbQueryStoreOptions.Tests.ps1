@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
-		Get-DbaDatabase -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -Match 'dbatoolsci' | Remove-DbaDatabase -Confirm:$false
+		Get-DbaDatabase -SqlInstance $script:instance1, $script:instance2 | Where-Object Name -Match 'dbatoolsci' | Remove-DbaDatabase
 	}
 	Context "Get some client protocols" {
 		foreach ($instance in ($script:instance1, $script:instance2)) {

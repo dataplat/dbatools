@@ -26,7 +26,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 				It "creates the catalog" {
 					$results.Created | Should Be $true
 				}
-				Remove-DbaDatabase -Confirm:$false -SqlInstance $ssisserver -Database $database
+				Remove-DbaDatabase -SqlInstance $ssisserver -Database $database
 			}
 		}
 	}

@@ -281,7 +281,7 @@ SET [RowEstimatePercentOriginal] = tcte.pct_of_orig_row
 	,[PageEstimatePercentOriginal] = tcte.pct_of_orig_page
 	,SizeCurrent = tcte.SizeCurrent
 	,SizeRequested = tcte.SizeRequested
-	,PercentCompression = 100 - (cast(tcte.[SizeRequested] AS NUMERIC(21, 2)) * 100 / (tcte.[SizeCurrent] - ABS(SIGN(tcte.[SizeCurrent])) + 1))
+	,PercentCompression = 100 - (cast(tcte.[SizeRequested] AS NUMERIC(10, 2)) * 100 / (tcte.[SizeCurrent] - ABS(SIGN(tcte.[SizeCurrent])) + 1))
 FROM tmp_cte tcte
 	,##testdbacompression tcomp
 WHERE tcte.objname = tcomp.TableName
