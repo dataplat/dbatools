@@ -97,7 +97,7 @@ function Find-DbaAgentJob {
 			Returns all agent job(s) that have failed since July of 2016 (and still have history in msdb)
 
 		.EXAMPLE
-			Get-DbaRegisteredServerName -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -ExcludeSchedule -Detailed | Format-Table -AutoSize -Wrap
+			Get-DbaRegisteredServer -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -IsNotScheduled | Format-Table -AutoSize -Wrap
 
 			Queries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule.
 	#>
