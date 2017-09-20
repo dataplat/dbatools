@@ -20,7 +20,6 @@ $TestsRunGroups = @{
 		'Get-DbaSpConfigure',
 		'Get-DbaSqlLog',
 		'Get-DbaSqlModule',
-		'Get-DbaSqlService',
 		'Invoke-DbaCycleErrorLog',
 		'Invoke-DbaDiagnosticQuery',
 		'Mount-DbaDatabase',
@@ -56,7 +55,8 @@ $TestsRunGroups = @{
 	"2016_service" = @(
 		'Start-DbaSqlService',
 		'Stop-DbaSqlService',
-		'Restart-DbaSqlService'
+		'Restart-DbaSqlService',
+		'Get-DbaSqlService'
 	)
 	# do not run on appveyor
 	"appveyor_disabled" = @(
