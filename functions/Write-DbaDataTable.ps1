@@ -273,7 +273,7 @@ Per Microsoft, KeepNulls will "Preserve null values in the destination table reg
 			}
 			else
 			{
-				if ($schema -notin $server.Databases[0].Schemas.Name)
+				if ($schema -notin $db.Schemas.Name)
 				{
 					Write-Warning "Schema does not exist"
 					break
