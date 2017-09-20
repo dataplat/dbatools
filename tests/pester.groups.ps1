@@ -24,7 +24,7 @@ $TestsRunGroups = @{
 		'Invoke-DbaCycleErrorLog',
 		'Invoke-DbaDiagnosticQuery',
 		'Mount-DbaDatabase',
-		'Remove-DbaDatabase',
+		'Remove-DbaDatabase -Confirm:$false',
 		'Restore-DbaDatabase',
 		'Set-DbaSpConfigure',
 		'Test-DbaIdentityUsage'
