@@ -244,7 +244,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
             InputObject = Name;
 
             if (Name == "")
-                throw new BloodyHellGiveMeSomethingToWorkWithException("Please provide an instance name", "DbaInstanceParameter");
+                throw new BloodyHellGiveMeSomethingToWorkWithException("Bloody hell! Don't give me an empty string for an instance name!", "DbaInstanceParameter");
 
             if (Name == ".")
             {

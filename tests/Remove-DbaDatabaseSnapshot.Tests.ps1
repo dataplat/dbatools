@@ -12,7 +12,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		$db2 = "dbatoolsci_RemoveSnap2"
 		$db2_snap1 = "dbatoolsci_RemoveSnap2_snapshotted"
 		Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2 -Force
-		Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2 | Remove-DbaDatabase -Confirm:$false
+		Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2 | Remove-DbaDatabase
 		$server.Query("CREATE DATABASE $db1")
 		$server.Query("CREATE DATABASE $db2")
 		$needed = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2
@@ -26,7 +26,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	AfterAll {
 		Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2 -Force -ErrorAction SilentlyContinue
-		Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1,$db2 -ErrorAction SilentlyContinue
+		Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2 -ErrorAction SilentlyContinue
 	}
 	Context "Parameters validation" {
 		It "Stops if no Database or AllDatabases" {

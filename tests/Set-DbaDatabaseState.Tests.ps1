@@ -10,7 +10,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$server.Query("CREATE DATABASE $db1")
 		}
 		AfterAll {
-			Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1
+			Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1
 		}
 		It "Stops if no Database or AllDatabases" {
 			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Silent } | Should Throw "You must specify"
@@ -58,7 +58,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$db6 = "dbatoolsci_dbsetstate_multi"
 			$db7 = "dbatoolsci_dbsetstate_rw"
 			$db8 = "dbatoolsci_dbsetstate_ro"
-			Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8 | Remove-DbaDatabase -Confirm:$false
+			Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8 | Remove-DbaDatabase
 			$server.Query("CREATE DATABASE $db1")
 			$server.Query("CREATE DATABASE $db2")
 			$server.Query("CREATE DATABASE $db3")
@@ -78,7 +78,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		AfterAll {
 			$null = Set-DbaDatabaseState -Sqlinstance $script:instance2 -Database $db2, $db3, $db4, $db5, $db7 -Online -ReadWrite -MultiUser -Force
-			$null = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
+			$null = Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8
 		}
 		if ($setupright) {
 			# just to have a correct report on how much time BeforeAll takes
