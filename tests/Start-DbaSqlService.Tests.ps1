@@ -7,7 +7,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	
 	Context "Command actually works" {
 		
-		$server = Connect-SqlInstance -SqlInstance $script:instance1
+		$server = Connect-SqlInstance -SqlInstance $script:instance2
 		$instanceName = $server.ServiceName
 		$computerName = $server.NetName
 
@@ -22,7 +22,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		Get-Service -ComputerName $computerName -Name $serviceName | Stop-Service -WarningAction SilentlyContinue | Out-Null
 		
 		It "starts the services back" {
-			$services = Start-DbaSqlService -ComputerName $script:instance1 -Type Agent -InstanceName $instanceName
+			$services = Start-DbaSqlService -ComputerName $script:instance2 -Type Agent -InstanceName $instanceName
 			$services | Should Not Be $null
 			foreach ($service in $services) {
 				$service.State | Should Be 'Running'
@@ -40,7 +40,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		foreach ($sn in $servicename) { Get-Service -ComputerName $computerName -Name $sn | Stop-Service -WarningAction SilentlyContinue | Out-Null }
 		
 		It "starts the services back through pipeline" {
-			$services = Get-DbaSqlService -ComputerName $script:instance1 -InstanceName $instanceName -Type Agent, Engine | Start-DbaSqlService
+			$services = Get-DbaSqlService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent, Engine | Start-DbaSqlService
 			$services | Should Not Be $null
 			foreach ($service in $services) {
 				$service.State | Should Be 'Running'

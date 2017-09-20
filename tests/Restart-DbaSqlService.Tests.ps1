@@ -7,9 +7,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	
 	Context "Command actually works" {
 		
-		$instanceName = (Connect-SqlInstance -SqlInstance $script:instance1).ServiceName
+		$instanceName = (Connect-SqlInstance -SqlInstance $script:instance2).ServiceName
 		It "restarts some services" {
-			$services = Restart-DbaSqlService -ComputerName $script:instance1 -InstanceName $instanceName -Type Agent
+			$services = Restart-DbaSqlService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent
 			$services | Should Not Be $null
 			foreach ($service in $services) {
 				$service.State | Should Be 'Running'
@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 			
 		It "restarts some services through pipeline" {
-			$services = Get-DbaSqlService -ComputerName $script:instance1 -InstanceName $instanceName -Type Agent, Engine | Restart-DbaSqlService
+			$services = Get-DbaSqlService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent, Engine | Restart-DbaSqlService
 			$services | Should Not Be $null
 			foreach ($service in $services) {
 				$service.State | Should Be 'Running'
