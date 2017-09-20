@@ -146,6 +146,9 @@ function Get-DbaRegisteredServer {
 			if ($ExcludeCmsServer) {
 				$servers = ($servers | Where-Object { $_.ServerName -ne $instance})
 			}
+
+			# Close the connection, otherwise using it with the ServersStore will keep it open
+			$cmsStore.ServerConnection.Disconnect()
 		}
 		
 		foreach ($server in $servers) {
