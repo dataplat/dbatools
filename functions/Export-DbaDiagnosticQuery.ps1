@@ -20,12 +20,18 @@ function Export-DbaDiagnosticQuery {
 		.PARAMETER Suffix
 			Suffix for the filename. It's datetime by default.
 
+        .PARAMETER NoPlanExport
+            Use this switch to suppress exporting of .sqlplan files
+
+        .PARAMETER NoQueryExport
+            Use this switch to suppress exporting of .sql files
+
 		.PARAMETER Silent
 			Use this switch to disable any kind of Output messages
 
 		.NOTES
 			Tags: Query
-			Author: André Kamman (@AndreKamman), http://clouddba.io
+			Author: Andre Kamman (@AndreKamman), http://clouddba.io
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -53,6 +59,8 @@ function Export-DbaDiagnosticQuery {
 		[string]$ConvertTo = "Csv",
 		[System.IO.FileInfo]$Path = [Environment]::GetFolderPath("mydocuments"),
 		[string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
+        [switch]$NoPlanExport,
+        [switch]$NoQueryExport,
 		[switch]$Silent
 	)
 	
@@ -100,50 +108,85 @@ function Export-DbaDiagnosticQuery {
 		if (Test-FunctionInterrupt) { return }
 		
 		foreach ($row in $InputObject) {
-			$results = $row.Result
+			$result = $row.Result
 			$name = $row.Name
 			$SqlInstance = $row.SqlInstance.Replace("\", "$")
 			$dbname = $row.DatabaseName
-			$number = $row.Number
-			
-			if ($null -eq $results){
-				Stop-Function -Message "Resultset was empty for $name" -Target $row -Continue
+			$number = $row.Number			
+				
+			if ($null -eq $result) {
+				Stop-Function -Message "Result was empty for $name" -Target $result -Continue
 			}
-			
-			foreach ($result in $results) {
 				
-				if ($null -eq $result) {
-					Stop-Function -Message "Result was empty for $name" -Target $result -Continue
-				}
-				
-				$queryname = Remove-InvalidFileNameChars -Name $Name
-				$excelfilename = "$Path\$SqlInstance-DQ-$Suffix.xlsx"
-				$exceldbfilename = "$Path\$SqlInstance-DQ-$dbname-$Suffix.xlsx"
-				$csvdbname = "$Path\$SqlInstance-$dbname-DQ-$number-$queryname-$Suffix.csv"
-				$csvfilename = "$Path\$SqlInstance-DQ-$number-$queryname-$Suffix.csv"
-				
-				switch ($ConvertTo) {
-					"Excel"
-					{
-						if ($result.dbSpecific) {
-							Write-Message -Level Output -Message "Exporting $exceldbfilename"
-							$result.result | Export-Excel -Path $exceldbfilename -WorkSheetname $result.Name -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow
-						}
-						else {
-							Write-Message -Level Output -Message "Exporting $excelfilename"
-							$result.result | Export-Excel -Path $excelfilename -WorkSheetname $result.Name -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow
-						}
+			$queryname = Remove-InvalidFileNameChars -Name $Name
+			$excelfilename = "$Path\$SqlInstance-DQ-$Suffix.xlsx"
+			$exceldbfilename = "$Path\$SqlInstance-DQ-$dbname-$Suffix.xlsx"
+			$csvdbfilename = "$Path\$SqlInstance-$dbname-DQ-$number-$queryname-$Suffix.csv"
+			$csvfilename = "$Path\$SqlInstance-DQ-$number-$queryname-$Suffix.csv"
+
+            if (($result | Get-Member | Where-Object Name -eq "Query Plan").Count -gt 0) {
+                $plannr = 0
+                foreach ($plan in $result."Query Plan") {
+                    $plannr += 1
+                    if ($row.DatabaseSpecific) {
+                        $planfilename = "$Path\$SqlInstance-$dbname-DQ-$number-$queryname-$plannr-$Suffix.sqlplan"
+                    }
+                    else {
+                        $planfilename = "$Path\$SqlInstance-DQ-$number-$queryname-$plannr-$Suffix.sqlplan"
+                    }
+                    
+                    if (!$NoPlanExport)
+                    {
+					    Write-Message -Level Output -Message "Exporting $planfilename"
+                        $plan | Out-File -FilePath $planfilename
+                    }
+                }
+
+                $result = $result | Select-Object * -ExcludeProperty "Query Plan"
+            }
+
+            if (($result | Get-Member | Where-Object Name -eq "Complete Query Text").Count -gt 0) {
+                $sqlnr = 0
+                foreach ($sql in $result."Complete Query Text") {
+                    $sqlnr += 1
+                    if ($row.DatabaseSpecific) {
+                        $sqlfilename = "$Path\$SqlInstance-$dbname-DQ-$number-$queryname-$sqlnr-$Suffix.sql"
+                    }
+                    else {
+                        $sqlfilename = "$Path\$SqlInstance-DQ-$number-$queryname-$sqlnr-$Suffix.sql"
+                    }
+                    
+                    if (!$NoQueryExport)
+                    {
+					    Write-Message -Level Output -Message "Exporting $sqlfilename"
+                        $sql | Out-File -FilePath $sqlfilename
+                    }
+                }
+
+                $result = $result | Select-Object * -ExcludeProperty "Complete Query Text"
+            }
+
+			switch ($ConvertTo) {
+				"Excel"
+				{
+					if ($row.DatabaseSpecific) {
+						Write-Message -Level Output -Message "Exporting $exceldbfilename"
+						$result | Export-Excel -Path $exceldbfilename -WorkSheetname $Name -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow
 					}
-					"csv"
-					{
-						if ($result.dbSpecific) {
-							Write-Message -Level Output -Message "Exporting $csvdbfilename"
-							$result | Export-Csv -Path $csvdbfilename -NoTypeInformation -Append
-						}
-						else {
-							Write-Message -Level Output -Message "Exporting $csvfilename"
-							$result | Export-Csv -Path $csvfilename -NoTypeInformation -Append
-						}
+					else {
+						Write-Message -Level Output -Message "Exporting $excelfilename"
+					    $result | Export-Excel -Path $excelfilename -WorkSheetname $Name -AutoSize -AutoFilter -BoldTopRow -FreezeTopRow
+					}
+				}
+				"csv"
+				{
+					if ($row.DatabaseSpecific) {
+						Write-Message -Level Output -Message "Exporting $csvdbfilename"
+						$result | Export-Csv -Path $csvdbfilename -NoTypeInformation -Append
+					}
+					else {
+						Write-Message -Level Output -Message "Exporting $csvfilename"
+						$result | Export-Csv -Path $csvfilename -NoTypeInformation -Append
 					}
 				}
 			}
