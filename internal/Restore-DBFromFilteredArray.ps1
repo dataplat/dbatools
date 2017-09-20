@@ -115,8 +115,8 @@ Function Restore-DBFromFilteredArray {
             Foreach ($File in $InternalFiles) {
                 if ($File.BackupPath -notlike "http*") {
                     Write-Message -Level Verbose -Message "Checking $($File.BackupPath) exists"
-                    if ((Test-DbaSqlPath -SqlInstance $server -Path $File.BackupPath) -eq $false) {
-                        Write-Message -Level VeryVerbose -Message "$($File.backupPath) is missing"
+                    if ((Test-DbaSqlPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $File.BackupPath) -eq $false) {
+                        Write-Message -Level VeryVerbose "$($File.backupPath) is missing"
                         $MissingFiles += $File.BackupPath
                     }
                 }
@@ -137,16 +137,15 @@ Function Restore-DBFromFilteredArray {
 
         foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object BackupSetGuid)) {
             #$RestorePoints  += [PSCustomObject]@{order=[Decimal]($if.Name); 'Files' = $if.group}
-            $RestorePoints += [PSCustomObject]@{order = [Decimal]3; FirstLsn = [Decimal](($if.Group.FirstLsn | Sort-Object -Unique)); LastLsn = [Decimal](($if.Group.LastLsn | Sort-Object -Unique)); 'Files' = $if.group}
+            $RestorePoints += [PSCustomObject]@{order = [Decimal](($if.Group.LastLsn | Sort-Object -Unique)); 'Files' = $if.group}
         }
-        $restoreOrder = [Decimal]1
-        $SortedRestorePoints = $RestorePoints | Sort-Object -property order, FirstLsn, LastLsn | ForEach-Object { @([PSCustomObject]@{order = $restoreOrder; 'Files' = $_.Files}); $restoreOrder ++ }
+        $SortedRestorePoints = $RestorePoints | Sort-Object -property order
         if ($ReuseSourceFolderStructure) {
             Write-Message -Level Verbose -Message "Checking for files folders for Reusing old structure"
             foreach ($File in ($RestorePoints.Files.filelist.PhysicalName | Sort-Object -Unique)) {
                 Write-Message -Level VeryVerbose -Message "File = $file"
                 if ((Test-DbaSqlPath -Path $File -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential) -ne $true) {
-                    Write-Message -Level VeryVerbose -Message "File doesn't exist, check for parent folder"
+                    Write-Message -Level VeryVerbose "File doesn't exist, check for parent folder"
                     if ((Test-DbaSqlPath -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential) -ne $true) {
                         Write-Message -Level debug -Message "$(Split-Path -Path $File -Parent) does not exist on $sqlinstance"
                         if ((New-DbaSqlDirectory -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential).Created -ne $true) {
@@ -253,7 +252,7 @@ Function Restore-DBFromFilteredArray {
                 break
             }
             $LogicalFileMovesString = $LogicalFileMoves -Join ", `n"
-            Write-Message -Level VeryVerbose -Message "Logical File Move string: $LogicalFileMovesString"
+            Write-Message -Level VeryVerbose -Message "$LogicalFileMovesString"
 
             if ($MaxTransferSize) {
                 $Restore.MaxTransferSize = $MaxTransferSize

@@ -20,7 +20,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 			$dbStore.Refresh()
 
 			$groupStore = $dbStore.ServerGroups[$group]
-			$newServer = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($groupStore, $regSrvName)
+			$newServer = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($groupStore,$regSrvName)
 			$newServer.ServerName = $srvName
 			$newServer.Description = $regSrvDesc
 			$newServer.Create()
@@ -31,12 +31,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 			$regSrvName2 = "dbatoolsci-server21"
 			$regSrvDesc2 = "dbatoolsci-server321"
 
-			$newGroup2 = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($groupStore, $group2)
+			$newGroup2 = New-Object Microsoft.SqlServer.Management.RegisteredServers.ServerGroup($groupStore,$group2)
 			$newGroup2.Create()
 			$dbStore.Refresh()
 
 			$groupStore2 = $dbStore.ServerGroups[$group].ServerGroups[$group2]
-			$newServer2 = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($groupStore2, $regSrvName2)
+			$newServer2 = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer($groupStore2,$regSrvName2)
 			$newServer2.ServerName = $srvName2
 			$newServer2.Description = $regSrvDesc2
 			$newServer2.Create()
@@ -47,11 +47,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		}
 
 		It "Should return multiple objects" {
-			$results = Get-DbaRegisteredServer -SqlInstance $script:instance1 -Group $group
+			$results = Get-DbaRegisteredServerName -SqlInstance $script:instance1 -Group $group
 			$results.Count | Should Be 2
 		}
 		It "Should allow searching subgroups" {
-			$results = Get-DbaRegisteredServer -SqlInstance $script:instance1 -Group "$group\$group2"
+			$results = Get-DbaRegisteredServerName -SqlInstance $script:instance1 -Group "$group\$group2"
 			$results.Count | Should Be 1
 		}
 		

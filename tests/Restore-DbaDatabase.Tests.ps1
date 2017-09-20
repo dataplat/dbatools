@@ -9,7 +9,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     New-Item -Type Directory $DataFolder -ErrorAction SilentlyContinue
     new-Item -Type Directory $LogFolder -ErrorAction SilentlyContinue
     Context "Properly restores a database on the local drive using Path" {
-        $null = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+        $null = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak
         It "Should Return the proper backup file location" {
             $results.BackupFile | Should Be "$script:appeyorlabrepo\singlerestore\singlerestore.bak"
@@ -31,7 +31,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again after withreplace test" {
-        $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
+        $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
         }
@@ -50,7 +50,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again after gci tests" {
-        $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
+        $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
         }
@@ -86,7 +86,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again post prefix and suffix tests" {
-        $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
+        $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
         }
@@ -106,7 +106,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 	
     Context "Database is properly removed (name change)" {
-        $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database pestering
+        $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database pestering
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
         }
@@ -145,7 +145,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 	
     Context "Database is properly removed again after folder options tests" {
-        $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
+        $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
         }
@@ -177,7 +177,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Clear-DbaSqlConnectionPool
 	Start-Sleep -Seconds 1
     Context "Database is properly removed again after all file mods test" {
-        $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
+        $results = Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
         It "Should say the status was dropped" {
             $results.Status | Should Be "Dropped"
         }
@@ -201,7 +201,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
 	
     Context "All user databases are removed post ola-style test" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase
         It "Should say the status was dropped" {
             $results.ForEach{ $_.Status | Should Be "Dropped" }
         }
@@ -232,7 +232,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Start-Sleep -Seconds 1
 	
     Context "All user databases are removed post RestoreTime check" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
@@ -256,7 +256,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "All user databases are removed" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase
         It "Should say the status was dropped post point in time test" {
             Foreach ($db in $results){ $db.Status | Should Be "Dropped" }
         }
@@ -299,7 +299,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "All user databases are removed post continue test" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
@@ -320,7 +320,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Start-Sleep -Seconds 1
 	
     Context "All user databases are removed post history test" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }

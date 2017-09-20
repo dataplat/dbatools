@@ -1,4 +1,4 @@
-function Update-Dbatools {
+Function Update-DbaTools {
 	<#
 		.SYNOPSIS
 			Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.
@@ -16,7 +16,6 @@ function Update-Dbatools {
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.NOTES 
-			Tags: Module
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -25,32 +24,32 @@ function Update-Dbatools {
 			https://dbatools.io/Update-DbaTools
 
 		.EXAMPLE
-			Update-Dbatools
+			Update-DbaTools
 
 			Updates dbatools. Deletes current copy and replaces it with freshest copy.
 
 		.EXAMPLE
-			Update-Dbatools -dev
+			Update-DbaTools -dev
 
 			Updates dbatools to the current development branch. Deletes current copy and replaces it with latest from github.
 	#>	
-	[CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact="Low")]
-	param(
-		[parameter(Mandatory=$false)]
-		[Alias("dev", "devbranch")]
-		[switch]$Development
-	)
+[CmdletBinding(SupportsShouldProcess=$true,ConfirmImpact="Low")]
+param(
+	[parameter(Mandatory=$false)]
+	[Alias("dev","devbranch")]
+	[switch]$Development
+)
 	$MyModuleBase = (Get-Module -name dbatools).ModuleBase;
 	$InstallScript = join-path -path $MyModuleBase -ChildPath "install.ps1";
-	if ($Development) {
+	if($Development) {
 		Write-Verbose "Installing dev/beta channel via $Installscript.";
-		if ($PSCmdlet.ShouldProcess("development branch", "Updating dbatools")) {
+		if ($PSCmdlet.ShouldProcess("development branch","Updating dbatools")) {
 			& $InstallScript -beta;
 		}
 	}
 	else {
 		Write-Verbose "Installing release version via $Installscript."
-		if ($PSCmdlet.ShouldProcess("release branch", "Updating dbatools")) {
+		if ($PSCmdlet.ShouldProcess("release branch","Updating dbatools")) {
 			& $InstallScript;
 		}
 	}
