@@ -85,7 +85,7 @@ function Test-DbaNetworkLatency {
 					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 				}
 				catch {
-					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+					Stop-Function -Message "Failed to connect to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				}
 				
 				do {
@@ -108,7 +108,7 @@ function Test-DbaNetworkLatency {
 					$averagewarm = $totalwarm
 				}
 				else {
-					$averagewarm = $totalwarm / ($count - 1)
+					$averagewarm = $totalwarm / $count
 				}
 				
 				
@@ -124,7 +124,7 @@ function Test-DbaNetworkLatency {
 				} | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Count as ExecutionCount', Total, 'Avg as Average', ExecuteOnlyTotal, 'ExecuteOnlyAvg as ExecuteOnlyAverage' #backwards compat
 			}
 			catch {
-				Stop-Function -Message "Error occurred: $_" -InnerErrorRecord $_ -Continue
+				Stop-Function -Message "Error occurred testing dba network latency: $_" -ErrorRecord $_ -Continue -Target $instance
 			}
 		}
 	}
