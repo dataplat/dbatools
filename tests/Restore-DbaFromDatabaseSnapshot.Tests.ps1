@@ -21,7 +21,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		$db2 = "dbatoolsci_RestoreSnap2"
 		$db2_snap1 = "dbatoolsci_RestoreSnap2_snapshotted1"
 		Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2 -Force
-		Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2 | Remove-DbaDatabase
+		Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2 | Remove-DbaDatabase -Confirm:$false
 		$server.Query("CREATE DATABASE $db1")
 		$server.Query("ALTER DATABASE $db1 MODIFY FILE ( NAME = N'$($db1)_log', SIZE = 13312KB )")
 		$server.Query("CREATE DATABASE $db2")
@@ -40,7 +40,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	AfterAll {
 		Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2 -Force -ErrorAction SilentlyContinue
-		Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2 -ErrorAction SilentlyContinue
+		Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1,$db2 -ErrorAction SilentlyContinue
 	}
 	Context "Parameters validation" {
 		It "Stops if no Database or Snapshot" {

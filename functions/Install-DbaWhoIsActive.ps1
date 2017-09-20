@@ -56,7 +56,7 @@ function Install-DbaWhoIsActive {
 			Installs sp_WhoisActive to sqlserver2014a's master database from the local file whoisactive_install.sql
 		
 		.EXAMPLE
-			$instances = Get-DbaRegisteredServerName sqlserver
+			$instances = Get-DbaRegisteredServer sqlserver
 			Install-DbaWhoIsActive -SqlInstance $instances -Database master
 			
 		.NOTES

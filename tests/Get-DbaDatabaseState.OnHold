@@ -16,7 +16,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$db6 = "dbatoolsci_dbstate_multi"
 			$db7 = "dbatoolsci_dbstate_rw"
 			$db8 = "dbatoolsci_dbstate_ro"
-			Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2,$db3,$db4,$db5,$db6,$db7,$db8 | Remove-DbaDatabase
+			Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2,$db3,$db4,$db5,$db6,$db7,$db8 | Remove-DbaDatabase -Confirm:$false
 			$server.Query("CREATE DATABASE $db1")
 			$server.Query("CREATE DATABASE $db2; ALTER DATABASE $db2 SET OFFLINE WITH ROLLBACK IMMEDIATE")
 			$server.Query("CREATE DATABASE $db3; ALTER DATABASE $db3 SET EMERGENCY WITH ROLLBACK IMMEDIATE")
@@ -36,7 +36,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		AfterAll {
 			$null = Set-DbaDatabaseState -Sqlinstance $script:instance2 -Database $db2,$db3,$db4,$db5,$db7 -Online -ReadWrite -MultiUser -Force
-			Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2,$db3,$db4,$db5,$db6,$db7,$db8
+			Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1,$db2,$db3,$db4,$db5,$db6,$db7,$db8
 		}
 		if ($setupright) {
 			It "Honors the Database parameter" {
