@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Test Check Default Trace" {
 
-        $results = Get-DbaTraceFile -SqlInstance $script:instance1 
+        $results = Get-DbaTraceFile -SqlInstance $script:instance2 
         It "Should find at least one trace file" {
             ($results).Count -gt 0 | Should Be $true
         }
