@@ -87,7 +87,12 @@ Function Start-DbaSqlService {
 	begin {
 		$processArray = @()
 		if ($PsCmdlet.ParameterSetName -eq "Server") {
-			$serviceCollection = Get-DbaSqlService @PSBoundParameters
+			$serviceParams = @{ ComputerName = $ComputerName }
+			if ($InstanceName) { $serviceParams.InstanceName = $InstanceName }
+			if ($Type) { $serviceParams.Type = $Type }
+			if ($Credential) { $serviceParams.Credential = $Credential }
+			if ($Silent) { $serviceParams.Silent = $Silent }
+			$serviceCollection = Get-DbaSqlService @serviceParams
 		}
 	}
 	process {
