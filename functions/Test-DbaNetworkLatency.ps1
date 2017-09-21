@@ -108,7 +108,7 @@ function Test-DbaNetworkLatency {
 					$averagewarm = $totalwarm
 				}
 				else {
-					$averagewarm = $totalwarm / $count
+					$averagewarm = $totalwarm / ($count - 1)
 				}
 				
 				
