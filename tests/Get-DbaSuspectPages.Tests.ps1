@@ -7,8 +7,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		BeforeAll {
 			$db = Get-DbaDatabase -SqlInstance $script:instance2 -Database msdb
             $db.Query("CREATE DATABASE dbatoolsci_suspectpages (id int identity)")
-            $dbId = Get-DbaDatabase -SqlInstance $script:instance2 -Database dbatoolsci_suspectpages | Select-Object ID
-			$db.Query("INSERT INTO msdb.dbo.suspect_pages VALUES($dbId,1,33,2,6,GETDATE())")
+			$db.Query("INSERT INTO msdb.dbo.suspect_pages VALUES(1,1,33,2,6,GETDATE())")
 		}
 		AfterAll {
 			$db.Query("DELETE FROM msdb.dbo.suspect_pages")
