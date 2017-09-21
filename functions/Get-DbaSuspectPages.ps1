@@ -73,7 +73,7 @@ function Get-DbaSuspectPages {
 				$results = $server.Query($sql) 
 			}
 			catch {
-				Stop-Function -Message "Issue collecting data on $server" -Target $server -ErrorRecord $_
+				Stop-Function -Message "Issue collecting data on $server" -Target $server -ErrorRecord $_ -Continue
 			}
 			
 			if ($Database) {
