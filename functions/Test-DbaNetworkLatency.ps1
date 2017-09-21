@@ -121,6 +121,7 @@ function Test-DbaNetworkLatency {
 					Avg              = [prettytimespan]::FromMilliseconds($average)
 					ExecuteOnlyTotal = [prettytimespan]::FromMilliseconds($totalwarm)
 					ExecuteOnlyAvg   = [prettytimespan]::FromMilliseconds($averagewarm)
+					NetworkOnlyTotal = [prettytimespan]::FromMiliseconds($totaltime - $totalwarm)
 				} | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Count as ExecutionCount', Total, 'Avg as Average', ExecuteOnlyTotal, 'ExecuteOnlyAvg as ExecuteOnlyAverage' #backwards compat
 			}
 			catch {
