@@ -304,11 +304,17 @@ namespace Sqlcollaborative.Dbatools.Parameter
                 {
                     name = ex.TargetSite.GetParameters()[0].Name;
                 }
-                catch { }
+                catch
+                {
+                }
                 if (name == "keyword")
                 {
                     throw;
                 }
+            }
+            catch (FormatException ex)
+            {
+                throw;
             }
             catch { }
 
