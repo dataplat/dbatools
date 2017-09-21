@@ -310,6 +310,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
                     throw;
                 }
             }
+            catch { }
 
             // Handle and clear protocols. Otherwise it'd make port detection unneccessarily messy
             if (Regex.IsMatch(tempString, "^TCP:", RegexOptions.IgnoreCase)) //TODO: Use case insinsitive String.BeginsWith()
