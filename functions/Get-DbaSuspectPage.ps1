@@ -1,4 +1,4 @@
-function Get-DbaSuspectPages {
+function Get-DbaSuspectPage {
 	<#
 		.SYNOPSIS
 		Returns data that is stored in SQL for Suspect Pages on the specied SQL Server Instance
@@ -27,9 +27,14 @@ function Get-DbaSuspectPages {
 		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 		.EXAMPLE
-		Get-DbaSuspectPages -SqlInstance sql2016 
+		Get-DbaSuspectPage -SqlInstance sql2016 
 
 		Retrieve any records stored for Suspect Pages on the sql2016 SQL Server.
+		
+		.EXAMPLE
+		Get-DbaSuspectPage -SqlInstance sql2016 -Database Test
+
+		Retrieve any records stored for Suspect Pages on the sql2016 SQL Server and the Test database only.
 
 #>
 	[CmdletBinding()]
@@ -38,7 +43,7 @@ function Get-DbaSuspectPages {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[object]$Database,
-        [PSCredential]$SqlCredential,
+       		[PSCredential]$SqlCredential,
 		[switch]$Silent
 	)
 	
