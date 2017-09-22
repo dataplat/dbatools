@@ -57,6 +57,15 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eClear-DbaSqlConnectionPool\r\n\r\nClears all local connection pools.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eClear-DbaSqlConnectionPool -ComputerName workstation27\r\n\r\nClears all connection pools on workstation27.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Clear-DbaWaitStatistics",
+        "Description":  "Reset the aggregated statistics - basically just executes DBCC SQLPERF (N\u0027sys.dm_os_wait_stats\u0027, CLEAR)",
+        "Tags":  "WaitStatistic",
+        "Synopsis":  "Clears wait statistics",
+        "Name":  "Clear-DbaWaitStatistics",
+        "Links":  "https://dbatools.io/Clear-DbaWaitStatistics",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eClear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012\r\n\r\nClear wait stats on servers sql2008 and sqlserver2012.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Connect-DbaSqlServer",
         "Description":  "This command is robust because it initializes properties that do not cause enumeration by default. It also supports both Windows and SQL Server authentication methods, and detects which to use based upon the provided credentials. \n\nBy default, this command also sets the connection\u0027s ApplicationName property  to \"dbatools PowerShell module - dbatools.io - custom connection\". If you\u0027re doing anything that requires profiling, you can look for this client name.\n\nAlternatively, you can pass in whichever client name you\u0027d like using the -ClientName parameter. There are a ton of other parameters for you to explore as well.\n    \nSee https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx,\nand https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.aspx\n\nTo execute SQL commands, you can use $server.ConnectionContext.ExecuteReader($sql) or $server.Databases[\u0027master\u0027].ExecuteNonQuery($sql)",
         "Synopsis":  "Creates a robust SMO SQL Server object.",
@@ -1808,6 +1817,15 @@
         "Name":  "Get-DbaUserLevelPermission",
         "Links":  "https://dbatools.io/Get-DbaUserLevelPermission",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaUserLevelPermission -SqlInstance sql2008, sqlserver2012\r\n\r\nCheck server and database permissions for servers sql2008 and sqlserver2012.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaUserLevelPermission -SqlInstance sql2008 -Database TestDB\r\n\r\nCheck server and database permissions on server sql2008 for only the TestDB database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaUserLevelPermission -SqlInstance sql2008 -Database TestDB -IncludePublicGuest -IncludeSystemObjects\r\n\r\nCheck server and database permissions on server sql2008 for only the TestDB database,\r\n      including public and guest grants, and sys schema objects.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaWaitStatistic",
+        "Description":  "This command is based off of Paul Randal\u0027s post \"Wait statistics, or please tell me where it hurts\"\n\nReturns:    WaitType\n\t\t\tCategory\n\t\t\tWaitSeconds\n\t\t\tResourceSeconds\n\t\t\tSignalSeconds\n\t\t\tWaitCount\n\t\t\tPercentage\n\t\t\tAverageWaitSeconds\n\t\t\tAverageResourceSeconds\n\t\t\tAverageSignalSeconds\n\t\t\tURL\n\nReference: https://www.sqlskills.com/blogs/paul/wait-statistics-or-please-tell-me-where-it-hurts/",
+        "Tags":  "WaitStatistic",
+        "Synopsis":  "Displays wait statistics",
+        "Name":  "Get-DbaWaitStatistic",
+        "Links":  "https://dbatools.io/Get-DbaWaitStatistic",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008, sqlserver2012\r\n\r\nCheck wait statistics for servers sql2008 and sqlserver2012\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008 -Threshold 98\r\n\r\nCheck wait statistics on server sql2008 for thresholds above 98%\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaWaitStatistic -SqlInstance sql2008 | Select *\r\n\r\nShows detailed notes, if available, from Paul\u0027s post\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$output = Get-DbaWaitStatistic -SqlInstance sql2008\r\n\r\n$output\r\nforeach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }\r\n\r\nDisplays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaWindowsLog",

@@ -35,7 +35,7 @@
 	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[DbaInstance[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
 		[switch]$Silent
 	)
@@ -55,7 +55,7 @@
 				$status = "Success"
 			}
 			catch {
-				$status = $_
+				$status = $_.Exception
 			}
 			
 			[PSCustomObject]@{
