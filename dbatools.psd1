@@ -357,7 +357,9 @@
 		'Disable-DbaAgHadr',
 		'Enable-DbaAgHadr',
 		'Get-DbaTraceFile',
-		'Get-DbaSuspectPage'
+		'Get-DbaSuspectPage',
+		'Get-DbaWaitStatistic',
+		'Clear-DbaWaitStatistics'
 	)
 	
 	# Cmdlets to export from this module
