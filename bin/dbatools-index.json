@@ -63,7 +63,7 @@
         "Synopsis":  "Clears wait statistics",
         "Name":  "Clear-DbaWaitStatistics",
         "Links":  "https://dbatools.io/Clear-DbaWaitStatistics",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eClear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012\r\n\r\nClear wait stats on servers sql2008 and sqlserver2012.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eClear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012\r\n\r\nAfter confirmation, clears wait stats on servers sql2008 and sqlserver2012\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eClear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false\r\n\r\nClears wait stats on servers sql2008 and sqlserver2012, without prompting\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Connect-DbaSqlServer",
@@ -1711,6 +1711,19 @@
         "Name":  "Get-DbaStartupParameter",
         "Links":  "https://dbatools.io/Get-DbaStartupParameter",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaStartupParameter -SqlInstance sql2014\r\n\r\nLogs into SQL WMI as the current user then displays the values for numerous startup parameters.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\r\n\r\nGet-DbaStartupParameter -SqlInstance sql2014 -Credential $wincred -Simple\r\n\r\nLogs in to WMI using the ad\\sqladmin credential and gathers simplified information about the SQL Server Startup \r\nParameters.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaSuspectPage",
+        "Description":  "This function returns any records that were stored due to suspect pages in databases on a SQL Server Instance.",
+        "Tags":  [
+                     "Pages",
+                     "DBCC"
+                 ],
+        "Author":  "Garry Bargsley (@gbargsley), http://blog.garrybargsley.com",
+        "Synopsis":  "Returns data that is stored in SQL for Suspect Pages on the specied SQL Server Instance",
+        "Name":  "Get-DbaSuspectPage",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSuspectPage -SqlInstance sql2016\r\n\r\nRetrieve any records stored for Suspect Pages on the sql2016 SQL Server.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaSuspectPage -SqlInstance sql2016 -Database Test\r\n\r\nRetrieve any records stored for Suspect Pages on the sql2016 SQL Server and the Test database only.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaTable",
