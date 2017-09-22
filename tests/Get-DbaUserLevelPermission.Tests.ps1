@@ -11,8 +11,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		
 		foreach ($result in $results) {
-			It "returns only tempdb results" {
-				$results.Object -eq 'tempdb' | Should Be $true
+			It "returns only tempdb or server results" {
+				$result.Object -in 'tempdb','SERVER' | Should Be $true
 			}
 		}
 	}
