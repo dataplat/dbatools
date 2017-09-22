@@ -79,11 +79,9 @@
 	
 	BEGIN {
 		
-		$sql = Get-Content -Raw "$script:PSModuleRoot\bin\stig.sql"
+		$sql = [System.IO.File]::ReadAllText("$script:PSModuleRoot\bin\stig.sql") 
 		
-		$endSQL = "Use tempdb
-                       GO
-                       BEGIN TRY DROP FUNCTION STIG.server_effective_permissions END TRY BEGIN CATCH END CATCH;
+		$endSQL = "	   BEGIN TRY DROP FUNCTION STIG.server_effective_permissions END TRY BEGIN CATCH END CATCH;
                        GO
                        BEGIN TRY DROP VIEW STIG.server_permissions END TRY BEGIN CATCH END CATCH;
                        GO
@@ -222,7 +220,7 @@
 				if (-not $serverDT) {
 					Write-Message -Level Verbose -Message "Building data table for server objects"
 					
-					$serverDT = $db.Query($serverSQL)
+					try { $serverDT = $db.Query($serverSQL) } catch { } 
 					
 					foreach ($row in $serverDT) {
 						[PSCustomObject]@{
@@ -247,7 +245,7 @@
 				}
 				
 				Write-Message -Level Verbose -Message "Building data table for $db objects"
-				$dbDT = $db.Query($dbSQL)
+				try { $dbDT = $db.Query($dbSQL) } catch { } 
 				
 				foreach ($row in $dbDT) {
 					[PSCustomObject]@{
@@ -272,7 +270,7 @@
 				
 				#Delete objects
 				Write-Message -Level Verbose -Message "Deleting objects"
-				$db.ExecuteNonQuery($endSQL)
+				try { $db.ExecuteNonQuery($endSQL) }catch { }
 				$sql = $sql.Replace($db.Name, "<TARGETDB>")
 				
 				#Sashay Away
