@@ -91,7 +91,7 @@ function Get-DbaSuspectPage {
 			  ComputerName   = $server.NetName
 			  InstanceName   = $server.ServiceName
 			  SqlInstance    = $server.DomainInstanceName
-			  DBName         = $row.DBName
+			  Database       = $row.DBName
 			  FileId         = $row.file_id
 			  PageId         = $row.page_id
 			  EventType      = $row.EventType
