@@ -5,6 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Testing if suspect pages are present" {
 		BeforeAll {
+			$db = Get-DbaDatabase -SqlInstance $script:instance1 -Database msdb
 			$db.Query("INSERT INTO msdb.dbo.suspect_pages VALUES(1,1,33,2,6,GETDATE())")
 		}
 		AfterAll {
