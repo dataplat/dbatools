@@ -15,6 +15,12 @@
 
 		Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
+	.PARAMETER WhatIf
+		If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+	.PARAMETER Confirm
+		If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
 	.PARAMETER Silent 
 		Use this switch to disable any kind of verbose messages
 
@@ -29,9 +35,13 @@
 
 	.EXAMPLE   
 		Clear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012
-		Clear wait stats on servers sql2008 and sqlserver2012.
+		After confirmation, clears wait stats on servers sql2008 and sqlserver2012
+	
+	.EXAMPLE   
+		Clear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false
+		Clears wait stats on servers sql2008 and sqlserver2012, without prompting
 	#>
-	[CmdletBinding()]
+	[CmdletBinding(ConfirmImpact = 'High', SupportsShouldProcess)]
 	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
@@ -50,19 +60,21 @@
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			try {
-				$server.Query("DBCC SQLPERF (N'sys.dm_os_wait_stats', CLEAR);")
-				$status = "Success"
-			}
-			catch {
-				$status = $_.Exception
-			}
-			
-			[PSCustomObject]@{
-				ComputerName    = $server.NetName
-				InstanceName    = $server.ServiceName
-				SqlInstance	    = $server.DomainInstanceName
-				Status		    = $status
+			if ($Pscmdlet.ShouldProcess($instance, "Performing CLEAR of sys.dm_os_wait_stats")) {
+				try {
+					$server.Query("DBCC SQLPERF (N'sys.dm_os_wait_stats', CLEAR);")
+					$status = "Success"
+				}
+				catch {
+					$status = $_.Exception
+				}
+				
+				[PSCustomObject]@{
+					ComputerName	 = $server.NetName
+					InstanceName	 = $server.ServiceName
+					SqlInstance	     = $server.DomainInstanceName
+					Status		     = $status
+				}
 			}
 		}
 	}
