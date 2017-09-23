@@ -14,7 +14,7 @@
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
 			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
@@ -24,7 +24,7 @@
 			Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 		
 		.PARAMETER ExcludeDatabase
-			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server
+			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 		
 		.PARAMETER IncludeSystemDBs
 			If this switch is enabled, system databases will be processed. By default, only user databases are processed.
