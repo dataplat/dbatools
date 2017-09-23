@@ -1,92 +1,80 @@
 ﻿function Get-DbaDatabaseSpace {
-<#
-	.SYNOPSIS
-		Returns database file space information for database files on a SQL instance.
-	
-	.DESCRIPTION
-		This function returns database file space information for a SQL Instance or group of SQL
-		Instances. Information is based on a query against sys.database_files and the FILEPROPERTY
-		function to query and return information. The function can accept a single instance or
-		multiple instances. By default, only user dbs will be shown, but using the IncludeSystemDBs
-		switch will include system databases
+	<#
+		.SYNOPSIS
+			Returns database file space information for database files on a SQL instance.
 		
-		File free space script borrowed and modified from Glenn Berry's DMV scripts (http://www.sqlskills.com/blogs/glenn/category/dmv-queries/)
-	
-	.PARAMETER SqlInstance
-		SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
-	
-	.PARAMETER SqlCredential
-		PSCredential object to connect under. If not specified, current Windows login will be used.
-	
-	.PARAMETER Database
-		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
-	
-	.PARAMETER ExcludeDatabase
-		The database(s) to exclude - this list is auto-populated from the server
-	
-	.PARAMETER IncludeSystemDBs
-		Switch parameter that when used will display system database information
-	
-	.PARAMETER Silent
-		Replaces user friendly yellow warnings with bloody red exceptions of doom!
-		Use this if you want the function to throw terminating errors you want to catch.
-	
-	.EXAMPLE
-		Get-DbaDatabaseSpace -SqlInstance localhost
+		.DESCRIPTION
+			This function returns database file space information for a SQL Instance or group of SQL Instances. Information is based on a query against sys.database_files and the FILEPROPERTY	function to query and return information.
+			
+			File free space script borrowed and modified from Glenn Berry's DMV scripts (http://www.sqlskills.com/blogs/glenn/category/dmv-queries/)
 		
-		Returns all user database files and free space information for the local host
-	
-	.EXAMPLE
-		Get-DbaDatabaseSpace -SqlInstance localhost | Where-Object {$_.PercentUsed -gt 80}
+		.PARAMETER SqlInstance 
+			Specifies the SQL Server instance(s) to scan.
+			
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
+
+		.PARAMETER Database
+			Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 		
-		Returns all user database files and free space information for the local host. Filters
-		the output object by any files that have a percent used of greater than 80%.
-	
-	.EXAMPLE
-		'localhost','localhost\namedinstance' | Get-DbaDatabaseSpace
+		.PARAMETER ExcludeDatabase
+			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 		
-		Returns all user database files and free space information for the localhost and
-		localhost\namedinstance SQL Server instances. Processes data via the pipeline.
-	
-	.EXAMPLE
-		Get-DbaDatabaseSpace -SqlInstance localhost -Database db1, db2
+		.PARAMETER IncludeSystemDBs
+			If this switch is enabled, system databases will be processed. By default, only user databases are processed.
 		
-		Returns database files and free space information for the db1 and db2 on localhost.
-	
-	.NOTES
-		Author: Michael Fal (@Mike_Fal), http://mikefal.net
-		Website: https://dbatools.io
-		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-	
-	.LINK
-		https://dbatools.io/Get-DbaDatabaseSpace
-#>
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
+		
+		.EXAMPLE
+			Get-DbaDatabaseSpace -SqlInstance localhost
+			
+			Returns all user database files and free space information for the localhost.
+		
+		.EXAMPLE
+			Get-DbaDatabaseSpace -SqlInstance localhost | Where-Object {$_.PercentUsed -gt 80}
+			
+			Returns all user database files and free space information for the local host. Filters the output object by any files that have a percent used of greater than 80%.
+		
+		.EXAMPLE
+			'localhost','localhost\namedinstance' | Get-DbaDatabaseSpace
+			
+			Returns all user database files and free space information for the localhost and localhost\namedinstance SQL Server instances. Processes data via the pipeline.
+		
+		.EXAMPLE
+			Get-DbaDatabaseSpace -SqlInstance localhost -Database db1, db2
+			
+			Returns database files and free space information for the db1 and db2 on localhost.
+		
+		.NOTES
+			Author: Michael Fal (@Mike_Fal), http://mikefal.net
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+		
+		.LINK
+			https://dbatools.io/Get-DbaDatabaseSpace
+	#>
 	[CmdletBinding()]
 	param ([parameter(ValueFromPipeline, Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]
-		$SqlInstance,
-		
-		[System.Management.Automation.PSCredential]
-		$SqlCredential,
-		
+		[DbaInstanceParameter[]]$SqlInstance,
+		[System.Management.Automation.PSCredential]$SqlCredential,
 		[Alias("Databases")]
-		[object[]]
-		$Database,
-		
-		[object[]]
-		$ExcludeDatabase,
-		
-		[switch]
-		$IncludeSystemDBs,
-		
-		[switch]
-		$Silent
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
+		[switch]$IncludeSystemDBs,
+		[switch]$Silent
 	)
 	
 	begin {
-		Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
+		Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")."
 		
 		$sql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName, 
 								   ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, 
@@ -141,14 +129,13 @@
 	}
 	
 	process {
-		
 		foreach ($instance in $SqlInstance) {
 			try {
-				Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
+				Write-Message -Level VeryVerbose -Message "Connecting to $instance." -Target $instance
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
+				Stop-Function -Message "Failed to process Instance $Instance." -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			if ($server.VersionMajor -lt 9) {
@@ -174,52 +161,72 @@
 				}
 			}
 			catch {
-				Stop-Function -Message "Unable to gather databases for $instance" -ErrorRecord $_ -Continue
+				Stop-Function -Message "Unable to gather databases for $instance." -ErrorRecord $_ -Continue
 			}
 			
 			foreach ($db in $dbs) {
 				try {
-					Write-Message -Level Verbose -Message "Querying $instance - $db"
+					Write-Message -Level Verbose -Message "Querying $instance - $db."
 					If ($db.status -ne 'Normal' -or $db.IsAccessible -eq $false) {
 						Write-Message -Level Warning -Message "$db is not accessible." -Target $db
 						continue
 					}
 					#Execute query against individual database and add to output
 					foreach ($row in ($db.ExecuteWithResults($sql)).Tables.Rows) {
-						If ($row.UsedSpaceMB -is [System.DBNull]) { $UsedMB = 0 }
-						Else { $UsedMB = [Math]::Round($row.UsedSpaceMB) }
-						If ($row.FreeSpaceMB -is [System.DBNull]) { $FreeMB = 0 }
-						Else { $FreeMB = [Math]::Round($row.FreeSpaceMB) }
-						If ($row.PercentUsed -is [System.DBNull]) { $PercentUsed = 0 }
-						Else { $PercentUsed = [Math]::Round($row.PercentUsed) }
-						If ($row.SpaceBeforeMax -is [System.DBNull]) { $SpaceUntilMax = 0 }
-						Else { $SpaceUntilMax = [Math]::Round($row.SpaceBeforeMax) }
-						If ($row.UnusableSpaceMB -is [System.DBNull]) { $UnusableSpace = 0 }
-						Else { $UnusableSpace = [Math]::Round($row.UnusableSpaceMB) }
+						if ($row.UsedSpaceMB -is [System.DBNull]) {
+							$UsedMB = 0
+						}
+						else {
+							$UsedMB = [Math]::Round($row.UsedSpaceMB)
+						}
+						if ($row.FreeSpaceMB -is [System.DBNull]) {
+							$FreeMB = 0
+						}
+						else {
+							$FreeMB = [Math]::Round($row.FreeSpaceMB)
+						}
+						if ($row.PercentUsed -is [System.DBNull]) {
+							$PercentUsed = 0
+						}
+						else {
+							$PercentUsed = [Math]::Round($row.PercentUsed)
+						}
+						if ($row.SpaceBeforeMax -is [System.DBNull]) {
+							$SpaceUntilMax = 0
+						}
+						else {
+							$SpaceUntilMax = [Math]::Round($row.SpaceBeforeMax)
+						}
+						if ($row.UnusableSpaceMB -is [System.DBNull]) {
+							$UnusableSpace = 0
+						}
+						else {
+							$UnusableSpace = [Math]::Round($row.UnusableSpaceMB)
+						}
 						
 						[pscustomobject]@{
-							ComputerName = $server.NetName
-							InstanceName = $server.ServiceName
-							SqlInstance = $server.DomainInstanceName
-							Database = $row.DBName
-							FileName = $row.FileName
-							FileGroup = $row.FileGroup
-							PhysicalName = $row.PhysicalName
-							FileType = $row.FileType
-							UsedSpaceMB = $UsedMB
-							FreeSpaceMB = $FreeMB
-							FileSizeMB = $row.FileSizeMB
-							PercentUsed = $PercentUsed
-							AutoGrowth = $row.GrowthMB
-							AutoGrowType = $row.GrowthType
-							SpaceUntilMaxSizeMB = $SpaceUntilMax
+							ComputerName         = $server.NetName
+							InstanceName         = $server.ServiceName
+							SqlInstance          = $server.DomainInstanceName
+							Database             = $row.DBName
+							FileName             = $row.FileName
+							FileGroup            = $row.FileGroup
+							PhysicalName         = $row.PhysicalName
+							FileType             = $row.FileType
+							UsedSpaceMB          = $UsedMB
+							FreeSpaceMB          = $FreeMB
+							FileSizeMB           = $row.FileSizeMB
+							PercentUsed          = $PercentUsed
+							AutoGrowth           = $row.GrowthMB
+							AutoGrowType         = $row.GrowthType
+							SpaceUntilMaxSizeMB  = $SpaceUntilMax
 							AutoGrowthPossibleMB = $row.PossibleAutoGrowthMB
-							UnusableSpaceMB = $UnusableSpace
+							UnusableSpaceMB      = $UnusableSpace
 						}
 					}
 				}
 				catch {
-					Stop-Function -Message "Unable to query $instance - $db" -Target $db -ErrorRecord $_ -Continue
+					Stop-Function -Message "Unable to query $instance - $db." -Target $db -ErrorRecord $_ -Continue
 				}
 			}
 		}
