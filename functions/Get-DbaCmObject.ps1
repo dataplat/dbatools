@@ -141,7 +141,7 @@
 				try { $conType = $connection.GetConnectionType(($excluded -join ","), $Force) }
 				catch {
 					if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
-					Stop-Function -Message "[$computer] Could not find a valid connection protocol, interrupting execution now" -Target $computer -Category OpenError -Continue -ContinueLabel "main" -SilentlyContinue:$SilentlyContinue -ErrorRecord $_
+					Stop-Function -Message "[$computer] Could not find a valid connection protocol, interrupting execution now" -Target $computer -Category OpenError -Continue -ContinueLabel "main" -SilentlyContinue:$SilentlyContinue -ErrorRecord $_ -WarningAction SilentlyContinue
 				}
 				
 				switch ($conType.ToString()) {
