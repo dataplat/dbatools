@@ -1,90 +1,90 @@
 function Test-DbaDiskAlignment {
 	<#
-    .SYNOPSIS
-        Verifies that your non-dynamic disks are aligned according to physical constraints.
-    
-    .DESCRIPTION
-        Returns $true or $false by default for one server. Returns Server name and IsBestPractice for more than one server.
+        .SYNOPSIS
+            Verifies that your non-dynamic disks are aligned according to physical constraints.
         
-        Specify -Detailed for additional information which returns some additional optional "best practice" columns, which may show false even though you pass the alignment test. This is because your offset is not one of the "expected" values that Windows uses, but your disk is still physically aligned.
-        
-        Please refer to your storage vendor best practices before following any advice below.
+        .DESCRIPTION
+            Returns $true or $false by default for one server. Returns Server name and IsBestPractice for more than one server.
+            
+            Specify -Detailed for additional information which returns some additional optional "best practice" columns, which may show false even though you pass the alignment test. This is because your offset is not one of the "expected" values that Windows uses, but your disk is still physically aligned.
+            
+            Please refer to your storage vendor best practices before following any advice below.
 
-        By default issues with disk alignment should be resolved by a new installation of Windows Server 2008, Windows Vista, or later operating systems, but verifying disk alignment continues to be recommended as a best practice.
-        While some versions of Windows use different starting alignments, if you are starting anew 1MB is generally the best practice offset for current operating systems (because it ensures that the partition offset % common stripe unit sizes == 0 )
+            By default issues with disk alignment should be resolved by a new installation of Windows Server 2008, Windows Vista, or later operating systems, but verifying disk alignment continues to be recommended as a best practice.
+            While some versions of Windows use different starting alignments, if you are starting anew 1MB is generally the best practice offset for current operating systems (because it ensures that the partition offset % common stripe unit sizes == 0 )
+            
+            Caveats:
+            * Dynamic drives (or those provisioned via third party software) may or may not have accurate results when polled by any of the built in tools, see your vendor for details.
+            * Windows does not have a reliable way to determine stripe unit Sizes. These values are obtained from vendor disk management software or from your SAN administrator.
+            * System drives in versions previous to Windows Server 2008 cannot be aligned, but it is generally not recommended to place SQL Server databases on system drives.
         
-        Caveats:
-        * Dynamic drives (or those provisioned via third party software) may or may not have accurate results when polled by any of the built in tools, see your vendor for details.
-        * Windows does not have a reliable way to determine stripe unit Sizes. These values are obtained from vendor disk management software or from your SAN administrator.
-        * System drives in versions previous to Windows Server 2008 cannot be aligned, but it is generally not recommended to place SQL Server databases on system drives.
-    
-	.PARAMETER ComputerName
-		The server(s) to check disk configuration on.
-    
-    .PARAMETER Detailed
-        If this switch is enabled, additional disk details will be displayed.
-    
-    .PARAMETER Credential
-        Specifies an alternate Windows account to use when enumerating drives on the server. May require Administrator privileges. To use:
+        .PARAMETER ComputerName
+            The server(s) to check disk configuration on.
+        
+        .PARAMETER Detailed
+            If this switch is enabled, additional disk details will be displayed.
+        
+        .PARAMETER Credential
+            Specifies an alternate Windows account to use when enumerating drives on the server. May require Administrator privileges. To use:
 
-        $cred = Get-Credential, then pass $cred object to the -Credential parameter.
-    
-    .PARAMETER SQLCredential
-		Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+            $cred = Get-Credential, then pass $cred object to the -Credential parameter.
+        
+        .PARAMETER SQLCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-		$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-		Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-		To connect as a different Windows user, run PowerShell as that user.		
-    
-	.PARAMETER NoSqlCheck
-		If this switch is enabled, the disk(s) will not be checked for SQL Server data or log files.
-    
-	.PARAMETER Silent
-		If this switch is enabled, the internal messaging functions will be silenced.	
-    
-    .EXAMPLE
-        Test-DbaDiskAlignment -ComputerName sqlserver2014a
+            To connect as a different Windows user, run PowerShell as that user.		
         
-        Tests the disk alignment of a single server named sqlserver2014a
-    
-    .EXAMPLE
-        Test-DbaDiskAlignment -ComputerName sqlserver2014a, sqlserver2014b, sqlserver2014c
+        .PARAMETER NoSqlCheck
+            If this switch is enabled, the disk(s) will not be checked for SQL Server data or log files.
         
-        Tests the disk alignment of multiple servers
-    
-    .NOTES
-        Tags: Storage
-        The preferred way to determine if your disks are aligned (or not) is to calculate:
-        1. Partition offset - stripe unit size
-        2. Stripe unit size - File allocation unit size
+        .PARAMETER Silent
+            If this switch is enabled, the internal messaging functions will be silenced.	
         
-        References:
-        Disk Partition Alignment Best Practices for SQL Server - https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx
-        A great article and behind most of this code.
+        .EXAMPLE
+            Test-DbaDiskAlignment -ComputerName sqlserver2014a
+            
+            Tests the disk alignment of a single server named sqlserver2014a
         
-        Getting Partition Offset information with Powershell - http://sqlblog.com/blogs/jonathan_kehayias/archive/2010/03/01/getting-partition-Offset-information-with-powershell.aspx
-        Thanks to Jonathan Kehayias!
+        .EXAMPLE
+            Test-DbaDiskAlignment -ComputerName sqlserver2014a, sqlserver2014b, sqlserver2014c
+            
+            Tests the disk alignment of multiple servers
         
-        Decree: Set your partition Offset and block Size and make SQL Server faster - http://www.midnightdba.com/Jen/2014/04/decree-set-your-partition-Offset-and-block-Size-make-sql-server-faster/
-        Thanks to Jen McCown!
+        .NOTES
+            Tags: Storage
+            The preferred way to determine if your disks are aligned (or not) is to calculate:
+            1. Partition offset - stripe unit size
+            2. Stripe unit size - File allocation unit size
+            
+            References:
+            Disk Partition Alignment Best Practices for SQL Server - https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx
+            A great article and behind most of this code.
+            
+            Getting Partition Offset information with Powershell - http://sqlblog.com/blogs/jonathan_kehayias/archive/2010/03/01/getting-partition-Offset-information-with-powershell.aspx
+            Thanks to Jonathan Kehayias!
+            
+            Decree: Set your partition Offset and block Size and make SQL Server faster - http://www.midnightdba.com/Jen/2014/04/decree-set-your-partition-Offset-and-block-Size-make-sql-server-faster/
+            Thanks to Jen McCown!
+            
+            Disk Performance Hands On - http://www.kendalvandyke.com/2009/02/disk-performance-hands-on-series-recap.html
+            Thanks to Kendal Van Dyke!
+            
+            Get WMI Disk Information - http://powershell.com/cs/media/p/7937.aspx
+            Thanks to jbruns2010!
+            
+            Author: Constantine Kokkinos (https://constantinekokkinos.com, @mobileck)
+            
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com,)
+            Copyright (C) 2016 Chrissy LeMaire
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0        
         
-        Disk Performance Hands On - http://www.kendalvandyke.com/2009/02/disk-performance-hands-on-series-recap.html
-        Thanks to Kendal Van Dyke!
-        
-        Get WMI Disk Information - http://powershell.com/cs/media/p/7937.aspx
-        Thanks to jbruns2010!
-        
-        Author: Constantine Kokkinos (https://constantinekokkinos.com, @mobileck)
-        
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com,)
-        Copyright (C) 2016 Chrissy LeMaire
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0        
-    
-    .LINK
-        https://dbatools.io/Test-DbaDiskAlignment
-#>    
+        .LINK
+            https://dbatools.io/Test-DbaDiskAlignment
+    #>    
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
