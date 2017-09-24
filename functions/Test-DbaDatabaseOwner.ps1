@@ -41,7 +41,7 @@ function Test-DbaDatabaseOwner {
 			Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
 
 		.PARAMETER Detailed
-			If this switch is enabled, a list of all databases and whether or not their owner matches TargetLogin.
+			If this switch is enabled, a list of all databases and whether or not their owner matches TargetLogin is returned.
 
 		.LINK
 			https://dbatools.io/Test-DbaDatabaseOwner
