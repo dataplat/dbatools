@@ -6,7 +6,8 @@
 	.DESCRIPTION 
 		This command is based off of Paul Randal's post "Wait statistics, or please tell me where it hurts"
 	
-		Returns:    WaitType
+		Returns:    
+					WaitType
 					Category
 					WaitSeconds
 					ResourceSeconds
@@ -29,6 +30,9 @@
 
 	.PARAMETER Threshold
 		Threshold, in percentage of all waits on the system. Default per Paul's post is 95%.
+	
+	.PARAMETER IncludeIgnorable
+		Some waits are no big deal and can be safely ignored in most circumstances. If you've got weird issues with mirroring or AGs.
 
 	.PARAMETER Silent 
 		Use this switch to disable any kind of verbose messages
@@ -47,8 +51,8 @@
 		Check wait statistics for servers sql2008 and sqlserver2012
 
 	.EXAMPLE   
-		Get-DbaWaitStatistic -SqlInstance sql2008 -Threshold 98
-		Check wait statistics on server sql2008 for thresholds above 98%
+		Get-DbaWaitStatistic -SqlInstance sql2008 -Threshold 98 -IncludeIgnorable
+		Check wait statistics on server sql2008 for thresholds above 98% and include wait stats that are most often, but not always, ignorable
 
 	.EXAMPLE   
 		Get-DbaWaitStatistic -SqlInstance sql2008 | Select *
@@ -69,6 +73,7 @@
 		[DbaInstance[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
 		[int]$Threshold = 95,
+		[switch]$IncludeIgnorable,
 		[switch]$Silent
 	)
 	
@@ -750,6 +755,36 @@
 			XE_TIMER_TASK_DONE								      = 'Other'
 		}
 		
+		$ignorable = 'BROKER_EVENTHANDLER', 'BROKER_RECEIVE_WAITFOR', 'BROKER_TASK_STOP',
+		'BROKER_TO_FLUSH', 'BROKER_TRANSMITTER', 'CHECKPOINT_QUEUE',
+		'CHKPT', 'CLR_AUTO_EVENT', 'CLR_MANUAL_EVENT', 'CLR_SEMAPHORE',
+		'DBMIRROR_DBM_EVENT', 'DBMIRROR_EVENTS_QUEUE', 'DBMIRROR_WORKER_QUEUE',
+		'DBMIRRORING_CMD', 'DIRTY_PAGE_POLL', 'DISPATCHER_QUEUE_SEMAPHORE',
+		'EXECSYNC', 'FSAGENT', 'FT_IFTS_SCHEDULER_IDLE_WAIT', 'FT_IFTSHC_MUTEX',
+		'HADR_CLUSAPI_CALL', 'HADR_FILESTREAM_IOMGR_IOCOMPLETION', 'HADR_LOGCAPTURE_WAIT',
+		'HADR_NOTIFICATION_DEQUEUE', 'HADR_TIMER_TASK', 'HADR_WORK_QUEUE',
+		'KSOURCE_WAKEUP', 'LAZYWRITER_SLEEP', 'LOGMGR_QUEUE',
+		'MEMORY_ALLOCATION_EXT', 'ONDEMAND_TASK_QUEUE', 'PREEMPTIVE_SP_SERVER_DIAGNOSTICS',
+		'PARALLEL_REDO_WORKER_WAIT_WORK', 'PREEMPTIVE_HADR_LEASE_MECHANISM', 
+		'PREEMPTIVE_OS_LIBRARYOPS', 'PREEMPTIVE_OS_COMOPS', 'PREEMPTIVE_OS_CRYPTOPS',
+		'PREEMPTIVE_OS_PIPEOPS', 'PREEMPTIVE_OS_AUTHENTICATIONOPS',
+		'PREEMPTIVE_OS_GENERICOPS', 'PREEMPTIVE_OS_VERIFYTRUST',
+		'PREEMPTIVE_OS_FILEOPS', 'PREEMPTIVE_OS_DEVICEOPS', 'PREEMPTIVE_OS_QUERYREGISTRY',
+		'PREEMPTIVE_OS_WRITEFILE', 'PREEMPTIVE_XE_CALLBACKEXECUTE', 'PREEMPTIVE_XE_DISPATCHER',
+		'PREEMPTIVE_XE_GETTARGETSTATE', 'PREEMPTIVE_XE_SESSIONCOMMIT',
+		'PREEMPTIVE_XE_TARGETINIT', 'PREEMPTIVE_XE_TARGETFINALIZE',
+		'PWAIT_ALL_COMPONENTS_INITIALIZED', 'PWAIT_DIRECTLOGCONSUMER_GETNEXT',
+		'QDS_PERSIST_TASK_MAIN_LOOP_SLEEP', 'QDS_ASYNC_QUEUE',
+		'QDS_CLEANUP_STALE_QUERIES_TASK_MAIN_LOOP_SLEEP', 'REQUEST_FOR_DEADLOCK_SEARCH',
+		'RESOURCE_QUEUE', 'SERVER_IDLE_CHECK', 'SLEEP_BPOOL_FLUSH', 'SLEEP_DBSTARTUP',
+		'SLEEP_DCOMSTARTUP', 'SLEEP_MASTERDBREADY', 'SLEEP_MASTERMDREADY',
+		'SLEEP_MASTERUPGRADED', 'SLEEP_MSDBSTARTUP', 'SLEEP_SYSTEMTASK', 'SLEEP_TASK',
+		'SLEEP_TEMPDBSTARTUP', 'SNI_HTTP_ACCEPT', 'SP_SERVER_DIAGNOSTICS_SLEEP',
+		'SQLTRACE_BUFFER_FLUSH', 'SQLTRACE_INCREMENTAL_FLUSH_SLEEP', 'SQLTRACE_WAIT_ENTRIES',
+		'WAIT_FOR_RESULTS', 'WAITFOR', 'WAITFOR_TASKSHUTDOWN', 'WAIT_XTP_HOST_WAIT',
+		'WAIT_XTP_OFFLINE_CKPT_NEW_LOG', 'WAIT_XTP_CKPT_CLOSE', 'WAIT_XTP_RECOVERY',
+		'XE_BUFFERMGR_ALLPROCESSED_EVENT', 'XE_DISPATCHER_JOIN',
+		'XE_DISPATCHER_WAIT', 'XE_LIVE_TARGET_TVF', 'XE_TIMER_EVENT'
 		
 		$sql = "WITH [Waits] AS
     	(SELECT
@@ -761,51 +796,7 @@
        100.0 * [wait_time_ms] / SUM ([wait_time_ms]) OVER() AS [Percentage],
         ROW_NUMBER() OVER(ORDER BY [wait_time_ms] DESC) AS [RowNum]
 	    FROM sys.dm_os_wait_stats
-	    WHERE [wait_type] NOT IN (
-	        N'BROKER_EVENTHANDLER', N'BROKER_RECEIVE_WAITFOR',
-	        N'BROKER_TASK_STOP', N'BROKER_TO_FLUSH',
-	        N'BROKER_TRANSMITTER', N'CHECKPOINT_QUEUE',
-	        N'CHKPT', N'CLR_AUTO_EVENT',
-	        N'CLR_MANUAL_EVENT', N'CLR_SEMAPHORE',
-	 
-	        -- Maybe comment these four out if you have mirroring issues
-	        N'DBMIRROR_DBM_EVENT', N'DBMIRROR_EVENTS_QUEUE',
-	        N'DBMIRROR_WORKER_QUEUE', N'DBMIRRORING_CMD',
-	 
-	        N'DIRTY_PAGE_POLL', N'DISPATCHER_QUEUE_SEMAPHORE',
-	        N'EXECSYNC', N'FSAGENT',
-	        N'FT_IFTS_SCHEDULER_IDLE_WAIT', N'FT_IFTSHC_MUTEX',
-	 
-	        -- Maybe comment these six out if you have AG issues
-	        N'HADR_CLUSAPI_CALL', N'HADR_FILESTREAM_IOMGR_IOCOMPLETION',
-	        N'HADR_LOGCAPTURE_WAIT', N'HADR_NOTIFICATION_DEQUEUE',
-	        N'HADR_TIMER_TASK', N'HADR_WORK_QUEUE',
-	 
-	        N'KSOURCE_WAKEUP', N'LAZYWRITER_SLEEP',
-	        N'LOGMGR_QUEUE', N'MEMORY_ALLOCATION_EXT',
-	        N'ONDEMAND_TASK_QUEUE',
-	        N'PREEMPTIVE_XE_GETTARGETSTATE',
-	        N'PWAIT_ALL_COMPONENTS_INITIALIZED',
-	        N'PWAIT_DIRECTLOGCONSUMER_GETNEXT',
-	        N'QDS_PERSIST_TASK_MAIN_LOOP_SLEEP', N'QDS_ASYNC_QUEUE',
-	        N'QDS_CLEANUP_STALE_QUERIES_TASK_MAIN_LOOP_SLEEP',
-	        N'QDS_SHUTDOWN_QUEUE', N'REDO_THREAD_PENDING_WORK',
-	        N'REQUEST_FOR_DEADLOCK_SEARCH', N'RESOURCE_QUEUE',
-	        N'SERVER_IDLE_CHECK', N'SLEEP_BPOOL_FLUSH',
-	        N'SLEEP_DBSTARTUP', N'SLEEP_DCOMSTARTUP',
-	        N'SLEEP_MASTERDBREADY', N'SLEEP_MASTERMDREADY',
-	        N'SLEEP_MASTERUPGRADED', N'SLEEP_MSDBSTARTUP',
-	        N'SLEEP_SYSTEMTASK', N'SLEEP_TASK',
-	        N'SLEEP_TEMPDBSTARTUP', N'SNI_HTTP_ACCEPT',
-	        N'SP_SERVER_DIAGNOSTICS_SLEEP', N'SQLTRACE_BUFFER_FLUSH',
-	        N'SQLTRACE_INCREMENTAL_FLUSH_SLEEP',
-	        N'SQLTRACE_WAIT_ENTRIES', N'WAIT_FOR_RESULTS',
-	        N'WAITFOR', N'WAITFOR_TASKSHUTDOWN',
-	        N'WAIT_XTP_RECOVERY',
-	        N'WAIT_XTP_HOST_WAIT', N'WAIT_XTP_OFFLINE_CKPT_NEW_LOG',
-	        N'WAIT_XTP_CKPT_CLOSE', N'XE_DISPATCHER_JOIN',
-	        N'XE_DISPATCHER_WAIT', N'XE_TIMER_EVENT')
-	    AND [waiting_tasks_count] > 0
+	    WHERE [waiting_tasks_count] > 0
 	    )
 		SELECT
 		    MAX ([W1].[wait_type]) AS [WaitType],
@@ -835,8 +826,19 @@
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
+			if ($IncludeIgnorable) {
+				$excludecolumns = 'Notes'
+			}
+			else {
+				$excludecolumns = 'Notes', 'Ignorable'
+			}
+			
 			foreach ($row in $server.Query($sql)) {
 				$waittype = $row.WaitType
+				if (-not $IncludeIgnorable) {
+					if ($ignorable -contains $waittype) { continue }
+				}
+				
 				[PSCustomObject]@{
 					ComputerName    = $server.NetName
 					InstanceName    = $server.ServiceName
@@ -851,9 +853,10 @@
 					AverageWaitSeconds = $row.AvgWaitSeconds
 					AverageResourceSeconds = $row.AvgResSeconds
 					AverageSignalSeconds = $row.AvgSigSeconds
+					Ignorable = ($ignorable -contains $waittype)
 					URL			    = $row.URL
 					Notes		    = ($details).$waittype
-				} | Select-DefaultView -ExcludeProperty Notes
+				} | Select-DefaultView -ExcludeProperty $excludecolumns
 			}
 		}
 	}
