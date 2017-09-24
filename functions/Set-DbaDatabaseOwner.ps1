@@ -74,6 +74,7 @@ function Set-DbaDatabaseOwner {
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
+		[Alias("Login")]
 		[string]$TargetLogin,
 		[switch]$Silent
 	)
