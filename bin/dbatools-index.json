@@ -830,6 +830,21 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgHadr -SqlInstance sql2016\r\n\r\nReturns a status of the Hadr setting for sql2016 SQL Server instance.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaAgListener",
+        "Description":  "Default view provides most common set of properties for information on the database in an Availability Group(s).\n\nInformation returned on the database will be specific to that replica, whether it is primary or a secondary.\n\nThis command will return an SMO object, but it is the AvailabilityDatabases object  and not the Server.Databases object.",
+        "Tags":  [
+                     "DisasterRecovery",
+                     "AG",
+                     "AvailabilityGroup",
+                     "Replica"
+                 ],
+        "Author":  "Viorel Ciucu (@viorelciucu)",
+        "Synopsis":  "Outputs the name of the Listener for the Availability Group(s) found on the server.",
+        "Name":  "Get-DbaAgListener",
+        "Links":  "https://dbatools.io/Get-DbaAgListener",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgListener -SqlInstance sqlserver2014a\r\n\r\nReturns basic information on the listener found on sqlserver2014a\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgListener -SqlInstance sqlserver2014a -AvailabilityGroup AG-a\r\n\r\nReturns basic information on the listener found on sqlserver2014a in the Availability Group AG-a\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaAgReplica",
         "Description":  "Default view provides most common set of properties for information on the Availability Group(s)\u0027 Replica.",
         "Tags":  [
@@ -2146,6 +2161,16 @@
         "Name":  "New-DbaDatabaseSnapshot",
         "Links":  "https://dbatools.io/New-DbaDatabaseSnapshot",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting\r\n\r\nCreates snapshot for HR and Accounting, returning a custom object displaying Server, Database, DatabaseCreated, \r\nSnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status, Notes\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -Name HR_snap\r\n\r\nCreates snapshot named \"HR_snap\" for HR\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -NameSuffix \u0027fool_{0}_snap\u0027\r\n\r\nCreates snapshot named \"fool_HR_snap\" for HR\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting -Path F:\\snapshotpath\r\n\r\nCreates snapshots for HR and Accounting databases, storing files under the F:\\snapshotpath\\ dir\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "New-DbaLogin",
+        "Description":  "Creates a new SQL Server login with provided specifications",
+        "Tags":  "Login",
+        "Author":  "Kirill Kravtsov (@nvarscar)",
+        "Synopsis":  "Creates a new SQL Server login",
+        "Name":  "New-DbaLogin",
+        "Links":  "https://dbatools.io/New-DbaLogin",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaLogin -SqlInstance Server1,Server2 -Login Newlogin\r\n\r\nYou will be prompted to securely enter the password for a login [Newlogin]. The login would be created on servers \r\nServer1 and Server2 with default parameters.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$securePassword = Read-Host \"Input password\" -AsSecureString\r\n\r\nNew-DbaLogin -SqlInstance Server1\\sql1 -Login Newlogin -Password $securePassword -PasswordPolicy -PasswordExpiration\r\n\r\nCreates a login on Server1\\sql1 with a predefined password. The login will have password and expiration policies \r\nenforced onto it.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql1 -Login Oldlogin | New-DbaLogin -SqlInstance sql1 -LoginRenameHashtable @{Oldlogin \r\n= \u0027Newlogin\u0027} -Force -NewSid -Disabled:$false\r\n\r\nCopies a login [Oldlogin] to the same instance sql1 with the same parameters (including password). New login will have \r\na new sid, a new name [Newlogin] and will not be disabled. Existing login [Newlogin] will be removed prior to creation.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLogin -SqlInstance sql1 -Login Login1,Login2 | New-DbaLogin -SqlInstance sql2 -PasswordPolicy \r\n-PasswordExpiration -DefaultDatabase tempdb -Disabled\r\n\r\nCopies logins [Login1] and [Login2] from instance sql1 to instance sql2, but enforces password and expiration policies \r\nfor the new logins. New logins will also have a default database set to [tempdb] and will be created in a disabled \r\nstate.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "New-DbaScriptingOption",
