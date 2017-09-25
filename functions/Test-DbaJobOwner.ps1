@@ -36,6 +36,9 @@ function Test-DbaJobOwner {
 		.PARAMETER Detailed
 			If this switch is enabled, a list of all jobs and whether or not their owner matches Login is returned.
 
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
+
 		.NOTES
 			Tags: Agent, Job, Owner
 			Author: Michael Fal (@Mike_Fal), http://mikefal.net
