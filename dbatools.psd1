@@ -359,7 +359,8 @@
 		'Get-DbaTraceFile',
 		'Get-DbaSuspectPage',
 		'Get-DbaWaitStatistic',
-		'Clear-DbaWaitStatistics'
+		'Clear-DbaWaitStatistics',
+		'Get-DbaTopResourceUsage'
 	)
 	
 	# Cmdlets to export from this module
