@@ -54,6 +54,10 @@
 	.EXAMPLE   
 		Get-DbaTopResourceUsage -SqlInstance sql2016 -Limit 30
 		Return the highest usage by duration (top 30) and frequency (top 30) for the TestDB on sql2016
+
+	.EXAMPLE   
+		Get-DbaTopResourceUsage -SqlInstance sql2016| Select *
+		Return all the columns plus the QueryPlan column
 	#>
 	[CmdletBinding()]
 	param (
