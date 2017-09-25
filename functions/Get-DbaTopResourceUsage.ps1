@@ -98,10 +98,10 @@
 						    coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') AS [Database],
 						    coalesce(object_name(ST.objectid, ST.dbid), '<none>') as ObjectName,
 						    qs.query_hash as QueryHash,
-						    qs.total_elapsed_time as TotalElapsedTime,
+						    qs.total_elapsed_time / 1000 as TotalElapsedTimeMs,
 						    qs.execution_count as ExecutionCount,
 						    cast(total_elapsed_time / (execution_count + 0.0) as money) as AverageDurationMs,
-						    elapsed_time as TotalElapsedTimeForQuery,
+						    elapsed_time / 1000 as TotalElapsedTimeMsForQuery,
 						    SUBSTRING(ST.TEXT,(QS.statement_start_offset + 2) / 2,
 						        (CASE 
 						            WHEN QS.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),ST.text)) * 2
