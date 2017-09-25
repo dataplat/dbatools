@@ -84,7 +84,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
 			It "Honors the Job parameter" {
 				$Results = @()
 				$Results += Get-DbaAgentJobOutputFile -SqlInstance 'SQLServerName' -Job 'Job1'
-				$Results.Job | Should Be 'Job1'
+				$Results.Job | Should Match 'Job1'
 				$Results.JobStep | Should Match 'Job1Step[12]'
 				$Results.OutputFileName | Should Match 'Job1Output[12]'
 			}
@@ -92,7 +92,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
 				$Results = @()
 				$Results += Get-DbaAgentJobOutputFile -SqlInstance 'SQLServerName' -ExcludeJob 'Job1'
 				$Results.Length | Should Be 1
-				$Results.Job | Should Be 'Job2'
+				$Results.Job | Should Match 'Job2'
 				$Results.OutputFileName | Should Be 'Job2Output1'
 				$Results.StepId | Should Be 1
 			}
