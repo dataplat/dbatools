@@ -1,66 +1,72 @@
 function Test-DbaVirtualLogFile {
 	<#
-	.SYNOPSIS
-		Returns database virtual log file information for database files on a SQL instance.
+		.SYNOPSIS
+			Returns database virtual log file information for database files on a SQL instance.
 
-	.DESCRIPTION
-		As you may already know, having a TLog file with too many VLFs can hurt database performance.
+		.DESCRIPTION
+			Having a transaction log file with too many virtual log files (VLFs) can hurt database performance.
 
-		Too many virtual log files can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance.
+			Too many VLFs can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance.
 
 			References:
-			http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/
-			http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx
+				http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/
+				http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx
 
-		If you've got a high number of VLFs, you can use Expand-SqlTLogResponsibly to reduce the number.
+			If you've got a high number of VLFs, you can use Expand-SqlTLogResponsibly to reduce the number.
 
-	.PARAMETER SqlInstance
-		SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input.
+		.PARAMETER SqlInstance 
+			Specifies the SQL Server instance(s) to scan.
+			
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-	.PARAMETER SqlCredential
-		PSCredential object to connect under. If not specified, current Windows login will be used.
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-	.PARAMETER Database
-		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-	.PARAMETER ExcludeDatabase
-		The database(s) to exclude - this list is auto-populated from the server
+			To connect as a different Windows user, run PowerShell as that user.
 
-	.PARAMETER IncludeSystemDBs
-		Switch parameter that when used will display system database information
+		.PARAMETER Database
+			Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+		
+		.PARAMETER ExcludeDatabase
+			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
-	.PARAMETER Detailed
-		Returns all information provided by DBCC LOGINFO plus the server name and database name
+		.PARAMETER IncludeSystemDBs
+			If this switch is enabled, system database information will be displayed.
 
-	.NOTES
-		Tags: DisasterRecovery, Backup
+		.PARAMETER Detailed
+			If this switch is enabled, all information provided by DBCC LOGINFO plus the server name and database name is returned.
 
-		Website: https://dbatools.io
-		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+		.NOTES
+			Tags: DisasterRecovery, Backup
 
-	.LINK
-		https://dbatools.io/Test-DbaVirtualLogFile
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-	.EXAMPLE
-		Test-DbaVirtualLogFile -SqlInstance sqlcluster
+		.LINK
+			https://dbatools.io/Test-DbaVirtualLogFile
 
-		Returns all user database virtual log file counts for the sqlcluster instance
+		.EXAMPLE
+			Test-DbaVirtualLogFile -SqlInstance sqlcluster
 
-	.EXAMPLE
-		Test-DbaVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}
+			Returns all user database virtual log file counts for the sqlcluster instance.
 
-		Returns user databases that have more than or equal to 50 VLFs
+		.EXAMPLE
+			Test-DbaVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}
 
-	.EXAMPLE
-		@('sqlserver','sqlcluster') | Test-DbaVirtualLogFile
+			Returns user databases that have 50 or more VLFs.
 
-		Returns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.
+		.EXAMPLE
+			@('sqlserver','sqlcluster') | Test-DbaVirtualLogFile
 
-	.EXAMPLE
-		Test-DbaVirtualLogFile -SqlInstance sqlcluster -Database db1, db2
+			Returns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.
 
-		Returns VLF counts for the db1 and db2 databases on sqlcluster.
+		.EXAMPLE
+			Test-DbaVirtualLogFile -SqlInstance sqlcluster -Database db1, db2
+
+			Returns VLF counts for the db1 and db2 databases on sqlcluster.
 	#>
 	[CmdletBinding()]
 	[OutputType([System.Collections.ArrayList])]
@@ -77,12 +83,12 @@ function Test-DbaVirtualLogFile {
 
 	PROCESS {
 		foreach ($servername in $SqlInstance) {
-			Write-Verbose "Connecting to $servername"
+			Write-Verbose "Connecting to $servername."
 			try {
 				$server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
 			}
 			catch {
-				Write-Warning "Can't connect to $instance, skipping..."
+				Write-Warning "Can't connect to $instance, skipping."
 				Continue
 			}
 
@@ -138,7 +144,7 @@ function Test-DbaVirtualLogFile {
 				}
 				catch {
 					Write-Exception $_
-					Write-Warning "Unable to query $($db.name) on $servername"
+					Write-Warning "Unable to query $($db.name) on $servername."
 					continue
 				}
 			}
