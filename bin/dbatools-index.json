@@ -1499,10 +1499,10 @@
                      "Restore",
                      "Databases"
                  ],
-        "Synopsis":  "Returns restore history details for databases on a SQL Server",
+        "Synopsis":  "Returns restore history details for databases on a SQL Server.",
         "Name":  "Get-DbaRestoreHistory",
         "Links":  "https://dbatools.io/Get-DbaRestoreHistory",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2016\r\n\r\nReturns server name, database, username, restore type, date for all restored databases on sql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2016 -Database db1, db2 -Since \u00277/1/2016 10:47:00\u0027\r\n\r\nReturns restore information only for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2016, sql2016 -Exclude db1\r\n\r\nLots of detailed information for all databases except db1 on sql2016 and sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs | Format-Table\r\n\r\nAdds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and makes the \r\noutput pretty\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2016 | Get-DbaRestoreHistory\r\n\r\nReturns database restore information for every database on every server listed in the Central Management Server on \r\nsql2016\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2016\r\n\r\nReturns server name, database, username, restore type, date for all restored databases on sql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2016 -Database db1, db2 -Since \u00277/1/2016 10:47:00\u0027\r\n\r\nReturns restore information only for databases db1 and db2 on sql2016 since July 1, 2016 at 10:47 AM.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2014, sql2016 -Exclude db1\r\n\r\nLots of detailed information for all databases except db1 on sql2014 and sql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRestoreHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs | Format-Table\r\n\r\nAdds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and formats the \r\ndata as a table.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2016 | Get-DbaRestoreHistory\r\n\r\nReturns database restore information for every database on every server listed in the Central Management Server on \r\nsql2016.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaRoleMember",
@@ -1741,7 +1741,7 @@
     },
     {
         "CommandName":  "Get-DbaTcpPort",
-        "Description":  "By default, this command returns just the TCP port used by the specified SQL Server.\n\nIf -Detailed is specified, server name, IPAddress (ipv4 and ipv6), port number and if the port assignment is static.",
+        "Description":  "By default, this function returns just the TCP port used by the specified SQL Server.\n\nIf -Detailed is specified, the server name, IPAddress (ipv4 and ipv6), port number and an indicator of whether or not the port assignment is static are returned.\n\nRemote sqlwmi is used by default. If this doesn\u0027t work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.",
         "Tags":  [
                      "SQLWMI",
                      "tcp"
@@ -1749,7 +1749,7 @@
         "Synopsis":  "Returns the TCP port used by the specified SQL Server.",
         "Name":  "Get-DbaTcpPort",
         "Links":  "https://dbatools.io/Get-DbaTcpPort",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTcpPort -SqlInstance sqlserver2014a\r\n\r\nReturns just the port number for the default instance on sqlserver2014a\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTcpPort -SqlInstance winserver\\sqlexpress, sql2016\r\n\r\nReturns an object with server name and port number for the sqlexpress on winserver and the default instance on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTcpPort -SqlInstance sqlserver2014a, sql2016 -Detailed\r\n\r\nReturns an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for sqlserver2014a and \r\nsql2016\r\n\r\nRemote sqlwmi is used by default. If this doesn\u0027t work, then remoting is used. If neither work, it defaults to T-SQL \r\nwhich can provide only the port.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2014 | Get-DbaTcpPort -ExcludeIpv6 -Detailed\r\n\r\nReturns an object with server name, IPAddress (just ipv4), port and static ($true/$false) for every server listed in \r\nthe Central Management Server on sql2014\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTcpPort -SqlInstance sqlserver2014a\r\n\r\nReturns just the port number for the default instance on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTcpPort -SqlInstance winserver\\sqlexpress, sql2016\r\n\r\nReturns an object with server name and port number for the sqlexpress on winserver and the default instance on sql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTcpPort -SqlInstance sqlserver2014a, sql2016 -Detailed\r\n\r\nReturns an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for sqlserver2014a and \r\nsql2016.\r\n\r\nRemote sqlwmi is used by default. If this doesn\u0027t work, then remoting is used. If neither work, it defaults to T-SQL \r\nwhich can provide only the port.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2014 | Get-DbaTcpPort -ExcludeIpv6 -Detailed\r\n\r\nReturns an object with server name, IPAddress (just ipv4), port and static ($true/$false) for every server listed in \r\nthe Central Management Server on sql2014.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaTempdbUsage",
@@ -1768,6 +1768,18 @@
         "Name":  "Get-DbatoolsLog",
         "Links":  "https://dbatools.io/Get-DbatoolsLog",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbatoolsLog\r\n\r\nReturns all log entries currently in memory.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaTopResourceUsage",
+        "Description":  "Returns the top 20 resource consumers for cached queries based on four different metrics: duration, frequency, IO, and CPU.\n\nThis command is based off of queries provided by Michael J. Swart at http://michaeljswart.com/go/Top20\n\nPer Michael: \"I\u0027ve posted queries like this before, and others have written many other versions of this query. All these queries are based on sys.dm_exec_query_stats.\"",
+        "Tags":  [
+                     "Query",
+                     "Performance"
+                 ],
+        "Synopsis":  "Returns the top 20 resource consumers for cached queries based on four different metrics: duration, frequency, IO, and CPU.",
+        "Name":  "Get-DbaTopResourceUsage",
+        "Links":  "https://dbatools.io/Get-DbaTopResourceUsage",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2008, sql2012\r\n\r\nReturn the 80 (20 x 4 types) top usage results by duration, frequency, IO, and CPU servers for servers sql2008 and \r\nsql2012\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2008 -Type Duration, Frequency -Database TestDB\r\n\r\nReturn the highest usage by duration (top 20) and frequency (top 20) for the TestDB on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2016 -Limit 30\r\n\r\nReturn the highest usage by duration (top 30) and frequency (top 30) for the TestDB on sql2016\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaTraceFile",
@@ -2657,7 +2669,7 @@
     },
     {
         "CommandName":  "Set-DbaJobOwner",
-        "Description":  "This function will alter SQL Agent Job ownership to match a specified login if their\ncurrent owner does not match the target login. By default, the target login will\nbe \u0027sa\u0027, but the function will allow the user to specify a different login for\nownership. The user can also apply this to all jobs or only to a select list\nof jobs (passed as either a comma separated list or a string array).\n\nBest practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account",
+        "Description":  "This function alters SQL Agent Job ownership to match a specified login if their current owner does not match the target login. By default, the target login will be \u0027sa\u0027, but the the user may specify a different login for ownership. This be applied to all jobs or only to a select collection of jobs.\n\nBest practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account",
         "Tags":  [
                      "Agent",
                      "Job"
@@ -2951,7 +2963,7 @@
     },
     {
         "CommandName":  "Test-DbaJobOwner",
-        "Description":  "This function will check all SQL Agent Job on an instance against a SQL login to validate if that\nlogin owns those SQL Agent Jobs or not. \n\nBy default, the function will check against \u0027sa\u0027 for ownership, but the user can pass a specific \nlogin if they use something else. \n\nOnly SQL Agent Jobs that do not match this ownership will be displayed, but if the -Detailed \nswitch is set all SQL Agent Jobs will be shown.\n\nBest practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account",
+        "Description":  "This function checks all SQL Agent Jobs on an instance against a SQL login to validate if that login owns those SQL Agent Jobs or not.\n\nBy default, the function checks against \u0027sa\u0027 for ownership, but the user can pass a specific login if they use something else. \n\nOnly SQL Agent Jobs that do not match this ownership will be displayed, but if the -Detailed switch is set all SQL Agent Jobs will be returned.\n\nBest practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account",
         "Tags":  [
                      "Agent",
                      "Job",
@@ -3106,7 +3118,7 @@
     },
     {
         "CommandName":  "Test-DbaVirtualLogFile",
-        "Description":  "As you may already know, having a TLog file with too many VLFs can hurt database performance.\n\nToo many virtual log files can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance.\n\n\tReferences:\n\thttp://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/\n\thttp://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx\n\nIf you\u0027ve got a high number of VLFs, you can use Expand-SqlTLogResponsibly to reduce the number.",
+        "Description":  "Having a transaction log file with too many virtual log files (VLFs) can hurt database performance.\n\nToo many VLFs can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance.\n\nReferences:\n\thttp://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/\n\thttp://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx\n\nIf you\u0027ve got a high number of VLFs, you can use Expand-SqlTLogResponsibly to reduce the number.",
         "Tags":  [
                      "DisasterRecovery",
                      "Backup"
@@ -3114,7 +3126,7 @@
         "Synopsis":  "Returns database virtual log file information for database files on a SQL instance.",
         "Name":  "Test-DbaVirtualLogFile",
         "Links":  "https://dbatools.io/Test-DbaVirtualLogFile",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaVirtualLogFile -SqlInstance sqlcluster\r\n\r\nReturns all user database virtual log file counts for the sqlcluster instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}\r\n\r\nReturns user databases that have more than or equal to 50 VLFs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e@(\u0027sqlserver\u0027,\u0027sqlcluster\u0027) | Test-DbaVirtualLogFile\r\n\r\nReturns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaVirtualLogFile -SqlInstance sqlcluster -Database db1, db2\r\n\r\nReturns VLF counts for the db1 and db2 databases on sqlcluster.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaVirtualLogFile -SqlInstance sqlcluster\r\n\r\nReturns all user database virtual log file counts for the sqlcluster instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}\r\n\r\nReturns user databases that have 50 or more VLFs.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e@(\u0027sqlserver\u0027,\u0027sqlcluster\u0027) | Test-DbaVirtualLogFile\r\n\r\nReturns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaVirtualLogFile -SqlInstance sqlcluster -Database db1, db2\r\n\r\nReturns VLF counts for the db1 and db2 databases on sqlcluster.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Uninstall-DbaWatchUpdate",
