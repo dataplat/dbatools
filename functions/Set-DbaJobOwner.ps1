@@ -4,11 +4,7 @@ function Set-DbaJobOwner {
 			Sets SQL Agent job owners with a desired login if jobs do not match that owner.
 
 		.DESCRIPTION
-			This function will alter SQL Agent Job ownership to match a specified login if their
-			current owner does not match the target login. By default, the target login will
-			be 'sa', but the function will allow the user to specify a different login for
-			ownership. The user can also apply this to all jobs or only to a select list
-			of jobs (passed as either a comma separated list or a string array).
+			This function alters SQL Agent Job ownership to match a specified login if their current owner does not match the target login. By default, the target login will be 'sa', but the the user may specify a different login for ownership. This be applied to all jobs or only to a select collection of jobs.
 
 			Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
 
@@ -20,30 +16,35 @@ function Set-DbaJobOwner {
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-		.PARAMETER SqlInstance
-			SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-			collection and receive pipeline input
-
+		.PARAMETER SqlInstance 
+			Specifies the SQL Server instance(s) to scan.
+			
 		.PARAMETER SqlCredential
-			PSCredential object to connect under. If not specified, current Windows login will be used.
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-		.PARAMETER Job
-			The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
+
+		.PARAMETER Job 
+			Specifies the job(s) to process. Options for this list are auto-populated from the server. If unspecified, all jobs will be processed.
+		
 		.PARAMETER ExcludeJob
-			The job(s) to exclude - this list is auto-populated from the server.
-
+			Specifies the job(s) to exclude from processing. Options for this list are auto-populated from the server.
+		
 		.PARAMETER Login
-			Specific login that you wish to set as owner - this list is auto-populated from the server. This defaults to 'sa' or the sysadmin name if sa was renamed.
+			Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.LINK
 			https://dbatools.io/Set-DbaJobOwner
@@ -74,19 +75,19 @@ function Set-DbaJobOwner {
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]
-		$SqlCredential,
+		[PSCredential]$SqlCredential,
+		[Alias("Jobs")]
 		[object[]]$Job,
 		[object[]]$ExcludeJob,
 		[Alias("TargetLogin")]
-		[object]$Login,
+		[string]$Login,
 		[switch]$Silent
 	)
 
 	process {
 		foreach ($servername in $SqlInstance) {
 			#connect to the instance
-			Write-Message -Level Verbose -Message "Connecting to $servername"
+			Write-Message -Level Verbose -Message "Connecting to $servername."
 			$server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
 
 			# dynamic sa name for orgs who have changed their sa name
@@ -97,7 +98,7 @@ function Set-DbaJobOwner {
 			#Validate login
 			if (($server.Logins.Name) -notcontains $Login) {
 				if ($SqlInstance.count -eq 1) {
-					throw -Message "Invalid login: $Login"
+					throw -Message "Invalid login: $Login."
 				}
 				else {
 					Write-Message -Level Warning -Message "$Login is not a valid login on $servername. Moving on."
@@ -111,7 +112,7 @@ function Set-DbaJobOwner {
 
 			#Get database list. If value for -Job is passed, massage to make it a string array.
 			#Otherwise, use all jobs on the instance where owner not equal to -TargetLogin
-			Write-Message -Level Verbose -Message "Gathering jobs to update"
+			Write-Message -Level Verbose -Message "Gathering jobs to update."
 
 			if ($Job) {
 				$jobcollection = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $Login -and $Job -contains $_.Name }
@@ -128,16 +129,16 @@ function Set-DbaJobOwner {
 			foreach ($j in $jobcollection) {
 				$jobname = $j.name
 
-				If ($PSCmdlet.ShouldProcess($servername, "Setting job owner for $jobname to $Login")) {
+				if ($PSCmdlet.ShouldProcess($servername, "Setting job owner for $jobname to $Login")) {
 					try {
-						Write-Message -Level Verbose -Message "Setting job owner for $jobname to $Login on $servername"
+						Write-Message -Level Verbose -Message "Setting job owner for $jobname to $Login on $servername."
 						#Set job owner to $TargetLogin (default 'sa')
 						$j.OwnerLoginName = $Login
 						$j.Alter()
 					}
 					catch {
 						# write-exception writes the full exception to file
-						Stop-Function -Message "Issue setting job owner on $jobName" -Target $jobName -InnerErrorRecord $_ -Category InvalidOperation
+						Stop-Function -Message "Issue setting job owner on $jobName." -Target $jobName -InnerErrorRecord $_ -Category InvalidOperation
 					}
 				}
 			}

@@ -4,38 +4,40 @@ function Test-DbaJobOwner {
 			Checks SQL Agent Job owners against a login to validate which jobs do not match that owner.
 
 		.DESCRIPTION
-			This function will check all SQL Agent Job on an instance against a SQL login to validate if that
-			login owns those SQL Agent Jobs or not. 
+			This function checks all SQL Agent Jobs on an instance against a SQL login to validate if that login owns those SQL Agent Jobs or not.
+
+			By default, the function checks against 'sa' for ownership, but the user can pass a specific login if they use something else. 
 			
-			By default, the function will check against 'sa' for ownership, but the user can pass a specific 
-			login if they use something else. 
-			
-			Only SQL Agent Jobs that do not match this ownership will be displayed, but if the -Detailed 
-			switch is set all SQL Agent Jobs will be shown.
+			Only SQL Agent Jobs that do not match this ownership will be displayed, but if the -Detailed switch is set all SQL Agent Jobs will be returned.
 
 			Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
 
-		.PARAMETER SqlInstance
-			SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-			collection and receive pipeline input
-
+		.PARAMETER SqlInstance 
+			Specifies the SQL Server instance(s) to scan.
+			
 		.PARAMETER SqlCredential
-			PSCredential object to connect under. If not specified, current Windows login will be used.
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Job
-			The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
-
+			Specifies the job(s) to process. Options for this list are auto-populated from the server. If unspecified, all jobs will be processed.
+		
 		.PARAMETER ExcludeJob
-			The job(s) to exclude - this list is auto-populated from the server.
-
+			Specifies the job(s) to exclude from processing. Options for this list are auto-populated from the server.
+		
 		.PARAMETER Login
-			Specific login that you wish to check for ownership - this list is auto-populated from the server. This defaults to 'sa' or the sysadmin name if sa was renamed.
+			Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
 
 		.PARAMETER Detailed
-			Provides Detailed information
+			If this switch is enabled, a list of all jobs and whether or not their owner matches Login is returned.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Agent, Job, Owner
@@ -65,12 +67,13 @@ function Test-DbaJobOwner {
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]
-		$SqlCredential,
+		[PSCredential]$SqlCredential,
+		[Alias("Jobs")]
 		[object[]]$Job,
 		[object[]]$ExcludeJob,
-		[object]$Login,
-		[Switch]$Detailed,
+		[Alias("TargetLogin")]
+		[string]$Login,
+		[switch]$Detailed,
 		[switch]$Silent
 	)
 
@@ -81,13 +84,13 @@ function Test-DbaJobOwner {
 	process {
 		foreach ($servername in $SqlInstance) {
 			#connect to the instance
-			Write-Message -Level Verbose -Message "Connecting to $servername"
+			Write-Message -Level Verbose -Message "Connecting to $servername."
 			$server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
 
 			#Validate login
 			if ($Login -and ($server.Logins.Name) -notcontains $Login) {
 				if ($SqlInstance.count -eq 1) {
-					Stop-Function -Message "Invalid login: $Login"
+					Stop-Function -Message "Invalid login: $Login."
 					return
 				}
 				else {
@@ -111,7 +114,7 @@ function Test-DbaJobOwner {
 
 			#Get database list. If value for -Job is passed, massage to make it a string array.
 			#Otherwise, use all jobs on the instance where owner not equal to -TargetLogin
-			Write-Message -Level Verbose -Message "Gathering jobs to Check"
+			Write-Message -Level Verbose -Message "Gathering jobs to check."
 			if ($Job) {
 				$jobCollection = $server.JobServer.Jobs | Where-Object { $Job -contains $_.Name }
 			}
