@@ -232,7 +232,7 @@
 			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -243,7 +243,7 @@
 					$server.Query($duration) | Select-DefaultView -ExcludeProperty QueryPlan
 				}
 				catch {
-					Stop-Function -Message "Failure" -Category QueryError -ErrorRecord $_ -Target $server -Continue
+					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
 				}
 			}
 			
@@ -252,7 +252,7 @@
 					$server.Query($frequency) | Select-DefaultView -ExcludeProperty QueryPlan
 				}
 				catch {
-					Stop-Function -Message "Failure" -Category QueryError -ErrorRecord $_ -Target $server -Continue
+					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
 				}
 			}
 			
@@ -261,7 +261,7 @@
 					$server.Query($io) | Select-DefaultView -ExcludeProperty QueryPlan
 				}
 				catch {
-					Stop-Function -Message "Failure" -Category QueryError -ErrorRecord $_ -Target $server -Continue
+					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
 				}
 			}
 			
@@ -270,7 +270,7 @@
 					$server.Query($cpu) | Select-DefaultView -ExcludeProperty QueryPlan
 				}
 				catch {
-					Stop-Function -Message "Failure" -Category QueryError -ErrorRecord $_ -Target $server -Continue
+					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
 				}
 			}
 		}
