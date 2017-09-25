@@ -101,7 +101,7 @@
 						    qs.total_elapsed_time / 1000 as TotalElapsedTimeMs,
 						    qs.execution_count as ExecutionCount,
 						    cast(total_elapsed_time / (execution_count + 0.0) as money) as AverageDurationMs,
-						    elapsed_time / 1000 as TotalElapsedTimeMsForQuery,
+						    elapsed_time / 1000 as QueryTotalElapsedTimeMs,
 						    SUBSTRING(ST.TEXT,(QS.statement_start_offset + 2) / 2,
 						        (CASE 
 						            WHEN QS.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),ST.text)) * 2
@@ -135,7 +135,7 @@
 						    coalesce(object_name(ST.objectid, ST.dbid), '<none>') as ObjectName,
 						    qs.query_hash as QueryHash,
 						    qs.execution_count as ExecutionCount,
-						    executions as TotalExecutionsForQuery,
+						    executions as QueryTotalExecutions,
 						    SUBSTRING(ST.TEXT,(QS.statement_start_offset + 2) / 2,
 						        (CASE 
 						            WHEN QS.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),ST.text)) * 2
