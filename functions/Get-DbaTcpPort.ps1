@@ -4,26 +4,28 @@ function Get-DbaTcpPort {
 			Returns the TCP port used by the specified SQL Server.
 
 		.DESCRIPTION
-			By default, this command returns just the TCP port used by the specified SQL Server.
+			By default, this function returns just the TCP port used by the specified SQL Server.
 
-			If -Detailed is specified, server name, IPAddress (ipv4 and ipv6), port number and if the port assignment is static.
+			If -Detailed is specified, the server name, IPAddress (ipv4 and ipv6), port number and an indicator of whether or not the port assignment is static are returned.
+
+			Remote sqlwmi is used by default. If this doesn't work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.
 
 		.PARAMETER SqlInstance
 			The SQL Server that you're connecting to.
 
 		.PARAMETER Credential
-			Credential object used to connect to the SQL Server as a different user
+			Allows you to connect to servers using alternate Windows credentials
+
+			$scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
 		.PARAMETER Detailed
-			Returns an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for one or more SQL Servers.
-
-			Remote sqlwmi is used by default. If this doesn't work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.
+			If this switch is enabled, an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for one or more SQL Servers is returned.
 
 		.PARAMETER ExcludeIpv6
-			Excludes IPv6 information when -Detailed is specified.
+			If this switch is enabled, IPv6 information is excluded from detailed output.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: SQLWMI, tcp
@@ -38,32 +40,31 @@ function Get-DbaTcpPort {
 		.EXAMPLE
 			Get-DbaTcpPort -SqlInstance sqlserver2014a
 
-			Returns just the port number for the default instance on sqlserver2014a
+			Returns just the port number for the default instance on sqlserver2014a.
 
 		.EXAMPLE
 			Get-DbaTcpPort -SqlInstance winserver\sqlexpress, sql2016
 
-			Returns an object with server name and port number for the sqlexpress on winserver and the default instance on sql2016
+			Returns an object with server name and port number for the sqlexpress on winserver and the default instance on sql2016.
 
 		.EXAMPLE
 			Get-DbaTcpPort -SqlInstance sqlserver2014a, sql2016 -Detailed
 
-			Returns an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for sqlserver2014a and sql2016
+			Returns an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for sqlserver2014a and sql2016.
 
 			Remote sqlwmi is used by default. If this doesn't work, then remoting is used. If neither work, it defaults to T-SQL which can provide only the port.
 
 		.EXAMPLE
 			Get-DbaRegisteredServer -SqlInstance sql2014 | Get-DbaTcpPort -ExcludeIpv6 -Detailed
 
-			Returns an object with server name, IPAddress (just ipv4), port and static ($true/$false) for every server listed in the Central Management Server on sql2014
+			Returns an object with server name, IPAddress (just ipv4), port and static ($true/$false) for every server listed in the Central Management Server on sql2014.
 	#>
 	[CmdletBinding()]
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[Alias("SqlCredential")]
-		[PSCredential]$Credential,
+		[Alias("SqlCredential")][PSCredential]$Credential,
 		[switch]$Detailed,
 		[Alias("Ipv4")]
 		[switch]$ExcludeIpv6,
@@ -95,13 +96,13 @@ function Get-DbaTcpPort {
 								$dacport = (Get-ItemProperty "HKLM:\$regroot\MSSQLServer\SuperSocketNetLib\AdminConnection\Tcp").TcpDynamicPorts
 								
 								[PsCustomObject]@{
-									ComputerName    = $instance
-									InstanceName    = $instanceName
-									SqlInstance	    = $vsname
-									IPAddress	    = "0.0.0.0"
-									Port		    = $dacport
-									Static		    = $false
-									Type		    = "DAC"
+									ComputerName = $instance
+									InstanceName = $instanceName
+									SqlInstance  = $vsname
+									IPAddress    = "0.0.0.0"
+									Port         = $dacport
+									Static       = $false
+									Type         = "DAC"
 								}
 							}
 							catch {
@@ -112,7 +113,7 @@ function Get-DbaTcpPort {
 							$ips = $tcp.IPAddresses
 							
 							# This is a remote command so do not use Write-message
-							Write-Verbose "Parsing information for $($ips.count) IP addresses"
+							Write-Verbose "Parsing information for $($ips.count) IP addresses."
 							foreach ($ip in $ips) {
 								$props = $ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpPort" -or $_.Name -eq "TcpDynamicPorts" }
 								
@@ -130,13 +131,13 @@ function Get-DbaTcpPort {
 								}
 								
 								[PsCustomObject]@{
-									ComputerName	 = $instance
-									InstanceName	 = $instanceName
-									SqlInstance	     = $vsname
-									IPAddress	     = $ip.IPAddress.IPAddressToString
-									Port			 = $port
-									Static		     = $static
-									Type			 = "Normal"
+									ComputerName = $instance
+									InstanceName = $instanceName
+									SqlInstance  = $vsname
+									IPAddress    = $ip.IPAddress.IPAddressToString
+									Port         = $port
+									Static       = $static
+									Type         = "Normal"
 								}
 							}
 						}
@@ -147,16 +148,16 @@ function Get-DbaTcpPort {
 					$computername = $resolved.FullComputerName
 					
 					try {
-						Write-Message -Level Verbose -Message "Trying with ComputerName ($computer)"
+						Write-Message -Level Verbose -Message "Trying with ComputerName ($computer)."
 						$someIps = Invoke-ManagedComputerCommand -ComputerName $computer -ArgumentList $computer -ScriptBlock $scriptblock
 					}
 					catch {
-						Write-Message -Level Verbose -Message "Trying with FullComputerName because ComputerName failed"
+						Write-Message -Level Verbose -Message "Trying with FullComputerName because ComputerName failed."
 						$someIps = Invoke-ManagedComputerCommand -ComputerName $computername -ArgumentList $fqdn -ScriptBlock $scriptblock
 					}
 				}
 				catch {
-					Stop-Function -Message "Could not get detailed information" -Target $instance -ErrorRecord $_
+					Stop-Function -Message "Could not get detailed information." -Target $instance -ErrorRecord $_
 				}
 				
 				$cleanedUp = $someIps | Sort-Object IPAddress
@@ -183,10 +184,10 @@ function Get-DbaTcpPort {
 				$port = $server.Query($sql)
 				
 				[PSCustomObject]@{
-					ComputerName   = $server.NetName
-					InstanceName   = $server.ServiceName
-					SqlInstance    = $server.DomainInstanceName
-					Port		   = $port.local_tcp_port
+					ComputerName = $server.NetName
+					InstanceName = $server.ServiceName
+					SqlInstance  = $server.DomainInstanceName
+					Port         = $port.local_tcp_port
 				}
 			}
 		}
