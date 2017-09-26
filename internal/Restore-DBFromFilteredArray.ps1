@@ -207,7 +207,7 @@ Function Restore-DBFromFilteredArray {
                     $MoveFile.LogicalFileName = $File.LogicalName
                     $IoFile = [System.Io.FileInfo]$File.PhysicalName
                     $Extension = $IoFile.Extension
-                    $Filename  = (split-path $file.PhysicalName -leaf) -replace ".$extension",""
+                    $Filename  = (split-path $file.PhysicalName -leaf) -replace "\.$extension",""
                     if ($ReplaceDbNameInFile) {
                         $Filename = $filename -replace $OldDatabaseName, $dbname
                     }
