@@ -64,6 +64,8 @@ if ($smoadded -eq $false) {
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventDbScopedEnum.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventEnum.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Collector.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XE.Core.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XEvent.Linq.dll"
 }
 <# 
 
