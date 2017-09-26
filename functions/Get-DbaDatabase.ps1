@@ -1,4 +1,4 @@
-﻿function Get-DbaDatabase {
+function Get-DbaDatabase {
     <#
 		.SYNOPSIS
 			Gets SQL Database information for each database that is present on the target instance(s) of SQL Server.
@@ -274,6 +274,7 @@
 				}
 				
 			}
+
 			if ($NoLogBackup -or $NoLogBackupSince) {
 				$dabs = (Get-DbaBackupHistory -SqlInstance $server -LastLog )
 				if ($null -ne $NoLogBackupSince) {
@@ -295,6 +296,7 @@
 			if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
 				$defaults += ('Notes')
 			}
+
 			if ($IncludeLastUsed) {
 				# Add Last Used to the default view
 				$defaults += ('LastRead as LastIndexRead', 'LastWrite as LastIndexWrite')
@@ -310,6 +312,23 @@
 						}
 					}
 					
+					$queryRestoreInfo = "
+											SELECT TOP 1
+												[d].[database_id]            AS DatabaseID,
+												[d].[name]                   AS DatabaseName,
+												[r].[restore_date]           AS RestoredDate,
+												[r].[user_name]              AS RestoredBy,
+												[b].[backup_finish_date]     AS BackupFinishDate,
+												[bmf].[physical_device_name] AS RestoredFrom
+											FROM master.sys.databases d
+											LEFT  OUTER JOIN msdb.dbo.[restorehistory] r ON r.[destination_database_name] = d.Name
+											INNER JOIN msdb..backupset b ON b.backup_set_id = r.backup_set_id
+											INNER JOIN msdb.dbo.backupmediafamily bmf ON bmf.media_set_id = b.media_set_id
+											WHERE d.database_id = $($db.id)
+											ORDER BY r.[restore_date] DESC"
+
+					$dbRestoreInfo = $server.Query($queryRestoreInfo)
+
 					$lastusedinfo = $dblastused | Where-Object { $_.dbname -eq $db.name }
 					Add-Member -Force -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
 					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName
@@ -317,6 +336,11 @@
 					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastRead -value $lastusedinfo.last_read
 					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastWrite -value $lastusedinfo.last_write
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name BackupFinishDate -Value $dbRestoreInfo.BackupFinishDate
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name RestoredDate -Value $dbRestoreInfo.RestoredDate
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name RestoredBy -Value $dbRestoreInfo.RestoredBy
+					Add-Member -Force -InputObject $db -MemberType NoteProperty -Name RestoredFrom -Value $dbRestoreInfo.RestoredFrom
+					
 					Select-DefaultView -InputObject $db -Property $defaults
 				}
 			}
