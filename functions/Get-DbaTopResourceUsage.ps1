@@ -57,6 +57,11 @@ function Get-DbaTopResourceUsage {
 	.EXAMPLE   
 		Get-DbaTopResourceUsage -SqlInstance sql2016 -Limit 30
 		Return the highest usage by duration (top 30) and frequency (top 30) for the TestDB on sql2016
+	
+	.EXAMPLE
+	Get-DbaTopResourceUsage -SqlInstance sql2008, sql2012 -ExcludeSystem
+		Return the 80 (20 x 4 types) top usage results by duration, frequency, IO, and CPU servers for servers sql2008 and sql2012 without any System Objects
+
 
 	.EXAMPLE   
 		Get-DbaTopResourceUsage -SqlInstance sql2016| Select *
