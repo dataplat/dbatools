@@ -207,7 +207,8 @@ Function Restore-DBFromFilteredArray {
                     $MoveFile.LogicalFileName = $File.LogicalName
                     $IoFile = [System.Io.FileInfo]$File.PhysicalName
                     $Extension = $IoFile.Extension
-                    $Filename  = (split-path $file.PhysicalName -leaf) -replace "\.$extension",""
+                    #$Filename  = (split-path $file.PhysicalName -leaf) -replace "\.$extension",""
+                    $FileName = $IoFile.BaseName
                     if ($ReplaceDbNameInFile) {
                         $Filename = $filename -replace $OldDatabaseName, $dbname
                     }
@@ -221,7 +222,7 @@ Function Restore-DBFromFilteredArray {
                     if ($DestinationFileNumber) {
                         $FileName = $FileName + '_' + $FileId + '_of_' + $RestoreFileCountFileCount
                     }
-                    if ($null -ne $extension) {
+                    if (($null -ne $extension) -and ($extension -ne '')) {
                         $filename = $filename + '.' + $extension
                     }
                     Write-Message -Level VeryVerbose -Message "past the checks"
