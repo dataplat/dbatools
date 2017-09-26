@@ -231,15 +231,15 @@ Function Rename-DbaDatabase {
 				$obj += "  - FileGroup: $($fg.Name)"
 				# LogicalNames
 				foreach($ln in $fg.Files) {
-					$obj += "    - Logical: $($ln.Name)"
-					$obj += "      - FileName: $($ln.FileName)"
+					$obj += "	- Logical: $($ln.Name)"
+					$obj += "	  - FileName: $($ln.FileName)"
 					
 				}
 			}
 			$obj += "  - Logfiles"
 			foreach($log in $database.LogFiles) {
-				$obj += "    - Logical: $($log.Name)"
-				$obj += "      - FileName: $($log.FileName)"
+				$obj += "	- Logical: $($log.Name)"
+				$obj += "	  - FileName: $($log.FileName)"
 			}
 			return $obj -Join "`n"
 		}
@@ -288,7 +288,7 @@ Function Rename-DbaDatabase {
 		# holds all db file enumerations (used for -Move only)
 		$InstanceFiles = @{}
 		
-        #region db loop
+		#region db loop
 		foreach($db in $dbs) {
 			# used to stop futher operations on database
 			$failed = $false
@@ -326,7 +326,7 @@ Function Rename-DbaDatabase {
 			if ($ReplaceBefore) {
 				$Entities_Before['DBN'][$db.Name] = $db.Name
 			}
-            #region databasename
+			#region databasename
 			if ($DatabaseName) {
 				$Orig_DBName = $db.Name
 				# fixed replacements
@@ -359,8 +359,8 @@ Function Rename-DbaDatabase {
 					}
 				}
 			}
-            #endregion databasename
-            #region filegroupname
+			#endregion databasename
+			#region filegroupname
 			if ($ReplaceBefore) {
 				#backfill PRIMARY
 				$Entities_Before['FGN']['PRIMARY'] = 'PRIMARY'
@@ -397,27 +397,27 @@ Function Rename-DbaDatabase {
 						Write-Message -Level VeryVerbose -Message "No rename necessary for FileGroup $($fg.Name) (on $db)"
 						continue
 					}
-                    if ($PSCmdlet.ShouldProcess($db, "Renaming FileGroup $($fg.Name) to $FinalFGName")) {
-					    try {
-						    if (!$Preview) {
-							    $fg.Rename($FinalFGName)
-						    }
-						    $New_FGNames.Remove($Orig_FGName)
-						    $New_FGNames[$FinalFGName] = 1
-						    $Entities_Before['FGN'][$Orig_FGName] = $FinalFGName
-					    } catch {
-						    Stop-Function -Message "Failed to rename FileGroup : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
-						    # stop any further renames
-						    $failed = $true
-						    break
-					    }
-                    }
+					if ($PSCmdlet.ShouldProcess($db, "Renaming FileGroup $($fg.Name) to $FinalFGName")) {
+						try {
+							if (!$Preview) {
+								$fg.Rename($FinalFGName)
+							}
+							$New_FGNames.Remove($Orig_FGName)
+							$New_FGNames[$FinalFGName] = 1
+							$Entities_Before['FGN'][$Orig_FGName] = $FinalFGName
+						} catch {
+							Stop-Function -Message "Failed to rename FileGroup : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
+							# stop any further renames
+							$failed = $true
+							break
+						}
+					}
 				}
-                $db.FileGroups.Refresh()
+				$db.FileGroups.Refresh()
 			}
-            
-            #endregion filegroupname
-            #region logicalname
+			
+			#endregion filegroupname
+			#region logicalname
 			if ($ReplaceBefore) {
 				foreach($fn in $db.FileGroups.Files.Name) {
 					$Entities_Before['LGN'][$fn] = $fn
@@ -466,21 +466,21 @@ Function Rename-DbaDatabase {
 							Write-Message -Level VeryVerbose -Message "No rename necessary for LogicalFile (on FileGroup $($fg.Name) (on $db))"
 							continue
 						}
-                        if ($PSCmdlet.ShouldProcess($db, "Renaming LogicalFile $($logical.Name) to $FinalLGName (on FileGroup $($fg.Name))")) {
-						    try {
-							    if (!$Preview) {
-								    $logical.Rename($FinalLGName)
-							    }
-							    $New_LogicalNames.Remove($Orig_LGName)
-							    $New_LogicalNames[$FinalLGName] = 1
-							    $Entities_Before['LGN'][$FinalLGName] = $Orig_LGName
-						    } catch {
-							    Stop-Function -Message "Failed to Rename Logical File : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
-							    # stop any further renames
-							    $failed = $true
-							    break
-						    }
-                        }
+						if ($PSCmdlet.ShouldProcess($db, "Renaming LogicalFile $($logical.Name) to $FinalLGName (on FileGroup $($fg.Name))")) {
+							try {
+								if (!$Preview) {
+									$logical.Rename($FinalLGName)
+								}
+								$New_LogicalNames.Remove($Orig_LGName)
+								$New_LogicalNames[$FinalLGName] = 1
+								$Entities_Before['LGN'][$FinalLGName] = $Orig_LGName
+							} catch {
+								Stop-Function -Message "Failed to Rename Logical File : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
+								# stop any further renames
+								$failed = $true
+								break
+							}
+						}
 					}
 				}
 				$fg.Files.Refresh()
@@ -510,26 +510,26 @@ Function Rename-DbaDatabase {
 							continue
 						}
 						if ($PSCmdlet.ShouldProcess($db, "Renaming LogicalFile log $($logicallog.Name) to $FinalLGName (LOG)")) {
-						    try {
-							    if (!$Preview) {
-								    $logicallog.Rename($FinalLGName)
-							    }
-							    $New_LogicalNames.Remove($Orig_LGName)
-							    $New_LogicalNames[$FinalLGName] = 1
-							    $Entities_Before['LGN'][$FinalLGName] = $Orig_LGName
-						    } catch {
-							    Stop-Function -Message "Failed to Rename Logical File : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
-							    # stop any further renames
-							    $failed = $true
-							    break
-						    }
-                        }
+							try {
+								if (!$Preview) {
+									$logicallog.Rename($FinalLGName)
+								}
+								$New_LogicalNames.Remove($Orig_LGName)
+								$New_LogicalNames[$FinalLGName] = 1
+								$Entities_Before['LGN'][$FinalLGName] = $Orig_LGName
+							} catch {
+								Stop-Function -Message "Failed to Rename Logical File : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
+								# stop any further renames
+								$failed = $true
+								break
+							}
+						}
 					}
 					$db.Logfiles.Refresh()
 				}
 			}
-            #endregion logicalname
-            #region filename
+			#endregion logicalname
+			#region filename
 			if ($ReplaceBefore) {
 				foreach($fn in $db.FileGroups.Files.FileName) {
 					$Entities_Before['FNN'][$fn] = $fn
@@ -609,25 +609,25 @@ Function Rename-DbaDatabase {
 							continue
 						}
 						if ($PSCmdlet.ShouldProcess($db, "Renaming FileName $($logical.FileName) to $FinalFNName (on FileGroup $($fg.Name))")) {
-						    try {
-							    if (!$Preview) {
-								    $logical.FileName = $FinalFNName
-								    $db.Alter()
-							    }
-							    $InstanceFiles[$Server_Id][$FNNameDir].Remove($FNName)
-							    $InstanceFiles[$Server_Id][$FNNameDir][$FinalFNName] = 1
-							    $Entities_Before['FNN'][$FinalFNName] = $FNName
-							    $Pending_Renames += [pscustomobject]@{
-								    Source      = $FNName
-								    Destination = $FinalFNName
-							    }
-						    } catch {
-							    Stop-Function -Message "Failed to Rename FileName : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
-							    # stop any further renames
-							    $failed = $true
-							    break
-						    }
-                        }
+							try {
+								if (!$Preview) {
+									$logical.FileName = $FinalFNName
+									$db.Alter()
+								}
+								$InstanceFiles[$Server_Id][$FNNameDir].Remove($FNName)
+								$InstanceFiles[$Server_Id][$FNNameDir][$FinalFNName] = 1
+								$Entities_Before['FNN'][$FinalFNName] = $FNName
+								$Pending_Renames += [pscustomobject]@{
+									Source	  = $FNName
+									Destination = $FinalFNName
+								}
+							} catch {
+								Stop-Function -Message "Failed to Rename FileName : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
+								# stop any further renames
+								$failed = $true
+								break
+							}
+						}
 					}
 					if(!$failed) {
 						$FG_Files = @($db.Logfiles)
@@ -658,31 +658,31 @@ Function Rename-DbaDatabase {
 							}
 							
 							if ($PSCmdlet.ShouldProcess($db, "Renaming FileName $($logical.FileName) to $FinalFNName (LOG)")) {
-							    try {
-								    if (!$Preview) {
-									    $logical.FileName = $FinalFNName
-									    $db.Alter()
-								    }
-								    $InstanceFiles[$Server_Id][$FNNameDir].Remove($FNName)
-								    $InstanceFiles[$Server_Id][$FNNameDir][$FinalFNName] = 1
-								    $Entities_Before['FNN'][$FinalFNName] = $FNName
-								    $Pending_Renames += [pscustomobject]@{
-									    Source      = $FNName
-									    Destination = $FinalFNName
-								    }
-							    } catch {
-								    Stop-Function -Message "Failed to Rename FileName : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
-								    # stop any further renames
-								    $failed = $true
-								    break
-							    }
-                            }
+								try {
+									if (!$Preview) {
+										$logical.FileName = $FinalFNName
+										$db.Alter()
+									}
+									$InstanceFiles[$Server_Id][$FNNameDir].Remove($FNName)
+									$InstanceFiles[$Server_Id][$FNNameDir][$FinalFNName] = 1
+									$Entities_Before['FNN'][$FinalFNName] = $FNName
+									$Pending_Renames += [pscustomobject]@{
+										Source	  = $FNName
+										Destination = $FinalFNName
+									}
+								} catch {
+									Stop-Function -Message "Failed to Rename FileName : $($_.Exception.InnerException.InnerException.InnerException)" -ErrorRecord $_ -Target $server.DomainInstanceName -OverrideExceptionMessage
+									# stop any further renames
+									$failed = $true
+									break
+								}
+							}
 						}
 					}
 					
 				}
-                #endregion filename
-                #region move
+				#endregion filename
+				#region move
 				$ComputerName = $null
 				$Final_Renames = New-Object System.Collections.ArrayList
 				if ([DbaValidate]::IsLocalhost($server.NetName)) {
@@ -739,7 +739,7 @@ Function Rename-DbaDatabase {
 						} else {
 							# we can do renames in a remote pssession
 							$null = $Final_Renames.Add([pscustomobject]@{
-										Source       = $op.Source
+										Source	   = $op.Source
 										Destination  = $op.Destination
 										ComputerName = $ComputerName
 									})
@@ -750,68 +750,68 @@ Function Rename-DbaDatabase {
 				if (!$failed -and ($SetOffline -or $Move) -and $Final_Renames) {
 					if (!$Move) {
 						Write-Message -Level VeryVerbose -Message "Setting the database offline. You are in charge of moving the files to the new location"
-                        # because renames still need to be dealt with
+						# because renames still need to be dealt with
 						$Status = 'PARTIAL'
 					} else {
-                        if ($PSCmdlet.ShouldProcess($db, "File Rename required, setting db offline")) {
-						    $SetState = Set-DbaDatabaseState -SqlInstance $server -Database $db.Name -Offline -Force
-						    if($SetState.Status -ne 'OFFLINE') {
-							    Write-Message -Level Warning -Message "Setting db offline failed, You are in charge of moving the files to the new location"
-                                # because it was impossible to set the database offline
-							    $Status = 'PARTIAL'
-						    } else {
-							    try {
-								    while($Final_Renames.Count -gt 0) {
-									    $op = $Final_Renames.Item(0)
-									    if ($null -eq $op.ComputerName) {
-										    Stop-Function -Message "No access to physical files for renames"
-									    } else {
-										    Write-Message -Level VeryVerbose -Message "Moving file $($op.Source) to $($op.Destination)"
-										    if (!$Preview) {
-											    $scriptblock = {
-												    $op = $args[0]
-												    Rename-Item -Path $op.Source -NewName $op.Destination
-											    }
-											    Invoke-Command2 -ComputerName $op.ComputerName -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $op
-										    }
-									    }
-									    $null = $Final_Renames.RemoveAt(0)
-								    }
-							    } catch {
-								    $failed = $true
-                                    # because a rename operation failed
-								    $Status = 'PARTIAL'
-								    Stop-Function -Message "Failed to rename $($op.Source) to $($op.Destination), you are in charge of moving the files to the new location" -ErrorRecord $_ -Target $instance -Exception $_.Exception -Continue
-							    }
-							    if (!$failed) {
-                                    if ($PSCmdlet.ShouldProcess($db, "Setting database online")) {
-								        $SetState = Set-DbaDatabaseState -SqlInstance $server -Database $db.Name -Online -Force
-								        if($SetState.Status -ne 'ONLINE') {
-									        Write-Message -Level Warning -Message "Setting db online failed"
-                                            # because renames were done, but the database didn't wake up
-									        $Status = 'PARTIAL'
-								        } else {
-									        $Status = 'FULL'
-								        }
-                                    }
-							    }
-						    }
-					    }
-                    }
+						if ($PSCmdlet.ShouldProcess($db, "File Rename required, setting db offline")) {
+							$SetState = Set-DbaDatabaseState -SqlInstance $server -Database $db.Name -Offline -Force
+							if($SetState.Status -ne 'OFFLINE') {
+								Write-Message -Level Warning -Message "Setting db offline failed, You are in charge of moving the files to the new location"
+								# because it was impossible to set the database offline
+								$Status = 'PARTIAL'
+							} else {
+								try {
+									while($Final_Renames.Count -gt 0) {
+										$op = $Final_Renames.Item(0)
+										if ($null -eq $op.ComputerName) {
+											Stop-Function -Message "No access to physical files for renames"
+										} else {
+											Write-Message -Level VeryVerbose -Message "Moving file $($op.Source) to $($op.Destination)"
+											if (!$Preview) {
+												$scriptblock = {
+													$op = $args[0]
+													Rename-Item -Path $op.Source -NewName $op.Destination
+												}
+												Invoke-Command2 -ComputerName $op.ComputerName -Credential $Credential -ScriptBlock $scriptblock -ArgumentList $op
+											}
+										}
+										$null = $Final_Renames.RemoveAt(0)
+									}
+								} catch {
+									$failed = $true
+									# because a rename operation failed
+									$Status = 'PARTIAL'
+									Stop-Function -Message "Failed to rename $($op.Source) to $($op.Destination), you are in charge of moving the files to the new location" -ErrorRecord $_ -Target $instance -Exception $_.Exception -Continue
+								}
+								if (!$failed) {
+									if ($PSCmdlet.ShouldProcess($db, "Setting database online")) {
+										$SetState = Set-DbaDatabaseState -SqlInstance $server -Database $db.Name -Online -Force
+										if($SetState.Status -ne 'ONLINE') {
+											Write-Message -Level Warning -Message "Setting db online failed"
+											# because renames were done, but the database didn't wake up
+											$Status = 'PARTIAL'
+										} else {
+											$Status = 'FULL'
+										}
+									}
+								}
+							}
+						}
+					}
 				} else {
-                    # because of a previous error with renames to do
+					# because of a previous error with renames to do
 					$Status = 'PARTIAL'
 				}
 			} else {
 				if (!$failed) {
-                    # because no previous error and not filename
+					# because no previous error and not filename
 					$Status = 'FULL'
 				} else {
-                    # because previous errors and not filename
+					# because previous errors and not filename
 					$Status = 'PARTIAL'
 				}
 			}
-            #endregion move
+			#endregion move
 			# remove entities that match for the output
 			foreach($k in $Entities_Before.Keys) {
 				$ToRemove = $Entities_Before[$k].GetEnumerator() | Where-Object { $_.Name -eq $_.Value } | Select-Object -ExpandProperty Name
@@ -819,11 +819,27 @@ Function Rename-DbaDatabase {
 					$Entities_Before[$k].Remove($el)
 				}
 			}
+			#handling masking outputprops
+			$DefaultExclude = @('DBN', 'FGN', 'LGN', 'FNN')
+			
+			if (!$DatabaseName) {
+				$DefaultExclude += 'DatabaseRenames'
+			}
+			if (!$FileGroupName) {
+				$DefaultExclude += 'FileGroupsRenames'
+			}
+			if (!$LogicalName) {
+				$DefaultExclude += 'LogicalNameRenames'
+			}
+			if (!$FileName) {
+				$DefaultExclude += 'FileNameRenames'
+			}
+			
 			[pscustomobject]@{
 					ComputerName = $server.NetName
 					InstanceName = $server.ServiceName
 					SqlInstance = $server.DomainInstanceName
-					Database = $db
+					Database = $db.Name
 					DBN = $Entities_Before['DBN']
 					DatabaseRenames = ($Entities_Before['DBN'].GetEnumerator() | Foreach-Object { "$($_.Name) --> $($_.Value)" }) -Join "`n"
 					FGN = $Entities_Before['FGN']
@@ -834,8 +850,8 @@ Function Rename-DbaDatabase {
 					FileNameRenames = ($Entities_Before['FNN'].GetEnumerator() | Foreach-Object { "$($_.Name) --> $($_.Value)"  }) -Join "`n"
 					PendingRenames = $Final_Renames
 					Status = $Status
-				} | Select-DefaultView -ExcludeProperty DatabaseRenames, FileGroupsRenames, LogicalNameRenames, FileNameRenames
+				} | Select-DefaultView -ExcludeProperty $DefaultExclude
 		}
-        #endregion db loop
+		#endregion db loop
 	}
 }
