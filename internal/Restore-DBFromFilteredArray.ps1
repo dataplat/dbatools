@@ -206,7 +206,7 @@ Function Restore-DBFromFilteredArray {
                     $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
                     $MoveFile.LogicalFileName = $File.LogicalName
                     $IoFile = [System.Io.FileInfo]$File.PhysicalName
-                    $Extension = $IoFile.$Extension
+                    $Extension = $IoFile.Extension
                     $Filename  = (split-path $file.PhysicalName -leaf) -replace ".$extension",""
                     if ($ReplaceDbNameInFile) {
                         $Filename = $filename -replace $OldDatabaseName, $dbname
