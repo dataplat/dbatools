@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		# Each of the 4 -Types return slightly different information so this way, we can check to ensure only duration was returned
 		It "Should have correct properties for Duration" {
-			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,ObjectName,QueryHash,TotalElapsedTime,ExecutionCount,AverageDurationMs,TotalElapsedTimeForQuery,QueryText'.Split(',')
+			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,ObjectName,QueryHash,TotalElapsedTimeMs,ExecutionCount,AverageDurationMs,QueryTotalElapsedTimeMs,QueryText'.Split(',')
 			($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 		}
 	}
