@@ -325,4 +325,24 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
     }
+
+    Context "Restores a db with log and file files missing extensions" {
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -path $script:appeyorlabrepo\sql2008-backups\Noextension.bak -ErrorVariable Errvar -WarningVariable WarnVar
+        It "Should Restore successfully" {
+            ($results.RestoreComplete -contains $false) | Should Be $false    
+        }
+        It "Should have no Warnining or errors" {
+            ($null -eq $WarnVar) | Should Be $true
+            ($null -eq $ErrVar) | Should be $true
+        }
+    }
+    Clear-DbaSqlConnectionPool
+	Start-Sleep -Seconds 1
+	
+    Context "All user databases are removed post history test" {
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+        It "Should say the status was dropped" {
+            Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
+        }
+    }
 }
