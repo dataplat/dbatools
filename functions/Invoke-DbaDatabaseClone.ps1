@@ -70,7 +70,7 @@
 			Stop-Function -Message "You must specify a server name if you did not pipe a database"
 		}
 		
-		$update = "declare @out table(id int identity(1,1),s sysname, o sysname, i sysname, stats_stream varbinary(max), rows bigint, pages bigint)
+		$updatestats = "declare @out table(id int identity(1,1),s sysname, o sysname, i sysname, stats_stream varbinary(max), rows bigint, pages bigint)
 					declare @dbcc table(stats_stream varbinary(max), rows bigint, pages bigint)
 					declare c cursor for 
 					       select object_schema_name(object_id) s, object_name(object_id) o, name i
@@ -146,7 +146,7 @@
 			if ($UpdateStatistics) {
 				try {
 					Write-Message -Level Verbose -Message "Updating statistics"
-					$null = $database.Query($update)
+					$null = $database.Query($updatestats)
 				}
 				catch {
 					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
