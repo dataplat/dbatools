@@ -86,15 +86,26 @@ function Get-DbaXEventsSession {
 			
 			foreach ($x in $xesessions) {
 				$status = switch ($x.IsRunning) { $true { "Running" } $false { "Stopped" } }
-				$files = $x.Targets.TargetFields | Where-Object Name -eq Filename | select -ExpandProperty Value
+				$file = $x.Targets.TargetFields | Where-Object Name -eq Filename | Select-Object -ExpandProperty Value
+				$remotefile = Join-AdminUnc -servername $server.netName -filepath $file
+				
+				<#
+				$remotefiles = @()
+				foreach ($file in $files) {
+					$tempfile = Join-AdminUnc -servername $server.netName -filepath $file
+					$remotefiles += $tempfile
+				}
+				#>
+				
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name ComputerName -Value $server.NetName
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Status -Value $status
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Session -Value $x.Name
-				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name TargetFiles -Value $files
+				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name TargetFile -Value $file
+				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name RemoteTargetFile -Value $remotefile
 				
-				Select-DefaultView -InputObject $x -Property ComputerName, InstanceName, SqlInstance, Name, Status, StartTime, AutoStart, State, Targets, TargetFiles, Events, MaxMemory, MaxEventSize
+				Select-DefaultView -InputObject $x -Property ComputerName, InstanceName, SqlInstance, Name, Status, StartTime, AutoStart, State, Targets, TargetFile, Events, MaxMemory, MaxEventSize
 			}
 		}
 	}
