@@ -131,7 +131,7 @@ Function Get-DbaSqlService {
 						}
 					}
 					
-					$services = $servicesTemp | Group-Object Name | ForEach-Object { $_.Group | Sort-Object Namespace -Descending | Select-Object -First 1 } | Select-Object -ExpandProperty Service
+					$services = ($servicesTemp | Group-Object Name | ForEach-Object { $_.Group | Sort-Object Namespace -Descending | Select-Object -First 1 }).Service
 					
 					if ($services) {
 						Write-Message -Level Verbose -Silent $Silent -Message "Creating output objects"
