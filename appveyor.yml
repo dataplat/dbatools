@@ -50,6 +50,7 @@ test_script:
           vstest.console /logger:Appveyor bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.Tests.dll
         }
   # "Test with native PS version"
+  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
   - ps: .\Tests\appveyor.pester.ps1
   
   # "Test with PS version 3" - Removed because it's not a true test. Even PS4+ .Where() works
