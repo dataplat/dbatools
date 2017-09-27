@@ -88,20 +88,17 @@ function Get-DbaXEventsSession {
 				$status = switch ($x.IsRunning) { $true { "Running" } $false { "Stopped" } }
 				$files = $x.Targets.TargetFields | Where-Object Name -eq Filename | Select-Object -ExpandProperty Value
 				
+				$filecollection = $remotefile = @()
+				
 				if ($files) {
-					$filecollection = $remotefile = @()
 					foreach ($file in $files) {
 						if ($file -notmatch ':\\' -and $file -notmatch '\\\\') {
 							$directory = $server.ErrorLogPath.TrimEnd("\")
-							$file = "$directory\AlwaysOn_health.xel"
+							$file = "$directory\$file"
 						}
 						$filecollection += $file
 						$remotefile += Join-AdminUnc -servername $server.netName -filepath $file
 					}
-				}
-				else {
-					$filecollection = $null
-					$remotefile = $null
 				}
 								
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name ComputerName -Value $server.NetName
