@@ -366,7 +366,8 @@
 		'Invoke-DbaDatabaseClone',
 		'Read-DbaXEventFile',
 		'Get-DbaDistributor',
-		'Update-DbaSqlServiceAccount'
+		'Update-DbaSqlServiceAccount',
+		'Watch-DbaXEventSession'
 	)
 	
 	# Cmdlets to export from this module
