@@ -17,13 +17,13 @@ function Export-DbaLogin {
 			SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Login
-			The login(s) to process - this list is autopopulated FROM the server. If unspecified, all logins will be processed.
+			The login(s) to process - this list is auto-populated FROM the server. If unspecified, all logins will be processed.
 
 		.PARAMETER ExcludeLogin
-			The login(s) to exclude - this list is autopopulated FROM the server.
+			The login(s) to exclude - this list is auto-populated FROM the server.
 
 		.PARAMETER Database
-			The database(s) to process - this list is autopopulated FROM the server. If unspecified, all databases will be processed.
+			The database(s) to process - this list is auto-populated FROM the server. If unspecified, all databases will be processed.
 
 		.PARAMETER FilePath
 			The file to write to.
@@ -85,7 +85,7 @@ function Export-DbaLogin {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[object[]]$Login,
 		[object[]]$ExcludeLogin,
@@ -120,7 +120,33 @@ function Export-DbaLogin {
 
 		Write-Message -Level Verbose -Message "Connecting to $sqlinstance"
 		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
-
+		
+		if ($NoDatabases -eq $false) {
+			# if we got a database or a list of databases passed
+			# and we need to enumerate mappings, login.enumdatabasemappings() takes forever
+			# the cool thing though is that database.enumloginmappings() is fast. A lot.
+			# if we get a list of databases passed (or even the default list of all the databases)
+			# we save outself a call to enumloginmappings if there is no map at all
+			$DbMapping = @()
+			$DbsToMap = $server.Databases
+			if ($Database) {
+				$DbsToMap = $DbsToMap | Where-Object Name -in $Database 
+			}
+			foreach($db in $DbsToMap) {
+				if ($db.IsAccessible -eq $false) {
+					continue
+				}
+				$dbmap = $db.EnumLoginMappings()
+				foreach($el in $dbmap) {
+					$DbMapping += [pscustomobject]@{
+						Database = $db.Name
+						UserName = $el.Username
+						LoginName = $el.LoginName
+					}
+				}
+			}
+		}
+		
 		foreach ($sourceLogin in $server.Logins) {
 			$userName = $sourceLogin.name
 
@@ -136,7 +162,7 @@ function Export-DbaLogin {
 			$userBase = ($userName.Split("\")[0]).ToLower()
 			if ($serverName -eq $userBase -or $userName.StartsWith("NT ")) {
 				if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it is a local machine name.")) {
-					Write-Message -Level Warning "$userName is skipped because it is a local machine name."
+					Write-Message -Level Warning -Message "$userName is skipped because it is a local machine name."
 					continue
 				}
 			}
@@ -266,13 +292,14 @@ function Export-DbaLogin {
 			}
 
 			if ($NoDatabases -eq $false) {
+				if ($userName -notin $DbMapping.LoginName) {
+					Write-Message -Level VeryVerbose -Message "Skipping as $userName is not mapped to an user of the databases"
+					continue
+				}
 				$dbs = $sourceLogin.EnumDatabaseMappings()
 				# Adding database mappings and securables
 				foreach ($db in $dbs) {
 					$dbName = $db.dbname
-					if ($database -and $dbName -notin $database) {
-						continue
-					}
 					$sourceDb = $server.Databases[$dbName]
 					$dbUserName = $db.username
 

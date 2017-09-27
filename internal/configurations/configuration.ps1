@@ -54,9 +54,9 @@ If there is nothing there (for example, if the user accidentally removed or null
 $configpath = $ExecutionContext.SessionState.Module.ModuleBase + "\internal\configurations"
 
 # Import configuration handlers
-foreach ($file in (Get-ChildItem -Path $configpath -Filter "*.handler.ps1"))
-{
-    . ([scriptblock]::Create([io.file]::ReadAllText($file.FullName)))
+foreach ($file in (Get-ChildItem -Path $configpath -Filter "*.handler.ps1")) {
+	if ($script:doDotSource) { . $file.FullName }
+	else { . ([scriptblock]::Create([io.file]::ReadAllText($file.FullName))) }
 }
 
 #region Implement user profile
@@ -70,7 +70,7 @@ if ($var = Get-Variable "dbatools_config" -Scope Global -ErrorAction Ignore)
 #endregion Implement user profile
 
 # Import other configuration files
-foreach ($file in (Get-ChildItem -Path $configpath -Exclude "configuration.ps1", "*.handler.ps1"))
-{
-    . ([scriptblock]::Create([io.file]::ReadAllText($file.FullName)))
+foreach ($file in (Get-ChildItem -Path $configpath -Exclude "configuration.ps1", "*.handler.ps1")) {
+	if ($script:doDotSource) { . $file.FullName }
+	else { . ([scriptblock]::Create([io.file]::ReadAllText($file.FullName))) }
 }

@@ -13,10 +13,10 @@ function Get-DbaLogin {
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
 		.PARAMETER Login
-			The login(s) to process - this list is autopopulated from the server. If unspecified, all logins will be processed.
+			The login(s) to process - this list is auto-populated from the server. If unspecified, all logins will be processed.
 
 		.PARAMETER ExcludeLogin
-			The login(s) to exclude - this list is autopopulated from the server
+			The login(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER Locked
 			Filters on the SMO property to return locked Logins.
@@ -81,7 +81,7 @@ function Get-DbaLogin {
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[object[]]$Login,
 		[object[]]$ExcludeLogin,
@@ -98,7 +98,7 @@ function Get-DbaLogin {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			$serverLogins = $server.Logins
@@ -125,15 +125,23 @@ function Get-DbaLogin {
 
 			foreach ($serverLogin in $serverlogins) {
 				Write-Message -Level Verbose -Message "Processing $serverLogin on $instance"
-				Write-Message -Level Verbose -Message "Getting last login time"
-				$sql = "SELECT MAX(login_time) AS [login_time] FROM sys.dm_exec_sessions WHERE login_name = '$($serverLogin.name)'"
 
-				Add-Member -InputObject $serverLogin -MemberType NoteProperty -Name LastLogin -Value $server.ConnectionContext.ExecuteScalar($sql)
-				Add-Member -InputObject $serverLogin -MemberType NoteProperty -Name ComputerName -Value $server.NetName
-				Add-Member -InputObject $serverLogin -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-				Add-Member -InputObject $serverLogin -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+				if ($server.VersionMajor -gt 9) {
+					# There's no reliable method to get last login time with SQL Server 2000, so only show on 2005+
+					Write-Message -Level Verbose -Message "Getting last login time"
+					$sql = "SELECT MAX(login_time) AS [login_time] FROM sys.dm_exec_sessions WHERE login_name = '$($serverLogin.name)'"
+					Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name LastLogin -Value $server.ConnectionContext.ExecuteScalar($sql)
+				}
+				else 
+				{
+					Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name LastLogin -Value $null
+				}
 
-				Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, LastLogin, HasAccess, IsLocked, IsDisabled
+				Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+				Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+				Add-Member -Force -InputObject $serverLogin -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+
+				Select-DefaultView -InputObject $serverLogin -Property ComputerName, InstanceName, SqlInstance, Name, LoginType, CreateDate, LastLogin, HasAccess, IsLocked, IsDisabled
 			} #foreach serverlogin
 		} #foreach instance
 	} #process

@@ -15,8 +15,8 @@ source and destination servers.
 		[object]$destination,
 		[Parameter(Mandatory = $false, Position = 2)]
 		[bool]$ReuseSourceFolderStructure,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential
+		[PSCredential]$SourceSqlCredential,
+		[PSCredential]$DestinationSqlCredential
 	)
 	
 	$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential

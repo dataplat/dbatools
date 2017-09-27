@@ -1,4 +1,4 @@
-#region Path.DbatoolsLogPath
+﻿#region Path.DbatoolsLogPath
 $ScriptBlock = {
     Param (
         $Value
@@ -24,7 +24,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.DebugHost]::LoggingPath = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath = $Value
     
     return $Result
 }

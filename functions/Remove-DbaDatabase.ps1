@@ -17,10 +17,13 @@ $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter
 Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER DatabaseCollection
 A collection of databases (such as returned by Get-DbaDatabase), to be removed.
+
+.PARAMETER IncludeSystemDb
+Use this switch to disable any kind of verbose messages
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
@@ -63,13 +66,14 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 		[DbaInstanceParameter[]]$SqlInstance,
 		[parameter(Mandatory = $false)]
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[parameter(Mandatory, ParameterSetName = "instance")]
 		[Alias("Databases")]
 		[object[]]$Database,
 		[Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "databases")]
 		[Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
+		[switch]$IncludeSystemDb,
 		[switch]$Silent
 	)
 
@@ -81,10 +85,15 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
-			}
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}							
+			$databasecollection += $server.Databases | Where-Object { $_.Name -in $Database }			
+		}
 
-			$databasecollection += $server.Databases | Where-Object { $_.Name -in $Database }
+		$system_dbs = @( "master", "model", "tempdb", "resource", "msdb" )
+		
+		if (-not($IncludeSystemDb)){
+			$databasecollection = $databasecollection | Where-Object { $_.Name -notin $system_dbs}
 		}
 
 		foreach ($db in $databasecollection) {
@@ -106,7 +115,7 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 			catch {
 				try {
 					if ($Pscmdlet.ShouldProcess("$db on $server", "alter db set single_user with rollback immediate then drop")) {
-						$null = $server.ConnectionContext.ExecuteNonQuery("alter database $db set single_user with rollback immediate; drop database $db")
+						$null = $server.Query("if exists (select * from sys.databases where name = '$($db.name)' and state = 0) alter database $db set single_user with rollback immediate; drop database $db")
 
 						[pscustomobject]@{
 							ComputerName = $server.NetName

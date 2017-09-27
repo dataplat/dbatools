@@ -25,14 +25,23 @@ Set to true to use windows authentication.
 Sql User Name to connect with.
 
 .PARAMETER Password
-Password to use to connect withy.
+Password to use to connect with.
+
+.PARAMETER MultipleActiveResultSets
+Enable Multiple Active Result Sets.
+
+.PARAMETER ColumnEncryptionSetting
+Enable Always Encrypted.
+
+.PARAMETER WorkstationID
+Set the Workstation Id that is associated with the connection.
 
 .NOTES
 Author: zippy1981
 Tags: SqlBuild
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+Copyright (C) 2017 Chrissy LeMaire
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
@@ -67,7 +76,16 @@ Returns a connection string builder that can be used to connect to the local sql
 		[string]$UserName = $null,
 		# No point in securestring here, the memory is never stored securely in memory.
 		[Parameter(Mandatory = $false)]
-		[string]$Password = $null
+		[string]$Password =  $null,
+		[Alias('MARS')]
+		[Parameter(Mandatory = $false)]
+		[switch]$MultipleActiveResultSets,
+		[Alias('AlwaysEncrypted')]
+		[Parameter(Mandatory = $false)]
+		[Data.SqlClient.SqlConnectionColumnEncryptionSetting]$ColumnEncryptionSetting = 
+			[Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled,
+		[Parameter(Mandatory = $false)]
+		[string]$WorkstationId = $env:COMPUTERNAME
 	)
     process {
 		foreach ($cs in $ConnectionString) {
@@ -87,11 +105,18 @@ Returns a connection string builder that can be used to connect to the local sql
 			if (![string]::IsNullOrWhiteSpace($UserName)) {
 				$builder["User ID"] = $UserName
 			}
-			<#
-			if ($Password -ne $null) {
+			if (![string]::IsNullOrWhiteSpace($Password)) {
 				$builder['Password'] = $Password
 			}
-			#>
+			if (![string]::IsNullOrWhiteSpace($WorkstationId)) {
+				$builder['Workstation ID'] = $WorkstationId
+			}
+			if ($MultipleActiveResultSets -eq $true) {
+				$builder['MultipleActiveResultSets'] = $true
+			}
+			if ($ColumnEncryptionSetting -eq [Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled) {
+				$builder['Column Encryption Setting'] = [Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled
+			}
 			$builder
 		}
     }

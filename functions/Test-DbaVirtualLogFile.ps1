@@ -15,16 +15,16 @@ function Test-DbaVirtualLogFile {
 		If you've got a high number of VLFs, you can use Expand-SqlTLogResponsibly to reduce the number.
 
 	.PARAMETER SqlInstance
-		SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input.
+		SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input.
 
 	.PARAMETER SqlCredential
 		PSCredential object to connect under. If not specified, current Windows login will be used.
 
 	.PARAMETER Database
-		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-	.PARAMETER Exclude
-		The database(s) to exclude - this list is autopopulated from the server
+	.PARAMETER ExcludeDatabase
+		The database(s) to exclude - this list is auto-populated from the server
 
 	.PARAMETER IncludeSystemDBs
 		Switch parameter that when used will display system database information
@@ -67,10 +67,10 @@ function Test-DbaVirtualLogFile {
 	param ([parameter(ValueFromPipeline, Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[switch]$IncludeSystemDBs,
 		[switch]$Detailed
 	)
@@ -90,11 +90,11 @@ function Test-DbaVirtualLogFile {
 			#If IncludeSystemDBs is true, include systemdbs
 			#only look at online databases (Status equal normal)
 
-			if ($Database.count -gt 0) {
+			if ($Database) {
 				$dbs = $dbs | Where-Object { $Database -contains $_.Name }
 			}
-			if ($Exclude) {
-				$dbs = $dbs | Where-Object Name -notin $Exclude
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -notin $ExcludeDatabase
 			}
 
 			if ($IncludeSystemDBs) {

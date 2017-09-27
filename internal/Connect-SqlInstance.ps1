@@ -1,4 +1,4 @@
-﻿function Connect-SqlInstance {
+function Connect-SqlInstance {
     <#
         .SYNOPSIS
             Internal function to establish smo connections.

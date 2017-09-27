@@ -1,4 +1,4 @@
-function Copy-DbaQueryStoreConfig {
+﻿function Copy-DbaQueryStoreConfig {
 	<#
 	.SYNOPSIS
 		Copies the configuration of a Query Store enabled database and sets the copied configuration on other databases.
@@ -19,10 +19,10 @@ function Copy-DbaQueryStoreConfig {
 		Credential object used to connect to the destination SQL Server as a different user.
 
 	.PARAMETER Destination
-		The target server where the databases reside on which you want to enfore the copied Query Store configuration from the SourceDatabase.
+		The target server where the databases reside on which you want to enforce the copied Query Store configuration from the SourceDatabase.
 
 	.PARAMETER DestinationDatabase
-		The databases that will recieve a copy of the Query Store configuration of the SourceDatabase.
+		The databases that will receive a copy of the Query Store configuration of the SourceDatabase.
 
 	.PARAMETER Exclude
 		Copy Query Store configuration for all but these specific databases.
@@ -68,12 +68,12 @@ function Copy-DbaQueryStoreConfig {
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[DbaInstanceParameter]$Source,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
+		[PSCredential]$SourceSqlCredential,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object]$SourceDatabase,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[DbaInstanceParameter[]]$Destination,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
+		[PSCredential]$DestinationSqlCredential,
 		[object[]]$DestinationDatabase,
 		[object[]]$Exclude,
 		[switch]$AllDatabases,
@@ -140,7 +140,7 @@ function Copy-DbaQueryStoreConfig {
 					DestinationDatabase = $db.name
 					Name = "QueryStore Configuration"
 					Status = $null
-					DateTime = [sqlcollective.dbatools.Utility.DbaDateTime](Get-Date)
+					DateTime = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
 
 				if ($db.IsAccessible -eq $false) {

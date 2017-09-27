@@ -93,7 +93,7 @@ function Find-DbaAgentJob {
 			Returns all agent job(s) that have failed since July of 2016 (and still have history in msdb)
 
 		.EXAMPLE
-			Get-SqlRegisteredServerName -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -NoSchedule -Detailed | Format-Table -AutoSize -Wrap
+			Get-DbaRegisteredServerName -SqlInstance CMSServer -Group Production | Find-DbaAgentJob -Disabled -NoSchedule -Detailed | Format-Table -AutoSize -Wrap
 
 			Queries CMS server to return all SQL instances in the Production folder and then list out all agent jobs that have either been disabled or have no schedule.
 
@@ -107,7 +107,7 @@ function Find-DbaAgentJob {
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[string[]]$Name,
 		[string[]]$StepName,
@@ -139,7 +139,7 @@ function Find-DbaAgentJob {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -Continue -Target $instance
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			$jobs = $server.JobServer.jobs
@@ -244,9 +244,9 @@ function Find-DbaAgentJob {
 			$jobs = $output | Select-Object -Unique
 
 			foreach ($job in $jobs) {
-				Add-Member -InputObject $job -MemberType NoteProperty -Name ComputerName -value $server.NetName
-				Add-Member -InputObject $job -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-				Add-Member -InputObject $job -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name ComputerName -value $server.NetName
+				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 				$job | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Name, LastRunDate, LastRunOutcome, IsEnabled, CreateDate, HasSchedule, OperatorToEmail, Category, OwnerLoginName
 			}
 		}

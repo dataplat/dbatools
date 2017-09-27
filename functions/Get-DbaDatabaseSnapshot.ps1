@@ -17,13 +17,13 @@ Credential object used to connect to the SQL Server as a different user
 Return information for only specific databases
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is autopopulated from the server
+The database(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER Snapshot
 Return information for only specific snapshots
 
 .PARAMETER ExcludeSnapshot
-The snapshot(s) to exclude - this list is autopopulated from the server
+The snapshot(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
@@ -62,7 +62,7 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [Alias("Credential")]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
+        [PSCredential]
         $SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
@@ -79,7 +79,7 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
             }
             catch {
-                Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             $dbs = $server.Databases
@@ -88,7 +88,7 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
                 $dbs = $dbs | Where-Object { $Database -contains $_.DatabaseSnapshotBaseName }
             }
             if ($ExcludeDatabase) {
-                $dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.DatabaseSnapshotBaseName}
+                $dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.DatabaseSnapshotBaseName }
             }
             if ($Snapshot) {
                 $dbs = $dbs | Where-Object { $Snapshot -contains $_.Name }
@@ -97,7 +97,7 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
                 $dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
             }
             if ($ExcludeSnapshot) {
-                $dbs = $dbs | Where-Object { $ExcludeSnapshot -notcontains $_.DatabaseSnapshotBaseName }
+                $dbs = $dbs | Where-Object { $ExcludeSnapshot -notcontains $_.Name }
             }
 
             foreach ($db in $dbs) {

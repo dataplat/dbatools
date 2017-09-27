@@ -15,13 +15,13 @@ The SQL Server that you're connecting to.
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is autopopulated from the server
+The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER Simple
-Shows concise information including Server name, Database name, and the date the last time backups were performed
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
 
 .NOTES
 Tags: DisasterRecovery, Backup
@@ -40,12 +40,17 @@ Get-DbaLastBackup -SqlInstance ServerA\sql987
 Returns a custom object displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
 
 .EXAMPLE
-Get-DbaLastBackup -SqlInstance ServerA\sql987 -Simple
+Get-DbaLastBackup -SqlInstance ServerA\sql987
 
 Returns a custom object with Server name, Database name, and the date the last time backups were performed
 
 .EXAMPLE
-Get-DbaLastBackup -SqlInstance ServerA\sql987 | Out-Gridview
+Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select *
+
+Returns a custom object with Server name, Database name, and the date the last time backups were performed, and also recoverymodel and calculations on how long ago backups were taken and what the status is.
+
+.EXAMPLE
+Get-DbaLastBackup -SqlInstance ServerA\sql987 | Select * | Out-Gridview
 
 Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, LastDiffBackup, LastLogBackup, SinceFull, SinceDiff, SinceLog, Status, DatabaseCreated, DaysSinceDbCreated
 
@@ -56,26 +61,26 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[switch]$Simple
+		[switch]$Silent
 	)
 
 	process {
 		foreach ($instance in $SqlInstance) {
-			Write-Verbose "Connecting to $instance"
+			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Write-Warning "Can't connect to $instance"
+				Write-Message -Level Warning -Message "Can't connect to $instance"
 				Continue
 			}
 
-			$dbs = $server.Databases | Where-Object { $_.name -ne 'TempDb' }
+			$dbs = $server.Databases | Where-Object { $_.name -ne 'tempdb' }
 
 			if ($Database) {
 				$dbs = $dbs | Where-Object Name -In $Database
@@ -87,10 +92,10 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 
 			foreach ($db in $dbs) {
 				$result = $null
-				Write-Verbose "Processing $db on $instance"
+				Write-Message -Level Verbose -Message "Processing $db on $instance"
 
 				if ($db.IsAccessible -eq $false) {
-					Write-Warning "The database $db on server $instance is not accessible. Skipping database."
+					Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database."
 					Continue
 				}
 				# To avoid complicated manipulations on datetimes depending on locale settings and culture,
@@ -118,25 +123,22 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 				else { $Status = 'OK' }
 
 				$result = [PSCustomObject]@{
-					Server             = $server.name
+					ComputerName       = $server.NetName
+					InstanceName       = $server.ServiceName
+					SqlInstance        = $server.DomainInstanceName
 					Database           = $db.name
 					RecoveryModel      = $db.recoverymodel
-					LastFullBackup     = if ($db.LastBackupdate -eq 0) { $null } else { $db.LastBackupdate.tostring() }
-					LastDiffBackup     = if ($db.LastDifferentialBackupDate -eq 0) { $null } else { $db.LastDifferentialBackupDate.tostring() }
-					LastLogBackup      = if ($db.LastLogBackupDate -eq 0) { $null } else { $db.LastLogBackupDate.tostring() }
+					LastFullBackup     = if ($db.LastBackupdate -eq 0) { $null } else { [DbaDateTime]$db.LastBackupdate}
+					LastDiffBackup     = if ($db.LastDifferentialBackupDate -eq 0) { $null } else { [DbaDateTime]$db.LastDifferentialBackupDate }
+					LastLogBackup      = if ($db.LastLogBackupDate -eq 0) { $null } else { [DbaDateTime]$db.LastLogBackupDate }
 					SinceFull          = $SinceFull
 					SinceDiff          = $SinceDiff
 					SinceLog           = $SinceLog
 					DatabaseCreated    = $db.createDate
 					DaysSinceDbCreated = $daysSinceDbCreated
-					Status             = $statu
-				}
-				if ($Simple) {
-					$result | Select-Object Server, Database, LastFullBackup, LastDiffBackup, LastLogBackup
-				}
-				else {
-					$result
-				}
+					Status             = $status
+				    }
+				Select-DefaultView -InputObject $result -Property ComputerName, InstanceName, SqlInstance, Database, LastFullBackup, LastDiffBackup, LastLogBackup
 			}
 		}
 	}

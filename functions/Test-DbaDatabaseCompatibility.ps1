@@ -13,10 +13,10 @@ function Test-DbaDatabaseCompatibility {
 		Credential object used to connect to the SQL Server as a different user
 
 	.PARAMETER Database
-		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-	.PARAMETER Exclude
-		The database(s) to exclude - this list is autopopulated from the server
+	.PARAMETER ExcludeDatabase
+		The database(s) to exclude - this list is auto-populated from the server
 
 	.PARAMETER Detailed
 		Shows detailed information about the server and database compatibility level
@@ -45,7 +45,7 @@ function Test-DbaDatabaseCompatibility {
 		Lots of detailed information for database and server compatibility level for all databases except db1 on sqlserver2014a and sql2016
 
 	.EXAMPLE
-		Get-SqlRegisteredServerName -SqlInstance sql2014 | Test-DbaDatabaseCompatibility
+		Get-DbaRegisteredServerName -SqlInstance sql2014 | Test-DbaDatabaseCompatibility
 
 		Returns db/server compatibility information for every database on every server listed in the Central Management Server on sql2016
 	#>
@@ -55,11 +55,11 @@ function Test-DbaDatabaseCompatibility {
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$Credential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[switch]$Detailed
 	)
 
@@ -86,12 +86,12 @@ function Test-DbaDatabaseCompatibility {
 			$serverversion = "Version$($server.VersionMajor)0"
 			$dbs = $server.Databases
 
-			if ($Database.count -gt 0) {
+			if ($Database) {
 				$dbs = $dbs | Where-Object { $Database -contains $_.Name }
 			}
 
-			if ($Exclude.count -gt 0) {
-				$dbs = $dbs | Where-Object Name -NotIn $Exclude
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
 
 			foreach ($db in $dbs) {

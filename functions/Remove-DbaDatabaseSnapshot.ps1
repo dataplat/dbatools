@@ -14,19 +14,19 @@ The SQL Server that you're connecting to
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Database
-Restores from the last snapshot databases with this names only
-NB: you can pass either Databases or Snapshots
+Removes snapshots for only this specific base db
 
 .PARAMETER ExcludeDatabase
-Processes all databases excepting the these 
-NB: you can pass either Databases or Snapshots
+Removes snapshots excluding this specific base dbs
 
 .PARAMETER Snapshot
-Restores databases from snapshots with this names only
-NB: you can pass either Databases or Snapshots
+Restores databases from snapshot with this name only
 
 .PARAMETER AllSnapshots
 Specifies that you want to remove all snapshots from the server
+
+.PARAMETER Force
+Will forcibly kill all running queries that prevent the drop process.
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
@@ -41,7 +41,7 @@ Internal parameter
 Use this switch to disable any kind of verbose messages
 
 .NOTES
-Tags: Snapshot, Databases
+Tags: Snapshot, Database
 Author: niphlod
 
 Website: https://dbatools.io
@@ -79,11 +79,11 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(Mandatory = $false, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
@@ -92,27 +92,38 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		[parameter(ValueFromPipeline = $true)]
 		[object]$PipelineSnapshot,
 		[switch]$AllSnapshots,
+		[switch]$Force,
 		[switch]$Silent
 	)
 
 	process {
-		if (!$snapshot -and !$Database -and !$AllSnapshots -and $null -eq $PipelineSnapshot -and !$ExcludeDatabase) {
+		if (!$Snapshot -and !$Database -and !$AllSnapshots -and $null -eq $PipelineSnapshot -and !$ExcludeDatabase) {
 			Stop-Function -Message "You must specify -Snapshot, -Database, -Exclude or -AllSnapshots"
+			return
 		}
 		# handle the database object passed by the pipeline
 		# do we need a specialized type back ?
 		if ($null -ne $PipelineSnapshot -and $PipelineSnapshot.getType().Name -eq 'pscustomobject') {
 			if ($Pscmdlet.ShouldProcess($PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName, "Remove db snapshot $($PipelineSnapshot.SnapshotDb.Name)")) {
-				$dropped = Remove-SqlDatabase -SqlInstance $PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName -DBName $PipelineSnapshot.SnapshotDb.Name -SqlCredential $Credential
-				if ($dropped -match "Success") {
-					$status = "Dropped"
+				try {
+					$server = Connect-SqlInstance -SqlInstance $PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName -SqlCredential $Credential
+				} catch {
+					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				}
-				else {
-					Write-Message -Level Warning -Message $dropped
+				try {
+					if ($Force) {
+						$server.KillAllProcesses($PipelineSnapshot.SnapshotDb.Name)
+					}
+					$null = $server.Query("drop database [$($PipelineSnapshot.SnapshotDb.Name)]")
+					$status = "Dropped"
+				} catch {
+					Write-Message -Level Warning -Message $_
 					$status = "Drop failed"
 				}
 
 				[PSCustomObject]@{
+					ComputerName = $PipelineSnapshot.SnapshotDb.Parent.NetName
+					InstanceName = $PipelineSnapshot.SnapshotDb.Parent.ServiceName
 					SqlInstance = $PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName
 					Database    = $PipelineSnapshot.Database
 					SnapshotOf  = $PipelineSnapshot.SnapshotOf
@@ -128,44 +139,52 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
 			} catch {
-				Stop-Function -Message "Failed to connect to: $instance" -InnerErrorRecord $_ -Target $instance -Continue -Silent $Silent
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
+			
 
 			$dbs = $server.Databases
-
 			if ($Database) {
-				$dbs = $dbs | Where-Object { $Databases -contains $_.DatabaseSnapshotBaseName }
+				$dbs = $dbs | Where-Object { $Database -contains $_.DatabaseSnapshotBaseName }
 			}
+			
 			if ($ExcludeDatabase) {
 				$dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.DatabaseSnapshotBaseName }
 			}
-			if ($snapshot) {
-				$dbs = $dbs | Where-Object { $snapshot -contains $_.Name }
+			
+			if ($Snapshot) {
+				$dbs = $dbs | Where-Object { $Snapshot -contains $_.Name }
 			}
-			if (!$snapshot -and !$Database) {
+			
+			if (!$Snapshot -and !$Database) {
 				$dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
 			}
+			
 
 			foreach ($db in $dbs) {
 				if ($db.IsAccessible -eq $false) {
 					Write-Message -Level Warning -Message "Database $db is not accessible."
 					continue
 				}
-				If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $db")) {
-					$dropped = Remove-DbaDatabase -SqlInstance $server -DBName $db.Name -SqlCredential $Credential
-					if ($dropped -match "Success") {
+				if ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $db")) {
+					$basedb = $db.DatabaseSnapshotBaseName
+					try {
+						if ($Force) {
+							# cannot drop the snapshot if someone is using it
+							$server.KillAllProcesses($db)
+						}
+						$null = $server.Query("drop database $db")
 						$status = "Dropped"
-					}
-					else {
-						Write-Message -Level Warning -Message $dropped
+					} catch {
+						Write-Message -Level Warning -Message $_
 						$status = "Drop failed"
 					}
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
 						SqlInstance  = $server.DomainInstanceName
-						Database     = $db.Name
-						SnapshotOf   = $db.DatabaseSnapshotBaseName
+						Database     = $db
+						SnapshotOf   = $basedb
 						Status       = $status
 					}
 				}

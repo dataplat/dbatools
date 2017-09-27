@@ -1,39 +1,33 @@
-Function Watch-DbaUpdate
-{
-<# 
-.SYNOPSIS 
-Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once max per release.
+Function Watch-DbaUpdate {
+	<# 
+		.SYNOPSIS 
+			Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once per release.
 
-.DESCRIPTION 
-Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once max per release.
-	
-Anyone know how to make it clickable so that it opens an URL?
+		.DESCRIPTION 
+			Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once max per release.
+			
+			Anyone know how to make it clickable so that it opens an URL?
 
-.NOTES
-Tags: JustForFun
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.NOTES
+			Tags: JustForFun
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		.LINK 
+			https://dbatools.io/Watch-DbaUpdate
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+		.EXAMPLE   
+			Watch-DbaUpdate
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-.LINK 
-https://dbatools.io/Watch-DbaUpdate
-
-.EXAMPLE   
-Watch-DbaUpdate
-
-Watches the gallery for updates to dbatools.
-#>	
+			Watches the gallery for updates to dbatools.
+	#>	
 
 	PROCESS
 	{
 		if (([Environment]::OSVersion).Version.Major -lt 10)
 		{
-			Write-Warning "This command only supports Windows 10 and above"
+			Write-Warning "This command only supports Windows 10 and higher."
 			return
 		}
 		

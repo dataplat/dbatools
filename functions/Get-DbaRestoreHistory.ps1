@@ -16,10 +16,10 @@ The SQL Server that you're connecting to.
 Credential object used to connect to the SQL Server as a different user
 
 .PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is autopopulated from the server
+The database(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER Since
 Datetime object used to narrow the results to a date
@@ -61,7 +61,7 @@ Get-DbaRestoreHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs | 
 Adds From and To file information to output, returns information only for AdventureWorks2014 and pubs, and makes the output pretty
 
 .EXAMPLE   
-Get-SqlRegisteredServerName -SqlInstance sql2016 | Get-DbaRestoreHistory
+Get-DbaRegisteredServerName -SqlInstance sql2016 | Get-DbaRestoreHistory
 
 Returns database restore information for every database on every server listed in the Central Management Server on sql2016
 	
@@ -72,7 +72,7 @@ Returns database restore information for every database on every server listed i
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,

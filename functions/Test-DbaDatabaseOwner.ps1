@@ -21,16 +21,16 @@ function Test-DbaDatabaseOwner {
 
 	.PARAMETER SqlInstance
 		SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-		collection and recieve pipeline input
+		collection and receive pipeline input
 
 	.PARAMETER SqlCredential
-		PSCredential object to connect under. If not specified, currend Windows login will be used.
+		PSCredential object to connect under. If not specified, current Windows login will be used.
 
 	.PARAMETER Database
-		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-	.PARAMETER Exclude
-		The database(s) to exclude - this list is autopopulated from the server
+	.PARAMETER ExcludeDatabase
+		The database(s) to exclude - this list is auto-populated from the server
 
 	.PARAMETER TargetLogin
 		Specific login that you wish to check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed.
@@ -59,11 +59,11 @@ function Test-DbaDatabaseOwner {
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[string]$TargetLogin,
 		[Switch]$Detailed
 	)
@@ -98,12 +98,12 @@ function Test-DbaDatabaseOwner {
 			$dbs = $server.Databases
 
 			#filter database collection based on parameters
-			if ($Database.Length -gt 0) {
+			if ($Database) {
 				$dbs = $dbs | Where-Object { $Database -contains $_.Name }
 			}
 
-			if ($Exclude.Length -gt 0) {
-				$dbs = $dbs | Where-Object Name -NotIn $Exclude
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
 
 			#for each database, create custom object for return set.

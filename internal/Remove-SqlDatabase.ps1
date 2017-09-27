@@ -12,7 +12,7 @@ an SMO server object.
 		[object]$SqlInstance,
 		[Parameter(Mandatory = $true)]
 		[string]$DBName,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[PSCredential]$SqlCredential
 	)
 	
 	$escapedname = "[$dbname]"
@@ -28,7 +28,7 @@ an SMO server object.
 	{
 		try
 		{
-			$null = $server.ConnectionContext.ExecuteNonQuery("DROP DATABASE $escapedname")
+			$null = $server.Query("DROP DATABASE $escapedname")
 			return "Successfully dropped $dbname on $($server.name)"
 		}
 		catch

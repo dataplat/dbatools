@@ -18,7 +18,7 @@ Function Restore-Database
 		[Alias("Tsql")]
 		[switch]$ScriptOnly,
 		[switch]$VerifyOnly,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[PSCredential]$SqlCredential
 	)
 	
 	$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential

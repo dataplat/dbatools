@@ -1,166 +1,182 @@
-function Copy-DbaCustomError
-{
-<#
-.SYNOPSIS 
-Copy-DbaCustomError migrates custom errors (user defined messages) from one SQL Server to another. 
+function Copy-DbaCustomError {
+	<#
+		.SYNOPSIS
+			Copy-DbaCustomError migrates custom errors (user defined messages), by the custom error ID, from one SQL Server to another.
 
-.DESCRIPTION
-By default, all  custom errors are copied. The -CustomError parameter is autopopulated for command-line completion and can be used to copy only specific custom errors.
+		.DESCRIPTION
+			By default, all custom errors are copied. The -CustomError parameter is auto-populated for command-line completion and can be used to copy only specific custom errors.
 
-If the custom error already exists on the destination, it will be skipped unless -Force is used. Interesting fact, if you drop the us_english version, all the other languages will be dropped for that specific ID as well.
+			If the custom error already exists on the destination, it will be skipped unless -Force is used. The us_english version must be created first. If you drop the us_english version, all the other languages will be dropped for that specific ID as well.
 
-Also, the us_english version must be created first.
-	
-.PARAMETER Source
-Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+		.PARAMETER Source
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-.PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+		.PARAMETER SourceSqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter. 
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+		.PARAMETER Destination
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
-$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter. 
+		.PARAMETER DestinationSqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. 	
-To connect as a different Windows user, run PowerShell as that user.
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Force
-Drops and recreates the XXXXX if it exists
+		.PARAMETER CustomError
+			The custom error(s) to process. This list is auto-populated from the server. If unspecified, all custom errors will be processed.
 
-.NOTES
-Tags: Migration
-Author: Chrissy LeMaire (@cl), netnerds.net
-Requires: sysadmin access on SQL Servers
+		.PARAMETER ExcludeCustomError
+			The custom error(s) to exclude. This list is auto-populated from the server.
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.PARAMETER Force
+			If this switch is enabled, the custom error will be dropped and recreated if it already exists on Destination.
 
-.LINK
-https://dbatools.io/Copy-DbaCustomError
+		.NOTES
+			Tags: Migration, CustomError
+			Author: Chrissy LeMaire (@cl), netnerds.net
+			Requires: sysadmin access on SQL Servers
 
-.EXAMPLE   
-Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-Copies all server custom errors from sqlserver2014a to sqlcluster, using Windows credentials. If custom errors with the same name exist on sqlcluster, they will be skipped.
+		.LINK
+			https://dbatools.io/Copy-DbaCustomError
 
-.EXAMPLE   
-Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -ServerTrigger 60000 -SourceSqlCredential $cred -Force
+		.EXAMPLE
+			Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster
 
-Copies a single custom error, the custom error with ID number 6000 from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
+			Copies all server custom errors from sqlserver2014a to sqlcluster using Windows credentials. If custom errors with the same name exist on sqlcluster, they will be skipped.
 
-.EXAMPLE   
-Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+		.EXAMPLE
+			Copy-DbaCustomError -Source sqlserver2014a -SourceSqlCredential $scred -Destination sqlcluster -DestinationSqlCredential $dcred -CustomError 60000 -Force
 
-Shows what would happen if the command were executed using force.
-#>
+			Copies only the custom error with ID number 60000 from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
+
+		.EXAMPLE
+			Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -ExcludeCustomError 60000 -Force
+
+			Copies all the custom errors found on sqlserver2014a except the custom error with ID number 60000 to sqlcluster. If a custom error with the same name exists on sqlcluster, it will be updated because -Force was used.
+
+		.EXAMPLE
+			Copy-DbaCustomError -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+
+			Shows what would happen if the command were executed using force.
+	#>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
+		[PSCredential]
+		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential,
-		[switch]$Force
+		[PSCredential]
+		$DestinationSqlCredential,
+		[object[]]$CustomError,
+		[object[]]$ExcludeCustomError,
+		[switch]$Force,
+		[switch]$Silent
 	)
 
-	
 	begin {
 
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-		
-		$source = $sourceserver.DomainInstanceName
-		$destination = $destserver.DomainInstanceName
-		
-		if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9)
-		{
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+
+		$source = $sourceServer.DomainInstanceName
+		$destination = $destServer.DomainInstanceName
+
+		if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
 			throw "Custom Errors are only supported in SQL Server 2005 and above. Quitting."
 		}
 	}
-	
 	process {
 
-		# Us has to go first
-		$orderedcustomerrors = @($sourceserver.UserDefinedMessages | Where-Object { $_.Language -eq "us_english" })
-		$orderedcustomerrors += $sourceserver.UserDefinedMessages | Where-Object { $_.Language -ne "us_english" }
-		$destcustomerrors = $destserver.UserDefinedMessages
-		
-		foreach ($customerror in $orderedcustomerrors)
-		{
-			$customerrorid = $customerror.ID
-			$language = $customerror.language.ToString()
-			
-			if ($customerrors.length -gt 0 -and $customerrors -notcontains $customerrorid) { continue }
-			
-			if ($destcustomerrors.ID -contains $customerror.ID)
-			{
-				if ($force -eq $false)
-				{
-					Write-Warning "Custom error $customerrorid $language exists at destination. Use -Force to drop and migrate."
+		# US has to go first
+		$orderedCustomErrors = @($sourceServer.UserDefinedMessages | Where-Object Language -eq "us_english")
+		$orderedCustomErrors += $sourceServer.UserDefinedMessages | Where-Object Language -ne "us_english"
+		$destCustomErrors = $destServer.UserDefinedMessages
+
+		foreach ($currentCustomError in $orderedCustomErrors) {
+			$customErrorId = $currentCustomError.ID
+			$language = $currentCustomError.Language.ToString()
+
+			$copyCustomErrorStatus = [pscustomobject]@{
+				SourceServer        = $sourceServer.Name
+				DestinationServer   = $destServer.Name
+				Name                = $currentCustomError
+				Status              = $null
+				DateTime            = [DbaDateTime](Get-Date)
+			}
+
+			if ( $CustomError -and ($customErrorId -notin $CustomError -or $customErrorId -in $ExcludeCustomError) ) {
+				continue
+			}
+
+			if ($destCustomErrors.ID -contains $customErrorId) {
+				if ($force -eq $false) {
+					$copyCustomErrorStatus.Status = "Skipped"
+					$copyCustomErrorStatus
+
+					Write-Message -Level Warning -Message "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
 					continue
 				}
-				else
-				{
-					If ($Pscmdlet.ShouldProcess($destination, "Dropping custom error $customerrorid $language and recreating"))
-					{
-						try
-						{
-							Write-Verbose "Dropping custom error $customerrorid (drops all languages for custom error $customerrorid)"
-							$destserver.UserDefinedMessages[$customerrorid, $language].Drop()
+				else {
+					If ($Pscmdlet.ShouldProcess($destination, "Dropping custom error $customErrorId $language and recreating")) {
+						try {
+							Write-Message -Level Verbose -Message "Dropping custom error $customErrorId (drops all languages for custom error $customErrorId)"
+							$destServer.UserDefinedMessages[$customErrorId, $language].Drop()
 						}
-						catch 
-						{ 
-							Write-Exception $_ 
-							continue
+						catch {
+							$copyCustomErrorStatus.Status = "Failed"
+							$copyCustomErrorStatus
+
+							Stop-Function -Message "Issue dropping custom error" -Target $customErrorId -InnerErrorRecord $_ -Continue
 						}
 					}
 				}
 			}
-			
-			If ($Pscmdlet.ShouldProcess($destination, "Creating custom error $customerrorid $language"))
-			{
-				try
-				{
-					Write-Output "Copying custom error $customerrorid $language"
-					$sql = $customerror.Script() | Out-String
-					$sql = $sql -replace [Regex]::Escape("'$source'"), "'$destination'"
-					Write-Verbose $sql
-					$destserver.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
+
+			if ($Pscmdlet.ShouldProcess($destination, "Creating custom error $customErrorId $language")) {
+				try {
+					Write-Message -Level Verbose -Message "Copying custom error $customErrorId $language"
+					$sql = $currentCustomError.Script() | Out-String
+					Write-Message -Level Debug -Message $sql
+					$destServer.Query($sql)
+
+					$copyCustomErrorStatus.Status = "Successful"
+					$copyCustomErrorStatus
 				}
-				catch
-				{
-					Write-Exception $_
+				catch {
+					$copyCustomErrorStatus.Status = "Failed"
+					$copyCustomErrorStatus
+
+					Stop-Function -Message "Issue creating custom error" -Target $customErrorId -InnerErrorRecord $_
 				}
 			}
 		}
 	}
-	
 	end {
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
-		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) { Write-Output "Custom error migration finished" }
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCustomError
 	}
-} 
+}

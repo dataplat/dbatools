@@ -10,7 +10,7 @@ Internal function. Ensures login has access on SQL Server.
 		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance", "SqlServer")]
 		[object]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[string]$Login
 		#[switch]$Detailed - can return if its a login or just has access
 	)

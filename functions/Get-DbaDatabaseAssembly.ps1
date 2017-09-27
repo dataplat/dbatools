@@ -7,11 +7,14 @@ Gets SQL Database Assembly information for each instance(s) of SQL Server.
  The Get-DbaDatabaseAssembly command gets SQL Database Assembly information for each instance(s) of SQL Server.
 	
 .PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
 to be executed against multiple SQL Server instances.
 
 .PARAMETER SqlCredential
 SqlCredential object to connect as. If not specified, current Windows login will be used.
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages.
 
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
@@ -35,7 +38,8 @@ Returns all Database Assembly for the local and sql2016 SQL Server instances
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[DbaInstanceParameter]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[PSCredential]$SqlCredential,
+		[switch]$Silent
 	)
 	
 	PROCESS {
@@ -45,8 +49,7 @@ Returns all Database Assembly for the local and sql2016 SQL Server instances
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Write-Warning "Can't connect to $instance or access denied. Skipping."
-				continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			
@@ -55,9 +58,9 @@ Returns all Database Assembly for the local and sql2016 SQL Server instances
 				try {
 					foreach ($assembly in $database.assemblies) {
 						
-						Add-Member -InputObject $assembly -MemberType NoteProperty -Name ComputerName -value $assembly.Parent.Parent.NetName
-						Add-Member -InputObject $assembly -MemberType NoteProperty -Name InstanceName -value $assembly.Parent.Parent.ServiceName
-						Add-Member -InputObject $assembly -MemberType NoteProperty -Name SqlInstance -value $assembly.Parent.Parent.DomainInstanceName
+						Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name ComputerName -value $assembly.Parent.Parent.NetName
+						Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name InstanceName -value $assembly.Parent.Parent.ServiceName
+						Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name SqlInstance -value $assembly.Parent.Parent.DomainInstanceName
 						
 						Select-DefaultView -InputObject $assembly -Property ComputerName, InstanceName, SqlInstance, ID, Name, Owner, 'AssemblySecurityLevel as SecurityLevel', CreateDate, IsSystemObject, Version
 						

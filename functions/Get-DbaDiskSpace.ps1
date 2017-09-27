@@ -126,7 +126,7 @@ srv0042 D:\                                                               0     
 		[ValidateSet('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')]
 		[String]$Unit = 'GB',
 		[Switch]$CheckForSql,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Switch]$Detailed,
 		[Switch]$CheckFragmentation,
 		[Switch]$AllDrives
@@ -191,16 +191,17 @@ srv0042 D:\                                                               0     
 			{
 				$SqlInstances = @()
 				$FailedToGetServiceInformation = $false
+                		$IsSqlEngineService = { $_.DisplayName -like 'SQL Server (*' -or $_.Name -eq 'MSSQLSERVER' -or $_.DisplayName -like 'MSSQL$*' }
 				try
 				{
-					$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
+                    			$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object $IsSqlEngineService
 				}
 				catch
 				{
 					Write-Verbose "$FunctionName - Cannot retrieve service information from $server using Get-Service. Trying WMI"
 					try
 					{
-						$sqlservices = Get-WmiObject Win32_Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
+						$sqlservices = Get-WmiObject Win32_Service -ComputerName $ipaddr | Where-Object $IsSqlEngineService
 					}
 					catch
 					{
@@ -209,10 +210,11 @@ srv0042 D:\                                                               0     
 					}
 				}
 				
-        foreach ($service in $sqlservices)
-        {
-          $instance = $service.DisplayName.Replace('SQL Server (', '')
-          $instance = $instance.TrimEnd(')')
+				foreach ($service in $sqlservices)
+				{
+					$instance = $service.DisplayName.Replace('SQL Server (', '')
+					$instance = $instance.TrimEnd(')')
+					$instance = $instance.Replace('MSSQL$', '')
 					
           if ($instance -eq 'MSSQLSERVER')
           {
@@ -289,18 +291,18 @@ srv0042 D:\                                                               0     
 					
 					if ($CheckForSql -or $Detailed)
 					{
-						Add-Member -InputObject $diskinfo -MemberType Noteproperty IsSqlDisk -value $sqldisk
+						Add-Member -Force -InputObject $diskinfo -MemberType Noteproperty IsSqlDisk -value $sqldisk
 					}
 					
 					if ($Detailed)
 					{
-						Add-Member -InputObject $diskinfo -MemberType Noteproperty FileSystem -value $disk.FileSystem
-						Add-Member -InputObject $diskinfo -MemberType Noteproperty DriveType -value $driveTypeName["$($disk.DriveType)"]
+						Add-Member -Force -InputObject $diskinfo -MemberType Noteproperty FileSystem -value $disk.FileSystem
+						Add-Member -Force -InputObject $diskinfo -MemberType Noteproperty DriveType -value $driveTypeName["$($disk.DriveType)"]
 					}
 					
 					if ($CheckFragmentation)
 					{
-						Add-Member -InputObject $diskinfo -MemberType Noteproperty PercentFragmented -value $disk.FilePercentFragmentation
+						Add-Member -Force -InputObject $diskinfo -MemberType Noteproperty PercentFragmented -value $disk.FilePercentFragmentation
 					}
 					$alldisks += $diskinfo
 				}

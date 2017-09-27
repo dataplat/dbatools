@@ -17,10 +17,10 @@ function Export-DbaUser {
 			Windows Authentication will be used if SqlCredential is not specified
 
 		.PARAMETER Database
-			The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+			The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 		.PARAMETER ExcludeDatabase
-			The database(s) to exclude - this list is autopopulated from the server
+			The database(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER User
 			Export only the specified database user(s). If not specified will export all users from the database(s)
@@ -89,7 +89,7 @@ function Export-DbaUser {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
@@ -148,7 +148,7 @@ function Export-DbaUser {
 			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
 		}
 		catch {
-			Stop-Function -Message "Failed to connect to $instance : $($_.Exception.Message)" -Continue -Target $instance -InnerErrorRecord $_
+			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 		}
 
 		if (!$database) {

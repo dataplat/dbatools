@@ -1,5 +1,4 @@
-﻿if ($Host.Version.Major -lt 5)
-{
+﻿if ($PSVersionTable.PSVersion.Major -lt 5) {
     
 <#
 Copied from the Microsoft Module: Microsoft.PowerShell.Archive

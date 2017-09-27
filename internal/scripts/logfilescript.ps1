@@ -1,4 +1,4 @@
-$scriptBlock = {
+﻿$scriptBlock = {
     #region Helper Functions
     function Clean-ErrorXml
     {
@@ -10,7 +10,7 @@ $scriptBlock = {
         $totalLength = $Null
         $files = Get-ChildItem -Path $Path.FullName -Filter "dbatools_$($pid)_error_*.xml" | Sort-Object LastWriteTime
         $totalLength = $files | Measure-Object Length -Sum | Select-Object -ExpandProperty Sum
-        if (([sqlcollective.dbatools.dbaSystem.DebugHost]::MaxErrorFileBytes) -gt $totalLength) { return }
+        if (([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MaxErrorFileBytes) -gt $totalLength) { return }
         
         $removed = 0
         foreach ($file in $files)
@@ -18,7 +18,7 @@ $scriptBlock = {
             $removed += $file.Length
             Remove-Item -Path $file.FullName -Force -Confirm:$false
             
-            if (($totalLength - $removed) -lt ([sqlcollective.dbatools.dbaSystem.DebugHost]::MaxErrorFileBytes)) { break }
+            if (($totalLength - $removed) -lt ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MaxErrorFileBytes)) { break }
         }
     }
     
@@ -29,10 +29,10 @@ $scriptBlock = {
             $Path
         )
         
-        if ([sqlcollective.dbatools.dbaSystem.DebugHost]::MaxMessagefileCount -eq 0) { return }
+        if ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MaxMessagefileCount -eq 0) { return }
         
         $files = Get-ChildItem -Path $Path.FullName -Filter "dbatools_$($pid)_message_*.log" | Sort-Object LastWriteTime
-        if (([sqlcollective.dbatools.dbaSystem.DebugHost]::MaxMessagefileCount) -ge $files.Count) { return }
+        if (([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MaxMessagefileCount) -ge $files.Count) { return }
         
         $removed = 0
         foreach ($file in $files)
@@ -40,7 +40,7 @@ $scriptBlock = {
             $removed++
             Remove-Item -Path $file.FullName -Force -Confirm:$false
             
-            if (($files.Count - $removed) -le ([sqlcollective.dbatools.dbaSystem.DebugHost]::MaxMessagefileCount)) { break }
+            if (($files.Count - $removed) -le ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MaxMessagefileCount)) { break }
         }
     }
     
@@ -52,14 +52,14 @@ $scriptBlock = {
         )
         
         # Kill too old files
-        Get-ChildItem -Path "$($Path.FullName)\*" -Include "*.xml", "*.log" -Filter "*" | Where-Object LastWriteTime -LT ((Get-Date) - ([sqlcollective.dbatools.dbaSystem.DebugHost]::MaxLogFileAge)) |Remove-Item -Force -Confirm:$false
+        Get-ChildItem -Path "$($Path.FullName)\*" -Include "*.xml", "*.log" -Filter "*" | Where-Object LastWriteTime -LT ((Get-Date) - ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MaxLogFileAge)) |Remove-Item -Force -Confirm:$false
         
         # Handle the global overcrowding
         $files = Get-ChildItem -Path "$($Path.FullName)\*" -Include "*.xml", "*.log" -Filter "*" | Sort-Object LastWriteTime
         if (-not ($files)) { return }
         $totalLength = $files | Measure-Object Length -Sum | Select-Object -ExpandProperty Sum
         
-        if (([sqlcollective.dbatools.dbaSystem.DebugHost]::MaxTotalFolderSize) -gt $totalLength) { return }
+        if (([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MaxTotalFolderSize) -gt $totalLength) { return }
         
         $removed = 0
         foreach ($file in $files)
@@ -67,7 +67,7 @@ $scriptBlock = {
             $removed += $file.Length
             Remove-Item -Path $file.FullName -Force -Confirm:$false
             
-            if (($totalLength - $removed) -lt ([sqlcollective.dbatools.dbaSystem.DebugHost]::MaxTotalFolderSize)) { break }
+            if (($totalLength - $removed) -lt ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MaxTotalFolderSize)) { break }
         }
     }
     #endregion Helper Functions
@@ -76,12 +76,12 @@ $scriptBlock = {
     while ($true)
     {
         # This portion is critical to gracefully closing the script
-        if ([sqlcollective.dbatools.dbaSystem.LogWriterHost]::LogWriterStopper)
+        if ([Sqlcollaborative.Dbatools.dbaSystem.LogWriterHost]::LogWriterStopper)
         {
             exit
         }
         
-        $path = [sqlcollective.dbatools.dbaSystem.DebugHost]::LoggingPath
+        $path = [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath
         if (-not (Test-Path $path))
         {
             $root = New-Item $path -ItemType Directory -Force -ErrorAction Stop
@@ -94,12 +94,12 @@ $scriptBlock = {
         if (-not ($num_Message)) { $num_Message = 0 }
         
         #region Process Errors
-        while ([sqlcollective.dbatools.dbaSystem.DebugHost]::OutQueueError.Count -gt 0)
+        while ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::OutQueueError.Count -gt 0)
         {
             $num_Error++
             
             $Record = $null
-            [sqlcollective.dbatools.dbaSystem.DebugHost]::OutQueueError.TryDequeue([ref]$Record)
+            [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::OutQueueError.TryDequeue([ref]$Record)
             
             if ($Record)
             {
@@ -111,13 +111,13 @@ $scriptBlock = {
         #endregion Process Errors
         
         #region Process Logs
-        while ([sqlcollective.dbatools.dbaSystem.DebugHost]::OutQueueLog.Count -gt 0)
+        while ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::OutQueueLog.Count -gt 0)
         {
             $CurrentFile = "$($root.FullName)\dbatools_$($pid)_message_$($num_Message).log"
             if (Test-Path $CurrentFile)
             {
                 $item = Get-Item $CurrentFile
-                if ($item.Length -gt ([sqlcollective.dbatools.dbaSystem.DebugHost]::MaxMessagefileBytes))
+                if ($item.Length -gt ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MaxMessagefileBytes))
                 {
                     $num_Message++
                     $CurrentFile = "$($root.FullName)\dbatools_$($pid)_message_$($num_Message).log"
@@ -125,7 +125,7 @@ $scriptBlock = {
             }
             
             $Entry = $null
-            [sqlcollective.dbatools.dbaSystem.DebugHost]::OutQueueLog.TryDequeue([ref]$Entry)
+            [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::OutQueueLog.TryDequeue([ref]$Entry)
             if ($Entry)
             {
                 Add-Content -Path $CurrentFile -Value (ConvertTo-Csv -InputObject $Entry -NoTypeInformation)[1]
@@ -140,5 +140,5 @@ $scriptBlock = {
     }
 }
 
-[sqlcollective.dbatools.dbaSystem.LogWriterHost]::SetScript($scriptBlock)
-[sqlcollective.dbatools.dbaSystem.LogWriterHost]::Start()
+[Sqlcollaborative.Dbatools.dbaSystem.LogWriterHost]::SetScript($scriptBlock)
+[Sqlcollaborative.Dbatools.dbaSystem.LogWriterHost]::Start()

@@ -134,7 +134,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Parameter(Mandatory = $false)]
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[object[]]$Job,
@@ -202,12 +202,12 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 		foreach ($instance in $sqlinstance) {
 			
 			# Try connecting to the instance
-			Write-Message -Message "Attempting to connect to $instance" -Level Output
+			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
 			try {
 				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			foreach ($j in $Job) {
@@ -226,7 +226,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 						# Get the job step
 						$JobStep = $Server.JobServer.Jobs[$j].JobSteps[$StepName]
 						
-						Write-Message -Message "Modifying job $j on $instance" -Level Output
+						Write-Message -Message "Modifying job $j on $instance" -Level Verbose
 						
 						#region job step options
 						# Setting the options for the job step
@@ -327,7 +327,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 						# Execute 
 						if ($PSCmdlet.ShouldProcess($instance, "Changing the job step $StepName for job $j")) {
 							try {
-								Write-Message -Message "Changing the job step $StepName for job $j" -Level Output
+								Write-Message -Message "Changing the job step $StepName for job $j" -Level Verbose
 								
 								# Change the job step
 								$JobStep.Alter()
@@ -344,6 +344,6 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 	} # process
 	
 	end {
-		Write-Message -Message "Finished changing job step(s)" -Level Output
+		Write-Message -Message "Finished changing job step(s)" -Level Verbose
 	}
 }

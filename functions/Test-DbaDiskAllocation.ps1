@@ -158,7 +158,7 @@ To return true or false for ALL disks being formatted to 64k
 							}
 							catch
 							{
-								Stop-Function -Message "Can't connect to $computer ($SqlInstance)"
+								Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 								continue
 							}
 						}

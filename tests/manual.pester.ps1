@@ -1,4 +1,4 @@
-﻿<#
+<#
     .SYNOPSIS
         Runs dbatools tests.
 
@@ -23,6 +23,7 @@ Param (
     [switch]
     $SkipHelpTest
 )
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $ModuleBase = Split-Path -Path $PSScriptRoot -Parent
 if (Get-Module dbatools) { Remove-Module dbatools }
 
@@ -42,12 +43,12 @@ if ($Path)
     foreach ($item in $Path)
     {
 		if ($testInt) { Invoke-Pester $item }
-        else { Invoke-Pester $item -ExcludeTag "Integrationtests" -Show $Show }
+        else { Invoke-Pester $item -ExcludeTag "IntegrationTests" -Show $Show }
     }
 }
 
 else
 {
     if ($testInt) { Invoke-Pester }
-	else { Invoke-Pester -ExcludeTag "Integrationtests" -Show $Show }
+	else { Invoke-Pester -ExcludeTag "IntegrationTests" -Show $Show }
 }

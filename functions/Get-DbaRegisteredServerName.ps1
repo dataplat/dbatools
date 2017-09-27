@@ -1,188 +1,245 @@
 function Get-DbaRegisteredServerName {
-    <#
-.SYNOPSIS
-Gets list of SQL Server names stored in SQL Server Central Management Server.
+	<#
+		.SYNOPSIS
+			Gets list of SQL Server objects stored in SQL Server Central Management Server (CMS).
 
-.DESCRIPTION
-Returns a simple array of server names. Be aware of the dynamic parameter 'Group', which can be used to limit results to one or more groups you have created on the CMS. See get-help for examples.
+		.DESCRIPTION
+			Returns an array of servers found in the CMS. By default, the command returns the ServerName property
+			of the servers. You can specify -FullObject to return the full SMO object, -IpAddress for only the
+			IPv4 Addresses of the server, and -NetBiosName for only the ComputerName.
 
-.PARAMETER SqlInstance
-The SQL Server instance. 
+		.PARAMETER SqlInstance
+			SQL Server name or SMO object representing the SQL Server to connect to.
+			This can be a collection to allow the function to be executed against multiple SQL Server instances.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
-Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+		.PARAMETER SqlCredential
+			SqlCredential object to connect as. If not specified, current Windows login will be used.
 
-.PARAMETER Group
-Auto-populated list of groups in SQL Server Central Management Server. You can specify one or more, comma separated.
-		
-.PARAMETER NoCmsServer
-By default, the Central Management Server name is included in the list. Use -NoCmsServer to exclude the CMS itself.
-	
-.PARAMETER NetBiosName
-Returns just the NetBios names of each server.
-	
-.PARAMETER IpAddr
-Returns just the ip addresses of each server.
-	
-.NOTES 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.PARAMETER Group
+			List of groups to filter to in SQL Server Central Management Server. You can specify one or more, comma separated.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+		.PARAMETER NoCmsServer
+			Excludes the CMS itself from returning in the output, if pulling NetBiosName, IpAddress, or ServerName.
+			Without this parameter, the CMS will only be included if you do not specify a group.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+		.PARAMETER FullObject
+			Returns the full SMO RegisteredServer object for each server. This will not return an object for the CMS Server.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.PARAMETER NetBiosName
+			Returns just the NetBios names of each server.
 
-.LINK
-https://dbatools.io/Get-DbaRegisteredServerName
+		.PARAMETER IpAddress
+			Returns just the IP addresses of each server.
 
-.EXAMPLE 
-Get-DbaRegisteredServerName -SqlInstance sqlserver2014a
+		.PARAMETER Silent
+			Use this switch to disable any kind of verbose messages
 
-Gets a list of all server names from the Central Management Server on sqlserver2014a, using Windows Credentials
+		.NOTES
+			Tags: RegisteredServer,CMS
 
-.EXAMPLE 
-Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -SqlCredential $credential
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-Gets a list of all server names from the Central Management Server on sqlserver2014a, using SQL Authentication
-		
-.EXAMPLE 
-Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -Group HR, Accounting
-	
-Gets a list of server names in the HR and Accounting groups from the Central Management Server on sqlserver2014a.
-	
-.EXAMPLE 
-Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -Group HR, Accounting -IpAddr
-	
-Gets a list of server IP addresses in the HR and Accounting groups from the Central Management Server on sqlserver2014a.
-	
-#>
-    [CmdletBinding(DefaultParameterSetName = "Default")]
-    Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter]$SqlInstance,
-        [object]$SqlCredential,
-        [switch]$NoCmsServer,
-        [parameter(ParameterSetName = "NetBios")]
-        [switch]$NetBiosName,
-        [parameter(ParameterSetName = "IP")]
-        [switch]$IpAddr
-    )
+		.LINK
+			https://dbatools.io/Get-DbaRegisteredServerName
 
-    begin {
-        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        $sqlconnection = $server.ConnectionContext.SqlConnectionObject
-		
-        try {
-            $cmstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlconnection)
-        }
-        catch {
-            throw "Cannot access Central Management Server"
-        }
-    }
+		.EXAMPLE
+			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a
 
-    process {
+			Gets a list of server names from the CMS on sqlserver2014a, using Windows Credentials
 
-        # see notes at Get-ParamSqlCmsGroups
-        Function Find-CmsGroup($CmsGrp, $base = '', $stopat) {
-            $results = @()
-            foreach ($el in $CmsGrp) {
-                if ($base -eq '') {
-                    $partial = $el.name
-                }
-                else {
-                    $partial = "$base\$($el.name)"
-                }
-                if ($partial -eq $stopat) {
-                    return $el
-                }
-                else {
-                    foreach ($group in $el.ServerGroups) {
-                        $results += Find-CmsGroup $group $partial $stopat
-                    }
-                }
-            }
-            return $results
-        }
-		
-        $servers = @()
-        if ($groups -ne $null) {
-            foreach ($group in $groups) {
-                $cms = Find-CmsGroup $cmstore.DatabaseEngineServerGroup.ServerGroups '' $group
-                $servers += ($cms.GetDescendantRegisteredServers()).servername
-            }
-        }
-        else {
-            $cms = $cmstore.ServerGroups["DatabaseEngineServerGroup"]
-            $servers = ($cms.GetDescendantRegisteredServers()).servername
-        }
-		
-        if ($NoCmsServer -eq $false) {
-            $servers += $SqlInstance.ComputerName
-        }
-    }
-    end {
-        if ($NetBiosName -or $IpAddr) {
-            $ipcollection = @()
-            $netbioscollection = @()
-            $processed = @()
-			
-            foreach ($server in $servers) {
-                if ($server -match '\\') {
-                    $server = $server.Split('\')[0]
-                }
-				
-                if ($processed -contains $server) { continue }
-                $processed += $server 
-				
-                try {
-                    Write-Verbose "Testing connection to $server and resolving IP address"
-                    $ipaddress = ((Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1).IPAddressToString
-                }
-                catch {
-                    Write-Warning "Could not resolve IP address for $server"
-                    continue
-                }
-				
-                if ($ipcollection -notcontains $ipaddress) { $ipcollection += $ipaddress }
-				
-                if ($NetBiosName) {
-                    try {
-                        $hostname = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter IPEnabled=TRUE -ComputerName $ipaddress -ErrorAction SilentlyContinue).PSComputerName
-                        if ($hostname -is [array]) { $hostname = $hostname[0] }
-                        Write-Verbose "Hostname resolved to $hostname"
-                        if ($hostname -eq $null) { $hostname = (nbtstat -A $ipaddress | Where-Object { $_ -match '\<00\>  UNIQUE' } | ForEach-Object { $_.SubString(4, 14) }).Trim() }
-                    }
-                    catch {
-                        Write-Warning "Could not resolve NetBios name for $server"
-                        continue
-                    }
-					
-                    if ($netbioscollection -notcontains $hostname) { $netbioscollection += $hostname }
-                }
-            }
-			
-            if ($NetBiosName) {
-                return $netbioscollection
-            }
-            else {
-                return $ipcollection
-            }
-        }
-        else {
-            return $servers
-        }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlRegisteredServerName
-    }
+		.EXAMPLE
+			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -SqlCredential $credential
+
+			Gets a list of server names from the CMS on sqlserver2014a, using SQL Authentication
+
+		.EXAMPLE
+			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -Group HR, Accounting
+
+			Gets a list of servers in the HR and Accounting groups from the CMS on sqlserver2014a.
+
+		.EXAMPLE
+			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -NoCmsServer
+
+			Gets a list of server names from the CMS on sqlserver2014a, but excludes the CMS server name.
+
+		.EXAMPLE
+			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -Group HR\Development
+
+			Returns a list of server names in the HR and sub-group Development from the CMS on sqlserver2014a
+
+		.EXAMPLE
+			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -IpAddress
+
+			Gets a list of the IP Addresses for servers in the CMS on sqlserver2014a, using Windows Credentials
+
+		.EXAMPLE
+			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -NetBiosName
+
+			Gets a list of the NetBIOS names of the servers in the CMS on sqlserver2014a, using Windows Credentials
+
+		.EXAMPLE
+			Get-DbaRegisteredServerName -SqlInstance sqlserver2014a -FullObject
+
+			Returns the full SMO RegisteredServer object for servers in the CMS on sqlserver2014a, using Windows Credentials
+	#>
+	[CmdletBinding(DefaultParameterSetName = "Default")]
+	param (
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential,
+		[Alias("Groups")]
+		[object[]]$Group,
+		[switch]$NoCmsServer,
+		[parameter(ParameterSetName = "NetBios")]
+		[switch]$NetBiosName,
+		[parameter(ParameterSetName = "IP")]
+		[switch]$IpAddress,
+		[parameter(ParameterSetName = "FullObject")]
+		[switch]$FullObject,
+		[switch]$Silent
+	)
+	process {
+		if ($NoCmsServer -and $FullObject) {
+			Write-Message -Level Verbose -Message ("-NoCmsServer is not valid in combination with -FullObject, ignoring. " + `
+					"-FullObject does not return an entry for the CMS itself.")
+		}
+
+		if (Test-FunctionInterrupt) { return }
+
+		# see notes at Get-ParamSqlCmsGroups
+		function Find-CmsGroup {
+			[cmdletbinding()]
+			param(
+				$CmsGrp,
+				$Base = $null,
+				$Stopat
+			)
+			$results = @()
+			foreach ($el in $CmsGrp) {
+				if ($null -eq $Base -or [string]::IsNullOrWhiteSpace($Base) ) {
+					$partial = $el.name
+				}
+				else {
+					$partial = "$Base\$($el.name)"
+				}
+				if ($partial -eq $Stopat) {
+					return $el
+				}
+				else {
+					foreach ($elg in $el.ServerGroups) {
+						$results += Find-CmsGroup -CmsGrp $elg -Base $partial -Stopat $Stopat
+					}
+				}
+			}
+			return $results
+		}
+
+		$servers = @()
+		$cmsServers = @()
+		foreach ($instance in $SqlInstance) {
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+				$sqlConnection = $server.ConnectionContext.SqlConnectionObject
+			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
+
+			try {
+				$cmsStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($sqlConnection)
+			}
+			catch {
+				Stop-Function -Message "Cannot access Central Management Server" -ErrorRecord $_ -Continue
+				return
+			}
+
+			if ($null -ne $Group) {
+				foreach ($currentGroup in $Group) {
+					$cms = Find-CmsGroup -CmsGrp $cmsStore.DatabaseEngineServerGroup.ServerGroups -Stopat $currentGroup
+					if ($null -eq $cms) {
+						Write-Message -Level Output -Message "No groups found matching that name"
+						continue
+					}
+					$servers += ($cms.GetDescendantRegisteredServers())
+				}
+			}
+			else {
+				$cms = $cmsStore.ServerGroups["DatabaseEngineServerGroup"]
+				$servers += ($cms.GetDescendantRegisteredServers())
+			}
+
+			#Store some information about the CMS's for later use
+			try {
+				$ip = (Resolve-DbaNetworkName $server.Name -Turbo -Silent).IpAddress
+			}
+			catch {
+				$ip = $null
+			}
+			$fakeCms = [PSCustomObject]@{
+				ComputerName = $server.ComputerNamePhysicalNetBIOS
+				ServerName   = $server.Name
+				IPAddress    = $ip
+			}
+			$cmsServers += $fakeCms
+		}
+	}
+
+	end {
+		# Use Resolve-DbaNetworkName to get IP / ComputerName
+		foreach ($server in $servers) {
+			try {
+				$lookup = Resolve-DbaNetworkName $server.ServerName -Turbo -Silent
+				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $lookup.ComputerName
+				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $lookup.IPAddress
+			}
+			catch {
+				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $null
+				Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $null
+			}
+		}
+
+		$IncludeCmsServer = ($NoCmsServer -eq $false -and $null -eq $Group)
+
+		if ($IpAddress) {
+			$ret = @($servers | Select-Object IPAddress)
+
+			if ($IncludeCmsServer) {
+				$ret += @($cmsServers | Select-Object IPAddress)
+			}
+
+			$ret | Select-Object -Unique -ExpandProperty IPAddress
+		}
+
+		elseif ($NetBiosName) {
+			$ret = @($servers | Select-Object ComputerName)
+
+			if ($IncludeCmsServer) {
+				$ret += @($cmsServers | Select-Object ComputerName)
+			}
+
+			$ret | Select-Object -Unique -ExpandProperty ComputerName
+		}
+
+		# #If -FullObject is specified, return everything, no distinct
+		elseif ($FullObject) {
+			return $servers
+		}
+
+		#By default, return only the server name for backwards compatibility
+		else {
+			$ret = @($servers | Select-Object ServerName)
+
+			if ($IncludeCmsServer) {
+				$ret += @($cmsServers | Select-Object ServerName)
+			}
+
+			$ret | Select-Object -Unique -ExpandProperty ServerName
+		}
+
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlRegisteredServerName
+	}
 }

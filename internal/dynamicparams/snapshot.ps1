@@ -1,5 +1,10 @@
-﻿[Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"] = @{ }
+﻿#region Initialize Cache
+if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"]) {
+	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"] = @{ }
+}
+#endregion Initialize Cache
 
+#region Tepp Data return
 $ScriptBlock = {
     param (
         $commandName,
@@ -14,7 +19,7 @@ $ScriptBlock = {
     )
     
     $start = Get-Date
-    [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts["snapshot"].LastExecution = $start
+    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["snapshot"].LastExecution = $start
 	
 	$server = $fakeBoundParameter['SqlInstance']
 	
@@ -34,34 +39,43 @@ $ScriptBlock = {
     }
     catch
     {
-        [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts["snapshot"].LastDuration = (Get-Date) - $start
+        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["snapshot"].LastDuration = (Get-Date) - $start
         return
     }
     
-    if ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"][$parServer.FullSmoName.ToLower()])
+    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"][$parServer.FullSmoName.ToLower()])
     {
-        foreach ($name in ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*"))
+        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*"))
         {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
-        [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts["snapshot"].LastDuration = (Get-Date) - $start
+        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["snapshot"].LastDuration = (Get-Date) - $start
         return
     }
     
     try
     {
-        foreach ($name in ([Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*"))
+        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*"))
         {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
-        [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts["snapshot"].LastDuration = (Get-Date) - $start
+        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["snapshot"].LastDuration = (Get-Date) - $start
         return
     }
     catch
     {
-        [Sqlcollective.Dbatools.TabExpansion.TabExpansionHost]::Scripts["snapshot"].LastDuration = (Get-Date) - $start
+        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["snapshot"].LastDuration = (Get-Date) - $start
         return
     }
 }
 
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name snapshot
+#endregion Tepp Data return
+
+#region Update Cache
+$ScriptBlock = {
+	if ($PSVersionTable.PSVersion.Major -ge 4) { [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"][$FullSmoName] = $server.Databases.Where({ $_.IsDatabaseSnapShot }).Name }
+	else { [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"][$FullSmoName] = ($server.Databases | Where-Object IsDatabaseSnapShot).Name }
+}
+Register-DbaTeppInstanceCacheBuilder -ScriptBlock $ScriptBlock
+#endregion Update Cache

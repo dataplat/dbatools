@@ -20,10 +20,10 @@ function Test-DbaFullRecoveryModel {
 		Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
 	.PARAMETER Database
-		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-	.PARAMETER Exclude
-		The database(s) to exclude - this list is autopopulated from the server
+	.PARAMETER ExcludeDatabase
+		The database(s) to exclude - this list is auto-populated from the server
 
 	.PARAMETER Detailed
 		Returns default information plus 'Notes' column
@@ -62,8 +62,8 @@ function Test-DbaFullRecoveryModel {
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[object[]]$ExcludeDatabase,
+		[PSCredential]
 		$SqlCredential,
 		[switch]$Detailed
 	)
@@ -95,12 +95,12 @@ function Test-DbaFullRecoveryModel {
 					   ON D.database_id = drs.database_id
 				  WHERE d.recovery_model = 1"
 
-				if ($Database.length -gt 0) {
+				if ($Database) {
 					$dblist = $Database -join "','"
 					$databasefilter += "AND d.[name] in ('$dblist')"
 				}
-				if ($Exclude) {
-					$dblist = $Exclude -join "','"
+				if ($ExcludeDatabase) {
+					$dblist = $ExcludeDatabase -join "','"
 					$databasefilter += "AND d.[name] NOT IN ('$dblist')"
 				}
 

@@ -31,13 +31,13 @@ Required. The destination SQL Server.
 Connect to SQL Server using specified SQL Login credentials.
 
 .PARAMETER Database
-Required. The name of the database where the CSV will be imported into. This parameter is autopopulated using the -SqlInstance and -SqlCredential (optional) parameters. 
+Required. The name of the database where the CSV will be imported into. This parameter is auto-populated using the -SqlInstance and -SqlCredential (optional) parameters. 
 
 .PARAMETER Schema
 The schema in which the SQL table or view where CSV will be imported into resides.
 Default is dbo
 
-If a schema name is not specificed, and a CSV with multiple . (ie; something.data.csv) then this will be interpreted as a request to import into a table [data] in the schema [something]
+If a schema name is not specified, and a CSV with multiple . (ie; something.data.csv) then this will be interpreted as a request to import into a table [data] in the schema [something]
 
 If a schema does not currently exist, it will be created, after a prompt to confirm this. Authorization will be set to dbo by default
 

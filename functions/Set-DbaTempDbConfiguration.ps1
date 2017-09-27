@@ -10,7 +10,7 @@ then calculate number of data files based on logical cores on the target host an
 on the total data size declared by the user, with a log file 25% of the total data file size. Other parameters can adjust 
 the settings as the user desires (such as different file paths, number of data files, and log file size). The function will
 not perform any functions that would shrink or delete data files. If a user desires this, they will need to reduce tempdb
-so that it is "smaller" than what the function will size it to before runnint the function.
+so that it is "smaller" than what the function will size it to before running the function.
 
 .NOTES 
 Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 SQLServer name or SMO object representing the SQL Server to connect to
 
 .PARAMETER SqlCredential
-PSCredential object to connect under. If not specified, currend Windows login will be used.
+PSCredential object to connect under. If not specified, current Windows login will be used.
 
 .PARAMETER DataFileCount
 Integer of number of datafiles to create. If not specified, function will use logical cores of host.
@@ -40,7 +40,7 @@ Integer of number of datafiles to create. If not specified, function will use lo
 Total data file size in megabytes
 
 .PARAMETER LogFileSizeMB
-Log file size in megabyes. If not specified, function will use 25% of total data file size.
+Log file size in megabytes. If not specified, function will use 25% of total data file size.
 
 .PARAMETER DataFileGrowthMB
 Growth size for the data file(s) in megabytes. The default is 512 MB.
@@ -73,7 +73,7 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER Silent
 Whether the silent switch was set in the calling function.
 If true, it will write errors, if any, but not write to the screen without explicit override using -Debug or -Verbose.
-If false, it will print a warning if in wrning mode. It will also be willing to write a message to the screen, if the level is within the range configured for that.
+If false, it will print a warning if in warning mode. It will also be willing to write a message to the screen, if the level is within the range configured for that.
 
 .LINK
 https://dbatools.io/Set-DbaTempDbConfiguration
@@ -111,7 +111,7 @@ Returns PSObject representing tempdb configuration.
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[int]$DataFileCount,
 		[Parameter(Mandatory = $true)]
 		[int]$DataFileSizeMB,
@@ -165,7 +165,7 @@ Returns PSObject representing tempdb configuration.
 			}
 		}
 		else {
-			$Filepath = $server.Databases['tempdb'].ExecuteWithResults('SELECT physical_name as FileName FROM sys.database_files WHERE file_id = 1').Tables.FileName
+			$Filepath = $server.Databases['tempdb'].ExecuteWithResults('SELECT physical_name as FileName FROM sys.database_files WHERE file_id = 1').Tables[0].Rows[0].FileName
 			$DataPath = Split-Path $Filepath
 		}
 		
@@ -178,7 +178,7 @@ Returns PSObject representing tempdb configuration.
 			}
 		}
 		else {
-			$Filepath = $server.Databases['tempdb'].ExecuteWithResults('SELECT physical_name as FileName FROM sys.database_files WHERE file_id = 2').Tables.FileName
+			$Filepath = $server.Databases['tempdb'].ExecuteWithResults('SELECT physical_name as FileName FROM sys.database_files WHERE file_id = 2').Tables[0].Rows[0].FileName
 			$LogPath = Split-Path $Filepath
 		}
 		Write-Message -Message "Using log path: $LogPath" -Level Verbose
@@ -192,8 +192,8 @@ Returns PSObject representing tempdb configuration.
 		$LogSizeMBActual = if (-not $LogFileSizeMB) { $([Math]::Floor($DataFileSizeMB/4)) }
 
 		# Check current tempdb. Throw an error if current tempdb is larger than config.
-		$CurrentFileCount = $server.Databases['tempdb'].ExecuteWithResults('SELECT count(1) as FileCount FROM sys.database_files WHERE type=0').Tables.FileCount
-		$TooBigCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT TOP 1 (size/128) as Size FROM sys.database_files WHERE size/128 > $DataFilesizeSingleMB AND type = 0").Tables.Size
+		$CurrentFileCount = $server.Databases['tempdb'].ExecuteWithResults('SELECT count(1) as FileCount FROM sys.database_files WHERE type=0').Tables[0].Rows[0].FileCount
+		$TooBigCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT TOP 1 (size/128) as Size FROM sys.database_files WHERE size/128 > $DataFilesizeSingleMB AND type = 0").Tables[0].Rows[0].Size
 		
 		if ($CurrentFileCount -gt $DataFileCount) {
 			Stop-Function -Message "Current tempdb not suitable to be reconfigured. The current tempdb has a greater number of files ($CurrentFileCount) than the calculated configuration ($DataFileCount)."
@@ -205,7 +205,7 @@ Returns PSObject representing tempdb configuration.
 			return
 		}
 		
-		$EqualCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT count(1) as FileCount FROM sys.database_files WHERE size/128 = $DataFilesizeSingleMB AND type = 0").Tables.FileCount
+		$EqualCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT count(1) as FileCount FROM sys.database_files WHERE size/128 = $DataFilesizeSingleMB AND type = 0").Tables[0].Rows[0].FileCount
 		
 		if ($EqualCount -gt 0) {
 			Stop-Function -Message "Current tempdb not suitable to be reconfigured. The current tempdb is the same size as the specified DataFileSizeMB."
@@ -214,7 +214,7 @@ Returns PSObject representing tempdb configuration.
 		
 		Write-Message -Message "tempdb configuration validated." -Level Verbose
 		
-		$DataFiles = $server.Databases['tempdb'].ExecuteWithResults("select f.Name, f.physical_name as FileName from sys.filegroups fg join sys.database_files f on fg.data_space_id = fg.data_space_id where fg.name = 'PRIMARY' and f.type_desc = 'ROWS'").Tables
+		$DataFiles = $server.Databases['tempdb'].ExecuteWithResults("select f.name as Name, f.physical_name as FileName from sys.filegroups fg join sys.database_files f on fg.data_space_id = f.data_space_id where fg.name = 'PRIMARY' and f.type_desc = 'ROWS'").Tables[0];
 		
 		#Checks passed, process reconfiguration
 		for ($i = 0; $i -lt $DataFileCount; $i++) {
@@ -236,7 +236,7 @@ Returns PSObject representing tempdb configuration.
 			$LogFileSizeMB = [Math]::Floor($DataFileSizeMB/4)
 		}
 		
-		$logfile = $server.Databases['tempdb'].ExecuteWithResults("SELECT name, physical_name as FileName FROM sys.database_files WHERE file_id = 2").Tables
+		$logfile = $server.Databases['tempdb'].ExecuteWithResults("SELECT name, physical_name as FileName FROM sys.database_files WHERE file_id = 2").Tables[0].Rows[0];
 		$Filename = Split-Path $logfile.FileName -Leaf
 		$LogicalName = $logfile.Name
 		$NewPath = "$LogPath\$Filename"

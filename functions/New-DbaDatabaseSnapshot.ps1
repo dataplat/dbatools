@@ -17,18 +17,22 @@ Credential object used to connect to the SQL Server as a different user
 Creates snapshot for all eligible databases
 
 .PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is autopopulated from the server
+The database(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
-	
+
 .PARAMETER Confirm
 Prompts for confirmation of every step. 
 
 .PARAMETER Name
+The specific snapshot name you want to create. Works only if you target a single database. If you need to create multiple snapshot,
+you must use the NameSuffix parameter
+
+.PARAMETER NameSuffix
 When you pass a simple string, it'll be appended to use it to build the name of the snapshot. By default snapshots are created with yyyyMMdd_HHmmss suffix
 You can also pass a standard placeholder, in which case it'll be interpolated (e.g. '{0}' gets replaced with the database name)
 
@@ -62,12 +66,12 @@ New-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
 Creates snapshot for HR and Accounting, returning a custom object displaying Server, Database, DatabaseCreated, SnapshotOf, SizeMB, DatabaseCreated, PrimaryFilePath, Status, Notes
 
 .EXAMPLE
-New-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -Name _snap
+New-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -Name HR_snap
 
 Creates snapshot named "HR_snap" for HR
 
 .EXAMPLE
-New-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -Name 'fool_{0}_snap'
+New-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -NameSuffix 'fool_{0}_snap'
 
 Creates snapshot named "fool_HR_snap" for HR
 
@@ -84,13 +88,14 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[switch]$AllDatabases,
 		[string]$Name,
+		[string]$NameSuffix,
 		[string]$Path,
 		[switch]$Force,
 		[switch]$Silent
@@ -101,13 +106,13 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		$NoSupportForSnap = @('model', 'master', 'tempdb')
 		# Evaluate the default suffix here for naming consistency
 		$DefaultSuffix = (Get-Date -Format "yyyyMMdd_HHmmss")
-		if ($Name.Length -gt 0) {
+		if ($NameSuffix.Length -gt 0) {
 			#Validate if Name can be interpolated
 			try {
-				$null = $Name -f 'some_string'
+				$null = $NameSuffix -f 'some_string'
 			}
 			catch {
-				Stop-Function -Message "Name parameter must be a template only containing one parameter {0}" -ErrorRecord $_
+				Stop-Function -Message "NameSuffix parameter must be a template only containing one parameter {0}" -ErrorRecord $_
 			}
 		}
 		
@@ -134,17 +139,18 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		}
 	}
 	process {
-		if (!$Database -and $AllDatabases -eq $false -and !$smodatabase) {
-			throw "You must specify a -AllDatabases or -Database to continue"
+		if (!$Database -and $AllDatabases -eq $false) {
+			Stop-Function -Message "You must specify a -AllDatabases or -Database to continue" -Silent $Silent
+			return
 		}
 		
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential -MinimumVersion 9
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue -Silent $Silent
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			#Checks for path existence
 			if ($Path.Length -gt 0) {
@@ -175,18 +181,25 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 				elseif ($db.name -in $NoSupportForSnap) {
 					Write-Message -Level Warning -Message "$($db.name) snapshots are prohibited"
 				}
+				elseif ($db.IsAccessible -ne $true) {
+					Write-Message -Level Verbose -Message "$($db.name) is not accessible, skipping"
+				}
 				else {
 					$sourcedbs += $db
 				}
 			}
-			
+			if($sourcedbs.Length -gt 1 -and $Name) {
+				Stop-Function -Message "You passed the Name parameter that is fixed but selected multiple databases to snapshot: use the NameSuffix parameter" -Continue -Silent $Silent
+			}
 			foreach ($db in $sourcedbs) {
-				if ($Name.Length -gt 0) {
-					$SnapName = $Name -f $db.Name
-					if ($SnapName -eq $Name) {
+				if ($NameSuffix.Length -gt 0) {
+					$SnapName = $NameSuffix -f $db.Name
+					if ($SnapName -eq $NameSuffix) {
 						#no interpolation, just append
-						$SnapName = '{0}{1}' -f $db.Name, $Name
+						$SnapName = '{0}{1}' -f $db.Name, $NameSuffix
 					}
+				} elseif ($Name.Length -gt 0) {
+					$SnapName = $Name
 				}
 				else {
 					$SnapName = "{0}_{1}" -f $db.Name, $DefaultSuffix
@@ -221,17 +234,16 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 						}
 						foreach ($file in $fg.Files) {
 							$counter += 1
-							# fixed extension is hardcoded as "ss", which seems a "de-facto" standard
-							$fname = [IO.Path]::ChangeExtension($file.Filename, "ss")
-							$fname = [IO.Path]::Combine((Split-Path $fname -Parent), ("{0}_{1}" -f $DefaultSuffix, (Split-Path $fname -Leaf)))
-							
+							$basename = [IO.Path]::GetFileNameWithoutExtension($file.FileName)
+							$basepath = Split-Path $file.FileName -Parent
 							# change path if specified
 							if ($Path.Length -gt 0) {
-								$basename = Split-Path $fname -Leaf
-								# we need to avoid cases where basename is the same for multiple FG
-								$basename = '{0:0000}_{1}' -f $counter, $basename
-								$fname = [IO.Path]::Combine($Path, $basename)
+								$basepath = $Path
 							}
+							# we need to avoid cases where basename is the same for multiple FG
+							$fname = [IO.Path]::Combine($basepath, ("{0}_{1}_{2:0000}_{3:000}" -f $basename, $DefaultSuffix, (Get-Date).MilliSecond, $counter))
+							# fixed extension is hardcoded as "ss", which seems a "de-facto" standard
+							$fname = [IO.Path]::ChangeExtension($fname, "ss")
 							$CustomFileStructure[$fg.Name] += @{ 'name' = $file.name; 'filename' = $fname }
 						}
 					}
@@ -261,7 +273,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							Database = $SnapDB.Name
 							SnapshotOf = $SnapDB.DatabaseSnapshotBaseName
 							SizeMB = [Math]::Round($SnapDB.Size, 2) ##FIXME, should use the stats for sparse files
-							DatabaseCreated = $SnapDB.createDate
+							DatabaseCreated = [dbadatetime]$SnapDB.createDate
 							PrimaryFilePath = $SnapDB.PrimaryFilePath
 							Status = 'Created'
 							Notes = $null
@@ -276,7 +288,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							$server.Databases.Refresh()
 							if ($SnapName -notin $server.Databases.Name) {
 								# previous creation failed completely, snapshot is not there already
-								$null = $server.ConnectionContext.ExecuteNonQuery($sql[0])
+								$null = $server.Query($sql[0])
 								$server.Databases.Refresh()
 								$SnapDB = $server.Databases[$Snapname]
 							}

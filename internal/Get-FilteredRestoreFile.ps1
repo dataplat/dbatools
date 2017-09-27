@@ -179,7 +179,7 @@ function Get-FilteredRestoreFile {
                     break
                 }
                 #This scans for striped full backups to build the results
-                $Results += $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq "Database" -and $_.FirstLSN -eq $FullBackup.FirstLSN}
+                $Results += $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq "Database" -and $_.FirstLSN -eq $FullBackup.FirstLSN -and $_.BackupSetGUID -eq $FullBackup.BackupSetGUID}
             }
             else {
                 Write-Message -Level VeryVerbose -Message "Continuing restore, setting fake fullbackup"
@@ -204,7 +204,7 @@ function Get-FilteredRestoreFile {
                 if ($null -ne $Diffbackups) {
                     Write-Message -Level Verbose -Message "we have at least one diff so look for tlogs after the last one"
                     #If we have a Diff backup, we only need T-log backups post that point
-                    $TlogStartLSN = ($DiffBackups | select-object -Property FirstLSN -first 1).FirstLSN
+                    $TlogStartLSN = ($DiffBackups | select-object -Property LastLsn -first 1).LastLsn
                     $Results += $Diffbackups
                 }
             }

@@ -18,22 +18,29 @@ function Test-DbaMigrationConstraint {
 
 		Take into account the new features introduced on SQL Server 2016 SP1 for all versions. More information at https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2016-service-pack-1-sp1-released/
 
-		The -Database parameter is autopopulated for command-line completion.
+		The -Database parameter is auto-populated for command-line completion.
 
 	.PARAMETER Source
 		Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-	.PARAMETER Destination
-		Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
-
 	.PARAMETER SourceSqlCredential
 		Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-	.PARAMETER Database
-		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+	.PARAMETER Destination
+		Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
 
-	.PARAMETER Exclude
-		The database(s) to exclude - this list is autopopulated from the server
+	.PARAMETER DestinationSqlCredential
+		Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+		$dcred = Get-Credential, this pass this $dcred to the param.
+
+		Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+
+	.PARAMETER Database
+		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+
+	.PARAMETER ExcludeDatabase
+		The database(s) to exclude - this list is auto-populated from the server
 
 	.PARAMETER WhatIf
 		Shows what would happen if the command were to run. No actions are actually performed.
@@ -42,13 +49,6 @@ function Test-DbaMigrationConstraint {
 		Prompts you for confirmation before executing any changing operations within the command.
 
 		$scred = Get-Credential, this pass $scred object to the param.
-
-		Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
-
-	.PARAMETER DestinationSqlCredential
-		Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-		$dcred = Get-Credential, this pass this $dcred to the param.
 
 		Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
 
@@ -86,16 +86,16 @@ function Test-DbaMigrationConstraint {
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $True)]
 		[DbaInstanceParameter]$Source,
+		[PSCredential]$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[System.Management.Automation.PSCredential]$SourceSqlCredential,
+		[PSCredential]$DestinationSqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
-		[System.Management.Automation.PSCredential]$DestinationSqlCredential
+		[object[]]$ExcludeDatabase
 	)
 
-	BEGIN {
+	begin {
 		<#
 			1804890536 = Enterprise
 			1872460670 = Enterprise Edition: Core-based Licensing
@@ -113,7 +113,7 @@ function Test-DbaMigrationConstraint {
 		$notesCanMigrate = "Database can be migrated."
 		$notesCannotMigrate = "Database cannot be migrated."
 	}
-	PROCESS {
+	process {
 
 		Write-Output "Attempting to connect to Sql Servers.."
 		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
@@ -123,8 +123,8 @@ function Test-DbaMigrationConstraint {
 			$Database = $sourceserver.Databases | Where-Object isSystemObject -eq 0 | Select-Object Name, Status
 		}
 
-		if ($Exclude) {
-			$Database = $sourceserver.Databases | Where-Object Name -NotIn $Exclude
+		if ($ExcludeDatabase) {
+			$Database = $sourceserver.Databases | Where-Object Name -NotIn $ExcludeDatabase
 		}
 
 		if ($Database -gt 0) {

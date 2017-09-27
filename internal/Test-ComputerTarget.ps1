@@ -39,7 +39,7 @@
     {
         foreach ($Computer in $ComputerName)
         {
-            [sqlcollective.dbatools.Utility.Validation]::IsValidComputerTarget($ComputerName)
+            [Sqlcollaborative.Dbatools.Utility.Validation]::IsValidComputerTarget($ComputerName)
         }
     }
 }

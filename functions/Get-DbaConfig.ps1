@@ -1,4 +1,4 @@
-function Get-DbaConfig
+﻿function Get-DbaConfig
 {
 	<#
 		.SYNOPSIS
@@ -7,6 +7,10 @@ function Get-DbaConfig
 		.DESCRIPTION
 			Retrieves configuration elements by name.
 			Can be used to search the existing configuration list.
+	
+		.PARAMETER FullName
+			Default: "*"
+			Search for configurations using the full name
 		
 		.PARAMETER Name
 			Default: "*"
@@ -34,20 +38,34 @@ function Get-DbaConfig
 			Author: Friedrich Weinmann
             Tags: Config
     #>
-    [CmdletBinding()]
-    Param (
+    [CmdletBinding(DefaultParameterSetName = "FullName")]
+	Param (
+		[Parameter(ParameterSetName = "FullName", Position = 0)]
+		[string]
+		$FullName = "*",
+		
+		[Parameter(ParameterSetName = "Module", Position = 1)]
         [string]
         $Name = "*",
-        
+		
+		[Parameter(ParameterSetName = "Module", Position = 0)]
         [string]
         $Module = "*",
         
         [switch]
         $Force
     )
-    
-    $Name = $Name.ToLower()
-    $Module = $Module.ToLower()
-    
-    [sqlcollective.dbatools.Configuration.Config]::Cfg.Values | Where-Object { ($_.Name -like $Name) -and ($_.Module -like $Module) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
+	
+	switch ($PSCmdlet.ParameterSetName) {
+		"Module" {
+			$Name = $Name.ToLower()
+			$Module = $Module.ToLower()
+			
+			[Sqlcollaborative.Dbatools.Configuration.Config]::Cfg.Values | Where-Object { ($_.Name -like $Name) -and ($_.Module -like $Module) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
+		}
+		
+		"FullName" {
+			[Sqlcollaborative.Dbatools.Configuration.Config]::Cfg.Values | Where-Object { ("$($_.Module).$($_.Name)" -like $FullName) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
+		}
+	}
 }

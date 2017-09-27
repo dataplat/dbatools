@@ -1,62 +1,51 @@
-Function Show-DbaServerFileSystem
-{
-<#
-.SYNOPSIS
-Shows file system on remote SQL Server and returns the directory name of the directory you select.
-	
-.DESCRIPTION
-Similar to the remote file system popup you see when browsing a remote SQL Server in SQL Server Management Studio, this command allows you to traverse the remote SQL Server's file structure.
+Function Show-DbaServerFileSystem {
+	<#
+		.SYNOPSIS
+			Shows file system on remote SQL Server and returns the directory name of the directory you select.
+			
+		.DESCRIPTION
+			Similar to the remote file system popup you see when browsing a remote SQL Server in SQL Server Management Studio, this command allows you to traverse the remote SQL Server's file structure.
 
-Show-DbaServerFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.
-	
-.PARAMETER SqlInstance
-The SQL Server instance.
-	
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Show-DbaServerFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.
+			
+		.PARAMETER SqlInstance
+			The SQL Server instance.
 
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+        .PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+			To connect as a different Windows user, run PowerShell as that user.		
 
-.NOTES
-Tags: Storage
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+		
+		.NOTES
+			Tags: Storage
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+		.LINK
+			https://dbatools.io/Show-DbaServerFileSystem
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-.LINK
-https://dbatools.io/Show-DbaServerFileSystem
-
-.EXAMPLE
-Show-DbaServerFileSystem -SqlInstance sqlserver2014a
-
-Shows a GUI and uses Windows Authentication to log into the SQL Server. Returns a string of the path you selected.
-	
-.EXAMPLE   
-Show-DbaServerFileSystem -Source sqlserver2014a -SqlCredential $cred
-
-Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a string of the path you selected.
-	
-#>
+		.EXAMPLE
+			Show-DbaServerFileSystem -SqlInstance sqlserver2014a
+		
+			Shows a GUI list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected path.
+			
+		.EXAMPLE   
+			Show-DbaServerFileSystem -Source sqlserver2014a -SqlCredential $cred
+			
+			Shows a GUI list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected path.
+		
+	#>
     [CmdletBinding(SupportsShouldProcess)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]

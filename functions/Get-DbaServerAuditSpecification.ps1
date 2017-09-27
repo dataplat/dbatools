@@ -8,11 +8,14 @@ Gets SQL Security Audit Specification information for each instance(s) of SQL Se
  The Get-DbaServerAuditSpecification command gets SQL Security Audit Specification information for each instance(s) of SQL Server.
 	
 .PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
 to be executed against multiple SQL Server instances.
 
 .PARAMETER SqlCredential
 SqlCredential object to connect as. If not specified, current Windows login will be used.
+
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages.
 
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
@@ -41,7 +44,8 @@ Returns all Security Audit Specifications for the local and sql2016 SQL Server i
 	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[PSCredential]$SqlCredential,
+		[switch]$Silent
 	)
 	
 	process
@@ -55,8 +59,7 @@ Returns all Security Audit Specifications for the local and sql2016 SQL Server i
 			}
 			catch
 			{
-				Write-Warning "Can't connect to $instance or access denied. Skipping."
-				continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			if ($server.versionMajor -lt 10)
@@ -67,9 +70,9 @@ Returns all Security Audit Specifications for the local and sql2016 SQL Server i
 			
 			foreach ($auditSpecification in $server.ServerAuditSpecifications)
 			{
-				Add-Member -InputObject $auditSpecification -MemberType NoteProperty -Name ComputerName -value $server.NetName
-				Add-Member -InputObject $auditSpecification -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-				Add-Member -InputObject $auditSpecification -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+				Add-Member -Force -InputObject $auditSpecification -MemberType NoteProperty -Name ComputerName -value $server.NetName
+				Add-Member -Force -InputObject $auditSpecification -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+				Add-Member -Force -InputObject $auditSpecification -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 				
 				Select-DefaultView -InputObject $auditSpecification -Property ComputerName, InstanceName, SqlInstance, ID, Name, AuditName, Enabled, CreateDate, DateLastModified, Guid
 			}

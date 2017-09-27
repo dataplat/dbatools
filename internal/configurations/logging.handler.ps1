@@ -1,4 +1,4 @@
-#region Logging.MaxErrorCount
+﻿#region Logging.MaxErrorCount
 $ScriptBlock = {
     Param (
         $Value
@@ -17,7 +17,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.DebugHost]::MaxErrorCount = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MaxErrorCount = $Value
     
     return $Result
 }
@@ -43,7 +43,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.DebugHost]::MaxMessageCount = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MaxMessageCount = $Value
     
     return $Result
 }
@@ -69,7 +69,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.DebugHost]::MaxMessagefileBytes = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MaxMessagefileBytes = $Value
     
     return $Result
 }
@@ -95,7 +95,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.DebugHost]::MaxMessagefileCount = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MaxMessagefileCount = $Value
     
     return $Result
 }
@@ -121,7 +121,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.DebugHost]::MaxErrorFileBytes = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MaxErrorFileBytes = $Value
     
     return $Result
 }
@@ -147,7 +147,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.DebugHost]::MaxTotalFolderSize = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MaxTotalFolderSize = $Value
     
     return $Result
 }
@@ -180,7 +180,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.DebugHost]::MaxLogFileAge = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MaxLogFileAge = $Value
     
     return $Result
 }
@@ -205,7 +205,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.DebugHost]::MessageLogFileEnabled = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MessageLogFileEnabled = $Value
     
     return $Result
 }
@@ -230,7 +230,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.DebugHost]::MessageLogEnabled = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::MessageLogEnabled = $Value
     
     return $Result
 }
@@ -255,7 +255,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.DebugHost]::ErrorLogFileEnabled = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ErrorLogFileEnabled = $Value
     
     return $Result
 }
@@ -280,7 +280,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.DebugHost]::ErrorLogEnabled = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ErrorLogEnabled = $Value
     
     return $Result
 }

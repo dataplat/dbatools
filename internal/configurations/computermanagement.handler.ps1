@@ -16,7 +16,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Connection.ConnectionHost]::DisableCache = $Value
+    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableCache = $Value
     
     return $Result
 }
@@ -41,7 +41,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Connection.ConnectionHost]::DisableBadCredentialCache = $Value
+    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableBadCredentialCache = $Value
     
     return $Result
 }
@@ -66,7 +66,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Connection.ConnectionHost]::DisableCredentialAutoRegister = $Value
+    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableCredentialAutoRegister = $Value
     
     return $Result
 }
@@ -91,7 +91,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Connection.ConnectionHost]::OverrideExplicitCredential = $Value
+    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::OverrideExplicitCredential = $Value
     
     return $Result
 }
@@ -116,7 +116,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Connection.ConnectionHost]::BadConnectionTimeout = $Value
+    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::BadConnectionTimeout = $Value
     
     return $Result
 }
@@ -141,7 +141,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Connection.ConnectionHost]::DisableCimPersistence = $Value
+    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableCimPersistence = $Value
     
     return $Result
 }
@@ -166,9 +166,105 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.Connection.ConnectionHost]::EnableCredentialFailover = $Value
+    [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::EnableCredentialFailover = $Value
     
     return $Result
 }
 Register-DbaConfigHandler -Name 'ComputerManagement.Cache.Enable.CredentialFailover' -ScriptBlock $ScriptBlock
 #endregion ComputerManagement.Cache.Enable.CredentialFailover
+
+#region ComputerManagement.Type.Disable.CimRM
+$ScriptBlock = {
+	Param (
+		$Value
+	)
+	
+	$Result = New-Object PSOBject -Property @{
+		Success  = $True
+		Message  = ""
+	}
+	
+	if ($Value.GetType().FullName -ne "System.Boolean") {
+		$Result.Message = "Not a Boolean: $Value"
+		$Result.Success = $False
+		return $Result
+	}
+	
+	[Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableConnectionCimRM = $Value
+	
+	return $Result
+}
+Register-DbaConfigHandler -Name 'ComputerManagement.Type.Disable.CimRM' -ScriptBlock $ScriptBlock
+#endregion ComputerManagement.Type.Disable.CimRM
+
+#region ComputerManagement.Type.Disable.CimDCOM
+$ScriptBlock = {
+	Param (
+		$Value
+	)
+	
+	$Result = New-Object PSOBject -Property @{
+		Success  = $True
+		Message  = ""
+	}
+	
+	if ($Value.GetType().FullName -ne "System.Boolean") {
+		$Result.Message = "Not a Boolean: $Value"
+		$Result.Success = $False
+		return $Result
+	}
+	
+	[Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableConnectionCimDCOM = $Value
+	
+	return $Result
+}
+Register-DbaConfigHandler -Name 'ComputerManagement.Type.Disable.CimDCOM' -ScriptBlock $ScriptBlock
+#endregion ComputerManagement.Type.Disable.CimDCOM
+
+#region ComputerManagement.Type.Disable.WMI
+$ScriptBlock = {
+	Param (
+		$Value
+	)
+	
+	$Result = New-Object PSOBject -Property @{
+		Success  = $True
+		Message  = ""
+	}
+	
+	if ($Value.GetType().FullName -ne "System.Boolean") {
+		$Result.Message = "Not a Boolean: $Value"
+		$Result.Success = $False
+		return $Result
+	}
+	
+	[Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableConnectionWMI = $Value
+	
+	return $Result
+}
+Register-DbaConfigHandler -Name 'ComputerManagement.Type.Disable.WMI' -ScriptBlock $ScriptBlock
+#endregion ComputerManagement.Type.Disable.WMI
+
+#region ComputerManagement.Type.Disable.PowerShellRemoting
+$ScriptBlock = {
+	Param (
+		$Value
+	)
+	
+	$Result = New-Object PSOBject -Property @{
+		Success  = $True
+		Message  = ""
+	}
+	
+	if ($Value.GetType().FullName -ne "System.Boolean") {
+		$Result.Message = "Not a Boolean: $Value"
+		$Result.Success = $False
+		return $Result
+	}
+	
+	[Sqlcollaborative.Dbatools.Connection.ConnectionHost]::DisableConnectionPowerShellRemoting = $Value
+	
+	return $Result
+}
+Register-DbaConfigHandler -Name 'ComputerManagement.Type.Disable.PowerShellRemoting' -ScriptBlock $ScriptBlock
+#endregion ComputerManagement.Type.Disable.PowerShellRemoting

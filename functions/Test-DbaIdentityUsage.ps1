@@ -16,10 +16,10 @@ function Test-DbaIdentityUsage {
 		Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
 	.PARAMETER Database
-		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-	.PARAMETER Exclude
-		The database(s) to exclude - this list is autopopulated from the server
+	.PARAMETER ExcludeDatabase
+		The database(s) to exclude - this list is auto-populated from the server
 
 	.PARAMETER Threshold
 		Allows you to specify a minimum % of the seed range being utilized.  This can be used to ignore seeds that have only utilized a small fraction of the range.
@@ -58,11 +58,11 @@ function Test-DbaIdentityUsage {
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$Exclude,
+		[object[]]$ExcludeDatabase,
 		[parameter(Position = 1, Mandatory = $false)]
 		[int]$Threshold = 0,
 		[parameter(Position = 2, Mandatory = $false)]
@@ -144,24 +144,20 @@ function Test-DbaIdentityUsage {
 			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
 			}
 			catch {
-				Stop-Function -Message "Can't connect to $instance or access denied. Skipping." -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-			
-			if ($server.versionMajor -lt 10) {
-				Stop-Function -Message "This function does not support versions lower than SQL Server 2008 (v10). Skipping server $instance." -Continue
-			}			
 			
 			$dbs = $server.Databases
 			
-			if ($Database.count -gt 0) {
+			if ($Database) {
 				$dbs = $dbs | Where-Object {$Database -contains $_.Name}
 			}
 			
-			if ($exclude.count -gt 0) {
-				$dbs = $dbs | Where-Object Name -NotIn $Exclude
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
 			
 			if ($NoSystemDb) {

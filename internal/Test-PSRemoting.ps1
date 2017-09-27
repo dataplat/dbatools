@@ -11,7 +11,7 @@ https://www.petri.com/test-network-connectivity-powershell-test-connection-cmdle
     [Parameter(Position=0,Mandatory,HelpMessage = "Enter a computername",ValueFromPipeline)]
     [ValidateNotNullorEmpty()]
     [string]$Computername,
-    [System.Management.Automation.Credential()]$Credential = [System.Management.Automation.PSCredential]::Empty
+    $Credential = [System.Management.Automation.PSCredential]::Empty
   )
  
   Begin {

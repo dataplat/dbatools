@@ -1,4 +1,4 @@
-function Set-DbaConfig
+﻿function Set-DbaConfig
 {
 	<#
 		.SYNOPSIS
@@ -120,9 +120,9 @@ function Set-DbaConfig
     #region Process Configuration Event Handlers
     if (-not $DisableHandler)
     {
-        if ([sqlcollective.dbatools.Configuration.Config]::ConfigHandler[$FullName])
+        if ([Sqlcollaborative.Dbatools.Configuration.Config]::ConfigHandler[$FullName])
         {
-            $TestResult = [sqlcollective.dbatools.Configuration.Config]::ConfigHandler[$FullName].Invoke($Value)
+            $TestResult = [Sqlcollaborative.Dbatools.Configuration.Config]::ConfigHandler[$FullName].Invoke($Value)
             if (-not $TestResult.Success)
             {
                 Stop-Function -Message "Failed to process configuration: $($TestResult.Message)" -Silent $Silent -Category InvalidResult -Target $Value
@@ -133,21 +133,21 @@ function Set-DbaConfig
     #endregion Process Configuration Event Handlers
     
     #region Process Record
-    if (([sqlcollective.dbatools.Configuration.Config]::Cfg[$FullName]) -and (-not $Default))
+    if (([Sqlcollaborative.Dbatools.Configuration.Config]::Cfg[$FullName]) -and (-not $Default))
     {
-        if ($PSBoundParameters.ContainsKey("Hidden")) { [sqlcollective.dbatools.Configuration.Config]::Cfg[$FullName].Hidden = $Hidden }
-        [sqlcollective.dbatools.Configuration.Config]::Cfg[$FullName].Value = $Value
-        if ($PSBoundParameters.ContainsKey("Description")) { [sqlcollective.dbatools.Configuration.Config]::Cfg[$FullName].Description = $Description }
+        if ($PSBoundParameters.ContainsKey("Hidden")) { [Sqlcollaborative.Dbatools.Configuration.Config]::Cfg[$FullName].Hidden = $Hidden }
+        [Sqlcollaborative.Dbatools.Configuration.Config]::Cfg[$FullName].Value = $Value
+        if ($PSBoundParameters.ContainsKey("Description")) { [Sqlcollaborative.Dbatools.Configuration.Config]::Cfg[$FullName].Description = $Description }
     }
-    elseif (-not [sqlcollective.dbatools.Configuration.Config]::Cfg[$FullName])
+    elseif (-not [Sqlcollaborative.Dbatools.Configuration.Config]::Cfg[$FullName])
     {
-        $Config = New-Object sqlcollective.dbatools.Configuration.Config
+        $Config = New-Object Sqlcollaborative.Dbatools.Configuration.Config
         $Config.Name = $name
         $Config.Module = $Module
         $Config.Description = $Description
         $Config.Value = $Value
         $Config.Hidden = $Hidden
-        [sqlcollective.dbatools.Configuration.Config]::Cfg[$FullName] = $Config
+        [Sqlcollaborative.Dbatools.Configuration.Config]::Cfg[$FullName] = $Config
     }
     #endregion Process Record
 }

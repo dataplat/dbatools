@@ -8,17 +8,17 @@ function Get-DbaSchemaChangeHistory {
 	Only works with SQL 2005 and later, as the system trace didn't exist before then
 
 	.PARAMETER SqlInstance
-	SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
+	SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
 	to be executed against multiple SQL Server instances.
 
 	.PARAMETER SqlCredential
 	SqlCredential object to connect as. If not specified, current Windows login will be used.
 
 	.PARAMETER Database
-	The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+	The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 	.PARAMETER ExcludeDatabase
-	The database(s) to exclude - this list is autopopulated from the server
+	The database(s) to exclude - this list is auto-populated from the server
 		
 	.PARAMETER Since
 	A date from which DDL changes should be returned. Default is to start at the beggining of the current trace file
@@ -68,7 +68,7 @@ function Get-DbaSchemaChangeHistory {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
@@ -86,31 +86,32 @@ function Get-DbaSchemaChangeHistory {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Can't connect to $instance or access denied. Skipping." -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			if ($Server.Version.Major -le 8) {
 				Stop-Function -Message "This command doesn't support SQL Server 2000, sorry about that" 
 				return
 			}
 			$TraceFileQuery = "select path from sys.traces where is_default = 1"
-			$TraceFile = $server.ConnectionContext.ExecuteWithResults($TraceFileQuery).Tables.Rows | Select-Object Path
 			
-			if ($null -eq $Database) { $Database = $server.databases.name }
+			$TraceFile = $server.Query($TraceFileQuery) | Select-Object Path
 			
-			if ($ExcludeDatabase) {
-				$database = $database | Where-Object { $_ -notin $ExcludeDatabase }
-			}
+			$Databases = $server.Databases
 			
-			foreach ($db in $Database) {
-				if ($server.databases[$db].status -notlike '*normal*') {
-					Stop-Function -Message "Can't open database $db. Skipping." -Continue
+			if ($Database) { $Databases = $Databases | Where-Object Name -in $database }
+			
+			if ($ExcludeDatabase) { $Databases = $Databases | Where-Object Name -notin $ExcludeDatabase }
+			
+			foreach ($db in $Databases) {
+				if ($db.IsAccessible -eq $false) {
+					Stop-Function -Message "$db on $server is inaccessible" -Continue
 				}
 				
 				$sql = "select SERVERPROPERTY('MachineName') AS ComputerName, 
 						ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, 
 						SERVERPROPERTY('ServerName') AS SqlInstance,
 						tt.databasename as 'DatabaseName',
-						starttime as 'StartTime',
+						starttime as 'DateModified',
 						Sessionloginname as 'LoginName',
 						NTusername as 'UserName',
 						applicationname as 'ApplicationName',
@@ -140,7 +141,7 @@ function Get-DbaSchemaChangeHistory {
 				Write-Message -Level Verbose -Message "Querying Database $db on $instance"
 				Write-Message -Level Debug -Message "SQL: $sql"
 				
-				$server.databases[$db].ExecuteWithResults($sql).Tables.Rows  | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName, starttime, LoginName, UserName, ApplicationName, DDLOperation, Object, ObjectType
+				$db.Query($sql)  | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName, DateModified, LoginName, UserName, ApplicationName, DDLOperation, Object, ObjectType
 			}	
 		}
 	}

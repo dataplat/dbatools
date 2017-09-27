@@ -52,7 +52,7 @@ Function Select-DefaultView
 					{
 						$old, $new = $p -isplit " as "
 						# Do not be tempted to not pipe here
-						$inputobject | Add-Member -MemberType AliasProperty -Name $new -Value $old -Force -ErrorAction SilentlyContinue
+						$inputobject | Add-Member -Force -MemberType AliasProperty -Name $new -Value $old -ErrorAction SilentlyContinue
 						$newproperty += $new
 					}
 					else
@@ -69,7 +69,7 @@ Function Select-DefaultView
 		$standardmembers = [System.Management.Automation.PSMemberInfo[]]@($defaultset)
 		
 		# Do not be tempted to not pipe here
-		$inputobject | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value $standardmembers -Force -ErrorAction SilentlyContinue
+		$inputobject | Add-Member -Force -MemberType MemberSet -Name PSStandardMembers -Value $standardmembers -ErrorAction SilentlyContinue
 		
 		$inputobject
 	}

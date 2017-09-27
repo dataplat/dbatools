@@ -7,7 +7,7 @@ Gets SQL Instance properties of one or more instance(s) of SQL Server.
  The Get-DbaSqlInstanceProperty command gets SQL Instance properties from the SMO object sqlserver.
 
 .PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
 to be executed against multiple SQL Server instances.
 
 .PARAMETER SqlCredential
@@ -43,7 +43,7 @@ Returns SQL Instance properties on sql2 and sql4
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[switch]$Silent
 	)
 	
@@ -53,30 +53,30 @@ Returns SQL Instance properties on sql2 and sql4
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failed to connect to: $instance" -ErrorRecord $_ -Target $instance -Continue -Silent $Silent
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			$props = $server.information.properties
       foreach ($prop in $props) {
-        Add-Member -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
-        Add-Member -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-        Add-Member -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-				Add-Member -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'Information'
+        Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+        Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+        Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+				Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'Information'
 				Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Name, Value, PropertyType
       }
       $props = $server.useroptions.properties
 			foreach ($prop in $props) {
-				Add-Member -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
-				Add-Member -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-				Add-Member -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-				Add-Member -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'UserOption'
+				Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+				Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+				Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+				Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'UserOption'
 				Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Name, Value, PropertyType
 			}
       $props = $server.settings.properties
 			foreach ($prop in $props) {
-				Add-Member -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
-				Add-Member -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-				Add-Member -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-				Add-Member -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'Setting'
+				Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+				Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+				Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+				Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'Setting'
 				Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Name, Value, PropertyType
 			}
 		}

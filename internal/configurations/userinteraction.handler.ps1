@@ -1,4 +1,4 @@
-#region message.maximuminfo
+﻿#region message.maximuminfo
 $ScriptBlock = {
     Param (
         $Value
@@ -24,7 +24,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumInformation = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MaximumInformation = $Value
     
     return $Result
 }
@@ -57,7 +57,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumVerbose = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MaximumVerbose = $Value
     
     return $Result
 }
@@ -90,7 +90,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.MessageHost]::MaximumDebug = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MaximumDebug = $Value
     
     return $Result
 }
@@ -123,7 +123,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumInformation = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MinimumInformation = $Value
     
     return $Result
 }
@@ -156,7 +156,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumVerbose = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MinimumVerbose = $Value
     
     return $Result
 }
@@ -189,7 +189,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.MessageHost]::MinimumDebug = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::MinimumDebug = $Value
     
     return $Result
 }
@@ -215,7 +215,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.MessageHost]::InfoColor = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::InfoColor = $Value
     
     return $Result
 }
@@ -241,7 +241,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.MessageHost]::DeveloperColor = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.MessageHost]::DeveloperColor = $Value
     
     return $Result
 }
@@ -266,7 +266,7 @@ $ScriptBlock = {
         return $Result
     }
     
-    [sqlcollective.dbatools.dbaSystem.DebugHost]::DeveloperMode = $Value
+    [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::DeveloperMode = $Value
     
     return $Result
 }
