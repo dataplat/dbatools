@@ -110,6 +110,7 @@ function Get-DbaXEventSession {
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Session -Value $x.Name
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name TargetFile -Value $filecollection
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name RemoteTargetFile -Value $remotefile
+				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Parent -Value $server
 				
 				Select-DefaultView -InputObject $x -Property ComputerName, InstanceName, SqlInstance, Name, Status, StartTime, AutoStart, State, Targets, TargetFile, Events, MaxMemory, MaxEventSize
 			}
