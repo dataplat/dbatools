@@ -1,0 +1,1560 @@
+Build started 9/22/2017 2:10:23 AM.
+Project "C:\github\dbatools\bin\projects\dbatools\dbatools.sln" on node 1 (default targets).
+Building with tools version "2.0".
+Target "ValidateSolutionConfiguration" in file "C:\github\dbatools\bin\projects\dbatools\dbatools.sln.metaproj" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.sln" (entry point):
+Task "Error" skipped, due to false condition; (('$(CurrentSolutionConfigurationContents)' == '') and ('$(SkipInvalidConfigurations)' != 'true')) was evaluated as (('<SolutionConfiguration>
+  <ProjectConfiguration Project="{7A0D426F-2E98-4851-8AF8-C1B2B17C052D}" AbsolutePath="C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" BuildProjectInSolution="True">Release|AnyCPU</ProjectConfiguration>
+  <ProjectConfiguration Project="{AFD56AD2-F9F0-4C9D-901B-69CA1455C32A}" AbsolutePath="C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" BuildProjectInSolution="True">Debug|AnyCPU</ProjectConfiguration>
+</SolutionConfiguration>' == '') and ('' != 'true')).
+Task "Warning" skipped, due to false condition; (('$(CurrentSolutionConfigurationContents)' == '') and ('$(SkipInvalidConfigurations)' == 'true')) was evaluated as (('<SolutionConfiguration>
+  <ProjectConfiguration Project="{7A0D426F-2E98-4851-8AF8-C1B2B17C052D}" AbsolutePath="C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" BuildProjectInSolution="True">Release|AnyCPU</ProjectConfiguration>
+  <ProjectConfiguration Project="{AFD56AD2-F9F0-4C9D-901B-69CA1455C32A}" AbsolutePath="C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" BuildProjectInSolution="True">Debug|AnyCPU</ProjectConfiguration>
+</SolutionConfiguration>' == '') and ('' == 'true')).
+Using "Message" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "Message"
+  Building solution configuration "Debug|Any CPU".
+Done executing task "Message".
+Done building target "ValidateSolutionConfiguration" in project "dbatools.sln".
+Target "ValidateToolsVersions" in file "C:\github\dbatools\bin\projects\dbatools\dbatools.sln.metaproj" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.sln" (entry point):
+Task "Error" skipped, due to false condition; ('$(MSBuildToolsVersion)' == '2.0' and ('$(ProjectToolsVersion)' != '2.0' and '$(ProjectToolsVersion)' != '')) was evaluated as ('4.0' == '2.0' and ('' != '2.0' and '' != '')).
+Done building target "ValidateToolsVersions" in project "dbatools.sln".
+Target "ValidateProjects" in file "C:\github\dbatools\bin\projects\dbatools\dbatools.sln.metaproj" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.sln" (entry point):
+Done building target "ValidateProjects" in project "dbatools.sln".
+Target "Build" in file "C:\github\dbatools\bin\projects\dbatools\dbatools.sln.metaproj" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.sln" (entry point):
+Using "MSBuild" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "MSBuild"
+  Global Properties:
+    BuildingSolutionFile=true
+    CurrentSolutionConfigurationContents=<SolutionConfiguration>
+    <ProjectConfiguration Project="{7A0D426F-2E98-4851-8AF8-C1B2B17C052D}" AbsolutePath="C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" BuildProjectInSolution="True">Release|AnyCPU</ProjectConfiguration>
+    <ProjectConfiguration Project="{AFD56AD2-F9F0-4C9D-901B-69CA1455C32A}" AbsolutePath="C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" BuildProjectInSolution="True">Debug|AnyCPU</ProjectConfiguration>
+  </SolutionConfiguration>
+    SolutionDir=C:\github\dbatools\bin\projects\dbatools\
+    SolutionExt=.sln
+    SolutionFileName=dbatools.sln
+    SolutionName=dbatools
+    SolutionPath=C:\github\dbatools\bin\projects\dbatools\dbatools.sln
+  Additional Properties for project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj":
+    Configuration=Release
+    Platform=AnyCPU
+    VisualStudioVersion=11.0
+  Additional Properties for project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj":
+    Configuration=Debug
+    Platform=AnyCPU
+    VisualStudioVersion=11.0
+Overriding target "GetFrameworkPaths" in project "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" with target "GetFrameworkPaths" from project "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.NETFramework.targets".
+Overriding target "SatelliteDllsProjectOutputGroup" in project "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" with target "SatelliteDllsProjectOutputGroup" from project "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.WinFX.targets".
+Project "C:\github\dbatools\bin\projects\dbatools\dbatools.sln" (1) is building "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (2) on node 1 (default targets).
+Building with tools version "15.0".
+Project file contains ToolsVersion="15.0". This toolset may be unknown or missing, in which case you may be able to resolve this by installing the appropriate version of MSBuild, or the build may have been forced to a particular ToolsVersion for policy reasons. Treating the project as if it had ToolsVersion="4.0". For more information, please see http://go.microsoft.com/fwlink/?LinkId=291333.
+Target "_CheckForInvalidConfigurationAndPlatform" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (entry point):
+Task "Error" skipped, due to false condition; ( '$(_InvalidConfigurationError)' == 'true' ) was evaluated as ( '' == 'true' ).
+Task "Warning" skipped, due to false condition; ( '$(_InvalidConfigurationWarning)' == 'true' ) was evaluated as ( '' == 'true' ).
+Using "Message" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "Message"
+  Configuration=Release
+Done executing task "Message".
+Task "Message"
+  Platform=AnyCPU
+Done executing task "Message".
+Task "Error" skipped, due to false condition; ('$(OutDir)' != '' and !HasTrailingSlash('$(OutDir)')) was evaluated as ('..\..\..\' != '' and !HasTrailingSlash('..\..\..\')).
+Task "Error" skipped, due to false condition; ('$(BaseIntermediateOutputPath)' != '' and !HasTrailingSlash('$(BaseIntermediateOutputPath)')) was evaluated as ('obj\' != '' and !HasTrailingSlash('obj\')).
+Task "Error" skipped, due to false condition; ('$(IntermediateOutputPath)' != '' and !HasTrailingSlash('$(IntermediateOutputPath)')) was evaluated as ('obj\Release\' != '' and !HasTrailingSlash('obj\Release\')).
+Done building target "_CheckForInvalidConfigurationAndPlatform" in project "dbatools.csproj".
+Target "EntityDeploy" skipped, due to false condition; ('@(EntityDeploy)' != '') was evaluated as ('' != '').
+Target "BeforeBuild" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "Build" depends on it):
+Done building target "BeforeBuild" in project "dbatools.csproj".
+Target "BuildOnlySettings" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "CoreBuild" depends on it):
+Done building target "BuildOnlySettings" in project "dbatools.csproj".
+Target "GetFrameworkPaths" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.NETFramework.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "PrepareForBuild" depends on it):
+Done building target "GetFrameworkPaths" in project "dbatools.csproj".
+Target "GetWinFXPath" skipped, due to false condition; (('@(Page)' != '' or '@(ApplicationDefinition)' != '' or '@(Resource)' != '') and ('$(GetWinFXNativePath)' != '' or '$(GetWinFXWoWPath)' != '' )) was evaluated as (('' != '' or '' != '' or '' != '') and ('' != '' or '' != '' )).
+Target "GetReferenceAssemblyPaths" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "PrepareForBuild" depends on it):
+Using "GetReferenceAssemblyPaths" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "GetReferenceAssemblyPaths"
+Done executing task "GetReferenceAssemblyPaths".
+Done building target "GetReferenceAssemblyPaths" in project "dbatools.csproj".
+Target "PrepareForBuild" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "CoreBuild" depends on it):
+Using "FindAppConfigFile" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "FindAppConfigFile"
+Done executing task "FindAppConfigFile".
+Using "MakeDir" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "MakeDir"
+  Creating directory "obj\Release\".
+Done executing task "MakeDir".
+Done building target "PrepareForBuild" in project "dbatools.csproj".
+Target "PreBuildEvent" skipped, due to false condition; ('$(PreBuildEvent)'!='') was evaluated as (''!='').
+Target "BeforeResolveReferences" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "ResolveReferences" depends on it):
+Done building target "BeforeResolveReferences" in project "dbatools.csproj".
+Target "AssignProjectConfiguration" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "ResolveReferences" depends on it):
+Using "AssignProjectConfiguration" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "AssignProjectConfiguration"
+Done executing task "AssignProjectConfiguration".
+Done building target "AssignProjectConfiguration" in project "dbatools.csproj".
+Target "AssignProjectConfiguration" skipped. Previously built successfully.
+Target "_SplitProjectReferencesByFileExistence" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "ResolveProjectReferences" depends on it):
+Task "ResolveNonMSBuildProjectOutput" skipped, due to false condition; ('$(BuildingInsideVisualStudio)'=='true' and '@(ProjectReferenceWithConfiguration)'!='') was evaluated as (''=='true' and ''!='').
+Done building target "_SplitProjectReferencesByFileExistence" in project "dbatools.csproj".
+Target "ResolveProjectReferences" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "ResolveReferences" depends on it):
+Task "MSBuild" skipped, due to false condition; ('%(_MSBuildProjectReferenceExistent.BuildReference)' == 'true' and '@(ProjectReferenceWithConfiguration)' != '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildProjectReferences)' != 'true') and '$(VisualStudioVersion)' != '10.0' and '@(_MSBuildProjectReferenceExistent)' != '') was evaluated as ('' == 'true' and '' != '' and ('' == 'true' or 'true' != 'true') and '11.0' != '10.0' and '' != '').
+Task "MSBuild" skipped, due to false condition; ('%(_MSBuildProjectReferenceExistent.BuildReference)' == 'true' and '@(ProjectReferenceWithConfiguration)' != '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildProjectReferences)' != 'true') and '$(VisualStudioVersion)' == '10.0' and '@(_MSBuildProjectReferenceExistent)' != '') was evaluated as ('' == 'true' and '' != '' and ('' == 'true' or 'true' != 'true') and '11.0' == '10.0' and '' != '').
+Task "MSBuild" skipped, due to false condition; ('%(_MSBuildProjectReferenceExistent.BuildReference)' == 'true' and '@(ProjectReferenceWithConfiguration)' != '' and '$(BuildingInsideVisualStudio)' != 'true' and '$(BuildProjectReferences)' == 'true' and '@(_MSBuildProjectReferenceExistent)' != '') was evaluated as ('' == 'true' and '' != '' and '' != 'true' and 'true' == 'true' and '' != '').
+Task "MSBuild" skipped, due to false condition; ('%(_MSBuildProjectReferenceExistent.BuildReference)' == 'true' and '@(ProjectReferenceWithConfiguration)' != '' and '$(BuildingProject)' == 'true' and '@(_MSBuildProjectReferenceExistent)' != '') was evaluated as ('' == 'true' and '' != '' and 'true' == 'true' and '' != '').
+Task "Warning" skipped, due to false condition; ('@(ProjectReferenceWithConfiguration)' != '' and '@(_MSBuildProjectReferenceNonexistent)' != '') was evaluated as ('' != '' and '' != '').
+Done building target "ResolveProjectReferences" in project "dbatools.csproj".
+Target "ResolveNativeReferences" skipped, due to false condition; ('@(NativeReference)'!='') was evaluated as (''!='').
+Target "GetFrameworkPaths" skipped. Previously built successfully.
+Target "GetReferenceAssemblyPaths" skipped. Previously built successfully.
+Target "PrepareForBuild" skipped. Previously built successfully.
+Target "GetInstalledSDKLocations" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "ResolveSDKReferences" depends on it):
+Task "GetInstalledSDKLocations" skipped, due to false condition; ('@(SDKReference)' != '') was evaluated as ('' != '').
+Done building target "GetInstalledSDKLocations" in project "dbatools.csproj".
+Target "ResolveSDKReferences" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "ResolveAssemblyReferences" depends on it):
+Task "ResolveSDKReference" skipped, due to false condition; ('@(SDKReference)'!='') was evaluated as (''!='').
+Done building target "ResolveSDKReferences" in project "dbatools.csproj".
+Target "ResolveSDKReferences" skipped. Previously built successfully.
+Target "ExpandSDKReferences" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "ResolveAssemblyReferences" depends on it):
+Task "GetSDKReferenceFiles" skipped, due to false condition; ('@(ResolvedSDKReference)'!='') was evaluated as (''!='').
+Done building target "ExpandSDKReferences" in project "dbatools.csproj".
+Target "ResolveAssemblyReferences" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "ResolveReferences" depends on it):
+Using "ResolveAssemblyReference" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "ResolveAssemblyReference"
+  TargetFrameworkMoniker:
+      .NETFramework,Version=v4.5.2
+  TargetFrameworkMonikerDisplayName:
+      .NET Framework 4.5.2
+  TargetedRuntimeVersion:
+      v4.0.30319
+  Assemblies:
+      Microsoft.Management.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL
+          Private = 'False'
+          HintPath = 'C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.Management.Infrastructure\v4.0_1.0.0.0__31bf3856ad364e35\Microsoft.Management.Infrastructure.dll'
+          SpecificVersion = 'False'
+      PresentationCore
+      PresentationFramework
+      System
+      System.Data
+      System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL
+          Private = 'False'
+          HintPath = 'C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Management.Automation.dll'
+          SpecificVersion = 'False'
+      System.Numerics
+      System.Xaml
+      WindowsBase
+      System.Core
+  AssemblyFiles:
+      C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\mscorlib.dll
+  CandidateAssemblyFiles:
+  TargetFrameworkDirectories:
+      C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\,C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\
+  InstalledAssemblyTables:
+  IgnoreInstalledAssemblyTable:
+      False
+  SearchPaths:
+      {CandidateAssemblyFiles}
+      {HintPathFromItem}
+      {TargetFrameworkDirectory}
+      {Registry:Software\Microsoft\.NETFramework,v4.5.2,AssemblyFoldersEx}
+      {AssemblyFolders}
+      {GAC}
+      {RawFileName}
+      ..\..\..\
+  AllowedAssemblyExtensions:
+      .winmd
+      .dll
+      .exe
+  AllowedRelatedFileExtensions:
+      .pdb
+      .xml
+      .pri
+  AppConfigFile:
+      
+  AutoUnify:
+      True
+  CopyLocalDependenciesWhenParentReferenceInGac:
+      True
+  FindDependencies:
+      True
+  TargetProcessorArchitecture:
+      msil
+  StateFile:
+      obj\Release\dbatools.csprojResolveAssemblyReference.cache
+  InstalledAssemblySubsetTables:
+  IgnoreInstalledAssemblySubsetTable:
+      False
+  TargetFrameworkSubsets:
+  FullTargetFrameworkSubsetNames:
+      Full
+  ProfileName:
+      
+  FullFrameworkFolders:
+      C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\
+  LatestTargetFrameworkDirectories:
+  ProfileTablesLocation:
+  Primary reference "mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\mscorlib.dll".
+      Reference found at search path location "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\mscorlib.dll".
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Primary reference "Microsoft.Management.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35".
+      Resolved file path is "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.Management.Infrastructure\v4.0_1.0.0.0__31bf3856ad364e35\Microsoft.Management.Infrastructure.dll".
+      Reference found at search path location "{HintPathFromItem}".
+      This reference is not "CopyLocal" because at least one source item had "Private" set to "false" and no source items had "Private" set to "true".
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Primary reference "PresentationCore, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\PresentationCore.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\PresentationCore.winmd", but it didn't exist.
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Primary reference "PresentationFramework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\PresentationFramework.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\PresentationFramework.winmd", but it didn't exist.
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Primary reference "System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.winmd", but it didn't exist.
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Primary reference "System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Data.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Data.winmd", but it didn't exist.
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Primary reference "System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35".
+      Resolved file path is "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Management.Automation.dll".
+      Reference found at search path location "{HintPathFromItem}".
+      This reference is not "CopyLocal" because at least one source item had "Private" set to "false" and no source items had "Private" set to "true".
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Primary reference "System.Numerics, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Numerics.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Numerics.winmd", but it didn't exist.
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Primary reference "System.Xaml, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Xaml.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Xaml.winmd", but it didn't exist.
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Primary reference "WindowsBase, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\WindowsBase.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\WindowsBase.winmd", but it didn't exist.
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Primary reference "System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Core.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Core.winmd", but it didn't exist.
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "Microsoft.Management.Infrastructure.Native, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35".
+      Resolved file path is "C:\WINDOWS\Microsoft.Net\assembly\GAC_64\Microsoft.Management.Infrastructure.Native\v4.0_1.0.0.0__31bf3856ad364e35\Microsoft.Management.Infrastructure.Native.dll".
+      Reference found at search path location "{GAC}".
+          For SearchPath "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.Management.Infrastructure\v4.0_1.0.0.0__31bf3856ad364e35".
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.Management.Infrastructure\v4.0_1.0.0.0__31bf3856ad364e35\Microsoft.Management.Infrastructure.Native.winmd", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.Management.Infrastructure\v4.0_1.0.0.0__31bf3856ad364e35\Microsoft.Management.Infrastructure.Native.dll", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.Management.Infrastructure\v4.0_1.0.0.0__31bf3856ad364e35\Microsoft.Management.Infrastructure.Native.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.Management.Infrastructure.Native.winmd", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.Management.Infrastructure.Native.dll", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.Management.Infrastructure.Native.exe", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\Microsoft.Management.Infrastructure.Native.winmd", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\Microsoft.Management.Infrastructure.Native.dll", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\Microsoft.Management.Infrastructure.Native.exe", but it didn't exist.
+          For SearchPath "{Registry:Software\Microsoft\.NETFramework,v4.5.2,AssemblyFoldersEx}".
+          Considered AssemblyFoldersEx locations.
+          For SearchPath "{AssemblyFolders}".
+          Considered "C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\Microsoft.Management.Infrastructure.Native.winmd", but it didn't exist.
+          Considered "C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\Microsoft.Management.Infrastructure.Native.dll", but it didn't exist.
+          Considered "C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\Microsoft.Management.Infrastructure.Native.exe", but it didn't exist.
+          Considered "C:\Program Files\Microsoft SQL Server\130\SDK\Assemblies\Microsoft.Management.Infrastructure.Native.winmd", but it didn't exist.
+          Considered "C:\Program Files\Microsoft SQL Server\130\SDK\Assemblies\Microsoft.Management.Infrastructure.Native.dll", but it didn't exist.
+          Considered "C:\Program Files\Microsoft SQL Server\130\SDK\Assemblies\Microsoft.Management.Infrastructure.Native.exe", but it didn't exist.
+      Required by "System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL".
+      Required by "Microsoft.Management.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL".
+      This reference is not "CopyLocal" because at least one source item had "Private" set to "false" and no source items had "Private" set to "true".
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Xml, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Xml.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35".
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Xml.winmd", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Xml.dll", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Xml.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Xml.winmd", but it didn't exist.
+      Required by "System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL".
+      This reference is not "CopyLocal" because at least one source item had "Private" set to "false" and no source items had "Private" set to "true".
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.DirectoryServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.DirectoryServices.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35".
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.DirectoryServices.winmd", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.DirectoryServices.dll", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.DirectoryServices.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.DirectoryServices.winmd", but it didn't exist.
+      Required by "System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL".
+      This reference is not "CopyLocal" because at least one source item had "Private" set to "false" and no source items had "Private" set to "true".
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Transactions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Transactions.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35".
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Transactions.winmd", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Transactions.dll", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Transactions.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Transactions.winmd", but it didn't exist.
+      Required by "System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL".
+      This reference is not "CopyLocal" because at least one source item had "Private" set to "false" and no source items had "Private" set to "true".
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Runtime.Serialization, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Runtime.Serialization.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35".
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Runtime.Serialization.winmd", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Runtime.Serialization.dll", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Runtime.Serialization.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Runtime.Serialization.winmd", but it didn't exist.
+      Required by "System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL".
+      This reference is not "CopyLocal" because at least one source item had "Private" set to "false" and no source items had "Private" set to "true".
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Management, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Management.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35".
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Management.winmd", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Management.dll", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Management.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Management.winmd", but it didn't exist.
+      Required by "System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL".
+      This reference is not "CopyLocal" because at least one source item had "Private" set to "false" and no source items had "Private" set to "true".
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Configuration.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35".
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Configuration.winmd", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Configuration.dll", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Configuration.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Configuration.winmd", but it didn't exist.
+      Required by "System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL".
+      This reference is not "CopyLocal" because at least one source item had "Private" set to "false" and no source items had "Private" set to "true".
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Security, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Security.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35".
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Security.winmd", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Security.dll", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Security.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Security.winmd", but it didn't exist.
+      Required by "System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL".
+      This reference is not "CopyLocal" because at least one source item had "Private" set to "false" and no source items had "Private" set to "true".
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Configuration.Install, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Configuration.Install.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35".
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Configuration.Install.winmd", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Configuration.Install.dll", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Configuration.Install.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Configuration.Install.winmd", but it didn't exist.
+      Required by "System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL".
+      This reference is not "CopyLocal" because at least one source item had "Private" set to "false" and no source items had "Private" set to "true".
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "Microsoft.CSharp, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.CSharp.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35".
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\Microsoft.CSharp.winmd", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\Microsoft.CSharp.dll", but it didn't exist.
+          Considered "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\Microsoft.CSharp.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.CSharp.winmd", but it didn't exist.
+      Required by "System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL".
+      This reference is not "CopyLocal" because at least one source item had "Private" set to "false" and no source items had "Private" set to "true".
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "Microsoft.VisualC, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.VisualC.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.VisualC.winmd", but it didn't exist.
+      Required by "System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL".
+      Required by "Microsoft.Management.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL".
+      This reference is not "CopyLocal" because at least one source item had "Private" set to "false" and no source items had "Private" set to "true".
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  AssemblyFoldersEx location: "{Registry:Software\Microsoft\.NETFramework,v4.5.2,AssemblyFoldersEx}"
+          C:\Program Files (x86)\Reference Assemblies\Microsoft\MSBuild\v14.0
+          C:\Program Files (x86)\Reference Assemblies\Microsoft\MSBuild\v12.0
+          C:\Program Files (x86)\Microsoft Web Tools\ReferenceAssemblies\14.0\
+          C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\ReferenceAssemblies\v4.5\
+          C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\IDE\ReferenceAssemblies\v4.5\
+          C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\PublicAssemblies\
+          C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\IDE\PublicAssemblies\
+          C:\Program Files (x86)\Microsoft.NET\Primary Interop Assemblies\
+          C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\ReferenceAssemblies\v4.5\
+          C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\PublicAssemblies\
+          C:\Program Files (x86)\Microsoft.NET\Primary Interop Assemblies\
+          C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\ReferenceAssemblies\v4.0\
+          C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\ReferenceAssemblies\v4.0\
+          C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\IDE\ReferenceAssemblies\v4.0\
+          c:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE\ReferenceAssemblies\v4.0\
+          C:\Program Files (x86)\Microsoft SQL Server\140\DTS\Tasks
+          C:\Program Files (x86)\Microsoft SQL Server\130\DTS\Tasks
+          C:\Program Files (x86)\Microsoft SQL Server\120\DTS\Tasks
+          C:\Program Files (x86)\Microsoft SQL Server\110\DTS\Tasks
+          C:\Program Files (x86)\Microsoft SQL Server\140\DTS\PipelineComponents\
+          C:\Program Files (x86)\Microsoft SQL Server\130\DTS\PipelineComponents\
+          C:\Program Files (x86)\Microsoft SQL Server\120\DTS\PipelineComponents\
+          C:\Program Files (x86)\Microsoft SQL Server\110\DTS\PipelineComponents\
+          C:\Program Files (x86)\Microsoft SQL Server\140\DTS\ForEachEnumerators
+          C:\Program Files (x86)\Microsoft SQL Server\130\DTS\ForEachEnumerators
+          C:\Program Files (x86)\Microsoft SQL Server\120\DTS\ForEachEnumerators
+          C:\Program Files (x86)\Microsoft SQL Server\110\DTS\ForEachEnumerators
+          C:\Program Files (x86)\Microsoft SQL Server\140\DTS\Connections\
+          C:\Program Files (x86)\Microsoft SQL Server\130\DTS\Connections\
+          C:\Program Files (x86)\Microsoft SQL Server\120\DTS\Connections\
+          C:\Program Files (x86)\Microsoft SQL Server\110\DTS\Connections\
+          C:\Program Files\Common Files\Microsoft Shared\Web Server Extensions\16\TEMPLATE\WorkflowActivities\
+          C:\Program Files\Common Files\Microsoft Shared\Web Server Extensions\16\ISAPI\
+          c:\Program Files (x86)\Microsoft Visual Studio 10.0\ReportViewer\
+          c:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE\PublicAssemblies\
+          c:\Program Files (x86)\Microsoft.NET\Primary Interop Assemblies\
+          c:\oracle\odp.net\managed\x64\..\common\EF6
+          c:\oracle\odp.net\managed\x64\..\common
+          C:\Program Files (x86)\GtkSharp\2.12\lib\Mono.Posix
+          C:\Program Files (x86)\GtkSharp\2.12\lib\Mono.Cairo
+          C:\Program Files (x86)\GtkSharp\2.12\lib\gtk-sharp-2.0
+          C:\Program Files (x86)\Microsoft SDKs\Expression\Blend\.NETFramework\v4.0\Prototyping\Libraries\
+          C:\Program Files (x86)\Microsoft SDKs\Expression\Blend\.NETFramework\v4.0\Libraries\
+          C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\ReferenceAssemblies\v2.0\
+          C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\ReferenceAssemblies\v2.0\
+          C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\IDE\ReferenceAssemblies\v2.0\
+          c:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE\ReferenceAssemblies\v2.0\
+          c:\Program Files (x86)\Microsoft Visual Studio 10.0\ReportViewer\
+          C:\Program Files (x86)\Common Files\Microsoft Shared\MSEnv\PublicAssemblies\
+          C:\Program Files (x86)\Microsoft Chart Controls\Assemblies
+          C:\Program Files (x86)\Microsoft ASP.NET\ASP.NET MVC 2\Assemblies\
+          C:\Program Files\Microsoft SQL Server\130\DTS\Tasks
+          C:\Program Files\Microsoft SQL Server\130\DTS\PipelineComponents\
+          C:\Program Files\Microsoft SQL Server\130\DTS\ForEachEnumerators
+          C:\Program Files\Microsoft SQL Server\130\DTS\Connections\
+Done executing task "ResolveAssemblyReference".
+Done building target "ResolveAssemblyReferences" in project "dbatools.csproj".
+Target "ResolveComReferences" skipped, due to false condition; ('@(COMReference)'!='' or '@(COMFileReference)'!='') was evaluated as (''!='' or ''!='').
+Target "AfterResolveReferences" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "ResolveReferences" depends on it):
+Done building target "AfterResolveReferences" in project "dbatools.csproj".
+Target "GetReferenceAssemblyPaths" skipped. Previously built successfully.
+Target "ImplicitlyExpandDesignTimeFacades" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.NETFramework.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "ResolveReferences" depends on it):
+Task "Message" skipped, due to false condition; ('%(ReferencePath.ResolvedFrom)' == 'ImplicitlyExpandDesignTimeFacades') was evaluated as ('{HintPathFromItem}' == 'ImplicitlyExpandDesignTimeFacades').
+Task "Message" skipped, due to false condition; ('%(ReferencePath.ResolvedFrom)' == 'ImplicitlyExpandDesignTimeFacades') was evaluated as ('C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\mscorlib.dll' == 'ImplicitlyExpandDesignTimeFacades').
+Task "Message" skipped, due to false condition; ('%(ReferencePath.ResolvedFrom)' == 'ImplicitlyExpandDesignTimeFacades') was evaluated as ('{TargetFrameworkDirectory}' == 'ImplicitlyExpandDesignTimeFacades').
+Done building target "ImplicitlyExpandDesignTimeFacades" in project "dbatools.csproj".
+Target "ResolveReferences" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "CoreBuild" depends on it):
+Done building target "ResolveReferences" in project "dbatools.csproj".
+Target "ValidationExtension" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.WorkflowBuildExtensions.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "PrepareResources" depends on it):
+Task "WorkflowBuildMessageTask" skipped, due to false condition; ('$(SkipWorkflowValidation)'!='' and '$(SkipWorkflowValidation)'!='true' and '$(SkipWorkflowValidation)'!='false') was evaluated as (''!='' and ''!='true' and ''!='false').
+Done building target "ValidationExtension" in project "dbatools.csproj".
+Target "ExpressionBuildExtension" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.WorkflowBuildExtensions.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "PrepareResources" depends on it):
+Task "WorkflowBuildMessageTask" skipped, due to false condition; ('$(DisableWorkflowCompiledExpressions)'!='' and '$(DisableWorkflowCompiledExpressions)'!='true' and '$(DisableWorkflowCompiledExpressions)'!='false') was evaluated as (''!='' and ''!='true' and ''!='false').
+Done building target "ExpressionBuildExtension" in project "dbatools.csproj".
+Target "XamlMarkupCompilePass1" skipped, due to false condition; ('@(XamlPage)' != '' or '@(XamlAppDef)' != '') was evaluated as ('' != '' or '' != '').
+Target "XamlMarkupCompileReadGeneratedFileList" skipped, due to false condition; ('@(XamlPage)' != '' or '@(XamlAppDef)' != '') was evaluated as ('' != '' or '' != '').
+Target "XamlMarkupCompileAddFilesGenerated" skipped, due to false condition; ('@(XamlPage)' != '' or '@(XamlAppDef)' != '') was evaluated as ('' != '' or '' != '').
+Target "XamlMarkupCompilePass2" skipped, due to false condition; ('$(XamlRequiresCompilationPass2)' == 'true' ) was evaluated as ('false' == 'true' ).
+Target "XamlMarkupCompileReadPass2Flag" skipped, due to false condition; ('@(XamlPage)' != '' or '@(XamlAppDef)' != '') was evaluated as ('' != '' or '' != '').
+Target "XamlMarkupCompileAddExtensionFilesGenerated" skipped, due to false condition; ('@(XamlPage)' != '' or '@(XamlAppDef)' != '') was evaluated as ('' != '' or '' != '').
+Target "AddDeferredValidationErrorsFileToFileWrites" skipped, due to false condition; (Exists('$(DeferredValidationErrorsFileName)')) was evaluated as (Exists('obj\Release\\AC2C1ABA-CCF6-44D4-8127-588FD4D0A860-DeferredValidationErrors.xml')).
+Target "ReportValidationBuildExtensionErrors" skipped, due to false condition; ('$(SkipWorkflowValidation)' != 'true' and ('@(XamlPage)' != '' or '@(XamlAppDef)' != '')) was evaluated as ('' != 'true' and ('' != '' or '' != '')).
+Target "MarkupCompilePass1" skipped, due to false condition; ('@(Page)' != '' or '@(ApplicationDefinition)' != '' ) was evaluated as ('' != '' or '' != '' ).
+Target "AfterMarkupCompilePass1" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.WinFX.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "PrepareResources" depends on it):
+Done building target "AfterMarkupCompilePass1" in project "dbatools.csproj".
+Target "MarkupCompilePass2ForMainAssembly" skipped, due to false condition; ('$(_RequireMCPass2ForMainAssembly)' == 'true' ) was evaluated as ('false' == 'true' ).
+Target "FileClassification" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.WinFX.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "PrepareResources" depends on it):
+Task "FileClassifier" skipped, due to false condition; ('@(GeneratedBaml)' != '' or '@(Resource)' != '' or '@(Font)' != '') was evaluated as ('' != '' or '' != '' or '' != '').
+Task "Message" skipped, due to false condition; ('$(MSBuildTargetsVerbose)'=='true') was evaluated as (''=='true').
+Task "Message" skipped, due to false condition; ('$(MSBuildTargetsVerbose)'=='true') was evaluated as (''=='true').
+Done building target "FileClassification" in project "dbatools.csproj".
+Target "MainResourcesGeneration" skipped, due to false condition; ('@(MainEmbeddedFiles)' != '') was evaluated as ('' != '').
+Target "AssignWinFXEmbeddedResource" skipped, due to false condition; ('@(WinFXEmbeddedResource)' != '') was evaluated as ('' != '').
+Target "AssignTargetPaths" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "PrepareResourceNames" depends on it):
+Using "AssignTargetPath" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "AssignTargetPath"
+Done executing task "AssignTargetPath".
+Task "AssignTargetPath"
+Done executing task "AssignTargetPath".
+Task "AssignTargetPath"
+Done executing task "AssignTargetPath".
+Task "AssignTargetPath"
+Done executing task "AssignTargetPath".
+Task "AssignTargetPath" skipped, due to false condition; ('@(_DeploymentBaseManifestWithTargetPath)'=='' and '%(None.Extension)'=='.manifest') was evaluated as (''=='' and ''=='.manifest').
+Done building target "AssignTargetPaths" in project "dbatools.csproj".
+Target "AssignTargetPaths" skipped. Previously built successfully.
+Target "SplitResourcesByCulture" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "PrepareResourceNames" depends on it):
+Task "Warning" skipped, due to false condition; ('@(ResxWithNoCulture)'!='') was evaluated as (''!='').
+Task "Warning" skipped, due to false condition; ('@(ResxWithCulture)'!='') was evaluated as (''!='').
+Task "Warning" skipped, due to false condition; ('@(NonResxWithCulture)'!='') was evaluated as (''!='').
+Task "Warning" skipped, due to false condition; ('@(NonResxWithNoCulture)'!='') was evaluated as (''!='').
+Using "AssignCulture" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "AssignCulture"
+Done executing task "AssignCulture".
+Done building target "SplitResourcesByCulture" in project "dbatools.csproj".
+Target "CreateManifestResourceNames" skipped, due to false condition; ('@(EmbeddedResource)' != '') was evaluated as ('' != '').
+Target "CreateCustomManifestResourceNames" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "PrepareResourceNames" depends on it):
+Done building target "CreateCustomManifestResourceNames" in project "dbatools.csproj".
+Target "PrepareResourceNames" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "PrepareResources" depends on it):
+Done building target "PrepareResourceNames" in project "dbatools.csproj".
+Target "ResolveAssemblyReferences" skipped. Previously built successfully.
+Target "SplitResourcesByCulture" skipped. Previously built successfully.
+Target "BeforeResGen" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "ResGen" depends on it):
+Done building target "BeforeResGen" in project "dbatools.csproj".
+Target "CoreResGen" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "ResGen" depends on it):
+Task "GenerateResource" skipped, due to false condition; ('%(EmbeddedResource.Type)' == 'Resx' and '%(EmbeddedResource.GenerateResource)' != 'false' and '$(GenerateResourceMSBuildRuntime)' != 'CLR2') was evaluated as ('' == 'Resx' and '' != 'false' and 'CurrentRuntime' != 'CLR2').
+Task "GenerateResource" skipped, due to false condition; ('%(EmbeddedResource.Type)' == 'Resx' and '%(EmbeddedResource.GenerateResource)' != 'false' and '$(GenerateResourceMSBuildRuntime)' == 'CLR2') was evaluated as ('' == 'Resx' and '' != 'false' and 'CurrentRuntime' == 'CLR2').
+Done building target "CoreResGen" in project "dbatools.csproj".
+Target "AfterResGen" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "ResGen" depends on it):
+Done building target "AfterResGen" in project "dbatools.csproj".
+Target "ResGen" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "PrepareResources" depends on it):
+Done building target "ResGen" in project "dbatools.csproj".
+Target "CompileLicxFiles" skipped, due to false condition; ('@(_LicxFile)'!='') was evaluated as (''!='').
+Target "PrepareResources" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "CoreBuild" depends on it):
+Done building target "PrepareResources" in project "dbatools.csproj".
+Target "ResolveKeySource" skipped, due to false condition; ($(SignManifests) == 'true' or $(SignAssembly) == 'true') was evaluated as ( == 'true' or  == 'true').
+Target "ResolveReferences" skipped. Previously built successfully.
+Target "ResolveKeySource" skipped, due to false condition; ($(SignManifests) == 'true' or $(SignAssembly) == 'true') was evaluated as ( == 'true' or  == 'true').
+Target "ResolveComReferences" skipped, due to false condition; ('@(COMReference)'!='' or '@(COMFileReference)'!='') was evaluated as (''!='' or ''!='').
+Target "ResolveNativeReferences" skipped, due to false condition; ('@(NativeReference)'!='') was evaluated as (''!='').
+Target "_SetExternalWin32ManifestProperties" skipped, due to false condition; ('$(GenerateClickOnceManifests)'=='true' or '@(NativeReference)'!='' or '@(ResolvedIsolatedComModules)'!='') was evaluated as (''=='true' or ''!='' or ''!='').
+Target "_SetEmbeddedWin32ManifestProperties" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "SetWin32ManifestProperties" depends on it):
+Using "GetFrameworkPath" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "GetFrameworkPath"
+Done executing task "GetFrameworkPath".
+Done building target "_SetEmbeddedWin32ManifestProperties" in project "dbatools.csproj".
+Target "SetWin32ManifestProperties" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "Compile" depends on it):
+Done building target "SetWin32ManifestProperties" in project "dbatools.csproj".
+Target "_GenerateCompileInputs" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "Compile" depends on it):
+Task "Warning" skipped, due to false condition; ('@(ManifestResourceWithNoCulture)'!='' and '%(ManifestResourceWithNoCulture.EmittedForCompatibilityOnly)'=='') was evaluated as (''!='' and ''=='').
+Task "Warning" skipped, due to false condition; ('@(ManifestNonResxWithNoCultureOnDisk)'!='' and '%(ManifestNonResxWithNoCultureOnDisk.EmittedForCompatibilityOnly)'=='') was evaluated as (''!='' and ''=='').
+Done building target "_GenerateCompileInputs" in project "dbatools.csproj".
+Target "PrepareForBuild" skipped. Previously built successfully.
+Target "GetReferenceAssemblyPaths" skipped. Previously built successfully.
+Target "_SetTargetFrameworkMonikerAttribute" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.CSharp.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "GenerateTargetFrameworkMonikerAttribute" depends on it):
+Done building target "_SetTargetFrameworkMonikerAttribute" in project "dbatools.csproj".
+Target "GenerateTargetFrameworkMonikerAttribute" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "BeforeCompile" depends on it):
+Skipping target "GenerateTargetFrameworkMonikerAttribute" because all output files are up-to-date with respect to the input files.
+Input files: C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets
+Output files: C:\Users\ctrlb.BASE\AppData\Local\Temp\.NETFramework,Version=v4.5.2.AssemblyAttributes.cs
+Done building target "GenerateTargetFrameworkMonikerAttribute" in project "dbatools.csproj".
+Target "GenerateAdditionalSources" skipped, due to false condition; ('@(AssemblyAttributes)' != '' and '$(GenerateAdditionalSources)' == 'true') was evaluated as ('' != '' and '' == 'true').
+Target "BeforeCompile" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "Compile" depends on it):
+Done building target "BeforeCompile" in project "dbatools.csproj".
+Target "_TimeStampBeforeCompile" skipped, due to false condition; ('$(RunPostBuildEvent)'=='OnOutputUpdated' or ('$(RegisterForComInterop)'=='true' and '$(OutputType)'=='library')) was evaluated as (''=='OnOutputUpdated' or (''=='true' and 'Library'=='library')).
+Target "_ComputeNonExistentFileProperty" skipped, due to false condition; (('$(BuildingInsideVisualStudio)' == 'true') and ('$(BuildingOutOfProcess)' != 'true') and (('$(BuildingProject)' == 'false') or ('$(UseHostCompilerIfAvailable)' == 'true'))) was evaluated as (('' == 'true') and ('' != 'true') and (('true' == 'false') or ('true' == 'true'))).
+Target "PreXsdCodeGen" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.ServiceModel.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "CoreCompile" depends on it):
+Using "CallTarget" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "CallTarget"
+Target "CleanXsdCodeGen" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.ServiceModel.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "PreXsdCodeGen" depends on it):
+Using "Delete" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "Delete"
+Done executing task "Delete".
+Done building target "CleanXsdCodeGen" in project "dbatools.csproj".
+Done executing task "CallTarget".
+Done building target "PreXsdCodeGen" in project "dbatools.csproj".
+Target "XsdCodeGen" skipped, due to false condition; ( '$(XsdCodeGenPreCondition)' == 'True' ) was evaluated as ( 'False' == 'True' ).
+Target "CoreCompile" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.CSharp.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "Compile" depends on it):
+Building target "CoreCompile" completely.
+Output file "..\..\..\dbatools.xml" does not exist.
+Using "Csc" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "Csc"
+  C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Csc.exe /noconfig /nowarn:1701,1702 /nostdlib+ /errorreport:prompt /warn:4 /doc:..\..\..\dbatools.xml /define:TRACE /highentropyva+ /reference:C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.Management.Infrastructure\v4.0_1.0.0.0__31bf3856ad364e35\Microsoft.Management.Infrastructure.dll /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\mscorlib.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\PresentationCore.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\PresentationFramework.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Core.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Data.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.dll" /reference:C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Management.Automation.dll /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Numerics.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Xaml.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\WindowsBase.dll" /debug:pdbonly /filealign:512 /optimize+ /out:obj\Release\dbatools.dll /subsystemversion:6.00 /target:library /utf8output Database\BackupHistory.cs Configuration\Config.cs Connection\ConnectionHost.cs Database\Dependency.cs dbaSystem\SystemHost.cs Exceptions\BloodyHellGiveMeSomethingToWorkWithException.cs Parameter\DbaCredentialParameter.cs TypeConversion\DbaCredentialParameterConverter.cs Utility\CredentialPrompt.cs Validation\LinkedServerResult.cs Utility\DateTimeExtension.cs Utility\DbaDate.cs Utility\DbaDateTime.cs Utility\DbaDateTimeBase.cs Utility\DbaTime.cs Utility\DbaTimeSpan.cs Utility\DbaTimeSpanPretty.cs Utility\RegexHelper.cs Utility\Size.cs TabExpansion\InstanceAccess.cs Parameter\DbaCmConnectionParameter.cs Parameter\DbaInstanceInputType.cs Parameter\DbaInstanceParameter.cs dbaSystem\DbaErrorRecord.cs dbaSystem\DbatoolsException.cs dbaSystem\DbatoolsExceptionRecord.cs dbaSystem\DebugHost.cs General\ExecutionMode.cs Connection\ManagementConnection.cs Connection\ManagementConnectionProtocolState.cs Connection\ManagementConnectionType.cs dbaSystem\LogEntry.cs dbaSystem\LogEntryType.cs dbaSystem\LogWriterHost.cs dbaSystem\MessageHost.cs dbaSystem\MessageLevel.cs Parameter\ParameterContractAttribute.cs Parameter\ParameterContractBehavior.cs Parameter\ParameterContractType.cs Properties\AssemblyInfo.cs Connection\SqlConnectionProtocol.cs TabExpansion\ScriptContainer.cs TabExpansion\TabExpansionHost.cs Utility\UtilityHost.cs Utility\Validation.cs "C:\Users\ctrlb.BASE\AppData\Local\Temp\.NETFramework,Version=v4.5.2.AssemblyAttributes.cs"
+  Microsoft (R) Visual C# Compiler version 4.7.2046.0
+  
+  for C# 5
+  Copyright (C) Microsoft Corporation. All rights reserved.
+  
+  
+  
+  This compiler is provided as part of the Microsoft (R) .NET Framework, but only supports language versions up to C# 5, which is no longer the latest version. For compilers that support newer versions of the C# programming language, see http://go.microsoft.com/fwlink/?LinkID=533240
+  
+Done executing task "Csc".
+Task "CallTarget" skipped, due to false condition; ('$(TargetsTriggeredByCompilation)' != '') was evaluated as ('' != '').
+Done building target "CoreCompile" in project "dbatools.csproj".
+Target "_TimeStampAfterCompile" skipped, due to false condition; ('$(RunPostBuildEvent)'=='OnOutputUpdated' or ('$(RegisterForComInterop)'=='true' and '$(OutputType)'=='library')) was evaluated as (''=='OnOutputUpdated' or (''=='true' and 'Library'=='library')).
+Target "AfterCompile" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "Compile" depends on it):
+Done building target "AfterCompile" in project "dbatools.csproj".
+Target "PrepareResourcesForSatelliteAssemblies" skipped, due to false condition; ('$(UICulture)' != '') was evaluated as ('' != '').
+Target "MergeLocalizationDirectives" skipped, due to false condition; ('@(GeneratedLocalizationFiles)' !='') was evaluated as ('' !='').
+Target "AfterCompileWinFX" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.WinFX.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "_AfterCompileWinFXInternal" depends on it):
+Done building target "AfterCompileWinFX" in project "dbatools.csproj".
+Target "_AfterCompileWinFXInternal" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.WinFX.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "Compile" depends on it):
+Done building target "_AfterCompileWinFXInternal" in project "dbatools.csproj".
+Target "Compile" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "CoreBuild" depends on it):
+Done building target "Compile" in project "dbatools.csproj".
+Target "DeferredValidation" skipped, due to false condition; ('$(SkipWorkflowValidation)' != 'true' and ('@(XamlPage)' != '' or '@(XamlAppDef)' != '')) was evaluated as ('' != 'true' and ('' != '' or '' != '')).
+Target "ExportWindowsMDFile" skipped, due to false condition; ('$(ExportWinMDFile)' == 'true') was evaluated as ('' == 'true').
+Target "UnmanagedUnregistration" skipped, due to false condition; ((('$(_AssemblyTimestampBeforeCompile)' != '$(_AssemblyTimestampAfterCompile)' or '$(RegisterForComInterop)' != 'true' or '$(OutputType)' != 'library') or
+                    ('$(_AssemblyTimestampBeforeCompile)' == '')) and
+                   Exists('@(_UnmanagedRegistrationCache)')) was evaluated as ((('' != '' or '' != 'true' or 'Library' != 'library') or
+                    ('' == '')) and
+                   Exists('obj\dbatools.csproj.UnmanagedRegistration.cache')).
+Target "GenerateSerializationAssemblies" skipped, due to false condition; ('$(_SGenGenerateSerializationAssembliesConfig)' == 'On' or ('@(WebReferenceUrl)'!='' and '$(_SGenGenerateSerializationAssembliesConfig)' == 'Auto')) was evaluated as ('Auto' == 'On' or (''!='' and 'Auto' == 'Auto')).
+Target "_GenerateSatelliteAssemblyInputs" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "CreateSatelliteAssemblies" depends on it):
+Task "Warning" skipped, due to false condition; ('@(ManifestResourceWithCulture)'!='' and '%(ManifestResourceWithCulture.EmittedForCompatibilityOnly)'=='') was evaluated as (''!='' and ''=='').
+Task "Warning" skipped, due to false condition; ('@(ManifestNonResxWithCultureOnDisk)'!='' and '%(ManifestNonResxWithCultureOnDisk.EmittedForCompatibilityOnly)'=='') was evaluated as (''!='' and ''=='').
+Done building target "_GenerateSatelliteAssemblyInputs" in project "dbatools.csproj".
+Target "ComputeIntermediateSatelliteAssemblies" skipped, due to false condition; (@(EmbeddedResource->'%(WithCulture)') != '') was evaluated as ( != '').
+Target "GenerateSatelliteAssemblies" skipped, due to false condition; ('@(_SatelliteAssemblyResourceInputs)' != '') was evaluated as ('' != '').
+Target "CreateSatelliteAssemblies" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "CoreBuild" depends on it):
+Done building target "CreateSatelliteAssemblies" in project "dbatools.csproj".
+Target "GenerateManifests" skipped, due to false condition; ('$(GenerateClickOnceManifests)'=='true' or '@(NativeReference)'!='' or '@(ResolvedIsolatedComModules)'!='' or '$(GenerateAppxManifest)' == 'true') was evaluated as (''=='true' or ''!='' or ''!='' or '' == 'true').
+Target "GetTargetPath" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "CoreBuild" depends on it):
+Done building target "GetTargetPath" in project "dbatools.csproj".
+Target "ComputeIntermediateSatelliteAssemblies" skipped, due to false condition; (@(EmbeddedResource->'%(WithCulture)') != '') was evaluated as ( != '').
+Target "_CopyFilesMarkedCopyLocal" skipped, due to false condition; ('@(ReferenceCopyLocalPaths)' != '') was evaluated as ('' != '').
+Target "AssignTargetPaths" skipped. Previously built successfully.
+Target "_SplitProjectReferencesByFileExistence" skipped. Previously built successfully.
+Target "GetCopyToOutputDirectoryXamlAppDefs" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Xaml.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "GetCopyToOutputDirectoryItems" depends on it):
+Task "AssignTargetPath"
+Done executing task "AssignTargetPath".
+Done building target "GetCopyToOutputDirectoryXamlAppDefs" in project "dbatools.csproj".
+Target "GetCopyToOutputDirectoryItems" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "_CopySourceItemsToOutputDirectory" depends on it):
+Task "MSBuild" skipped, due to false condition; ('@(_MSBuildProjectReferenceExistent)' != '' and '$(_GetChildProjectCopyToOutputDirectoryItems)' == 'true' and '%(_MSBuildProjectReferenceExistent.Private)' != 'false' and '$(UseCommonOutputDirectory)' != 'true') was evaluated as ('' != '' and 'true' == 'true' and '' != 'false' and 'false' != 'true').
+Task "AssignTargetPath"
+Done executing task "AssignTargetPath".
+Done building target "GetCopyToOutputDirectoryItems" in project "dbatools.csproj".
+Target "_CopyOutOfDateSourceItemsToOutputDirectory" skipped, due to false condition; ( '@(_SourceItemsToCopyToOutputDirectory)' != '' ) was evaluated as ( '' != '' ).
+Target "_CopyOutOfDateSourceItemsToOutputDirectoryAlways" skipped, due to false condition; ( '@(_SourceItemsToCopyToOutputDirectoryAlways)' != '' ) was evaluated as ( '' != '' ).
+Target "_CopySourceItemsToOutputDirectory" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "CopyFilesToOutputDirectory" depends on it):
+Done building target "_CopySourceItemsToOutputDirectory" in project "dbatools.csproj".
+Target "_CopyAppConfigFile" skipped, due to false condition; ( '@(AppConfigWithTargetPath)' != '' ) was evaluated as ( '' != '' ).
+Target "_CopyManifestFiles" skipped, due to false condition; ( '$(_DeploymentCopyApplicationManifest)'=='true' or '$(GenerateClickOnceManifests)'=='true' ) was evaluated as ( ''=='true' or ''=='true' ).
+Target "_CheckForCompileOutputs" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "CopyFilesToOutputDirectory" depends on it):
+Done building target "_CheckForCompileOutputs" in project "dbatools.csproj".
+Target "_SGenCheckForOutputs" skipped, due to false condition; ('$(_SGenGenerateSerializationAssembliesConfig)' == 'On' or ('@(WebReferenceUrl)'!='' and '$(_SGenGenerateSerializationAssembliesConfig)' == 'Auto')) was evaluated as ('Auto' == 'On' or (''!='' and 'Auto' == 'Auto')).
+Target "CopyFilesToOutputDirectory" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "PrepareForRun" depends on it):
+Using "Copy" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "Copy"
+  Copying file from "obj\Release\dbatools.dll" to "..\..\..\dbatools.dll".
+Done executing task "Copy".
+Task "Message"
+  dbatools -> C:\github\dbatools\bin\dbatools.dll
+Done executing task "Message".
+Task "Copy" skipped, due to false condition; ('@(AddModules)' != '') was evaluated as ('' != '').
+Task "Copy" skipped, due to false condition; ('$(_SGenDllCreated)'=='true') was evaluated as ('false'=='true').
+Task "Copy"
+  Copying file from "obj\Release\dbatools.pdb" to "..\..\..\dbatools.pdb".
+Done executing task "Copy".
+Task "Copy"
+  Did not copy from file "..\..\..\dbatools.xml" to file "..\..\..\dbatools.xml" because the "SkipUnchangedFiles" parameter was set to "true" in the project and the files' sizes and timestamps match.
+Done executing task "Copy".
+Task "Copy" skipped, due to false condition; ('@(IntermediateSatelliteAssembliesWithTargetPath)' != '') was evaluated as ('' != '').
+Task "Copy" skipped, due to false condition; ('@(ReferenceComWrappersToCopyLocal)' != '' or '@(ResolvedIsolatedComModules)' != '' or '@(_DeploymentLooseManifestFile)' != '' or '@(NativeReferenceFile)' != '' ) was evaluated as ('' != '' or '' != '' or '' != '' or '' != '' ).
+Task "Copy" skipped, due to false condition; ('$(SkipCopyWinMDArtifact)' != 'true' and '@(WinMDExpArtifacts)' != '') was evaluated as ('' != 'true' and '' != '').
+Task "Message" skipped, due to false condition; ('$(SkipCopyWinMDArtifact)' != 'true' and '$(_WindowsMetadataOutputPath)' != '') was evaluated as ('' != 'true' and '' != '').
+Done building target "CopyFilesToOutputDirectory" in project "dbatools.csproj".
+Target "PrepareForRun" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "CoreBuild" depends on it):
+Done building target "PrepareForRun" in project "dbatools.csproj".
+Target "UnmanagedRegistration" skipped, due to false condition; ('$(RegisterForComInterop)'=='true' and '$(OutputType)'=='library') was evaluated as (''=='true' and 'Library'=='library').
+Target "_CheckForCompileOutputs" skipped. Previously built successfully.
+Target "_SGenCheckForOutputs" skipped, due to false condition; ('$(_SGenGenerateSerializationAssembliesConfig)' == 'On' or ('@(WebReferenceUrl)'!='' and '$(_SGenGenerateSerializationAssembliesConfig)' == 'Auto')) was evaluated as ('Auto' == 'On' or (''!='' and 'Auto' == 'Auto')).
+Target "_CleanGetCurrentAndPriorFileWrites" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "IncrementalClean" depends on it):
+Using "ReadLinesFromFile" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "ReadLinesFromFile"
+Done executing task "ReadLinesFromFile".
+Using "ConvertToAbsolutePath" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "ConvertToAbsolutePath"
+Done executing task "ConvertToAbsolutePath".
+Using "FindUnderPath" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "FindUnderPath"
+  Comparison path is "C:\github\dbatools\bin\projects\dbatools\dbatools".
+Done executing task "FindUnderPath".
+Task "FindUnderPath"
+  Comparison path is "..\..\..\".
+Done executing task "FindUnderPath".
+Task "FindUnderPath"
+  Comparison path is "obj\Release\".
+Done executing task "FindUnderPath".
+Using "RemoveDuplicates" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "RemoveDuplicates"
+Done executing task "RemoveDuplicates".
+Done building target "_CleanGetCurrentAndPriorFileWrites" in project "dbatools.csproj".
+Target "IncrementalClean" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "CoreBuild" depends on it):
+Task "FindUnderPath"
+  Comparison path is "..\..\..\".
+Done executing task "FindUnderPath".
+Task "FindUnderPath"
+  Comparison path is "obj\Release\".
+Done executing task "FindUnderPath".
+Task "Delete"
+Done executing task "Delete".
+Task "RemoveDuplicates"
+Done executing task "RemoveDuplicates".
+Using "WriteLinesToFile" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "WriteLinesToFile"
+Done executing task "WriteLinesToFile".
+Done building target "IncrementalClean" in project "dbatools.csproj".
+Target "PostBuildEvent" skipped, due to false condition; ('$(PostBuildEvent)' != '' and ('$(RunPostBuildEvent)' != 'OnOutputUpdated' or '$(_AssemblyTimestampBeforeCompile)' != '$(_AssemblyTimestampAfterCompile)')) was evaluated as ('' != '' and ('' != 'OnOutputUpdated' or '' != '')).
+Target "CoreBuild" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "Build" depends on it):
+Done building target "CoreBuild" in project "dbatools.csproj".
+Target "AfterBuild" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (target "Build" depends on it):
+Done building target "AfterBuild" in project "dbatools.csproj".
+Target "Build" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (entry point):
+Done building target "Build" in project "dbatools.csproj".
+Done Building Project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (default targets).
+Overriding target "GetFrameworkPaths" in project "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" with target "GetFrameworkPaths" from project "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.NETFramework.targets".
+Overriding target "SatelliteDllsProjectOutputGroup" in project "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" with target "SatelliteDllsProjectOutputGroup" from project "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.WinFX.targets".
+Project "C:\github\dbatools\bin\projects\dbatools\dbatools.sln" (1) is building "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (3) on node 1 (default targets).
+Building with tools version "14.0".
+Target "_CheckForInvalidConfigurationAndPlatform" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (entry point):
+Task "Error" skipped, due to false condition; ( '$(_InvalidConfigurationError)' == 'true' ) was evaluated as ( '' == 'true' ).
+Task "Warning" skipped, due to false condition; ( '$(_InvalidConfigurationWarning)' == 'true' ) was evaluated as ( '' == 'true' ).
+Using "Message" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "Message"
+  Configuration=Debug
+Done executing task "Message".
+Task "Message"
+  Platform=AnyCPU
+Done executing task "Message".
+Task "Error" skipped, due to false condition; ('$(OutDir)' != '' and !HasTrailingSlash('$(OutDir)')) was evaluated as ('bin\Debug\' != '' and !HasTrailingSlash('bin\Debug\')).
+Task "Error" skipped, due to false condition; ('$(BaseIntermediateOutputPath)' != '' and !HasTrailingSlash('$(BaseIntermediateOutputPath)')) was evaluated as ('obj\' != '' and !HasTrailingSlash('obj\')).
+Task "Error" skipped, due to false condition; ('$(IntermediateOutputPath)' != '' and !HasTrailingSlash('$(IntermediateOutputPath)')) was evaluated as ('obj\Debug\' != '' and !HasTrailingSlash('obj\Debug\')).
+Done building target "_CheckForInvalidConfigurationAndPlatform" in project "dbatools.Tests.csproj".
+Target "EntityDeploy" skipped, due to false condition; ('@(EntityDeploy)' != '') was evaluated as ('' != '').
+Target "BeforeBuild" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "Build" depends on it):
+Done building target "BeforeBuild" in project "dbatools.Tests.csproj".
+Target "BuildOnlySettings" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "CoreBuild" depends on it):
+Done building target "BuildOnlySettings" in project "dbatools.Tests.csproj".
+Target "GetFrameworkPaths" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.NETFramework.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "PrepareForBuild" depends on it):
+Done building target "GetFrameworkPaths" in project "dbatools.Tests.csproj".
+Target "GetWinFXPath" skipped, due to false condition; (('@(Page)' != '' or '@(ApplicationDefinition)' != '' or '@(Resource)' != '') and ('$(GetWinFXNativePath)' != '' or '$(GetWinFXWoWPath)' != '' )) was evaluated as (('' != '' or '' != '' or '' != '') and ('' != '' or '' != '' )).
+Target "GetReferenceAssemblyPaths" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "PrepareForBuild" depends on it):
+Using "GetReferenceAssemblyPaths" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "GetReferenceAssemblyPaths"
+Done executing task "GetReferenceAssemblyPaths".
+Done building target "GetReferenceAssemblyPaths" in project "dbatools.Tests.csproj".
+Target "PrepareForBuild" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "CoreBuild" depends on it):
+Using "FindAppConfigFile" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "FindAppConfigFile"
+Done executing task "FindAppConfigFile".
+Using "MakeDir" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "MakeDir"
+  Creating directory "bin\Debug\".
+  Creating directory "obj\Debug\".
+Done executing task "MakeDir".
+Done building target "PrepareForBuild" in project "dbatools.Tests.csproj".
+Target "PreBuildEvent" skipped, due to false condition; ('$(PreBuildEvent)'!='') was evaluated as (''!='').
+Target "BeforeResolveReferences" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "ResolveReferences" depends on it):
+Done building target "BeforeResolveReferences" in project "dbatools.Tests.csproj".
+Target "AssignProjectConfiguration" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "ResolveReferences" depends on it):
+Using "AssignProjectConfiguration" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "AssignProjectConfiguration"
+  Project reference "..\dbatools\dbatools.csproj" has been assigned the "Release|AnyCPU" configuration.
+Done executing task "AssignProjectConfiguration".
+Done building target "AssignProjectConfiguration" in project "dbatools.Tests.csproj".
+Target "AssignProjectConfiguration" skipped. Previously built successfully.
+Target "_SplitProjectReferencesByFileExistence" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "ResolveProjectReferences" depends on it):
+Task "ResolveNonMSBuildProjectOutput" skipped, due to false condition; ('$(BuildingInsideVisualStudio)'=='true' and '@(ProjectReferenceWithConfiguration)'!='') was evaluated as (''=='true' and '..\dbatools\dbatools.csproj'!='').
+Done building target "_SplitProjectReferencesByFileExistence" in project "dbatools.Tests.csproj".
+Target "ResolveProjectReferences" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "ResolveReferences" depends on it):
+Task "MSBuild" skipped, due to false condition; ('%(_MSBuildProjectReferenceExistent.BuildReference)' == 'true' and '@(ProjectReferenceWithConfiguration)' != '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildProjectReferences)' != 'true') and '$(VisualStudioVersion)' != '10.0' and '@(_MSBuildProjectReferenceExistent)' != '') was evaluated as ('true' == 'true' and '..\dbatools\dbatools.csproj' != '' and ('' == 'true' or 'true' != 'true') and '11.0' != '10.0' and '..\dbatools\dbatools.csproj' != '').
+Task "MSBuild" skipped, due to false condition; ('%(_MSBuildProjectReferenceExistent.BuildReference)' == 'true' and '@(ProjectReferenceWithConfiguration)' != '' and ('$(BuildingInsideVisualStudio)' == 'true' or '$(BuildProjectReferences)' != 'true') and '$(VisualStudioVersion)' == '10.0' and '@(_MSBuildProjectReferenceExistent)' != '') was evaluated as ('true' == 'true' and '..\dbatools\dbatools.csproj' != '' and ('' == 'true' or 'true' != 'true') and '11.0' == '10.0' and '..\dbatools\dbatools.csproj' != '').
+Using "MSBuild" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "MSBuild"
+  Global Properties:
+    Configuration=Release
+    Platform=AnyCPU
+Project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (3) is building "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (2:2) on node 1 (default targets).
+Building with tools version "15.0".
+Target "_CheckForInvalidConfigurationAndPlatform" skipped. Previously built successfully.
+Target "Build" skipped. Previously built successfully.
+Done Building Project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (default targets).
+Done executing task "MSBuild".
+Task "MSBuild"
+  Global Properties:
+    Configuration=Release
+    Platform=AnyCPU
+Project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (3) is building "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (2:3) on node 1 (GetNativeManifest target(s)).
+Building with tools version "15.0".
+Project file contains ToolsVersion="15.0". This toolset may be unknown or missing, in which case you may be able to resolve this by installing the appropriate version of MSBuild, or the build may have been forced to a particular ToolsVersion for policy reasons. Treating the project as if it had ToolsVersion="4.0". For more information, please see http://go.microsoft.com/fwlink/?LinkId=291333.
+Target "_CheckForInvalidConfigurationAndPlatform" skipped. Previously built successfully.
+Target "GetNativeManifest" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (entry point):
+Done building target "GetNativeManifest" in project "dbatools.csproj".
+Done Building Project "C:\github\dbatools\bin\projects\dbatools\dbatools\dbatools.csproj" (GetNativeManifest target(s)).
+Done executing task "MSBuild".
+Task "Warning" skipped, due to false condition; ('@(ProjectReferenceWithConfiguration)' != '' and '@(_MSBuildProjectReferenceNonexistent)' != '') was evaluated as ('..\dbatools\dbatools.csproj' != '' and '' != '').
+Done building target "ResolveProjectReferences" in project "dbatools.Tests.csproj".
+Target "ResolveNativeReferences" skipped, due to false condition; ('@(NativeReference)'!='') was evaluated as (''!='').
+Target "GetFrameworkPaths" skipped. Previously built successfully.
+Target "GetReferenceAssemblyPaths" skipped. Previously built successfully.
+Target "PrepareForBuild" skipped. Previously built successfully.
+Target "GetInstalledSDKLocations" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "ResolveSDKReferences" depends on it):
+Task "GetInstalledSDKLocations" skipped, due to false condition; ('@(SDKReference)' != '') was evaluated as ('' != '').
+Done building target "GetInstalledSDKLocations" in project "dbatools.Tests.csproj".
+Target "ResolveSDKReferences" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "ResolveAssemblyReferences" depends on it):
+Task "ResolveSDKReference" skipped, due to false condition; ('@(SDKReference)'!='') was evaluated as (''!='').
+Done building target "ResolveSDKReferences" in project "dbatools.Tests.csproj".
+Target "ResolveSDKReferences" skipped. Previously built successfully.
+Target "ExpandSDKReferences" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "ResolveAssemblyReferences" depends on it):
+Task "GetSDKReferenceFiles" skipped, due to false condition; ('@(ResolvedSDKReference)'!='') was evaluated as (''!='').
+Done building target "ExpandSDKReferences" in project "dbatools.Tests.csproj".
+Target "ResolveAssemblyReferences" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "ResolveReferences" depends on it):
+Using "ResolveAssemblyReference" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "ResolveAssemblyReference"
+  TargetFrameworkMoniker:
+      .NETFramework,Version=v4.5.2
+  TargetFrameworkMonikerDisplayName:
+      .NET Framework 4.5.2
+  TargetedRuntimeVersion:
+      v4.0.30319
+  Assemblies:
+      System
+      Microsoft.VisualStudio.QualityTools.UnitTestFramework
+          Private = 'False'
+      System.Core
+  AssemblyFiles:
+      C:\github\dbatools\bin\dbatools.dll
+      C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\mscorlib.dll
+  CandidateAssemblyFiles:
+  TargetFrameworkDirectories:
+      C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\,C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\
+  InstalledAssemblyTables:
+  IgnoreInstalledAssemblyTable:
+      False
+  SearchPaths:
+      {CandidateAssemblyFiles}
+      C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages
+      {HintPathFromItem}
+      {TargetFrameworkDirectory}
+      {Registry:Software\Microsoft\.NETFramework,v4.5.2,AssemblyFoldersEx}
+      {AssemblyFolders}
+      {GAC}
+      {RawFileName}
+      bin\Debug\
+  AllowedAssemblyExtensions:
+      .winmd
+      .dll
+      .exe
+  AllowedRelatedFileExtensions:
+      .pdb
+      .xml
+      .pri
+  AppConfigFile:
+      
+  AutoUnify:
+      True
+  CopyLocalDependenciesWhenParentReferenceInGac:
+      True
+  FindDependencies:
+      True
+  TargetProcessorArchitecture:
+      msil
+  StateFile:
+      obj\Debug\dbatools.Tests.csprojResolveAssemblyReference.cache
+  InstalledAssemblySubsetTables:
+  IgnoreInstalledAssemblySubsetTable:
+      False
+  TargetFrameworkSubsets:
+  FullTargetFrameworkSubsetNames:
+      Full
+  ProfileName:
+      
+  FullFrameworkFolders:
+      C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\
+  LatestTargetFrameworkDirectories:
+  ProfileTablesLocation:
+  Primary reference "dbatools, Version=0.6.2.24, Culture=neutral, PublicKeyToken=null".
+      Resolved file path is "C:\github\dbatools\bin\dbatools.dll".
+      Reference found at search path location "C:\github\dbatools\bin\dbatools.dll".
+      Found related file "C:\github\dbatools\bin\dbatools.pdb".
+      Found related file "C:\github\dbatools\bin\dbatools.xml".
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Primary reference "mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\mscorlib.dll".
+      Reference found at search path location "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\mscorlib.dll".
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Primary reference "System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.winmd", but it didn't exist.
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Primary reference "Microsoft.VisualStudio.QualityTools.UnitTestFramework".
+C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets(1605,5): warning MSB3245: Could not resolve this reference. Could not locate the assembly "Microsoft.VisualStudio.QualityTools.UnitTestFramework". Check to make sure the assembly exists on disk. If this reference is required by your code, you may get compilation errors. [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\Microsoft.VisualStudio.QualityTools.UnitTestFramework.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\Microsoft.VisualStudio.QualityTools.UnitTestFramework.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.VisualStudio.QualityTools.UnitTestFramework.winmd", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.VisualStudio.QualityTools.UnitTestFramework.exe", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\Microsoft.VisualStudio.QualityTools.UnitTestFramework.winmd", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\Microsoft.VisualStudio.QualityTools.UnitTestFramework.exe", but it didn't exist.
+          For SearchPath "{Registry:Software\Microsoft\.NETFramework,v4.5.2,AssemblyFoldersEx}".
+          Considered AssemblyFoldersEx locations.
+          For SearchPath "{AssemblyFolders}".
+          Considered "C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\Microsoft.VisualStudio.QualityTools.UnitTestFramework.winmd", but it didn't exist.
+          Considered "C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll", but it didn't exist.
+          Considered "C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\Microsoft.VisualStudio.QualityTools.UnitTestFramework.exe", but it didn't exist.
+          Considered "C:\Program Files\Microsoft SQL Server\130\SDK\Assemblies\Microsoft.VisualStudio.QualityTools.UnitTestFramework.winmd", but it didn't exist.
+          Considered "C:\Program Files\Microsoft SQL Server\130\SDK\Assemblies\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll", but it didn't exist.
+          Considered "C:\Program Files\Microsoft SQL Server\130\SDK\Assemblies\Microsoft.VisualStudio.QualityTools.UnitTestFramework.exe", but it didn't exist.
+          For SearchPath "{GAC}".
+          Considered "Microsoft.VisualStudio.QualityTools.UnitTestFramework", which was not found in the GAC.
+          For SearchPath "{RawFileName}".
+          Considered treating "Microsoft.VisualStudio.QualityTools.UnitTestFramework" as a file name, but it didn't exist.
+          For SearchPath "bin\Debug\".
+          Considered "bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.winmd", but it didn't exist.
+          Considered "bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll", but it didn't exist.
+          Considered "bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.exe", but it didn't exist.
+  Primary reference "System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Core.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Core.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Core.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Core.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Core.winmd", but it didn't exist.
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35".
+      Resolved file path is "C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Management.Automation.dll".
+      Reference found at search path location "{GAC}".
+          For SearchPath "C:\github\dbatools\bin".
+          Considered "C:\github\dbatools\bin\System.Management.Automation.winmd", but it didn't exist.
+          Considered "C:\github\dbatools\bin\System.Management.Automation.dll", but it didn't exist.
+          Considered "C:\github\dbatools\bin\System.Management.Automation.exe", but it didn't exist.
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Management.Automation.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Management.Automation.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Management.Automation.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Management.Automation.winmd", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Management.Automation.dll", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Management.Automation.exe", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\System.Management.Automation.winmd", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\System.Management.Automation.dll", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\System.Management.Automation.exe", but it didn't exist.
+          For SearchPath "{Registry:Software\Microsoft\.NETFramework,v4.5.2,AssemblyFoldersEx}".
+          Considered AssemblyFoldersEx locations.
+          For SearchPath "{AssemblyFolders}".
+          Considered "C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\System.Management.Automation.winmd", but it didn't exist.
+          Considered "C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\System.Management.Automation.dll", but it didn't exist.
+          Considered "C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\System.Management.Automation.exe", but it didn't exist.
+          Considered "C:\Program Files\Microsoft SQL Server\130\SDK\Assemblies\System.Management.Automation.winmd", but it didn't exist.
+          Considered "C:\Program Files\Microsoft SQL Server\130\SDK\Assemblies\System.Management.Automation.dll", but it didn't exist.
+          Considered "C:\Program Files\Microsoft SQL Server\130\SDK\Assemblies\System.Management.Automation.exe", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's registered in the GAC.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Numerics, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Numerics.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\github\dbatools\bin".
+          Considered "C:\github\dbatools\bin\System.Numerics.winmd", but it didn't exist.
+          Considered "C:\github\dbatools\bin\System.Numerics.dll", but it didn't exist.
+          Considered "C:\github\dbatools\bin\System.Numerics.exe", but it didn't exist.
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Numerics.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Numerics.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Numerics.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Numerics.winmd", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "PresentationFramework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\PresentationFramework.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\github\dbatools\bin".
+          Considered "C:\github\dbatools\bin\PresentationFramework.winmd", but it didn't exist.
+          Considered "C:\github\dbatools\bin\PresentationFramework.dll", but it didn't exist.
+          Considered "C:\github\dbatools\bin\PresentationFramework.exe", but it didn't exist.
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\PresentationFramework.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\PresentationFramework.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\PresentationFramework.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\PresentationFramework.winmd", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "PresentationCore, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\PresentationCore.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\github\dbatools\bin".
+          Considered "C:\github\dbatools\bin\PresentationCore.winmd", but it didn't exist.
+          Considered "C:\github\dbatools\bin\PresentationCore.dll", but it didn't exist.
+          Considered "C:\github\dbatools\bin\PresentationCore.exe", but it didn't exist.
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\PresentationCore.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\PresentationCore.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\PresentationCore.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\PresentationCore.winmd", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "Microsoft.Management.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35".
+      Resolved file path is "C:\WINDOWS\Microsoft.Net\assembly\GAC_MSIL\Microsoft.Management.Infrastructure\v4.0_1.0.0.0__31bf3856ad364e35\Microsoft.Management.Infrastructure.dll".
+      Reference found at search path location "{GAC}".
+          For SearchPath "C:\github\dbatools\bin".
+          Considered "C:\github\dbatools\bin\Microsoft.Management.Infrastructure.winmd", but it didn't exist.
+          Considered "C:\github\dbatools\bin\Microsoft.Management.Infrastructure.dll", but it didn't exist.
+          Considered "C:\github\dbatools\bin\Microsoft.Management.Infrastructure.exe", but it didn't exist.
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\Microsoft.Management.Infrastructure.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\Microsoft.Management.Infrastructure.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\Microsoft.Management.Infrastructure.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.Management.Infrastructure.winmd", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.Management.Infrastructure.dll", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.Management.Infrastructure.exe", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\Microsoft.Management.Infrastructure.winmd", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\Microsoft.Management.Infrastructure.dll", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\Microsoft.Management.Infrastructure.exe", but it didn't exist.
+          For SearchPath "{Registry:Software\Microsoft\.NETFramework,v4.5.2,AssemblyFoldersEx}".
+          Considered AssemblyFoldersEx locations.
+          For SearchPath "{AssemblyFolders}".
+          Considered "C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\Microsoft.Management.Infrastructure.winmd", but it didn't exist.
+          Considered "C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\Microsoft.Management.Infrastructure.dll", but it didn't exist.
+          Considered "C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\Microsoft.Management.Infrastructure.exe", but it didn't exist.
+          Considered "C:\Program Files\Microsoft SQL Server\130\SDK\Assemblies\Microsoft.Management.Infrastructure.winmd", but it didn't exist.
+          Considered "C:\Program Files\Microsoft SQL Server\130\SDK\Assemblies\Microsoft.Management.Infrastructure.dll", but it didn't exist.
+          Considered "C:\Program Files\Microsoft SQL Server\130\SDK\Assemblies\Microsoft.Management.Infrastructure.exe", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's registered in the GAC.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Data.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\github\dbatools\bin".
+          Considered "C:\github\dbatools\bin\System.Data.winmd", but it didn't exist.
+          Considered "C:\github\dbatools\bin\System.Data.dll", but it didn't exist.
+          Considered "C:\github\dbatools\bin\System.Data.exe", but it didn't exist.
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Data.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Data.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Data.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Data.winmd", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Xml, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Xml.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Xml.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Xml.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Xml.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Xml.winmd", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.DirectoryServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.DirectoryServices.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.DirectoryServices.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.DirectoryServices.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.DirectoryServices.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.DirectoryServices.winmd", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Transactions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Transactions.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Transactions.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Transactions.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Transactions.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Transactions.winmd", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Runtime.Serialization, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Runtime.Serialization.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Runtime.Serialization.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Runtime.Serialization.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Runtime.Serialization.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Runtime.Serialization.winmd", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Management, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Management.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Management.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Management.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Management.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Management.winmd", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Configuration.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Configuration.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Configuration.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Configuration.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Configuration.winmd", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Security, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Security.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Security.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Security.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Security.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Security.winmd", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "System.Configuration.Install, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Configuration.Install.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Configuration.Install.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Configuration.Install.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\System.Configuration.Install.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Configuration.Install.winmd", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "Microsoft.CSharp, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.CSharp.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\Microsoft.CSharp.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\Microsoft.CSharp.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\Microsoft.CSharp.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.CSharp.winmd", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "Microsoft.Management.Infrastructure.Native, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35".
+      Resolved file path is "C:\WINDOWS\Microsoft.Net\assembly\GAC_64\Microsoft.Management.Infrastructure.Native\v4.0_1.0.0.0__31bf3856ad364e35\Microsoft.Management.Infrastructure.Native.dll".
+      Reference found at search path location "{GAC}".
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\Microsoft.Management.Infrastructure.Native.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\Microsoft.Management.Infrastructure.Native.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\Microsoft.Management.Infrastructure.Native.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.Management.Infrastructure.Native.winmd", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.Management.Infrastructure.Native.dll", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.Management.Infrastructure.Native.exe", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\Microsoft.Management.Infrastructure.Native.winmd", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\Microsoft.Management.Infrastructure.Native.dll", but it didn't exist.
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Facades\Microsoft.Management.Infrastructure.Native.exe", but it didn't exist.
+          For SearchPath "{Registry:Software\Microsoft\.NETFramework,v4.5.2,AssemblyFoldersEx}".
+          Considered AssemblyFoldersEx locations.
+          For SearchPath "{AssemblyFolders}".
+          Considered "C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\Microsoft.Management.Infrastructure.Native.winmd", but it didn't exist.
+          Considered "C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\Microsoft.Management.Infrastructure.Native.dll", but it didn't exist.
+          Considered "C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\Microsoft.Management.Infrastructure.Native.exe", but it didn't exist.
+          Considered "C:\Program Files\Microsoft SQL Server\130\SDK\Assemblies\Microsoft.Management.Infrastructure.Native.winmd", but it didn't exist.
+          Considered "C:\Program Files\Microsoft SQL Server\130\SDK\Assemblies\Microsoft.Management.Infrastructure.Native.dll", but it didn't exist.
+          Considered "C:\Program Files\Microsoft SQL Server\130\SDK\Assemblies\Microsoft.Management.Infrastructure.Native.exe", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's registered in the GAC.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  Dependency "Microsoft.VisualC, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+      Resolved file path is "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.VisualC.dll".
+      Reference found at search path location "{TargetFrameworkDirectory}".
+          For SearchPath "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages".
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\Microsoft.VisualC.winmd", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\Microsoft.VisualC.dll", but it didn't exist.
+          Considered "C:\Program Files\Common Files\microsoft shared\VSTT\11.0\UITestExtensionPackages\Microsoft.VisualC.exe", but it didn't exist.
+          For SearchPath "{TargetFrameworkDirectory}".
+          Considered "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\Microsoft.VisualC.winmd", but it didn't exist.
+      Required by "C:\github\dbatools\bin\dbatools.dll".
+      This reference is not "CopyLocal" because it's a prerequisite file.
+      The ImageRuntimeVersion for this reference is "v4.0.30319".
+  AssemblyFoldersEx location: "{Registry:Software\Microsoft\.NETFramework,v4.5.2,AssemblyFoldersEx}"
+          C:\Program Files (x86)\Reference Assemblies\Microsoft\MSBuild\v14.0
+          C:\Program Files (x86)\Reference Assemblies\Microsoft\MSBuild\v12.0
+          C:\Program Files (x86)\Microsoft Web Tools\ReferenceAssemblies\14.0\
+          C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\ReferenceAssemblies\v4.5\
+          C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\IDE\ReferenceAssemblies\v4.5\
+          C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\PublicAssemblies\
+          C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\IDE\PublicAssemblies\
+          C:\Program Files (x86)\Microsoft.NET\Primary Interop Assemblies\
+          C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\ReferenceAssemblies\v4.5\
+          C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\PublicAssemblies\
+          C:\Program Files (x86)\Microsoft.NET\Primary Interop Assemblies\
+          C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\ReferenceAssemblies\v4.0\
+          C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\ReferenceAssemblies\v4.0\
+          C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\IDE\ReferenceAssemblies\v4.0\
+          c:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE\ReferenceAssemblies\v4.0\
+          C:\Program Files (x86)\Microsoft SQL Server\140\DTS\Tasks
+          C:\Program Files (x86)\Microsoft SQL Server\130\DTS\Tasks
+          C:\Program Files (x86)\Microsoft SQL Server\120\DTS\Tasks
+          C:\Program Files (x86)\Microsoft SQL Server\110\DTS\Tasks
+          C:\Program Files (x86)\Microsoft SQL Server\140\DTS\PipelineComponents\
+          C:\Program Files (x86)\Microsoft SQL Server\130\DTS\PipelineComponents\
+          C:\Program Files (x86)\Microsoft SQL Server\120\DTS\PipelineComponents\
+          C:\Program Files (x86)\Microsoft SQL Server\110\DTS\PipelineComponents\
+          C:\Program Files (x86)\Microsoft SQL Server\140\DTS\ForEachEnumerators
+          C:\Program Files (x86)\Microsoft SQL Server\130\DTS\ForEachEnumerators
+          C:\Program Files (x86)\Microsoft SQL Server\120\DTS\ForEachEnumerators
+          C:\Program Files (x86)\Microsoft SQL Server\110\DTS\ForEachEnumerators
+          C:\Program Files (x86)\Microsoft SQL Server\140\DTS\Connections\
+          C:\Program Files (x86)\Microsoft SQL Server\130\DTS\Connections\
+          C:\Program Files (x86)\Microsoft SQL Server\120\DTS\Connections\
+          C:\Program Files (x86)\Microsoft SQL Server\110\DTS\Connections\
+          C:\Program Files\Common Files\Microsoft Shared\Web Server Extensions\16\TEMPLATE\WorkflowActivities\
+          C:\Program Files\Common Files\Microsoft Shared\Web Server Extensions\16\ISAPI\
+          c:\Program Files (x86)\Microsoft Visual Studio 10.0\ReportViewer\
+          c:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE\PublicAssemblies\
+          c:\Program Files (x86)\Microsoft.NET\Primary Interop Assemblies\
+          c:\oracle\odp.net\managed\x64\..\common\EF6
+          c:\oracle\odp.net\managed\x64\..\common
+          C:\Program Files (x86)\GtkSharp\2.12\lib\Mono.Posix
+          C:\Program Files (x86)\GtkSharp\2.12\lib\Mono.Cairo
+          C:\Program Files (x86)\GtkSharp\2.12\lib\gtk-sharp-2.0
+          C:\Program Files (x86)\Microsoft SDKs\Expression\Blend\.NETFramework\v4.0\Prototyping\Libraries\
+          C:\Program Files (x86)\Microsoft SDKs\Expression\Blend\.NETFramework\v4.0\Libraries\
+          C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\ReferenceAssemblies\v2.0\
+          C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\ReferenceAssemblies\v2.0\
+          C:\Program Files (x86)\Microsoft Visual Studio 11.0\Common7\IDE\ReferenceAssemblies\v2.0\
+          c:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE\ReferenceAssemblies\v2.0\
+          c:\Program Files (x86)\Microsoft Visual Studio 10.0\ReportViewer\
+          C:\Program Files (x86)\Common Files\Microsoft Shared\MSEnv\PublicAssemblies\
+          C:\Program Files (x86)\Microsoft Chart Controls\Assemblies
+          C:\Program Files (x86)\Microsoft ASP.NET\ASP.NET MVC 2\Assemblies\
+          C:\Program Files\Microsoft SQL Server\130\DTS\Tasks
+          C:\Program Files\Microsoft SQL Server\130\DTS\PipelineComponents\
+          C:\Program Files\Microsoft SQL Server\130\DTS\ForEachEnumerators
+          C:\Program Files\Microsoft SQL Server\130\DTS\Connections\
+Done executing task "ResolveAssemblyReference".
+Done building target "ResolveAssemblyReferences" in project "dbatools.Tests.csproj".
+Target "ResolveComReferences" skipped, due to false condition; ('@(COMReference)'!='' or '@(COMFileReference)'!='') was evaluated as (''!='' or ''!='').
+Target "AfterResolveReferences" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "ResolveReferences" depends on it):
+Done building target "AfterResolveReferences" in project "dbatools.Tests.csproj".
+Target "GetReferenceAssemblyPaths" skipped. Previously built successfully.
+Target "ImplicitlyExpandDesignTimeFacades" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.NETFramework.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "ResolveReferences" depends on it):
+Task "Message" skipped, due to false condition; ('%(ReferencePath.ResolvedFrom)' == 'ImplicitlyExpandDesignTimeFacades') was evaluated as ('C:\github\dbatools\bin\dbatools.dll' == 'ImplicitlyExpandDesignTimeFacades').
+Task "Message" skipped, due to false condition; ('%(ReferencePath.ResolvedFrom)' == 'ImplicitlyExpandDesignTimeFacades') was evaluated as ('C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\mscorlib.dll' == 'ImplicitlyExpandDesignTimeFacades').
+Task "Message" skipped, due to false condition; ('%(ReferencePath.ResolvedFrom)' == 'ImplicitlyExpandDesignTimeFacades') was evaluated as ('{TargetFrameworkDirectory}' == 'ImplicitlyExpandDesignTimeFacades').
+Done building target "ImplicitlyExpandDesignTimeFacades" in project "dbatools.Tests.csproj".
+Target "ResolveReferences" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "CoreBuild" depends on it):
+Done building target "ResolveReferences" in project "dbatools.Tests.csproj".
+Target "ValidationExtension" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.WorkflowBuildExtensions.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "PrepareResources" depends on it):
+Task "WorkflowBuildMessageTask" skipped, due to false condition; ('$(SkipWorkflowValidation)'!='' and '$(SkipWorkflowValidation)'!='true' and '$(SkipWorkflowValidation)'!='false') was evaluated as (''!='' and ''!='true' and ''!='false').
+Done building target "ValidationExtension" in project "dbatools.Tests.csproj".
+Target "ExpressionBuildExtension" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.WorkflowBuildExtensions.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "PrepareResources" depends on it):
+Task "WorkflowBuildMessageTask" skipped, due to false condition; ('$(DisableWorkflowCompiledExpressions)'!='' and '$(DisableWorkflowCompiledExpressions)'!='true' and '$(DisableWorkflowCompiledExpressions)'!='false') was evaluated as (''!='' and ''!='true' and ''!='false').
+Done building target "ExpressionBuildExtension" in project "dbatools.Tests.csproj".
+Target "XamlMarkupCompilePass1" skipped, due to false condition; ('@(XamlPage)' != '' or '@(XamlAppDef)' != '') was evaluated as ('' != '' or '' != '').
+Target "XamlMarkupCompileReadGeneratedFileList" skipped, due to false condition; ('@(XamlPage)' != '' or '@(XamlAppDef)' != '') was evaluated as ('' != '' or '' != '').
+Target "XamlMarkupCompileAddFilesGenerated" skipped, due to false condition; ('@(XamlPage)' != '' or '@(XamlAppDef)' != '') was evaluated as ('' != '' or '' != '').
+Target "XamlMarkupCompilePass2" skipped, due to false condition; ('$(XamlRequiresCompilationPass2)' == 'true' ) was evaluated as ('false' == 'true' ).
+Target "XamlMarkupCompileReadPass2Flag" skipped, due to false condition; ('@(XamlPage)' != '' or '@(XamlAppDef)' != '') was evaluated as ('' != '' or '' != '').
+Target "XamlMarkupCompileAddExtensionFilesGenerated" skipped, due to false condition; ('@(XamlPage)' != '' or '@(XamlAppDef)' != '') was evaluated as ('' != '' or '' != '').
+Target "AddDeferredValidationErrorsFileToFileWrites" skipped, due to false condition; (Exists('$(DeferredValidationErrorsFileName)')) was evaluated as (Exists('obj\Debug\\AC2C1ABA-CCF6-44D4-8127-588FD4D0A860-DeferredValidationErrors.xml')).
+Target "ReportValidationBuildExtensionErrors" skipped, due to false condition; ('$(SkipWorkflowValidation)' != 'true' and ('@(XamlPage)' != '' or '@(XamlAppDef)' != '')) was evaluated as ('' != 'true' and ('' != '' or '' != '')).
+Target "MarkupCompilePass1" skipped, due to false condition; ('@(Page)' != '' or '@(ApplicationDefinition)' != '' ) was evaluated as ('' != '' or '' != '' ).
+Target "AfterMarkupCompilePass1" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.WinFX.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "PrepareResources" depends on it):
+Done building target "AfterMarkupCompilePass1" in project "dbatools.Tests.csproj".
+Target "MarkupCompilePass2ForMainAssembly" skipped, due to false condition; ('$(_RequireMCPass2ForMainAssembly)' == 'true' ) was evaluated as ('false' == 'true' ).
+Target "FileClassification" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.WinFX.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "PrepareResources" depends on it):
+Task "FileClassifier" skipped, due to false condition; ('@(GeneratedBaml)' != '' or '@(Resource)' != '' or '@(Font)' != '') was evaluated as ('' != '' or '' != '' or '' != '').
+Task "Message" skipped, due to false condition; ('$(MSBuildTargetsVerbose)'=='true') was evaluated as (''=='true').
+Task "Message" skipped, due to false condition; ('$(MSBuildTargetsVerbose)'=='true') was evaluated as (''=='true').
+Done building target "FileClassification" in project "dbatools.Tests.csproj".
+Target "MainResourcesGeneration" skipped, due to false condition; ('@(MainEmbeddedFiles)' != '') was evaluated as ('' != '').
+Target "AssignWinFXEmbeddedResource" skipped, due to false condition; ('@(WinFXEmbeddedResource)' != '') was evaluated as ('' != '').
+Target "AssignTargetPaths" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "PrepareResourceNames" depends on it):
+Using "AssignTargetPath" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "AssignTargetPath"
+Done executing task "AssignTargetPath".
+Task "AssignTargetPath"
+Done executing task "AssignTargetPath".
+Task "AssignTargetPath"
+Done executing task "AssignTargetPath".
+Task "AssignTargetPath"
+Done executing task "AssignTargetPath".
+Task "AssignTargetPath" skipped, due to false condition; ('@(_DeploymentBaseManifestWithTargetPath)'=='' and '%(None.Extension)'=='.manifest') was evaluated as (''=='' and ''=='.manifest').
+Done building target "AssignTargetPaths" in project "dbatools.Tests.csproj".
+Target "AssignTargetPaths" skipped. Previously built successfully.
+Target "SplitResourcesByCulture" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "PrepareResourceNames" depends on it):
+Task "Warning" skipped, due to false condition; ('@(ResxWithNoCulture)'!='') was evaluated as (''!='').
+Task "Warning" skipped, due to false condition; ('@(ResxWithCulture)'!='') was evaluated as (''!='').
+Task "Warning" skipped, due to false condition; ('@(NonResxWithCulture)'!='') was evaluated as (''!='').
+Task "Warning" skipped, due to false condition; ('@(NonResxWithNoCulture)'!='') was evaluated as (''!='').
+Using "AssignCulture" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "AssignCulture"
+Done executing task "AssignCulture".
+Done building target "SplitResourcesByCulture" in project "dbatools.Tests.csproj".
+Target "CreateManifestResourceNames" skipped, due to false condition; ('@(EmbeddedResource)' != '') was evaluated as ('' != '').
+Target "CreateCustomManifestResourceNames" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "PrepareResourceNames" depends on it):
+Done building target "CreateCustomManifestResourceNames" in project "dbatools.Tests.csproj".
+Target "PrepareResourceNames" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "PrepareResources" depends on it):
+Done building target "PrepareResourceNames" in project "dbatools.Tests.csproj".
+Target "ResolveAssemblyReferences" skipped. Previously built successfully.
+Target "SplitResourcesByCulture" skipped. Previously built successfully.
+Target "BeforeResGen" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "ResGen" depends on it):
+Done building target "BeforeResGen" in project "dbatools.Tests.csproj".
+Target "CoreResGen" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "ResGen" depends on it):
+Task "GenerateResource" skipped, due to false condition; ('%(EmbeddedResource.Type)' == 'Resx' and '%(EmbeddedResource.GenerateResource)' != 'false' and '$(GenerateResourceMSBuildRuntime)' != 'CLR2') was evaluated as ('' == 'Resx' and '' != 'false' and 'CurrentRuntime' != 'CLR2').
+Task "GenerateResource" skipped, due to false condition; ('%(EmbeddedResource.Type)' == 'Resx' and '%(EmbeddedResource.GenerateResource)' != 'false' and '$(GenerateResourceMSBuildRuntime)' == 'CLR2') was evaluated as ('' == 'Resx' and '' != 'false' and 'CurrentRuntime' == 'CLR2').
+Done building target "CoreResGen" in project "dbatools.Tests.csproj".
+Target "AfterResGen" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "ResGen" depends on it):
+Done building target "AfterResGen" in project "dbatools.Tests.csproj".
+Target "ResGen" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "PrepareResources" depends on it):
+Done building target "ResGen" in project "dbatools.Tests.csproj".
+Target "CompileLicxFiles" skipped, due to false condition; ('@(_LicxFile)'!='') was evaluated as (''!='').
+Target "PrepareResources" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "CoreBuild" depends on it):
+Done building target "PrepareResources" in project "dbatools.Tests.csproj".
+Target "ResolveKeySource" skipped, due to false condition; ($(SignManifests) == 'true' or $(SignAssembly) == 'true') was evaluated as ( == 'true' or  == 'true').
+Target "ResolveReferences" skipped. Previously built successfully.
+Target "ResolveKeySource" skipped, due to false condition; ($(SignManifests) == 'true' or $(SignAssembly) == 'true') was evaluated as ( == 'true' or  == 'true').
+Target "ResolveComReferences" skipped, due to false condition; ('@(COMReference)'!='' or '@(COMFileReference)'!='') was evaluated as (''!='' or ''!='').
+Target "ResolveNativeReferences" skipped, due to false condition; ('@(NativeReference)'!='') was evaluated as (''!='').
+Target "_SetExternalWin32ManifestProperties" skipped, due to false condition; ('$(GenerateClickOnceManifests)'=='true' or '@(NativeReference)'!='' or '@(ResolvedIsolatedComModules)'!='') was evaluated as (''=='true' or ''!='' or ''!='').
+Target "_SetEmbeddedWin32ManifestProperties" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "SetWin32ManifestProperties" depends on it):
+Using "GetFrameworkPath" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "GetFrameworkPath"
+Done executing task "GetFrameworkPath".
+Done building target "_SetEmbeddedWin32ManifestProperties" in project "dbatools.Tests.csproj".
+Target "SetWin32ManifestProperties" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "Compile" depends on it):
+Done building target "SetWin32ManifestProperties" in project "dbatools.Tests.csproj".
+Target "_GenerateCompileInputs" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "Compile" depends on it):
+Task "Warning" skipped, due to false condition; ('@(ManifestResourceWithNoCulture)'!='' and '%(ManifestResourceWithNoCulture.EmittedForCompatibilityOnly)'=='') was evaluated as (''!='' and ''=='').
+Task "Warning" skipped, due to false condition; ('@(ManifestNonResxWithNoCultureOnDisk)'!='' and '%(ManifestNonResxWithNoCultureOnDisk.EmittedForCompatibilityOnly)'=='') was evaluated as (''!='' and ''=='').
+Done building target "_GenerateCompileInputs" in project "dbatools.Tests.csproj".
+Target "PrepareForBuild" skipped. Previously built successfully.
+Target "GetReferenceAssemblyPaths" skipped. Previously built successfully.
+Target "_SetTargetFrameworkMonikerAttribute" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.CSharp.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "GenerateTargetFrameworkMonikerAttribute" depends on it):
+Done building target "_SetTargetFrameworkMonikerAttribute" in project "dbatools.Tests.csproj".
+Target "GenerateTargetFrameworkMonikerAttribute" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "BeforeCompile" depends on it):
+Skipping target "GenerateTargetFrameworkMonikerAttribute" because all output files are up-to-date with respect to the input files.
+Input files: C:\Program Files (x86)\MSBuild\14.0\bin\amd64\Microsoft.Common.targets
+Output files: C:\Users\ctrlb.BASE\AppData\Local\Temp\.NETFramework,Version=v4.5.2.AssemblyAttributes.cs
+Done building target "GenerateTargetFrameworkMonikerAttribute" in project "dbatools.Tests.csproj".
+Target "GenerateAdditionalSources" skipped, due to false condition; ('@(AssemblyAttributes)' != '' and '$(GenerateAdditionalSources)' == 'true') was evaluated as ('' != '' and '' == 'true').
+Target "BeforeCompile" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "Compile" depends on it):
+Done building target "BeforeCompile" in project "dbatools.Tests.csproj".
+Target "_TimeStampBeforeCompile" skipped, due to false condition; ('$(RunPostBuildEvent)'=='OnOutputUpdated' or ('$(RegisterForComInterop)'=='true' and '$(OutputType)'=='library')) was evaluated as (''=='OnOutputUpdated' or (''=='true' and 'Library'=='library')).
+Target "_ComputeNonExistentFileProperty" skipped, due to false condition; (('$(BuildingInsideVisualStudio)' == 'true') and ('$(BuildingOutOfProcess)' != 'true') and (('$(BuildingProject)' == 'false') or ('$(UseHostCompilerIfAvailable)' == 'true'))) was evaluated as (('' == 'true') and ('' != 'true') and (('true' == 'false') or ('true' == 'true'))).
+Target "PreXsdCodeGen" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.ServiceModel.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "CoreCompile" depends on it):
+Using "CallTarget" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "CallTarget"
+Target "CleanXsdCodeGen" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.ServiceModel.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "PreXsdCodeGen" depends on it):
+Using "Delete" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "Delete"
+Done executing task "Delete".
+Done building target "CleanXsdCodeGen" in project "dbatools.Tests.csproj".
+Done executing task "CallTarget".
+Done building target "PreXsdCodeGen" in project "dbatools.Tests.csproj".
+Target "XsdCodeGen" skipped, due to false condition; ( '$(XsdCodeGenPreCondition)' == 'True' ) was evaluated as ( 'False' == 'True' ).
+Target "CoreCompile" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.CSharp.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "Compile" depends on it):
+Building target "CoreCompile" completely.
+Output file "obj\Debug\dbatools.Tests.dll" does not exist.
+Using "Csc" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "Csc"
+  C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Csc.exe /noconfig /nowarn:1701,1702 /nostdlib+ /errorreport:prompt /warn:4 /define:DEBUG;TRACE /highentropyva+ /reference:C:\github\dbatools\bin\dbatools.dll /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\mscorlib.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.Core.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5.2\System.dll" /debug+ /debug:full /filealign:512 /optimize- /out:obj\Debug\dbatools.Tests.dll /subsystemversion:6.00 /target:library /utf8output Connection\ManagementConnectionTest.cs Parameter\DbaInstanceParamaterTest.cs Properties\AssemblyInfo.cs Utility\SizeTest.cs "C:\Users\ctrlb.BASE\AppData\Local\Temp\.NETFramework,Version=v4.5.2.AssemblyAttributes.cs"
+  Microsoft (R) Visual C# Compiler version 4.7.2046.0
+  
+  for C# 5
+  Copyright (C) Microsoft Corporation. All rights reserved.
+  
+  
+  
+  This compiler is provided as part of the Microsoft (R) .NET Framework, but only supports language versions up to C# 5, which is no longer the latest version. For compilers that support newer versions of the C# programming language, see http://go.microsoft.com/fwlink/?LinkID=533240
+  
+Connection\ManagementConnectionTest.cs(1,17): error CS0234: The type or namespace name 'VisualStudio' does not exist in the namespace 'Microsoft' (are you missing an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Parameter\DbaInstanceParamaterTest.cs(3,17): error CS0234: The type or namespace name 'VisualStudio' does not exist in the namespace 'Microsoft' (are you missing an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(2,17): error CS0234: The type or namespace name 'VisualStudio' does not exist in the namespace 'Microsoft' (are you missing an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Connection\ManagementConnectionTest.cs(10,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Connection\ManagementConnectionTest.cs(10,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Connection\ManagementConnectionTest.cs(26,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Connection\ManagementConnectionTest.cs(26,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Connection\ManagementConnectionTest.cs(7,6): error CS0246: The type or namespace name 'TestClass' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Connection\ManagementConnectionTest.cs(7,6): error CS0246: The type or namespace name 'TestClassAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Parameter\DbaInstanceParamaterTest.cs(10,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Parameter\DbaInstanceParamaterTest.cs(10,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Parameter\DbaInstanceParamaterTest.cs(22,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Parameter\DbaInstanceParamaterTest.cs(22,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Parameter\DbaInstanceParamaterTest.cs(34,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Parameter\DbaInstanceParamaterTest.cs(34,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Parameter\DbaInstanceParamaterTest.cs(46,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Parameter\DbaInstanceParamaterTest.cs(46,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Parameter\DbaInstanceParamaterTest.cs(58,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Parameter\DbaInstanceParamaterTest.cs(58,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Parameter\DbaInstanceParamaterTest.cs(7,6): error CS0246: The type or namespace name 'TestClass' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Parameter\DbaInstanceParamaterTest.cs(7,6): error CS0246: The type or namespace name 'TestClassAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(9,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(9,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(17,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(17,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(25,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(25,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(34,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(34,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(42,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(42,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(55,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(55,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(62,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(62,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(69,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(69,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(76,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(76,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(83,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(83,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(92,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(92,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(6,6): error CS0246: The type or namespace name 'TestClass' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+Utility\SizeTest.cs(6,6): error CS0246: The type or namespace name 'TestClassAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  The command exited with code 1.
+Done executing task "Csc" -- FAILED.
+Done building target "CoreCompile" in project "dbatools.Tests.csproj" -- FAILED.
+Target "_CheckForCompileOutputs" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "_CleanGetCurrentAndPriorFileWrites" depends on it):
+Done building target "_CheckForCompileOutputs" in project "dbatools.Tests.csproj".
+Target "_SGenCheckForOutputs" skipped, due to false condition; ('$(_SGenGenerateSerializationAssembliesConfig)' == 'On' or ('@(WebReferenceUrl)'!='' and '$(_SGenGenerateSerializationAssembliesConfig)' == 'Auto')) was evaluated as ('Off' == 'On' or (''!='' and 'Off' == 'Auto')).
+Target "_CleanGetCurrentAndPriorFileWrites" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "_CleanRecordFileWrites" depends on it):
+Using "ReadLinesFromFile" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "ReadLinesFromFile"
+Done executing task "ReadLinesFromFile".
+Using "ConvertToAbsolutePath" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "ConvertToAbsolutePath"
+Done executing task "ConvertToAbsolutePath".
+Using "FindUnderPath" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "FindUnderPath"
+  Comparison path is "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests".
+Done executing task "FindUnderPath".
+Task "FindUnderPath"
+  Comparison path is "bin\Debug\".
+Done executing task "FindUnderPath".
+Task "FindUnderPath"
+  Comparison path is "obj\Debug\".
+Done executing task "FindUnderPath".
+Using "RemoveDuplicates" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "RemoveDuplicates"
+Done executing task "RemoveDuplicates".
+Done building target "_CleanGetCurrentAndPriorFileWrites" in project "dbatools.Tests.csproj".
+Target "_CleanRecordFileWrites" in file "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets" from project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (target "CoreBuild" depends on it):
+Task "RemoveDuplicates"
+Done executing task "RemoveDuplicates".
+Task "MakeDir"
+Done executing task "MakeDir".
+Using "WriteLinesToFile" task from assembly "Microsoft.Build.Tasks.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a".
+Task "WriteLinesToFile"
+Done executing task "WriteLinesToFile".
+Done building target "_CleanRecordFileWrites" in project "dbatools.Tests.csproj".
+Done Building Project "C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (default targets) -- FAILED.
+Done executing task "MSBuild" -- FAILED.
+Done building target "Build" in project "dbatools.sln" -- FAILED.
+Done Building Project "C:\github\dbatools\bin\projects\dbatools\dbatools.sln" (default targets) -- FAILED.
+
+Build FAILED.
+
+"C:\github\dbatools\bin\projects\dbatools\dbatools.sln" (default target) (1) ->
+"C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (default target) (3) ->
+(ResolveAssemblyReferences target) -> 
+  C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Microsoft.Common.targets(1605,5): warning MSB3245: Could not resolve this reference. Could not locate the assembly "Microsoft.VisualStudio.QualityTools.UnitTestFramework". Check to make sure the assembly exists on disk. If this reference is required by your code, you may get compilation errors. [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+
+
+"C:\github\dbatools\bin\projects\dbatools\dbatools.sln" (default target) (1) ->
+"C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj" (default target) (3) ->
+(CoreCompile target) -> 
+  Connection\ManagementConnectionTest.cs(1,17): error CS0234: The type or namespace name 'VisualStudio' does not exist in the namespace 'Microsoft' (are you missing an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Parameter\DbaInstanceParamaterTest.cs(3,17): error CS0234: The type or namespace name 'VisualStudio' does not exist in the namespace 'Microsoft' (are you missing an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(2,17): error CS0234: The type or namespace name 'VisualStudio' does not exist in the namespace 'Microsoft' (are you missing an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Connection\ManagementConnectionTest.cs(10,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Connection\ManagementConnectionTest.cs(10,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Connection\ManagementConnectionTest.cs(26,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Connection\ManagementConnectionTest.cs(26,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Connection\ManagementConnectionTest.cs(7,6): error CS0246: The type or namespace name 'TestClass' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Connection\ManagementConnectionTest.cs(7,6): error CS0246: The type or namespace name 'TestClassAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Parameter\DbaInstanceParamaterTest.cs(10,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Parameter\DbaInstanceParamaterTest.cs(10,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Parameter\DbaInstanceParamaterTest.cs(22,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Parameter\DbaInstanceParamaterTest.cs(22,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Parameter\DbaInstanceParamaterTest.cs(34,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Parameter\DbaInstanceParamaterTest.cs(34,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Parameter\DbaInstanceParamaterTest.cs(46,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Parameter\DbaInstanceParamaterTest.cs(46,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Parameter\DbaInstanceParamaterTest.cs(58,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Parameter\DbaInstanceParamaterTest.cs(58,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Parameter\DbaInstanceParamaterTest.cs(7,6): error CS0246: The type or namespace name 'TestClass' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Parameter\DbaInstanceParamaterTest.cs(7,6): error CS0246: The type or namespace name 'TestClassAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(9,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(9,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(17,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(17,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(25,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(25,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(34,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(34,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(42,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(42,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(55,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(55,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(62,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(62,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(69,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(69,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(76,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(76,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(83,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(83,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(92,10): error CS0246: The type or namespace name 'TestMethod' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(92,10): error CS0246: The type or namespace name 'TestMethodAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(6,6): error CS0246: The type or namespace name 'TestClass' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+  Utility\SizeTest.cs(6,6): error CS0246: The type or namespace name 'TestClassAttribute' could not be found (are you missing a using directive or an assembly reference?) [C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\dbatools.Tests.csproj]
+
+    1 Warning(s)
+    45 Error(s)
+
+Time Elapsed 00:00:00.78

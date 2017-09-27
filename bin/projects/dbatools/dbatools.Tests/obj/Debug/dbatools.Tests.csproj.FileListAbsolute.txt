@@ -1,0 +1,1 @@
+C:\github\dbatools\bin\projects\dbatools\dbatools.Tests\obj\Debug\dbatools.Tests.csprojResolveAssemblyReference.cache
