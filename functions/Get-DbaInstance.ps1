@@ -198,7 +198,9 @@ function Get-DbaInstance {
 		[string]$WorkstationId,
 		[string]$AppendConnectionString
 	)
-	
+	begin {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Connect-DbaSqlServer
+	}
 	process {
 		if ($SqlInstance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
 			
