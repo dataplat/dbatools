@@ -130,8 +130,14 @@
 				elseif ($connection.Credentials) { $message += "Working credentials are known for $($connection.Credentials.UserName), however the connection is not configured to automatically use them. This can be done using 'Set-DbaCmConnection -ComputerName $connection -OverrideExplicitCredential' " }
 				elseif ($connection.UseWindowsCredentials) { $message += "The windows credentials are known to work, however the connection is not configured to automatically use them. This can be done using 'Set-DbaCmConnection -ComputerName $connection -OverrideExplicitCredential' " }
 				$message += $_.Exception.Message
-				Stop-Function -Message $message -ErrorRecord $_ -Target $connection -Continue
+				Stop-Function -Message $message -ErrorRecord $_ -Target $connection -Continue -OverrideExceptionMessage
 			}
+			
+			[Sqlcollaborative.Dbatools.Connection.ManagementConnectionType]$enabledProtocols = "None"
+			if ($connection.CimRM -notlike "Disabled") { $enabledProtocols += "CimRM" }
+			if ($connection.CimDCOM -notlike "Disabled") { $enabledProtocols += "CimDCOM" }
+			if ($connection.Wmi -notlike "Disabled") { $enabledProtocols += "Wmi" }
+			if ($connection.PowerShellRemoting -notlike "Disabled") { $enabledProtocols += "PowerShellRemoting" }
 			
 			# Create list of excluded connection types (Duplicates don't matter)
 			$excluded = @()
@@ -141,7 +147,7 @@
 				try { $conType = $connection.GetConnectionType(($excluded -join ","), $Force) }
 				catch {
 					if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
-					Stop-Function -Message "[$computer] Could not find a valid connection protocol, interrupting execution now" -Target $computer -Category OpenError -Continue -ContinueLabel "main" -SilentlyContinue:$SilentlyContinue -ErrorRecord $_
+					Stop-Function -Message "[$computer] Unable to find a connection to the target system. Ensure the name is typed correctly, and the server allows any of the following protocols: $enabledProtocols" -Target $computer -Category OpenError -Continue -ContinueLabel "main" -SilentlyContinue:$SilentlyContinue -ErrorRecord $_
 				}
 				
 				switch ($conType.ToString()) {
@@ -191,6 +197,11 @@
 							# See here for code reference: https://msdn.microsoft.com/en-us/library/cc150671(v=vs.85).aspx
 							elseif ($_.Exception.InnerException.StatusCode -eq 5) {
 								Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
+							}
+							
+							# 0 & ExtendedStatus = Weird issue beyond the scope of the CIM standard. Often a server-side issue
+							elseif (($_.Exception.InnerException.StatusCode -eq 0) -and ($_.Exception.InnerException.ErrorData.original_error -like "__ExtendedStatus")) {
+								Stop-Function -Message "[$computer] Something went wrong when looking for $ClassName, in $Namespace. This often indicates issues with the target system." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue
 							}
 							else {
 								$connection.ReportFailure('CimRM')
@@ -243,11 +254,18 @@
 							elseif ($_.Exception.InnerException.StatusCode -eq 3) {
 								Stop-Function -Message "[$computer] Invalid namespace: $Namespace" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
 							}
+							
 							# 5 = Invalid Class
 							# See here for code reference: https://msdn.microsoft.com/en-us/library/cc150671(v=vs.85).aspx
 							elseif ($_.Exception.InnerException.StatusCode -eq 5) {
 								Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
 							}
+							
+							# 0 & ExtendedStatus = Weird issue beyond the scope of the CIM standard. Often a server-side issue
+							elseif (($_.Exception.InnerException.StatusCode -eq 0) -and ($_.Exception.InnerException.ErrorData.original_error -like "__ExtendedStatus")) {
+								Stop-Function -Message "[$computer] Something went wrong when looking for $ClassName, in $Namespace. This often indicates issues with the target system." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue
+							}
+							
 							else {
 								$connection.ReportFailure('CimDCOM')
 								$excluded += "CimDCOM"
@@ -303,6 +321,9 @@
 							}
 							elseif ($_.CategoryInfo.Category -eq "InvalidType") {
 								Stop-Function -Message "[$computer] Invalid class name ($ClassName), not found in current namespace ($Namespace)" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue
+							}
+							elseif ($_.Exception.ErrorCode -eq "ProviderLoadFailure") {
+								Stop-Function -Message "[$computer] Failed to access: $ClassName, in namespace: $Namespace - There was a provider error. This indicates a potential issue with WMI on the server side." -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue
 							}
 							else {
 								$connection.ReportFailure('Wmi')

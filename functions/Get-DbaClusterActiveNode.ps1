@@ -1,58 +1,59 @@
-Function Get-DbaClusterActiveNode
-{
-<#
-.SYNOPSIS
-Returns the active node of a SQL Cluster
-	
-.DESCRIPTION
-Returns a string of the current owner. If -Detailed is specified, a datatable of details will be returned.
-	
-.PARAMETER SqlInstance
-The SQL Cluster
+function Get-DbaClusterActiveNode {
+	<#
+		.SYNOPSIS
+			Returns the active node of a SQL Cluster.
+			
+		.DESCRIPTION
+			Returns the name of the current active node in the SQL Server cluster.
+			
+		.PARAMETER SqlInstance
+			Specifies the SQL Server clustered instance to check.
 
-.PARAMETER SqlCredential
-If you want to use alternative credentials to connect.
-	
-.PARAMETER Detailed
-Returns available details of SQL Cluster nodes. In SQL Server 2008, this will return node names. In SQL Server 2012 and above, this will return:
-	
-NodeName
-Status
-StatusDescription
-CurrentOwner
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
-	
-.NOTES
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+			To connect as a different Windows user, run PowerShell as that user.
+			
+		.PARAMETER Detailed
+			Returns available details of SQL Cluster nodes. In SQL Server 2008, this will return node names. In SQL Server 2012 and above, this will return:
+				
+			NodeName
+			Status
+			StatusDescription
+			CurrentOwner
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+			
+		.NOTES
+			Tags:
+			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+			Copyright (C) 2016 Chrissy LeMaire
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.LINK
-https://dbatools.io/Get-DbaClusterActiveNode
+		.LINK
+			https://dbatools.io/Get-DbaClusterActiveNode
 
-.EXAMPLE
-Get-DbaClusterActiveNode -SqlInstance sqlcluster
+		.EXAMPLE
+			Get-DbaClusterActiveNode -SqlInstance sqlcluster
 
-Returns a simple string with the ComputerNamePhysicalNetBIOS property
+			Returns a simple string with the ComputerNamePhysicalNetBIOS property.
 
-.EXAMPLE
-Get-DbaClusterActiveNode -SqlInstance sqlcluster -Detailed
+		.EXAMPLE
+			Get-DbaClusterActiveNode -SqlInstance sqlcluster -Detailed
 
-Returns a datatable with details
-	
-#>
+			Returns a datatable with details about sqlcluster.
+				
+	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
@@ -60,43 +61,35 @@ Returns a datatable with details
 		[switch]$Detailed
 	)
 	
-	BEGIN
-	{
+	begin {
 		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -RegularUser
 		$computername = $server.ComputerNamePhysicalNetBIOS
 	}
 	
-	PROCESS
-	{
-		if ($server.IsClustered -eq $false)
-		{
-			return "Not a clustered instance"
+	process {
+		if ($server.IsClustered -eq $false) {
+			return "Not a clustered instance."
 		}
 		
-		if ($Detailed -eq $true)
-		{
+		if ($Detailed -eq $true) {
 			$sql = "Select *  FROM sys.dm_os_cluster_nodes"
 			$datatable = $server.ConnectionContext.ExecuteWithResults($sql).Tables
 			return $datatable
 		}
-		else
-		{
+		else {
 			# support multiple active nodes on SQL Server 2012 and above.
-			if ($server.VersionMajor -ge 11)
-			{
+			if ($server.VersionMajor -ge 11) {
 				$sql = "Select nodename FROM sys.dm_os_cluster_nodes where is_current_owner = 1"
 				$datatable = $server.ConnectionContext.ExecuteWithResults($sql).Tables.NodeName
 				return $datatable
 			}
-			else
-			{
+			else {
 				return $computername
 			}
 		}
 	}
 	
-	END
-	{
+	end {
 		$server.ConnectionContext.Disconnect()
 	}
 }

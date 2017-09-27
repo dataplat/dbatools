@@ -74,6 +74,28 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 			It "Should return 1 Diff backups" {
 				($Output[0].values | Where-Object { $_.BackupTypeDescription -eq 'Database Differential' } | Measure-Object).count | Should Be 1
 			}
+			It "Should return 192 log backups" {
+				($Output[0].values | Where-Object { $_.BackupTypeDescription -eq 'Transaction Log' } | Measure-Object).count | Should Be 192
+			}
+			It "Should not contain the Log backup with LastLsn 17126786000011867500001 " {
+				($Output[0].values | Where-Object { $_.LastLsn -eq '17126786000011867500001' } | Measure-Object).count | Should Be 0
+			}
+		}
+		Context "When FirstLSN ne CheckPointLsn" {
+			$Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\chkptLSN-ne-firstLSN.json -raw)
+			Mock Read-DbaBackupHeader { $Header }
+			$RestoreDate =  Get-date "2017-07-18 09:00:00"
+			$Output = Get-FilteredRestoreFile -SqlServer 'TestSQL' -Files "c:\dummy.txt" -RestoreTime $RestoreDate
+			$Output
+			It "Should return an array of 193 items" {
+				$Output[0].values.count | Should be 194
+			}
+			It "Should return 1 Full backups" {
+				($Output[0].values | Where-Object { $_.BackupTypeDescription -eq 'Database' } | Measure-Object).count | Should Be 1
+			}
+			It "Should return 1 Diff backups" {
+				($Output[0].values | Where-Object { $_.BackupTypeDescription -eq 'Database Differential' } | Measure-Object).count | Should Be 1
+			}
 			It "Should return 191 log backups" {
 				($Output[0].values | Where-Object { $_.BackupTypeDescription -eq 'Transaction Log' } | Measure-Object).count | Should Be 192
 			}

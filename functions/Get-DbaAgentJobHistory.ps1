@@ -137,7 +137,6 @@
 				$Job,
 				[switch]$WithOutputFile
 			)
-			
 			$tokenrex = [regex]'\$\((?<method>[^()]+)\((?<tok>[^)]+)\)\)|\$\((?<tok>[^)]+)\)'
 			$propmap = @{
 				'INST' = $Server.ServiceName
@@ -168,7 +167,6 @@
 					}
 				return $value
 			}
-			
 			
 			#'STEPID' =  stepid
 			#'STRTTM' job begin time
@@ -216,14 +214,14 @@
 				else {
 					$executions = $server.JobServer.EnumJobHistory($filter)
 				}
-				
 				if ($NoJobSteps) {
 					$executions = $executions | Where-Object { $_.StepID -eq 0 }
 				}
 				
 				if ($WithOutputFile) {
 					$outmap = @{}
-					$outfiles = Get-DbaAgentJobOutPutFile -SqlInstance $Server -SqlCredential $SqlCredential -Job $Job
+					$outfiles = Get-DbaAgentJobOutputFile -SqlInstance $Server -SqlCredential $SqlCredential -Job $Job
+					
 					foreach($out in $outfiles) {
 						if (!$outmap.ContainsKey($out.Job)) {
 							$outmap[$out.Job] = @{}
@@ -243,7 +241,7 @@
 						try {
 							$outname = $outmap[$execution.JobName][$execution.StepID]
 							$outname = Resolve-JobToken -exec $execution -outcome $outcome -outfile $outname
-							$outremote = Join-AdminUNC $Server.ComputerNamePhysicalNetBIOS $outname
+							$outremote = Join-AdminUNC $Server.NetName $outname
 						} catch {
 							$outname = ''
 							$outremote = ''
@@ -285,7 +283,6 @@
 			
 			if ($ExcludeJob) {
 				$jobs = $server.JobServer.Jobs.Name | Where-Object { $_ -notin $ExcludeJob }
-
 				foreach ($currentjob in $jobs) {
 					Get-JobHistory -Server $server -Job $currentjob -WithOutputFile:$WithOutputFile
 				}
