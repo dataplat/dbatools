@@ -100,17 +100,10 @@ function Get-DbaXEventsSession {
 					}
 				}
 				else {
+					$filecollection = $null
 					$remotefile = $null
 				}
-				
-				<#
-				$remotefiles = @()
-				foreach ($file in $files) {
-					$tempfile = Join-AdminUnc -servername $server.netName -filepath $file
-					$remotefiles += $tempfile
-				}
-				#>
-				
+								
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name ComputerName -Value $server.NetName
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
