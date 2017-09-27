@@ -7,7 +7,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Reading db statuses" {
 		BeforeAll {
 			$script:instance2 = $env:COMPUTERNAME
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$server = Get-DbaInstance -SqlInstance $script:instance2
 			$db1 = "dbatoolsci_dbstate_online"
 			$db2 = "dbatoolsci_dbstate_offline"
 			$db3 = "dbatoolsci_dbstate_emergency"

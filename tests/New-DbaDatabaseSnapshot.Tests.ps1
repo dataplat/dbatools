@@ -32,7 +32,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	}
 	Context "Operations on databases" {
 		BeforeAll {
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$server = Get-DbaInstance -SqlInstance $script:instance2
 			$db1 = "dbatoolsci_SnapMe"
 			$db2 = "dbatoolsci_SnapMe2"
 			$db3 = "dbatoolsci_SnapMe3_Offline"

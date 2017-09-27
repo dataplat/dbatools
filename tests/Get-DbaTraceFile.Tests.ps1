@@ -7,7 +7,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		$traceconfig = Get-DbaSpConfigure -SqlInstance $script:instance2 -ConfigName DefaultTraceEnabled
 		
 		if ($traceconfig.RunningValue -eq $false) {
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$server = Get-DbaInstance -SqlInstance $script:instance2
 			$server.Query("EXEC sp_configure 'show advanced options', 1;")
 			$server.Query("RECONFIGURE WITH OVERRIDE")
 			$server.Query("EXEC sp_configure 'default trace enabled', 1;")

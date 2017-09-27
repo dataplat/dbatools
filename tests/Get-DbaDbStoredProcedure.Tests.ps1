@@ -32,7 +32,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 # Get-DbaNoun
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
-		$server = Connect-DbaSqlServer -SqlInstance $script:instance1
+		$server = Get-DbaInstance -SqlInstance $script:instance1
 		$random = Get-Random
 		$procName = "dbatools_getdbsp"
 		$dbname = "dbatoolsci_getdbsp$random"
