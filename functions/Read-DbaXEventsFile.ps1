@@ -4,10 +4,13 @@
 	Read XEvents from a xel or xem file
 
 	.DESCRIPTION
-	Read XEvents from a xel or xem file. Returns a Microsoft.SqlServer.XEvent.Linq.QueryableXEventData object.
+	Read XEvents from a xel or xem file. Returns a weird Microsoft.SqlServer.XEvent.Linq.QueryableXEventData enumeration object.
 
 	.PARAMETER Path
 	The path to the file. This is relative to the computer executing the command. UNC paths supported.
+	
+	.PARAMETER Exact
+	By default, this command will add a wildcard to the Path because Eventing uses the file name as a template and adds characters. Use this to skip the addition of the wildcard.
 		
 	.PARAMETER Silent
 	If this switch is enabled, the internal messaging functions will be silenced.
@@ -36,35 +39,42 @@
 	param (
 		[parameter(Mandatory, ValueFromPipeline)]
 		[object[]]$Path,
+		[switch]$Exact,
 		[switch]$Silent
 	)
 	process {
-		if ($Path.RemoteTargetFile) {
-			$instance = [dbainstance]$Path.ComputerName
-			
-			if ($instance.IsLocal) {
-				$Path = $Path.TargetFile
-			}
-			else {
-				$Path = $Path.RemoteTargetFile
-			}
-		}
-		
 		foreach ($file in $path) {
 			
+			if ($file -is [System.String]) {
+				$currentfile = $file
+			}
+			else {
+				if ($file.TargetFile.Length -eq 0) { continue }
+				
+				$instance = [dbainstance]$file.ComputerName
+				
+				if ($instance.IsLocalHost) {
+					$currentfile = $file.TargetFile
+				}
+				else {
+					$currentfile = $file.RemoteTargetFile
+				}
+			}
+			
 			if (-not $Exact) {
-				$file = $file.Replace('.xel', '*.xel')
-				$file = $file.Replace('.xem', '*.xem')
+				$currentfile = $currentfile.Replace('.xel', '*.xel')
+				$currentfile = $currentfile.Replace('.xem', '*.xem')
 			}
 			
-			$accessible = Test-Path -Path $file
-			$whoami = whoami 
-			if (-not $accessible)
-			{
-				Stop-Function -Continue -Message "$file cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
+			$accessible = Test-Path -Path $currentfile
+			$whoami = whoami
+			
+			if (-not $accessible) {
+				if ($file.Status -eq "Stopped") { continue }
+				Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
 			}
 			
-			New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($file)
+			New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
 		}
 	}
 }
