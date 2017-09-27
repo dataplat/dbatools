@@ -4,10 +4,10 @@
 	Read XEvents from a xel or xem file
 
 	.DESCRIPTION
-	Read XEvents from a xel or xem file
+	Read XEvents from a xel or xem file. Returns a Microsoft.SqlServer.XEvent.Linq.QueryableXEventData object.
 
 	.PARAMETER Path
-	The path to the file. This is relative to the computer executing the command.
+	The path to the file. This is relative to the computer executing the command. UNC paths supported.
 		
 	.PARAMETER Silent
 	If this switch is enabled, the internal messaging functions will be silenced.
@@ -29,7 +29,7 @@
 	.EXAMPLE
 	Get-DbaXEventsSession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEventsFile
 	
-	Reads remote xevents
+	Reads remote xevents by acccessing the file over the admin UNC share
 
 #>
 	[CmdletBinding()]
@@ -57,8 +57,14 @@
 				$file = $file.Replace('.xem', '*.xem')
 			}
 			
+			$accessible = Test-Path -Path $file
+			$whoami = whoami 
+			if (-not $accessible)
+			{
+				Stop-Function -Continue -Message "$file cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
+			}
+			
 			New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($file)
-			#[pscustomobject]($d.actions | Select-Object Name, Value)
 		}
 	}
 }
