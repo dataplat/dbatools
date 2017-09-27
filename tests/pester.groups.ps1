@@ -56,12 +56,14 @@ $TestsRunGroups = @{
 		'Start-DbaSqlService',
 		'Stop-DbaSqlService',
 		'Restart-DbaSqlService',
-		'Get-DbaSqlService'
+		'Get-DbaSqlService',
+		'Update-DbaSqlServiceAccount'
 	)
 	# do not run on appveyor
 	"appveyor_disabled" = @(
 		'Get-DbaDatabaseState'
 	)
+	
 	# do not run everywhere
 	"disabled"          = @()
 }
