@@ -15,6 +15,9 @@
 	.PARAMETER Session
 	Only return specific sessions. This parameter is auto-populated.
 		
+	.PARAMETER SessionCollection
+	Internal parameter for the pipeline - not supported yet
+	
 	.PARAMETER Silent
 	If this switch is enabled, the internal messaging functions will be silenced.
 
@@ -28,14 +31,14 @@
 	https://dbatools.io/Get-DbaXEventData
 
 	.EXAMPLE
-	Get-DbaXEventData -SqlInstance ServerA\sql987 -Path C:\temp\deadocks.xel
+	Get-DbaXEventData -SqlInstance ServerA\sql987
 
-	Returns events
+	Returns events for all sessions
 
 	.EXAMPLE
-	Get-DbaXEventSession -SqlInstance sql2014 -Session deadlocks | Get-DbaXEventData
+	#Get-DbaXEventSession -SqlInstance sql2014 -Session deadlocks | Get-DbaXEventData
 	
-	Reads remote xevents by acccessing the file over the admin UNC share
+	#Reads remote xevents by acccessing the file over the admin UNC share
 
 #>
 	[CmdletBinding()]
