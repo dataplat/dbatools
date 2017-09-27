@@ -332,8 +332,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($results.RestoreComplete -contains $false) | Should Be $false    
         }
         It "Should have no Warnining or errors" {
-            ($null -eq $WarnVar) | Should Be $true
-            ($null -eq $ErrVar) | Should be $true
+            ($WarnVar -eq '') | Should Be $true
+            ($ErrVar -eq '') | Should be $true
         }
     }
     Clear-DbaSqlConnectionPool
