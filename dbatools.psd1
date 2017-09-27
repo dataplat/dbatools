@@ -364,7 +364,8 @@
 		'New-DbaLogin',
 		'Get-DbaAgListener',
 		'Invoke-DbaDatabaseClone',
-		'Read-DbaXEventsFile'
+		'Read-DbaXEventsFile',
+		'Get-DbaDistributor'
 	)
 	
 	# Cmdlets to export from this module
