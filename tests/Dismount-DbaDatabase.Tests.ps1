@@ -35,15 +35,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Detaches a single database and tests to ensure the alias still exists" {
 		$results = Detach-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
 		
-		It -Skip "was successfull" {
+		It "was successfull" {
 			$results.DetachResult | Should Be "Success"
 		}
 		
-		It -Skip "removed just one database" {
+		It "removed just one database" {
 			$results.Database | Should Be $dbname
 		}
 		
-		It -Skip "has the correct properties" {
+		It "has the correct properties" {
 			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,DetachResult'.Split(',')
 			($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 		}
@@ -68,7 +68,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2 | Remove-DbaDatabase -Confirm:$false
 		}
 		
-		It -Skip "Skips detachment if database is snapshotted" {
+		It "Skips detachment if database is snapshotted" {
 			$result = Dismount-DbaDatabase -SqlInstance $script:instance2 -Database $db2 -Force -WarningAction SilentlyContinue -WarningVariable warn
 			$result | Should Be $null
 			$warn -match "snapshot" | Should Be $true
@@ -77,7 +77,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		$null = Stop-DbaProcess -SqlInstance $script:instance2 -Database $db1
 		$result = Dismount-DbaDatabase -SqlInstance $script:instance2 -Database $db1
-		It -Skip "Detaches the database correctly" {
+		It "Detaches the database correctly" {
 			$result = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1
 			$result | Should Be $null
 		}
