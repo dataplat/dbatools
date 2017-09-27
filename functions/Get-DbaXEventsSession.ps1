@@ -86,9 +86,18 @@ function Get-DbaXEventsSession {
 			
 			foreach ($x in $xesessions) {
 				$status = switch ($x.IsRunning) { $true { "Running" } $false { "Stopped" } }
-				$file = $x.Targets.TargetFields | Where-Object Name -eq Filename | Select-Object -ExpandProperty Value
-				if ($file) {
-					$remotefile = Join-AdminUnc -servername $server.netName -filepath $file
+				$files = $x.Targets.TargetFields | Where-Object Name -eq Filename | Select-Object -ExpandProperty Value
+				
+				if ($files) {
+					$filecollection = $remotefile = @()
+					foreach ($file in $files) {
+						if ($file -notmatch ':\\' -and $file -notmatch '\\\\') {
+							$directory = $server.ErrorLogPath.TrimEnd("\")
+							$file = "$directory\AlwaysOn_health.xel"
+						}
+						$filecollection += $file
+						$remotefile += Join-AdminUnc -servername $server.netName -filepath $file
+					}
 				}
 				else {
 					$remotefile = $null
@@ -107,7 +116,7 @@ function Get-DbaXEventsSession {
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Status -Value $status
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Session -Value $x.Name
-				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name TargetFile -Value $file
+				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name TargetFile -Value $filecollection
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name RemoteTargetFile -Value $remotefile
 				
 				Select-DefaultView -InputObject $x -Property ComputerName, InstanceName, SqlInstance, Name, Status, StartTime, AutoStart, State, Targets, TargetFile, Events, MaxMemory, MaxEventSize
