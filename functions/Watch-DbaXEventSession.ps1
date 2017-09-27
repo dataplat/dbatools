@@ -38,9 +38,21 @@
 	Shows events for the system_health session as it happens
 
 	.EXAMPLE
-	Get-DbaXEventSession -SqlInstance sql2014 -Session deadlocks | Watch-DbaXEventSession
+	Get-DbaXEventSession  -SqlInstance sql2016 -Session system_health | Watch-DbaXEventSession | Select -ExpandProperty Fields
 	
-	Also shows events for the deadlocks session as it happens
+	Also shows events for the system_health session as it happens and expands the Fields property. Looks a bit like this
+	
+	Name                Type                                   Value
+	----                ----                                   -----
+	id                  System.UInt32                              0
+	timestamp           System.UInt64                              0
+	process_utilization System.UInt32                              0
+	system_idle         System.UInt32                             99
+	user_mode_time      System.UInt64                        8906250
+	kernel_mode_time    System.UInt64                         468750
+	page_faults         System.UInt32                             60
+	working_set_delta   System.Int64                               0
+	memory_utilization  System.UInt32                             99
 
 #>
 	[CmdletBinding(DefaultParameterSetName="Default")]
@@ -75,15 +87,24 @@
 		
 		if ($SessionObject) {
 			try {
-				New-Object -TypeName Microsoft.SqlServer.XEvent.Linq.QueryableXEventData(
+				$xevent = New-Object -TypeName Microsoft.SqlServer.XEvent.Linq.QueryableXEventData(
 					($server.ConnectionContext.ConnectionString),
 					($SessionObject.Name),
 					[Microsoft.SqlServer.XEvent.Linq.EventStreamSourceOptions]::EventStream,
 					[Microsoft.SqlServer.XEvent.Linq.EventStreamCacheOptions]::DoNotCache
 				)
+				
+				foreach ($publishedEvent in $xevent) {
+					$publishedEvent
+				}
 			}
 			catch {
 				Stop-Function -Message "Failure" -ErrorRecord $_ -Target $session
+			}
+			finally {
+				if ($xevent -is [IDisposable]) {
+					$xevent.Dispose()
+				}
 			}
 		}
 		else {
