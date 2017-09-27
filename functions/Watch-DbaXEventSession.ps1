@@ -5,6 +5,8 @@
 
 	.DESCRIPTION
 	Watch live XEvent Data as it happens - this command runs until you kill the PowerShell session or Ctrl-C.
+	
+	Thanks to Dave Mason (@BeginTry) for some straightforward code samples https://itsalljustelectrons.blogspot.be/2017/01/SQL-Server-Extended-Event-Handling-Via-Powershell.html
 
 	.PARAMETER SqlInstance
 	The SQL Instances that you're connecting to.
