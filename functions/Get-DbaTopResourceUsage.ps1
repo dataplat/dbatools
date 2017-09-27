@@ -1,4 +1,4 @@
-﻿function Get-DbaTopResourceUsage {
+function Get-DbaTopResourceUsage {
 	<# 
 	.SYNOPSIS 
 		Returns the top 20 resource consumers for cached queries based on four different metrics: duration, frequency, IO, and CPU.
@@ -24,6 +24,9 @@
 	
 	.PARAMETER ExcludeDatabase
 		The database(s) to exclude - this list is auto-populated from the server
+
+	.PARAMETER ExcludeSystem
+		This will exclude system objects like replication procedures from being returned.
 	
 	.PARAMETER Type
 		By default, all Types run but you can specify one or more of the following: Duration, Frequency, IO, or CPU
@@ -54,6 +57,15 @@
 	.EXAMPLE   
 		Get-DbaTopResourceUsage -SqlInstance sql2016 -Limit 30
 		Return the highest usage by duration (top 30) and frequency (top 30) for the TestDB on sql2016
+	
+	.EXAMPLE
+	Get-DbaTopResourceUsage -SqlInstance sql2008, sql2012 -ExcludeSystem
+		Return the 80 (20 x 4 types) top usage results by duration, frequency, IO, and CPU servers for servers sql2008 and sql2012 without any System Objects
+
+
+	.EXAMPLE   
+		Get-DbaTopResourceUsage -SqlInstance sql2016| Select *
+		Return all the columns plus the QueryPlan column
 	#>
 	[CmdletBinding()]
 	param (
@@ -67,7 +79,8 @@
 		[ValidateSet("All", "Duration", "Frequency", "IO", "CPU")]
 		[string[]]$Type = "All",
 		[int]$Limit = 20,
-		[switch]$Silent
+		[switch]$Silent,
+		[switch]$ExcludeSystem
 	)
 	
 	begin {
@@ -84,6 +97,9 @@
 			$wherenotdb = " and coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') notin '$($excludedatabase -join '', '')'"
 		}
 		
+		if ($ExcludeSystem) {
+			$whereexcludesystem = " AND coalesce(object_name(st.objectid, st.dbid), '<none>') NOT LIKE 'sp_MS%' "
+		}
 		$duration = ";with long_queries as
 						(
 						    select top $Limit 
@@ -98,10 +114,10 @@
 						    coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') AS [Database],
 						    coalesce(object_name(ST.objectid, ST.dbid), '<none>') as ObjectName,
 						    qs.query_hash as QueryHash,
-						    qs.total_elapsed_time as TotalElapsedTime,
+						    qs.total_elapsed_time / 1000 as TotalElapsedTimeMs,
 						    qs.execution_count as ExecutionCount,
-						    cast(total_elapsed_time / (execution_count + 0.0) as money) as AverageDurationMs,
-						    elapsed_time as TotalElapsedTimeForQuery,
+						    cast((total_elapsed_time / 1000) / (execution_count + 0.0) as money) as AverageDurationMs,
+						    lq.elapsed_time / 1000 as QueryTotalElapsedTimeMs,
 						    SUBSTRING(ST.TEXT,(QS.statement_start_offset + 2) / 2,
 						        (CASE 
 						            WHEN QS.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),ST.text)) * 2
@@ -114,7 +130,7 @@
 						cross apply sys.dm_exec_sql_text(qs.sql_handle) st
 						cross apply sys.dm_exec_query_plan (qs.plan_handle) qp
 						outer apply sys.dm_exec_plan_attributes(qs.plan_handle) pa
-						where pa.attribute = 'dbid' $wheredb $wherenotdb
+						where pa.attribute = 'dbid' $wheredb $wherenotdb $whereexcludesystem
 						order by lq.elapsed_time desc,
 						    lq.query_hash,
 						    qs.total_elapsed_time desc
@@ -135,7 +151,7 @@
 						    coalesce(object_name(ST.objectid, ST.dbid), '<none>') as ObjectName,
 						    qs.query_hash as QueryHash,
 						    qs.execution_count as ExecutionCount,
-						    executions as TotalExecutionsForQuery,
+						    executions as QueryTotalExecutions,
 						    SUBSTRING(ST.TEXT,(QS.statement_start_offset + 2) / 2,
 						        (CASE 
 						            WHEN QS.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),ST.text)) * 2
@@ -148,7 +164,7 @@
 						cross apply sys.dm_exec_sql_text(qs.sql_handle) st
 						cross apply sys.dm_exec_query_plan (qs.plan_handle) qp
 						outer apply sys.dm_exec_plan_attributes(qs.plan_handle) pa
-						where pa.attribute = 'dbid'  $wheredb $wherenotdb
+						where pa.attribute = 'dbid'  $wheredb $wherenotdb $whereexcludesystem
 						order by fq.executions desc,
 						    fq.query_hash,
 						    qs.execution_count desc
@@ -184,7 +200,7 @@
 				cross apply sys.dm_exec_sql_text(qs.sql_handle) st
 				cross apply sys.dm_exec_query_plan (qs.plan_handle) qp
 				outer apply sys.dm_exec_plan_attributes(qs.plan_handle) pa
-				where pa.attribute = 'dbid' $wheredb $wherenotdb
+				where pa.attribute = 'dbid' $wheredb $wherenotdb $whereexcludesystem
 				order by fq.io desc,
 				    fq.query_hash,
 				    qs.total_logical_reads + total_logical_writes desc
@@ -220,7 +236,7 @@
 				cross apply sys.dm_exec_sql_text(qs.sql_handle) st
 				cross apply sys.dm_exec_query_plan (qs.plan_handle) qp
 				outer apply sys.dm_exec_plan_attributes(qs.plan_handle) pa
-				where pa.attribute = 'dbid' $wheredb $wherenotdb
+				where pa.attribute = 'dbid' $wheredb $wherenotdb $whereexcludesystem
 				order by hcq.cpuTime desc,
 				    hcq.query_hash,
 				    qs.total_worker_time desc
@@ -237,7 +253,10 @@
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-			
+			if ($server.ConnectionContext.StatementTimeout -ne 0) {
+				$server.ConnectionContext.StatementTimeout = 0
+			}
+
 			if ($Type -in "All", "Duration") {
 				try {
 					$server.Query($duration) | Select-DefaultView -ExcludeProperty QueryPlan
