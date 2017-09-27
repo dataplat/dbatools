@@ -87,7 +87,12 @@ function Get-DbaXEventsSession {
 			foreach ($x in $xesessions) {
 				$status = switch ($x.IsRunning) { $true { "Running" } $false { "Stopped" } }
 				$file = $x.Targets.TargetFields | Where-Object Name -eq Filename | Select-Object -ExpandProperty Value
-				$remotefile = Join-AdminUnc -servername $server.netName -filepath $file
+				if ($file) {
+					$remotefile = Join-AdminUnc -servername $server.netName -filepath $file
+				}
+				else {
+					$remotefile = $null
+				}
 				
 				<#
 				$remotefiles = @()
