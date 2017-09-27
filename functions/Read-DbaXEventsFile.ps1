@@ -1,26 +1,19 @@
 ﻿function Read-DbaXEventsFile {
  <#
 	.SYNOPSIS
-	Get a list of Extended Events Sessions
+	Read XEvents from a xel or xem file
 
 	.DESCRIPTION
-	Retrieves a list of Extended Events Sessions
+	Read XEvents from a xel or xem file
 
-	.PARAMETER SqlInstance
-	The SQL Instances that you're connecting to.
-
-	.PARAMETER SqlCredential
-	Credential object used to connect to the SQL Server as a different user
-
-	.PARAMETER Session
-	Only return specific sessions. This parameter is auto-populated.
+	.PARAMETER Path
+	The path to the file. This is relative to the computer executing the command.
 		
 	.PARAMETER Silent
 	If this switch is enabled, the internal messaging functions will be silenced.
 
 	.NOTES
-	Tags: Memory
-	Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+	Tags: Xevent
 	Website: https://dbatools.io
 	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -29,14 +22,14 @@
 	https://dbatools.io/Read-DbaXEventsFile
 
 	.EXAMPLE
-	Read-DbaXEventsFile -SqlInstance ServerA\sql987
+	Read-DbaXEventsFile -SqlInstance ServerA\sql987 -Path C:\temp\deadocks.xel
 
-	Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties.
+	Returns events
 
 	.EXAMPLE
 	Get-DbaXEventsSession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEventsFile
 	
-	Reads remote xevents 
+	Reads remote xevents
 
 #>
 	[CmdletBinding()]
