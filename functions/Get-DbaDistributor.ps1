@@ -42,7 +42,7 @@ function Get-DbaDistributor {
 	)
 	begin {
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.RMO") -eq $null) {
-			Stop-Function -Message "SMO version is too old. To collect Extended Events, you must have SQL Server Management Studio 2012 or higher installed."
+			Stop-Function -Message "Replication management objects not available. Please install SQL Server Management Studio."
 		}
 	}
 	
