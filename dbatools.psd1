@@ -363,7 +363,8 @@
 		'Get-DbaTopResourceUsage',
 		'New-DbaLogin',
 		'Get-DbaAgListener',
-		'Invoke-DbaDatabaseClone'
+		'Invoke-DbaDatabaseClone',
+		'Read-DbaXEventsFile'
 	)
 	
 	# Cmdlets to export from this module
