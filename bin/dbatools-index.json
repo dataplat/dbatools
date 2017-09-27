@@ -1222,6 +1222,16 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDiskSpace -ComputerName srv0042 | Format-Table -AutoSize\r\n\r\nGet disk space for the server srv0042.\r\n\r\nServer  Name Label  SizeInGB FreeInGB PercentFree BlockSize\r\n------  ---- -----  -------- -------- ----------- ---------\r\nsrv0042 C:\\  System   126,45   114,12       90,25      4096\r\nsrv0042 E:\\  Data1     97,62    96,33       98,67      4096\r\nsrv0042 F:\\  DATA2      29,2     29,2         100     16384\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDiskSpace -ComputerName srv0042 -Unit MB | Format-Table -AutoSize\r\n\r\nGet disk space for the server srv0042 and displays in megabytes (MB).\r\n\r\nServer  Name Label  SizeInMB  FreeInMB PercentFree BlockSize\r\n------  ---- -----  --------  -------- ----------- ---------\r\nsrv0042 C:\\  System   129481 116856,11       90,25      4096\r\nsrv0042 E:\\  Data1     99968  98637,56       98,67      4096\r\nsrv0042 F:\\  DATA2     29901  29900,92         100     16384\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDiskSpace -ComputerName srv0042, srv0007 -Unit TB | Format-Table -AutoSize\r\n\r\nGet disk space from two servers and displays in terabytes (TB).\r\n\r\nServer  Name Label  SizeInTB FreeInTB PercentFree BlockSize\r\n------  ---- -----  -------- -------- ----------- ---------\r\nsrv0042 C:\\  System     0,12     0,11       90,25      4096\r\nsrv0042 E:\\  Data1       0,1     0,09       98,67      4096\r\nsrv0042 F:\\  DATA2      0,03     0,03         100     16384\r\nsrv0007 C:\\  System     0,07     0,01       11,92      4096\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDiskSpace -ComputerName srv0042 -Detailed | Format-Table -AutoSize\r\n\r\nGet detailed disk space information.\r\n\r\nServer  Name                                              Label    SizeInGB FreeInGB PercentFree BlockSize IsSqlDisk \r\nFileSystem DriveType\r\n------  ----                                              -----    -------- -------- ----------- --------- --------- \r\n---------- ---------\r\nsrv0042 C:\\                                               System     126,45   114,12       90,25      4096     False \r\nNTFS       Local Disk\r\nsrv0042 E:\\                                               Data1       97,62    96,33       98,67      4096     False \r\nReFS       Local Disk\r\nsrv0042 F:\\                                               DATA2        29,2     29,2         100     16384     False \r\nFAT32      Local Disk\r\nsrv0042 \\\\?\\Volume{7a31be94-b842-42f5-af71-e0464a1a9803}\\ Recovery     0,44     0,13       30,01      4096     False \r\nNTFS       Local Disk\r\nsrv0042 D:\\                                                               0        0           0               False    \r\n        Compact Disk\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaDistributor",
+        "Description":  "This function locates and enumerates distributor information for a given SQL Server instance.",
+        "Tags":  "Replication",
+        "Author":  "William Durkin, @sql_williamd",
+        "Synopsis":  "Gets the information about a replication distributor for a given SQL Server instance.",
+        "Name":  "Get-DbaDistributor",
+        "Links":  "https://dbatools.io/Get-DbaDistributor",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDistributor -SqlInstance sql2008, sqlserver2012\r\n\r\nRetrieve distributor information for servers sql2008 and sqlserver2012.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaEndpoint",
         "Description":  "The Get-DbaEndpoint command gets SQL Endpoint(s) information for each instance(s) of SQL Server.",
         "Author":  "Garry Bargsley (@gbargsley), http://blog.garrybargsley.com",
@@ -1250,13 +1260,13 @@
     },
     {
         "CommandName":  "Get-DbaFile",
-        "Description":  "This command searches all specified directories, allowing a DBA to see file information on a server without direct access\n\nYou can filter by extension using the -FileType parameter. By default, the default data directory will be returned. You can provide and additional paths to search using the -Path parameter.",
+        "Description":  "This command searches all specified directories, allowing a DBA to see file information on a server without direct access\n\nYou can filter by extension using the -FileType parameter. By default, the default data directory will be returned. You can provide and additional paths to search using the -Path parameter.\n\t\nThanks to serg-52 for the query:  https://www.sqlservercentral.com/Forums/Topic1642213-391-1.aspx",
         "Tags":  "Discovery",
         "Author":  "Brandon Abshire, netnerds.net",
         "Synopsis":  "Get-DbaFile finds files in any directory specified on a remote SQL Server",
         "Name":  "Get-DbaFile",
         "Links":  "https://dbatools.io/Get-DbaFile",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFile -SqlInstance sqlserver2014a -Path E:\\Dir1\r\n\r\nLogs into the SQL Server \"sqlserver2014a\" using Windows credentials and searches E:\\Dir for all files\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFile -SqlInstance sqlserver2014a -SqlCredential $cred -Path \u0027E:\\sql files\u0027\r\n\r\nLogs into the SQL Server \"sqlserver2014a\" using alternative credentials and returns all files in \u0027E:\\sql files\u0027\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$all = Get-DbaDefaultPath -SqlInstance sql2014\r\n\r\nGet-DbaFile -SqlInstance sql2014 -Path $all.Data, $all.Log, $all.Backup\r\nReturns the files in the default data, log and backup directories on sql2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFile -SqlInstance sql2014 -Path \u0027E:\\Dir1\u0027, \u0027E:\\Dir2\u0027\r\n\r\nReturns the files in \"E:\\Dir1\" and \"E:Dir2\" on sql2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFile -SqlInstance -Path \u0027E:\\Dir1\u0027 sql2014, sql2016 -FileType fsf, mld\r\n\r\nFinds files in E:\\Dir1 ending with \".fsf\" and \".mld\" for both the servers sql2014 and sql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFile -SqlInstance -Path \u0027E:\\Dir1\u0027 sql2014, sql2016 -FileType fsf, mld\r\n\r\nFinds files in E:\\Dir1 ending with \".fsf\" and \".mld\" for both the servers sql2014 and sql2016.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFile -SqlInstance sqlserver2014a -Path E:\\Dir1\r\n\r\nLogs into the SQL Server \"sqlserver2014a\" using Windows credentials and searches E:\\Dir for all files\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFile -SqlInstance sqlserver2014a -SqlCredential $cred -Path \u0027E:\\sql files\u0027\r\n\r\nLogs into the SQL Server \"sqlserver2014a\" using alternative credentials and returns all files in \u0027E:\\sql files\u0027\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$all = Get-DbaDefaultPath -SqlInstance sql2014\r\n\r\nGet-DbaFile -SqlInstance sql2014 -Path $all.Data, $all.Log, $all.Backup -Depth 3\r\nReturns the files in the default data, log and backup directories on sql2014, 3 directories deep (recursively).\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFile -SqlInstance sql2014 -Path \u0027E:\\Dir1\u0027, \u0027E:\\Dir2\u0027\r\n\r\nReturns the files in \"E:\\Dir1\" and \"E:Dir2\" on sql2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFile -SqlInstance -Path \u0027E:\\Dir1\u0027 sql2014, sql2016 -FileType fsf, mld\r\n\r\nFinds files in E:\\Dir1 ending with \".fsf\" and \".mld\" for both the servers sql2014 and sql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaFile -SqlInstance -Path \u0027E:\\Dir1\u0027 sql2014, sql2016 -FileType fsf, mld\r\n\r\nFinds files in E:\\Dir1 ending with \".fsf\" and \".mld\" for both the servers sql2014 and sql2016.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaForceNetworkEncryption",
@@ -1794,7 +1804,7 @@
         "Synopsis":  "Returns the top 20 resource consumers for cached queries based on four different metrics: duration, frequency, IO, and CPU.",
         "Name":  "Get-DbaTopResourceUsage",
         "Links":  "https://dbatools.io/Get-DbaTopResourceUsage",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2008, sql2012\r\n\r\nReturn the 80 (20 x 4 types) top usage results by duration, frequency, IO, and CPU servers for servers sql2008 and \r\nsql2012\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2008 -Type Duration, Frequency -Database TestDB\r\n\r\nReturn the highest usage by duration (top 20) and frequency (top 20) for the TestDB on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2016 -Limit 30\r\n\r\nReturn the highest usage by duration (top 30) and frequency (top 30) for the TestDB on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2016| Select *\r\n\r\nReturn all the columns plus the QueryPlan column\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2008, sql2012\r\n\r\nReturn the 80 (20 x 4 types) top usage results by duration, frequency, IO, and CPU servers for servers sql2008 and \r\nsql2012\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2008 -Type Duration, Frequency -Database TestDB\r\n\r\nReturn the highest usage by duration (top 20) and frequency (top 20) for the TestDB on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2016 -Limit 30\r\n\r\nReturn the highest usage by duration (top 30) and frequency (top 30) for the TestDB on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2008, sql2012 -ExcludeSystem\r\n\r\nReturn the 80 (20 x 4 types) top usage results by duration, frequency, IO, and CPU servers for servers sql2008 and \r\nsql2012 without any System Objects\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2016| Select *\r\n\r\nReturn all the columns plus the QueryPlan column\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaTraceFile",
@@ -1879,14 +1889,14 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$ErrorLogs = Get-DbaWindowsLog -SqlInstance sql01\\sharepoint\r\n\r\n$ErrorLogs | Where-Object ErrorNumber -eq 18456\r\n\r\nReturns all lines in the errorlogs that have event number 18456 in them\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Get-DbaXEventsSession",
+        "CommandName":  "Get-DbaXEventSession",
         "Description":  "Retrieves a list of Extended Events Sessions",
         "Tags":  "Memory",
         "Author":  "Klaas Vandenberghe ( @PowerDBAKlaas )",
         "Synopsis":  "Get a list of Extended Events Sessions",
-        "Name":  "Get-DbaXEventsSession",
-        "Links":  "https://dbatools.io/Get-DbaXEventsSession",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXEventsSession -SqlInstance ServerA\\sql987\r\n\r\nReturns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXEventsSession -SqlInstance ServerA\\sql987 | Format-Table ComputerName, SQLInstance, Session, Status \r\n-AutoSize\r\n\r\nReturns a formatted table displaying ComputerName, SQLInstance, Session, and Status.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e\u0027ServerA\\sql987\u0027,\u0027ServerB\u0027 | Get-DbaXEventsSession\r\n\r\nReturns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties, from multiple \r\nSQL Instances.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Name":  "Get-DbaXEventSession",
+        "Links":  "https://dbatools.io/Get-DbaXEventSession",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXEventSession -SqlInstance ServerA\\sql987\r\n\r\nReturns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXEventSession -SqlInstance ServerA\\sql987 | Format-Table ComputerName, SqlInstance, Session, Status \r\n-AutoSize\r\n\r\nReturns a formatted table displaying ComputerName, SqlInstance, Session, and Status.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e\u0027ServerA\\sql987\u0027,\u0027ServerB\u0027 | Get-DbaXEventSession\r\n\r\nReturns a custom object with ComputerName, SqlInstance, Session, StartTime, Status and other properties, from multiple \r\nSQL Instances.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Import-DbaCsvToSql",
@@ -1956,6 +1966,18 @@
         "Name":  "Invoke-DbaCycleErrorLog",
         "Links":  "https://dbatools.io/Invoke-DbaCycleLog",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaCycleLog -SqlInstance sql2016 -Type agent\r\n\r\nCycles the current error log for the SQL Server Agent on SQL Server instance sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaCycleLog -SqlInstance sql2016 -Type instance\r\n\r\nCycles the current error log for the SQL Server instance on SQL Server instance sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaCycleLog -SqlInstance sql2016\r\n\r\nCycles the current error log for both SQL Server instance and SQL Server Agent on SQL Server instance sql2016\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Invoke-DbaDatabaseClone",
+        "Description":  "Clones a database schema and statistics.\n\nThis can be useful for testing query performance without requiring all the space needed for the data in the database.\n\nRead more at sqlperformance: https://sqlperformance.com/2016/08/sql-statistics/expanding-dbcc-clonedatabase\n\nThanks to Microsoft Tiger Team for the code and idea https://github.com/Microsoft/tigertoolbox/",
+        "Tags":  [
+                     "Statistics",
+                     "Performance"
+                 ],
+        "Synopsis":  "Clones a database schema and statistics",
+        "Name":  "Invoke-DbaDatabaseClone",
+        "Links":  "https://dbatools.io/Invoke-DbaDatabaseClone",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone\r\n\r\nClones mydb to myclone on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaDatabaseClone -SqlInstance sql2016 -Database mydb -CloneDatabase myclone, myclone2 -UpdateStatistics\r\n\r\nUpdates the statistics of mydb then clones to myclone and myclone2\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Invoke-DbaDatabaseShrink",
@@ -2285,6 +2307,15 @@
         "Name":  "Read-DbaTransactionLog",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase\r\n\r\nWill read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell \r\nobject $Log\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase -IgnoreLimit\r\n\r\nWill read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell \r\nobject $Log, ignoring the recommnedation of not returning more that 0.5GB of log\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Read-DbaXEventFile",
+        "Description":  "Read XEvents from a xel or xem file. Returns a weird Microsoft.SqlServer.XEvent.Linq.QueryableXEventData enumeration object.",
+        "Tags":  "Xevent",
+        "Synopsis":  "Read XEvents from a xel or xem file",
+        "Name":  "Read-DbaXEventFile",
+        "Links":  "https://dbatools.io/Read-DbaXEventFile",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaXEventFile -SqlInstance ServerA\\sql987 -Path C:\\temp\\deadocks.xel\r\n\r\nReturns events\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXEventSession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEventFile\r\n\r\nReads remote xevents by acccessing the file over the admin UNC share\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Remove-DbaAgentJob",
@@ -3166,6 +3197,15 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eUninstall-DbaWatchUpdate\r\n\r\nRemoves the scheduled task created by Install-DbaWatchUpdate.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Update-DbaSqlServiceAccount",
+        "Description":  "Reconfigures service account or updates password of the specified SQL Server service. The service will be restarted in the event of changing the account.",
+        "Author":  "Kirill Kravtsov (@nvarscar)",
+        "Synopsis":  "Changes service account (or just its password) of the SQL Server service.",
+        "Name":  "Update-DbaSqlServiceAccount",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$NewPassword = ConvertTo-SecureString \u0027Qwerty1234\u0027 -AsPlainText -Force\r\n\r\nUpdate-DbaSqlServiceAccount -ComputerName sql1 -ServiceName \u0027MSSQL$MYINSTANCE\u0027 -Password $NewPassword\r\n\r\nChanges the current service account\u0027s password of the service MSSQL$MYINSTANCE to \u0027Qwerty1234\u0027\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$cred = Get-Credential\r\n\r\nGet-DbaSqlService sql1 -Type Engine,Agent -Instance MYINSTANCE | Update-DbaSqlServiceAccount -ServiceCredential $cred\r\n\r\nRequests credentials from the user and configures them as a service account for the SQL Server engine and agent \r\nservices of the instance sql1\\MYINSTANCE\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$cred = New-Object System.Management.Automation.PSCredential (\"NETWORKSERVICE\", [securestring]::New())\r\n\r\nUpdate-DbaSqlServiceAccount -ComputerName sql1,sql2 -ServiceName \u0027MSSQLSERVER\u0027,\u0027SQLSERVERAGENT\u0027 -ServiceCredential $cred\r\n\r\nConfigures SQL Server engine and agent services on the machines sql1 and sql2 to run under Network Service system user.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Update-Dbatools",
         "Description":  "Exported function. Updates dbatools. Deletes current copy and replaces it with freshest copy.",
         "Tags":  "Module",
@@ -3195,6 +3235,15 @@
         "Name":  "Watch-DbaUpdate",
         "Links":  "https://dbatools.io/Watch-DbaUpdate",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eWatch-DbaUpdate\r\n\r\nWatches the gallery for updates to dbatools.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Watch-DbaXEventSession",
+        "Description":  "Watch live XEvent Data as it happens - this command runs until you kill the PowerShell session or Ctrl-C.\n\nThanks to Dave Mason (@BeginTry) for some straightforward code samples https://itsalljustelectrons.blogspot.be/2017/01/SQL-Server-Extended-Event-Handling-Via-Powershell.html",
+        "Tags":  "Xevent",
+        "Synopsis":  "Watch live XEvent Data as it happens",
+        "Name":  "Watch-DbaXEventSession",
+        "Links":  "https://dbatools.io/Watch-DbaXEventSession",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eWatch-DbaXEventSession -SqlInstance ServerA\\sql987 -Session system_health\r\n\r\nShows events for the system_health session as it happens\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXEventSession  -SqlInstance sql2016 -Session system_health | Watch-DbaXEventSession | Select \r\n-ExpandProperty Fields\r\n\r\nAlso shows events for the system_health session as it happens and expands the Fields property. Looks a bit like this\r\n\r\nName                Type                                   Value\r\n----                ----                                   -----\r\nid                  System.UInt32                              0\r\ntimestamp           System.UInt64                              0\r\nprocess_utilization System.UInt32                              0\r\nsystem_idle         System.UInt32                             99\r\nuser_mode_time      System.UInt64                        8906250\r\nkernel_mode_time    System.UInt64                         468750\r\npage_faults         System.UInt32                             60\r\nworking_set_delta   System.Int64                               0\r\nmemory_utilization  System.UInt32                             99\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Write-DbaDataTable",
