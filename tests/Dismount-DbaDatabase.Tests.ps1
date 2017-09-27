@@ -67,6 +67,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$null = Attach-DbaDatabase -SqlInstance $script:instance2 -Database $db1 -FileStructure $fileStructure
 			$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2 | Remove-DbaDatabase -Confirm:$false
 		}
+		
 		It "Skips detachment if database is snapshotted" {
 			$result = Dismount-DbaDatabase -SqlInstance $script:instance2 -Database $db2 -Force -WarningAction SilentlyContinue -WarningVariable warn
 			$result | Should Be $null
@@ -74,9 +75,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$result = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db2
 			$result | Should Not Be $null
 		}
+		$null = Stop-DbaProcess -SqlInstance $script:instance2 -Database $db1
+		$result = Dismount-DbaDatabase -SqlInstance $script:instance2 -Database $db1
 		It "Detaches the database correctly" {
-			$null = Stop-DbaProcess -SqlInstance $script:instance2 -Database $db1
-			$result = Dismount-DbaDatabase -SqlInstance $script:instance2 -Database $db1
 			$result = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1
 			$result | Should Be $null
 		}

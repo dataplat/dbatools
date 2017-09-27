@@ -11,7 +11,7 @@
 	RootModule			    = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion		    = '0.9.57'
+	ModuleVersion		    = '0.9.58'
 	
 	# ID used to uniquely identify this module
 	GUID				    = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -184,7 +184,7 @@
 		'Find-DbaDatabase',
 		'Get-DbaMsdtc',
 		'Get-DbaUptime',
-		'Get-DbaXEventsSession',
+		'Get-DbaXEventSession',
 		'Test-DbaOptimizeForAdHoc',
 		'Find-DbaStoredProcedure',
 		'Measure-DbaBackupThroughput',
@@ -362,7 +362,12 @@
 		'Clear-DbaWaitStatistics',
 		'Get-DbaTopResourceUsage',
 		'New-DbaLogin',
-		'Get-DbaAgListener'
+		'Get-DbaAgListener',
+		'Invoke-DbaDatabaseClone',
+		'Read-DbaXEventFile',
+		'Get-DbaDistributor',
+		'Update-DbaSqlServiceAccount',
+		'Watch-DbaXEventSession'
 	)
 	
 	# Cmdlets to export from this module
@@ -444,7 +449,8 @@
 	'Invoke-DbaSqlcmd',
 	'Get-DbaQueryStoreConfig',
 	'Set-DbaQueryStoreConfig',
-	'Get-DbaRegisteredServerName'
+	'Get-DbaRegisteredServerName',
+	'Get-DbaXEventsSession'
 	
 	
 	# List of all modules packaged with this module
@@ -489,8 +495,8 @@
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUtxf5PiC4Z0yLmYvrGTXpQzN2
-# j7+ggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUAdMgoNvqBV6xAqrCIevI8V+P
+# Pd+ggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -621,22 +627,22 @@
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQU94Ur1/1Fo/yStJ102IilAVP079QwDQYJKoZIhvcNAQEBBQAE
-# ggEAAJgT7hMRvdPeQPrDIJA8/YR8FAUf72nI3OqehneQa0qhCQGOww/bAIB8qjK6
-# dgJMv5z2SMee+wUOuhDVkW6gdZbs5BDr5sEHdKNGDG6Zd18Ry+2QEsSo2ej0zmrI
-# d9lIkUGt/cZDQrDwDFHYw0/bSa3oQ56bgHf7jyJoDO3976jsCzcYs7Ewv7bNC2fZ
-# KCXtKFF+TfxCxZxbpKSm0wiWgh7KkNLIloJKd9MZidTeYG3pTWnmdzcq7rm1rxn7
-# SAZbYR/y0eRewpXoVmxzmi/8GB4LZloOYKvkeRST0dU6l7EXJiaigv/NtRLiRMgG
-# EJW15riAuNZSDpzqIQ3qymeFsKGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUiy7m6wy+E38WC1Wb+GVvIO7pF/AwDQYJKoZIhvcNAQEBBQAE
+# ggEAFaEbnsFWiLEQUS2oWZCYrTRQyKTebnzCR7jc6d0Hm+skZLOfNxwVZ9fXSkAw
+# msVMNetRJuT/gVd+cEM1wvMJJV/m0e3RgGN892CEFcybrCVp6fh0MzVoVzz4gz9x
+# ol6Q+QU2K0ItuEdK5/U+qcgZ3JLsuik/+dDbmhhlJ7aSs06fPYDNNdTBlLz1FUH9
+# VYtzM4C7J+5wgzfGaDh2uRd5wvw/KeRwo0pKjttPdhvWN31HYJTLNJAm/uBQKOjZ
+# rk891QpGGqKyBCKPuyy/YI4OJASpZNRHHrPlC03Dafw1Du/c0bZUz7XBQb4fjTkS
+# 5uLR3lVQ4mLt1bhBmBOrqDUglaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwOTI2MTEwNDQ2WjAj
-# BgkqhkiG9w0BCQQxFgQUKUoLk4DnVXX59mWGw4gkf4or2jcwDQYJKoZIhvcNAQEB
-# BQAEggEAhcZgkOXoh5qMekJNS+BwxHhTcmK7r34XcfhFZf9QWb8rWSFkfdvkeeOR
-# hzrPE4+Ey9lR04DgXHKFUto7OG163oBQC1QWQxuRyqggaCm6RFeBjscaQGoRmn12
-# 78CG6Bq3dvW+/XRAVq1un5lL+8CAUNV5ZmwYhSxYHFE53lbCOcK2EeW+p4zWH2MU
-# e5ccJOB7jfFW0NnXHWu6VzhGeFTMAH4rA9uFWoMnoJDG+gi7yvvNLtBRddyOMUJL
-# 1bqRrsvFXQ92g3MUD8H1mEVKKl0ekpHDWAR/fVhPMMdOA9OGvHoG0BQXnKlYeYUO
-# KZhhXGL0M98o+eetUogeZs/fCOE1aQ==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwOTI3MjExNTMwWjAj
+# BgkqhkiG9w0BCQQxFgQUs///QFiKvH3zSFVuYIARWneVVe4wDQYJKoZIhvcNAQEB
+# BQAEggEAGaH1zV4I3aeTlGYfodkhB8MGHtVzdIP/XagmrhD1WfvB90hSZUikV4Yl
+# SsIgBdu2A1jjtDIM58BXY5e8HKnjuhCUt5PaIcXU5PogKE4DZ5VM8ZMLV4KKIvWC
+# w+wpOjKi1i8PdHJzZ31VGxgjOUjSnUW57JdkdtG0hYca7s7+oBNZPjw6Ua9y1mOp
+# 2tizFX0UKOpqsj63WSP9DGqO2P51XRKDEY5PzHhjnQHxQuhsY2wUbjXT+Ol3T2fi
+# 7FkUrsefFxTiPtV1snNiiRIXNmnYyuXJw+BOYQ+zTtZuNzp+O872+2ScsDiQKnTn
+# EdvZ182/2HS95RwtLTDh/0z6Dk7nlQ==
 # SIG # End signature block
