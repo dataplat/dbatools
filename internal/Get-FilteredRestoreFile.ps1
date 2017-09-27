@@ -199,9 +199,9 @@ function Get-FilteredRestoreFile {
             #Get latest Differential Backup
             #If we're doing a continue and the last restore wasn't a full db we can't use a diff, so skip
             if ($null -eq $lastrestore -or $lastrestore -eq 'Database'  ) {
-                $DiffbackupsLSN = ($SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.FirstLsn -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1).FirstLSN
+                $DiffbackupsLSN = ($SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.CheckpointLsn -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1).FirstLSN
                 #Scan for striped differential backups
-                $Diffbackups = $SqlBackupDetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.FirstLsn -and $_.FirstLSN -eq $DiffBackupsLSN}
+                $Diffbackups = $SqlBackupDetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.CheckpointLsn -and $_.FirstLSN -eq $DiffBackupsLSN}
                 if ($null -ne $Diffbackups) {
                     Write-Message -Level Verbose -Message "we have at least one diff so look for tlogs after the last one"
                     #If we have a Diff backup, we only need T-log backups post that point
