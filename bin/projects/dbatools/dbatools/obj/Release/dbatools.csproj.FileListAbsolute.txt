@@ -1,0 +1,6 @@
+C:\github\dbatools\bin\projects\dbatools\dbatools\obj\Release\dbatools.csprojResolveAssemblyReference.cache
+C:\github\dbatools\bin\projects\dbatools\dbatools\obj\Release\dbatools.dll
+C:\github\dbatools\bin\dbatools.xml
+C:\github\dbatools\bin\projects\dbatools\dbatools\obj\Release\dbatools.pdb
+C:\github\dbatools\bin\dbatools.dll
+C:\github\dbatools\bin\dbatools.pdb
