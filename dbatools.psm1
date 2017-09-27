@@ -29,8 +29,8 @@ foreach ($smoversion in "13.0.0.0", "12.0.0.0") {
 }
 
 $assemblies = "Management.Common", "Dmf", "Instapi", "SqlWmiManagement", "ConnectionInfo", "SmoExtended", "SqlTDiagM", "Management.Utility",
-"SString", "Management.RegisteredServers", "Management.Sdk.Sfc", "SqlEnum", "RegSvrEnum", "WmiEnum", "ServiceBrokerEnum", "Management.XEvent",
-"ConnectionInfoExtended", "Management.Collector", "Management.CollectorEnum", "Management.Dac", "Management.DacEnum", "Management.IntegrationServices"
+"SString", "Management.RegisteredServers", "Management.Sdk.Sfc", "SqlEnum", "RegSvrEnum", "WmiEnum", "ServiceBrokerEnum", "Management.XEvent", "XEvent.Linq"
+"ConnectionInfoExtended", "Management.Collector", "Management.CollectorEnum", "Management.Dac", "Management.DacEnum", "Management.IntegrationServices", "XE.Core"
 
 foreach ($assembly in $assemblies) {
 	try {
@@ -64,6 +64,8 @@ if ($smoadded -eq $false) {
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventDbScopedEnum.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventEnum.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Collector.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XE.Core.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XEvent.Linq.dll"
 }
 <# 
 
@@ -214,6 +216,8 @@ if (-not (Test-Path Alias:Restore-HallengrenBackup)) { Set-Alias -Scope Global -
 if (-not (Test-Path Alias:Get-DbaDatabaseFreeSpace)) { Set-Alias -Scope Global -Name Get-DbaDatabaseFreeSpace -Value Get-DbaDatabaseSpace }
 if (-not (Test-Path Alias:Set-DbaQueryStoreConfig)) { Set-Alias -Scope Global -Name Set-DbaQueryStoreConfig -Value Set-DbaDbQueryStoreOptions }
 if (-not (Test-Path Alias:Get-DbaQueryStoreConfig)) { Set-Alias -Scope Global -Name Get-DbaQueryStoreConfig -Value Get-DbaDbQueryStoreOptions }
+if (-not (Test-Path Alias:Get-DbaXEventsSession)) { Set-Alias -Scope Global -Name Get-DbaXEventsSession -Value Get-DbaXEventSession }
+
 
 # Leave forever
 Set-Alias -Scope Global -Name Attach-DbaDatabase -Value Mount-DbaDatabase
