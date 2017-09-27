@@ -1,5 +1,5 @@
 ﻿$functions = Get-ChildItem function:\*-Dba*
-
+ 
 #region Automatic TEPP by parameter name
 foreach ($function in $functions) {
 	if ($function.Parameters.Keys -contains "SqlInstance") {
