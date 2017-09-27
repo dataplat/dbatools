@@ -30,7 +30,6 @@ $TestsRunGroups = @{
 	)
 	# run on scenario 2016
 	"2016"              = @(
-		'Dismount-DbaDatabase',
 		'Get-DbaAgDatabase',
 		'Get-DbaAgHadr',
 		'Get-DbaAgReplica',
@@ -61,7 +60,8 @@ $TestsRunGroups = @{
 	)
 	# do not run on appveyor
 	"appveyor_disabled" = @(
-		'Get-DbaDatabaseState'
+		'Get-DbaDatabaseState',
+		'Dismount-DbaDatabase'
 	)
 	
 	# do not run everywhere
