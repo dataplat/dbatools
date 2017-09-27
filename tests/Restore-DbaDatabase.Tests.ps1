@@ -331,10 +331,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should Restore successfully" {
             ($results.RestoreComplete -contains $false) | Should Be $false    
         }
-        It "Should have no Warnining or errors" {
-            ('' -eq $WarnVar) | Should Be $true
-            ('' -eq $ErrVar) | Should be $true
-        }
     }
     Clear-DbaSqlConnectionPool
 	Start-Sleep -Seconds 1
