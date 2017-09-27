@@ -184,7 +184,7 @@
 		'Find-DbaDatabase',
 		'Get-DbaMsdtc',
 		'Get-DbaUptime',
-		'Get-DbaXEventsSession',
+		'Get-DbaXEventSession',
 		'Test-DbaOptimizeForAdHoc',
 		'Find-DbaStoredProcedure',
 		'Measure-DbaBackupThroughput',
@@ -364,8 +364,9 @@
 		'New-DbaLogin',
 		'Get-DbaAgListener',
 		'Invoke-DbaDatabaseClone',
-		'Read-DbaXEventsFile',
-		'Get-DbaDistributor'
+		'Read-DbaXEventFile',
+		'Get-DbaDistributor',
+		'Update-DbaSqlServiceAccount'
 	)
 	
 	# Cmdlets to export from this module
@@ -447,7 +448,8 @@
 	'Invoke-DbaSqlcmd',
 	'Get-DbaQueryStoreConfig',
 	'Set-DbaQueryStoreConfig',
-	'Get-DbaRegisteredServerName'
+	'Get-DbaRegisteredServerName',
+	'Get-DbaXEventsSession'
 	
 	
 	# List of all modules packaged with this module

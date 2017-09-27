@@ -1,4 +1,4 @@
-function Get-DbaXEventsSession {
+function Get-DbaXEventSession {
  <#
 	.SYNOPSIS
 	Get a list of Extended Events Sessions
@@ -26,20 +26,20 @@ function Get-DbaXEventsSession {
 	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.LINK
-	https://dbatools.io/Get-DbaXEventsSession
+	https://dbatools.io/Get-DbaXEventSession
 
 	.EXAMPLE
-	Get-DbaXEventsSession -SqlInstance ServerA\sql987
+	Get-DbaXEventSession -SqlInstance ServerA\sql987
 
 	Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties.
 
 	.EXAMPLE
-	Get-DbaXEventsSession -SqlInstance ServerA\sql987 | Format-Table ComputerName, SqlInstance, Session, Status -AutoSize
+	Get-DbaXEventSession -SqlInstance ServerA\sql987 | Format-Table ComputerName, SqlInstance, Session, Status -AutoSize
 
 	Returns a formatted table displaying ComputerName, SqlInstance, Session, and Status.
 
 	.EXAMPLE
-	'ServerA\sql987','ServerB' | Get-DbaXEventsSession
+	'ServerA\sql987','ServerB' | Get-DbaXEventSession
 
 	Returns a custom object with ComputerName, SqlInstance, Session, StartTime, Status and other properties, from multiple SQL Instances.
 
@@ -59,6 +59,8 @@ function Get-DbaXEventsSession {
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null) {
 			Stop-Function -Message "SMO version is too old. To collect Extended Events, you must have SQL Server Management Studio 2012 or higher installed."
 		}
+		
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-DbaXEventsSession
 	}
 	
 	process {
