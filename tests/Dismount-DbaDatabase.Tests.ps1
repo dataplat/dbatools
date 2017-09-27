@@ -50,7 +50,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	Context "Database Detachment" {
 		BeforeAll {
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$server = Get-DbaInstance -SqlInstance $script:instance2
 			$db1 = "dbatoolsci_dbsetstate_detached"
 			$db2 = "dbatoolsci_dbsetstate_detached_withSnap"
 			$server.Query("CREATE DATABASE $db1")

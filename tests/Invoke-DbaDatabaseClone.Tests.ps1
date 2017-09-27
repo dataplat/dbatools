@@ -8,7 +8,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	$clonedb2 = "dbatoolsci_clonetest_CLONE2"
 	Context "Command functions as expected" {
 		BeforeAll {
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$server = Get-DbaInstance -SqlInstance $script:instance2
 			$server.Query("CREATE DATABASE $dbname")
 		}
 		
