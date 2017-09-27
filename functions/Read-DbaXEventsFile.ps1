@@ -60,7 +60,8 @@
 		foreach ($file in $path) {
 			
 			if (-not $Exact) {
-				$file = $file.Replace('.xel', '*.xel')	
+				$file = $file.Replace('.xel', '*.xel')
+				$file = $file.Replace('.xem', '*.xem')
 			}
 			
 			New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($file)
