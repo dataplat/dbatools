@@ -31,9 +31,9 @@
 	https://dbatools.io/Watch-DbaXEventSession
 
 	.EXAMPLE
-	Watch-DbaXEventSession -SqlInstance ServerA\sql987 -Session deadlocks
+	Watch-DbaXEventSession -SqlInstance ServerA\sql987 -Session system_health
 
-	Shows events for the deadlocks session as it happens
+	Shows events for the system_health session as it happens
 
 	.EXAMPLE
 	Get-DbaXEventSession -SqlInstance sql2014 -Session deadlocks | Watch-DbaXEventSession
