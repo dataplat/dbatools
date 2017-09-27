@@ -9,7 +9,7 @@ function Test-DbaDiskAllocation {
 			Specify -Detailed for details.
 			
 			References:
-			https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx - "The performance question here is usually not one of correlation per the formula, but whether the cluster size ..has been explicitly defined at 64 KB, which is a best practice for SQL Server."
+			https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx - "The performance question here is usually not one of correlation per the formula, but whether the cluster size has been explicitly defined at 64 KB, which is a best practice for SQL Server."
 			
 			http://tk.azurewebsites.net/2012/08/
 			
@@ -20,8 +20,14 @@ function Test-DbaDiskAllocation {
 			If this switch is enabled, the disk(s) will not be checked for SQL Server data or log files.
 			
 		.PARAMETER SqlCredential
-			If you want to use SQL Server Authentication to connect.
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.		
+		
 		.PARAMETER Detailed
 			If this switch is enabled, detailed output is produced.
 
