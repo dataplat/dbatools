@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 # Targets only instance2 because it's the only one where Snapshots can happen
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
-		$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+		$server = Get-DbaInstance -SqlInstance $script:instance2
 		$db1 = "dbatoolsci_RemoveSnap"
 		$db1_snap1 = "dbatoolsci_RemoveSnap_snapshotted1"
 		$db1_snap2 = "dbatoolsci_RemoveSnap_snapshotted2"
