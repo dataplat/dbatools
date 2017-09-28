@@ -369,7 +369,9 @@
 		'Update-DbaSqlServiceAccount',
 		'Watch-DbaXEventSession',
 		'Disable-DbaTraceFlag',
-		'Enable-DbaTraceFlag'
+		'Enable-DbaTraceFlag',
+		'Start-DbaAgentJob',
+		'Stop-DbaAgentJob'
 	)
 	
 	# Cmdlets to export from this module
