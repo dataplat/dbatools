@@ -111,35 +111,10 @@ function New-DbaAgentSchedule {
 			https://dbatools.io/New-DbaAgentSchedule
 
 		.EXAMPLE
-			New-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -Schedule daily -FrequencyType Daily -FrequencyInterval 1 -Force
+			New-DbaAgentSchedule -SqlInstance localhost\SQL2016 -Schedule daily -FrequencyType Daily -FrequencyInterval Everyday -Force
 
-			Creates a schedule for the job with a daily frequency every day. It also assumes default values for the start date, start time, end date and end time.
+			Creates a schedule with a daily frequency every day. It also assumes default values for the start date, start time, end date and end time.
 
-		.EXAMPLE
-			New-DbaAgentSchedule -SqlInstance sql1 -Job Job1, Job2, Job3 -Schedule weekly -FrequencyType Weekly -FrequencyInterval Monday, Wednesday, Friday -Force
-
-			Creates a schedule for the job with a daily frequency every day. It also assumes default values for the start date, start time, end date and end time.
-			The force will remove any existing schedules that have the same name
-
-		.EXAMPLE
-			New-DbaAgentSchedule -SqlInstance sql1 -Job Job1 -Schedule daily -StartDate 20170530 -StartTime 110000 -EndTime 150000 -FrequencyType Daily -FrequencyInterval 1
-
-			Create a daily schedule that starts on the May 30th on 11 AM and ends on 3 PM.
-
-		.EXAMPLE
-			sql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1 -Schedule daily -FrequencyType Daily -FrequencyInterval 1
-
-			Creates a schedule for the job with a daily frequency every day on multiple servers
-
-		.EXAMPLE
-			sql1, sql2, sql3 | New-DbaAgentSchedule -Job Job1, Job2, Job3 -Schedule daily -FrequencyType Daily -FrequencyInterval 1
-
-			Creates a schedule for the job with a daily frequency every day on multiple servers for multiple jobs using pipe line
-
-		.EXAMPLE
-			New-DbaAgentSchedule -SqlInstance sql1 -Schedule daily -FrequencyType Daily -FrequencyInterval 1 -Force
-
-			Creates a schedule that's not connected to a job
 	#>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 	param (
@@ -420,7 +395,7 @@ function New-DbaAgentSchedule {
 			# Try connecting to the instance
 			Write-Message -Message "Attempting to connect to $instance" -Level Output
 			try {
-				$server = Connect-DbaSqlServer -SqlInstance $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
