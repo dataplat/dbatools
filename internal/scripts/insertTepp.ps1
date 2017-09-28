@@ -1,5 +1,5 @@
 ﻿$functions = Get-ChildItem function:\*-Dba*
-
+ 
 #region Automatic TEPP by parameter name
 foreach ($function in $functions) {
 	if ($function.Parameters.Keys -contains "SqlInstance") {
@@ -84,14 +84,14 @@ foreach ($function in $functions) {
 	if ($function.Parameters.Keys -contains "ExcludeCredential") {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeCredential -Name Credential
 	}
-	
+
 	if ($function.Parameters.Keys -contains "CredentialIdentity") {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter CredentialIdentity -Name Credential
 	}
 	if ($function.Parameters.Keys -contains "ExcludeCredentialIdentity") {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeCredentialIdentity -Name Credential
 	}
-	
+
 	if ($function.Parameters.Keys -contains "CustomError") {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter CustomError -Name CustomError
 	}
@@ -181,6 +181,13 @@ foreach ($function in $functions) {
 	}
 	if ($function.Parameters.Keys -contains "ExcludeGroup") {
 		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeGroup -Name Group
+	}
+
+	if ($function.Parameters.Keys -contains "Session") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter Session -Name Session
+	}
+	if ($function.Parameters.Keys -contains "ExcludeSession") {
+		Register-DbaTeppArgumentCompleter -Command $function.Name -Parameter ExcludeSession -Name Session
 	}
 }
 #endregion Automatic TEPP by parameter name
