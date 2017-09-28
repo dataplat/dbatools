@@ -448,6 +448,16 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eDisable-DbaForceNetworkEncryption\r\n\r\nDisables Force Encryption on the default (MSSQLSERVER) instance on localhost - requires (and checks for) RunAs admin.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eDisable-DbaForceNetworkEncryption -SqlInstance sql01\\SQL2008R2SP2\r\n\r\nDisables Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both login and modify the \r\nregistry.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eDisable-DbaForceNetworkEncryption -SqlInstance sql01\\SQL2008R2SP2 -WhatIf\r\n\r\nShows what would happen if the command were executed.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Disable-DbaTraceFlag",
+        "Description":  "The function will disable a Trace Flag that is currently running globally on the SQL Server instance(s) listed",
+        "Tags":  "TraceFlag",
+        "Author":  "Garry Bargsley (@gbargsley), http://blog.garrybargsley.com",
+        "Synopsis":  "Disable a Global Trace Flag that is currently running",
+        "Name":  "Disable-DbaTraceFlag",
+        "Links":  "https://dbatools.io/Disable-DbaTraceFlag",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eDisable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 3226\r\n\r\nDisable the globally running trace flag 3226 on SQL Server instance sql2016\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Dismount-DbaDatabase",
         "Description":  "This command detaches one or more SQL Server databases. If necessary, -Force can be used to break mirrors and remove databases from availability groups prior to detaching.",
         "Tags":  "Database",
@@ -478,6 +488,16 @@
         "Name":  "Enable-DbaForceNetworkEncryption",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eEnable-DbaForceNetworkEncryption\r\n\r\nEnables Force Encryption on the default (MSSQLSERVER) instance on localhost. Requires (and checks for) RunAs admin.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eEnable-DbaForceNetworkEncryption -SqlInstance sql01\\SQL2008R2SP2\r\n\r\nEnables Force Network Encryption for the SQL2008R2SP2 on sql01. Uses Windows Credentials to both connect and modify the \r\nregistry.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eEnable-DbaForceNetworkEncryption -SqlInstance sql01\\SQL2008R2SP2 -WhatIf\r\n\r\nShows what would happen if the command were executed.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Enable-DbaTraceFlag",
+        "Description":  "The function will set one or multiple trace flags on the SQL Server instance(s) listed",
+        "Tags":  "TraceFlag",
+        "Author":  "Garry Bargsley (@gbargsley), http://blog.garrybargsley.com",
+        "Synopsis":  "Enable a Global Trace Flag",
+        "Name":  "Enable-DbaTraceFlag",
+        "Links":  "https://dbatools.io/Enable-DbaTraceFlag",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eEnable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 3226\r\n\r\nEnable the trace flag 32266 on SQL Server instance sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eEnable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 1117, 1118\r\n\r\nEnable multiple trace flags on SQL Server instance sql2016\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Expand-DbaTLogResponsibly",
@@ -1822,10 +1842,7 @@
     {
         "CommandName":  "Get-DbaTraceFlag",
         "Description":  "Returns Trace Flags that are enabled globally on each instance(s) of SQL Server as an object.",
-        "Tags":  [
-                     "Trace",
-                     "Flag"
-                 ],
+        "Tags":  "TraceFlag",
         "Author":  "Kevin Bullen (@sqlpadawan)",
         "Synopsis":  "Get global Trace Flag(s) information for each instance(s) of SQL Server.",
         "Name":  "Get-DbaTraceFlag",
@@ -1906,7 +1923,7 @@
         "Synopsis":  "Efficiently imports very large (and small) CSV files into SQL Server using only the .NET Framework and PowerShell.",
         "Name":  "Import-DbaCsvToSql",
         "Links":  "https://blog.netnerds.net/2015/09/Import-DbaCsvtosql-super-fast-csv-to-sql-server-import-powershell-module/",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaCsvToSql -Csv C:\\temp\\housing.csv -SqlInstance sql001 -Database markets\r\n\r\nImports the entire comma-delimited housing.csv to the SQL \"markets\" database on a SQL Server named sql001.\r\n\r\nSince a table name was not specified, the table name is automatically determined from filename as \"housing\" and a \r\nprompt will appear to confirm table name.\r\n\r\nThe first row is not skipped, as it does not contain column names.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaCsvToSql -Csv .\\housing.csv -SqlInstance sql001 -Database markets -Table housing -First 100000 -Safe \r\n-Delimiter \"`t\" -FirstRowColumns\r\n\r\nImports the first 100,000 rows of the tab delimited housing.csv file to the \"housing\" table in the \"markets\" database \r\non a SQL Server named sql001. Since -Safe was specified, the OleDB method will be used for the bulk import. The first \r\nrow is skipped, as it contains column names.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaCsvToSql -csv C:\\temp\\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter \r\n\"|\" -Turbo\r\n\r\nImports all records from the pipe delimited huge.txt file using the fastest method possible into the latitudes table \r\nwithin the locations database. Obtains a table lock for the duration of the bulk copy operation. This specific command \r\nhas been used \r\nto import over 10.5 million rows in 2 minutes.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaCsvToSql -Csv C:\\temp\\housing.csv, .\\housing2.csv -SqlInstance sql001 -Database markets -Table housing \r\n-Delimiter \"`t\" -query \"select top 100000 column1, column3 from csv\" -Truncate\r\n\r\nTruncates the \"housing\" table, then imports columns 1 and 3 of the first 100000 rows of the tab-delimited housing.csv \r\nin the C:\\temp directory, and housing2.csv in the current directory. Since the query is executed against both files, a \r\ntotal of 200,000 rows will be imported.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaCsvToSql -Csv C:\\temp\\housing.csv -SqlInstance sql001 -Database markets -Table housing -query \"select \r\naddress, zip from csv where state = \u0027Louisiana\u0027\" -FirstRowColumns -Truncate -FireTriggers\r\n\r\nUses the first line to determine CSV column names. Truncates the \"housing\" table on the SQL Server, then imports the \r\naddress and zip columns from all records in the housing.csv where the state equals Louisiana.\r\n\r\nTriggers are fired for all rows. Note that this does slightly slow down the import.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaCsvToSql -Csv C:\\temp\\housing.csv -SqlInstance sql001 -Database markets\r\n\r\nImports the entire comma-delimited housing.csv to the SQL \"markets\" database on a SQL Server named sql001.\r\n\r\nSince a table name was not specified, the table name is automatically determined from filename as \"housing\" and a \r\nprompt will appear to confirm table name.\r\n\r\nThe first row is not skipped, as it does not contain column names.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaCsvToSql -Csv .\\housing.csv -SqlInstance sql001 -Database markets -Table housing -First 100000 -Safe \r\n-Delimiter \"`t\" -FirstRowColumns\r\n\r\nImports the first 100,000 rows of the tab delimited housing.csv file to the \"housing\" table in the \"markets\" database \r\non a SQL Server named sql001. Since -Safe was specified, the OleDB method will be used for the bulk import. The first \r\nrow is skipped, as it contains column names.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaCsvToSql -csv C:\\temp\\huge.txt -SqlInstance sqlcluster -Database locations -Table latitudes -Delimiter \r\n\"|\" -Turbo\r\n\r\nImports all records from the pipe delimited huge.txt file using the fastest method possible into the latitudes table \r\nwithin the locations database. Obtains a table lock for the duration of the bulk copy operation. This specific command \r\nhas been used \r\nto import over 10.5 million rows in 2 minutes.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaCsvToSql -Csv C:\\temp\\housing.csv, .\\housing2.csv -SqlInstance sql001 -Database markets -Table housing \r\n-Delimiter \"`t\" -query \"select top 100000 column1, column3 from csv\" -Truncate\r\n\r\nTruncates the \"housing\" table, then imports columns 1 and 3 of the first 100000 rows of the tab-delimited housing.csv \r\nin the C:\\temp directory, and housing2.csv in the current directory. Since the query is executed against both files, a \r\ntotal of 200,000 rows will be imported.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaCsvToSql -Csv C:\\temp\\housing.csv -SqlInstance sql001 -Database markets -Table housing -query \"select \r\naddress, zip from csv where state = \u0027Louisiana\u0027\" -FirstRowColumns -Truncate -FireTriggers\r\n\r\nUses the first line to determine CSV column names. Truncates the \"housing\" table on the SQL Server, then imports the \r\naddress and zip columns from all records in the housing.csv where the state equals Louisiana.\r\n\r\nTriggers are fired for all rows. Note that this does slightly slow down the import.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaCsvToSql -Csv c:\\temp\\SingleColumn.csv -SqlInstance sql001 -Database markets -Table TempTable \r\n-SingleColumn\r\n\r\nUpload the single column Csv SingleColumn.csv to Temptable which has just one column\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Import-DbaSpConfigure",
@@ -2845,6 +2862,18 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eShow-DbaServerFileSystem -SqlInstance sqlserver2014a\r\n\r\nShows a list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected \r\npath.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eShow-DbaServerFileSystem -Source sqlserver2014a -SqlCredential $cred\r\n\r\nShows a list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected path.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Start-DbaAgentJob",
+        "Description":  "This command starts a job then returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.",
+        "Tags":  [
+                     "Job",
+                     "Agent"
+                 ],
+        "Synopsis":  "Starts a running SQL Server Agent Job.",
+        "Name":  "Start-DbaAgentJob",
+        "Links":  "https://dbatools.io/Start-DbaAgentJob",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance localhost\r\n\r\nStarts all running SQL Agent Jobs on the local SQL Server instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture | Start-DbaAgentJob\r\n\r\nStarts the cdc.DBWithCDC_capture SQL Agent Job on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture\r\n\r\nStarts the cdc.DBWithCDC_capture SQL Agent Job on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob\r\n\r\nRestarts all failed jobs on all servers in the $servers collection\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Start-DbaMigration",
         "Description":  "Start-DbaMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you\u0027re looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:\n\nAll user databases to exclude support databases such as ReportServerTempDB (Use -IncludeSupportDbs for this). Use -NoDatabases to skip.\nAll logins. Use -NoLogins to skip.\nAll database mail objects. Use -NoDatabaseMail\nAll credentials. Use -NoCredentials to skip.\nAll objects within the Job Server (SQL Agent). Use -NoAgentServer to skip.\nAll linked servers. Use -NoLinkedServers to skip.\nAll groups and servers within Central Management Server. Use -NoCentralManagementServer to skip.\nAll SQL Server configuration objects (everything in sp_configure). Use -NoSpConfigure to skip.\nAll user objects in system databases. Use -NoSysDbUserObjects to skip.\nAll system triggers. Use -NoSystemTriggers to skip.\nAll system backup devices. Use -NoBackupDevices to skip.\nAll Audits. Use -NoAudits to skip.\nAll Endpoints. Use -NoEndpoints to skip.\nAll Extended Events. Use -NoExtendedEvents to skip.\nAll Policy Management objects. Use -NoPolicyManagement to skip.\nAll Resource Governor objects. Use -NoResourceGovernor to skip.\nAll Server Audit Specifications. Use -NoServerAuditSpecifications to skip.\nAll Custom Errors (User Defined Messages). Use -NoCustomErrors to skip.\nCopies All Data Collector collection sets. Does not configure the server. Use -NoDataCollector to skip.\n\nThis script provides the ability to migrate databases using detach/copy/attach or backup/restore. SQL Server logins, including passwords, SID and database/server roles can also be migrated. In addition, job server objects can be migrated and server configuration settings can be exported or migrated. This script works with named instances, clusters and SQL Express.\n\nBy default, databases will be migrated to the destination SQL Server\u0027s default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.",
         "Tags":  [
@@ -2867,6 +2896,18 @@
         "Name":  "Start-DbaSqlService",
         "Links":  "https://dbatools.io/Start-DbaSqlService",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaSqlService -ComputerName sqlserver2014a\r\n\r\nStarts the SQL Server related services on computer sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027| Get-DbaSqlService | Start-DbaSqlService\r\n\r\nGets the SQL Server related services on computers sql1, sql2 and sql3 and starts them.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaSqlService -ComputerName sql1,sql2 -Instance MSSQLSERVER\r\n\r\nStarts the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaSqlService -ComputerName $MyServers -Type SSRS\r\n\r\nStarts the SQL Server related services of type \"SSRS\" (Reporting Services) on computers in the variable MyServers.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Stop-DbaAgentJob",
+        "Description":  "This command stops a job then returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.",
+        "Tags":  [
+                     "Job",
+                     "Agent"
+                 ],
+        "Synopsis":  "Stops a running SQL Server Agent Job.",
+        "Name":  "Stop-DbaAgentJob",
+        "Links":  "https://dbatools.io/Stop-DbaAgentJob",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaAgentJob -SqlInstance localhost\r\n\r\nStops all running SQL Agent Jobs on the local SQL Server instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture | Stop-DbaAgentJob\r\n\r\nStops the cdc.DBWithCDC_capture SQL Agent Job on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaAgentJob -SqlInstance sql2016 -Job cdc.DBWithCDC_capture\r\n\r\nStops the cdc.DBWithCDC_capture SQL Agent Job on sql2016\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Stop-DbaProcess",
