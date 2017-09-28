@@ -5,7 +5,13 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Context "Verifying TraceFlag output" {
 		BeforeAll {
+			$server = Get-DbaInstance -SqlInstance $script:instance2
+			$startingtfs = Get-DbaTraceFlag -SqlInstance $script:instance2
 			$safetraceflag = 3226
+			
+			if ($startingtfs.TraceFlag -contains $safetraceflag) {
+				$server.Query("DBCC TRACEOFF($safetraceflag,-1)")
+			}
 		}
 		AfterAll {
 			if ($startingtfs.TraceFlag -notcontains $safetraceflag) {
@@ -13,15 +19,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 			}
 		}
 		
-		It "Has the right default properties" {
-			$expectedProps = 'ComputerName,InstanceName,SqlInstance,TraceFlag,Global,Status'.Split(',')
-			$results = Get-DbaTraceFlag -SqlInstance $script:instance2
-			($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($expectedProps | Sort-Object)
-		}
+		$results = Enable-DbaTraceFlag -SqlInstance $server -TraceFlag $safetraceflag
 		
-		It "Return 3226 as enabled" {
-			$results = Enable-DbaTraceFlag -SqlInstance $script:instance2 -TraceFlag 3226
-			$results.TraceFlag | Should Be 3226
+		It "Return $safetraceflag as enabled" {
+			$results.TraceFlag -contains $safetraceflag | Should Be $true
 		}
 	}
 }
