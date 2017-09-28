@@ -69,7 +69,9 @@ function Invoke-DbaDatabaseCorruption {
         }
         
         $db = $Server.Databases | Where-Object Name -eq $Database
-        
+        if (!db) {
+            Stop-Function -Message "The database specified does not exist."            
+        }
         if ($Table) {
             $tb = $db.Tables | Where-Object Name -eq $Table
         }
