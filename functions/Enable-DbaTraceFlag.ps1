@@ -45,13 +45,10 @@ function Enable-DbaTraceFlag {
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
-		[object[]]$TraceFlag,
+		[string[]]$TraceFlag,
 		[switch]$Silent
 	)
 	
-	begin {
-		
-	}
 	process {
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
@@ -62,15 +59,30 @@ function Enable-DbaTraceFlag {
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-
-			$query = "DBCC TRACEON ($TraceFlag, -1)"
 			
-			if ($TraceFlag) {
-				try {
-					$server.Query($query)
+			$CurrentRunningTraceFlags = Get-DbaTraceFlag -SqlInstance $server -Silent
+			
+			foreach ($flag in $TraceFlag) {
+				If ($TraceFlag.Count -gt 1) { 
+					$combineParam += $flag + ","
+				}else {
+					$combineParam = $flag + ","
 				}
-				catch {
-					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+			}
+
+			if ($TraceFlag) {
+				If ($TraceFlag -notcontains $CurrentRunningTraceFlags.TraceFlag) {
+					$query = "DBCC TRACEON ($combineParam -1)"
+					try {
+						$server.Query($query)
+						Get-DbaTraceFlag -SqlInstance $server -Silent | Select-Object TraceFlag, Global, Status
+					}
+					catch {
+						Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
+					}
+				}
+				else {
+					Write-Message -Level Warning -Message "The Trace File submitted is already running globally."
 				}
 			}
 		}

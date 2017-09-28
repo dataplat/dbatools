@@ -42,14 +42,9 @@ function Disable-DbaTraceFlag {
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
-		[object[]]$TraceFlag,
+		[string[]]$TraceFlag,
 		[switch]$Silent
 	)
-	
-	begin {
-		
-		
-	}
 	
 	process {
 		foreach ($instance in $SqlInstance) {
@@ -62,8 +57,17 @@ function Disable-DbaTraceFlag {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
-			$query = "DBCC TRACEOFF ($TraceFlag, -1)"
-$query
+			foreach ($flag in $TraceFlag) {
+				If ($TraceFlag.Count -gt 1) { 
+					$combineParam += $flag + ","
+				}
+				else {
+					$combineParam = $flag + ","
+				}
+			}
+
+			$query = "DBCC TRACEOFF ($combineParam -1)"
+
 			if ($TraceFlag) {
 				try {
 					$server.Query($query)
