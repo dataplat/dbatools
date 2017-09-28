@@ -127,7 +127,7 @@
                             Job                  = $j.Name
                             JobStep              = $Step.Name
                             OutputFileName       = $Step.OutputFileName
-                            RemoteOutputFileName = Join-AdminUNC $Server.ComputerNamePhysicalNetBIOS $Step.OutputFileName
+                            RemoteOutputFileName = Join-AdminUNC $Server.NetName $Step.OutputFileName
                             StepId               = $Step.Id
                         } | Select-DefaultView -ExcludeProperty StepId
                     }

@@ -1,5 +1,5 @@
 Function Get-DbaSqlService {
-<#
+	<#
 	.SYNOPSIS
 	Gets the SQL Server related services on a computer. 
 
@@ -20,6 +20,9 @@ Function Get-DbaSqlService {
 	.PARAMETER Type
 	Use -Type to collect only services of the desired SqlServiceType.
 	Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
+
+	.PARAMETER ServiceName
+	Can be used to specify service names explicitly, without looking for service types/instances.
 
 	.PARAMETER Silent
 	Use this switch to disable any kind of verbose messages
@@ -67,16 +70,20 @@ Function Get-DbaSqlService {
 
 	Calls a Restart method for each Engine service on computer sql1 with -Force option.
 #>
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = "Search")]
 	Param (
-		[parameter(ValueFromPipeline = $true)]
+		[parameter(ValueFromPipeline = $true, Position = 1)]
 		[Alias("cn", "host", "Server")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+		[Parameter(ParameterSetName = "Search")]
 		[Alias("Instance")]
 		[string[]]$InstanceName,
 		[PSCredential]$Credential,
+		[Parameter(ParameterSetName = "Search")]
 		[ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS")]
 		[string[]]$Type,
+		[Parameter(ParameterSetName = "ServiceName")]
+		[string[]]$ServiceName,
 		[switch]$Silent
 	)
 	
@@ -92,17 +99,31 @@ Function Get-DbaSqlService {
 			@{ Name = "Browser"; Id = 7 },
 			@{ Name = "Unknown"; Id = 8 }
 		)
-		if ($Type) {
-			$TypeClause = ""
-			foreach ($itemType in $Type) {
-				foreach ($id in ($ServiceIdMap | Where-Object { $_.Name -eq $itemType }).Id) {
-					if ($TypeClause) { $TypeClause += ' OR ' }
-					$TypeClause += "SQLServiceType = $id"
+		if ($PsCmdlet.ParameterSetName -match 'Search') {
+			if ($Type) {
+				$searchClause = ""
+				foreach ($itemType in $Type) {
+					foreach ($id in ($ServiceIdMap | Where-Object { $_.Name -eq $itemType }).Id) {
+						if ($searchClause) { $searchClause += ' OR ' }
+						$searchClause += "SQLServiceType = $id"
+					}
 				}
 			}
+			else {
+				$searchClause = "SQLServiceType > 0"
+			}
 		}
-		else {
-			$TypeClause = "SQLServiceType > 0"
+		elseif ($PsCmdlet.ParameterSetName -match 'ServiceName') {
+			if ($ServiceName) {
+				$searchClause = ""
+				foreach ($sn in $ServiceName) {
+					if ($searchClause) { $searchClause += ' OR ' }
+					$searchClause += "ServiceName = '$sn'"
+				}
+			}
+			else {
+				$searchClause = "SQLServiceType > 0"
+			}
 		}
 	}
 	PROCESS {
@@ -118,7 +139,7 @@ Function Get-DbaSqlService {
 					ForEach ($namespace in $namespaces) {
 						try {
 							Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer." -Target $Computer
-							foreach ($service in (Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\$($namespace.Name)" -Query "SELECT * FROM SqlService WHERE $TypeClause" -Silent -Credential $credential)) {
+							foreach ($service in (Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\$($namespace.Name)" -Query "SELECT * FROM SqlService WHERE $searchClause" -Silent -Credential $credential)) {
 								$servicesTemp += New-Object PSObject -Property @{
 									Name  = $service.ServiceName
 									Namespace = $namespace.Name
@@ -158,8 +179,7 @@ Function Get-DbaSqlService {
 								}
 							}
 							$priority = switch ($service.ServiceType) {
-								"Agent" { 200 }
-								"Engine" { 300 }
+								"Engine" { 200 }
 								default { 100 }
 							}
 							#If only specific instances are selected
