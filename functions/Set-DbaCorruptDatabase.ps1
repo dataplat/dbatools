@@ -77,11 +77,7 @@ function Set-DbaCorruptDatabase {
 		if ("master","tempdb","model","msdb" -contains $Database) {
 			Stop-Function -Message "You may not corrupt system databases."
 			return
-    }    
-    if ($SqlInstance.Count -gt 1) {
-			Stop-Function -Message "You specified more than one SQL Server, this command can only corrupt one database at a time."
-			return
-    }
+    }        
     if ($Database.Count -gt 1) {
 			Stop-Function -Message "You specified more than one database, this command can only corrupt one database at a time."
 			return
