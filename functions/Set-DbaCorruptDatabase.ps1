@@ -10,10 +10,10 @@ function Set-DbaCorruptDatabase {
 			This command will take an instance and database (and optionally a table) and set the database to single user mode, corrupt either the specified table or the first table it finds, and returns it to multi-user.
 
 		.PARAMETER SqlInstance
-			The SQL Server instance holding the databases to be removed.You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+			The SQL Server instance holding the databases to be removed.You must have sysadmin access and Server version must be SQL Server version 2000 or higher.
 
 		.PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+			Allows you to login to Servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$cred = Get-Credential, this pass this $cred to the param. 
 		
@@ -43,22 +43,17 @@ function Set-DbaCorruptDatabase {
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 		.LINK
-			https://dbatools.io/Set-DbaCorruptTable
+			https://dbatools.io/Set-DbaCorruptDatabase
 
 		.EXAMPLE
-			Set-DbaCorruptTable -SqlInstance sql2016 -Database containeddb
+			Set-DbaCorruptDatabase -SqlInstance sql2016 -Database containeddb
 
-			Prompts then selects the first table in database containeddb and corrupts its first non-IAM page.
-
-		.EXAMPLE
-			Set-DbaCorruptTable -SqlInstance sql2016 -ExcludeDatabase mydb, containeddb -Table
-
-			Prompts then removes all the user databases except mydb and containeddb on SQL Server sql2016.		
+			Prompts for confirmation then selects the first table in database containeddb and corrupts it (by putting database into single user mode, writing to garbage to its first non-iam page, and returning it to multi-user.)
 			
 		.EXAMPLE
-			Set-DbaCorruptTable -SqlInstance sql2016 -Database containeddb -Table Customers -Confirm:$false
+			Set-DbaCorruptDatabase -SqlInstance sql2016 -Database containeddb -Table Customers -Confirm:$false
 
-			Does not prompt and immediately corrupts table customers in database containeddb on the sql2016 instance.
+			Does not prompt and immediately corrupts table customers in database containeddb on the sql2016 instance (by putting database into single user mode, writing to garbage to its first non-iam page, and returning it to multi-user.)
 	#>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
 	param (
@@ -92,24 +87,24 @@ function Set-DbaCorruptDatabase {
 		if (Test-FunctionInterrupt) { return }		
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
-				$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+				$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
-			if ($server.VersionMajor -lt 9) {
-				Stop-Function -Message "DBCC WRITEPAGE has been updated in SQL Server 2005 and later, this command does not support earlier verisons $($Server.MajorVersion)."
+			if ($Server.VersionMajor -lt 9) {
+				Stop-Function -Message "DBCC WRITEPAGE has been updated in SQL Server 2005 and later, this command does not support earlier verisons $($Server.VersionMajor)."
 				return
 			}
-      $db = $server.Databases | Where-Object Name -in $Database
+      $db = $Server.Databases | Where-Object Name -in $Database
       $Table = $db.Tables | Select-Object -First 1
       if (!$Table -or $Table.Count -ne 1) {
         Stop-Function -Message "There are no accessible tables in $Database."
         return
       }
 
-      if ($Pscmdlet.ShouldProcess("$db on $server", "CorruptDatabase")) {
+      if ($Pscmdlet.ShouldProcess("$db on $Server", "CorruptDatabase")) {
         
         $ClusteredIndexID = 1
         $Offset = '4000'
@@ -138,13 +133,13 @@ function Set-DbaCorruptDatabase {
           Stop-Function -Message "Failed to write page." -Category WriteError -ErrorRecord $_ -Target $instance -Continue            
 				}
 				Write-Verbose "Setting multi-user."
-				$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+				$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 				$null = Set-DbaDatabaseState -SqlServer (Connect-SqlInstance -SqlInstance $Server -SqlCredential $SqlCredential) -Database $Database -MultiUser -Force
 				
         [pscustomobject]@{
-          ComputerName = $server.NetName
-          InstanceName = $server.ServiceName
-          SqlInstance = $server.DomainInstanceName
+          ComputerName = $Server.NetName
+          InstanceName = $Server.ServiceName
+          SqlInstance = $Server.DomainInstanceName
           Database = $db.Name
           Table = $Table.Name
           Status = "Corrupted"

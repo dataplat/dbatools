@@ -358,7 +358,7 @@ function Get-DbaBackupHistory {
 									a.is_copy_only,
 									a.last_recovery_fork_guid
 								FROM (SELECT
-								  RANK() OVER (ORDER BY backupset.last_lsn DESC) AS 'BackupSetRank',
+									RANK() OVER (ORDER BY [type],backup_finish_date DESC) AS 'BackupSetRank',
 								  backupset.database_name AS [Database],
 								  backupset.user_name AS Username,
 								  backupset.backup_start_date AS Start,
