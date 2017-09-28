@@ -21,7 +21,7 @@ function Enable-DbaTraceFlag {
 		Use this switch to disable any kind of verbose messages (this is required)
 
 	.NOTES 
-		Tags: Trace, Flag
+		Tags: TraceFlag
 		Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 		
 		Website: https://dbatools.io
@@ -45,7 +45,8 @@ function Enable-DbaTraceFlag {
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
-		[string[]]$TraceFlag,
+		[parameter(Mandatory)]
+		[int[]]$TraceFlag,
 		[switch]$Silent
 	)
 	
@@ -60,29 +61,23 @@ function Enable-DbaTraceFlag {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$CurrentRunningTraceFlags = Get-DbaTraceFlag -SqlInstance $server -Silent
+			$CurrentRunningTraceFlags = Get-DbaTraceFlag -SqlInstance $server
 			
-			foreach ($flag in $TraceFlag) {
-				If ($TraceFlag.Count -gt 1) { 
-					$combineParam += $flag + ","
-				}else {
-					$combineParam = $flag + ","
+			# We could combine all trace flags but the granularity is worth it
+			foreach ($tf in $TraceFlag) {
+				If ($CurrentRunningTraceFlags.TraceFlag -contains $tf) {
+					Write-Message -Level Warning -Message "The Trace flag $tf is already running globally."
+					continue
 				}
-			}
-
-			if ($TraceFlag) {
-				If ($TraceFlag -notcontains $CurrentRunningTraceFlags.TraceFlag) {
-					$query = "DBCC TRACEON ($combineParam -1)"
-					try {
-						$server.Query($query)
-						Get-DbaTraceFlag -SqlInstance $server -Silent | Select-Object TraceFlag, Global, Status
-					}
-					catch {
-						Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
-					}
+				
+				try {
+					$query = "DBCC TRACEON ($tf, -1)"
+					$server.Query($query)
+					$server.Refresh()
+					Get-DbaTraceFlag -SqlInstance $server -TraceFlag $TraceFlag
 				}
-				else {
-					Write-Message -Level Warning -Message "The Trace File submitted is already running globally."
+				catch {
+					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
 				}
 			}
 		}

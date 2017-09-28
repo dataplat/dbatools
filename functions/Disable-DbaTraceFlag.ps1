@@ -22,7 +22,7 @@ function Disable-DbaTraceFlag {
 		Use this switch to disable any kind of verbose messages (this is required)
 
 	.NOTES 
-		Tags: Trace, Flag
+		Tags: TraceFlag
 		Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 		
 		Website: https://dbatools.io
@@ -42,7 +42,8 @@ function Disable-DbaTraceFlag {
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
-		[string[]]$TraceFlag,
+		[parameter(Mandatory)]
+		[int[]]$TraceFlag,
 		[switch]$Silent
 	)
 	
@@ -56,22 +57,27 @@ function Disable-DbaTraceFlag {
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-
-			foreach ($flag in $TraceFlag) {
-				If ($TraceFlag.Count -gt 1) { 
-					$combineParam += $flag + ","
+			
+			$current = Get-DbaTraceFlag -SqlInstance $server
+			
+			foreach ($tf in $TraceFlag) {
+				
+				if ($tf -notin $current.TraceFlag) {
+					Write-Message -Level Warning -Message "Trace Flag is $tf not currently enabled on $instance"
+					continue
 				}
-				else {
-					$combineParam = $flag + ","
-				}
-			}
-
-			$query = "DBCC TRACEOFF ($combineParam -1)"
-
-			if ($TraceFlag) {
+				
 				try {
+					$query = "DBCC TRACEOFF ($tf, -1)"
 					$server.Query($query)
-					Get-DbaTraceFlag -SqlInstance $server -Silent | Select-Object TraceFlag, Global, Status					
+					
+					[pscustomobject]@{
+						ComputerName	 = $server.NetName
+						InstanceName	 = $server.ServiceName
+						SqlInstance	     = $server.DomainInstanceName
+						TraceFlag	     = $tf
+						Status		     = "Disabled"
+					}
 				}
 				catch {
 					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
