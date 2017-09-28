@@ -29,8 +29,8 @@ foreach ($smoversion in "13.0.0.0", "12.0.0.0") {
 }
 
 $assemblies = "Management.Common", "Dmf", "Instapi", "SqlWmiManagement", "ConnectionInfo", "SmoExtended", "SqlTDiagM", "Management.Utility",
-"SString", "Management.RegisteredServers", "Management.Sdk.Sfc", "SqlEnum", "RegSvrEnum", "WmiEnum", "ServiceBrokerEnum", "Management.XEvent",
-"ConnectionInfoExtended", "Management.Collector", "Management.CollectorEnum", "Management.Dac", "Management.DacEnum", "Management.IntegrationServices"
+"SString", "Management.RegisteredServers", "Management.Sdk.Sfc", "SqlEnum", "RegSvrEnum", "WmiEnum", "ServiceBrokerEnum", "Management.XEvent", "XEvent.Linq"
+"ConnectionInfoExtended", "Management.Collector", "Management.CollectorEnum", "Management.Dac", "Management.DacEnum", "Management.IntegrationServices", "XE.Core"
 
 foreach ($assembly in $assemblies) {
 	try {
@@ -64,6 +64,8 @@ if ($smoadded -eq $false) {
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventDbScopedEnum.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventEnum.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Collector.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XE.Core.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XEvent.Linq.dll"
 }
 <# 
 
@@ -214,6 +216,9 @@ if (-not (Test-Path Alias:Restore-HallengrenBackup)) { Set-Alias -Scope Global -
 if (-not (Test-Path Alias:Get-DbaDatabaseFreeSpace)) { Set-Alias -Scope Global -Name Get-DbaDatabaseFreeSpace -Value Get-DbaDatabaseSpace }
 if (-not (Test-Path Alias:Set-DbaQueryStoreConfig)) { Set-Alias -Scope Global -Name Set-DbaQueryStoreConfig -Value Set-DbaDbQueryStoreOptions }
 if (-not (Test-Path Alias:Get-DbaQueryStoreConfig)) { Set-Alias -Scope Global -Name Get-DbaQueryStoreConfig -Value Get-DbaDbQueryStoreOptions }
+if (-not (Test-Path Alias:Get-DbaXEventsSession)) { Set-Alias -Scope Global -Name Get-DbaXEventsSession -Value Get-DbaXEventSession }
+if (-not (Test-Path Alias:Connect-DbaSqlServer)) { Set-Alias -Scope Global -Name Connect-DbaSqlServer -Value Get-DbaInstance }
+
 
 # Leave forever
 Set-Alias -Scope Global -Name Attach-DbaDatabase -Value Mount-DbaDatabase
@@ -222,8 +227,8 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUQfjpAsa6Bd4E8SbmMFXOHQZd
-# L/KggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU7OYMsnxxv1knvDWMofntErI6
+# eXSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -354,22 +359,22 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUgWIh5SUKnizyzVpqJ8WqdyOCJiUwDQYJKoZIhvcNAQEBBQAE
-# ggEAE0bbioYOnFR7xiMGd0WcG5EofTLBKnim7PjKinfxJxhenzuk3b5OSgzuVtTs
-# kLtszrmUQabDFp8JgKpb2exyq72CYGwIK0sILbamDAivhCcEze5uZgHOR78vMYn0
-# 1R/Kwz7lBHR1ho0x+BO+IK2qI1UYJO98VL9t9hlUHWFxW+w1ZCF2DkoVd54rBwJh
-# zHjnjdQI01dySaS9eu50OvwFPDVAT2XO8jwabfdvKWCWDDwkluP8fHf/VUiAHony
-# mt+qHjMp1Zjrl1lVder68Pfx2e3l6aeIMIRRCH7Tdm2a06nOgHjSdtw65CAda38k
-# 10g6JaCvlaqL6eBW+0OmG1VHHqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUdbCyz+DhOWQFl/XFLfCxsyUlrzcwDQYJKoZIhvcNAQEBBQAE
+# ggEAA40K0P0Q86251jlAR5pkplqizHGgAWfm7h2maDCIB+WdDrsTQfzz/cdRMKoj
+# AY3MTv7TlMm6NHJadRQDuMoQTVYwakF4znofeFiGkWf+LOGrO159yxC1eY52zbuE
+# ygrMDoDscRKawHPIn4oOHtHaOSj4tcM+C9wYuRCoSHFC9VwD3EJgu6wpKOsI50np
+# R6GV0Yakq6qtMEwFvYo7cV4etqw6wtQFFOPJa99EHy77fzXRymMPYXy2HIJPLK67
+# BAMwcBnyenV12yWjAQQg7UwfHWVe66s4qyg6W6mqfZzcD4sjBN6T2xwpWV452X2v
+# 4E/rE7rtx/iq6yRxzM9dt7Ze9qGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwOTI2MTEwNDQ4WjAj
-# BgkqhkiG9w0BCQQxFgQU/TTljXAbBqpw3Mna6dUqBv+zL5AwDQYJKoZIhvcNAQEB
-# BQAEggEAURRpqaVEG+53uAQIADzNbQosYZMhLlA2rpGCSHkFkf2u35xxq3gZ6amg
-# R+eCZ2EUcLQtSk+7bxQgjvV+OA/ODRyyRFqudlMPrXDue4xWA381ic881trAo3mG
-# FBL/p9omMFKVPZeuWmdqyt/wSWa2PyFYI2wYo6hdZNYrLQTrHeDgZyrVQkN3BW0x
-# BZrzwB0LF8PhoKU1MuueDO/mX+6WpLi8CnYtQ9C1jH6aTrN8l86+J8+F+S2bmIMi
-# Y6LIJt8x8yeLO0NXSWGWl72obiJfy20niMPuzzCzPLC+3rFcMi+SaQUEN9SkIVJa
-# rgB7ZeSzYdHofgr4rWW3sJrARIM12A==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwOTI4MTE1NTU0WjAj
+# BgkqhkiG9w0BCQQxFgQUnbi5KyIFhia4k2wZz6L47k2z4HgwDQYJKoZIhvcNAQEB
+# BQAEggEADbVBB1tBqb8Tm0ykRNsyy0MQ/nIFrH702X3iSVOm/qWw+2o0OY9MOUWW
+# SoKtPPfDLftn9pm2N91T9cX1vcBAt9xXz8yoAeemJuAr5bBaAQRJ79eNwreGhRvv
+# +9zjxRCA6+E2oRvGnu1KZJGunGeZDHMmnETjrgSFCZzvjqygyY7VrjnvwNzyijjD
+# qrH5kg+d5LK1vxfoIiUf7CyxEXe5/etbap01gSvIIFX91N9ptSz6BJlNEzYQmF9e
+# +Gjv9qyzeFhd/UVgp4CaggARpWTUPc2A7NEsbSoeapMmmQCkqVTZH9ixleALAnQB
+# HjFGFjZ/UbAGNB2kg2p02D9nCd7KkQ==
 # SIG # End signature block

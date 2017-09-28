@@ -1,4 +1,4 @@
-function Get-DbaXEventsSession {
+function Get-DbaXEventSession {
  <#
 	.SYNOPSIS
 	Get a list of Extended Events Sessions
@@ -26,20 +26,20 @@ function Get-DbaXEventsSession {
 	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.LINK
-	https://dbatools.io/Get-DbaXEventsSession
+	https://dbatools.io/Get-DbaXEventSession
 
 	.EXAMPLE
-	Get-DbaXEventsSession -SqlInstance ServerA\sql987
+	Get-DbaXEventSession -SqlInstance ServerA\sql987
 
 	Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties.
 
 	.EXAMPLE
-	Get-DbaXEventsSession -SqlInstance ServerA\sql987 | Format-Table ComputerName, SqlInstance, Session, Status -AutoSize
+	Get-DbaXEventSession -SqlInstance ServerA\sql987 | Format-Table ComputerName, SqlInstance, Session, Status -AutoSize
 
 	Returns a formatted table displaying ComputerName, SqlInstance, Session, and Status.
 
 	.EXAMPLE
-	'ServerA\sql987','ServerB' | Get-DbaXEventsSession
+	'ServerA\sql987','ServerB' | Get-DbaXEventSession
 
 	Returns a custom object with ComputerName, SqlInstance, Session, StartTime, Status and other properties, from multiple SQL Instances.
 
@@ -59,6 +59,8 @@ function Get-DbaXEventsSession {
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null) {
 			Stop-Function -Message "SMO version is too old. To collect Extended Events, you must have SQL Server Management Studio 2012 or higher installed."
 		}
+		
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-DbaXEventsSession
 	}
 	
 	process {
@@ -86,12 +88,31 @@ function Get-DbaXEventsSession {
 			
 			foreach ($x in $xesessions) {
 				$status = switch ($x.IsRunning) { $true { "Running" } $false { "Stopped" } }
+				$files = $x.Targets.TargetFields | Where-Object Name -eq Filename | Select-Object -ExpandProperty Value
+				
+				$filecollection = $remotefile = @()
+				
+				if ($files) {
+					foreach ($file in $files) {
+						if ($file -notmatch ':\\' -and $file -notmatch '\\\\') {
+							$directory = $server.ErrorLogPath.TrimEnd("\")
+							$file = "$directory\$file"
+						}
+						$filecollection += $file
+						$remotefile += Join-AdminUnc -servername $server.netName -filepath $file
+					}
+				}
+								
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name ComputerName -Value $server.NetName
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Status -Value $status
 				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Session -Value $x.Name
-				Select-DefaultView -InputObject $x -Property ComputerName, InstanceName, SqlInstance, Name, Status, StartTime, AutoStart, State, Targets, Events, MaxMemory, MaxEventSize
+				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name TargetFile -Value $filecollection
+				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name RemoteTargetFile -Value $remotefile
+				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Parent -Value $server
+				
+				Select-DefaultView -InputObject $x -Property ComputerName, InstanceName, SqlInstance, Name, Status, StartTime, AutoStart, State, Targets, TargetFile, Events, MaxMemory, MaxEventSize
 			}
 		}
 	}
