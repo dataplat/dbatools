@@ -27,6 +27,9 @@ function Import-DbaCsvToSql {
 			
 			Valid delimiters are '`t`, '|', ';',' ' and ',' (tab, pipe, semicolon, space, and comma).
 
+		.PARAMETER SingleColumn
+			Specifies that the file contains a single column of data
+
         .PARAMETER SqlInstance
             The SQL Server Instance to import data into.
         
@@ -163,6 +166,11 @@ function Import-DbaCsvToSql {
 
 			Triggers are fired for all rows. Note that this does slightly slow down the import.
 
+		.EXAMPLE
+			Import-DbaCsvToSql -Csv c:\temp\SingleColumn.csv -SqlInstance sql001 -Database markets -Table TempTable -SingleColumn
+
+			Upload the single column Csv SingleColumn.csv to Temptable which has just one column
+
 	#>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
@@ -176,6 +184,7 @@ function Import-DbaCsvToSql {
 		[switch]$Truncate,
 		[ValidateSet("`t", "|", ";", " ", ",")]
 		[string]$Delimiter = ",",
+		[switch]$SingleColumn,
 		[switch]$FirstRowColumns,
 		[parameter(ParameterSetName = "reader")]
 		[switch]$Turbo,
@@ -371,7 +380,7 @@ function Import-DbaCsvToSql {
 				
 				$filename = Split-Path $file -leaf; $directory = Split-Path $file
 				Add-Content -Path "$directory\schema.ini" -Value "[$filename]"
-				Add-Content -Path "$directory\schema.ini" -Value "Format=Delimited($Delimiter)"
+				Add-Content -Path "$directory\schema.ini" -Value "Format=Delimited($InternalDelimiter)"
 				Add-Content -Path "$directory\schema.ini" -Value "ColNameHeader=$FirstRowColumns"
 				
 				$index = 0
@@ -419,7 +428,7 @@ function Import-DbaCsvToSql {
 					Columns parameter determine column names.
 
 				.EXAMPLE
-					New-SqlTable -Csv $Csv -Delimiter $Delimiter -Columns $columns -ColumnText $columntext -SqlConn $sqlconn -Transaction $transaction
+					New-SqlTable -Csv $Csv -Delimiter $InternalDelimiter -Columns $columns -ColumnText $columntext -SqlConn $sqlconn -Transaction $transaction
 				
 				.OUTPUTS
 					Creates new table
@@ -511,6 +520,14 @@ function Import-DbaCsvToSql {
 		# turbo mode requires a table lock, or it's just regular fast
 		if ($turbo -eq $true) {
 			$tablelock = $true
+		}
+
+		# Hack to get around the delimter parameter ValidateSet
+		if ($SingleColumn -eq $true){
+			$InternalDelimiter = ''
+		}
+		else {
+			$InternalDelimiter = $Delimiter
 		}
 		
 		# The query parameter requires OleDB which is invoked by the "safe" variable
@@ -675,7 +692,7 @@ function Import-DbaCsvToSql {
 					$SqlCredentialPath = "$env:TEMP\sqlcredential.xml"
 					Export-CliXml -InputObject $SqlCredential $SqlCredentialPath
 				}
-				$command = "Import-DbaCsvToSql -Csv $csv -SqlInstance '$SqlInstance'-Database '$database' -Table '$table' -Delimiter '$Delimiter' -First $First -Query '$query' -Batchsize $BatchSize -NotifyAfter $NotifyAfter $switches -shellswitch"
+				$command = "Import-DbaCsvToSql -Csv $csv -SqlInstance '$SqlInstance'-Database '$database' -Table '$table' -Delimiter '$InternalDelimiter' -First $First -Query '$query' -Batchsize $BatchSize -NotifyAfter $NotifyAfter $switches -shellswitch"
 				
 				if ($SqlCredentialPath.length -gt 0) {
 					$command += " -SqlCredentialPath $SqlCredentialPath"
@@ -690,22 +707,27 @@ function Import-DbaCsvToSql {
 		foreach ($file in $csv) {
 			try { $firstfewlines = Get-Content $file -First 3 -ErrorAction Stop }
 			catch { throw "$file is in use." }
-			foreach ($line in $firstfewlines) {
-				if (($line -match $delimiter) -eq $false) {
-					throw "Delimiter $delimiter not found in first row of $file."
+			if ($SingleColumn -ne $true ){
+				foreach ($line in $firstfewlines) {
+					if (($line -match $InternalDelimiter) -eq $false) {
+						throw "Delimiter $InternalDelimiter not found in first row of $file."
+					}
 				}
 			}
 		}
 		
 		# If more than one csv specified, check to ensure number of columns match
 		if ($csv -is [system.array]) {
-			$numberofcolumns = ((Get-Content $csv[0] -First 1 -ErrorAction Stop) -Split $delimiter).Count
-			
-			foreach ($file in $csv) {
-				$firstline = Get-Content $file -First 1 -ErrorAction Stop
-				$newnumcolumns = ($firstline -Split $Delimiter).Count
-				if ($newnumcolumns -ne $numberofcolumns) {
-					throw "Multiple csv file mismatch. Do both use the same delimiter and have the same number of columns?"
+			if ($SingleColumn -ne $true)
+			{
+				$numberofcolumns = ((Get-Content $csv[0] -First 1 -ErrorAction Stop) -Split $InternalDelimiter).Count
+				
+				foreach ($file in $csv) {
+					$firstline = Get-Content $file -First 1 -ErrorAction Stop
+					$newnumcolumns = ($firstline -Split $InternalDelimiter).Count
+					if ($newnumcolumns -ne $numberofcolumns) {
+						throw "Multiple csv file mismatch. Do both use the same delimiter and have the same number of columns?"
+					}
 				}
 			}
 		}
@@ -758,14 +780,18 @@ function Import-DbaCsvToSql {
 		}
 		
 		# Create columns based on first data row of first csv.
-		Write-Output "[*] Calculating column names and datatypes"
-		$columns = Get-Columns -Csv $Csv -Delimiter $Delimiter -FirstRowColumns $FirstRowColumns
-		if ($columns.count -gt 255 -and $safe -eq $true) {
-			throw "CSV must contain fewer than 256 columns."
+		if ($SingleColumn -ne $true){ 
+			Write-Output "[*] Calculating column names and datatypes"
+			$columns = Get-Columns -Csv $Csv -Delimiter $InternalDelimiter -FirstRowColumns $FirstRowColumns
+			if ($columns.count -gt 255 -and $safe -eq $true) {
+				throw "CSV must contain fewer than 256 columns."
+			}
 		}
 		
-		$columntext = Get-ColumnText -Csv $Csv -Delimiter $Delimiter
-		
+		if ($SingleColumn -ne $true) {
+			$columntext = Get-ColumnText -Csv $Csv -Delimiter $InternalDelimiter
+		}
+
 		# OLEDB method requires extra checks
 		if ($safe -eq $true) {
 			# Advanced SQL queries may not work (SqlBulkCopy likes a 1 to 1 mapping), so warn the user.
@@ -781,7 +807,7 @@ function Import-DbaCsvToSql {
 			# In order to ensure consistent results, a schema.ini file must be created.
 			# If a schema.ini already exists, it will be moved to TEMP temporarily.		
 			Write-Verbose "Creating schema.ini"
-			$movedschemainis = Write-Schemaini -Csv $Csv -Columns $columns -Delimiter "$Delimiter" -FirstRowColumns $FirstRowColumns -ColumnText $columntext
+			$movedschemainis = Write-Schemaini -Csv $Csv -Columns $columns -Delimiter "$InternalDelimiter" -FirstRowColumns $FirstRowColumns -ColumnText $columntext
 		}
 		
 		# Display SQL Server Login info
@@ -853,7 +879,7 @@ function Import-DbaCsvToSql {
 		if ($tablexists -eq $false) {
 			Write-Output "[*] Table does not exist"
 			Write-Output "[*] Creating table"
-			New-SqlTable -Csv $Csv -Delimiter $Delimiter -Columns $columns -ColumnText $columntext -SqlConn $sqlconn -Transaction $transaction
+			New-SqlTable -Csv $Csv -Delimiter $InternalDelimiter -Columns $columns -ColumnText $columntext -SqlConn $sqlconn -Transaction $transaction
 		}
 		else {
 			Write-Output "[*] Table exists"
@@ -1077,7 +1103,7 @@ function Import-DbaCsvToSql {
 					# Check to see if file has quote identified data (ie. "first","second","third")
 					$quoted = $false
 					$checkline = Get-Content $file -Last 1
-					$checkcolumns = $checkline.Split($delimiter)
+					$checkcolumns = $checkline.Split($InternalDelimiter)
 					foreach ($checkcolumn in $checkcolumns) {
 						if ($checkcolumn.StartsWith('"') -and $checkcolumn.EndsWith('"')) {
 							$quoted = $true
@@ -1087,16 +1113,16 @@ function Import-DbaCsvToSql {
 					if ($quoted -eq $true) {
 						Write-Warning "The CSV file appears to use quoted identifiers. This may take a little longer."
 						# Thanks for this, Chris! http://www.schiffhauer.com/c-split-csv-values-with-a-regular-expression/
-						$pattern = "((?<=`")[^`"]*(?=`"($delimiter|$)+)|(?<=$delimiter|^)[^$delimiter`"]*(?=$delimiter|$))"
+						$pattern = "((?<=`")[^`"]*(?=`"($InternalDelimiter|$)+)|(?<=$InternalDelimiter|^)[^$InternalDelimiter`"]*(?=$InternalDelimiter|$))"
 					}
 					if ($turbo -eq $true -and $first -eq 0) {
 						while (($line = $reader.ReadLine()) -ne $null) {
 							$i++
 							if ($quoted -eq $true) {
-								$null = $datatable.Rows.Add(($line.TrimStart('"').TrimEnd('"')) -Split "`"$delimiter`"")
+								$null = $datatable.Rows.Add(($line.TrimStart('"').TrimEnd('"')) -Split "`"$InternalDelimiter`"")
 							}
 							else {
-								$row = $datatable.Rows.Add($line.Split($delimiter))
+								$row = $datatable.Rows.Add($line.Split($InternalDelimiter))
 							}
 							
 							if (($i % $batchsize) -eq 0) {
@@ -1116,13 +1142,13 @@ function Import-DbaCsvToSql {
 									$row = $datatable.Rows.Add(($line.TrimStart('"').TrimEnd('"')) -Split $pattern)
 								}
 								else {
-									$row = $datatable.Rows.Add($line.Split($delimiter))
+									$row = $datatable.Rows.Add($line.Split($InternalDelimiter))
 								}
 							}
 							catch {
 								$row = $datatable.NewRow()
 								try {
-									$tempcolumn = $line.Split($delimiter)
+									$tempcolumn = $line.Split($InternalDelimiter)
 									$colnum = 0
 									foreach ($column in $tempcolumn) {
 										if ($column.length -ne 0) {
@@ -1137,7 +1163,7 @@ function Import-DbaCsvToSql {
 								}
 								catch {
 									Write-Warning "The following line ($i) is causing issues:"
-									Write-Output $line.Replace($delimiter, "`n")
+									Write-Output $line.Replace($InternalDelimiter, "`n")
 									
 									if ($quoted -eq $true) {
 										Write-Warning "The import has failed, likely because the quoted data was a little too inconsistent. Try using the -Safe parameter."
