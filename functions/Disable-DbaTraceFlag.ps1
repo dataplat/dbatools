@@ -71,6 +71,7 @@ function Disable-DbaTraceFlag {
 			if ($TraceFlag) {
 				try {
 					$server.Query($query)
+					Get-DbaTraceFlag -SqlInstance $server -Silent | Select-Object TraceFlag, Global, Status					
 				}
 				catch {
 					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
