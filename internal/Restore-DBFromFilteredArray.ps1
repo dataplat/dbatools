@@ -223,7 +223,7 @@ Function Restore-DBFromFilteredArray {
                         $FileName = $FileName + '_' + $FileId + '_of_' + $RestoreFileCountFileCount
                     }
                     if (($null -ne $extension) -and ($extension -ne '')) {
-                        $filename = $filename + '.' + $extension
+                        $filename = $filename + $extension
                     }
                     Write-Message -Level VeryVerbose -Message "past the checks"
                     if (($File.Type -eq 'L' -or $File.filetype -eq 'L') -and $DestinationLogDirectory -ne '') {
