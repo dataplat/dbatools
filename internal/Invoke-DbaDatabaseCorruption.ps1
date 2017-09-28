@@ -44,92 +44,91 @@ function Invoke-DbaDatabaseCorruption {
         [DbaInstanceParameter]$SqlInstance,
         [parameter(Mandatory = $false)]
         [Alias("Credential")]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
+        [PSCredential]
         $SqlCredential,
         [parameter(Mandatory)]
         [string]$Database,
         [string]$Table,
         [switch]$Silent
     )    
-      if ("master", "tempdb", "model", "msdb" -contains $Database) {
-        Stop-Function -Message "You may not corrupt system databases."
-        return
-      }  
+    if ("master", "tempdb", "model", "msdb" -contains $Database) {
+      Stop-Function -Message "You may not corrupt system databases."
+      return
+    }  
 
-      try {
-        Write-Message -Level Verbose -Message "Connecting to $SqlInstance"            
-        $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 9
-      }
-      catch {
-        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance
-        return
-      }
-      
-      $db = $Server.Databases | Where-Object Name -eq $Database
-      if (!db) {
-        Stop-Function -Message "The database specified does not exist."
-        return
-      }      
-      if ($Table) {
-        $tb = $db.Tables | Where-Object Name -eq $Table
-      }
-      else {
-        $tb = $db.Tables | select -First 1
-      }
+    try {
+      Write-Message -Level Verbose -Message "Connecting to $SqlInstance"            
+      $Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 9
+    }
+    catch {
+      Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
+      return
+    }
+    
+    $db = $Server.Databases | Where-Object Name -eq $Database
+    if (!$db) {
+      Stop-Function -Message "The database specified does not exist."
+      return
+    }      
+    if ($Table) {
+      $tb = $db.Tables | Where-Object Name -eq $Table
+    }
+    else {
+      $tb = $db.Tables | select -First 1
+    }
 
-      if (-not $tb) {
-        Stop-Function -Message "There are no accessible tables in $Database on $SqlInstance." -Target $Database
-        return
-      }
-      
-      $RowCount = $db.Query("select top 1 * from $($tb.name)")        
-      if ($RowCount.count -eq 0) {
-        Stop-Function -Message "The table $tb has no rows" -Target $table
-        return
-      }                
-      
-      if ($Pscmdlet.ShouldProcess("$db on $SqlInstance", "Corrupt $tb in $Database")) {          
-      $clusteredindexid = $fileid = $numberofbytestochange = $bypassbufferpool = 1
-      $offset = 4000
-      $page = 0
-      $hexvalue = '0x45'
-      
-      $dbccind = "DBCC IND (N'$Database',N'$($tb.Name)',$clusteredindexid)"        
-      $pages = $Server.Query($dbccind) | Where-Object { $_.IAMFID -ne [DBNull]::Value } | Select-Object -Property PageFID, PagePID -First 1
-      $page = $pages.PagePID
-      $fileid = $pages.PageFID
-      $dbccwritepage = "DBCC WRITEPAGE (N'$Database', $fileid, $page, $offset, $numberofbytestochange, $hexvalue, $bypassbufferpool);"
-      
-      Write-Message -Level Verbose -Message "Setting single-user mode."        
+    if (-not $tb) {
+      Stop-Function -Message "There are no accessible tables in $Database on $SqlInstance." -Target $Database
+      return
+    }
+    
+    $RowCount = $db.Query("select top 1 * from $($tb.name)")        
+    if ($RowCount.count -eq 0) {
+      Stop-Function -Message "The table $tb has no rows" -Target $table
+      return
+    }                
+    
+    if ($Pscmdlet.ShouldProcess("$db on $SqlInstance", "Corrupt $tb in $Database")) {          
+    $clusteredindexid = $fileid = $numberofbytestochange = $bypassbufferpool = 1
+    $offset = 4000
+    $page = 0
+    $hexvalue = '0x45'
+    
+    $dbccind = "DBCC IND (N'$Database',N'$($tb.Name)',$clusteredindexid)"        
+    $pages = $Server.Query($dbccind) | Where-Object { $_.IAMFID -ne [DBNull]::Value } | Select-Object -Property PageFID, PagePID -First 1
+    $page = $pages.PagePID
+    $fileid = $pages.PageFID
+    $dbccwritepage = "DBCC WRITEPAGE (N'$Database', $fileid, $page, $offset, $numberofbytestochange, $hexvalue, $bypassbufferpool);"
+    
+    Write-Message -Level Verbose -Message "Setting single-user mode."        
+    $null = Stop-DbaProcess -SqlInstance $Server -Database $Database
+    $null = Set-DbaDatabaseState -SqlServer $Server -Database $Database -SingleUser -Force
+            
+    try {
+      Write-Message -Level Verbose -Message "Stopping processes in target database."
       $null = Stop-DbaProcess -SqlInstance $Server -Database $Database
-      $null = Set-DbaDatabaseState -SqlServer $Server -Database $Database -SingleUser -Force
-              
-      try {
-        Write-Message -Level Verbose -Message "Stopping processes in target database."
-        $null = Stop-DbaProcess -SqlInstance $Server -Database $Database
-        Write-Message -Level Verbose -Message "Corrupting data."
-        $Server.Databases[$Database].Query($dbccwritepage)
-      }
-      catch {
-        $null = Set-DbaDatabaseState -SqlServer $Server -Database $Database -MultiUser -Force
-        Stop-Function -Message "Failed to write page" -Category WriteError -ErrorRecord $_ -Target $instance
-        return
-      }
-      
-      Write-Message -Level Verbose -Message "Setting database into multi-user mode."
-      $Server.ConnectionContext.Disconnect() 
-      $Server.ConnectionContext.Connect() 
+      Write-Message -Level Verbose -Message "Corrupting data."
+      $Server.Databases[$Database].Query($dbccwritepage)
+    }
+    catch {
       $null = Set-DbaDatabaseState -SqlServer $Server -Database $Database -MultiUser -Force
-      
-      
-      [pscustomobject]@{
-        ComputerName  = $Server.NetName
-        InstanceName  = $Server.ServiceName
-        SqlInstance   = $Server.DomainInstanceName
-        Database      = $db.Name
-        Table         = $tb.Name
-        Status        = "Corrupted"
-      }
+      Stop-Function -Message "Failed to write page" -Category WriteError -ErrorRecord $_ -Target $instance
+      return
+    }
+    
+    Write-Message -Level Verbose -Message "Setting database into multi-user mode."
+    $Server.ConnectionContext.Disconnect() 
+    $Server.ConnectionContext.Connect() 
+    $null = Set-DbaDatabaseState -SqlServer $Server -Database $Database -MultiUser -Force
+    
+    
+    [pscustomobject]@{
+      ComputerName  = $Server.NetName
+      InstanceName  = $Server.ServiceName
+      SqlInstance   = $Server.DomainInstanceName
+      Database      = $db.Name
+      Table         = $tb.Name
+      Status        = "Corrupted"
     }
   }
 }
