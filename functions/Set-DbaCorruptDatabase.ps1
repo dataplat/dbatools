@@ -73,6 +73,10 @@ function Set-DbaCorruptDatabase {
 		if (!$Database) {
 			Stop-Function -Message "You must pass a database to be corrupted."
 			return
+		}
+		if ("master","tempdb","model","msdb" -contains $Database) {
+			Stop-Function -Message "You may not corrupt system databases."
+			return
     }    
     if ($SqlInstance.Count -gt 1) {
 			Stop-Function -Message "You specified more than one SQL Server, this command can only corrupt one database at a time."
@@ -114,12 +118,12 @@ function Set-DbaCorruptDatabase {
         $NumberOfBytesToChange = '1'
         $BypassBufferPool = '1'          
         
-        $DBCCIND = "DBCC IND (N'$DatabaseName',N'$($Table.Name)',$ClusteredIndexID)"          
+        $DBCCIND = "DBCC IND (N'$Database',N'$($Table.Name)',$ClusteredIndexID)"          
         # I spit on dbnull btw        
         $Pages = ( $Server.Query($DBCCIND) |  Where-Object {-not($_.IAMFID.Equals([DBNull]::Value))} ) |  Select-Object -Property PageFID, PagePID -First 1                            
         $Page = $Pages.PagePID
         $FileID = $Pages.PageFID
-        $DBCCWritePage = "DBCC WRITEPAGE (N'$Databasename', $FileID, $Page, $Offset, $NumberOfBytesToChange, $HexValue, $BypassBufferPool);"
+        $DBCCWritePage = "DBCC WRITEPAGE (N'$Database', $FileID, $Page, $Offset, $NumberOfBytesToChange, $HexValue, $BypassBufferPool);"
 				Write-Verbose "Settin single-user."
 				$null = Stop-DbaProcess -SqlInstance $Server -Database $Database
         $null = Set-DbaDatabaseState -SqlServer $Server -Database $Database -SingleUser -Force
