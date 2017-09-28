@@ -23,6 +23,12 @@
 	
 		.PARAMETER JobCollection
 			Internal parameter that enables piping
+	
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+		.PARAMETER Confirm 
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages.
@@ -95,26 +101,28 @@
 				Stop-Function -Message "$currentjob on $server is idle ($status)" -Target $currentjob -Continue
 			}
 			
-			$null = $currentjob.Stop()
-			Start-Sleep -Milliseconds 300
-			$currentjob.Refresh()
-			
-			$waits = 0
-			while ($currentjob.CurrentRunStatus -ne 'Idle' -and $waits++ -lt 10) {
-				Start-Sleep -Milliseconds 100
+			If ($Pscmdlet.ShouldProcess($server, "Stopping job $currentjob")) {
+				$null = $currentjob.Stop()
+				Start-Sleep -Milliseconds 300
 				$currentjob.Refresh()
-			}
-			
-			if ($wait) {
-				while ($currentjob.CurrentRunStatus -ne 'Idle') {
-					Write-Message -Level Output -Message "$currentjob is $($currentjob.CurrentRunStatus)"
-					Start-Sleep -Seconds 3
+				
+				$waits = 0
+				while ($currentjob.CurrentRunStatus -ne 'Idle' -and $waits++ -lt 10) {
+					Start-Sleep -Milliseconds 100
 					$currentjob.Refresh()
 				}
-				$currentjob
-			}
-			else {
-				$currentjob
+				
+				if ($wait) {
+					while ($currentjob.CurrentRunStatus -ne 'Idle') {
+						Write-Message -Level Output -Message "$currentjob is $($currentjob.CurrentRunStatus)"
+						Start-Sleep -Seconds 3
+						$currentjob.Refresh()
+					}
+					$currentjob
+				}
+				else {
+					$currentjob
+				}
 			}
 		}
 	}
