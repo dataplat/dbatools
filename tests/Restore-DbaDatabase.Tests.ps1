@@ -190,8 +190,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	
     Context "Properly restores an instance using ola-style backups" {
         $results = Get-ChildItem $script:appeyorlabrepo\sql2008-backups | Restore-DbaDatabase -SqlInstance $script:instance1
-        It "Restored files count should be 27" {
-            $results.DatabaseName.Count | Should Be 27
+        It "Restored files count should be 28" {
+            $results.DatabaseName.Count | Should Be 28
         }
         It "Should return successful restore" {
             ($results.RestoreComplete -contains $false) | Should Be $false
@@ -317,6 +317,22 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     }
 	
 	Clear-DbaSqlConnectionPool
+	Start-Sleep -Seconds 1
+	
+    Context "All user databases are removed post history test" {
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+        It "Should say the status was dropped" {
+            Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
+        }
+    }
+
+    Context "Restores a db with log and file files missing extensions" {
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -path $script:appeyorlabrepo\sql2008-backups\Noextension.bak -ErrorVariable Errvar -WarningVariable WarnVar
+        It "Should Restore successfully" {
+            ($results.RestoreComplete -contains $false) | Should Be $false    
+        }
+    }
+    Clear-DbaSqlConnectionPool
 	Start-Sleep -Seconds 1
 	
     Context "All user databases are removed post history test" {
