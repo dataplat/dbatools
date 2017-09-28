@@ -226,7 +226,7 @@ function Find-DbaAgentJob {
 				$job | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Name as JobName', LastRunDate, LastRunOutcome, IsEnabled, CreateDate, HasSchedule, OperatorToEmail, Category, OwnerLoginName
 				if ($RestartJob)
 				{
-					Write-Message -Level Verbose -Message "Attempt to Restart "
+					Write-Message -Level Verbose -Message "Restarting job $job on $server"
 					$job.start()
 				}
 			}
