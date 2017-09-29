@@ -81,9 +81,10 @@ Gets all SQL Server client aliases on Workstationx
 						[pscustomobject]@{
 							ComputerName	   = $env:COMPUTERNAME
 							NetworkLibrary	   = $protocol
-							ServerName	       = $entry
+							ServerName		   = $entry
 							AliasName		   = $clean
 							AliasString	       = $value
+							Architecture	   = $architecture
 						}
 					}
 				}
@@ -92,7 +93,7 @@ Gets all SQL Server client aliases on Workstationx
 			if ($PScmdlet.ShouldProcess($computer, "Getting aliases")) {
 				try {
 					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop |
-					Select-DefaultView -Property ComputerName, NetworkLibrary, ServerName, AliasName
+					Select-DefaultView -Property ComputerName, Architecture, NetworkLibrary, ServerName, AliasName
 				}
 				catch {
 					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
