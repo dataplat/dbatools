@@ -85,6 +85,32 @@
 				return
 			}
 		}
+		
+		#region Remoting Script
+		$scriptBlock = {
+			
+			param (
+				$CertificateData,
+				
+				$Password,
+				
+				$Store,
+				
+				$Folder
+			)
+			
+			$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+			$cert.Import($CertificateData, $Password, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+			Write-Verbose "Importing cert to $Folder\$Store"
+			$tempStore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
+			$tempStore.Open('ReadWrite')
+			$tempStore.Add($cert)
+			$tempStore.Close()
+			
+			Write-Verbose "Searching Cert:\$Store\$Folder"
+			Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
+		}
+		#endregion Remoting Script
 	}
 	process {
 		if (Test-FunctionInterrupt) { return }
@@ -107,22 +133,6 @@
 			
 				if ((-not $computer.IsLocalhost) -and (-not $Password)) {
 					$Password = ((65 .. 90) + (97 .. 122) | Get-Random -Count 29 | ForEach-Object { [char]$_ }) -join "" | ConvertTo-SecureString -AsPlainText -Force
-				}
-				
-				$scriptBlock = {
-					$Store = $args[2]
-					$Folder = $args[3]
-					
-					$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-					$cert.Import($args[0], $args[1], [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-					Write-Verbose "Importing cert to $Folder\$Store"
-					$tempStore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
-					$tempStore.Open('ReadWrite')
-					$tempStore.Add($cert)
-					$tempStore.Close()
-					
-					Write-Verbose "Searching Cert:\$Store\$Folder"
-					Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
 				}
 				
 				if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import cert")) {
