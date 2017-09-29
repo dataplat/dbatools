@@ -148,7 +148,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			}
 		}
 	}
-	Context "Revert SQL Agent service account changes" {
+	Context "Revert SQL Agent service account changes ($currentAgentUser)" {
 		$errVar = $warnVar = $null
 		$results = $services | Where-Object { $_.ServiceType -eq 'Agent' } | Update-DbaSqlServiceAccount -Username $currentAgentUser -ErrorVariable $errVar -WarningVariable $warnVar
 		
@@ -167,7 +167,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			}
 		}
 	}
-	Context "Revert SQL Engine service account changes" {
+	Context "Revert SQL Engine service account changes ($currentEngineUser)" {
 		$errVar = $warnVar = $null
 		$results = $services | Where-Object { $_.ServiceType -eq 'Engine' } | Update-DbaSqlServiceAccount -Username $currentEngineUser -ErrorVariable $errVar -WarningVariable $warnVar
 		
