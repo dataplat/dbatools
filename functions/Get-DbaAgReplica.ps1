@@ -89,7 +89,7 @@ function Get-DbaAgReplica {
 					Add-Member -Force -InputObject $currentReplica -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
 					Add-Member -Force -InputObject $currentReplica -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 
-					$defaults = 'ComputerName','InstanceName','SqlInstance','Parent as AvailabilityGroup','Name as Replica','AvailabilityMode','BackupPriority','EndpointUrl','SessionTimeout','FailoverMode','ReadonlyRoutingList'
+					$defaults = 'ComputerName','InstanceName','SqlInstance','Parent as AvailabilityGroup','Name as Replica','Role','ConnectionState','RollupSynchronizationState','AvailabilityMode','BackupPriority','EndpointUrl','SessionTimeout','FailoverMode','ReadonlyRoutingList'
 					Select-DefaultView -InputObject $currentReplica -Property $defaults
 				}
 			}
