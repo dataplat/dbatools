@@ -12,12 +12,6 @@ The target computer where the alias will be created
 .PARAMETER Credential
 Allows you to login to remote computers using alternative credentials
 
-.PARAMETER ServerAlias
-The target SQL Server
-	
-.PARAMETER Alias
-The alias to be created
-	
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
 
@@ -29,8 +23,12 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
-https://dbatools.io/ Get-DbaClientAlias
+https://dbatools.io/Get-DbaClientAlias
 
+	.EXAMPLE
+Get-DbaClientAlias
+Gets all SQL Server client aliases on the local computer
+	
 .EXAMPLE
 Get-DbaClientAlias -ComputerName workstationx
 Gets all SQL Server client aliases on Workstationx
@@ -44,32 +42,26 @@ Gets all SQL Server client aliases on Workstationx
 	
 	process {
 		foreach ($computer in $ComputerName) {
-			$null = Test-ElevationRequirement -ComputerName $computer -Continue
-			
 			$scriptblock = {
 				$basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
 				
-				if ($env:PROCESSOR_ARCHITECTURE -like "*64*") { $64bit = $true }
-				
 				foreach ($basekey in $basekeys) {
-					if ($64bit -ne $true -and $basekey -like "*WOW64*") { continue }
 					
 					if ((Test-Path $basekey) -eq $false) {
-						Stop-Function -Message "Base key ($basekey) does not exist. Quitting." -Target $basekey
+						Write-Warning "Base key ($basekey) does not exist. Quitting."
+						continue
 					}
 					
 					$client = "$basekey\Client"
 					
 					if ((Test-Path $client) -eq $false) {
-						Write-Message -Level Verbose -Message "Creating $client key"
-						$null = Get-Item -Path $client -Force
+						continue
 					}
 					
 					$connect = "$client\ConnectTo"
 					
 					if ((Test-Path $connect) -eq $false) {
-						Write-Message -Level Verbose -Message "Creating $connect key"
-						$null = Get-Item -Path $connect -Force
+						continue
 					}
 					
 					if ($basekey -like "*WOW64*") {
@@ -79,14 +71,28 @@ Gets all SQL Server client aliases on Workstationx
 						$architecture = "64-bit"
 					}
 					
-					Write-Message -Level Verbose -Message "Creating/updating alias for $ComputerName for $architecture"
-					Get-ItemProperty -Path $connect# -Name $Alias -Value "DBMSSOCN,$ComputerName" -PropertyType String -Force
+					Write-Verbose "Creating/updating alias for $ComputerName for $architecture"
+					$all = Get-Item -Path $connect
+					foreach ($entry in $all.Property) {
+						$value = Get-ItemPropertyValue -Path $connect -Name $entry
+						$clean = $value.Replace('DBNMPNTW,', '').Replace('DBMSSOCN,', '')
+						if ($value -match 'DBMSSOCN') { $protocol = 'TCP/IP' } else { $protocol = 'Named Pipes' }
+						
+						[pscustomobject]@{
+							ComputerName	   = $env:COMPUTERNAME
+							NetworkLibrary	   = $protocol
+							ServerName	       = $entry
+							AliasName		   = $clean
+							AliasString	       = $value
+						}
+					}
 				}
 			}
 			
 			if ($PScmdlet.ShouldProcess($computer, "Getting aliases")) {
 				try {
-					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop
+					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop |
+					Select-DefaultView -Property ComputerName, NetworkLibrary, ServerName, AliasName
 				}
 				catch {
 					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
