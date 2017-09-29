@@ -76,14 +76,14 @@
 				$client = "$basekey\Client"
 				
 				if ((Test-Path $client) -eq $false) {
-					Write-Verbose "Creating $client key"
+					# "Creating $client key"
 					$null = New-Item -Path $client -Force
 				}
 				
 				$connect = "$client\ConnectTo"
 				
 				if ((Test-Path $connect) -eq $false) {
-					Write-Verbose "Creating $connect key"
+					# "Creating $connect key"
 					$null = New-Item -Path $connect -Force
 				}
 				
@@ -94,7 +94,7 @@
 					$architecture = "64-bit"
 				}
 				
-				Write-Verbose "Creating/updating alias for $ComputerName for $architecture"
+				# Write-Verbose "Creating/updating alias for $ComputerName for $architecture"
 				$null = New-ItemProperty -Path $connect -Name $Alias -Value $serverstring -PropertyType String -Force
 			}
 		}
@@ -110,11 +110,11 @@
 		
 		foreach ($computer in $ComputerName.ComputerName) {
 			
-			$null = Test-ElevationRequirement -ComputerName $computer
+			$null = Test-ElevationRequirement -ComputerName $computer -Continue
 			
 			if ($PScmdlet.ShouldProcess($computer, "Adding $alias")) {
 				try {
-					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -ArgumentList $ServerName, $Alias, $serverstring -Verbose:$verbose
+					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -ArgumentList $ServerName, $Alias, $serverstring
 				}
 				catch {
 					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
