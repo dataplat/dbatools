@@ -119,7 +119,7 @@ function Update-DbaSqlServiceAccount {
 			#System logins should not have a domain name, whitespaces or passwords
 			$trimmedUsername = (Split-Path $Username -Leaf).Trim().Replace(' ', '')
 			#Request password input if password was not specified and account is not MSA or system login
-			if ($NewPassword.Length -eq 0 -and $PSBoundParameters.Keys -notcontains 'NewPassword' -and $trimmedUsername -notin 'NETWORKSERVICE', 'LOCALSYSTEM', 'LOCALSERVICE' -and $Username.EndsWith('$') -eq $false ) {
+			if ($NewPassword.Length -eq 0 -and $PSBoundParameters.Keys -notcontains 'NewPassword' -and $trimmedUsername -notin 'NETWORKSERVICE', 'LOCALSYSTEM', 'LOCALSERVICE' -and $Username.EndsWith('$') -eq $false -and $Username.StartsWith('NT Service\') -eq $false) {
 				$NewPassword = Read-Host -Prompt "Input new password for account $UserName" -AsSecureString
 				$NewPassword2 = Read-Host -Prompt "Repeat password" -AsSecureString
 				if ((New-Object System.Management.Automation.PSCredential ("user", $NewPassword)).GetNetworkCredential().Password -ne `
