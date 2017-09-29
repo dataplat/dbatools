@@ -59,6 +59,11 @@ FUNCTION Get-DbaAgentJob {
 			Get-DbaAgentJob -SqlInstance localhost -NoDisabledJobs
 
 			Returns all SQl Agent Jobs for the local SQL Server instances, excluding the disabled jobs.
+	
+		.EXAMPLE
+			$servers | Get-DbaAgentJob | Out-GridView -Passthru | Start-DbaAgentJob -WhatIf
+	
+			Find all of your Jobs from servers in the $server collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob
 	#>
 	[CmdletBinding()]
 	param (

@@ -80,6 +80,11 @@ function Find-DbaAgentJob {
 			Find-DbaAgentJob -SqlInstance Dev01 -IsDisabled -IsNoEmailNotification -IsNotScheduled
 
 			Returns all agent job(s) that are either disabled, have no email notification or don't have a schedule. returned with detail
+	
+		.EXAMPLE
+			$servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob 
+
+			Finds all failed job then starts them. Consider using a -WhatIf at the end of Start-DbaAgentJob to see what it'll do first
 
 		.EXAMPLE
 			Find-DbaAgentJob -SqlInstance Dev01 -LastUsed 10 -Exclude "Yearly - RollUp Workload", "SMS - Notification"
