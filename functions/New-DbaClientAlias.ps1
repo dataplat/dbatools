@@ -18,6 +18,9 @@ The target SQL Server
 .PARAMETER Alias
 The alias to be created
 	
+.PARAMETER Protocol
+The protocol for the connection, either TCPIP or NetBIOS. Defaults to TCPIP.
+
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
 
