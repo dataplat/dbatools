@@ -131,13 +131,13 @@ Function Get-DbaSqlService {
 			$Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
 			if ($Server.ComputerName) {
 				$Computer = $server.ComputerName
-				Write-Message -Level Verbose -Message "Getting SQL Server namespace on $Computer"
-				$namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue -Credential $credential | Sort-Object Name -Descending
+				Write-Message -Level VeryVerbose -Message "Getting SQL Server namespace on $Computer" -Target $Computer
+				$namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction Ignore -Silent -Credential $credential | Sort-Object Name -Descending
 				if ($namespaces) {
 					ForEach ($namespace in $namespaces) {
 						try {
-							Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer."
-							$services = Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE $searchClause" -ErrorAction SilentlyContinue -Credential $credential
+							Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer." -Target $Computer
+							$services = Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE $searchClause" -Silent -Credential $credential
 						}
 						catch {
 							Write-Message -Level Verbose -Silent $Silent -Message "Failed to acquire services from namespace $($namespace.Name)."

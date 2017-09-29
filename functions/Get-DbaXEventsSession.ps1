@@ -1,120 +1,97 @@
-function Get-DbaXEventsSession
-{
+function Get-DbaXEventsSession {
  <#
-.SYNOPSIS
-Get a list of Extended Events Sessions
+	.SYNOPSIS
+	Get a list of Extended Events Sessions
 
-.DESCRIPTION
-Retrieves a list of Extended Events Sessions
+	.DESCRIPTION
+	Retrieves a list of Extended Events Sessions
 
-.PARAMETER SqlInstance
-The SQL Instances that you're connecting to.
+	.PARAMETER SqlInstance
+	The SQL Instances that you're connecting to.
 
-.PARAMETER SqlCredential
-Credential object used to connect to the SQL Server as a different user
+	.PARAMETER SqlCredential
+	Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Sessions
-Only return specific sessions. This parameter is auto-populated.
+	.PARAMETER Session
+	Only return specific sessions. This parameter is auto-populated.
+		
+	.PARAMETER Silent
+	If this switch is enabled, the internal messaging functions will be silenced.
 
-.NOTES
-Tags: Memory
-Author: Klaas Vandenberghe ( @PowerDBAKlaas )
-	
-dbatools PowerShell module (https://dbatools.io)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	.NOTES
+	Tags: Memory
+	Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+	Website: https://dbatools.io
+	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-	
-.LINK
-https://dbatools.io/Get-DbaXEventsSession
+	.LINK
+	https://dbatools.io/Get-DbaXEventsSession
 
-.EXAMPLE
-Get-DbaXEventsSession -SqlInstance ServerA\sql987
+	.EXAMPLE
+	Get-DbaXEventsSession -SqlInstance ServerA\sql987
 
-Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties.
+	Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties.
 
-.EXAMPLE
-Get-DbaXEventsSession -SqlInstance ServerA\sql987 | Format-Table ComputerName, SQLInstance, Session, Status -AutoSize
+	.EXAMPLE
+	Get-DbaXEventsSession -SqlInstance ServerA\sql987 | Format-Table ComputerName, SqlInstance, Session, Status -AutoSize
 
-Returns a formatted table displaying ComputerName, SQLInstance, Session, and Status.
+	Returns a formatted table displaying ComputerName, SqlInstance, Session, and Status.
 
-.EXAMPLE
-'ServerA\sql987','ServerB' | Get-DbaXEventsSession
+	.EXAMPLE
+	'ServerA\sql987','ServerB' | Get-DbaXEventsSession
 
-Returns a custom object with ComputerName, SQLInstance, Session, StartTime, Status and other properties, from multiple SQL Instances.
+	Returns a custom object with ComputerName, SqlInstance, Session, StartTime, Status and other properties, from multiple SQL Instances.
+
 #>
 	[CmdletBinding()]
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]$SqlCredential
+		[PSCredential]$SqlCredential,
+		[Alias("Sessions")]
+		[object[]]$Session,
+		[switch]$Silent
 	)
-
+	
 	begin {
-		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null)
-		{
-			throw "SMO version is too old. To collect Extended Events, you must have SQL Server Management Studio 2012 or higher installed."
+		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null) {
+			Stop-Function -Message "SMO version is too old. To collect Extended Events, you must have SQL Server Management Studio 2012 or higher installed."
 		}
 	}
+	
 	process {
-		foreach ($instance in $SqlInstance)
-		{
-			Write-Verbose "Connecting to $instance."
-			try
-			{
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential -ErrorAction SilentlyContinue
-				Write-Verbose "SQL Instance $instance is version $($server.versionmajor)."
+		if (Test-FunctionInterrupt) { return }
+		
+		foreach ($instance in $SqlInstance) {
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
 			}
-			catch
-			{
-				Write-Warning " Failed to connect to $instance."
-				continue
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-			if ($server.versionmajor -lt 11)
-			{
-				Write-Warning "$instance is lower than SQL Server 2012 and does not support extended events."
-				continue
+			
+			$SqlConn = $server.ConnectionContext.SqlConnectionObject
+			$SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
+			$XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
+			Write-Message -Level Verbose -Message "Getting XEvents Sessions on $instance."
+			
+			$xesessions = $XEStore.sessions
+			
+			if ($Session) {
+				$xesessions = $xesessions | Where-Object { $_.Name -in $Session }
 			}
-			else
-			{
-				$SqlConn = $server.ConnectionContext.SqlConnectionObject
-				$SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
-				$XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
-				Write-Verbose "Getting XEvents Sessions on $instance."
-				
-				$xesessions = $XEStore.sessions
-				
-				if ($Session)
-				{
-					$xesessions = $xesessions | Where-Object { $_.Name -in $Session }
-				}
-				
-				try
-				{
-					$xesessions |
-					ForEach-Object {
-						[PSCustomObject]@{
-							ComputerName = $server.NetName
-							SQLInstance = $server.ServiceName
-							Session = $_.Name
-							Status = switch ($_.IsRunning) { $true { "Running" } $false { "Stopped" } }
-							StartTime = $_.StartTime
-							AutoStart = $_.AutoStart
-							State = $_.State
-							Targets = $_.Targets
-							Events = $_.Events
-							MaxMemory = $_.MaxMemory
-							MaxEventSize = $_.MaxEventSize
-						}
-					}
-				}
-				catch
-				{
-					Write-Warning "Failed to get XEvents Sessions on $instance."
-				}
+			
+			foreach ($x in $xesessions) {
+				$status = switch ($x.IsRunning) { $true { "Running" } $false { "Stopped" } }
+				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Status -Value $status
+				Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Session -Value $x.Name
+				Select-DefaultView -InputObject $x -Property ComputerName, InstanceName, SqlInstance, Name, Status, StartTime, AutoStart, State, Targets, Events, MaxMemory, MaxEventSize
 			}
 		}
 	}
