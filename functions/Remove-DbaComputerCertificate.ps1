@@ -58,46 +58,54 @@
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential]$Credential,
 		[parameter(ValueFromPipelineByPropertyName, Mandatory)]
-		[string]$Thumbprint,
+		[string[]]$Thumbprint,
 		[string]$Store = "LocalMachine",
 		[string]$Folder="My",
 		[switch]$Silent
 	)
 	
-	process {
-		
-		foreach ($computer in $computername) {
+	begin {
+		#region Scriptblock for remoting
+		$scriptblock = {
+			param (
+				$Thumbprint,
+				
+				$Store,
+				
+				$Folder
+			)
+			Write-Verbose "Searching Cert:\$Store\$Folder for thumbprint: $thumbprint"
+			$cert = Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $Thumbprint }
 			
-			$scriptblock = {
-				$thumbprint = $args[0]
-				$Store = $args[1]
-				$Folder = $args[2]
-				Write-Verbose "Searching Cert:\$Store\$Folder for thumbprint: $thumbprint"
-				$cert = Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $Thumbprint }
-				
-				if ($cert) {
-					$null = $cert | Remove-Item
-					$status = "Removed"
-				}
-				else {
-					$status = "Certificate not found in Cert:\$Store\$Folder"
-				}
-				
-				[pscustomobject]@{
-					ComputerName    = $env:COMPUTERNAME
-					Store		    = $Store
-					Folder		    = $Folder
-					Thumbprint	    = $thumbprint
-					Status		    = $status
-				}
+			if ($cert) {
+				$null = $cert | Remove-Item
+				$status = "Removed"
+			}
+			else {
+				$status = "Certificate not found in Cert:\$Store\$Folder"
 			}
 			
-			if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to remove cert from Cert:\$Store\$Folder")) {
-				try {
-					Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $thumbprint, $store, $folder -ScriptBlock $scriptblock -ErrorAction Stop
-				}
-				catch {
-					Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue
+			[pscustomobject]@{
+				ComputerName	 = $env:COMPUTERNAME
+				Store		     = $Store
+				Folder		     = $Folder
+				Thumbprint	     = $thumbprint
+				Status		     = $status
+			}
+		}
+		#endregion Scriptblock for remoting
+	}
+	
+	process {
+		foreach ($computer in $computername) {
+			foreach ($thumb in $Thumbprint) {
+				if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to remove cert from Cert:\$Store\$Folder")) {
+					try {
+						Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $thumb, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop
+					}
+					catch {
+						Stop-Function -Message $_ -ErrorRecord $_ -Target $computer -Continue
+					}
 				}
 			}
 		}
