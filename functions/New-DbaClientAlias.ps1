@@ -1,47 +1,47 @@
 ﻿Function New-DbaClientAlias {
 <#
-.SYNOPSIS 
-Creates/updates a sql alias for the specified server - mimics cliconfg.exe
+	.SYNOPSIS 
+	Creates/updates a sql alias for the specified server - mimics cliconfg.exe
 
-.DESCRIPTION
-Creates/updates a SQL Server alias by altering HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client
+	.DESCRIPTION
+	Creates/updates a SQL Server alias by altering HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client
 
-.PARAMETER ComputerName
-The target computer where the alias will be created
+	.PARAMETER ComputerName
+	The target computer where the alias will be created
 
-.PARAMETER Credential
-Allows you to login to remote computers using alternative credentials
+	.PARAMETER Credential
+	Allows you to login to remote computers using alternative credentials
 
-.PARAMETER ServerName
-The target SQL Server
-	
-.PARAMETER Alias
-The alias to be created
-	
-.PARAMETER Protocol
-The protocol for the connection, either TCPIP or NetBIOS. Defaults to TCPIP.
+	.PARAMETER ServerName
+	The target SQL Server
+		
+	.PARAMETER Alias
+	The alias to be created
+		
+	.PARAMETER Protocol
+	The protocol for the connection, either TCPIP or NetBIOS. Defaults to TCPIP.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+	.PARAMETER Silent
+	Use this switch to disable any kind of verbose messages
 
-.NOTES
-Tags: Alias
+	.NOTES
+	Tags: Alias
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+	Website: https://dbatools.io
+	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.LINK
-https://dbatools.io/New-DbaClientAlias
+	.LINK
+	https://dbatools.io/New-DbaClientAlias
 
-.EXAMPLE
-New-DbaClientAlias -ServerName sqlcluster\sharepoint -Alias sp
-Creates a new TCP alias on the local workstation called sp, which points sqlcluster\sharepoint
-	
-.EXAMPLE
-New-DbaClientAlias -ServerName sqlcluster\sharepoint -Alias sp -Protocol NamedPipes
-Creates a new NamedPipes alias on the local workstation called sp, which points sqlcluster\sharepoint
-	
+	.EXAMPLE
+	New-DbaClientAlias -ServerName sqlcluster\sharepoint -Alias sp
+	Creates a new TCP alias on the local workstation called sp, which points sqlcluster\sharepoint
+		
+	.EXAMPLE
+	New-DbaClientAlias -ServerName sqlcluster\sharepoint -Alias sp -Protocol NamedPipes
+	Creates a new NamedPipes alias on the local workstation called sp, which points sqlcluster\sharepoint
+		
 #>
 	[CmdletBinding()]
 	Param (

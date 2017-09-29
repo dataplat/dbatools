@@ -1,37 +1,37 @@
 ﻿Function Get-DbaClientAlias {
 <#
-.SYNOPSIS 
-Creates/updates a sql alias for the specified server - mimics cliconfg.exe
+	.SYNOPSIS 
+	Creates/updates a sql alias for the specified server - mimics cliconfg.exe
 
-.DESCRIPTION
-Creates/updates a SQL Server alias by altering HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client
+	.DESCRIPTION
+	Creates/updates a SQL Server alias by altering HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client
 
-.PARAMETER ComputerName
-The target computer where the alias will be created
+	.PARAMETER ComputerName
+	The target computer where the alias will be created
 
-.PARAMETER Credential
-Allows you to login to remote computers using alternative credentials
+	.PARAMETER Credential
+	Allows you to login to remote computers using alternative credentials
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+	.PARAMETER Silent
+	Use this switch to disable any kind of verbose messages
 
-.NOTES
-Tags: Alias
+	.NOTES
+	Tags: Alias
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+	Website: https://dbatools.io
+	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.LINK
-https://dbatools.io/Get-DbaClientAlias
+	.LINK
+	https://dbatools.io/Get-DbaClientAlias
 
+		.EXAMPLE
+	Get-DbaClientAlias
+	Gets all SQL Server client aliases on the local computer
+		
 	.EXAMPLE
-Get-DbaClientAlias
-Gets all SQL Server client aliases on the local computer
-	
-.EXAMPLE
-Get-DbaClientAlias -ComputerName workstationx
-Gets all SQL Server client aliases on Workstationx
+	Get-DbaClientAlias -ComputerName workstationx
+	Gets all SQL Server client aliases on Workstationx
 #>
 	[CmdletBinding()]
 	Param (
