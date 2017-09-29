@@ -43,6 +43,17 @@ Gets all SQL Server client aliases on Workstationx
 	process {
 		foreach ($computer in $ComputerName) {
 			$scriptblock = {
+				
+				function Get-ItemPropertyValue {
+					Param (
+						[parameter()]
+						[String]$Path,
+						[parameter()]
+						[String]$Name
+					)
+					(Get-ItemProperty -LiteralPath $Path -Name $Name).$Name
+				}
+				
 				$basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
 				
 				foreach ($basekey in $basekeys) {
