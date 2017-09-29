@@ -372,8 +372,9 @@
 		'Enable-DbaTraceFlag',
 		'Start-DbaAgentJob',
 		'Stop-DbaAgentJob'
-		'New-DbaClientAlias', # Remove-DbaClientAlias
-		'Get-DbaClientAlias'
+		'New-DbaClientAlias',
+		'Get-DbaClientAlias',
+		'Remove-DbaClientAlias'
 	)
 	
 	# Cmdlets to export from this module
