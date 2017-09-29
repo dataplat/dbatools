@@ -33,7 +33,7 @@ https://dbatools.io/ Get-DbaClientAlias
 
 .EXAMPLE
 Get-DbaClientAlias -ComputerName workstationx
-Does this
+Gets all SQL Server client aliases on Workstationx
 #>
 	[CmdletBinding()]
 	Param (
@@ -80,14 +80,13 @@ Does this
 					}
 					
 					Write-Message -Level Verbose -Message "Creating/updating alias for $ComputerName for $architecture"
-					$null = Get-ItemProperty -Path $connect -Name $Alias -Value "DBMSSOCN,$ComputerName" -PropertyType String -Force
+					Get-ItemProperty -Path $connect# -Name $Alias -Value "DBMSSOCN,$ComputerName" -PropertyType String -Force
 				}
 			}
 			
-			if ($PScmdlet.ShouldProcess($computer, "Adding $alias")) {
+			if ($PScmdlet.ShouldProcess($computer, "Getting aliases")) {
 				try {
-					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -ArgumentList $alias, $Password, $Store, $Folder |
-					Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
+					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop
 				}
 				catch {
 					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue

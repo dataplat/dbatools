@@ -1,10 +1,10 @@
 ﻿Function New-DbaClientAlias {
 <#
 .SYNOPSIS 
-Gets SQL Server Client aliases - mimics cliconfg.exe
+Sets SQL Server Client aliases - mimics cliconfg.exe
 
 .DESCRIPTION
-Gets SQL Server Client aliases - mimics cliconfg.exe which is stored in HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client
+Sets SQL Server Client aliases - mimics cliconfg.exe which is stored in HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client
 
 .PARAMETER ComputerName
 The target computer - defaults to localhost
@@ -36,7 +36,12 @@ https://dbatools.io/ New-DbaClientAlias
 
 .EXAMPLE
 New-DbaClientAlias -ServerAlias sqlcluster\sharepoint -Alias sp
-Does this
+Creates a new TCP alias on the local workstation called sp, which points sqlcluster\sharepoint
+	
+.EXAMPLE
+New-DbaClientAlias -ServerAlias sqlcluster\sharepoint -Alias sp -Protocol NamedPipes
+Creates a new NamedPipes alias on the local workstation called sp, which points sqlcluster\sharepoint
+	
 #>
 	[CmdletBinding()]
 	Param (
@@ -55,6 +60,9 @@ Does this
 		# This is a script block so cannot use messaging system
 		$scriptblock = {
 			$basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
+			$ServerAlias = $args[0]
+			$Alias = $args[1]
+			$serverstring = $args[2]
 			
 			if ($env:PROCESSOR_ARCHITECTURE -like "*64*") { $64bit = $true }
 			
@@ -108,8 +116,13 @@ Does this
 			
 			if ($PScmdlet.ShouldProcess($computer, "Adding $alias")) {
 				try {
-					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -ArgumentList $alias, $Password, $Store, $Folder -Verbose:$verbose |
-					Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
+					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -ArgumentList $ServerAlias, $Alias, $serverstring -Verbose:$verbose
+					[pscustomobject]@{
+						ComputerName	  = $computer
+						ServerAlias	      = $ServerAlias
+						Alias			  = $Alias
+						RegistryEntry  = $serverstring
+					}
 				}
 				catch {
 					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
