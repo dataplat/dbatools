@@ -15,9 +15,6 @@
 	.PARAMETER Alias
 	The alias to be deleted
 	
-	.PARAMETER Protocol
-	The protocol of the alias to be deleted. Defaults to TCPIP.
-	
 	.PARAMETER Silent
 	Use this switch to disable any kind of verbose messages
 
@@ -41,21 +38,22 @@
 #>
 	[CmdletBinding()]
 	Param (
+		[parameter(ValueFromPipelineByPropertyName)]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential]$Credential,
-		[parameter(Mandatory)]
+		[parameter(Mandatory, ValueFromPipelineByPropertyName)]
+		[Alias('AliasName')]
 		[string]$Alias,
-		[ValidateSet("TCPIP", "NamedPipes")]
-		[string]$Protocol = "TCPIP",
 		[switch]$Silent
 	)
 	
 	process {
+		
 		foreach ($computer in $ComputerName) {
-			$null = Test-ElevationRequirement -ComputerName $computer
+			$null = Test-ElevationRequirement -ComputerName $computer -Continue
 			
 			$scriptblock = {
-				
+				$Alias = $args[0]
 				function Get-ItemPropertyValue {
 					Param (
 						[parameter()]
@@ -94,40 +92,18 @@
 						$architecture = "64-bit"
 					}
 					
-					#Write-Verbose "Creating/updating alias for $ComputerName for $architecture"
+					
 					$all = Get-Item -Path $connect
 					foreach ($entry in $all) {
-						#Write-Warning $connect
-						#Write-Warning $entry 
-					
-						#Get-Item -Path $e | Remove-ItemProperty -Name $entry.Property
 						
 						foreach ($en in $entry) {
 							$e = $entry.ToString().Replace('HKEY_LOCAL_MACHINE', 'HKLM:\')
-							if ($en.Property -eq $Alias) {
-								Write-Warning $alias
-								Remove-Item $e
-								Write-Warning "$($en.property)"
+							if ($en.Property -contains $Alias) {
+								Remove-ItemProperty -Path $e -Name $Alias
 							}
 							else {
 								$en
-								#Write-Warning "$($entry.property)"
 							}
-						}
-						
-						#Remove-ItemProperty -Path $connect -Name $entry
-						
-						#$clean = $value.Replace('DBNMPNTW,', '').Replace('DBMSSOCN,', '')
-						#if ($value.StartsWith('DBMSSOCN')) { $protocol = 'TCP/IP' }
-						#else { $protocol = 'Named Pipes' }
-						
-						$null = [pscustomobject]@{
-							ComputerName	    = $env:COMPUTERNAME
-							NetworkLibrary	    = $protocol
-							ServerName		    = $clean
-							AliasName		    = $entry
-							AliasString		    = $value
-							Architecture	    = $architecture
 						}
 					}
 				}
@@ -135,7 +111,7 @@
 			
 			if ($PScmdlet.ShouldProcess($computer, "Getting aliases")) {
 				try {
-					$null = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -Verbose:$false
+					$null = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -Verbose:$false -ArgumentList $Alias
 					Get-DbaClientAlias -ComputerName $computer
 					
 				}
