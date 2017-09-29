@@ -1,58 +1,57 @@
 ﻿function Add-DbaComputerCertificate {
-  <#
-    .SYNOPSIS
-      Adds a computer certificate - useful for older systems.
-
-    .DESCRIPTION
-      Adds a computer certificate from a local or remote computer.
-
-    .PARAMETER ComputerName
-      The target SQL Server. Defaults to localhost.
-
-    .PARAMETER Credential
-      Allows you to login to $ComputerName using alternative credentials.
-
-    .PARAMETER Password
-      The password for the certificate, if it is password protected.
-
-    .PARAMETER Certificate
-      The target certificate object.
-
-    .PARAMETER Path
-      The local path to the target certificate object.
-
-    .PARAMETER Store
-      Certificate store. Default is LocalMachine.
-
-    .PARAMETER Folder
-      Certificate folder. Default is My (Personal).
-    
-    .PARAMETER WhatIf
-        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-    .PARAMETER Confirm
-        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-
-    .PARAMETER Silent
-      If this switch is enabled, the internal messaging functions will be silenced.
-        
-    .NOTES
-      Tags: Certificate
-
-      Website: https://dbatools.io
-      Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-      License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-
-    .EXAMPLE
-      Add-DbaComputerCertificate -ComputerName Server1 -Path C:\temp\cert.cer
-
-      Adds the local C:\temp\cer.cer to the remote server Server1 in LocalMachine\My (Personal).
-
-    .EXAMPLE
-      Add-DbaComputerCertificate -Path C:\temp\cert.cer
-
-      Adds the local C:\temp\cer.cer to the local computer's LocalMachine\My (Personal) certificate store.
-
+<#
+	.SYNOPSIS
+		Adds a computer certificate - useful for older systems.
+	
+	.DESCRIPTION
+		Adds a computer certificate from a local or remote computer.
+	
+	.PARAMETER ComputerName
+		The target SQL Server. Defaults to localhost.
+	
+	.PARAMETER Credential
+		Allows you to login to $ComputerName using alternative credentials.
+	
+	.PARAMETER Password
+		The password for the certificate, if it is password protected.
+	
+	.PARAMETER Certificate
+		The target certificate object.
+	
+	.PARAMETER Path
+		The local path to the target certificate object.
+	
+	.PARAMETER Store
+		Certificate store. Default is LocalMachine.
+	
+	.PARAMETER Folder
+		Certificate folder. Default is My (Personal).
+	
+	.PARAMETER Silent
+		If this switch is enabled, the internal messaging functions will be silenced.
+	
+	.PARAMETER WhatIf
+		If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+	
+	.PARAMETER Confirm
+		If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+	
+	.EXAMPLE
+		Add-DbaComputerCertificate -ComputerName Server1 -Path C:\temp\cert.cer
+		
+		Adds the local C:\temp\cer.cer to the remote server Server1 in LocalMachine\My (Personal).
+	
+	.EXAMPLE
+		Add-DbaComputerCertificate -Path C:\temp\cert.cer
+		
+		Adds the local C:\temp\cer.cer to the local computer's LocalMachine\My (Personal) certificate store.
+	
+	.NOTES
+		Tags: Certificate
+		
+		Website: https://dbatools.io
+		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 #>
 	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
 	param (
