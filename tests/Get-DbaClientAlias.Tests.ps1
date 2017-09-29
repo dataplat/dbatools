@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	
 	Context "adds the alias" {
-		$null = New-DbaClientAlias -ServerName sql2016 -Alias dbatoolscialias
+		$null = New-DbaClientAlias -ServerName sql2016 -Alias dbatoolscialias -Verbose:$false
 		$results = Get-DbaClientAlias
 		It "returns accurate information" {
 			$results.AliasName -contains 'dbatoolscialias' | Should Be $true
