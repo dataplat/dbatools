@@ -1,25 +1,22 @@
 ﻿Function New-DbaClientAlias {
 <#
 .SYNOPSIS 
-Sets SQL Server Client aliases - mimics cliconfg.exe
+Creates/updates a sql alias for the specified server - mimics cliconfg.exe
 
 .DESCRIPTION
-Sets SQL Server Client aliases - mimics cliconfg.exe which is stored in HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client
+Creates/updates a SQL Server alias by altering HKLM:\SOFTWARE\Microsoft\MSSQLServer\Client
 
 .PARAMETER ComputerName
-The target computer - defaults to localhost
-		
+The target computer where the alias will be created
+
 .PARAMETER Credential
 Allows you to login to remote computers using alternative credentials
 
-.PARAMETER ServerAlias
-The SqlServer that the alias will point to
-
+.PARAMETER ServerName
+The target SQL Server
+	
 .PARAMETER Alias
-The new alias
-
-.PARAMETER Protocol
-Defaults to TCPIP but can be NamedPipes
+The alias to be created
 	
 .PARAMETER Silent
 Use this switch to disable any kind of verbose messages
@@ -32,14 +29,14 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
-https://dbatools.io/ New-DbaClientAlias
+https://dbatools.io/New-DbaClientAlias
 
 .EXAMPLE
-New-DbaClientAlias -ServerAlias sqlcluster\sharepoint -Alias sp
+New-DbaClientAlias -ServerName sqlcluster\sharepoint -Alias sp
 Creates a new TCP alias on the local workstation called sp, which points sqlcluster\sharepoint
 	
 .EXAMPLE
-New-DbaClientAlias -ServerAlias sqlcluster\sharepoint -Alias sp -Protocol NamedPipes
+New-DbaClientAlias -ServerName sqlcluster\sharepoint -Alias sp -Protocol NamedPipes
 Creates a new NamedPipes alias on the local workstation called sp, which points sqlcluster\sharepoint
 	
 #>
@@ -48,7 +45,7 @@ Creates a new NamedPipes alias on the local workstation called sp, which points 
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential]$Credential,
 		[parameter(Mandatory, ValueFromPipeline)]
-		[DbaInstanceParameter[]]$ServerAlias,
+		[DbaInstanceParameter[]]$ServerName,
 		[parameter(Mandatory)]
 		[string]$Alias,
 		[ValidateSet("TCPIP", "NamedPipes")]
@@ -60,7 +57,7 @@ Creates a new NamedPipes alias on the local workstation called sp, which points 
 		# This is a script block so cannot use messaging system
 		$scriptblock = {
 			$basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
-			$ServerAlias = $args[0]
+			$ServerName = $args[0]
 			$Alias = $args[1]
 			$serverstring = $args[2]
 			
@@ -102,32 +99,25 @@ Creates a new NamedPipes alias on the local workstation called sp, which points 
 	
 	process {
 		if ($protocol -eq "TCPIP") {
-			$serverstring = "DBMSSOCN,$ServerAlias"
+			$serverstring = "DBMSSOCN,$ServerName"
 		}
 		else {
-			$serverstring = "DBNMPNTW,\\$ServerAlias\pipe\sql\query"
+			$serverstring = "DBNMPNTW,\\$ServerName\pipe\sql\query"
 		}
 		
 		foreach ($computer in $ComputerName.ComputerName) {
 			
-			if ((Test-ElevationRequirement -ComputerName $computer)) {
-				continue
-			}
+			$null = Test-ElevationRequirement -ComputerName $computer
 			
 			if ($PScmdlet.ShouldProcess($computer, "Adding $alias")) {
 				try {
-					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -ArgumentList $ServerAlias, $Alias, $serverstring -Verbose:$verbose
-					[pscustomobject]@{
-						ComputerName	  = $computer
-						ServerAlias	      = $ServerAlias
-						Alias			  = $Alias
-						RegistryEntry  = $serverstring
-					}
+					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -ArgumentList $ServerName, $Alias, $serverstring -Verbose:$verbose
 				}
 				catch {
 					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
 				}
 			}
 		}
+		Get-DbaClientAlias -ComputerName $computer -Credential $Credential #| Where-Object ServerName -eq $ServerName
 	}
 }
