@@ -74,6 +74,11 @@ namespace Sqlcollaborative.Dbatools.dbaSystem
         /// Enables the developer mode. In this additional information and logs are written, in order to make it easier to troubleshoot issues.
         /// </summary>
         public static bool DeveloperMode = false;
+
+        /// <summary>
+        /// Returns whether the module is currently in a development branch. Some warnings will only be shown in development branch, but hidden in master / public releases
+        /// </summary>
+        public static bool DevelopmentBranch = true;
         #endregion Defines
 
         #region Queues

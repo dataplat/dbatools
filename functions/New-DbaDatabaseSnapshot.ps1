@@ -139,7 +139,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		}
 	}
 	process {
-		if (!$Database -and $AllDatabases -eq $false -and !$smodatabase) {
+		if (!$Database -and $AllDatabases -eq $false) {
 			Stop-Function -Message "You must specify a -AllDatabases or -Database to continue" -Silent $Silent
 			return
 		}
@@ -147,7 +147,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential -MinimumVersion 9
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -181,6 +181,9 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 				elseif ($db.name -in $NoSupportForSnap) {
 					Write-Message -Level Warning -Message "$($db.name) snapshots are prohibited"
 				}
+				elseif ($db.IsAccessible -ne $true) {
+					Write-Message -Level Verbose -Message "$($db.name) is not accessible, skipping"
+				}
 				else {
 					$sourcedbs += $db
 				}
@@ -195,6 +198,8 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 						#no interpolation, just append
 						$SnapName = '{0}{1}' -f $db.Name, $NameSuffix
 					}
+				} elseif ($Name.Length -gt 0) {
+					$SnapName = $Name
 				}
 				else {
 					$SnapName = "{0}_{1}" -f $db.Name, $DefaultSuffix
@@ -229,17 +234,16 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 						}
 						foreach ($file in $fg.Files) {
 							$counter += 1
-							# fixed extension is hardcoded as "ss", which seems a "de-facto" standard
-							$fname = [IO.Path]::ChangeExtension($file.Filename, "ss")
-							$fname = [IO.Path]::Combine((Split-Path $fname -Parent), ("{0}_{1}" -f $DefaultSuffix, (Split-Path $fname -Leaf)))
-							
+							$basename = [IO.Path]::GetFileNameWithoutExtension($file.FileName)
+							$basepath = Split-Path $file.FileName -Parent
 							# change path if specified
 							if ($Path.Length -gt 0) {
-								$basename = Split-Path $fname -Leaf
-								# we need to avoid cases where basename is the same for multiple FG
-								$basename = '{0:0000}_{1}' -f $counter, $basename
-								$fname = [IO.Path]::Combine($Path, $basename)
+								$basepath = $Path
 							}
+							# we need to avoid cases where basename is the same for multiple FG
+							$fname = [IO.Path]::Combine($basepath, ("{0}_{1}_{2:0000}_{3:000}" -f $basename, $DefaultSuffix, (Get-Date).MilliSecond, $counter))
+							# fixed extension is hardcoded as "ss", which seems a "de-facto" standard
+							$fname = [IO.Path]::ChangeExtension($fname, "ss")
 							$CustomFileStructure[$fg.Name] += @{ 'name' = $file.name; 'filename' = $fname }
 						}
 					}

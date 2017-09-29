@@ -6,45 +6,53 @@ function Stop-DbaProcess {
 		.DESCRIPTION
 			This command kills all spids associated with a spid, login, host, program or database.
 				
-			if you are attempting to kill your own login sessions, the process performing the kills will be skipped.
+			If you are attempting to kill your own login sessions, the process performing the kills will be skipped.
 
 		.PARAMETER SqlInstance
 			The SQL Server instance.
 
-		.PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
+        .PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Spid
-			This parameter is auto-populated from -SqlInstance. You can specify one or more Spids to be killed.
+			Specifies one or more spids to be killed. Options for this parameter are auto-populated from the server.
 
 		.PARAMETER Login
-			This parameter is auto-populated from-SqlInstance and allows only login names that have active processes. You can specify one or more logins whose processes will be killed.
+			Specifies one or more login names whose processes will be killed. Options for this parameter are auto-populated from the server and only login names that have active processes are offered.
 
 		.PARAMETER Hostname
-			This parameter is auto-populated from -SqlInstance and allows only host names that have active processes. You can specify one or more Hosts whose processes will be killed.
+			Specifies one or more client hostnames whose processes will be killed. Options for this parameter are auto-populated from the server and only hostnames that have active processes are offered.
 
 		.PARAMETER Program
-			This parameter is auto-populated from -SqlInstance and allows only program names that have active processes. You can specify one or more Programs whose processes will be killed.
+			Specifies one or more client programs whose processes will be killed. Options for this parameter are auto-populated from the server and only programs that have active processes are offered.
 
 		.PARAMETER Database
+			Specifies one or more databases whose processes will be killed. Options for this parameter are auto-populated from the server and only databases that have active processes are offered.
+
 			This parameter is auto-populated from -SqlInstance and allows only database names that have active processes. You can specify one or more Databases whose processes will be killed.
 
 		.PARAMETER ExcludeSpid
-			This parameter is auto-populated from -SqlInstance. You can specify one or more Spids to exclude from being killed (goes well with Logins).
-
-			Exclude is the last filter to run, so even if a Spid matches, for example, Hosts, if it's listed in Exclude it wil be excluded.
-
-		.PARAMETER Whatif 
-			Shows what would happen if the command were to run. No actions are actually performed. 
-
-		.PARAMETER Confirm 
-			Prompts you for confirmation before executing any changing operations within the command. 
+			Specifies one or more spids which will not be killed. Options for this parameter are auto-populated from the server.
 			
+			Exclude is the last filter to run, so even if a spid matches (for example) Hosts, if it's listed in Exclude it wil be excluded.
+		
 		.PARAMETER ProcessCollection 
-			This is the process object passed by Get-DbaProcess if using a pipeline
-	
+			This is the process object passed by Get-DbaProcess if using a pipeline.
+
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 			
 		.NOTES 
 			Tags: Processes
@@ -90,35 +98,17 @@ function Stop-DbaProcess {
 	Param (
 		[parameter(Mandatory, ParameterSetName = "Server")]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter]
-		$SqlInstance,
-		
+		[DbaInstanceParameter]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential]
-		
-		$SqlCredential,
-		
-		[int[]]
-		$Spid,
-		
-		[int[]]
-		$ExcludeSpid,
-		
-		[string[]]
-		$Database,
-		
-		[string[]]
-		$Login,
-		
-		[string[]]
-		$Hostname,
-		
-		[string[]]
-		$Program,
-		
+		[PSCredential]$SqlCredential,
+		[int[]]$Spid,
+		[int[]]$ExcludeSpid,
+		[string[]]$Database,
+		[string[]]$Login,
+		[string[]]$Hostname,
+		[string[]]$Program,
 		[parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Process")]
-		[object[]]
-		$ProcessCollection,
+		[object[]]$ProcessCollection,
 		
 		[switch]
 		$Silent
@@ -135,14 +125,14 @@ function Stop-DbaProcess {
 			$sourceserver = $session.Parent
 			
 			if (!$sourceserver) {
-				Stop-Function -Message "Only process objects can be passed through the pipeline" -Category InvalidData -Target $session
+				Stop-Function -Message "Only process objects can be passed through the pipeline." -Category InvalidData -Target $session
 				return
 			}
 			
 			$currentspid = $session.spid
 			
 			if ($sourceserver.ConnectionContext.ProcessID -eq $currentspid) {
-				Write-Message -Level Warning -Message "Skipping spid $currentspid because you cannot use KILL to kill your own process" -Target $session
+				Write-Message -Level Warning -Message "Skipping spid $currentspid because you cannot use KILL to kill your own process." -Target $session
 				Continue
 			}
 			
@@ -160,7 +150,7 @@ function Stop-DbaProcess {
 					}
 				}
 				catch {
-					Stop-Function -Message "Couldn't kill spid $currentspid" -Target $session -ErrorRecord $_ -Continue
+					Stop-Function -Message "Couldn't kill spid $currentspid." -Target $session -ErrorRecord $_ -Continue
 				}
 			}
 		}

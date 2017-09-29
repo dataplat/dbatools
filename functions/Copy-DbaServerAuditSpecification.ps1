@@ -9,44 +9,46 @@ function Copy-DbaServerAuditSpecification {
 			If the audit specification already exists on the destination, it will be skipped unless -Force is used.
 
 		.PARAMETER Source
-			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 		.PARAMETER SourceSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-		To connect as a different Windows user, run PowerShell as that user.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
 		.PARAMETER DestinationSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
 			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER AuditSpecification
-			The Server Audit Specification(s) to process - this list is auto-populated from the server. If unspecified, all Server Audit Specifications will be processed.
+			The Server Audit Specification(s) to process. Options for this list are auto-populated from the server. If unspecified, all Server Audit Specifications will be processed.
 
 		.PARAMETER ExcludeAuditSpecification
-			The Server Audit Specification(s) to exclude - this list is auto-populated from the server
+			The Server Audit Specification(s) to exclude. Options for this list are is auto-populated from the server
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Force
-			Drops and recreates the Audit Specification if it exists
+			If this switch is enabled, the Audits Specifications will be dropped and recreated on Destination.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Migration,ServerAudit,AuditSpecification
@@ -63,12 +65,12 @@ function Copy-DbaServerAuditSpecification {
 		.EXAMPLE
 			Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster
 
-			Copies all server audits from sqlserver2014a to sqlcluster, using Windows credentials. If audits with the same name exist on sqlcluster, they will be skipped.
+			Copies all server audits from sqlserver2014a to sqlcluster using Windows credentials to connect. If audits with the same name exist on sqlcluster, they will be skipped.
 
 		.EXAMPLE
 			Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster -ServerAuditSpecification tg_noDbDrop -SourceSqlCredential $cred -Force
 
-			Copies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an audit with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+			Copies a single audit, the tg_noDbDrop audit from sqlserver2014a to sqlcluster using SQL credentials to connect to sqlserver2014a and Windows credentials to connect to sqlcluster. If an audit specification with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 		.EXAMPLE
 			Copy-DbaServerAuditSpecification -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
@@ -79,12 +81,10 @@ function Copy-DbaServerAuditSpecification {
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
-		[PSCredential]
-		$SourceSqlCredential,
+		[PSCredential]$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential]
-		$DestinationSqlCredential,
+		[PSCredential]$DestinationSqlCredential,
 		[object[]]$AuditSpecification,
 		[object[]]$ExcludeAuditSpecification,
 		[switch]$Force,

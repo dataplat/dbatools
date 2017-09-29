@@ -106,48 +106,20 @@
 	param (
 		[parameter(ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
-		[DbaInstanceParameter[]]
-		$ComputerName = $env:COMPUTERNAME,
-		
-		[PSCredential]
-		
-		$Credential,
-		
-		[string]
-		$CaServer,
-		
-		[string]
-		$CaName,
-		
-		[string]
-		$ClusterInstanceName,
-		
-		[securestring]
-		$Password,
-		
-		[string]
-		$FriendlyName = "SQL Server",
-		
-		[string]
-		$CertificateTemplate = "WebServer",
-		
-		[int]
-		$KeyLength = 1024,
-		
-		[string]
-		$Store = "LocalMachine",
-		
-		[string]
-		$Folder = "My",
-		
-		[string[]]
-		$Dns,
-		
-		[switch]
-		$SelfSigned,
-		
-		[switch]
-		$Silent
+		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+		[PSCredential]$Credential,
+		[string]$CaServer,
+		[string]$CaName,
+		[string]$ClusterInstanceName,
+		[securestring]$Password,
+		[string]$FriendlyName = "SQL Server",
+		[string]$CertificateTemplate = "WebServer",
+		[int]$KeyLength = 1024,
+		[string]$Store = "LocalMachine",
+		[string]$Folder = "My",
+		[string[]]$Dns,
+		[switch]$SelfSigned,
+		[switch]$Silent
 	)
 	begin {
 		$englishCodes = 9, 1033, 2057, 3081, 4105, 5129, 6153, 7177, 8201, 9225

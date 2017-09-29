@@ -13,31 +13,60 @@ if ($dbatools_dotsourcemodule) { $script:doDotSource = $true }
 if ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
 if ((Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
 
-Get-ChildItem -Path "$script:PSModuleRoot\bin\smo\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dmf.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SqlWmiManagement.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ConnectionInfo.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ConnectionInfoExtended.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SmoExtended.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.RegisteredServers.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Sdk.Sfc.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SqlEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.RegSvrEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WmiEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ServiceBrokerEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Collector.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.CollectorEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Utility.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.UtilityEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.HadrDMF.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEvent.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventDbScoped.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventDbScopedEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Collector.dll"
+Get-ChildItem -Path "$script:PSModuleRoot\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
 
+# Attempt to add older SMO first because it's RTM and not beta
+foreach ($smoversion in "13.0.0.0", "12.0.0.0") {
+	try {
+		Add-Type -AssemblyName "Microsoft.SqlServer.Smo, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
+		$smoadded = $true
+	}
+	catch {
+		$smoadded = $false
+	}
+	
+	if ($smoadded -eq $true) { break }
+}
+
+$assemblies = "Management.Common", "Dmf", "Instapi", "SqlWmiManagement", "ConnectionInfo", "SmoExtended", "SqlTDiagM", "Management.Utility",
+"SString", "Management.RegisteredServers", "Management.Sdk.Sfc", "SqlEnum", "RegSvrEnum", "WmiEnum", "ServiceBrokerEnum", "Management.XEvent", "XEvent.Linq"
+"ConnectionInfoExtended", "Management.Collector", "Management.CollectorEnum", "Management.Dac", "Management.DacEnum", "Management.IntegrationServices", "XE.Core"
+
+foreach ($assembly in $assemblies) {
+	try {
+		Add-Type -AssemblyName "Microsoft.SqlServer.$assembly, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
+	}
+	catch {
+		# Don't care
+	}
+}
+if ($smoadded -eq $false) {
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dmf.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SqlWmiManagement.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ConnectionInfo.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ConnectionInfoExtended.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SmoExtended.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.RegisteredServers.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Sdk.Sfc.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SqlEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.RegSvrEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WmiEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ServiceBrokerEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Collector.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.CollectorEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Utility.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.UtilityEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.HadrDMF.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEvent.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventDbScoped.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventDbScopedEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventEnum.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Collector.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XE.Core.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XEvent.Linq.dll"
+}
 <# 
 
 	Do the rest of the loading 
@@ -132,18 +161,18 @@ if (-not (Test-Path Alias:Copy-SqlDatabaseMail)) { Set-Alias -Scope Global -Name
 if (-not (Test-Path Alias:Copy-SqlDataCollector)) { Set-Alias -Scope Global -Name Copy-SqlDataCollector -Value Copy-DbaDataCollector }
 if (-not (Test-Path Alias:Copy-SqlEndpoint)) { Set-Alias -Scope Global -Name Copy-SqlEndpoint -Value Copy-DbaEndpoint }
 if (-not (Test-Path Alias:Copy-SqlExtendedEvent)) { Set-Alias -Scope Global -Name Copy-SqlExtendedEvent -Value Copy-DbaExtendedEvent }
-if (-not (Test-Path Alias:Copy-SqlJob)) { Set-Alias -Scope Global -Name Copy-SqlJob -Value Copy-DbaJob }
+if (-not (Test-Path Alias:Copy-SqlJob)) { Set-Alias -Scope Global -Name Copy-SqlJob -Value Copy-DbaAgentJob }
 if (-not (Test-Path Alias:Copy-SqlJobServer)) { Set-Alias -Scope Global -Name Copy-SqlJobServer -Value Copy-SqlServerAgent }
 if (-not (Test-Path Alias:Copy-SqlLinkedServer)) { Set-Alias -Scope Global -Name Copy-SqlLinkedServer -Value Copy-DbaLinkedServer }
 if (-not (Test-Path Alias:Copy-SqlLogin)) { Set-Alias -Scope Global -Name Copy-SqlLogin -Value Copy-DbaLogin }
-if (-not (Test-Path Alias:Copy-SqlOperator)) { Set-Alias -Scope Global -Name Copy-SqlOperator -Value Copy-DbaOperator }
+if (-not (Test-Path Alias:Copy-SqlOperator)) { Set-Alias -Scope Global -Name Copy-SqlOperator -Value Copy-DbaAgentOperator }
 if (-not (Test-Path Alias:Copy-SqlPolicyManagement)) { Set-Alias -Scope Global -Name Copy-SqlPolicyManagement -Value Copy-DbaPolicyManagement }
-if (-not (Test-Path Alias:Copy-SqlProxyAccount)) { Set-Alias -Scope Global -Name Copy-SqlProxyAccount -Value Copy-DbaProxyAccount }
+if (-not (Test-Path Alias:Copy-SqlProxyAccount)) { Set-Alias -Scope Global -Name Copy-SqlProxyAccount -Value Copy-DbaAgentProxyAccount }
 if (-not (Test-Path Alias:Copy-SqlResourceGovernor)) { Set-Alias -Scope Global -Name Copy-SqlResourceGovernor -Value Copy-DbaResourceGovernor }
 if (-not (Test-Path Alias:Copy-SqlServerAgent)) { Set-Alias -Scope Global -Name Copy-SqlServerAgent -Value Copy-DbaServerAgent }
 if (-not (Test-Path Alias:Copy-SqlServerRole)) { Set-Alias -Scope Global -Name Copy-SqlServerRole -Value Copy-DbaServerRole }
 if (-not (Test-Path Alias:Copy-SqlServerTrigger)) { Set-Alias -Scope Global -Name Copy-SqlServerTrigger -Value Copy-DbaServerTrigger }
-if (-not (Test-Path Alias:Copy-SqlSharedSchedule)) { Set-Alias -Scope Global -Name Copy-SqlSharedSchedule -Value Copy-DbaSharedSchedule }
+if (-not (Test-Path Alias:Copy-SqlSharedSchedule)) { Set-Alias -Scope Global -Name Copy-SqlSharedSchedule -Value Copy-DbaAgentSharedSchedule }
 if (-not (Test-Path Alias:Copy-SqlSpConfigure)) { Set-Alias -Scope Global -Name Copy-SqlSpConfigure -Value Copy-DbaSpConfigure }
 if (-not (Test-Path Alias:Copy-SqlSsisCatalog)) { Set-Alias -Scope Global -Name Copy-SqlSsisCatalog -Value Copy-DbaSsisCatalog }
 if (-not (Test-Path Alias:Copy-SqlSysDbUserObjects)) { Set-Alias -Scope Global -Name Copy-SqlSysDbUserObjects -Value Copy-DbaSysDbUserObjects }
@@ -155,7 +184,8 @@ if (-not (Test-Path Alias:Export-SqlUser)) { Set-Alias -Scope Global -Name Expor
 if (-not (Test-Path Alias:Find-SqlDuplicateIndex)) { Set-Alias -Scope Global -Name Find-SqlDuplicateIndex -Value Find-DbaDuplicateIndex }
 if (-not (Test-Path Alias:Find-SqlUnusedIndex)) { Set-Alias -Scope Global -Name Find-SqlUnusedIndex -Value Find-DbaUnusedIndex }
 if (-not (Test-Path Alias:Get-SqlMaxMemory)) { Set-Alias -Scope Global -Name Get-SqlMaxMemory -Value Get-DbaMaxMemory }
-if (-not (Test-Path Alias:Get-SqlRegisteredServerName)) { Set-Alias -Scope Global -Name Get-SqlRegisteredServerName -Value Get-DbaRegisteredServerName }
+if (-not (Test-Path Alias:Get-SqlRegisteredServerName)) { Set-Alias -Scope Global -Name Get-SqlRegisteredServerName -Value Get-DbaRegisteredServer }
+if (-not (Test-Path Alias:Get-DbaRegisteredServerName)) { Set-Alias -Scope Global -Name Get-DbaRegisteredServerName -Value Get-DbaRegisteredServer }
 if (-not (Test-Path Alias:Get-SqlServerKey)) { Set-Alias -Scope Global -Name Get-SqlServerKey -Value Get-DbaSqlProductKey }
 if (-not (Test-Path Alias:Import-SqlSpConfigure)) { Set-Alias -Scope Global -Name Import-SqlSpConfigure -Value Import-DbaSpConfigure }
 if (-not (Test-Path Alias:Install-SqlWhoIsActive)) { Set-Alias -Scope Global -Name Install-SqlWhoIsActive -Value Install-DbaWhoIsActive }
@@ -186,6 +216,9 @@ if (-not (Test-Path Alias:Restore-HallengrenBackup)) { Set-Alias -Scope Global -
 if (-not (Test-Path Alias:Get-DbaDatabaseFreeSpace)) { Set-Alias -Scope Global -Name Get-DbaDatabaseFreeSpace -Value Get-DbaDatabaseSpace }
 if (-not (Test-Path Alias:Set-DbaQueryStoreConfig)) { Set-Alias -Scope Global -Name Set-DbaQueryStoreConfig -Value Set-DbaDbQueryStoreOptions }
 if (-not (Test-Path Alias:Get-DbaQueryStoreConfig)) { Set-Alias -Scope Global -Name Get-DbaQueryStoreConfig -Value Get-DbaDbQueryStoreOptions }
+if (-not (Test-Path Alias:Get-DbaXEventsSession)) { Set-Alias -Scope Global -Name Get-DbaXEventsSession -Value Get-DbaXEventSession }
+if (-not (Test-Path Alias:Connect-DbaSqlServer)) { Set-Alias -Scope Global -Name Connect-DbaSqlServer -Value Get-DbaInstance }
+
 
 # Leave forever
 Set-Alias -Scope Global -Name Attach-DbaDatabase -Value Mount-DbaDatabase
@@ -194,8 +227,8 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUpFZKuW+uOogGZj3kxIDppy1g
-# JJSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU7OYMsnxxv1knvDWMofntErI6
+# eXSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -326,22 +359,22 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUOJ+2V45Bw3htt1gFmVlmTyxwH84wDQYJKoZIhvcNAQEBBQAE
-# ggEAPT1SIWDUE2VV3HZb3yHqmEKY3UOpJzVeGKghwLjtBPvldsZzFzyCGJpFTVZL
-# O5Vvt4XYpz4LWZsN2l8fp2WNWx09NujxVrMeyob3exeGnmCZ0fSZncKINIMxFtbX
-# DxJVZH6tObjGU6AEoHHd0+favejZ2Ka0JZ16NlhuIR3XoofluXHkcHrKITt2Wzox
-# kpjCxVMErNcOlxg0RB+5yw5+pzja3PPqz1HxFrT5DTT3SYKb2SiSzAeN7Y5gHoRh
-# cTYgQ6+xrNsa6TlZtW9O9mNLVv9J9Tyx0cd+jzrOPtNsfJCTtPFY1Tg7c3hDh1Rp
-# GDAYyw9gg0P5/05tQZgr3YJCh6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUdbCyz+DhOWQFl/XFLfCxsyUlrzcwDQYJKoZIhvcNAQEBBQAE
+# ggEAA40K0P0Q86251jlAR5pkplqizHGgAWfm7h2maDCIB+WdDrsTQfzz/cdRMKoj
+# AY3MTv7TlMm6NHJadRQDuMoQTVYwakF4znofeFiGkWf+LOGrO159yxC1eY52zbuE
+# ygrMDoDscRKawHPIn4oOHtHaOSj4tcM+C9wYuRCoSHFC9VwD3EJgu6wpKOsI50np
+# R6GV0Yakq6qtMEwFvYo7cV4etqw6wtQFFOPJa99EHy77fzXRymMPYXy2HIJPLK67
+# BAMwcBnyenV12yWjAQQg7UwfHWVe66s4qyg6W6mqfZzcD4sjBN6T2xwpWV452X2v
+# 4E/rE7rtx/iq6yRxzM9dt7Ze9qGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIzMjEzNzM1WjAj
-# BgkqhkiG9w0BCQQxFgQUw67W+d1dyFtihh3unct1yTRPeXIwDQYJKoZIhvcNAQEB
-# BQAEggEALgZgK8aABGpzi/z8TQbnC3aGRL+oA3DLz9WJsmCQDiFJKDGL8U3NU4aP
-# h+pJK0IDc9Fvr29WsvRT1e/UtOrOPSmsb1L+jXmj2tIxW9rxKAnmIWogqpfmPnVj
-# mmzbodw2VLkfSxieSSATy9acu9Fz0loyqx8ygBBpkFYnnjOtKeL9bTSLcizQOolP
-# VH2pj85ZcKTqPWi92yYK6FIvEPzLEfgcLESbXzmiMu2biRAQqs9UYqExNsW+VSuL
-# ba5lciMQeFqbdq1UtcotYOVelydSxuUrsC/KeicGJTCyO32i7Ku5pN8TwZw/cx7v
-# Kxjmv0zWgtAS5BHxitpbBzP+OjcB4Q==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwOTI4MjIzNjM4WjAj
+# BgkqhkiG9w0BCQQxFgQUnbi5KyIFhia4k2wZz6L47k2z4HgwDQYJKoZIhvcNAQEB
+# BQAEggEAECY4n58Ji2Xd0kcYw0fXifKIlAKe7EzGOwvxBp0nzrq0zqdZOsdha6i/
+# fTEf0MOqk3tCQm4irMeZX+Ne0ceu2vYwg4mGqocZsju4/UEVagK8eVMjdPUWGDsm
+# kzSg0c8bkgtw9MdrH2q2Wnd3+qGHPo/0pQjOrwrFIKdfjpk3c69fjQ/CEmis8VFM
+# 1PMgPRIRrZsfrRdp+RV/GxXpGa+nYnljDw34832YYfUW8cRcG3U/uVUUI6lAi8WT
+# Dx5pHXAEzN0s7btoixy+Q9JQwDLGcvnMrnlDLorHgjS+N1eE80n6gNwmiE4OfE/A
+# k2abq//zZH4dzcAmCAln20bY+C+0tg==
 # SIG # End signature block

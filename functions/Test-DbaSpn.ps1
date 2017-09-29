@@ -32,6 +32,7 @@ Use this switch to disable any kind of verbose messages
 .NOTES
 Tags: SQLWMI, SPN
 Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
+Editor: niphlod
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 
@@ -91,9 +92,9 @@ have be a valid login with appropriate rights on the domain
 			}
 			
 			$ipaddr = $resolved.IPAddress
-			$hostentry = $resolved.DNSHostEntry
+			$hostentry = $resolved.FullComputerName
 			
-			Write-Message -Message "Resolved ComputerName to FQDN: $computer" -Level Verbose
+			Write-Message -Message "Resolved ComputerName to FQDN: $hostentry" -Level Verbose
 			
 			$Scriptblock = {
 				
@@ -144,7 +145,7 @@ have be a valid login with appropriate rights on the domain
 						Credential = $Credential # for piping
 					}
 					
-					$spn.InstanceName = $instance.name
+					$spn.InstanceName = $instance.Name
 					$InstanceName = $spn.InstanceName
 					
 					Write-Verbose "Parsing $InstanceName"
@@ -240,10 +241,10 @@ have be a valid login with appropriate rights on the domain
 				$spns
 			}
 			
-			Write-Message -Message "Attempting to connect to SQL WMI on remote computer" -Level Verbose
+			Write-Message -Message "Attempting to connect to SQL WMI on remote computer " -Level Verbose
 			
 			try {
-				$spns = Invoke-ManagedComputerCommand -ComputerName $ipaddr -ScriptBlock $Scriptblock -ArgumentList $computer.ComputerName, $hostentry, $computer.InstanceName -Credential $Credential -ErrorAction Stop
+				$spns = Invoke-ManagedComputerCommand -ComputerName $hostentry -ScriptBlock $Scriptblock -ArgumentList $computer.FullComputerName, $hostentry, $computer.InstanceName -Credential $Credential -ErrorAction Stop
 			}
 			catch {
 				Stop-Function -Message "Couldn't connect to $computer" -ErrorRecord $_ -Continue

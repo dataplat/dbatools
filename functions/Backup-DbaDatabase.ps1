@@ -84,7 +84,7 @@ function Backup-DbaDatabase {
 
 		.NOTES
 			Tags: DisasterRecovery, Backup, Restore
-			Original Author: Stuart Moore (@napalmgram), stuart-moore.com
+			Author: Stuart Moore (@napalmgram), stuart-moore.com
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -117,7 +117,7 @@ function Backup-DbaDatabase {
 		[string]$BackupFileName,
 		[switch]$CopyOnly,
 		[ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
-		[string]$Type = "Database",
+		[string]$Type = 'Database',
 		[parameter(ParameterSetName = "NoPipe", Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$DatabaseCollection,
 		[switch]$CreateFolder,
@@ -232,9 +232,9 @@ function Backup-DbaDatabase {
 				Write-Message -Level Warning -Message "$failreason"
 			}
 			
-			$lastfull = $database.LastBackupDate.Year
+			$lastfull = $database.Refresh().LastBackupDate.Year
 			
-			if ($Type -ne "Database" -and $lastfull -eq 1) {
+			if ($Type -notin @("Database", "Full") -and $lastfull -eq 1) {
 				$failreason = "$database does not have an existing full backup, cannot take log or differentialbackup"
 				$failures += $failreason
 				Write-Message -Level Warning -Message "$failreason"
@@ -264,31 +264,32 @@ function Backup-DbaDatabase {
 			}
 			
 			if ($type -in 'diff', 'differential') {
-				Write-Message -Level Verbose -Message "Creating differential backup"
-				$type = "Database"
+				Write-Message -Level VeryVerbose -Message "Creating differential backup"
+				$SMOBackuptype = "Database"
 				$backup.Incremental = $true
-                $outputType = 'Differential'
+				$outputType = 'Differential'
 			}
 			
 			if ($Type -eq "Log") {
-				Write-Message -Level Verbose -Message "Creating log backup"
+				Write-Message -Level VeryVerbose -Message "Creating log backup"
 				$Suffix = "trn"
-                $OutputType = 'Log'
+				$OutputType = 'Log'
+				$SMOBackupType = 'Log'
 			}
 			
 			if ($type -in 'Full', 'Database') {
-                Write-verbose "Setting type"
-				$type = "Database"
-                $OutputType='Full'
+				Write-Message -Level VeryVerbose -Message "Creating full backup"
+				$SMOBackupType = "Database"
+				$OutputType='Full'
 			}
 			
 			$backup.CopyOnly = $copyonly
-			$backup.Action = $type
+			$backup.Action = $SMOBackupType
 			if ('' -ne $AzureBaseUrl) {
 				$backup.CredentialName = $AzureCredential
 			}
 			
-			Write-Message -Level Verbose -Message "Sorting Paths"
+			Write-Message -Level VeryVerbose -Message "Sorting Paths"
 			
 			#If a backupfilename has made it this far, use it
 			$FinalBackupPath = @()
@@ -318,11 +319,11 @@ function Backup-DbaDatabase {
 					$BackupDirectory += $server.BackupDirectory
 				}
 				
-				$timestamp = (Get-date -Format yyyyMMddHHmm)
-				Write-Message -Level Verbose -Message "Setting filename"
+				$timestamp = (Get-Date -Format yyyyMMddHHmm)
+				Write-Message -Level VeryVerbose -Message "Setting filename"
 				$BackupFileName = "$($dbname)_$timestamp"
 				if ('' -ne $AzureBaseUrl) {
-					write-verbose "Azure div"
+					Write-Message -Level VeryVerbose -Message "Azure div"
 					$PathDivider = "/"
 				}
 				else {
@@ -436,15 +437,15 @@ function Backup-DbaDatabase {
 							DatabaseName = $dbname
 							BackupComplete = $BackupComplete
 							BackupFilesCount = $FinalBackupPath.count
-							BackupFile = (split-path $FinalBackupPath -leaf)
-							BackupFolder = (split-path $FinalBackupPath | Sort-Object -Unique)
+							BackupFile = (Split-Path $FinalBackupPath -leaf)
+							BackupFolder = (Split-Path $FinalBackupPath | Sort-Object -Unique)
 							BackupPath = ($FinalBackupPath | Sort-Object -Unique)
 							Script = $script
 							Notes = $failures -join (',')
 							FullName = ($FinalBackupPath | Sort-Object -Unique)
 							FileList = $FileList
 							SoftwareVersionMajor = $server.VersionMajor
-                            Type = $outputType
+							Type = $outputType
 						} | Restore-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
 						if ($verifiedResult[0] -eq "Verify successful") {
 							$failures += $verifiedResult[0]
@@ -471,8 +472,8 @@ function Backup-DbaDatabase {
 				DatabaseName = $dbname
 				BackupComplete = $BackupComplete
 				BackupFilesCount = $FinalBackupPath.count
-				BackupFile = (split-path $FinalBackupPath -leaf)
-				BackupFolder = (split-path $FinalBackupPath | Sort-Object -Unique)
+				BackupFile = (Split-Path $FinalBackupPath -leaf)
+				BackupFolder = (Split-Path $FinalBackupPath | Sort-Object -Unique)
 				BackupPath = ($FinalBackupPath | Sort-Object -Unique)
 				Script = $script
 				Notes = $failures -join (',')
@@ -480,7 +481,7 @@ function Backup-DbaDatabase {
 				FileList = $FileList
 				SoftwareVersionMajor = $server.VersionMajor
 				Verified = $Verified
-                Type = $outputType
+				Type = $outputType
 			} | Select-DefaultView -ExcludeProperty $OutputExclude
 			$BackupFileName = $null
 		}

@@ -14,7 +14,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 	}
 	
-	$null = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -InputFile C:\github\appveyor-lab\sql2008-scripts\logins.sql
+	$null = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -InputFile $script:appeyorlabrepo\sql2008-scripts\logins.sql
 	
 	Context "Copy login with the same properties." {
 		It "Should copy successfully" {
@@ -46,7 +46,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		It "Should login with newly created Sql Login (also tests credential login) and gets name" {
 			$password = ConvertTo-SecureString -Force -AsPlainText tester1
 			$cred = New-Object System.Management.Automation.PSCredential ("tester", $password)
-			$s = Connect-DbaSqlServer -SqlInstance $script:instance1 -Credential $cred
+			$s = Get-DbaInstance -SqlInstance $script:instance1 -Credential $cred
 			$s.Name | Should Be $script:instance1
 		}
 	}

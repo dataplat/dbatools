@@ -12,7 +12,13 @@ function Get-DbaLinkedServer {
 
 		.PARAMETER SqlCredential
 			SqlCredential object to connect as. If not specified, current Windows login will be used.
+		
+		.PARAMETER LinkedServer
+			The linked server(s) to process - this list is auto-populated from the server. If unspecified, all linked servers will be processed.
 
+		.PARAMETER ExcludeLinkedServer
+			The linked server(s) to exclude - this list is auto-populated from the server
+	
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
 
@@ -37,6 +43,8 @@ function Get-DbaLinkedServer {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
+		[object[]]$LinkedServer,
+		[object[]]$ExcludeLinkedServer,
 		[switch]$Silent
 	)
 	foreach ($Instance in $SqlInstance) {
@@ -53,7 +61,10 @@ function Get-DbaLinkedServer {
 		if ($LinkedServer) {
 			$lservers = $lservers | Where-Object { $_.Name -in $LinkedServer }
 		}
-
+		if ($ExcludeLinkedServer) {
+			$lservers = $lservers | Where-Object { $_.Name -notin $ExcludeLinkedServer }
+		}
+		
 		foreach ($ls in $lservers) {
 			Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name ComputerName -value $server.NetName
 			Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name InstanceName -value $server.ServiceName

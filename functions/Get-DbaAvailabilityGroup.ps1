@@ -23,7 +23,7 @@ function Get-DbaAvailabilityGroup {
 
 		.NOTES
 			Tags: DisasterRecovery, AG, AvailabilityGroup
-			Original Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
+			Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -90,7 +90,7 @@ function Get-DbaAvailabilityGroup {
 				if ($IsPrimary) {
 					$defaults = 'ComputerName','InstanceName','SqlInstance','Name as AvailabilityGroup','IsPrimary'
 					$value = $false
-					if ($serverName -eq $ag.PrimaryReplicaServerName) {
+					if ($ag.PrimaryReplicaServerName -eq $server.Name) {
 						$value = $true
 					}
 					Add-Member -Force -InputObject $ag -MemberType NoteProperty -Name IsPrimary -Value $value

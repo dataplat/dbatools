@@ -36,7 +36,7 @@ Use this switch to disable any kind of verbose messages
 
 .NOTES
 Tags: Migration, Certificate
-Original Author: Jess Pomfret (@jpomfret)
+Author: Jess Pomfret (@jpomfret)
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

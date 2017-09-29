@@ -2,6 +2,15 @@ $commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+	Context "Connects to multiple instances" {
+		It 'Returns multiple objects' {
+			$results = Test-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2
+			$results.Count | Should BeGreaterThan 1 # and ultimately not throw an exception
+		}
+	}
+}
+
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     InModuleScope dbatools {
         Context 'Validate input arguments' {

@@ -34,7 +34,7 @@ Prompts you for confirmation before executing any changing operations within the
 Use this switch to disable any kind of verbose messages
 
 .NOTES 
-Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job
 	
 Website: https://dbatools.io
@@ -151,6 +151,6 @@ Removes the job from multiple servers using pipe line
     } # process
 
     end {
-        Write-Message -Message "Finished removing jobs(s)." -Level Output
+        Write-Message -Message "Finished removing jobs(s)." -Level Verbose
     }
 }

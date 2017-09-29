@@ -22,7 +22,7 @@
 		
 		.NOTES
 			Tags: SMO
-			Original Author: Ben Miller (@DBAduck - http://dbaduck.com)
+			Author: Ben Miller (@DBAduck - http://dbaduck.com)
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

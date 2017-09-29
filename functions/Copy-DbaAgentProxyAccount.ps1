@@ -9,7 +9,7 @@
 			If the associated credential for the account does not exist on the destination, it will be skipped. If the proxy account already exists on the destination, it will be skipped unless -Force is used.
 
 		.PARAMETER Source
-			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or newer.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
@@ -21,7 +21,7 @@
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or newer.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
 		.PARAMETER DestinationSqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
@@ -120,7 +120,15 @@
 			$credentialName = $proxyAccount.CredentialName
 			$copyAgentProxyAccountStatus.Name = $credentialName
 			$copyAgentProxyAccountStatus.Type = "Credential"
-			if ($null -eq $destServer.Credentials[$CredentialName]) {
+			
+			try {
+				$credentialtest = $destServer.Credentials[$CredentialName]
+			}
+			catch {
+				# don't care
+			}
+			
+			if ($null -eq $credentialtest) {
 				$copyAgentProxyAccountStatus.Status = "Skipped"
 				$copyAgentProxyAccountStatus
 				Write-Message -Level Warning -Message "Associated credential account, $CredentialName, does not exist on $destination. Skipping migration of $proxyName."

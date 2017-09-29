@@ -54,7 +54,7 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 
 .NOTES
 Tags: Migration, SSIS
-Original Author: Phil Schwartz (philschwartz.me, @pschwartzzz)
+Author: Phil Schwartz (philschwartz.me, @pschwartzzz)
 	
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -104,17 +104,16 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
         [Switch]$Force
     )
 	
-    begin {
-
+	begin {
         function Get-RemoteIntegrationService {
             param (
                 [Object]$Computer
             )
-            $result = Get-Service -ComputerName $Computer -Name msdts*
-            if ($result.Count -gt 0) {
+	    $result = Get-DbaSqlService -ComputerName $Computer -Type SSIS
+            if ($result) {
                 $running = $false
                 foreach ($service in $result) {
-                    if (!$service.Status -eq "Running") {
+                    if (!$service.State -eq "Running") {
                         Write-Warning "Service $($service.DisplayName) was found on the destination, but is currently not running."
                     }
                     else {
@@ -293,8 +292,9 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
         $sourceFolders = $sourceCatalog.Folders
         $destinationFolders = $destinationCatalog.Folders
     }
-    process {
-        if (!$sourceCatalog) {
+	process {
+		
+		if (!$sourceCatalog) {
             throw "The source SSISDB catalog does not exist."
         }
         if (!$destinationCatalog) {
