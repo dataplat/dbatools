@@ -29,12 +29,13 @@
 	https://dbatools.io/Remove-DbaClientAlias
 
 	.EXAMPLE
-	Remove-DbaClientAlias
-	Removes all SQL Server client aliases on the local computer
+	Remove-DbaClientAlias -ComputerName workstationx -Alias sqlps
+	Removes the sqlps SQL client alias on workstationx
 
 	.EXAMPLE
-	Remove-DbaClientAlias -ComputerName workstationx
-	Gets all SQL Server client aliases on Workstationx
+	Get-DbaClientAlias | Remove-DbaClientAlias 
+	Removes all SQL Server client aliases on the local computer
+
 #>
 	[CmdletBinding()]
 	Param (
