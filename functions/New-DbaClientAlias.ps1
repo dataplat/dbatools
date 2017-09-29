@@ -49,7 +49,7 @@ Creates a new NamedPipes alias on the local workstation called sp, which points 
 		[parameter(Mandatory)]
 		[string]$Alias,
 		[ValidateSet("TCPIP", "NamedPipes")]
-		[string]$Protcol = "TCPIP",
+		[string]$Protocol = "TCPIP",
 		[switch]$Silent
 	)
 	
@@ -118,6 +118,7 @@ Creates a new NamedPipes alias on the local workstation called sp, which points 
 				}
 			}
 		}
-		Get-DbaClientAlias -ComputerName $computer -Credential $Credential #| Where-Object ServerName -eq $ServerName
+		
+		Get-DbaClientAlias -ComputerName $computer -Credential $Credential | Where-Object AliasName -eq $Alias
 	}
 }

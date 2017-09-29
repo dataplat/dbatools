@@ -87,13 +87,13 @@ Gets all SQL Server client aliases on Workstationx
 					foreach ($entry in $all.Property) {
 						$value = Get-ItemPropertyValue -Path $connect -Name $entry
 						$clean = $value.Replace('DBNMPNTW,', '').Replace('DBMSSOCN,', '')
-						if ($value -match 'DBMSSOCN') { $protocol = 'TCP/IP' } else { $protocol = 'Named Pipes' }
+						if ($value.StartsWith('DBMSSOCN')) { $protocol = 'TCP/IP' } else { $protocol = 'Named Pipes' }
 						
 						[pscustomobject]@{
 							ComputerName	   = $env:COMPUTERNAME
 							NetworkLibrary	   = $protocol
-							ServerName		   = $entry
-							AliasName		   = $clean
+							ServerName		   = $clean
+							AliasName		   = $entry
 							AliasString	       = $value
 							Architecture	   = $architecture
 						}
