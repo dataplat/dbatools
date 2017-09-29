@@ -82,7 +82,7 @@
 						$architecture = "64-bit"
 					}
 					
-					Write-Verbose "Creating/updating alias for $ComputerName for $architecture"
+					# "Creating/updating alias for $ComputerName for $architecture"
 					$all = Get-Item -Path $connect
 					foreach ($entry in $all.Property) {
 						$value = Get-ItemPropertyValue -Path $connect -Name $entry
