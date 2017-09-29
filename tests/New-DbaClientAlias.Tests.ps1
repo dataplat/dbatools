@@ -9,5 +9,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		It "returns accurate information" {
 			$results.AliasName | Should Be dbatoolscialias-new, dbatoolscialias-new
 		}
+		$results | Remove-DbaClientAlias
 	}
 }
