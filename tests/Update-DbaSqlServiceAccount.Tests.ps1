@@ -1,4 +1,4 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 . "$PSScriptRoot\..\internal\Connect-SqlInstance.ps1"
@@ -53,17 +53,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	$server.Roles['sysadmin'].AddMember($winLogin)
 
 	$isRevertable = $true
+	ForEach ($svcaccount in $currentAgentUser, $currentEngineUser) {
+		if (! ($svcaccount.EndsWith('$') -or $svcaccount.StartsWith('NT AUTHORITY\') -or $svcaccount.StartsWith('NT Service\'))) {
+			$isRevertable = $false
+		}
+	}
 	
 	Context "Current configuration to be able to roll back" {
 		It "Both agent and engine services must exist" {
 			($services | Measure-Object).Count | Should Be 2
 		}
 		It "Current service accounts should be localsystem-like or MSA to allow for a rollback" {
-			ForEach ($svcaccount in $currentAgentUser, $currentEngineUser) {
-				if (! ($svcaccount.EndsWith('$') -or $svcaccount.StartsWith('NT AUTHORITY\') -or $svcaccount.StartsWith('NT Service\'))) {
-					$isRevertable = $false
-				}
-			}
 			$isRevertable | Should be $true
 		}
 	}
@@ -128,10 +128,29 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			}
 		}
 	}
+
+	Context "Change agent service account to local system" {
+		$errVar = $warnVar = $null
+		$results = $services | Where-Object { $_.ServiceType -eq 'Agent' } | Update-DbaSqlServiceAccount -Username 'NT AUTHORITY\LOCAL SYSTEM' -ErrorVariable $errVar -WarningVariable $warnVar
+		
+		It "Should return something" {	
+			$results | Should Not Be $null
+		}
+		It "Should have no errors or warnings" {
+			$errVar | Should Be $null
+			$warnVar | Should Be $null
+		}
+		It "Should be successful" {
+			foreach ($result in $results) {
+				$result.Status | Should Be 'Successful'
+				$result.State | Should Be 'Running'
+				$result.StartName | Should Be 'LocalSystem'
+			}
+		}
+	}
 	Context "Revert SQL Agent service account changes" {
 		$errVar = $warnVar = $null
-		$cred = New-Object System.Management.Automation.PSCredential($currentAgentUser, [securestring]::New())
-		$results = $services | Where-Object { $_.ServiceType -eq 'Agent' } | Update-DbaSqlServiceAccount -ServiceCredential $cred -ErrorVariable $errVar -WarningVariable $warnVar
+		$results = $services | Where-Object { $_.ServiceType -eq 'Agent' } | Update-DbaSqlServiceAccount -Username $currentAgentUser -ErrorVariable $errVar -WarningVariable $warnVar
 		
 		It "Should return something" {	
 			$results | Should Not Be $null
@@ -150,8 +169,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	Context "Revert SQL Engine service account changes" {
 		$errVar = $warnVar = $null
-		$cred = New-Object System.Management.Automation.PSCredential($currentEngineUser, [securestring]::New())
-		$results = $services | Where-Object { $_.ServiceType -eq 'Engine' } | Update-DbaSqlServiceAccount -ServiceCredential $cred -ErrorVariable $errVar -WarningVariable $warnVar
+		$results = $services | Where-Object { $_.ServiceType -eq 'Engine' } | Update-DbaSqlServiceAccount -Username $currentEngineUser -ErrorVariable $errVar -WarningVariable $warnVar
 		
 		It "Should return something" {	
 			$results | Should Not Be $null
