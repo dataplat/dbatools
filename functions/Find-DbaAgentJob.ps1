@@ -47,9 +47,6 @@ function Find-DbaAgentJob {
 		.PARAMETER Since
 			Datetime object used to narrow the results to a date
 
-		.PARAMETER RestartJob
-			Use this switch to re-run any jobs (usually used in conjunction with the failed switch)	
-
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
 
@@ -127,7 +124,6 @@ function Find-DbaAgentJob {
 		[string[]]$Category,
 		[string]$Owner,
 		[datetime]$Since,
-		[switch]$RestartJob,
 		[switch]$Silent
 	)
 	begin {
@@ -223,12 +219,10 @@ function Find-DbaAgentJob {
 				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name ComputerName -value $server.NetName
 				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
 				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-				$job | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Name as JobName', LastRunDate, LastRunOutcome, IsEnabled, CreateDate, HasSchedule, OperatorToEmail, Category, OwnerLoginName
-				if ($RestartJob)
-				{
-					Write-Message -Level Verbose -Message "Restarting job $job on $server"
-					$job.start()
-				}
+				Add-Member -Force -InputObject $job -MemberType NoteProperty -Name JobName -value $job.Name
+				
+				
+				Select-DefaultView -InputObject $job -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, CurrentRunStatus, CurrentRunRetryAttempt, 'IsEnabled as Enabled', LastRunDate, LastRunOutcome, DateCreated, HasSchedule, OperatorToEmail, 'DateCreated as CreateDate'
 			}
 		}
 	}
