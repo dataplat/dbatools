@@ -75,23 +75,21 @@ function Test-ElevationRequirement {
 	$testResult = $true
 	if ($ComputerName.IsLocalHost -and (-not $isElevated)) { $testResult = $false }
 	
-	switch ($PSCmdlet.ParameterSetName) {
-		"NoStop" {
-			return $testResult
+	if ($PSCmdlet.ParameterSetName -like "NoStop") {
+		return $testResult
+	}
+	elseif ($PSCmdlet.ParameterSetName -like "Stop") {
+		if ($testResult) { return $testResult }
+		
+		$splatStopFunction = @{
+			Message = "Console not elevated, but elevation is required to perform all actions within this command"
 		}
-		"Stop" {
-			if ($testResult) { return $testResult }
-			
-			$splatStopFunction = @{
-				Message = "Console not elevated, but elevation is required to perform all actions within this command"
-			}
-			
-			if (Test-Bound "Continue") { $splatStopFunction["Continue"] = $Continue }
-			if (Test-Bound "ContinueLabel") { $splatStopFunction["ContinueLabel"] = $ContinueLabel }
-			if (Test-Bound "SilentlyContinue") { $splatStopFunction["SilentlyContinue"] = $SilentlyContinue }
-			
-			. Stop-Function @splatStopFunction -FunctionName (Get-PSCallStack)[1].Command
-			return $testResult
-		}
+		
+		if (Test-Bound "Continue") { $splatStopFunction["Continue"] = $Continue }
+		if (Test-Bound "ContinueLabel") { $splatStopFunction["ContinueLabel"] = $ContinueLabel }
+		if (Test-Bound "SilentlyContinue") { $splatStopFunction["SilentlyContinue"] = $SilentlyContinue }
+		
+		. Stop-Function @splatStopFunction -FunctionName (Get-PSCallStack)[1].Command
+		return $testResult
 	}
 }

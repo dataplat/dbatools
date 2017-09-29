@@ -72,7 +72,13 @@ function Test-DbaIdentityUsage {
 
 	BEGIN {
 		
-		$sql = ";WITH CTE_1
+    $sql = ";WITH CT_DT AS
+		(
+			SELECT 'tinyint' AS DataType, 0 AS MinValue ,255 AS MaxValue UNION
+			SELECT 'smallint' AS DataType, -32768 AS MinValue ,32767 AS MaxValue UNION
+			SELECT 'int' AS DataType, -2147483648 AS MinValue ,2147483647 AS MaxValue UNION
+			SELECT 'bigint' AS DataType, -9223372036854775808 AS MinValue ,9223372036854775807 AS MaxValue 
+		), CTE_1
 		AS
 		(
 		  SELECT SCHEMA_NAME(o.schema_id) AS SchemaName,
@@ -83,42 +89,37 @@ function Test-DbaIdentityUsage {
 
 				 CONVERT(bigint, ISNULL(a.last_value, seed_value)) AS LastValue,
 
-				 CONVERT(bigint,
-								(
-									CONVERT(bigint, ISNULL(last_value, seed_value)) 
-									- CONVERT(bigint, seed_value) 
-									+ (CASE WHEN CONVERT(bigint, seed_value) <> 0 THEN 1 ELSE 0 END) 
-								)
-								/
-								CONVERT(bigint, increment_value)
-						) AS NumberOfUses,
+				 (CASE
+						WHEN CONVERT(bigint, increment_value) < 0 THEN
+							(CONVERT(bigint, seed_value) 
+							- CONVERT(bigint, ISNULL(last_value, seed_value)) 
+							+ (CASE WHEN CONVERT(bigint, seed_value) <> 0 THEN ABS(CONVERT(bigint, increment_value)) ELSE 0 END))
+						ELSE
+							(CONVERT(bigint, ISNULL(last_value, seed_value)) 
+							- CONVERT(bigint, seed_value)
+							+ (CASE WHEN CONVERT(bigint, seed_value) <> 0 THEN ABS(CONVERT(bigint, increment_value)) ELSE 0 END))
+					END) / ABS(CONVERT(bigint, increment_value))  AS NumberOfUses,
 
-				 -- Divide by increment_value to shows the max number of values that can be used
-				 -- E.g: smallint identity column that starts on the lower possible value (-32768) and have an increment of 2 will only accept ABS(32768 - 32767 - 1) / 2 = 32768 rows
-				 CAST( 
-						--ABS(
-						CONVERT(bigint, seed_value) 
-						- 
-						Case
-							When b.name = 'tinyint'   Then 255
-							When b.name = 'smallint'  Then 32767
-							When b.name = 'int'       Then 2147483647
-							When b.name = 'bigint'    Then 9223372036854775807
-						End 
-						-
-						-- When less than 0 the 0 counts too
-						CASE 
-							WHEN CONVERT(bigint, seed_value) <= 0 THEN 1
-							ELSE 0
-							END
-						--) 
-						/ CONVERT(bigint, increment_value) 
+				  CAST (
+						(CASE
+							WHEN CONVERT(bigint, increment_value) < 0 THEN
+								ABS(CONVERT(bigint,dt.MinValue) 
+								- CONVERT(bigint, seed_value) 
+								- (CASE WHEN CONVERT(bigint, seed_value) <> 0 THEN ABS(CONVERT(bigint, increment_value)) ELSE 0 END))
+							ELSE
+								CONVERT(bigint,dt.MaxValue) 
+								- CONVERT(bigint, seed_value) 
+								+ (CASE WHEN CONVERT(bigint, seed_value) <> 0 THEN ABS(CONVERT(bigint, increment_value)) ELSE 0 END)
+						END) / ABS(CONVERT(bigint, increment_value))  
 					AS Numeric(20, 0)) AS MaxNumberRows
+
 			FROM sys.identity_columns a
 				INNER JOIN sys.objects o
 				   ON a.object_id = o.object_id
 				INNER JOIN sys.types As b
-				   ON a.system_type_id = b.system_type_id
+					 ON a.system_type_id = b.system_type_id
+				INNER JOIN CT_DT dt 
+					 ON b.name = dt.DataType
 		  WHERE a.seed_value is not null
 		),
 		CTE_2

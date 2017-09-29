@@ -7,10 +7,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
        
         $dbs = @( "master", "model", "tempdb", "msdb" )
         
-		It "Should not attempt to remove system databases." {                        
+		It "Should not attempt to remove system databases." {
             foreach ($db in $dbs) { 
                 $db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $db
-                Remove-DbaDatabase -SqlInstance $script:instance1 -Database $db
+                Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db
                 $db2 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $db
                 $db2.Name | Should Be $db1.Name
             } 
@@ -19,21 +19,31 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should not take system databases offline or change their status." {
             foreach ($db in $dbs) { 
                 $db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $db
-                Remove-DbaDatabase -SqlInstance $script:instance1 -Database $db 
-                $db2 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $db                
+                Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db 
+                $db2 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $db
                 $db2.Status | Should Be $db1.Status
-                $db2.IsAccessible | Should Be $db1.IsAccessible                
+                $db2.IsAccessible | Should Be $db1.IsAccessible
             } 
         }
     }
     Context "Should remove user databases and return useful errors if it cannot." {
 		It "Should remove a non system database." {
-			Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
+			Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
 			Get-DbaProcess -SqlInstance $script:instance1 -Database singlerestore | Stop-DbaProcess
-			Restore-DbaDatabase -SqlInstance $script:instance1 -Path C:\github\appveyor-lab\singlerestore\singlerestore.bak -WithReplace
+			Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -WithReplace
             (Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore).IsAccessible | Should Be $true
-            Remove-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore
+            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
             Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore | Should Be $null
         }
 	}
+    Context "Should remove restoring database and return useful errors if it cannot." {
+		It "Should remove a non system database." {
+			Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
+			Get-DbaProcess -SqlInstance $script:instance1 -Database singlerestore | Stop-DbaProcess
+			Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -WithReplace -NoRecovery
+            (Get-DbaInstance -SqlInstance $script:instance1).Databases['singlerestore'].IsAccessible | Should Be $false
+            Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
+            Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore | Should Be $null
+    }
+    }
 }

@@ -12,9 +12,6 @@
 	.PARAMETER Credential
 		Allows you to login to $ComputerName using alternative credentials
 	
-	.PARAMETER Certificate
-		The target certificate object
-	
 	.PARAMETER Thumbprint
 		The thumbprint of the certificate object
 	
@@ -38,6 +35,11 @@
 		
 		Removes certificate with thumbprint C2BBE81A94FEE7A26FFF86C2DFDAF6BFD28C6C94 in the LocalMachine store on Server1
 	
+	.EXAMPLE 
+		Get-DbaComputerCertificate | Where-Object Thumbprint -eq E0A071E387396723C45E92D42B2D497C6A182340 | Remove-DbaComputerCertificate
+	
+		Removes certificate using the pipeline
+	
 	.EXAMPLE
 		Remove-DbaComputerCertificate -ComputerName Server1 -Thumbprint C2BBE81A94FEE7A26FFF86C2DFDAF6BFD28C6C94 -Store User -Folder My
 		
@@ -53,40 +55,16 @@
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param (
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
-		[DbaInstanceParameter[]]
-		$ComputerName = $env:COMPUTERNAME,
-		
-		[PSCredential]
-		
-		$Credential,
-		
-		[parameter(ParameterSetName = "Certificate", ValueFromPipeline)]
-		[System.Security.Cryptography.X509Certificates.X509Certificate2]
-		$Certificate,
-		
-		[string]
-		$Thumbprint,
-		
-		[string]
-		$Store = "LocalMachine",
-		
-		[string]
-		$Folder,
-		
-		[switch]
-		$Silent
+		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+		[PSCredential]$Credential,
+		[parameter(ValueFromPipelineByPropertyName, Mandatory)]
+		[string]$Thumbprint,
+		[string]$Store = "LocalMachine",
+		[string]$Folder="My",
+		[switch]$Silent
 	)
 	
 	process {
-		
-		if (-not $Certificate -and -not $Thumbprint) {
-			Stop-Function -Message "You must specify either Certificate or Thumbprint" -Category InvalidArgument
-			return
-		}
-		
-		if ($Certificate) {
-			$thumbprint = $Certificate.Thumbprint
-		}
 		
 		foreach ($computer in $computername) {
 			
@@ -94,12 +72,11 @@
 				$thumbprint = $args[0]
 				$Store = $args[1]
 				$Folder = $args[2]
-				
 				Write-Verbose "Searching Cert:\$Store\$Folder for thumbprint: $thumbprint"
-				$cert = Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
+				$cert = Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $Thumbprint }
 				
 				if ($cert) {
-					$cert | Remove-Item
+					$null = $cert | Remove-Item
 					$status = "Removed"
 				}
 				else {
@@ -107,9 +84,11 @@
 				}
 				
 				[pscustomobject]@{
-					ComputerName = $env:COMPUTERNAME
-					Thumbprint   = $thumbprint
-					Status	     = $status
+					ComputerName    = $env:COMPUTERNAME
+					Store		    = $Store
+					Folder		    = $Folder
+					Thumbprint	    = $thumbprint
+					Status		    = $status
 				}
 			}
 			

@@ -98,7 +98,9 @@ function Get-DbaProcess {
 				Stop-Function -Message "Could not connect to Sql Server instance $instance : $_" -Target $instance -ErrorRecord $_ -Continue
 			}
 			
-			$sql = "SELECT datediff(minute, s.last_request_end_time, getdate()) as MinutesAsleep, s.session_id as spid, s.host_process_id as HostProcessId, t.text as Query
+			$sql = "SELECT datediff(minute, s.last_request_end_time, getdate()) as MinutesAsleep, s.session_id as spid, s.host_process_id as HostProcessId, t.text as Query,
+					s.login_time as LoginTime,s.client_version as ClientVersion, s.last_request_start_time as LastRequestStartTime, s.last_request_end_time as LastRequestEndTime,
+					c.net_transport as NetTransport, c.encrypt_option as EncryptOption, c.auth_scheme as AuthScheme, c.net_packet_size as NetPacketSize, c.client_net_address as ClientNetAddress
 					FROM sys.dm_exec_connections c join sys.dm_exec_sessions s on c.session_id = s.session_id cross apply sys.dm_exec_sql_text(c.most_recent_sql_handle) t"
 			
 			if ($server.VersionMajor -gt 8) {
@@ -168,11 +170,20 @@ function Get-DbaProcess {
 				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name Status -value $status
 				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name Command -value $command
-				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name LastQuery -value $row.Query
 				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name HostProcessId -value $row.HostProcessId
 				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name MinutesAsleep -value $row.MinutesAsleep
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name LoginTime -value $row.LoginTime
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name ClientVersion -value $row.ClientVersion
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name LastRequestStartTime -value $row.LastRequestStartTime
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name LastRequestEndTime -value $row.LastRequestEndTime
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name NetTransport -value $row.NetTransport
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name EncryptOption -value $row.EncryptOption
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name AuthScheme -value $row.AuthScheme
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name NetPacketSize -value $row.NetPacketSize
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name ClientNetAddress -value $row.ClientNetAddress
+				Add-Member -Force -InputObject $session -MemberType NoteProperty -Name LastQuery -value $row.Query
 				
-				Select-DefaultView -InputObject $session -Property ComputerName, InstanceName, SqlInstance, Spid, Login, Host, Database, BlockingSpid, Program, Status, Command, Cpu, MemUsage, IsSystem, MinutesAsleep, HostProcessId, LastQuery
+				Select-DefaultView -InputObject $session -Property ComputerName, InstanceName, SqlInstance, Spid, Login, LoginTime, Host, Database, BlockingSpid, Program, Status, Command, Cpu, MemUsage, LastRequestStartTime, LastRequestEndTime, MinutesAsleep, ClientNetAddress, NetTransport, EncryptOption, AuthScheme, NetPacketSize, ClientVersion, HostProcessId, IsSystem, LastQuery
 			}
 		}
 	}

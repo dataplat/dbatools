@@ -167,6 +167,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 					continue
 				}
 				if ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $db")) {
+					$basedb = $db.DatabaseSnapshotBaseName
 					try {
 						if ($Force) {
 							# cannot drop the snapshot if someone is using it
@@ -183,7 +184,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 						InstanceName = $server.ServiceName
 						SqlInstance  = $server.DomainInstanceName
 						Database     = $db
-						SnapshotOf   = $db.DatabaseSnapshotBaseName
+						SnapshotOf   = $basedb
 						Status       = $status
 					}
 				}

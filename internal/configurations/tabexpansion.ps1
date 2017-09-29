@@ -1,6 +1,6 @@
 ﻿# Sets the default interval and timeout for TEPP updates
 Set-DbaConfig -Name 'TabExpansion.UpdateInterval' -Value (New-TimeSpan -Minutes 3) -Default -DisableHandler -Description 'The frequency in which TEPP tries to update each cache for autocompletion'
-Set-DbaConfig -Name 'TabExpansion.UpdateTimeout' -Value (New-TimeSpan -Minutes 30) -Default -DisableHandler -Description 'After this timespan has passed without connections to a server, the TEPP updater will no longer update the cache.'
+Set-DbaConfig -Name 'TabExpansion.UpdateTimeout' -Value (New-TimeSpan -Seconds 30) -Default -DisableHandler -Description 'After this timespan has passed without connections to a server, the TEPP updater will no longer update the cache.'
 
 # Disable the management cache entire
 Set-DbaConfig -Name 'TabExpansion.Disable' -Value $false -Default -DisableHandler -Description 'Globally disables all TEPP functionality by dbatools'

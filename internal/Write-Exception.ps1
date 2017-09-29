@@ -21,11 +21,11 @@ Writes inner exception to disk
 	$docs = [Environment]::GetFolderPath("mydocuments")
 	$errorlog = "$docs\dbatools-exceptions.txt"
 	$message = $e.Exception
-	$infocation = $e.InvocationInfo
+	$invocation = $e.InvocationInfo
 	
-	$position = $infocation.PositionMessage
-	$scriptname = $infocation.ScriptName
-	if ($e.Exception.InnerException -ne $null) { $messsage = $e.Exception.InnerException }
+	$position = $invocation.PositionMessage
+	$scriptname = $invocation.ScriptName
+	if ($e.Exception.InnerException -ne $null) { $message = $e.Exception.InnerException }
 	
 	$message = $message.ToString()
 	

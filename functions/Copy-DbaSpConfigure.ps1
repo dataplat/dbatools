@@ -7,41 +7,43 @@ function Copy-DbaSpConfigure {
 			By default, all configuration values are copied. The -ConfigName parameter is auto-populated for command-line completion and can be used to copy only specific configs.
 
 		.PARAMETER Source
-			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 		.PARAMETER SourceSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
 		.PARAMETER DestinationSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
 			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER ConfigName
-			The ConfigName(s) to process - this list is auto-populated from the server. If unspecified, all ConfigNames will be processed.
+			Specifies the configuration setting to process. Options for this list are auto-populated from the server. If unspecified, all ConfigNames will be processed.
 
 		.PARAMETER ExcludeConfigName
-			The ConfigName(s) to exclude - this list is auto-populated from the server
+			Specifies the configuration settings to exclude. Options for this list are auto-populated from the server.
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Migration, Configure, SpConfigure
@@ -63,12 +65,12 @@ function Copy-DbaSpConfigure {
 		.EXAMPLE
 			Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -ConfigName DefaultBackupCompression, IsSqlClrEnabled -SourceSqlCredential $cred -Force
 
-			Updates the values for two configs, the  IsSqlClrEnabled and DefaultBackupCompression, from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster.
+			Copies the values for IsSqlClrEnabled and DefaultBackupCompression from sqlserver2014a to sqlcluster using SQL credentials to authenticate to sqlserver2014a and Windows credentials to authenticate to sqlcluster.
 
 		.EXAMPLE
 			Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -ExcludeConfigName DefaultBackupCompression, IsSqlClrEnabled
 
-			Updates all configs except for IsSqlClrEnabled and DefaultBackupCompression, from sqlserver2014a to sqlcluster.
+			Copies all configs except for IsSqlClrEnabled and DefaultBackupCompression, from sqlserver2014a to sqlcluster.
 
 		.EXAMPLE
 			Copy-DbaSpConfigure -Source sqlserver2014a -Destination sqlcluster -WhatIf
@@ -139,7 +141,7 @@ function Copy-DbaSpConfigure {
 
 					$result = Set-DbaSpConfigure -SqlInstance $destServer -ConfigName $sConfigName -Value $sConfiguredValue -Silent -Mode 'Lazy'
 					if ($result) {
-						Write-Message -Level Verbose -Message "Updated $($destProp.ConfigName) ($($destProp.DisplayName)) from $destOldConfigValue to $sConfiguredValue"
+						Write-Message -Level Verbose -Message "Updated $($destProp.ConfigName) ($($destProp.DisplayName)) from $destOldConfigValue to $sConfiguredValue."
 					}
 
 					if ($requiresRestart -eq $false) {

@@ -10,6 +10,8 @@ Function Out-DbaDataTable {
 		
 		Thanks to Chad Miller, this is based on his script. https://gallery.technet.microsoft.com/scriptcenter/4208a159-a52e-4b99-83d4-8048468d29dd
 	
+		If the attempt to convert to datatable fails, try the -Raw parameter for less accurate datatype detection.
+	
 	.PARAMETER InputObject
 		The object to transform into a DataTable
 	
@@ -25,6 +27,9 @@ Function Out-DbaDataTable {
 	
 	.PARAMETER IgnoreNull
 		If this switch is used, objects with null values will be ignored (empty rows will be added by default)
+	
+	.PARAMETER Raw
+		Creates a datatable with all strings - no attempt to parse out datatypes is made
 	
 	.PARAMETER Silent
 		Use this switch to disable any kind of verbose messages
@@ -66,33 +71,25 @@ Function Out-DbaDataTable {
 	[OutputType([System.Object[]])]
 	param (
 		[Parameter(Position = 0,
-					Mandatory = $true,
-					ValueFromPipeline = $true)]
+				   Mandatory = $true,
+				   ValueFromPipeline = $true)]
 		[AllowNull()]
-		[PSObject[]]
-		$InputObject,
-		
+		[PSObject[]]$InputObject,
 		[Parameter(Position = 1)]
 		[ValidateSet("Ticks",
-					"TotalDays",
-					"TotalHours",
-					"TotalMinutes",
-					"TotalSeconds",
-					"TotalMilliseconds",
-					"String")]
+					 "TotalDays",
+					 "TotalHours",
+					 "TotalMinutes",
+					 "TotalSeconds",
+					 "TotalMilliseconds",
+					 "String")]
 		[ValidateNotNullOrEmpty()]
-		[string]
-		$TimeSpanType = "TotalMilliseconds",
-		
+		[string]$TimeSpanType = "TotalMilliseconds",
 		[ValidateSet("Int64", "Int32", "String")]
-		[string]
-		$SizeType = "Int64",
-		
-		[switch]
-		$IgnoreNull,
-		
-		[switch]
-		$Silent
+		[string]$SizeType = "Int64",
+		[switch]$IgnoreNull,
+		[switch]$Raw,
+		[switch]$Silent
 	)
 	
 	Begin {
@@ -258,7 +255,9 @@ Function Out-DbaDataTable {
 							}
 							$column = New-Object System.Data.DataColumn
 							$column.ColumnName = $property.Name.ToString()
-							$column.DataType = [System.Type]::GetType($converted.type)
+							if (-not $Raw) {
+								$column.DataType = [System.Type]::GetType($converted.type)
+							}
 							$datatable.Columns.Add($column)
 						}
 						else {
@@ -277,7 +276,7 @@ Function Out-DbaDataTable {
                             $propValueLength = 0
                         }
 						if ($propValueLength -gt 0) {
-							if ($property.value.ToString() -eq 'System.Object[]') {
+							if ($property.value.ToString() -eq 'System.Object[]' -or $property.value.ToString() -eq 'System.String[]') {
 								$datarow.Item($property.Name) = $property.value -join ", "
 							}
 							else {

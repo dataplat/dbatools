@@ -8,65 +8,65 @@
 @{
 	
 	# Script module or binary module file associated with this manifest.
-	RootModule = 'dbatools.psm1'
+	RootModule			    = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion = '0.9.19'
+	ModuleVersion		    = '0.9.60'
 	
 	# ID used to uniquely identify this module
-	GUID = '9d139310-ce45-41ce-8e8b-d76335aa1789'
+	GUID				    = '9d139310-ce45-41ce-8e8b-d76335aa1789'
 	
 	# Author of this module
-	Author = 'Chrissy LeMaire'
+	Author				    = 'Chrissy LeMaire'
 	
 	# Company or vendor of this module
-	CompanyName = 'dbatools.io'
+	CompanyName			    = 'dbatools.io'
 	
 	# Copyright statement for this module
-	Copyright = '2017 Chrissy LeMaire'
+	Copyright			    = '2017 Chrissy LeMaire'
 	
 	# Description of the functionality provided by this module
-	Description = 'Provides extra functionality for SQL Server Database admins and enables SQL Server instance migrations.'
+	Description			    = "The community module that enables SQL Server Pros to automate database development and server administration"
 	
 	# Minimum version of the Windows PowerShell engine required by this module
-	PowerShellVersion = '3.0'
+	PowerShellVersion	    = '3.0'
 	
 	# Name of the Windows PowerShell host required by this module
-	PowerShellHostName = ''
+	PowerShellHostName	    = ''
 	
 	# Minimum version of the Windows PowerShell host required by this module
-	PowerShellHostVersion = ''
+	PowerShellHostVersion   = ''
 	
 	# Minimum version of the .NET Framework required by this module
-	DotNetFrameworkVersion = ''
+	DotNetFrameworkVersion  = ''
 	
 	# Minimum version of the common language runtime (CLR) required by this module
-	CLRVersion = ''
+	CLRVersion			    = ''
 	
 	# Processor architecture (None, X86, Amd64, IA64) required by this module
-	ProcessorArchitecture = ''
+	ProcessorArchitecture   = ''
 	
 	# Modules that must be imported into the global environment prior to importing this module
-	RequiredModules = @()
+	RequiredModules		    = @()
 	
 	# Assemblies that must be loaded prior to importing this module
-	RequiredAssemblies = @()
+	RequiredAssemblies	    = @()
 	
 	# Script files () that are run in the caller's environment prior to importing this module
-	ScriptsToProcess = @()
+	ScriptsToProcess	    = @()
 	
 	# Type files (xml) to be loaded when importing this module
-	TypesToProcess = @()
+	TypesToProcess		    = @()
 	
 	# Format files (xml) to be loaded when importing this module
 	# "xml\dbatools.Format.ps1xml"
-	FormatsToProcess = @("xml\dbatools.Format.ps1xml")
+	FormatsToProcess	    = @("xml\dbatools.Format.ps1xml")
 	
 	# Modules to import as nested modules of the module specified in ModuleToProcess
-	NestedModules = @()
+	NestedModules		    = @()
 	
 	# Functions to export from this module
-	FunctionsToExport = @(
+	FunctionsToExport	    = @(
 		'Start-DbaMigration',
 		'Copy-DbaDatabase',
 		'Copy-DbaLogin',
@@ -108,7 +108,7 @@
 		'Watch-DbaDbLogin',
 		'Expand-DbaTLogResponsibly',
 		'Test-DbaMigrationConstraint',
-		'Get-DbaRegisteredServerName',
+		'Get-DbaRegisteredServer',
 		'Test-DbaNetworkLatency',
 		'Find-DbaDuplicateIndex',
 		'Show-DbaServerFileSystem',
@@ -151,7 +151,7 @@
 		'Remove-DbaBackup',
 		'Get-DbaPermission',
 		'Get-DbaLastBackup',
-		'Connect-DbaSqlServer',
+		'Get-DbaInstance',
 		'Get-DbaStartupParameter',
 		'Get-DbaBackupHistory',
 		'Read-DbaBackupHeader',
@@ -184,7 +184,7 @@
 		'Find-DbaDatabase',
 		'Get-DbaMsdtc',
 		'Get-DbaUptime',
-		'Get-DbaXEventsSession',
+		'Get-DbaXEventSession',
 		'Test-DbaOptimizeForAdHoc',
 		'Find-DbaStoredProcedure',
 		'Measure-DbaBackupThroughput',
@@ -325,7 +325,7 @@
 		'Get-DbaErrorLog',
 		'Get-DbaDefaultPath',
 		'Get-DbaDbStoredProcedure',
-		'Test-DbaCompression',
+		'Test-DbaDbCompression',
 		'Mount-DbaDatabase',
 		'Dismount-DbaDatabase',
 		'Set-DbaPrivilege',
@@ -337,21 +337,53 @@
 		'Invoke-Sqlcmd2',
 		'New-DbaCredential',
 		'Get-DbaFile',
-		'Set-DbaCompression',
+		'Set-DbaDbCompression',
 		'New-DbaClientAlias',
-		'Get-DbaClientAlias'
+		'Get-DbaClientAlias',
+		'Get-DbaOperatingSystem',
+		'Install-DbaMaintenanceSolution',
+		'Get-DbaComputerSystem',
+		'Get-DbaTraceFlag',
+		'Stop-DbaSqlService',
+		'Start-DbaSqlService',
+		'Restart-DbaSqlService',
+		'Invoke-DbaCycleErrorLog',
+		'Get-DbaSqlRegistryRoot',
+		'Get-DbaAvailableCollation',
+		'Get-DbaUserLevelPermission',
+		'Get-DbaAgHadr',
+		'Get-DbaPolicy',
+		'Find-DbaSimilarTable',
+		'Disable-DbaAgHadr',
+		'Enable-DbaAgHadr',
+		'Get-DbaTraceFile',
+		'Get-DbaSuspectPage',
+		'Get-DbaWaitStatistic',
+		'Clear-DbaWaitStatistics',
+		'Get-DbaTopResourceUsage',
+		'New-DbaLogin',
+		'Get-DbaAgListener',
+		'Invoke-DbaDatabaseClone',
+		'Read-DbaXEventFile',
+		'Get-DbaDistributor',
+		'Update-DbaSqlServiceAccount',
+		'Watch-DbaXEventSession',
+		'Disable-DbaTraceFlag',
+		'Enable-DbaTraceFlag',
+		'Start-DbaAgentJob',
+		'Stop-DbaAgentJob'
 	)
 	
 	# Cmdlets to export from this module
-	CmdletsToExport = '*'
+	CmdletsToExport		    = '*'
 	
 	# Variables to export from this module
-	VariablesToExport = '*'
+	VariablesToExport	    = '*'
 	
 	# Aliases to export from this module
 	# Aliases are stored in dbatools.psm1
 	# KEEP Detach-DbaDatabase, Dismount-DbaDatabase and Start-SqlMigration FOREVER
-	AliasesToExport = 'Detach-DbaDatabase', 'Attach-DbaDatabase',
+	AliasesToExport		    = 'Detach-DbaDatabase', 'Attach-DbaDatabase',
 	'Reset-SqlSaPassword',
 	'Copy-SqlUserDefinedMessage',
 	'Copy-SqlJobServer',
@@ -420,44 +452,47 @@
 	'Get-DbaDatabaseFreeSpace',
 	'Invoke-DbaSqlcmd',
 	'Get-DbaQueryStoreConfig',
-	'Set-DbaQueryStoreConfig'
+	'Set-DbaQueryStoreConfig',
+	'Get-DbaRegisteredServerName',
+	'Get-DbaXEventsSession',
+	'Connect-DbaSqlServer'
 	
 	
 	# List of all modules packaged with this module
-	ModuleList = @()
+	ModuleList			    = @()
 	
 	# List of all files packaged with this module
-	FileList = ''
+	FileList			    = ''
 	
-	PrivateData = @{
+	PrivateData			    = @{
 		# PSData is module packaging and gallery metadata embedded in PrivateData
 		# It's for rebuilding PowerShellGet (and PoshCode) NuGet-style packages
 		# We had to do this because it's the only place we're allowed to extend the manifest
 		# https://connect.microsoft.com/PowerShell/feedback/details/421837
-		PSData = @{
+		PSData  = @{
 			# The primary categorization of this module (from the TechNet Gallery tech tree).
-			Category = "Databases"
+			Category	  = "Databases"
 			
 			# Keyword tags to help users find this module via navigations and search.
-			Tags = @('sqlserver', 'migrations', 'sql', 'dba', 'databases')
+			Tags		  = @('sqlserver', 'migrations', 'sql', 'dba', 'databases')
 			
 			# The web address of an icon which can be used in galleries to represent this module
-			IconUri = "https://dbatools.io/logo.png"
+			IconUri	      = "https://dbatools.io/logo.png"
 			
 			# The web address of this module's project or support homepage.
-			ProjectUri = "https://dbatools.io"
+			ProjectUri    = "https://dbatools.io"
 			
 			# The web address of this module's license. Points to a page that's embeddable and linkable.
-			LicenseUri = "http://www.gnu.org/licenses/gpl-3.0.en.html"
+			LicenseUri    = "http://www.gnu.org/licenses/gpl-3.0.en.html"
 			
 			# Release notes for this particular version of the module
-			ReleaseNotes = "https://dbatools.io/releases"
+			ReleaseNotes  = "https://dbatools.io/releases"
 			
 			# If true, the LicenseUrl points to an end-user license (not just a source license) which requires the user agreement before use.
 			# RequireLicenseAcceptance = ""
 			
 			# Indicates this is a pre-release/testing version of the module.
-			IsPrerelease = 'True'
+			IsPrerelease  = 'True'
 		}
 	}
 }
@@ -465,8 +500,8 @@
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU6j3VJvYA/DAYDoHl0POng9bQ
-# R4uggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU2/x+CEzoe+H37ivyQdpysMgQ
+# NpyggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -597,22 +632,22 @@
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUH7Pl0sbGMDQhA/wCA0t1wgmCJ0MwDQYJKoZIhvcNAQEBBQAE
-# ggEAOvS7t/ovZYX/x1PsgiKQIS7X2eWYiext+QDomGshOKWP4HkbkAO8wIhhACsf
-# EhF1gjZDdeP/5cCUi5R7yw5YRc1gTA9Ll/LuVcWTbnRPHE4SDncZ7A3g4zaBWea9
-# EphERBLYJ7LHeBH6Qiq9S3JuI+9V0ONJYW4qmI5LFjY0DRzrOno6+Wp9RyViesXV
-# jhEb2Hqy2REHlxwywB8TLSt7VQ55mLlUMJmj54s6q7DW10mqiECZnUWYnwJSwTO8
-# ehilL+pVFQqz7ZhNKDQxeCGoX+qTDuJOI0JYZ7J+Zpg6tUXB2N+6GVhLhF1BaOhm
-# 3wMII3CBOfyvdgVt73rpL8kCKaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQU3NefObjxQhestjMp3H+FGtLjvHcwDQYJKoZIhvcNAQEBBQAE
+# ggEAhEVk3Wx5VOs65Ae4S1RtOOr+6qbxUYNejV2DJDAX8W86GchAig9f+4IVYSUA
+# ENZxJ14wlNthsEFxJ6YVNgGswEbM0EpsaDdOmIZl0K87csgHYYjzE08FGkcRJy8m
+# 0q0AkOl0sXR79eNTPxuMz1dt4jJbLYxKAl/f90KBfGsbYxpWyL8fvF1GApW2Qs0n
+# 8pa3pzVyCYEyRMtK8nQEM5yJ3hS0lnlQfD2krnFQrlQLya/OpQ5Ja9oi3U8oI1Vs
+# iknWLjaIJTOOTZSB6gbgHUUbkb0EBnP5A9wyMM/LlnoaYVK3h44mcFjThgKKUs1u
+# cIAKxnD+GOA27Sp5A/uo7/rkz6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIzMjEzNzM0WjAj
-# BgkqhkiG9w0BCQQxFgQUw8euSEyh6QtllNbmEEDeMgfy+Y4wDQYJKoZIhvcNAQEB
-# BQAEggEAO+1QXo5/GEDQGooO79UgUf8ZKBKkHOYDyMrzT7a1UPk7YRmnWmzqpp9d
-# DPaM+bgF8+VA8ns1C+A2iw3EtkAA8KZ0Hq6wQRSaUAVKcSi9dB5T4rIffsosc/eI
-# ORKRXERaNQ+PUh0MmpTotnw1bfTNSJIatbXNEhyPxMwIoF6cfI3BzZTYr1zh/G5+
-# Pb5TSce5eHHX1scEeWSPqFSsUeGN0QWfSapn9r/muUvXsUiT0uPispNJtlOsMlAN
-# 3qW1oxqjzv8vtKKkMUDtqwCmPfSw3iwuEIWqCrsySLiKBZx9zWDW57ZLlcBAptKq
-# djanmPqyZoaRyJsSfNd4rt+/r/GDRw==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwOTI4MjIzNjM4WjAj
+# BgkqhkiG9w0BCQQxFgQUhCX88N0EIAFrXkZQbJVWWUDg+aIwDQYJKoZIhvcNAQEB
+# BQAEggEAdSe4G2S//2dmpFD28qzSWL3S8ZQBj51oinb2lKGh5BZHXp0EmVmKiRVo
+# mfpVER933332wXRUOg/jCqFiiIUCug/S3eWko+xSauIqDvNCoHmPDWWFRhOioNOn
+# 5OYehpasYjYqDkqNNqqbiwdvZvCAFM6XG/GkE0wCF80c4G8ldPTcI4sMnTfgBdad
+# HKqgT+xBRVpfMEr7SUaihlteYMN+SfKpwVOu9JrbIKzZN7twwKbSn4X00zsEvAK5
+# hWnvAvtnBMpwW2EwQ8/DJDuXLU099DRdTUvg0tEfqVk1w9Q3IftA7j+l7JbYCY4R
+# C85uEEhYBGINIGjRLQiMJnDTOmtmlw==
 # SIG # End signature block

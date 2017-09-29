@@ -65,7 +65,7 @@
 
         .NOTES
             Tags: ComputerManagement
-            Original Author: Fred Winmann (@FredWeinmann)
+            Author: Fred Winmann (@FredWeinmann)
 
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

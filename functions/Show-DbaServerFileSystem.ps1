@@ -1,63 +1,52 @@
-Function Show-DbaServerFileSystem
-{
-<#
-.SYNOPSIS
-Shows file system on remote SQL Server and returns the directory name of the directory you select.
-	
-.DESCRIPTION
-Similar to the remote file system popup you see when browsing a remote SQL Server in SQL Server Management Studio, this command allows you to traverse the remote SQL Server's file structure.
+function Show-DbaServerFileSystem {
+	<#
+		.SYNOPSIS
+			Shows file system on remote SQL Server in a local GUI and returns the selected directory name
+			
+		.DESCRIPTION
+			Similar to the remote file system popup you see when browsing a remote SQL Server in SQL Server Management Studio, this function allows you to traverse the remote SQL Server's file structure.
 
-Show-DbaServerFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.
-	
-.PARAMETER SqlInstance
-The SQL Server instance.
-	
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Show-DbaServerFileSystem uses SQL Management Objects to browse the directories and what you see is limited to the permissions of the account running the command.
+			
+        .PARAMETER SqlInstance
+			The SQL Server whose filesystem you want to view.
+        
+        .PARAMETER SqlCredential
+ 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+			$cred = Get-Credential, then pass $cred object to the -SqlCredential parameter.
 
-Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+			To connect as a different Windows user, run PowerShell as that user.		
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.NOTES
-Tags: Storage
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+		
+		.NOTES
+			Tags: Storage
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+		.LINK
+			https://dbatools.io/Show-DbaServerFileSystem
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-.LINK
-https://dbatools.io/Show-DbaServerFileSystem
-
-.EXAMPLE
-Show-DbaServerFileSystem -SqlInstance sqlserver2014a
-
-Shows a GUI and uses Windows Authentication to log into the SQL Server. Returns a string of the path you selected.
-	
-.EXAMPLE   
-Show-DbaServerFileSystem -Source sqlserver2014a -SqlCredential $cred
-
-Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a string of the path you selected.
-	
-#>
-    [CmdletBinding(SupportsShouldProcess)]
+		.EXAMPLE
+			Show-DbaServerFileSystem -SqlInstance sqlserver2014a
+		
+			Shows a list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected path.
+			
+		.EXAMPLE   
+			Show-DbaServerFileSystem -Source sqlserver2014a -SqlCredential $cred
+			
+			Shows a list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected path.
+		
+	#>
+	[CmdletBinding(SupportsShouldProcess)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
@@ -65,14 +54,16 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 		[object]$SqlCredential
 	)
 	
-	BEGIN
-	{
-		try { Add-Type -AssemblyName PresentationFramework }
-		catch { throw "Windows Presentation Framework required but not installed" }
+	begin {
+		try {
+			Add-Type -AssemblyName PresentationFramework
+		}
+		catch {
+			throw "Windows Presentation Framework required but not installed."
+		}
 		
-		Function Add-TreeItem
-		{
-			Param (
+		function Add-TreeItem {
+			param (
 				[string]$name,
 				[object]$parent,
 				[string]$tag
@@ -91,15 +82,13 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 			$image.Width = 20
 			$image.Stretch = "Fill"
 			
-			if ($name.length -eq 1)
-			{
+			if ($name.length -eq 1) {
 				$image.Source = $diskicon
 				$textblock.Text = "$name`:"
 				$childitem.Tag = "$name`:"
 				
 			}
-			else
-			{
+			else {
 				$image.Source = $foldericon
 				$textblock.Text = $name
 				$childitem.Tag = "$tag\$name"
@@ -114,29 +103,29 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 			[void]$parent.Items.Add($childitem)
 		}
 		
-		Function Get-SubDirectory
-		{
+		function Get-SubDirectory {
 			Param (
 				[string]$nameSpace,
 				[object]$treeviewItem
 			)
 			
 			$textbox.Text = $nameSpace
-			try { $dirs = $sourceserver.EnumDirectories($nameSpace) }
-			catch { return }
+			try {
+				$dirs = $sourceserver.EnumDirectories($nameSpace)
+			}
+			catch {
+				return
+			}
 			$subdirs = $dirs.Name
 			
-			foreach ($subdir in $subdirs)
-			{
-				if (!$subdir.StartsWith("$") -and $subdir -ne 'System Volume Information')
-				{
+			foreach ($subdir in $subdirs) {
+				if (!$subdir.StartsWith("$") -and $subdir -ne 'System Volume Information') {
 					Add-TreeItem -Name $subdir -Parent $treeviewItem -Tag $nameSpace
 				}
 			}
 		}
 		
-		Function Convert-b64toimg
-		{
+		function Convert-b64toimg {
 			param ($base64)
 			
 			$bitmap = New-Object System.Windows.Media.Imaging.BitmapImage
@@ -154,8 +143,7 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 		$sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SourceSqlCredential
 	}
 	
-	PROCESS
-	{		
+	process {		
 		# Create XAML form in Visual Studio, ensuring the ListView looks chromeless 
 		[xml]$xaml = '<Window 
 		xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" 
@@ -178,19 +166,21 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 		
 		$xaml.SelectNodes("//*[@Name]") | ForEach-Object { Set-Variable -Name ($_.Name) -Value $window.FindName($_.Name) -Scope Script }
 		
-		try { $drives = ($sourceserver.EnumAvailableMedia()).Name }
-		catch { throw "No access to remote SQL Server files" }
+		try {
+			$drives = ($sourceserver.EnumAvailableMedia()).Name
+		}
+		catch {
+			throw "No access to remote SQL Server files."
+		}
 		
-		foreach ($drive in $drives)
-		{
+		foreach ($drive in $drives) {
 			$drive = $drive.Replace(":", "")
 			Add-TreeItem -Name $drive -Parent $treeview -Tag $drive
 		}
 		
-		$window.Add_SourceInitialized({
+		$window.Add_SourceInitialized( {
 				[System.Windows.RoutedEventHandler]$Event = {
-					if ($_.OriginalSource -is [System.Windows.Controls.TreeViewItem])
-					{
+					if ($_.OriginalSource -is [System.Windows.Controls.TreeViewItem]) {
 						$treeviewItem = $_.OriginalSource
 						$treeviewItem.items.clear()
 						Get-SubDirectory -NameSpace $treeviewItem.Tag -TreeViewItem $treeviewItem
@@ -200,11 +190,11 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 				$treeview.AddHandler([System.Windows.Controls.TreeViewItem]::SelectedEvent, $Event)
 			})
 		
-		$okbutton.Add_Click({
+		$okbutton.Add_Click( {
 				$window.Close()
 			})
 		
-		$cancelbutton.Add_Click({
+		$cancelbutton.Add_Click( {
 				$textbox.Text = $null
 				$window.Close()
 			})
@@ -212,11 +202,9 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 		$null = $window.ShowDialog()
 	}
 	
-	END
-	{
+	end {
 		
-		if ($textbox.Text.length -gt 0)
-		{
+		if ($textbox.Text.length -gt 0) {
 			$drive = $textbox.Text + '\'
 			return $drive
 		}

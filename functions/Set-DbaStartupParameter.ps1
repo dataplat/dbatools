@@ -65,7 +65,7 @@ Collecting information for the DBCC SQLPERF command
 Collecting information for some dynamic management views
 Many extended-events event points
 
-** Warning *\* When you use the –x startup option, the information that is available for you to diagnose performance and functional problems with SQL Server is greatly reduced.
+** Warning *\* When you use the ï¿½x startup option, the information that is available for you to diagnose performance and functional problems with SQL Server is greatly reduced.
 	
 .PARAMETER SingleUserDetails
 The username for single user
@@ -90,7 +90,7 @@ Prompts you for confirmation before executing any changing operations within the
 Use this switch to disable any kind of verbose messages
 
 .NOTES
-Original Author: Stuart Moore (@napalmgram), stuart-moore.com
+Author: Stuart Moore (@napalmgram), stuart-moore.com
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire

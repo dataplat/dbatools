@@ -258,7 +258,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 	}
 	end {
 		if ($result.count -eq 0) {
-			Write-Message -Level Output -Message "No orphaned files found"
+			Write-Message -Level Verbose -Message "No orphaned files found"
 		}
 	}
 }

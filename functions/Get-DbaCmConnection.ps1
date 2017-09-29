@@ -17,7 +17,7 @@
     Use this if you want the function to throw terminating errors you want to catch.
 
 	.NOTES
-	Original Author: Fred Winmann (@FredWeinmann)
+	Author: Fred Winmann (@FredWeinmann)
 	Tags: ComputerManagement
 
 	Website: https://dbatools.io

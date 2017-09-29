@@ -1,41 +1,45 @@
 function Copy-DbaSysDbUserObject {
 	<#
 		.SYNOPSIS
-			Imports *all* user objects found in source SQL Server's master, msdb and model databases to the destination.
+			Imports all user objects found in source SQL Server's master, msdb and model databases to the destination.
 
 		.DESCRIPTION
-			Imports *all* user objects found in source SQL Server's master, msdb and model databases to the destination. This is useful because many DBA's store backup/maintenance procs/tables/triggers/etc (among other things) in master or msdb.
+			Imports all user objects found in source SQL Server's master, msdb and model databases to the destination. This is useful because many DBAs store backup/maintenance procs/tables/triggers/etc (among other things) in master or msdb.
 
 			It is also useful for migrating objects within the model database.
 
 		.PARAMETER Source
-			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 		.PARAMETER SourceSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-			$scred = Get-Credential, this pass $scred object to the param.
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
 		.PARAMETER DestinationSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-			$dcred = Get-Credential, this pass this $dcred to the param.
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent 
-			Use this switch to disable any kind of verbose messages
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Migration, SystemDatabase, UserObject
@@ -48,22 +52,20 @@ function Copy-DbaSysDbUserObject {
 			https://dbatools.io/Copy-DbaSysDbUserObject
 
 		.EXAMPLE
-		Copy-DbaSysDbUserObject $sourceServer $destserve
+			Copy-DbaSysDbUserObject $sourceServer $destserver
 
-		Copies user objects from source to destination
+			Copies user objects from source to destination
 	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[DbaInstanceParameter]$Source,
-		[PSCredential]
-		$SourceSqlCredential,
+		[PSCredential]$SourceSqlCredential,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential]
-		$DestinationSqlCredential,
+		[PSCredential]$DestinationSqlCredential,
 		[switch]$Silent
 	)
 	process {
@@ -113,7 +115,7 @@ function Copy-DbaSysDbUserObject {
 			$transfer.Options.Permissions = $true
 			$transfer.Options.WithDependencies = $false
 
-			Write-Message -Level Output -Message "Copying from $systemDb"
+			Write-Message -Level Output -Message "Copying from $systemDb."
 			try {
 				$sqlQueries = $transfer.ScriptTransfer()
 
@@ -121,7 +123,7 @@ function Copy-DbaSysDbUserObject {
 					Write-Message -Level Debug -Message $sql
 					if ($PSCmdlet.ShouldProcess($destServer, $sql)) {
 						try {
-							$destServer.Query($sql,$systemDb)
+							$destServer.Query($sql, $systemDb)
 						}
 						catch {
 							# Don't care - long story having to do with duplicate stuff

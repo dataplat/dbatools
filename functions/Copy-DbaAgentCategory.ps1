@@ -15,7 +15,7 @@
 			If the category already exists on the destination, it will be skipped unless -Force is used.
 
 		.PARAMETER Source
-			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or newer.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
@@ -27,7 +27,7 @@
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or newer.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
 		.PARAMETER DestinationSqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
@@ -57,7 +57,7 @@
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Force
-			If this switch is enabled, the Category will be dropped and recreated on Destination.i
+			If this switch is enabled, the Category will be dropped and recreated on Destination.
 
 		.PARAMETER Silent
 			If this switch is enabled, the internal messaging functions will be silenced.
@@ -77,12 +77,12 @@
 		.EXAMPLE
 			Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster
 
-			Copies all operator categories from sqlserver2014a to sqlcluster, using Windows credentials. If operator categories with the same name exist on sqlcluster, they will be skipped.
+			Copies all operator categories from sqlserver2014a to sqlcluster using Windows authentication. If operator categories with the same name exist on sqlcluster, they will be skipped.
 
 		.EXAMPLE
 			Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -OperatorCategory PSOperator -SourceSqlCredential $cred -Force
 
-			Copies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+			Copies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster using SQL credentials to authenticate to sqlserver2014a and Windows credentials for sqlcluster. If a operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 		.EXAMPLE
 			Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force

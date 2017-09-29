@@ -97,7 +97,7 @@ namespace Sqlcollaborative.Dbatools.TabExpansion
         /// <summary>
         /// After this timespan of no requests to a server, the updates to its cache are disabled.
         /// </summary>
-        public static TimeSpan TeppUpdateTimeout = new TimeSpan(0, 30, 0);
+        public static TimeSpan TeppUpdateTimeout = new TimeSpan(0, 0, 30);
         #endregion Configuration
 
         #region Updater
