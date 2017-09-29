@@ -63,6 +63,7 @@ $TestsRunGroups = @{
 	"appveyor_disabled" = @(
 		'Get-DbaDatabaseState'
 	)
+	
 	# do not run everywhere
 	"disabled"          = @()
 }

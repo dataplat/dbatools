@@ -1,66 +1,68 @@
 function Test-DbaDatabaseOwner {
 	<#
-	.SYNOPSIS
-		Checks database owners against a login to validate which databases do not match that owner.
+		.SYNOPSIS
+			Checks database owners against a login to validate which databases do not match that owner.
 
-	.DESCRIPTION
-		This function will check all databases on an instance against a SQL login to validate if that
-		login owns those databases or not. By default, the function will check against 'sa' for
-		ownership, but the user can pass a specific login if they use something else. Only databases
-		that do not match this ownership will be displayed, but if the -Detailed switch is set all
-		databases will be shown.
+		.DESCRIPTION
+			This function will check all databases on an instance against a SQL login to validate if that
+			login owns those databases or not. By default, the function will check against 'sa' for
+			ownership, but the user can pass a specific login if they use something else. Only databases
+			that do not match this ownership will be displayed, but if the -Detailed switch is set all
+			databases will be shown.
 
-		Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
+			Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
 
-	.NOTES
-		Author: Michael Fal (@Mike_Fal), http://mikefal.net
+		.NOTES
+			Tags: 
+			Author: Michael Fal (@Mike_Fal), http://mikefal.net
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-		Website: https://dbatools.io
-		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+		.PARAMETER SqlInstance 
+			Specifies the SQL Server instance(s) to scan.
+			
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-	.PARAMETER SqlInstance
-		SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-		collection and receive pipeline input
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-	.PARAMETER SqlCredential
-		PSCredential object to connect under. If not specified, current Windows login will be used.
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-	.PARAMETER Database
-		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+			To connect as a different Windows user, run PowerShell as that user.
 
-	.PARAMETER ExcludeDatabase
-		The database(s) to exclude - this list is auto-populated from the server
+		.PARAMETER Database
+			Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+		
+		.PARAMETER ExcludeDatabase
+			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+		
+		.PARAMETER TargetLogin
+			Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
 
-	.PARAMETER TargetLogin
-		Specific login that you wish to check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed.
+		.PARAMETER Detailed
+			If this switch is enabled, a list of all databases and whether or not their owner matches TargetLogin is returned.
 
-	.PARAMETER Detailed
-		Switch parameter. When declared, function will return all databases and whether or not they
-		match the declared owner.
+		.LINK
+			https://dbatools.io/Test-DbaDatabaseOwner
 
-	.LINK
-		https://dbatools.io/Test-DbaDatabaseOwner
+		.EXAMPLE
+			Test-DbaDatabaseOwner -SqlInstance localhost
 
-	.EXAMPLE
-		Test-DbaDatabaseOwner -SqlInstance localhost
+			Returns all databases where the owner does not match 'sa'.
 
-		Returns all databases where the owner does not match 'sa'.
+		.EXAMPLE
+			Test-DbaDatabaseOwner -SqlInstance localhost -TargetLogin 'DOMAIN\account'
 
-	.EXAMPLE
-		Test-DbaDatabaseOwner -SqlInstance localhost -TargetLogin 'DOMAIN\account'
-
-		Returns all databases where the owner does not match 'DOMAIN\account'. Note
-		that TargetLogin must be a valid security principal that exists on the target server.
+			Returns all databases where the owner does not match 'DOMAIN\account'.
 	#>
 	[OutputType("System.Object[]")]
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]
-		$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
