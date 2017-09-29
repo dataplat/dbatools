@@ -19,7 +19,7 @@
 			Use this switch to disable any kind of verbose messages.
 
 		.NOTES
-			Tags: Trace, Flag
+			Tags: TraceFlag
 			Author: Kevin Bullen (@sqlpadawan)
 
 			References:  https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-traceon-trace-flags-transact-sql
@@ -53,7 +53,7 @@
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]
 		$SqlCredential,
-		[object[]]$TraceFlag,
+		[int[]]$TraceFlag,
 		[switch]$Silent
 	)
 
@@ -66,7 +66,7 @@
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
-			$tflags = $server.EnumActiveGlobalTraceFlags();
+			$tflags = $server.EnumActiveGlobalTraceFlags()
 			
             if ($tFlags.Rows.Count -eq 0) {
 				Write-Message -Level Output -Message "No global trace flags enabled"
@@ -79,13 +79,13 @@
 	               
                 foreach ($tflag in $tflags) {
 			        [pscustomobject]@{
-				        'ComputerName' = $server.NetName;
-				        'InstanceName' = $server.ServiceName;
-				        'SqlInstance'  = $server.DomainInstanceName;
-				        'TraceFlag'    = $tflag.TraceFlag;
-				        'Global'       = $tflag.Global;
-				        'Session'      = $tflag.Session;
-				        'Status'       = $tflag.Status
+				        ComputerName = $server.NetName
+				        InstanceName = $server.ServiceName
+				        SqlInstance  = $server.DomainInstanceName
+				        TraceFlag    = $tflag.TraceFlag
+				        Global       = $tflag.Global
+				        Session      = $tflag.Session
+				        Status       = $tflag.Status
                 } | Select-DefaultView -ExcludeProperty 'Session'
             }
         }
