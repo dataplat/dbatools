@@ -53,12 +53,12 @@
         /// <summary>
         /// Will match a mostly valid instance name.
         /// </summary>
-        public static string InstanceName = @"^[\p{L}&_#][\p{L}\d\$#_]{1,15}$";
+        public static string InstanceName = @"^[\p{L}&_#][\p{L}\d\$#_]{0,15}$";
 
         /// <summary>
         /// Will match any instance of a mostly valid instance name.
         /// </summary>
-        public static string InstanceNameEx = @"[\p{L}&_#][\p{L}\d\$#_]{1,15}";
+        public static string InstanceNameEx = @"[\p{L}&_#][\p{L}\d\$#_]{0,15}";
 
         /// <summary>
         /// Matches a word against the list of officially reserved keywords
