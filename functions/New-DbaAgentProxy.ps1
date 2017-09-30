@@ -84,7 +84,8 @@
 		.EXAMPLE
 		New-DbaAgentProxy -SqlInstance localhost\sql2016 -Name STIG -Credential 'PowerShell Proxy' -Description "Used for auditing purposes" -Login ad\sqlstig -SubSystem CmdExec, PowerShell -ServerRole securtyadmin -MsdbRole ServerGroupAdministratorRole
 		
-		Creates an Agent Proxy on sql2016 with the name STIG with the 'PowerShell Proxy' credential.
+		Creates an Agent Proxy on sql2016 with the name STIG with the 'PowerShell Proxy' credential and the following principals:
+	
 		Login: ad\sqlstig
 		ServerRole: securtyadmin 
 		MsdbRole: ServerGroupAdministratorRole
