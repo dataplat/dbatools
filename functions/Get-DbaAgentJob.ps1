@@ -59,6 +59,11 @@ FUNCTION Get-DbaAgentJob {
 			Get-DbaAgentJob -SqlInstance localhost -NoDisabledJobs
 
 			Returns all SQl Agent Jobs for the local SQL Server instances, excluding the disabled jobs.
+	
+		.EXAMPLE
+			$servers | Get-DbaAgentJob | Out-GridView -Passthru | Start-DbaAgentJob -WhatIf
+	
+			Find all of your Jobs from servers in the $server collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob
 	#>
 	[CmdletBinding()]
 	param (
@@ -100,7 +105,7 @@ FUNCTION Get-DbaAgentJob {
 				Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name InstanceName -value $agentJob.Parent.Parent.ServiceName
 				Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name SqlInstance -value $agentJob.Parent.Parent.DomainInstanceName
 				
-				Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, CurrentRunStatus, CurrentRunRetryAttempt, 'IsEnabled as Enabled', LastRunDate, DateCreated, HasSchedule, OperatorToEmail
+				Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, CurrentRunStatus, CurrentRunRetryAttempt, 'IsEnabled as Enabled', LastRunDate, LastRunOutcome, DateCreated, HasSchedule, OperatorToEmail, 'DateCreated as CreateDate'
 			}
 		}
 	}
