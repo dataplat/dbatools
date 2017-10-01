@@ -356,7 +356,7 @@ Function Restore-DBFromFilteredArray {
                         }
                     }
                     else {
-                        Write-Progress -id 2 -activity "Restoring $DbName to ServerName" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                        Write-Progress -id 2 -activity "Restoring $DbName to $ServerName" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                         $script = $Restore.Script($Server)
                         $Restore.sqlrestore($Server)
                         Write-Progress -id 2 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
