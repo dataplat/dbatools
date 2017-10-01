@@ -2136,6 +2136,18 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1\r\n\r\nCreate a step in \"Job1\" with the name Step1 with the default subsystem TransactSql.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb\r\n\r\nCreate a step in \"Job1\" with the name Step1 where the database will the msdb\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb\r\n\r\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2, \u0027Job Three\u0027 -StepName Step1 -Database msdb\r\n\r\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers for multiple jobs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | New-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb\r\n\r\nCreate a step in \"Job1\" with the name Step1 where the database will the \"msdb\" for multiple servers using pipeline\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "New-DbaAgentProxy",
+        "Description":  "Adds one or more proxies to SQL Server Agent",
+        "Tags":  [
+                     "Agent",
+                     "Proxy"
+                 ],
+        "Synopsis":  "Adds one or more proxies to SQL Server Agent",
+        "Name":  "New-DbaAgentProxy",
+        "Links":  "https://dbatools.io/New-DbaAgentProxy",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentProxy -SqlInstance sql2016 -Name STIG -Credential \u0027PowerShell Proxy\u0027\r\n\r\nCreates an Agent Proxy on sql2016 with the name STIG with the \u0027PowerShell Proxy\u0027 credential.\r\nThe proxy is automatically added to the CmdExec subsystem.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentProxy -SqlInstance localhost\\sql2016 -Name STIG -Credential \u0027PowerShell Proxy\u0027 -Description \"Used \r\nfor auditing purposes\" -Login ad\\sqlstig -SubSystem CmdExec, PowerShell -ServerRole securtyadmin -MsdbRole \r\nServerGroupAdministratorRole\r\n\r\nCreates an Agent Proxy on sql2016 with the name STIG with the \u0027PowerShell Proxy\u0027 credential and the following \r\nprincipals:\r\n\r\nLogin: ad\\sqlstig\r\nServerRole: securtyadmin \r\nMsdbRole: ServerGroupAdministratorRole\r\n\r\nBy default, only sysadmins have access to create job steps with proxies. This will allow 3 additional principals access:\r\nThe proxy is then added to the CmdExec and PowerShell subsystems\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "New-DbaAgentSchedule",
         "Description":  "New-DbaAgentSchedule will help create a new schedule for a job.\nIf the job parameter is not supplied the schedule will not be attached to a job.",
         "Tags":  [
