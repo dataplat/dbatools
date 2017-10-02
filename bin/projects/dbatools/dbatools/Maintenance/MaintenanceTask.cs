@@ -25,12 +25,12 @@ namespace Sqlcollaborative.Dbatools.Maintenance
         /// <summary>
         /// The interval at which the task should be performed
         /// </summary>
-        public TimeSpan Interval = new TimeSpan(-1);
+        public TimeSpan Interval = new TimeSpan(0);
 
         /// <summary>
         /// If the task need not be performed right away, it can be delayed, in order to prioritize more important initialization tasks
         /// </summary>
-        public TimeSpan Delay = new TimeSpan(-1);
+        public TimeSpan Delay = new TimeSpan(0);
 
         /// <summary>
         /// When was the task first registered. Duplicate registration calls will not increment this value.
@@ -62,10 +62,10 @@ namespace Sqlcollaborative.Dbatools.Maintenance
                 if (Once && (LastExecution > Registered))
                     return false;
 
-                if ((Delay.Ticks > 0) && ((Registered + Delay) > DateTime.Now))
+                if ((Delay.Ticks > 0) && ((Registered.Add(Delay)) > DateTime.Now))
                     return false;
 
-                if ((LastExecution + Interval) > DateTime.Now)
+                if ((LastExecution.Add(Interval)) > DateTime.Now)
                     return false;
 
                 return true;

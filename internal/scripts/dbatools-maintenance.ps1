@@ -1,4 +1,9 @@
-﻿$scriptBlock = {
+﻿foreach ($item in (Get-ChildItem "$script:PSModuleRoot\internal\maintenance" -Filter *.ps1)) {
+	if ($script:doDotSource) { . $item.FullName }
+	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($item.FullName))), $null, $null) }
+}
+
+$scriptBlock = {
 	$script:___ScriptName = 'maintenance'
 	
 	# Import module in a way where internals are available
@@ -15,8 +20,8 @@
 			$task = $null
 			$tasksDone = @()
 			while ($task = [Sqlcollaborative.Dbatools.Maintenance.MaintenanceHost]::GetNextTask($tasksDone)) {
-				try { $task.ScriptBlock.Invoke() }
-				catch { Write-Message -Silent $false -Level Verbose -Message "[Maintenance] Task '$($task.Name)' failed to execute" -ErrorRecord $_ -FunctionName "task:Maintenance" -Target $task }
+				try { ([ScriptBlock]::Create($task.ScriptBlock.ToString())).Invoke() }
+				catch { Write-Message -Silent $false -Level Verbose -Message "[Maintenance] Task '$($task.Name)' failed to execute: $_" -ErrorRecord $_ -FunctionName "task:Maintenance" -Target $task }
 				$task.LastExecution = Get-Date
 				$tasksDone += $task.Name
 			}
@@ -25,7 +30,7 @@
 		}
 		#endregion Main Execution
 	}
-	catch { }
+	catch {  }
 	finally {
 		[Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLower()].SignalStopped()
 	}
