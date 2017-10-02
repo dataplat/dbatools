@@ -22,10 +22,6 @@ namespace Sqlcollaborative.Dbatools.Utility
             {
                 return (Byte / (double)1024);
             }
-            set
-            {
-
-            }
         }
 
         /// <summary>
@@ -36,10 +32,6 @@ namespace Sqlcollaborative.Dbatools.Utility
             get
             {
                 return (Byte / (double)1048576);
-            }
-            set
-            {
-
             }
         }
 
@@ -52,10 +44,6 @@ namespace Sqlcollaborative.Dbatools.Utility
             {
                 return (Byte / (double)1073741824);
             }
-            set
-            {
-
-            }
         }
 
         /// <summary>
@@ -66,10 +54,6 @@ namespace Sqlcollaborative.Dbatools.Utility
             get
             {
                 return (Byte / (double)1099511627776);
-            }
-            set
-            {
-
             }
         }
 
@@ -118,7 +102,7 @@ namespace Sqlcollaborative.Dbatools.Utility
             }
             if (Byte == -1)
                 return "Unlimited";
-            return "";
+            throw new ArgumentOutOfRangeException("Byte", string.Format("Invalid value of {0} for Byte", Byte));
         }
 
         /// <summary>
@@ -128,7 +112,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <returns>True if equal, false elsewise</returns>
         public override bool Equals(object obj)
         {
-            return ((obj != null) && (obj is Size) && (Byte == ((Size)obj).Byte));
+            return (obj is Size && (Byte == ((Size)obj).Byte));
         }
 
         /// <summary>
