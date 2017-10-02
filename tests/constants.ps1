@@ -1,5 +1,4 @@
 ﻿# constants
-Write-Verbose "Here we go"
 if (Test-Path C:\temp\constants.ps1) {
 	Write-Vervose "C:\temp\constants.ps1 found."
 	. C:\temp\constants.ps1
