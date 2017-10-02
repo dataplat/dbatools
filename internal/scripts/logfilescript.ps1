@@ -134,7 +134,7 @@
 			Start-Sleep -Seconds 5
 		}
 	}
-	catch { $_ | Export-Clixml "$path\error.xml" }
+	catch { }
 	finally {
 		[Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLower()].SignalStopped()
 	}
@@ -142,5 +142,3 @@
 
 Register-DbaRunspace -ScriptBlock $scriptBlock -Name "logging"
 Start-DbaRunspace -Name "logging"
-#[Sqlcollaborative.Dbatools.dbaSystem.LogWriterHost]::SetScript($scriptBlock)
-#[Sqlcollaborative.Dbatools.dbaSystem.LogWriterHost]::Start()

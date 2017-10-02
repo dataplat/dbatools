@@ -19,13 +19,11 @@ $ScriptBlock = {
 	
 	# Disable Async TEPP runspace if not needed
 	if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled) {
-		try { [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Stop() }
-		catch { }
+		Stop-DbaRunspace -Name "teppasynccache"
 	}
 	else
 	{
-		try { [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Start() }
-		catch { }
+		Start-DbaRunspace -Name "teppasynccache"
 	}
 	
 	return $Result
@@ -54,13 +52,11 @@ $ScriptBlock = {
 	
 	# Disable Async TEPP runspace if not needed
 	if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled) {
-		try { [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Stop() }
-		catch { }
+		Stop-DbaRunspace -Name "teppasynccache"
 	}
 	else
 	{
-		try { [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Start() }
-		catch { }
+		Start-DbaRunspace -Name "teppasynccache"
 	}
 	
 	return $Result
