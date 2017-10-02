@@ -149,6 +149,10 @@ else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Crea
 if ($script:doDotSource) { . "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1" }
 else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1"))), $null, $null) }
 
+# Start the maintenance system (requires pretty much everything else already up and running)
+if ($script:doDotSource) { . "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1" }
+else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1"))), $null, $null) }
+
 # I renamed this function to be more accurate - 1ms
 if (-not (Test-Path Alias:Copy-SqlAgentCategory)) { Set-Alias -Scope Global -Name Copy-SqlAgentCategory -Value Copy-DbaAgentCategory }
 if (-not (Test-Path Alias:Copy-SqlAlert)) { Set-Alias -Scope Global -Name Copy-SqlAlert -Value Copy-DbaAgentAlert }
