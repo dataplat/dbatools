@@ -87,6 +87,9 @@ else {
 	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\bin\typealiases.ps1"))), $null, $null)
 }
 
+# Tell the library where the module is based, just in case
+[Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase = $script:PSModuleRoot
+
 # All internal functions privately available within the toolset - 221ms
 foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\*.ps1")) {
 	if ($script:doDotSource) { . $function.FullName }
