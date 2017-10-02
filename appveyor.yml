@@ -32,6 +32,13 @@ artifacts:
   - path: msbuild.log
     name: MSBuild Log
 
+  - path: coverage.xml
+    name: OpenCover Code Coverate Report
+before_build:
+- nuget restore
+- choco install opencover.portable
+- choco install codecov
+
 before_test:
    # grab appveyor lab files
   - ps: .\Tests\appveyor.prep.ps1
@@ -47,7 +54,8 @@ test_script:
   # DLL unittests only in default scenario
   - ps: |
         if($env:SCENARIO -eq 'default') {
-          vstest.console /logger:Appveyor bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.Tests.dll
+          OpenCover.Console.exe -register:user -target:"vstest.console.exe" -targetargs:"/logger:Appveyor bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.Tests.dll" -output:"coverage.xml" -filter:"+[Sqlcollaborative.Dbatools*]* "
+          codecov -f "coverage.xml" -t 19e6dc26-6d5b-489b-ad73-73845980e7bf
         }
   # "Test with native PS version"
   - ps: .\Tests\appveyor.pester.ps1
@@ -57,6 +65,7 @@ test_script:
 
   # "Collecting and uploading results"
   - ps: .\Tests\appveyor.pester.ps1 -Finalize
+
 
 #on_finish:
 #  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
