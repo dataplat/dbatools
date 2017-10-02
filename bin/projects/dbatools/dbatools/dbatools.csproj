@@ -61,6 +61,9 @@
     <Compile Include="dbaSystem\SystemHost.cs" />
     <Compile Include="Exceptions\BloodyHellGiveMeSomethingToWorkWithException.cs" />
     <Compile Include="Parameter\DbaCredentialParameter.cs" />
+    <Compile Include="Runspace\DbaRunspaceState.cs" />
+    <Compile Include="Runspace\RunspaceContainer.cs" />
+    <Compile Include="Runspace\RunspaceHost.cs" />
     <Compile Include="TypeConversion\DbaCredentialParameterConverter.cs" />
     <Compile Include="Utility\CredentialPrompt.cs" />
     <Compile Include="Validation\LinkedServerResult.cs" />
