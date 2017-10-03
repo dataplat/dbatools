@@ -8,7 +8,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	$clonedb2 = "dbatoolsci_clonetest_CLONE2"
 	Context "Command functions as expected" {
 		BeforeAll {
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$server = Get-DbaInstance -SqlInstance $script:instance2
 			$server.Query("CREATE DATABASE $dbname")
 		}
 		
@@ -31,7 +31,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 			$systemwarn -match "user database" | Should Be $true
 		}
 		
-		$results = Invoke-DbaDatabaseClone -SqlInstance $script:instance2 -Database $dbname -CloneDatabase $clonedb #, $clonedb2
+		$results = Invoke-DbaDatabaseClone -SqlInstance $script:instance2 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue
 		
 		It -Skip "returns 2 results" {
 			$results.Count -eq 2 | Should Be $true
