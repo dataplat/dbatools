@@ -60,7 +60,13 @@
     <Compile Include="Database\Dependency.cs" />
     <Compile Include="dbaSystem\SystemHost.cs" />
     <Compile Include="Exceptions\BloodyHellGiveMeSomethingToWorkWithException.cs" />
+    <Compile Include="Maintenance\MaintenanceHost.cs" />
+    <Compile Include="Maintenance\MaintenancePriority.cs" />
+    <Compile Include="Maintenance\MaintenanceTask.cs" />
     <Compile Include="Parameter\DbaCredentialParameter.cs" />
+    <Compile Include="Runspace\DbaRunspaceState.cs" />
+    <Compile Include="Runspace\RunspaceContainer.cs" />
+    <Compile Include="Runspace\RunspaceHost.cs" />
     <Compile Include="TypeConversion\DbaCredentialParameterConverter.cs" />
     <Compile Include="Utility\CredentialPrompt.cs" />
     <Compile Include="Validation\LinkedServerResult.cs" />
@@ -87,7 +93,6 @@
     <Compile Include="Connection\ManagementConnectionType.cs" />
     <Compile Include="dbaSystem\LogEntry.cs" />
     <Compile Include="dbaSystem\LogEntryType.cs" />
-    <Compile Include="dbaSystem\LogWriterHost.cs" />
     <Compile Include="dbaSystem\MessageHost.cs" />
     <Compile Include="dbaSystem\MessageLevel.cs" />
     <Compile Include="Parameter\ParameterContractAttribute.cs" />
