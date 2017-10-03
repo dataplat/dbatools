@@ -15,42 +15,42 @@ namespace Sqlcollaborative.Dbatools.Maintenance
         /// <summary>
         /// The name of the task to execute. No duplciates are possible.
         /// </summary>
-        public string Name;
+        public string Name { get; set; }
 
         /// <summary>
         /// Whether the task should be done once only
         /// </summary>
-        public bool Once;
+        public bool Once { get; set; }
 
         /// <summary>
         /// The interval at which the task should be performed
         /// </summary>
-        public TimeSpan Interval = new TimeSpan(0);
+        public TimeSpan Interval { get; set; } = new TimeSpan(0);
 
         /// <summary>
         /// If the task need not be performed right away, it can be delayed, in order to prioritize more important initialization tasks
         /// </summary>
-        public TimeSpan Delay = new TimeSpan(0);
+        public TimeSpan Delay { get; set; } = new TimeSpan(0);
 
         /// <summary>
         /// When was the task first registered. Duplicate registration calls will not increment this value.
         /// </summary>
-        public DateTime Registered;
+        public DateTime Registered { get; set; }
 
         /// <summary>
         /// When was the task last executed.
         /// </summary>
-        public DateTime LastExecution;
+        public DateTime LastExecution { get; set; }
 
         /// <summary>
         /// How important is this task?
         /// </summary>
-        public MaintenancePriority Priority;
+        public MaintenancePriority Priority { get; set; }
 
         /// <summary>
         /// The task code to execute
         /// </summary>
-        public ScriptBlock ScriptBlock;
+        public ScriptBlock ScriptBlock { get; set; }
 
         /// <summary>
         /// Whether the task is due and should be executed
