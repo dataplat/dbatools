@@ -132,18 +132,29 @@ Function Get-DbaSqlService {
 			if ($Server.ComputerName) {
 				$Computer = $server.ComputerName
 				Write-Message -Level VeryVerbose -Message "Getting SQL Server namespace on $Computer" -Target $Computer
-				$namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction Ignore -Silent -Credential $credential | Sort-Object Name -Descending
+				try { $namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -Silent -Credential $credential | Sort-Object Name -Descending }
+				catch { }
 				if ($namespaces) {
+					$servicesTemp = @()
+					
 					ForEach ($namespace in $namespaces) {
 						try {
 							Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer." -Target $Computer
-							$services = Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -Query "SELECT * FROM SqlService WHERE $searchClause" -Silent -Credential $credential
+							foreach ($service in (Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\$($namespace.Name)" -Query "SELECT * FROM SqlService WHERE $searchClause" -Silent -Credential $credential)) {
+								$servicesTemp += New-Object PSObject -Property @{
+									Name  = $service.ServiceName
+									Namespace = $namespace.Name
+									Service = $service
+								}
+							}
 						}
 						catch {
-							Write-Message -Level Verbose -Silent $Silent -Message "Failed to acquire services from namespace $($namespace.Name)."
+							Write-Message -Level Verbose -Silent $Silent -Message "Failed to acquire services from namespace $($namespace.Name)." -Target $Computer
 						}
-						if ($services) { break }
 					}
+					
+					$services = ($servicesTemp | Group-Object Name | ForEach-Object { $_.Group | Sort-Object Namespace -Descending | Select-Object -First 1 }).Service
+					
 					if ($services) {
 						Write-Message -Level Verbose -Silent $Silent -Message "Creating output objects"
 						ForEach ($service in $services) {
