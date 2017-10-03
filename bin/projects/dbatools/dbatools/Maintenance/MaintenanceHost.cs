@@ -14,7 +14,7 @@ namespace Sqlcollaborative.Dbatools.Maintenance
         /// <summary>
         /// The register of available tasks.
         /// </summary>
-        public static Dictionary<string, MaintenanceTask> Tasks { get; set; } = new Dictionary<string, MaintenanceTask>();
+        public static Dictionary<string, MaintenanceTask> Tasks = new Dictionary<string, MaintenanceTask>();
 
         /// <summary>
         /// Whether there are any due tasks
