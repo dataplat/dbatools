@@ -4,8 +4,8 @@
 	Read XEvents from a xel or xem file
 
 	.DESCRIPTION
-	Read XEvents from a xel or xem file. Returns a weird Microsoft.SqlServer.XEvent.Linq.QueryableXEventData enumeration object.
-
+	Read XEvents from a xel or xem file. 
+	
 	.PARAMETER Path
 	The path to the file. This is relative to the computer executing the command. UNC paths supported.
 	
@@ -74,7 +74,19 @@
 				Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
 			}
 			
-			New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
+			# Make it selectable, otherwise it's a weird enumeration
+			foreach ($row in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile))) {
+				[pscustomobject]@{
+					Name    = $row.Name
+					Fields  = $row.Fields
+					Actions = $row.Actions
+					Timestamp = $row.Timestamp
+					UUID    = $row.UUID
+					Package = $row.Package
+					Location = $row.Location
+					Metadata = $row.Metadata
+				} | Select-DefaultView -Property Name, Timestamp, Fields, Actions
+			}
 		}
 	}
 }
