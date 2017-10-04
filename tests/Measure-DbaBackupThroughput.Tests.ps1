@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Context "Returns output for single database" {
 		BeforeAll {
-			$server = Get-DbaInstance -SqlInstance $script:instance2
+			$server = Connect-DbaInstance -SqlInstance $script:instance2
 			$random = Get-Random
 			$db = "dbatoolsci_measurethruput$random"
 			$server.Query("CREATE DATABASE $db")
