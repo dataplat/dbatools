@@ -20,7 +20,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return (Byte / (double)1024);
+                return (Byte / 1024d);
             }
             set
             {
@@ -35,7 +35,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return (Byte / (double)1048576);
+                return (Byte / 1048576d);
             }
             set
             {
@@ -50,7 +50,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return (Byte / (double)1073741824);
+                return (Byte / 1073741824d);
             }
             set
             {
@@ -65,7 +65,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return (Byte / (double)1099511627776);
+                return (Byte / 1099511627776d);
             }
             set
             {
