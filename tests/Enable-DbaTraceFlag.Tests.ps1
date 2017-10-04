@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Context "Verifying TraceFlag output" {
 		BeforeAll {
-			$server = Get-DbaInstance -SqlInstance $script:instance2
+			$server = Connect-DbaInstance -SqlInstance $script:instance2
 			$startingtfs = Get-DbaTraceFlag -SqlInstance $script:instance2
 			$safetraceflag = 3226
 			
