@@ -373,7 +373,8 @@
 		'Start-DbaAgentJob',
 		'Stop-DbaAgentJob',
 		'Remove-DbaClientAlias',
-		'New-DbaAgentProxy'
+		'New-DbaAgentProxy',
+		'Test-DbaLogShippingStatus'
 	)
 	
 	# Cmdlets to export from this module
