@@ -90,10 +90,12 @@ if ($ImportLibrary) {
 				$start = Get-Date
 				$system = [Appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -like "System, *"
 				$msbuild = (Resolve-Path "$(Split-Path $system.Location)\..\..\..\..\Framework$(if ([intptr]::Size -eq 8) { "64" })\$($system.ImageRuntimeVersion)\msbuild.exe").Path
-				$msbuildOptions = "/p:Configuration=Release"
+				$msbuildConfiguration = "/p:Configuration=Release"
+				$msbuildOptions = ""
 				if ($env:APPVEYOR -eq 'True') {
 					# This doesn't seem to work. Keep it here for now
-					$msbuildOptions = '/p:Configuration=Debug /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"'
+					$msbuildOptions = '/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"'
+					$msbuildConfiguration = '/p:Configuration=Debug'
 					
 					if (-not (Test-Path "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll")) {
 						throw "msbuild logger not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
@@ -105,7 +107,7 @@ if ($ImportLibrary) {
 				}
 				
 				Write-Verbose -Message "Building the library"
-				& $msbuild "$libraryBase\projects\dbatools\dbatools.sln" $msbuildOptions
+				& $msbuild "$libraryBase\projects\dbatools\dbatools.sln" $msbuildConfiguration $msbuildOptions
 				
 				try {
 					Write-Verbose -Message "Found library, trying to copy & import"
