@@ -94,8 +94,17 @@
 					[Microsoft.SqlServer.XEvent.Linq.EventStreamCacheOptions]::DoNotCache
 				)
 				
-				foreach ($publishedEvent in $xevent) {
-					$publishedEvent
+				foreach ($row in $xevent) {
+					[pscustomobject]@{
+						Name	 = $row.Name
+						Fields   = $row.Fields
+						Actions  = $row.Actions
+						Timestamp = $row.Timestamp
+						UUID	 = $row.UUID
+						Package  = $row.Package
+						Location = $row.Location
+						Metadata = $row.Metadata
+					} | Select-DefaultView -Property Name, Timestamp, Fields, Actions
 				}
 			}
 			catch {
