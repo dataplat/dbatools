@@ -1,4 +1,6 @@
 ﻿$scriptBlock = {
+	$script:___ScriptName = 'teppasynccache'
+	
 	#region Utility Functions
 	function Get-PriorityServer {
 		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::InstanceAccess.Values | Where-Object -Property LastUpdate -LT (New-Object System.DateTime(1, 1, 1, 1, 1, 1))
@@ -54,20 +56,29 @@
 	}
 	#endregion Utility Functions
 	
-	#region Main Execution
-	while ($true) {
-		if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppUdaterStopper) { break }
-		
-		Get-PriorityServer | Update-TeppCache
-		
-		Get-ActionableServer | Update-TeppCache
-		
-		Start-Sleep -Seconds 5
+	try {
+		#region Main Execution
+		while ($true) {
+			# This portion is critical to gracefully closing the script
+			if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLower()].State -notlike "Running") {
+				break
+			}
+			
+			Get-PriorityServer | Update-TeppCache
+			
+			Get-ActionableServer | Update-TeppCache
+			
+			Start-Sleep -Seconds 5
+		}
+		#endregion Main Execution
 	}
-	#endregion Main Execution
+	catch { }
+	finally {
+		[Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLower()].SignalStopped()
+	}
 }
 
-[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetScript($scriptBlock)
+Register-DbaRunspace -ScriptBlock $scriptBlock -Name "teppasynccache"
 if (-not ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled)) {
-	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Start()
+	Start-DbaRunspace -Name "teppasynccache"
 }

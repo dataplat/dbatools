@@ -15,7 +15,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 				}
 				while ($lastexitcode -ne 0 -and $s++ -lt 10)
 			}
-			$server = Get-DbaInstance -SqlInstance $script:instance2
+			$server = Connect-DbaInstance -SqlInstance $script:instance2
 			$db1 = "dbatoolsci_GetSnap"
 			$db1_snap1 = "dbatoolsci_GetSnap_snapshotted1"
 			$db1_snap2 = "dbatoolsci_GetSnap_snapshotted2"

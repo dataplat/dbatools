@@ -66,9 +66,9 @@ Describe "$commandname Unit Test" -Tags Unittest {
 			$SortedVersions = $Naturalized | Sort-Object
 			($SortedVersions -join ",") | Should Be ($Naturalized -join ",")
 		}
-		It "Names are at least 7" {
+		It "Names are at least 8" {
 			$Names = $IdxRef.Data.Name | Where-Object { $_ }
-			$Names.Length | Should BeGreaterThan 6
+			$Names.Length | Should BeGreaterThan 7
 		}
 	}
 	# These are groups by major release (aka "Name")
