@@ -11,7 +11,7 @@
 	RootModule			    = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion		    = '0.9.62'
+	ModuleVersion		    = '0.9.63'
 	
 	# ID used to uniquely identify this module
 	GUID				    = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -151,7 +151,7 @@
 		'Remove-DbaBackup',
 		'Get-DbaPermission',
 		'Get-DbaLastBackup',
-		'Get-DbaInstance',
+		'Connect-DbaInstance',
 		'Get-DbaStartupParameter',
 		'Get-DbaBackupHistory',
 		'Read-DbaBackupHeader',
@@ -457,7 +457,8 @@
 	'Set-DbaQueryStoreConfig',
 	'Get-DbaRegisteredServerName',
 	'Get-DbaXEventsSession',
-	'Connect-DbaSqlServer'
+	'Connect-DbaSqlServer',
+	'Get-DbaInstance'
 	
 	
 	# List of all modules packaged with this module
