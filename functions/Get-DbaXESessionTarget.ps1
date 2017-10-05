@@ -1,4 +1,4 @@
-﻿function Get-DbaXEventSessionTarget {
+﻿function Get-DbaXESessionTarget {
  <#
 	.SYNOPSIS
 	Get a list of Extended Events Session Targets
@@ -31,20 +31,20 @@
 	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 	
 	.LINK
-	https://dbatools.io/Get-DbaXEventSessionTarget
+	https://dbatools.io/Get-DbaXESessionTarget
 	
 	.EXAMPLE
-	Get-DbaXEventSessionTarget -SqlInstance ServerA\sql987 -Session system_health
+	Get-DbaXESessionTarget -SqlInstance ServerA\sql987 -Session system_health
 
 	Shows targets for the system_health session on ServerA\sql987
 
 	.EXAMPLE
-	Get-DbaXEventSession -SqlInstance sql2016 -Session system_health | Get-DbaXEventSessionTarget
+	Get-DbaXESession -SqlInstance sql2016 -Session system_health | Get-DbaXESessionTarget
 	
 	Returns the targets for the system_health session on sql2016
 	
 	.EXAMPLE
-	Get-DbaXEventSession -SqlInstance sql2016 -Session system_health | Get-DbaXEventSessionTarget -Target package0.event_file
+	Get-DbaXESession -SqlInstance sql2016 -Session system_health | Get-DbaXESessionTarget -Target package0.event_file
 	
 	Return only the package0.event_file target for the system_health session on sql2016 
 #>
