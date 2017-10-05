@@ -1,53 +1,60 @@
 function Test-DbaDatabaseCollation {
 	<#
-	.SYNOPSIS
-		Compares Database Collations to Server Collation
+		.SYNOPSIS
+			Compares Database Collations to Server Collation
 
-	.DESCRIPTION
-		Compares Database Collations to Server Collation
+		.DESCRIPTION
+			Compares Database Collations to Server Collation
 
-	.PARAMETER SqlInstance
-		The SQL Server that you're connecting to.
+		.PARAMETER SqlInstance
+			The SQL Server that you're connecting to.
 
-	.PARAMETER Credential
-		Credential object used to connect to the SQL Server as a different user
+		.PARAMETER Credential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-	.PARAMETER Database
-		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+			$scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
-	.PARAMETER ExcludeDatabase
-		The database(s) to exclude - this list is auto-populated from the server
+			Windows Authentication will be used if Credential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-	.PARAMETER Detailed
-		Shows detailed information about the server and database collations
+			To connect as a different Windows user, run PowerShell as that user.
 
-	.NOTES
-		Website: https://dbatools.io
-		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+		.PARAMETER Database
+			Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+		
+		.PARAMETER ExcludeDatabase
+			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+		
+		.PARAMETER Detailed
+			If this switch is enabled, full details about database & server collations and whether they match is returned.
 
-	.LINK
-		https://dbatools.io/Test-DbaDatabaseCollation
+		.NOTES
+			Tags: 
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-	.EXAMPLE
-		Test-DbaDatabaseCollation -SqlInstance sqlserver2014a
+		.LINK
+			https://dbatools.io/Test-DbaDatabaseCollation
 
-		Returns server name, databse name and true/false if the collations match for all databases on sqlserver2014a
+		.EXAMPLE
+			Test-DbaDatabaseCollation -SqlInstance sqlserver2014a
 
-	.EXAMPLE
-		Test-DbaDatabaseCollation -SqlInstance sqlserver2014a -Database db1, db2
+			Returns server name, database name and true/false if the collations match for all databases on sqlserver2014a.
 
-		Returns server name, databse name and true/false if the collations match for the db1 and db2 databases on sqlserver2014a
+		.EXAMPLE
+			Test-DbaDatabaseCollation -SqlInstance sqlserver2014a -Database db1, db2
 
-	.EXAMPLE
-		Test-DbaDatabaseCollation -SqlInstance sqlserver2014a, sql2016 -Detailed -Exclude db1
+			Returns server name, database name and true/false if the collations match for the db1 and db2 databases on sqlserver2014a.
 
-		Lots of detailed information for database and server collations for all databases except db1 on sqlserver2014a and sql2016
+		.EXAMPLE
+			Test-DbaDatabaseCollation -SqlInstance sqlserver2014a, sql2016 -Detailed -Exclude db1
 
-	.EXAMPLE
-		Get-DbaRegisteredServer -SqlInstance sql2016 | Test-DbaDatabaseCollation
+			Returns detailed information for database and server collations for all databases except db1 on sqlserver2014a and sql2016.
 
-		Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016
+		.EXAMPLE
+			Get-DbaRegisteredServer -SqlInstance sql2016 | Test-DbaDatabaseCollation
+
+			Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016.
 	#>
 	[CmdletBinding()]
 	[OutputType("System.Collections.ArrayList")]
@@ -55,8 +62,7 @@ function Test-DbaDatabaseCollation {
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]
-		$Credential,
+		[PSCredential]$Credential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
@@ -78,7 +84,7 @@ function Test-DbaDatabaseCollation {
 					throw $_
 				}
 				else {
-					Write-Warning "Can't connect to $servername. Moving on."
+					Write-Message -Level Warning -Message  "Can't connect to $servername. Moving on."
 					Continue
 				}
 			}
@@ -94,7 +100,7 @@ function Test-DbaDatabaseCollation {
 			}
 
 			foreach ($db in $dbs) {
-				Write-Verbose "Processing $($db.name) on $servername"
+				Write-Message -Level Verbose -Message "Processing $($db.name) on $servername."
 				$null = $collection.Add([PSCustomObject]@{
 						Server            = $server.name
 						ServerCollation   = $server.collation

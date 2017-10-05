@@ -223,9 +223,13 @@ if (-not (Test-Path Alias:Restore-HallengrenBackup)) { Set-Alias -Scope Global -
 if (-not (Test-Path Alias:Get-DbaDatabaseFreeSpace)) { Set-Alias -Scope Global -Name Get-DbaDatabaseFreeSpace -Value Get-DbaDatabaseSpace }
 if (-not (Test-Path Alias:Set-DbaQueryStoreConfig)) { Set-Alias -Scope Global -Name Set-DbaQueryStoreConfig -Value Set-DbaDbQueryStoreOptions }
 if (-not (Test-Path Alias:Get-DbaQueryStoreConfig)) { Set-Alias -Scope Global -Name Get-DbaQueryStoreConfig -Value Get-DbaDbQueryStoreOptions }
-if (-not (Test-Path Alias:Get-DbaXEventsSession)) { Set-Alias -Scope Global -Name Get-DbaXEventsSession -Value Get-DbaXEventSession }
 if (-not (Test-Path Alias:Connect-DbaSqlServer)) { Set-Alias -Scope Global -Name Connect-DbaSqlServer -Value Connect-DbaInstance }
 if (-not (Test-Path Alias:Get-DbaInstance)) { Set-Alias -Scope Global -Name Get-DbaInstance -Value Connect-DbaInstance }
+if (-not (Test-Path Alias:Get-DbaXEventSession)) { Set-Alias -Scope Global -Name Get-DbaXEventSession -Value Get-DbaXESession }
+if (-not (Test-Path Alias:Get-DbaXEventSessionTarget)) { Set-Alias -Scope Global -Name Get-DbaXEventSessionTarget -Value Get-DbaXESessionTarget }
+if (-not (Test-Path Alias:Read-DbaXEventFile)) { Set-Alias -Scope Global -Name Read-DbaXEventFile -Value Read-DbaXEFile }
+if (-not (Test-Path Alias:Watch-DbaXEventSession)) { Set-Alias -Scope Global -Name Watch-DbaXEventSession -Value Watch-DbaXESession }
+
 
 # Leave forever
 Set-Alias -Scope Global -Name Attach-DbaDatabase -Value Mount-DbaDatabase
@@ -376,12 +380,12 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMDA0MjAxMDA0WjAj
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMDA1MTUwMDI2WjAj
 # BgkqhkiG9w0BCQQxFgQU5XsdSLiIQG/97LQFJv1QISJ5XVMwDQYJKoZIhvcNAQEB
-# BQAEggEAED7ruil2cJ3teSJjX/miMa+6u4ChRqHVEUFVwQYTu8aw67PBsuEUkopV
-# LvXgvcLt5ToIvvS/ZxEhud4pVXaM7GvO1pxXWGY3PJAQgdKh6MV3b1yz7VqGmOL4
-# uZ+3DUQQ61KavDLI938ishYZQRtpEpQcIKAu88LFV0wCNk+8/cJ7T0FucxI9bR4A
-# OMpNcLqVZXevIHXDMr7b1+A4B24Wp7ydF+2LMvLuNvUwTuaBYnxzxFY6ntgUbVl7
-# gs6uwkgnF0v0POWTAyLYZnVQV7HUwXw1UfTsFKbCP/VYm55WjDY2G1FOakcYGaS1
-# 2EPpKS2pFb1i8z62Ak3epNBNdAfOkQ==
+# BQAEggEATr8MiASunE2HKi5F+NkHQsQDk7Cdm+OSvlz814N8Ds8QQpYE+llgAolR
+# pvKgpT0j8pTAOq833hWy3o4GVRmvn4BDJg4BrHj7f1PAZKlq3U23IAdEYCI8WDep
+# KuTJCA/ntXtsgtPaYOE/j3S0EUp8ZiMkJTudkBwBhsR4lavXp/4z+uwCMNxQXlC0
+# 7FKbxBEEJ+A1jpkWKNviICUdp/Jvc2bLrix2eIQccSkeAa4w/eaHqCtcXNC/c9/I
+# P53xR1Iwb1Zo1KeEgVZ1EG/Cx4Bcnxe3FFJMynBw0ekuq8iTS/dbrXMIlYTDaY0U
+# X5g9PDn1BjG2Qo4wLDf4yhR+qr1/Kw==
 # SIG # End signature block
