@@ -133,11 +133,14 @@
 				Stop-Function -Message $message -ErrorRecord $_ -Target $connection -Continue -OverrideExceptionMessage
 			}
 			
-			[Sqlcollaborative.Dbatools.Connection.ManagementConnectionType]$enabledProtocols = "None"
-			if ($connection.CimRM -notlike "Disabled") { $enabledProtocols += "CimRM" }
-			if ($connection.CimDCOM -notlike "Disabled") { $enabledProtocols += "CimDCOM" }
-			if ($connection.Wmi -notlike "Disabled") { $enabledProtocols += "Wmi" }
-			if ($connection.PowerShellRemoting -notlike "Disabled") { $enabledProtocols += "PowerShellRemoting" }
+			# Flags-Enumerations cannot be added in PowerShell 4 or older.
+			# Thus we create a string and convert it afterwards.
+			$enabledProtocols = "None"
+			if ($connection.CimRM -notlike "Disabled") { $enabledProtocols += ", CimRM" }
+			if ($connection.CimDCOM -notlike "Disabled") { $enabledProtocols += ", CimDCOM" }
+			if ($connection.Wmi -notlike "Disabled") { $enabledProtocols += ", Wmi" }
+			if ($connection.PowerShellRemoting -notlike "Disabled") { $enabledProtocols += ", PowerShellRemoting" }
+			[Sqlcollaborative.Dbatools.Connection.ManagementConnectionType]$enabledProtocols = $enabledProtocols
 			
 			# Create list of excluded connection types (Duplicates don't matter)
 			$excluded = @()
