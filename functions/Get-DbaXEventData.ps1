@@ -1,4 +1,4 @@
-﻿function Get-DbaXEventData {
+﻿function Get-DbaXEData {
  <#
 	.SYNOPSIS
 	Read XEvents from a session
@@ -28,15 +28,15 @@
 	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.LINK
-	https://dbatools.io/Get-DbaXEventData
+	https://dbatools.io/Get-DbaXEData
 
 	.EXAMPLE
-	Get-DbaXEventData -SqlInstance ServerA\sql987
+	Get-DbaXEData -SqlInstance ServerA\sql987
 
 	Returns events for all sessions
 
 	.EXAMPLE
-	#Get-DbaXEventSession -SqlInstance sql2014 -Session deadlocks | Get-DbaXEventData
+	#Get-DbaXESession -SqlInstance sql2014 -Session deadlocks | Get-DbaXEData
 	
 	#Reads remote xevents by acccessing the file over the admin UNC share
 

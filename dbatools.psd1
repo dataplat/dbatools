@@ -184,7 +184,7 @@
 		'Find-DbaDatabase',
 		'Get-DbaMsdtc',
 		'Get-DbaUptime',
-		'Get-DbaXEventSession',
+		'Get-DbaXESession',
 		'Test-DbaOptimizeForAdHoc',
 		'Find-DbaStoredProcedure',
 		'Measure-DbaBackupThroughput',
@@ -364,10 +364,10 @@
 		'New-DbaLogin',
 		'Get-DbaAgListener',
 		'Invoke-DbaDatabaseClone',
-		'Read-DbaXEventFile',
+		'Read-DbaXEFile',
 		'Get-DbaDistributor',
 		'Update-DbaSqlServiceAccount',
-		'Watch-DbaXEventSession',
+		'Watch-DbaXESession',
 		'Disable-DbaTraceFlag',
 		'Enable-DbaTraceFlag',
 		'Start-DbaAgentJob',
@@ -375,7 +375,7 @@
 		'Remove-DbaClientAlias',
 		'New-DbaAgentProxy',
 		'Test-DbaLogShippingStatus',
-		'Get-DbaXEventSessionTarget',
+		'Get-DbaXESessionTarget',
 		'New-DbaXESmartTargetResponse',
 		'New-DbaXESmartTarget'
 	)
@@ -460,7 +460,7 @@
 	'Get-DbaQueryStoreConfig',
 	'Set-DbaQueryStoreConfig',
 	'Get-DbaRegisteredServerName',
-	'Get-DbaXEventsSession',
+	'Get-DbaXEsSession',
 	'Connect-DbaSqlServer',
 	'Get-DbaInstance'
 	

@@ -1,4 +1,4 @@
-﻿function Read-DbaXEventFile {
+﻿function Read-DbaXEFile {
  <#
 	.SYNOPSIS
 	Read XEvents from a xel or xem file
@@ -25,15 +25,15 @@
 	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.LINK
-	https://dbatools.io/Read-DbaXEventFile
+	https://dbatools.io/Read-DbaXEFile
 
 	.EXAMPLE
-	Read-DbaXEventFile -SqlInstance ServerA\sql987 -Path C:\temp\deadocks.xel
+	Read-DbaXEFile -SqlInstance ServerA\sql987 -Path C:\temp\deadocks.xel
 
 	Returns events
 
 	.EXAMPLE
-	Get-DbaXEventSession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEventFile
+	Get-DbaXESession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEFile
 	
 	Reads remote xevents by acccessing the file over the admin UNC share
 
