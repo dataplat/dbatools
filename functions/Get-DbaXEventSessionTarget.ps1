@@ -64,9 +64,16 @@
 	begin {
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null) {
 			Stop-Function -Message "SMO version is too old. To collect Extended Events, you must have SQL Server Management Studio 2012 or higher installed."
+			return	
 		}
 		
-		function get-target ($Sessions, $server) {
+		function Get-Target {
+			[CmdletBinding()]
+			param (
+				$Sessions,
+				$Server
+			)
+			
 			foreach ($xsession in $Sessions) {
 				
 				if ($null -eq $server) {
