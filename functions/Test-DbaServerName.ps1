@@ -1,62 +1,61 @@
-Function Test-DbaServerName
-{
-<#
-.SYNOPSIS
-Tests to see if it's possible to easily rename the server at the SQL Server instance level, or if it even needs to be changed.
+function Test-DbaServerName {
+	<#
+		.SYNOPSIS
+			Tests to see if it's possible to easily rename the server at the SQL Server instance level, or if it even needs to be changed.
 
-.DESCRIPTION
-When a SQL Server's host OS is renamed, the SQL Server should be as well. This helps with Availability Groups and Kerberos.
+		.DESCRIPTION
+			When a SQL Server's host OS is renamed, the SQL Server should be as well. This helps with Availability Groups and Kerberos.
 
-This command helps determine if your OS and SQL Server names match, and thus, if a rename is required.
+			This command helps determine if your OS and SQL Server names match, and whether a rename is required.
 
-It then checks conditions that would prevent a rename like database mirroring and replication.
+			It then checks conditions that would prevent a rename, such as database mirroring and replication.
 
-https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
+			https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
 
-.PARAMETER SqlInstance
-The SQL Server that you're connecting to.
+		.PARAMETER SqlInstance
+			The SQL Server that you're connecting to.
 
-.PARAMETER Credential
-Credential object used to connect to the SQL Server as a different user.
+		.PARAMETER Credential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER Detailed
-Specifies if the servername is updatable. If updatable -eq $false, it will return the reasons why.
+			$scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
-.PARAMETER NoWarning
-This is an internal parameter used by Repair-DbaServerName which produces warnings of its own.
+			Windows Authentication will be used if Credential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.NOTES
-Tags: SPN
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+			To connect as a different Windows user, run PowerShell as that user.
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		.PARAMETER Detailed
+			If this switch is enabled, additional details are returned including whether the server name is updatable. If the server name is not updatable, the reason why will be returned.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+		.PARAMETER NoWarning
+			If this switch is enabled, no warning will be displayed if SQL Server Reporting Services can't be checked due to a failure to connect via Get-Service.
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.NOTES
+			Tags: SPN
+			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+			Copyright (C) 2016 Chrissy LeMaire
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.LINK
-https://dbatools.io/Test-DbaServerName
+		.LINK
+			https://dbatools.io/Test-DbaServerName
 
-.EXAMPLE
-Test-DbaServerName -SqlInstance sqlserver2014a
+		.EXAMPLE
+			Test-DbaServerName -SqlInstance sqlserver2014a
 
-Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a.
+			Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a.
 
-.EXAMPLE
-Test-DbaServerName -SqlInstance sqlserver2014a, sql2016
+		.EXAMPLE
+			Test-DbaServerName -SqlInstance sqlserver2014a, sql2016
 
-Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
+			Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
 
-.EXAMPLE
-Test-DbaServerName -SqlInstance sqlserver2014a, sql2016 -Detailed
+		.EXAMPLE
+			Test-DbaServerName -SqlInstance sqlserver2014a, sql2016 -Detailed
 
-Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
+			Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
 
-If a Rename is required, it will also show Updatable, and Reasons if the servername is not updatable.
-
-#>
+			If a Rename is required, it will also show Updatable, and Reasons if the servername is not updatable.
+		#>
 	[CmdletBinding()]
 	[OutputType([System.Collections.ArrayList])]
 	Param (
@@ -68,35 +67,27 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 		[switch]$NoWarning
 	)
 
-	PROCESS
-	{
+	process {
 
-		foreach ($servername in $SqlInstance)
-		{
-			try
-			{
+		foreach ($servername in $SqlInstance) {
+			try {
 				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $Credential
 			}
-			catch
-			{
-					Write-Warning "Can't connect to $servername. Moving on."
-					Continue
+			catch {
+				Write-Message -Level Warning -Message  "Can't connect to $servername. Moving on."
+				Continue
 			}
 
-			if ($server.isClustered)
-			{
-				Write-Warning "$servername is a cluster. Renaming clusters is not supported by Microsoft."
+			if ($server.isClustered) {
+				Write-Message -Level Warning -Message  "$servername is a cluster. Renaming clusters is not supported by Microsoft."
 			}
 
-			if ($server.VersionMajor -eq 8)
-			{
-				if ($servercount -eq 1 -and $SqlInstance.count -eq 1)
-				{
+			if ($server.VersionMajor -eq 8) {
+				if ($servercount -eq 1 -and $SqlInstance.count -eq 1) {
 					throw "SQL Server 2000 not supported."
 				}
-				else
-				{
-					Write-Warning "SQL Server 2000 not supported. Skipping $servername."
+				else {
+					Write-Message -Level Warning -Message  "SQL Server 2000 not supported. Skipping $servername."
 					Continue
 				}
 			}
@@ -104,71 +95,60 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 			$SqlInstancename = $server.ConnectionContext.ExecuteScalar("select @@servername")
 			$instance = $server.InstanceName
 
-			if ($instance.length -eq 0)
-			{
+			if ($instance.length -eq 0) {
 				$serverinstancename = $server.NetName
 				$instance = "MSSQLSERVER"
 			}
-			else
-			{
+			else {
 				$netname = $server.NetName
 				$serverinstancename = "$netname\$instance"
 			}
 
 			$serverinfo = [PSCustomObject]@{
 				ServerInstanceName = $serverinstancename
-				SqlServerName = $SqlInstancename
-				IsEqual = $serverinstancename -eq $SqlInstancename
-				RenameRequired = $serverinstancename -ne $SqlInstancename
-                Updatable = "N/A"
-                Warnings = $null
-                Blockers = $null
+				SqlServerName      = $SqlInstancename
+				IsEqual            = $serverinstancename -eq $SqlInstancename
+				RenameRequired     = $serverinstancename -ne $SqlInstancename
+				Updatable          = "N/A"
+				Warnings           = $null
+				Blockers           = $null
 			}
 
-			if ($Detailed)
-			{
+			if ($Detailed) {
 				$reasons = @()
 				$servicename = "SQL Server Reporting Services ($instance)"
 				$netbiosname = $server.ComputerNamePhysicalNetBIOS
-				Write-Verbose "Checking for $servicename on $netbiosname"
+				Write-Message -Level Verbose -Message  "Checking for $servicename on $netbiosname"
 				$rs = $null
 
-				try
-				{
-					 $rs = Get-Service -ComputerName $netbiosname -DisplayName $servicename -ErrorAction SilentlyContinue
+				try {
+					$rs = Get-Service -ComputerName $netbiosname -DisplayName $servicename -ErrorAction SilentlyContinue
 				}
-				catch
-				{
-					if ($NoWarnings -eq $false)
-					{
-						Write-Warning "Can't contact $netbiosname using Get-Service. This means the script will not be able to automatically restart SQL services."
+				catch {
+					if ($NoWarning -eq $false) {
+						Write-Message -Level Warning -Message  "Can't contact $netbiosname using Get-Service. This means the script will not be able to automatically restart SQL services."
 					}
 				}
 
-				if ($rs.length -gt 0)
-				{
-					if ($rs.Status -eq 'Running')
-					{
+				if ($rs.length -gt 0) {
+					if ($rs.Status -eq 'Running') {
 						$rstext = "Reporting Services ($instance) must be stopped and updated."
 					}
-					else
-					{
+					else {
 						$rstext = "Reporting Services ($instance) exists. When it is started again, it must be updated."
 					}
 					$serverinfo.Warnings = $rstext
 				}
-                else
-                {
-                    $serverinfo.Warnings = "N/A"
-                }
+				else {
+					$serverinfo.Warnings = "N/A"
+				}
 
 				# check for mirroring
 				$mirroreddb = $server.Databases | Where-Object { $_.IsMirroringEnabled -eq $true }
 
 				Write-Debug "Found the following mirrored dbs: $($mirroreddb.name)"
 
-				if ($mirroreddb.length -gt 0)
-				{
+				if ($mirroreddb.length -gt 0) {
 					$dbs = $mirroreddb.name -join ", "
 					$reasons += "Databases are being mirrored: $dbs"
 				}
@@ -178,8 +158,7 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				Write-Debug $sql
 				$replicatedb = $server.ConnectionContext.ExecuteWithResults($sql).Tables
 
-				if ($replicatedb.name.length -gt 0)
-				{
+				if ($replicatedb.name.length -gt 0) {
 					$dbs = $replicatedb.name -join ", "
 					$reasons += "Databases are involved in replication: $dbs"
 				}
@@ -189,30 +168,25 @@ If a Rename is required, it will also show Updatable, and Reasons if the servern
 				Write-Debug $sql
 				$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables
 
-				if ($results.RemoteLoginName.length -gt 0)
-				{
+				if ($results.RemoteLoginName.length -gt 0) {
 					$remotelogins = $results.RemoteLoginName -join ", "
 					$reasons += "Remote logins still exist: $remotelogins"
 				}
 
-				if ($reasons.length -gt 0)
-				{
-                    $serverinfo.Updatable = $false
-                    $serverinfo.Blockers = $reasons
+				if ($reasons.length -gt 0) {
+					$serverinfo.Updatable = $false
+					$serverinfo.Blockers = $reasons
 				}
-				else
-				{
-                    $serverinfo.Updatable = $true
-                    $serverinfo.Blockers = "N/A"
+				else {
+					$serverinfo.Updatable = $true
+					$serverinfo.Blockers = "N/A"
 				}
 			}
 			
-			if ($Detailed)
-			{
+			if ($Detailed) {
 				$serverinfo
 			}
-			else
-			{
+			else {
 				$serverinfo | Select-DefaultView -ExcludeProperty Warnings, Blockers
 			}
 		}
