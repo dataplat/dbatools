@@ -1,4 +1,4 @@
-﻿function Watch-DbaXEventSession {
+﻿function Watch-DbaXESession {
  <#
 	.SYNOPSIS
 	Watch live XEvent Data as it happens
@@ -17,6 +17,9 @@
 	.PARAMETER Session
 	Only return a specific session. This parameter is auto-populated.
 		
+	.PARAMETER Raw
+	Returns the Microsoft.SqlServer.XEvent.Linq.QueryableXEventData enumeration object
+	
 	.PARAMETER SessionObject
 	Internal parameter
 	
@@ -30,15 +33,15 @@
 	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.LINK
-	https://dbatools.io/Watch-DbaXEventSession
+	https://dbatools.io/Watch-DbaXESession
 
 	.EXAMPLE
-	Watch-DbaXEventSession -SqlInstance ServerA\sql987 -Session system_health
+	Watch-DbaXESession -SqlInstance ServerA\sql987 -Session system_health
 
 	Shows events for the system_health session as it happens
 
 	.EXAMPLE
-	Get-DbaXEventSession  -SqlInstance sql2016 -Session system_health | Watch-DbaXEventSession | Select -ExpandProperty Fields
+	Get-DbaXESession  -SqlInstance sql2016 -Session system_health | Watch-DbaXESession | Select -ExpandProperty Fields
 	
 	Also shows events for the system_health session as it happens and expands the Fields property. Looks a bit like this
 	
@@ -64,6 +67,7 @@
 		[string]$Session,
 		[parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
 		[Microsoft.SqlServer.Management.XEvent.Session]$SessionObject,
+		[switch]$Raw,
 		[switch]$Silent
 	)
 	process {
@@ -94,8 +98,16 @@
 					[Microsoft.SqlServer.XEvent.Linq.EventStreamCacheOptions]::DoNotCache
 				)
 				
-				foreach ($publishedEvent in $xevent) {
-					$publishedEvent
+				if ($raw) {
+					foreach ($row in $xevent) {
+						$row
+					}
+				}
+				else {
+					# make it pretty
+					foreach ($row in $xevent) {
+						Select-DefaultView -InputObject $row -Property Name, Timestamp, Fields, Actions
+					}
 				}
 			}
 			catch {
