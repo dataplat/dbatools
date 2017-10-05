@@ -12,9 +12,9 @@ function Test-DbaDatabaseCompatibility {
 		.PARAMETER Credential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+			$scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
-			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if Credential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
 			To connect as a different Windows user, run PowerShell as that user.
 
