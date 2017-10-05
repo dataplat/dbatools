@@ -25,9 +25,10 @@ function Test-DbaDatabaseCompatibility {
 			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 		
 		.PARAMETER Detailed
-			If this switch is enabled, a list of all databases and whether or not their owner matches TargetLogin is returned.
+			If this switch is enabled, full details about database & server compatibility levels and whether they match is returned.
 
 		.NOTES
+			Tags: 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
