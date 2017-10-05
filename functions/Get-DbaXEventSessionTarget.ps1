@@ -71,7 +71,9 @@
 			[CmdletBinding()]
 			param (
 				$Sessions,
-				$Server
+				$Session,
+				$Server,
+				$Target
 			)
 			
 			foreach ($xsession in $Sessions) {
@@ -140,11 +142,11 @@
 				$xsessions = $xsessions | Where-Object { $_.Name -in $Session }
 			}
 			
-			Get-Target -Sessions $xsessions -Server $server
+			Get-Target -Sessions $xsessions -Session $Session -Server $server -Target $Target
 		}
 		
 		if ((Test-Bound -ParameterName SqlInstance -Not)) {
-			Get-Target -Sessions $SessionObject
+			Get-Target -Sessions $SessionObject -Session $Session -Target $Target
 		}
 	}
 }
