@@ -78,26 +78,13 @@
 				Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
 			}
 			
-			$rows = New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
-			
 			if ($raw) {
-				foreach ($row in $rows) {
-					$row
-				}
+				New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
 			}
 			else {
 				# Make it selectable, otherwise it's a weird enumeration
-				foreach ($row in $rows) {
-					[pscustomobject]@{
-						Name   = $row.Name
-						Fields = $row.Fields
-						Actions = $row.Actions
-						Timestamp = $row.Timestamp
-						UUID   = $row.UUID
-						Package = $row.Package
-						Location = $row.Location
-						Metadata = $row.Metadata
-					} | Select-DefaultView -Property Name, Timestamp, Fields, Actions
+				foreach ($row in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile))) {
+					Select-DefaultView -InputObject $row -Property Name, Timestamp, Fields, Actions
 				}
 			}
 		}
