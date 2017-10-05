@@ -17,6 +17,9 @@
 	.PARAMETER Session
 	Only return a specific session. This parameter is auto-populated.
 		
+	.PARAMETER Raw
+	Returns the Microsoft.SqlServer.XEvent.Linq.QueryableXEventData enumeration object
+	
 	.PARAMETER SessionObject
 	Internal parameter
 	
@@ -64,6 +67,7 @@
 		[string]$Session,
 		[parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
 		[Microsoft.SqlServer.Management.XEvent.Session]$SessionObject,
+		[switch]$Raw,
 		[switch]$Silent
 	)
 	process {
@@ -94,17 +98,24 @@
 					[Microsoft.SqlServer.XEvent.Linq.EventStreamCacheOptions]::DoNotCache
 				)
 				
-				foreach ($row in $xevent) {
-					[pscustomobject]@{
-						Name	 = $row.Name
-						Fields   = $row.Fields
-						Actions  = $row.Actions
-						Timestamp = $row.Timestamp
-						UUID	 = $row.UUID
-						Package  = $row.Package
-						Location = $row.Location
-						Metadata = $row.Metadata
-					} | Select-DefaultView -Property Name, Timestamp, Fields, Actions
+				if ($raw) {
+					foreach ($row in $xevent) {
+						$row
+					}
+				}
+				else {
+					foreach ($row in $xevent) {
+						[pscustomobject]@{
+							Name    = $row.Name
+							Fields  = $row.Fields
+							Actions = $row.Actions
+							Timestamp = $row.Timestamp
+							UUID    = $row.UUID
+							Package = $row.Package
+							Location = $row.Location
+							Metadata = $row.Metadata
+						} | Select-DefaultView -Property Name, Timestamp, Fields, Actions
+					}
 				}
 			}
 			catch {

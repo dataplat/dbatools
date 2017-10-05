@@ -12,6 +12,9 @@
 	.PARAMETER Exact
 	By default, this command will add a wildcard to the Path because Eventing uses the file name as a template and adds characters. Use this to skip the addition of the wildcard.
 		
+	.PARAMETER Raw
+	Returns the Microsoft.SqlServer.XEvent.Linq.PublishedEvent enumeration object
+	
 	.PARAMETER Silent
 	If this switch is enabled, the internal messaging functions will be silenced.
 
@@ -40,6 +43,7 @@
 		[parameter(Mandatory, ValueFromPipeline)]
 		[object[]]$Path,
 		[switch]$Exact,
+		[switch]$Raw,
 		[switch]$Silent
 	)
 	process {
@@ -74,18 +78,27 @@
 				Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
 			}
 			
-			# Make it selectable, otherwise it's a weird enumeration
-			foreach ($row in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile))) {
-				[pscustomobject]@{
-					Name    = $row.Name
-					Fields  = $row.Fields
-					Actions = $row.Actions
-					Timestamp = $row.Timestamp
-					UUID    = $row.UUID
-					Package = $row.Package
-					Location = $row.Location
-					Metadata = $row.Metadata
-				} | Select-DefaultView -Property Name, Timestamp, Fields, Actions
+			$rows = New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
+			
+			if ($raw) {
+				foreach ($row in $rows) {
+					$row
+				}
+			}
+			else {
+				# Make it selectable, otherwise it's a weird enumeration
+				foreach ($row in $rows) {
+					[pscustomobject]@{
+						Name   = $row.Name
+						Fields = $row.Fields
+						Actions = $row.Actions
+						Timestamp = $row.Timestamp
+						UUID   = $row.UUID
+						Package = $row.Package
+						Location = $row.Location
+						Metadata = $row.Metadata
+					} | Select-DefaultView -Property Name, Timestamp, Fields, Actions
+				}
 			}
 		}
 	}
