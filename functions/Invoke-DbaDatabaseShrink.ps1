@@ -58,7 +58,7 @@ Timeout in minutes. Defaults to infinity (shrinks can take a while.)
 Only shrink the log file, not the entire database
 
 .PARAMETER ExcludeIndexStats
-Exclude statsitics about fragmentation
+Exclude statistics about fragmentation
 	
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
