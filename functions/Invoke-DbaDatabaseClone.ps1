@@ -119,16 +119,27 @@
 			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 12
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$minimum = [version]"12.0.5000.0" # SQL 2014 SP2
+			$sql2012min = [version]"11.0.7001.0" # SQL 2012 SP4
+			$sql2014min = [version]"12.0.5000.0" # SQL 2014 SP2
+			$sql2016min = [version]"13.0.4001.0" # SQL 2016 SP1
 			
-			if ($server.Version -lt $minimum) {
+			
+			if ($server.VersionMajor -eq 11 -and $server.Version -lt $sql2012min) {
+				Stop-Function -Message "Unsupported version for $instance. SQL Server 2012 SP4 and above required." -Target $server -Continue
+			}
+			
+			if ($server.VersionMajor -eq 12 -and $server.Version -lt $sql2014min) {
 				Stop-Function -Message "Unsupported version for $instance. SQL Server 2014 SP2 and above required." -Target $server -Continue
+			}
+			
+			if ($server.VersionMajor -eq 13 -and $server.Version -lt $sql2016min) {
+				Stop-Function -Message "Unsupported version for $instance. SQL Server 2016 SP1 and above required." -Target $server -Continue
 			}
 			
 			if (-not $Database.Name) {
