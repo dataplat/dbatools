@@ -7,8 +7,6 @@ function Start-DbaMigration {
 
 			For more granular control, please use one of the -No parameters and use the other functions available within the dbatools module.
 
-			Automatically outputs a transcript to disk.
-
 		.DESCRIPTION 
 			Start-DbaMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you're looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:
 
@@ -272,16 +270,6 @@ function Start-DbaMigration {
 	)
 	
 	begin {
-		$docs = [Environment]::GetFolderPath("mydocuments")
-		$transcript = "$docs\dbatools-startmigration-transcript.txt"
-		
-		if (Test-Path $transcript) {
-			Start-Transcript -Path $transcript -Append
-		}
-		else {
-			Start-Transcript -Path $transcript
-		}
-		
 		$elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 		$started = Get-Date
 		
@@ -595,7 +583,6 @@ function Start-DbaMigration {
 			Write-Output "Migration started: $started"
 			Write-Output "Migration completed: $(Get-Date)"
 			Write-Output "Total Elapsed time: $totaltime"
-			Stop-Transcript
 		}
 	}
 }
