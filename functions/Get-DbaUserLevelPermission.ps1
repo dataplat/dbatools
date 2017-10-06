@@ -77,9 +77,98 @@
 		[switch]$Silent
 	)
 	
-	BEGIN {
+	begin {
 		
-		$sql = [System.IO.File]::ReadAllText("$script:PSModuleRoot\bin\stig.sql") 
+		function Read-QueryFile {
+			param ($filename)
+			
+			$badvalues = @($null, '')
+			if ($filename -in $badvalues) {
+				throw "Filename is null or blank, please provide a valid file."
+			}
+			
+			function Parse-SqlQueryComments {
+				param (
+					$SqlStatement,
+					$preservePositions,
+					$removeLiterals = $false
+				)
+				$everythingExceptNewLines = [Regex]"[^\r\n]";
+				# Based on http://drizin.io/Removing-comments-from-SQL-scripts/ and converted by CK
+				# Which was based on http://stackoverflow.com/questions/3524317/regex-to-strip-line-comments-from-c-sharp/3524689#3524689
+				$lineComments = "--(.*?)\r?\n";
+				$lineCommentsOnLastLine = "--(.*?)$" # because it's possible that there's no \r\n after the last line comment
+				# literals ('literals'), bracketedIdentifiers ([object]) and quotedIdentifiers ("object"), they follow the same structure:
+				# there's the start character, any consecutive pairs of closing characters are considered part of the literal/identifier, and then comes the closing character
+				$literals = "('(('')|[^'])*')" # 'John', 'O''malley''s', etc
+				$bracketedIdentifiers = "\[((\]\])|[^\]])* \]" # [object], [ % object]] ], etc
+				$quotedIdentifiers = "(\""((\""\"")|[^""])*\"")" # "object", "object[]", etc - when QUOTED_IDENTIFIER is set to ON, they are identifiers, else they are literals
+				# var blockComments = @"/\*(.*?)\*/";  //the original code was for C#, but Microsoft SQL allows a nested block comments // //https://msdn.microsoft.com/en-us/library/ms178623.aspx
+				# so we should use balancing groups // http://weblogs.asp.net/whaggard/377025
+				$nestedBlockComments = "/\*
+                                    (?>
+                                    /\*  (?<LEVEL>)      # On opening push level
+                                    |
+                                    \*/ (?<-LEVEL>)     # On closing pop level
+                                    |
+                                    (?! /\* | \*/ ) . # Match any char unless the opening and closing strings
+                                    )+                         # /* or */ in the lookahead string
+                                    (?(LEVEL)(?!))             # If level exists then fail
+                                    \*/";
+				$noComments = [Regex]::Replace(
+					$SqlStatement,
+					$nestedBlockComments + "|" + $lineComments + "|" + $lineCommentsOnLastLine + "|" + $literals + "|" + $bracketedIdentifiers + "|" + $quotedIdentifiers,
+					{
+						if ($args[0].Value.StartsWith("/*") -and $preservePositions) {
+							return $everythingExceptNewLines.Replace($args[0].Value, " ")
+						} # preserve positions and keep line-breaks // return new string(' ', me.Value.Length);
+						elseif ($args[0].Value.StartsWith("/*") -and !$preservePositions) {
+							return "";
+						}
+						elseif ($args[0].Value.StartsWith("--") -and $preservePositions) {
+							return $everythingExceptNewLines.Replace($args[0].Value, " ")
+						} # preserve positions and keep line-breaks
+						elseif ($args[0].Value.StartsWith("--") -and !$preservePositions) {
+							return $everythingExceptNewLines.Replace($args[0].Value, "")
+						} # preserve only line-breaks // Environment.NewLine;
+						elseif ($args[0].Value.StartsWith("[") -or $args[0].Value.StartsWith("\`"")) {
+							return $args[0].Value # do not remove object identifiers ever
+						}
+						elseif (!$removeLiterals) {
+							# Keep the literal strings
+							return $args[0].Value;
+						}
+						elseif ($removeLiterals -and $preservePositions) {
+							# remove literals, but preserving positions and line-breaks
+							$literalWithLineBreaks = $everythingExceptNewLines.Replace($args[0].Value, " ");
+							return "'" + $literalWithLineBreaks.Substring(1, $literalWithLineBreaks.Length - 2) + "'";
+						}
+						elseif ($removeLiterals -and !$preservePositions) {
+							# wrap completely all literals
+							return "''";
+						}
+						else {
+							throw NotImplementedException;
+						}
+					},
+					[System.Text.RegularExpressions.RegexOptions]::Singleline -bor [System.Text.RegularExpressions.RegexOptions]::IgnorePatternWhitespace);
+				return $noComments;
+			}
+			
+			$CommentDataRemoved = Parse-SqlQueryComments -SqlStatement (Get-Content $filename -Raw)
+			
+			$GoStatements = "(?m)^GO$"
+			$querylist = $CommentDataRemoved -Split $GoStatements
+			$querylist = $querylist | Where-Object { $_ }
+			
+			#$querylist | % { if $_ -eq 'go'}
+			Write-Verbose "Returning $($querylist.count) queries"
+			return, $querylist
+		}
+		
+		$sql = Read-QueryFile "$script:PSModuleRoot\bin\stig.sql"
+		$sql
+		return 
 		
 		$endSQL = "	   BEGIN TRY DROP FUNCTION STIG.server_effective_permissions END TRY BEGIN CATCH END CATCH;
                        GO
@@ -175,10 +264,10 @@
 		
 		if ($IncludePublicGuest) { $dbSQL = $dbSQL.Replace("LEFT JOIN", "FULL JOIN") }
 		if ($IncludeSystemObjects) { $dbSQL = $dbSQL.Replace("AND [Schema/Owner] <> 'sys'", "") }
-		
 	}
 	
 	process {
+		return 
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			
@@ -214,63 +303,66 @@
 				
 				#Create objects in active database
 				Write-Message -Level Verbose -Message "Creating objects"
-				try { $db.ExecuteNonQuery($sql) } catch {} # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
+				Invoke-Sqlcmd2 -ServerInstance $SqlInstance -Credential $SqlCredential -Query $sql
 				
 				#Grab permissions data
 				if (-not $serverDT) {
 					Write-Message -Level Verbose -Message "Building data table for server objects"
 					
-					try { $serverDT = $db.Query($serverSQL) } catch { } 
+					try { $serverDT = $db.Query($serverSQL) }
+					catch { }
 					
 					foreach ($row in $serverDT) {
 						[PSCustomObject]@{
-							ComputerName    = $server.NetName
-							InstanceName    = $server.ServiceName
-							SqlInstance	    = $server.DomainInstanceName
-							Object		    = 'SERVER'
-							Type		    = $row.Type
-							Member		    = $row.Member
+							ComputerName	 = $server.NetName
+							InstanceName	 = $server.ServiceName
+							SqlInstance	     = $server.DomainInstanceName
+							Object		     = 'SERVER'
+							Type			 = $row.Type
+							Member		     = $row.Member
 							RoleSecurableClass = $row.'Role/Securable/Class'
-							SchemaOwner     = $row.'Schema/Owner'
-							Securable	    = $row.Securable
-							GranteeType	    = $row.'Grantee Type'
-							Grantee		    = $row.Grantee
-							Permission	    = $row.Permission
-							State		    = $row.State
-							Grantor		    = $row.Grantor
-							GrantorType	    = $row.'Grantor Type'
-							SourceView	    = $row.'Source View'
+							SchemaOwner	     = $row.'Schema/Owner'
+							Securable	     = $row.Securable
+							GranteeType	     = $row.'Grantee Type'
+							Grantee		     = $row.Grantee
+							Permission	     = $row.Permission
+							State		     = $row.State
+							Grantor		     = $row.Grantor
+							GrantorType	     = $row.'Grantor Type'
+							SourceView	     = $row.'Source View'
 						}
 					}
 				}
 				
 				Write-Message -Level Verbose -Message "Building data table for $db objects"
-				try { $dbDT = $db.Query($dbSQL) } catch { } 
+				try { $dbDT = $db.Query($dbSQL) }
+				catch { }
 				
 				foreach ($row in $dbDT) {
 					[PSCustomObject]@{
-						ComputerName    = $server.NetName
-						InstanceName    = $server.ServiceName
-						SqlInstance	    = $server.DomainInstanceName
-						Object		    = $db.Name
-						Type		    = $row.Type
-						Member		    = $row.Member
+						ComputerName	 = $server.NetName
+						InstanceName	 = $server.ServiceName
+						SqlInstance	     = $server.DomainInstanceName
+						Object		     = $db.Name
+						Type			 = $row.Type
+						Member		     = $row.Member
 						RoleSecurableClass = $row.'Role/Securable/Class'
-						SchemaOwner     = $row.'Schema/Owner'
-						Securable	    = $row.Securable
-						GranteeType	    = $row.'Grantee Type'
-						Grantee		    = $row.Grantee
-						Permission	    = $row.Permission
-						State		    = $row.State
-						Grantor		    = $row.Grantor
-						GrantorType	    = $row.'Grantor Type'
-						SourceView	    = $row.'Source View'
+						SchemaOwner	     = $row.'Schema/Owner'
+						Securable	     = $row.Securable
+						GranteeType	     = $row.'Grantee Type'
+						Grantee		     = $row.Grantee
+						Permission	     = $row.Permission
+						State		     = $row.State
+						Grantor		     = $row.Grantor
+						GrantorType	     = $row.'Grantor Type'
+						SourceView	     = $row.'Source View'
 					}
 				}
 				
 				#Delete objects
 				Write-Message -Level Verbose -Message "Deleting objects"
-				try { $db.ExecuteNonQuery($endSQL) }catch { }
+				try { $db.ExecuteNonQuery($endSQL) }
+				catch { }
 				$sql = $sql.Replace($db.Name, "<TARGETDB>")
 				
 				#Sashay Away

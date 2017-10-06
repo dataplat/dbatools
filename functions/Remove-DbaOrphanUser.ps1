@@ -301,7 +301,7 @@ function Remove-DbaOrphanUser {
 									if (-not $SkipUser) {
 										if ($Force) {
 											if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user $dbuser using -Force")) {
-												$server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+												$server.Databases[$db.Name].Query($query) | Out-Null
 												Write-Message -Level Verbose -Message "User $dbuser was dropped from $($db.Name). -Force parameter was used!"
 											}
 										}
@@ -314,7 +314,7 @@ function Remove-DbaOrphanUser {
 								else {
 									if (-not $SkipUser) {
 										if ($Pscmdlet.ShouldProcess($db.Name, "Dropping user $dbuser")) {
-											$server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+											$server.Databases[$db.Name].Query($query) | Out-Null
 											Write-Message -Level Verbose -Message "User $dbuser was dropped from $($db.Name)."
 										}
 									}

@@ -169,7 +169,7 @@
 					$Comp = $ServerVersion * 10
 					$tsqlComp = "ALTER DATABASE $db SET COMPATIBILITY_LEVEL = $Comp"
 					try {
-						$db.ExecuteNonQuery($tsqlComp)
+						$null = $db.Query($tsqlComp)
 						$comResult = $Comp
 					}
 					catch {
@@ -187,7 +187,7 @@
 				If ($Pscmdlet.ShouldProcess($server, "Updating $db with DBCC CHECKDB DATA_PURITY")) {
 					$tsqlCheckDB = "DBCC CHECKDB ('$dbname') WITH DATA_PURITY, NO_INFOMSGS"
 					try {
-						$db.ExecuteNonQuery($tsqlCheckDB)
+						$null = $db.Query($tsqlCheckDB)
 						$DataPurityResult = "Success"
 					}
 					catch {
@@ -205,7 +205,7 @@
 				If ($Pscmdlet.ShouldProcess($server, "Updating $db with DBCC UPDATEUSAGE")) {
 					$tsqlUpdateUsage = "DBCC UPDATEUSAGE ($db) WITH NO_INFOMSGS;"
 					try {
-						$db.ExecuteNonQuery($tsqlUpdateUsage)
+						$db.Query($tsqlUpdateUsage)
 						$UpdateUsageResult = "Success"
 					}
 					catch {
@@ -224,7 +224,7 @@
 				If ($Pscmdlet.ShouldProcess($server, "Updating $db statistics")) {
 					$tsqlStats = "EXEC sp_updatestats;"
 					try {
-						$db.ExecuteNonQuery($tsqlStats)
+						$null = $db.Query($tsqlStats)
 						$UpdateStatsResult = "Success"
 					}
 					catch {
@@ -251,7 +251,7 @@
 					
 					If ($Pscmdlet.ShouldProcess($server, "Refreshing view $fullName on $db")) {
 						try {
-							$db.ExecuteNonQuery($tsqlupdateView)
+							$null = $db.Query($tsqlupdateView)
 						}
 						catch {
 							Write-Message -Level Warning -Message "Failed update view $fullName on $db" -ErrorRecord $_ -Target $instance
