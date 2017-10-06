@@ -1,0 +1,19 @@
+$phase1 = @()
+$leftover = @()
+dir | %{
+
+ $file = $_
+ try
+ {
+ Add-Type -Path $_.FullName -ErrorAction Stop
+ $phase1 += $_.FullName
+ }
+ catch { $leftover += $file.FullName }
+}
+
+$dep = @()
+dir | %{
+    try { Add-Type -Path $_.FullName -ErrorAction Stop }
+    catch { $_.Exception.LoaderExceptions.FileName | %{ $dep += $_ }}
+}
+$dep | select -unique

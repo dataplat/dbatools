@@ -22,13 +22,13 @@ Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.AnalysisServices.AppLocal
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Azure.KeyVault.Core.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Data.Edm.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Data.OData.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Practices.TransientFaultHandling.Core.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.DataTransfer.Common.Utils.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ASTasks.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.BatchParser.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.BulkInsertTaskConnections.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ConnectionInfo.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ConnectionInfoExtended.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.CustomControls.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DataProfiler.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DataProfilingTask.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Diagnostics.STrace.dll"
@@ -57,17 +57,13 @@ Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Instapi.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.ClusterManagement.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.Common.ObjectModel.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.ISServerDBUpgrade.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.MasterService.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.MasterServiceClient.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.ODataConnectionManager.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.ODataSrc.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.Server.Common.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.Server.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.Server.IPC.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.server.shared.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.SqlTaskScheduler.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.TaskScheduler.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.WorkerAgent.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ManagedConnections.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ManagedDTS.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Collector.dll"
@@ -121,8 +117,6 @@ Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Types.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Types.resources.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.VSTAScriptingLib.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WebServiceTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WizardFramework.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WizardFrameworkLite.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WMIDRTask.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WmiEnum.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WMIEWTask.dll"
@@ -139,18 +133,14 @@ Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll"
 
 <#
 Likely don't need yet
-
-try {
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Data.Services.Client.dll" -ErrorAction Stop
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.DataTransfer.Common.dll" -ErrorAction Stop
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.DataTransfer.DataContracts.dll" -ErrorAction Stop
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.AnalysisServices.AppLocal.Tabular.dll" -ErrorAction Stop
-} catch { }
-
-
-try { Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.SmoMetadataProvider.dll" -ErrorAction Stop } catch { }
-try { Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Hadoop.Avro.dll" -ErrorAction Stop } catch { }
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WizardFramework.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WizardFrameworkLite.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.WorkerAgent.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.SqlTaskScheduler.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.CustomControls.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.NetEnterpriseServers.ExceptionMessageBox.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.MasterService.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.MasterServiceClient.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Practices.TransientFaultHandling.Core.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.Scale.ResourceProvider.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.Scale.ScaleoutContract.dll"
@@ -168,6 +158,14 @@ Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Ssdqs.Component.DataQuali
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.WindowsAzure.Configuration.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.WindowsAzure.Storage.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.WindowsAzure.StorageClient.dll"
+
+# Throws exceptions but likes to be added
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Data.Services.Client.dll" -ErrorAction Stop
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.DataTransfer.Common.dll" -ErrorAction Stop
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.DataTransfer.DataContracts.dll" -ErrorAction Stop
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.AnalysisServices.AppLocal.Tabular.dll" -ErrorAction Stop
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.SmoMetadataProvider.dll"
+Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Hadoop.Avro.dll"
 
 # Can't load, won't load
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Data.DataFeedClient.dll"
