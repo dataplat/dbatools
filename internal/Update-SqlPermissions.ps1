@@ -280,7 +280,7 @@ function Update-SqlPermissions {
 				if ($Pscmdlet.ShouldProcess($destination, "Adding $dbUsername to $dbName.")) {
 					$sql = $SourceServer.Databases[$dbName].Users[$dbUsername].Script() | Out-String
 					try {
-						$destDb.ExecuteNonQuery($sql)
+						$null = $destDb.Query($sql)
 						Write-Message -Level Verbose -Message "Adding user $dbUsername (login: $dbLogin) to $dbName successfully performed."
 					}
 					catch {

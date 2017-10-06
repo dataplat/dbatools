@@ -202,7 +202,7 @@ function Install-DbaWhoIsActive {
 				$allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 				foreach ($batch in $batches) {
 					try {
-						$null = $server.databases[$Database].ExecuteNonQuery($batch)
+						$null = $server.databases[$Database].Query($batch)
 					}
 					catch {
 						Stop-Function -Message "Failed to install stored procedure." -ErrorRecord $_ -Continue -Target $instance

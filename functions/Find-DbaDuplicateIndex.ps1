@@ -570,7 +570,7 @@ function Find-DbaDuplicateIndex {
 										$sqlDropScript += "    DROP INDEX $($index.TableName).$($index.IndexName)`r`n`r`n"
 
 										if ($Pscmdlet.ShouldProcess($db, "Dropping index '$($index.IndexName)' on table '$($index.TableName)' using -Force")) {
-											$server.Databases[$db].ExecuteNonQuery($sqlDropScript) | Out-Null
+											$server.Databases[$db].Query($sqlDropScript) | Out-Null
 											Write-Output "Index '$($index.IndexName)' on table '$($index.TableName)' dropped"
 										}
 									}

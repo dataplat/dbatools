@@ -173,7 +173,7 @@ function Repair-DbaOrphanUser {
 									}
 
 									if ($Pscmdlet.ShouldProcess($db.Name, "Mapping user '$($User.Name)'")) {
-										$server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
+										$server.Databases[$db.Name].Query($query) | Out-Null
 										Write-Message -Level Verbose -Message "`r`nUser '$($User.Name)' mapped with their login."
 
 										[PSCustomObject]@{

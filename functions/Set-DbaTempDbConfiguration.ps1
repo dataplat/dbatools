@@ -246,7 +246,7 @@ function Set-DbaTempDbConfiguration {
 		else {
 			if ($Pscmdlet.ShouldProcess($SqlInstance, "Executing query and informing that a restart is required.")) {
 				try {
-					$server.Databases['master'].ExecuteNonQuery($sql)
+					$null = $server.Databases['master'].Query($sql)
 					Write-Message -Level Verbose -Message "tempdb successfully reconfigured."
 					
 					[PSCustomObject]@{

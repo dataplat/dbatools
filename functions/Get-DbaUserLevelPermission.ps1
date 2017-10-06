@@ -270,7 +270,7 @@
 				
 				#Delete objects
 				Write-Message -Level Verbose -Message "Deleting objects"
-				try { $db.ExecuteNonQuery($endSQL) }catch { }
+				try { $null = $db.Query($endSQL) }catch { }
 				$sql = $sql.Replace($db.Name, "<TARGETDB>")
 				
 				#Sashay Away
