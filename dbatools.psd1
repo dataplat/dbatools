@@ -11,7 +11,7 @@
 	RootModule			    = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion		    = '0.9.64'
+	ModuleVersion		    = '0.9.65'
 	
 	# ID used to uniquely identify this module
 	GUID				    = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -184,7 +184,7 @@
 		'Find-DbaDatabase',
 		'Get-DbaMsdtc',
 		'Get-DbaUptime',
-		'Get-DbaXEventSession',
+		'Get-DbaXESession',
 		'Test-DbaOptimizeForAdHoc',
 		'Find-DbaStoredProcedure',
 		'Measure-DbaBackupThroughput',
@@ -364,10 +364,10 @@
 		'New-DbaLogin',
 		'Get-DbaAgListener',
 		'Invoke-DbaDatabaseClone',
-		'Read-DbaXEventFile',
+		'Read-DbaXEFile',
 		'Get-DbaDistributor',
 		'Update-DbaSqlServiceAccount',
-		'Watch-DbaXEventSession',
+		'Watch-DbaXESession',
 		'Disable-DbaTraceFlag',
 		'Enable-DbaTraceFlag',
 		'Start-DbaAgentJob',
@@ -375,7 +375,7 @@
 		'Remove-DbaClientAlias',
 		'New-DbaAgentProxy',
 		'Test-DbaLogShippingStatus',
-		'Get-DbaXEventSessionTarget',
+		'Get-DbaXESessionTarget',
 		'New-DbaXESmartTargetResponse',
 		'New-DbaXESmartTarget'
 	)
@@ -460,10 +460,13 @@
 	'Get-DbaQueryStoreConfig',
 	'Set-DbaQueryStoreConfig',
 	'Get-DbaRegisteredServerName',
-	'Get-DbaXEventsSession',
 	'Connect-DbaSqlServer',
-	'Get-DbaInstance'
-	
+	'Get-DbaInstance',
+	'Get-DbaXEventsSession',
+	'Get-DbaXEventSession',
+	'Get-DbaXEventSessionTarget',
+	'Read-DbaXEventFile',
+	'Watch-DbaXEventSession'
 	
 	# List of all modules packaged with this module
 	ModuleList			    = @()
@@ -507,8 +510,8 @@
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU+UVey9s118GriUmrf1nOLUT3
-# zyaggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU6TiVpjg6r7xqH27tWJ9Mhk6k
+# hEyggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -639,22 +642,22 @@
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUId2pXpHpGsjTJijqMaaloou18jMwDQYJKoZIhvcNAQEBBQAE
-# ggEAJy8HrhffekN8WuV1dfLd1punpE6msbqEbqVtWAvMBU3XQrDt8LxgzFiYLqeU
-# nxO0slMcwDRm/fbY32n7l5N9Yw5ZDw1l93/zNZcsVlg7VdDu33+9uj2pfKia2U5W
-# BJXv38MFPfFfPepTorbi+JzbiaoND7F/FhDfBMW1leUHvfvzSwQKQyw4zNusFRsA
-# ur/4q9TYVqUzXB/5SFZPbA4FdUf1PnXo87/N3fviHsv1SBdZTjE4Sh1WuTf8qsm8
-# FS0bz6cNl+kNx5YrzyaTt1KqyGSdEBPBloZhk7fGgnAyTbnoeTiapmx2nlFXAzVT
-# IEkZcuM4bQ4r88/dTO1E5lBLrqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUnfAm3SFirV6ctrYU0KmN/w/PkcUwDQYJKoZIhvcNAQEBBQAE
+# ggEAcrVfStSidIrKLD7dWiK7e6T8E6t6i8qgfnXnFE2sX7afUtprkOXdox+egQTQ
+# J8NGkL1Kx5LHQSMdlvI/J08CDtlySGnz8dRJaDgLt4YgTSjzhS0nkVv39nmbwkOH
+# eAxyGIfBG6MDUgnnavWumUgrwrSPOycxw6jtkluzYpndAwk6wSEET+r1m3ZisIb6
+# jBkRWBwWr/vVw9YuqV2gDedwUTm8cbrqRp8AxQLj2Ju4mFucnxSHh/27TlGgF3Ul
+# P3nYxl2p6vCcUTMfTgQGbajRsfIusqFrsVyCBRik7jSDoWtk72kBO1hk3PKCcWlo
+# AikBHe1Bd2kPu1hTXivBbxRGcKGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMDA1MTUwMDI2WjAj
-# BgkqhkiG9w0BCQQxFgQUQ5AFJElB7LPjOLl4BPLdWelPY04wDQYJKoZIhvcNAQEB
-# BQAEggEAWjqkjNW1+MPD9+k/AwEuiLqA5tKcME0RcKLeagObu9o+khfg/Qlu8ozZ
-# y+HTG2U2I4SSrKOmRHOa8zGqMlEgSKMacMH3zH+x2LkvDyvrzcMCtNvMYid+XqnR
-# Dh/hYyFmN8WL1Q8vlFeBCNfa650SD433rG06OOFoC48grfWxmKrenJnivNU9f+gz
-# RcTR+Sk1PAkbeqde2s0MI5akMymh3HksgJKd/T21Fu8IzEjHTM1Uvpj/NRoYrXpA
-# XmA+UKujLKgztrGhdkEmNGCYzNenD8D2W3NJ+NY22p0z0l7CC9H4wMyBymeBE3S0
-# JkdqP7XUgasGk55xCHnLX+sy46yCdA==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMDA2MTk1ODA2WjAj
+# BgkqhkiG9w0BCQQxFgQUDgbgbpcZ6qjAPI0Nsb3WAZaovykwDQYJKoZIhvcNAQEB
+# BQAEggEAHuQeAHsQcT5vvtlN/idvZD1HHaRFMOPmWVHpMQdep++cvogVKYsc5Rln
+# vUEIyr9OfDswQ7nUInir0F+Df9Jk1WxpukKIC4vwYlwYqoHbMQMT4PNBQChNkH8Z
+# 0LMEZ6wUyunBXXCNOYVbcdN9YnfzCKbwaM15LRUjhpH55IWy0wjqg/6NRuBNh2HJ
+# syp2zJHGrE+2kZDQKGstStn1F1mxuvICPNF6nxBx/lASfeu3V+YWHMgNamO0J/Rf
+# wFgMzcsz2mU8MrdMwFsQORCzzaz6lviCeijHPxPXAP7aHVuxa+rT/6cboVn2Cybv
+# 4JbB9c4fj48O9kAuGHBkLMSsk0Kv8g==
 # SIG # End signature block
