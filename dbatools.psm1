@@ -17,6 +17,7 @@ Get-ChildItem -Path "$script:PSModuleRoot\*.dll" -Recurse | Unblock-File -ErrorA
 
 try {
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.BatchParser.dll" -ErrorAction Stop
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.BatchParserClient.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.BulkInsertTaskConnections.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DTSRuntimeWrap.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DtsServer.Interop.dll"
