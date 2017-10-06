@@ -34,9 +34,11 @@ try {
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XE.Core.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XEvent.Configuration.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XEvent.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XEvent.Linq.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XmlSrc.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll"
 	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DTSPipelineWrap.dll"
+	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ScriptTask.dll" -ErrorAction Stop
 }
 catch {
 	# don't care ;)
@@ -107,7 +109,6 @@ Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.PipelineXML.dll
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.PolicyEnum.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.RegSvrEnum.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.BusinessLogicSupport.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ScriptTask.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SendMailTask.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ServiceBrokerEnum.dll"
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll"
