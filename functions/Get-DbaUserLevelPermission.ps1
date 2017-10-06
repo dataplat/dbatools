@@ -62,7 +62,7 @@
         including public and guest grants, and sys schema objects.
 	#>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
@@ -77,34 +77,9 @@
 		[switch]$Silent
 	)
 	
-	BEGIN {
+	begin {
 		
-		$sql = [System.IO.File]::ReadAllText("$script:PSModuleRoot\bin\stig.sql") 
-		
-		$endSQL = "	   BEGIN TRY DROP FUNCTION STIG.server_effective_permissions END TRY BEGIN CATCH END CATCH;
-                       GO
-                       BEGIN TRY DROP VIEW STIG.server_permissions END TRY BEGIN CATCH END CATCH;
-                       GO
-                       BEGIN TRY DROP FUNCTION STIG.members_of_server_role END TRY BEGIN CATCH END CATCH;
-                       GO
-                       BEGIN TRY DROP FUNCTION STIG.server_roles_of END TRY BEGIN CATCH END CATCH;
-                       GO
-                       BEGIN TRY DROP VIEW STIG.server_role_members END TRY BEGIN CATCH END CATCH;
-                       GO
-                       BEGIN TRY DROP FUNCTION STIG.database_effective_permissions END TRY BEGIN CATCH END CATCH;
-                       GO
-                       BEGIN TRY DROP VIEW STIG.database_permissions END TRY BEGIN CATCH END CATCH;
-                       GO
-                       BEGIN TRY DROP FUNCTION STIG.members_of_db_role END TRY BEGIN CATCH END CATCH;
-                       GO
-                       BEGIN TRY DROP FUNCTION STIG.database_roles_of END TRY BEGIN CATCH END CATCH;
-                       GO
-                       BEGIN TRY DROP VIEW STIG.database_role_members END TRY BEGIN CATCH END CATCH;
-                       GO
-                       BEGIN TRY DROP SCHEMA STIG END TRY BEGIN CATCH END CATCH;
-                       GO"
-		
-		
+		$sql = [System.IO.File]::ReadAllText("$script:PSModuleRoot\bin\stig.sql") 		
 		$serverSQL = "SELECT  'SERVER LOGINS' AS Type ,
                                     sl.name AS Member ,
                                     ISNULL(srm.role, 'None') AS [Role/Securable/Class] ,
@@ -180,6 +155,7 @@
 	
 	process {
 		foreach ($instance in $SqlInstance) {
+			$serverdt = $null
 			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			
 			try {
@@ -212,65 +188,95 @@
 				
 				$sql = $sql.Replace("<TARGETDB>", $db.Name)
 				
+				## Load assembly
+				$parseoptions = New-Object Microsoft.SqlServer.Management.SqlParser.Parser.ParseOptions
+				$parseoptions.BatchSeparator = 'GO'
+				$batch = [Microsoft.SqlServer.Management.SqlParser.Parser.Parser]::Parse($sql, $parseoptions)
+				
 				#Create objects in active database
 				Write-Message -Level Verbose -Message "Creating objects"
-				try { $null = $db.Query($sql) } catch {} # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
+				
+				foreach ($query in $batch) {
+					try { $db.Query($query) } catch {} # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
+				}
 				
 				#Grab permissions data
-				if (-not $serverDT) {
+				if (-not $serverdt) {
 					Write-Message -Level Verbose -Message "Building data table for server objects"
 					
-					try { $serverDT = $db.Query($serverSQL) } catch { } 
-					
-					foreach ($row in $serverDT) {
-						[PSCustomObject]@{
-							ComputerName    = $server.NetName
-							InstanceName    = $server.ServiceName
-							SqlInstance	    = $server.DomainInstanceName
-							Object		    = 'SERVER'
-							Type		    = $row.Type
-							Member		    = $row.Member
-							RoleSecurableClass = $row.'Role/Securable/Class'
-							SchemaOwner     = $row.'Schema/Owner'
-							Securable	    = $row.Securable
-							GranteeType	    = $row.'Grantee Type'
-							Grantee		    = $row.Grantee
-							Permission	    = $row.Permission
-							State		    = $row.State
-							Grantor		    = $row.Grantor
-							GrantorType	    = $row.'Grantor Type'
-							SourceView	    = $row.'Source View'
+					$batch = [Microsoft.SqlServer.Management.SqlParser.Parser.Parser]::Parse($serverSQL, $parseoptions)
+					foreach ($query in $batch) {
+						
+						$serverdt = $db.Query($query)
+						foreach ($row in $serverdt) {
+							[PSCustomObject]@{
+								ComputerName	 = $server.NetName
+								InstanceName	 = $server.ServiceName
+								SqlInstance	     = $server.DomainInstanceName
+								Object		     = 'SERVER'
+								Type			 = $row.Type
+								Member		     = $row.Member
+								RoleSecurableClass = $row.'Role/Securable/Class'
+								SchemaOwner	     = $row.'Schema/Owner'
+								Securable	     = $row.Securable
+								GranteeType	     = $row.'Grantee Type'
+								Grantee		     = $row.Grantee
+								Permission	     = $row.Permission
+								State		     = $row.State
+								Grantor		     = $row.Grantor
+								GrantorType	     = $row.'Grantor Type'
+								SourceView	     = $row.'Source View'
+							}
 						}
 					}
 				}
 				
 				Write-Message -Level Verbose -Message "Building data table for $db objects"
-				try { $dbDT = $db.Query($dbSQL) } catch { } 
 				
-				foreach ($row in $dbDT) {
-					[PSCustomObject]@{
-						ComputerName    = $server.NetName
-						InstanceName    = $server.ServiceName
-						SqlInstance	    = $server.DomainInstanceName
-						Object		    = $db.Name
-						Type		    = $row.Type
-						Member		    = $row.Member
-						RoleSecurableClass = $row.'Role/Securable/Class'
-						SchemaOwner     = $row.'Schema/Owner'
-						Securable	    = $row.Securable
-						GranteeType	    = $row.'Grantee Type'
-						Grantee		    = $row.Grantee
-						Permission	    = $row.Permission
-						State		    = $row.State
-						Grantor		    = $row.Grantor
-						GrantorType	    = $row.'Grantor Type'
-						SourceView	    = $row.'Source View'
+				$batch = [Microsoft.SqlServer.Management.SqlParser.Parser.Parser]::Parse($dbSQL, $parseoptions)
+				foreach ($query in $batch) {
+					
+					$serverdt = $db.Query($query)
+					try { $dbDT = $db.Query($dbSQL) }
+					catch { }
+					
+					foreach ($row in $dbDT) {
+						[PSCustomObject]@{
+							ComputerName	 = $server.NetName
+							InstanceName	 = $server.ServiceName
+							SqlInstance	     = $server.DomainInstanceName
+							Object		     = $db.Name
+							Type			 = $row.Type
+							Member		     = $row.Member
+							RoleSecurableClass = $row.'Role/Securable/Class'
+							SchemaOwner	     = $row.'Schema/Owner'
+							Securable	     = $row.Securable
+							GranteeType	     = $row.'Grantee Type'
+							Grantee		     = $row.Grantee
+							Permission	     = $row.Permission
+							State		     = $row.State
+							Grantor		     = $row.Grantor
+							GrantorType	     = $row.'Grantor Type'
+							SourceView	     = $row.'Source View'
+						}
 					}
 				}
 				
 				#Delete objects
 				Write-Message -Level Verbose -Message "Deleting objects"
-				try { $null = $db.Query($endSQL) }catch { }
+				
+				$db.Query("BEGIN TRY DROP FUNCTION STIG.server_effective_permissions END TRY BEGIN CATCH END CATCH")
+             	$db.Query("BEGIN TRY DROP VIEW STIG.server_permissions END TRY BEGIN CATCH END CATCH")
+				$db.Query("BEGIN TRY DROP FUNCTION STIG.members_of_server_role END TRY BEGIN CATCH END CATCH")
+				$db.Query("BEGIN TRY DROP FUNCTION STIG.server_roles_of END TRY BEGIN CATCH END CATCH")
+				$db.Query("BEGIN TRY DROP VIEW STIG.server_role_members END TRY BEGIN CATCH END CATCH")
+				$db.Query("BEGIN TRY DROP FUNCTION STIG.database_effective_permissions END TRY BEGIN CATCH END CATCH")
+				$db.Query("BEGIN TRY DROP VIEW STIG.database_permissions END TRY BEGIN CATCH END CATCH")
+				$db.Query("BEGIN TRY DROP FUNCTION STIG.members_of_db_role END TRY BEGIN CATCH END CATCH")
+				$db.Query("BEGIN TRY DROP FUNCTION STIG.database_roles_of END TRY BEGIN CATCH END CATCH")
+				$db.Query("BEGIN TRY DROP VIEW STIG.database_role_members END TRY BEGIN CATCH END CATCH")
+				$db.Query("BEGIN TRY DROP SCHEMA STIG END TRY BEGIN CATCH END CATCH")
+                
 				$sql = $sql.Replace($db.Name, "<TARGETDB>")
 				
 				#Sashay Away
