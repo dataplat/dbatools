@@ -214,7 +214,7 @@
 				
 				#Create objects in active database
 				Write-Message -Level Verbose -Message "Creating objects"
-				try { $db.ExecuteNonQuery($sql) } catch {} # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
+				try { $null = $db.Query($sql) } catch {} # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
 				
 				#Grab permissions data
 				if (-not $serverDT) {
