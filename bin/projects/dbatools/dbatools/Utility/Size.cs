@@ -102,7 +102,7 @@ namespace Sqlcollaborative.Dbatools.Utility
             }
             if (Byte == -1)
                 return "Unlimited";
-            throw new ArgumentOutOfRangeException("Byte", string.Format("Invalid value of {0} for Byte", Byte));
+            return "";
         }
 
         /// <summary>
