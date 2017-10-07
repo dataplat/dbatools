@@ -1,7 +1,7 @@
 function Test-DbaVirtualLogFile {
 	<#
 		.SYNOPSIS
-			Returns database virtual log file information for database files on a SQL instance.
+			Returns calculations on the database virtual log files for database on a SQL instance.
 
 		.DESCRIPTION
 			Having a transaction log file with too many virtual log files (VLFs) can hurt database performance.
@@ -35,11 +35,8 @@ function Test-DbaVirtualLogFile {
 		.PARAMETER IncludeSystemDBs
 			If this switch is enabled, system database information will be displayed.
 
-		.PARAMETER Silent
-			If this switch is enabled, the internal messaging functions will be silenced.
-
 		.NOTES
-			Tags: VLF, Database, LogFile
+			Tags: VLF, Database
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -66,7 +63,7 @@ function Test-DbaVirtualLogFile {
 		.EXAMPLE
 			Test-DbaVirtualLogFile -SqlInstance sqlcluster -Database db1, db2
 
-			Returns the VLF counts for the db1 and db2 databases on sqlcluster.
+			Returns VLF counts for the db1 and db2 databases on sqlcluster.
 	#>
 	[CmdletBinding()]
 	[OutputType([System.Collections.ArrayList])]
@@ -105,31 +102,24 @@ function Test-DbaVirtualLogFile {
 
 			foreach ($db in $dbs) {
 				try {
-					$data = $db.Query("DBCC LOGINFO")
+					$data = Get-DbaDbVirtualLogFile -SqlInstance $server -Database $db.Name
+					$logFile = Get-DbaDatabaseFile -SqlInstance $server -Database $db.Name | Where-Object Type -eq 1
 
-					foreach ($d in $data) {
-						[pscustomobject]@{
-							ComputerName   = $server.NetName
-							InstanceName   = $server.ServiceName
-							SqlInstance    = $server.DomainInstanceName
-							Database       = $db.Name
-							RecoveryUnitId = $d.RecoveryUnitId
-							FileId         = $d.FileId
-							FileSize       = $d.FileSize
-							StartOffset    = $d.StartOffset
-							FSeqNo         = $d.FSeqNo
-							Status         = $d.Status
-							Parity         = $d.Parity
-							CreateLsn      = $d.CreateLSN
-						}
-					}
-					# Add-Member -Force -InputObject $data -MemberType Noteproperty -Name ComputerName -Value $server.NetName
-					# Add-Member -Force -InputObject $data -MemberType Noteproperty -Name InstanceName -Value $server.ServiceName
-					# Add-Member -Force -InputObject $data -MemberType Noteproperty -Name SqlInstance -Value $server.DomainInstanceName
-					# Add-Member -Force -InputObject $data -MemberType NoteProperty -Name Database -Value $db.Name
-					# Add-Member -Force -InputObject $data -MemberType NoteProperty -Name Count -Value $data.Count
+					$active = $data | Where-Object Status -EQ 2
+					$inactive = $data | Where-Object Status -EQ 0
 
-					# $data | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database
+					[PSCustomObject]@{
+						ComputerName   = $server.NetName
+						InstanceName   = $server.ServiceName
+						SqlInstance    = $server.DomainInstanceName
+						Database       = $db.name
+						Total   = $data.Count
+						Inactive = if ($inactive -and $inactive.Count -eq $null) {1} else {$inactive.Count}
+						Active            = if ($active -and $active.Count -eq $null) {1} else {$active.Count}
+						LogFileName = $logFile.LogicalName -join ","
+						LogFileGrowth = $logFile.Growth -join ","
+						LogFileGrowthType = $logFile.GrowthType -join ","
+					} | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, TotalCount
 				}
 				catch {
 					Stop-Function -Message "Unable to query $($db.name) on $instance." -ErrorRecord $_ -Target $db -Continue
