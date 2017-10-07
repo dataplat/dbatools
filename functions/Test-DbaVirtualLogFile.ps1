@@ -14,9 +14,9 @@ function Test-DbaVirtualLogFile {
 
 			If you've got a high number of VLFs, you can use Expand-SqlTLogResponsibly to reduce the number.
 
-		.PARAMETER SqlInstance 
+		.PARAMETER SqlInstance
 			Specifies the SQL Server instance(s) to scan.
-			
+
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
@@ -28,15 +28,15 @@ function Test-DbaVirtualLogFile {
 
 		.PARAMETER Database
 			Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
-		
+
 		.PARAMETER ExcludeDatabase
 			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
 		.PARAMETER IncludeSystemDBs
 			If this switch is enabled, system database information will be displayed.
 
-		.PARAMETER Detailed
-			If this switch is enabled, all information provided by DBCC LOGINFO plus the server name and database name is returned.
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: DisasterRecovery, Backup
@@ -78,77 +78,55 @@ function Test-DbaVirtualLogFile {
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[switch]$IncludeSystemDBs,
-		[switch]$Detailed
+		[switch]$Silent
 	)
 
-	PROCESS {
-		foreach ($servername in $SqlInstance) {
-			Write-Verbose "Connecting to $servername."
+	process {
+		foreach ($instance in $SqlInstance) {
 			try {
-				$server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
+				Write-Message -Level Verbose -Message "Connecting to $instance."
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Write-Warning "Can't connect to $instance, skipping."
-				Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			$dbs = $server.Databases
-			#If IncludeSystemDBs is true, include systemdbs
-			#only look at online databases (Status equal normal)
-
 			if ($Database) {
-				$dbs = $dbs | Where-Object { $Database -contains $_.Name }
+				$dbs = $dbs | Where-Object Name -in $Database
 			}
 			if ($ExcludeDatabase) {
-				$dbs = $dbs | Where-Object Name -notin $ExcludeDatabase
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
 
-			if ($IncludeSystemDBs) {
-				$dbs = $dbs | Where-Object { $_.status -eq 'Normal' }
-			}
-			else {
-				$dbs = $dbs | Where-Object { $_.status -eq 'Normal' -and $_.IsSystemObject -eq 0 }
+			if (!$IncludeSystemDBs) {
+				$dbs = $dbs | Where-Object IsSystemObject -eq $false
 			}
 
 			foreach ($db in $dbs) {
 				try {
-					Write-Verbose "Querying $($db.name) on $servername."
-					#Execute query against individual database and add to output
+					$data = $db.Query("DBCC LOGINFO")
 
-					if ($Detailed -eq $true) {
-						$table = New-Object System.Data.Datatable
-						$servercolumn = $table.Columns.Add("Server")
-						$servercolumn.DefaultValue = $server.name
-						$dbcolumn = $table.Columns.Add("Database")
-						$dbcolumn.DefaultValue = $db.name
-
-						$temptable = $db.ExecuteWithResults("DBCC LOGINFO").Tables
-
-						foreach ($column in $temptable.Columns) {
-							$null = $table.Columns.Add($column.ColumnName)
-						}
-
-						foreach ($row in $temptable.rows) {
-							$table.ImportRow($row)
-						}
-						
-						$table
-					}
-					else {
-						[PSCustomObject]@{
-							Server   = $server.name
-							Database = $db.name
-							Count    = $db.ExecuteWithResults("DBCC LOGINFO").Tables.Rows.Count
-						}
-					}
+					[PSCustomObject]@{
+						ComputerName   = $server.NetName
+						InstanceName   = $server.ServiceName
+						SqlInstance    = $server.DomainInstanceName
+						Database       = $db.name
+						Count          = $data.Count
+						RecoveryUnitId = $data.RecoveryUnitId
+						FileId         = $data.FileId
+						FileSize       = $data.FileSize
+						StartOffset    = $data.StartOffset
+						FSeqNo         = $data.FSeqNo
+						Status         = $data.Status
+						Parity         = $data.Parity
+						CreateLSN      = $data.CreateLSN
+					} | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, Count
 				}
 				catch {
-					Write-Exception $_
-					Write-Warning "Unable to query $($db.name) on $servername."
-					continue
+					Stop-Function -Message "Unable to query $($db.name) on $instance." -ErrorRecord $_ -Target $db -Continue
 				}
 			}
 		}
 	}
 }
-
