@@ -66,7 +66,7 @@ function Test-DbaVirtualLogFile {
 		.EXAMPLE
 			Test-DbaVirtualLogFile -SqlInstance sqlcluster -Database db1, db2
 
-			Returns VLF counts for the db1 and db2 databases on sqlcluster.
+			Returns the VLF counts for the db1 and db2 databases on sqlcluster.
 	#>
 	[CmdletBinding()]
 	[OutputType([System.Collections.ArrayList])]
