@@ -19,7 +19,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 		#>
 		$paramCount = 6
 		$defaultParamCount = 11
-		[object[]]$params = (Get-ChildItem function:\Test-DbaVirtualLogFile).Parameters.Keys
+		[object[]]$params = (Get-ChildItem function:\Get-DbaDbVirtualLogFile).Parameters.Keys
 		$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystemDbs', 'Silent'
 		it "Should contain our specific parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
@@ -48,10 +48,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db1
 	}
 	Context "Command actually works" {
-		$results = Test-DbaVirtualLogFile -SqlInstance $script:instance1 -Database $db1
+		$results = Get-DbaDbVirtualLogFile -SqlInstance $script:instance1 -Database $db1
 		It "Should have correct properties" {
-			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,Count,RecoveryUnitId,FileId,FileSize,StartOffset,FSeqNo,Status,Parity,CreateLSN'.Split(',')
-			($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,RecoveryUnitId,FileId,FileSize,StartOffset,FSeqNo,Status,Parity,CreateLSN'.Split(',')
+			($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 		}
 
 		It "Should have database name of $db1" {
