@@ -31,16 +31,32 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 # Get-DbaNoun
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+	BeforeAll {
+		$server = Connect-DbaInstance -SqlInstance $script:instance1
+		$db1 = "dbatoolsci_testvlf"
+		$server.Query("CREATE DATABASE $db1")
+		$needed = Get-DbaDatabase -SqlInstance $script:instance1 -Database $db1
+		$setupright = $true
+		if ($needed.Count -ne 1) {
+			$setupright = $false
+			it "has failed setup" {
+				Set-TestInconclusive -message "Setup failed"
+			}
+		}
+	}
+	AfterAll {
+		Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db1
+	}
 	Context "Command actually works" {
-		$results = Get-DbaXyz -ComputerName $script:instance1, $script:instance2
-		it "Should have correct properties" {
-			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Property1,Property2,Property3'.Split(',')
+		$results = Test-DbaVirtualLogFile -SqlInstance $script:instance1 -Database $db1
+		It "Should have correct properties" {
+			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,Count,RecoveryUnitId,FileId,FileSize,StartOffset,FSeqNo,Status,Parity,CreateLSN'.Split(',')
 			($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 		}
 
-		It "Shows only one type of value" {
+		It "Should have database name of $db1" {
 			foreach ($result in $results) {
-				$result.Property1 | Should BeLike "*FilterValue*"
+				$result.Database | Should Be $db1
 			}
 		}
 	}
