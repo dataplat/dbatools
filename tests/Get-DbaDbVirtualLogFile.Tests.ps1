@@ -33,7 +33,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
 		$server = Connect-DbaInstance -SqlInstance $script:instance1
-		$db1 = "dbatoolsci_testvlf"
+		$db1 = "dbatoolsci_getvlf"
 		$server.Query("CREATE DATABASE $db1")
 		$needed = Get-DbaDatabase -SqlInstance $script:instance1 -Database $db1
 		$setupright = $true
