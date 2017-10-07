@@ -39,7 +39,7 @@ function Test-DbaVirtualLogFile {
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
-			Tags: DisasterRecovery, Backup
+			Tags: VLF, Database, LogFile
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
