@@ -107,21 +107,29 @@ function Test-DbaVirtualLogFile {
 				try {
 					$data = $db.Query("DBCC LOGINFO")
 
-					[PSCustomObject]@{
-						ComputerName   = $server.NetName
-						InstanceName   = $server.ServiceName
-						SqlInstance    = $server.DomainInstanceName
-						Database       = $db.name
-						Count          = $data.Count
-						RecoveryUnitId = $data.RecoveryUnitId
-						FileId         = $data.FileId
-						FileSize       = $data.FileSize
-						StartOffset    = $data.StartOffset
-						FSeqNo         = $data.FSeqNo
-						Status         = $data.Status
-						Parity         = $data.Parity
-						CreateLSN      = $data.CreateLSN
-					} | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, Count
+					foreach ($d in $data) {
+						[pscustomobject]@{
+							ComputerName   = $server.NetName
+							InstanceName   = $server.ServiceName
+							SqlInstance    = $server.DomainInstanceName
+							Database       = $db.Name
+							RecoveryUnitId = $d.RecoveryUnitId
+							FileId         = $d.FileId
+							FileSize       = $d.FileSize
+							StartOffset    = $d.StartOffset
+							FSeqNo         = $d.FSeqNo
+							Status         = $d.Status
+							Parity         = $d.Parity
+							CreateLsn      = $d.CreateLSN
+						}
+					}
+					# Add-Member -Force -InputObject $data -MemberType Noteproperty -Name ComputerName -Value $server.NetName
+					# Add-Member -Force -InputObject $data -MemberType Noteproperty -Name InstanceName -Value $server.ServiceName
+					# Add-Member -Force -InputObject $data -MemberType Noteproperty -Name SqlInstance -Value $server.DomainInstanceName
+					# Add-Member -Force -InputObject $data -MemberType NoteProperty -Name Database -Value $db.Name
+					# Add-Member -Force -InputObject $data -MemberType NoteProperty -Name Count -Value $data.Count
+
+					# $data | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database
 				}
 				catch {
 					Stop-Function -Message "Unable to query $($db.name) on $instance." -ErrorRecord $_ -Target $db -Continue
