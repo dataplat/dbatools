@@ -4,7 +4,7 @@ $TestsRunGroups = @{
 	# run on scenario 2008R2
 	"2008R2"            = @(
 		'Add-DbaComputerCertificate',
-		'Get-DbaInstance',
+		'Connect-DbaInstance',
 		'Get-DbaAgentJobs',
 		'Get-DbaAgentJobOutputFile',
 		'Get-DbaBackupHistory',
