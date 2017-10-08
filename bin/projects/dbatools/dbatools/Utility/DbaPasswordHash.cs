@@ -38,27 +38,27 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <summary>
         /// What version of the password it is.
         /// </summary>
-        public DbaPasswordHashVersion HashVersion { get; }
+        public DbaPasswordHashVersion HashVersion { get; private set; }
 
         /// <summary>
         /// Random 32 bit salt for the password hash.
         /// </summary>
-        public uint Salt { get; }
+        public uint Salt { get; private set; }
 
         /// <summary>
         /// Just the encrypted hash without the version or salt.
         /// </summary>
-        public byte[] Hash { get; }
+        public byte[] Hash { get; private set; }
 
         /// <summary>
         /// The raw hash.
         /// </summary>
-        public byte[] RawHash { get; }
+        public byte[] RawHash { get; private set; }
 
         /// <summary>
         /// The raw hash for the upper case version of the password.
         /// </summary>
-        public byte[] RawHashUpperCase { get; }
+        public byte[] RawHashUpperCase { get; private set; }
 
         /// <remarks>TODO: dynamically use an unmanaged library if its faster.</remarks>
         /// <seealso>
