@@ -104,7 +104,7 @@
 		[Parameter(Mandatory = $false, Position = 2, ValueFromPipeline = $true)]
 		[object[]]$Database,
 		[Parameter(Mandatory = $false, Position = 3)]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Parameter(Mandatory = $false, Position = 4)]
 		[switch]$NoRecovery,
 		[Parameter(Mandatory = $false, Position = 5)]
@@ -151,7 +151,7 @@
 			Write-Message -Message "Attempting to connect to Sql Server" -Level 2
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $sqlinstance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $sqlinstance -SqlCredential $SqlCredential
 			}
 			catch
 			{

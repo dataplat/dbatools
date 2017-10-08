@@ -48,7 +48,7 @@ function Get-DbaPrivilege {
 		[parameter(ValueFromPipeline)]
 		[Alias("cn", "host", "Server")]
 		[dbainstanceparameter[]]$ComputerName = $env:COMPUTERNAME,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$Credential,
 		[switch]$Silent
 	)

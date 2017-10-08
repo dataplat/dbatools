@@ -42,7 +42,7 @@
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[switch]$Silent
 	)
@@ -103,12 +103,13 @@
 			$logpath = $logpath.Trim().TrimEnd("\")
 			
 			[pscustomobject]@{
-				ComputerName = $server.NetName
-				InstanceName = $server.ServiceName
-				SqlInstance = $server.DomainInstanceName
-				Data = $datapath
-				Log = $logpath
-				Backup = $server.BackupDirectory
+				ComputerName  = $server.NetName
+				InstanceName  = $server.ServiceName
+				SqlInstance   = $server.DomainInstanceName
+				Data		  = $datapath
+				Log		      = $logpath
+				Backup	      = $server.BackupDirectory
+				ErrorLog	  = $server.ErrorLogPath
 			}
 		}
 	}

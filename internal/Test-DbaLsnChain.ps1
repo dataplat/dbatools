@@ -15,7 +15,7 @@ This is just an object consisting of the output from Read-DbaBackupHeader. Norma
 before arriving here. (ie; only 1 anchoring Full backup)
 	
 .NOTES 
-Original Author: Stuart Moore (@napalmgram), stuart-moore.com
+Author: Stuart Moore (@napalmgram), stuart-moore.com
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire

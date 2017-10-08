@@ -53,7 +53,7 @@
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[DateTime]$Since,
 		[ValidateSet('Unsent', 'Sent','Failed','Retrying')]

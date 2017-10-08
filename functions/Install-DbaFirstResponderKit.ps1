@@ -25,7 +25,7 @@ If SqlCredential is not specified, Windows authentication will be used.
 Use this switch to disable any kind of verbose messages
 
 .NOTES 
-Original author: Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)
+Author: Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -66,7 +66,7 @@ Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authe
 		[Parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[object]$Database = "master",
 		[switch]$Silent

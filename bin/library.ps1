@@ -1,5 +1,5 @@
 ﻿# Current library Version the module expects
-$currentLibraryVersion = New-Object System.Version(0, 6, 0, 13)
+$currentLibraryVersion = New-Object System.Version(0, 7, 0, 26)
 
 <#
 Library Versioning 101:
@@ -9,6 +9,12 @@ Major: Should always be equal to the main version number of the dbatools PowerSh
 Minor: Tracks major features within a major release. Increment on new features or significant structural changes. Reset to 0 when incrementing the major version.
 Build: Tracks lesser functionality upgrades. Increment on all minor upgrades, reset to 0 when introducing a new major feature or major version.
 Revision: Tracks all changes. Every single update to the library - bugfix, feature or redesign - increments the revision counter. It is never reset to 0.
+
+Updating the library version number:
+When changing the library version number, it is necessary to do so in TWO places:
+- At the top of this very library.ps1
+- Within AssemblyInfo.cs
+These two locations MUST have matching version numbers, otherwise it will keep building the library and complaining about version mismatch!
 #>
 
 <#
@@ -86,8 +92,11 @@ if ($ImportLibrary) {
 				$msbuild = (Resolve-Path "$(Split-Path $system.Location)\..\..\..\..\Framework$(if ([intptr]::Size -eq 8) { "64" })\$($system.ImageRuntimeVersion)\msbuild.exe").Path
 				$msbuildOptions = ""
 				if($env:APPVEYOR -eq 'True') {
-					Write-Host "msbuild output will be logged to appveyor console"
-					$msbuildOptions = '/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"' 
+					$msbuildOptions = '/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"'
+					
+					if (-not (Test-Path "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll")) {
+						throw "msbuild logger not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
+					}
 				}
 
 				if (-not (Test-Path $msbuild)) {
@@ -95,7 +104,7 @@ if ($ImportLibrary) {
 				}
 				
 				Write-Verbose -Message "Building the library"
-				$null = & $msbuild "$libraryBase\projects\dbatools\dbatools.sln" $msbuildOptions
+				& $msbuild "$libraryBase\projects\dbatools\dbatools.sln" $msbuildOptions
 				
 				try {
 					Write-Verbose -Message "Found library, trying to copy & import"
@@ -164,7 +173,7 @@ aka "The guy who made most of The Library that Failed to import"
 }
 
 #region Version Warning
-if ($currentLibraryVersion -ne ([Sqlcollaborative.Dbatools.Utility.UtilityHost]::LibraryVersion)) {
+if ($currentLibraryVersion -ne ([version](([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object ManifestModule -like "dbatools.dll").CustomAttributes | Where-Object AttributeType -like "System.Reflection.AssemblyFileVersionAttribute" ).ConstructorArguments.Value)) {
 	Write-Warning @"
 A version missmatch between the dbatools library loaded and the one expected by
 this module. This usually happens when you update the dbatools module and use
@@ -172,6 +181,8 @@ Remove-Module / Import-Module in order to load the latest version without
 starting a new PowerShell instance.
 
 Please restart the console to apply the library update, or unexpected behavior will likely occur.
+
+If the issues continue to persist, please Remove-Item '$script:PSModuleRoot\bin\dbatools.dll'
 "@
 }
 #endregion Version Warning

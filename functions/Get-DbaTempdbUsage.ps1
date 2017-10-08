@@ -39,7 +39,7 @@ Function Get-DbaTempdbUsage {
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[switch]$Silent
 	)
 	

@@ -4,7 +4,7 @@ function Copy-DbaServerTrigger {
 			Copy-DbaServerTrigger migrates server triggers from one SQL Server to another.
 
 		.DESCRIPTION
-			By default, all triggers are copied. The -ServerTrigger parameter is autopopulated for command-line completion and can be used to copy only specific triggers.
+			By default, all triggers are copied. The -ServerTrigger parameter is auto-populated for command-line completion and can be used to copy only specific triggers.
 
 			If the trigger already exists on the destination, it will be skipped unless -Force is used.
 
@@ -31,10 +31,10 @@ function Copy-DbaServerTrigger {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER ServerTrigger
-			The Server Trigger(s) to process - this list is auto populated from the server. If unspecified, all Server Triggers will be processed.
+			The Server Trigger(s) to process - this list is auto-populated from the server. If unspecified, all Server Triggers will be processed.
 
 		.PARAMETER ExcludeServerTrigger
-			The Server Trigger(s) to exclude - this list is auto populated from the server
+			The Server Trigger(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
@@ -79,11 +79,11 @@ function Copy-DbaServerTrigger {
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$DestinationSqlCredential,
 		[object[]]$ServerTrigger,
 		[object[]]$ExcludeServerTrigger,
@@ -123,7 +123,7 @@ function Copy-DbaServerTrigger {
 				SourceServer      = $sourceServer.Name
 				DestinationServer = $destServer.Name
 				Name              = $triggerName
-				Type              = $null
+				Type              = "Server"
 				Status            = $null
 				Notes             = $null
 				DateTime          = [DbaDateTime](Get-Date)
@@ -165,8 +165,11 @@ function Copy-DbaServerTrigger {
 					$sql = $sql -replace "CREATE TRIGGER", "`nGO`nCREATE TRIGGER"
 					$sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
 					Write-Message -Level Debug -Message $sql
-					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-
+					
+					foreach ($query in ($sql -split '\nGO\b')) {
+						$destServer.Query($query) | Out-Null
+					}
+					
 					$copyTriggerStatus.Status = "Successful"
 					$copyTriggerStatus
 				}

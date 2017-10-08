@@ -88,18 +88,18 @@
     
     begin
     {
-        $TestEquals = Was-Bound -ParameterName Equals
-        $TestNotEquals = Was-Bound -ParameterName NotEquals
-        $TestLike = Was-Bound -ParameterName Like
-        $TestNotLike = Was-Bound -ParameterName NotLike
-        $TestIn = Was-Bound -ParameterName In
-        $TestNotIn = Was-Bound -ParameterName NotIn
-        $TestMatch = Was-Bound -ParameterName Match
-        $TestNotMatch = Was-Bound -ParameterName NotMatch
+        $TestEquals = Test-Bound -ParameterName Equals
+        $TestNotEquals = Test-Bound -ParameterName NotEquals
+        $TestLike = Test-Bound -ParameterName Like
+        $TestNotLike = Test-Bound -ParameterName NotLike
+        $TestIn = Test-Bound -ParameterName In
+        $TestNotIn = Test-Bound -ParameterName NotIn
+        $TestMatch = Test-Bound -ParameterName Match
+        $TestNotMatch = Test-Bound -ParameterName NotMatch
         
         $TestObject = -not ($TestEquals -or $TestNotEquals -or $TestLike -or $TestNotLike -or $TestIn -or $TestNotIn -or $TestMatch -or $TestNotMatch)
         
-        $TestProperty = Was-Bound -ParameterName PropertyName
+        $TestProperty = Test-Bound -ParameterName PropertyName
     }
     process
     {

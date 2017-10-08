@@ -5,7 +5,7 @@ Function Resolve-SqlIpAddress
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
+		[PSCredential]$SqlCredential
 	)
 	
 	$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential

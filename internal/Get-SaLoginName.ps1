@@ -5,7 +5,7 @@ Function Get-SaLoginName
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
+		[PSCredential]$SqlCredential
 	)
 	
 	

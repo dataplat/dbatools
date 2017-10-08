@@ -8,7 +8,7 @@ Gets SQL Custom Error Message information for each instance(s) of SQL Server.
  The Get-DbaCustomError command gets SQL Custom Error Message information for each instance(s) of SQL Server.
 	
 .PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
 to be executed against multiple SQL Server instances.
 
 .PARAMETER SqlCredential
@@ -44,7 +44,7 @@ Returns all Custom Error Message(s) for the local and sql2016 SQL Server instanc
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[DbaInstanceParameter]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[switch]$Silent
 	)
 	
@@ -65,9 +65,9 @@ Returns all Custom Error Message(s) for the local and sql2016 SQL Server instanc
 			
 			foreach ($customError in $server.UserDefinedMessages)
 			{
-				Add-Member -InputObject $customError -MemberType NoteProperty -Name ComputerName -value $customError.Parent.NetName
-				Add-Member -InputObject $customError -MemberType NoteProperty -Name InstanceName -value $customError.Parent.ServiceName
-				Add-Member -InputObject $customError -MemberType NoteProperty -Name SqlInstance -value $customError.Parent.DomainInstanceName
+				Add-Member -Force -InputObject $customError -MemberType NoteProperty -Name ComputerName -value $customError.Parent.NetName
+				Add-Member -Force -InputObject $customError -MemberType NoteProperty -Name InstanceName -value $customError.Parent.ServiceName
+				Add-Member -Force -InputObject $customError -MemberType NoteProperty -Name SqlInstance -value $customError.Parent.DomainInstanceName
 				
 				Select-DefaultView -InputObject $customError -Property ComputerName, InstanceName, SqlInstance, ID, Text, LanguageID, Language
 			}

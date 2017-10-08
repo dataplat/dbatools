@@ -1,4 +1,8 @@
-Describe "New-DbaSqlConnectionStringBuilder Unit Tests" -Tag 'Unittests' {
+$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Get a ConnectionStringBuilder and assert its values" {
         $results = New-DbaSqlConnectionStringBuilder "Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Column Encryption Setting=enabled" 
         It "Should be a connection string builder" {

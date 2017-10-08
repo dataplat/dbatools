@@ -69,7 +69,7 @@ Skips some prompts/confirms but not all of them.
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
+		[PSCredential]$Credential,
 		[switch]$AutoFix,
 		[switch]$Force
 	)
@@ -156,7 +156,7 @@ Skips some prompts/confirms but not all of them.
 									Write-Debug $sql
 									try
 									{
-										$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+										$null = $server.Query($sql)
 										Write-Output "Successfully executed $sql`n"
 									}
 									catch
@@ -257,7 +257,7 @@ Skips some prompts/confirms but not all of them.
 				Write-Debug $sql
 				try
 				{
-					$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $server.Query($sql)
 					Write-Output "`nSuccessfully executed $sql"
 				}
 				catch
@@ -271,7 +271,7 @@ Skips some prompts/confirms but not all of them.
 				
 				try
 				{
-					$null = $server.ConnectionContext.ExecuteNonQuery($sql)
+					$null = $server.Query($sql)
 					Write-Output "Successfully executed $sql"
 				}
 				catch

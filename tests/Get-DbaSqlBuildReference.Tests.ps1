@@ -1,4 +1,8 @@
-Describe "Get-DbaSqlBuildReference Unit Test" -Tags Unittest {
+$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Unit Test" -Tags Unittest {
 	$ModuleBase = (Get-Module -Name dbatools).ModuleBase
 	$idxfile = "$ModuleBase\bin\dbatools-buildref-index.json"
 	Context 'Validate data in json is correct' {
@@ -62,9 +66,9 @@ Describe "Get-DbaSqlBuildReference Unit Test" -Tags Unittest {
 			$SortedVersions = $Naturalized | Sort-Object
 			($SortedVersions -join ",") | Should Be ($Naturalized -join ",")
 		}
-		It "Names are at least 7" {
+		It "Names are at least 8" {
 			$Names = $IdxRef.Data.Name | Where-Object { $_ }
-			$Names.Length | Should BeGreaterThan 6
+			$Names.Length | Should BeGreaterThan 7
 		}
 	}
 	# These are groups by major release (aka "Name")
@@ -114,6 +118,17 @@ Describe "Get-DbaSqlBuildReference Unit Test" -Tags Unittest {
 			It "LATEST is on PAR with a SP" {
 				$LATEST = $Versions | Where-Object SP -contains "LATEST"
 				$LATEST.SP.Count | Should Be 2
+			}
+		}
+	}
+}
+
+Describe "$commandname Integration Tests" -Tags IntegrationTests {
+	Context "Test retrieving version from instances" {
+		$results = Get-DbaSqlBuildReference -SqlInstance $script:instance1,$script:instance2
+		It "Should return an exact match" {
+			foreach($r in $results) {
+				$r.MatchType | Should Be "Exact"
 			}
 		}
 	}

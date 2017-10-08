@@ -28,7 +28,7 @@
     Use this if you want the function to throw terminating errors you want to catch.
 
     .NOTES
-	Original Author: Fred Weinmann (@FredWeinmann)
+	Author: Fred Weinmann (@FredWeinmann)
 	Tags: Debug
 
 	Website: https://dbatools.io
@@ -152,7 +152,7 @@ This will make it easier for us to troubleshoot and you won't be sending us the 
         Write-Message -Level Output -Message "Collecting list of loaded assemblies (Name, Version, and Location)"
         $hash["Assemblies"] = [appdomain]::CurrentDomain.GetAssemblies() | Select-Object CodeBase, FullName, Location, ImageRuntimeVersion, GlobalAssemblyCache, IsDynamic
         
-        if (Was-Bound "Variables") {
+        if (Test-Bound "Variables") {
             Write-Message -Level Output -Message "Adding variables specified for export: $($Variables -join ", ")"
             $hash["Variables"] = $Variables | Get-Variable -ErrorAction Ignore
         }

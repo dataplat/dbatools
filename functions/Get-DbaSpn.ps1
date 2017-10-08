@@ -56,7 +56,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 		[Parameter(Mandatory = $false)]
 		[string[]]$AccountName,
 		[Parameter(Mandatory = $false)]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$Credential,
+		[PSCredential]$Credential,
 		[switch]$Silent
 	)
 	begin

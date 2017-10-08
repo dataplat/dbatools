@@ -7,7 +7,7 @@ Gets SQL Database Assembly information for each instance(s) of SQL Server.
  The Get-DbaDatabaseAssembly command gets SQL Database Assembly information for each instance(s) of SQL Server.
 	
 .PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
 to be executed against multiple SQL Server instances.
 
 .PARAMETER SqlCredential
@@ -38,7 +38,7 @@ Returns all Database Assembly for the local and sql2016 SQL Server instances
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[DbaInstanceParameter]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[switch]$Silent
 	)
 	
@@ -58,9 +58,9 @@ Returns all Database Assembly for the local and sql2016 SQL Server instances
 				try {
 					foreach ($assembly in $database.assemblies) {
 						
-						Add-Member -InputObject $assembly -MemberType NoteProperty -Name ComputerName -value $assembly.Parent.Parent.NetName
-						Add-Member -InputObject $assembly -MemberType NoteProperty -Name InstanceName -value $assembly.Parent.Parent.ServiceName
-						Add-Member -InputObject $assembly -MemberType NoteProperty -Name SqlInstance -value $assembly.Parent.Parent.DomainInstanceName
+						Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name ComputerName -value $assembly.Parent.Parent.NetName
+						Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name InstanceName -value $assembly.Parent.Parent.ServiceName
+						Add-Member -Force -InputObject $assembly -MemberType NoteProperty -Name SqlInstance -value $assembly.Parent.Parent.DomainInstanceName
 						
 						Select-DefaultView -InputObject $assembly -Property ComputerName, InstanceName, SqlInstance, ID, Name, Owner, 'AssemblySecurityLevel as SecurityLevel', CreateDate, IsSystemObject, Version
 						

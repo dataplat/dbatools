@@ -10,7 +10,7 @@ Internal function. Checks to see if SQL Server Agent is running on a server.
 		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance", "SqlServer")]
 		[object]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
+		[PSCredential]$SqlCredential
 	)
 	
 	if ($SqlInstance.GetType() -ne [Microsoft.SqlServer.Management.Smo.Server])

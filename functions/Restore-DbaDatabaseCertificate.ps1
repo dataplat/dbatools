@@ -36,7 +36,7 @@ Use this switch to disable any kind of verbose messages
 
 .NOTES
 Tags: Migration, Certificate
-Original Author: Jess Pomfret (@jpomfret)
+Author: Jess Pomfret (@jpomfret)
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -53,7 +53,7 @@ Imports all the certificates in the specified path.
 		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$Path,
 		[object]$Database = "master",

@@ -8,29 +8,29 @@
 		.DESCRIPTION
 			By default, all SQL Agent categories for Jobs, Operators and Alerts are copied.
 
-			The -OperatorCategories parameter is autopopulated for command-line completion and can be used to copy only specific operator categories.
-			The -AgentCategories parameter is autopopulated for command-line completion and can be used to copy only specific agent categories.
-			The -JobCategories parameter is autopopulated for command-line completion and can be used to copy only specific job categories.
+			The -OperatorCategories parameter is auto-populated for command-line completion and can be used to copy only specific operator categories.
+			The -AgentCategories parameter is auto-populated for command-line completion and can be used to copy only specific agent categories.
+			The -JobCategories parameter is auto-populated for command-line completion and can be used to copy only specific job categories.
 
 			If the category already exists on the destination, it will be skipped unless -Force is used.
 
 		.PARAMETER Source
-			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 		.PARAMETER SourceSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
 		.PARAMETER DestinationSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
@@ -39,28 +39,28 @@
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER CategoryType
-			Specifies the Category Type to migrate. Valid options are Job, Alert and Operator. When CategoryType is specified, all categories from the selected type will be migrated. For granular migrations, use the three parameters below.
+			Specifies the Category Type to migrate. Valid options are "Job", "Alert" and "Operator". When CategoryType is specified, all categories from the selected type will be migrated. For granular migrations, use the three parameters below.
 
 		.PARAMETER OperatorCategory
-			This parameter is autopopulated for command-line completion and can be used to copy only specific operator categories.
+			This parameter is auto-populated for command-line completion and can be used to copy only specific operator categories.
 
 		.PARAMETER AgentCategory
-			This parameter is autopopulated for command-line completion and can be used to copy only specific agent categories.
+			This parameter is auto-populated for command-line completion and can be used to copy only specific agent categories.
 
 		.PARAMETER JobCategory
-			This parameter is autopopulated for command-line completion and can be used to copy only specific job categories.
+			This parameter is auto-populated for command-line completion and can be used to copy only specific job categories.
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Force
-			Drops and recreates the XXXXX if it exists
+			If this switch is enabled, the Category will be dropped and recreated on Destination.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Migration, Agent
@@ -77,12 +77,12 @@
 		.EXAMPLE
 			Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster
 
-			Copies all operator categories from sqlserver2014a to sqlcluster, using Windows credentials. If operator categories with the same name exist on sqlcluster, they will be skipped.
+			Copies all operator categories from sqlserver2014a to sqlcluster using Windows authentication. If operator categories with the same name exist on sqlcluster, they will be skipped.
 
 		.EXAMPLE
 			Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -OperatorCategory PSOperator -SourceSqlCredential $cred -Force
 
-			Copies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+			Copies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster using SQL credentials to authenticate to sqlserver2014a and Windows credentials for sqlcluster. If a operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 		.EXAMPLE
 			Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
@@ -93,13 +93,13 @@
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$DestinationSqlCredential,
-		[Parameter(ParameterSetName = 'SpecifcAlerts')]
+		[Parameter(ParameterSetName = 'SpecificAlerts')]
 		[ValidateSet('Job', 'Alert', 'Operator')]
 		[string[]]$CategoryType,
 		[switch]$Force,
@@ -114,7 +114,7 @@
 					Copy-JobCategory migrates job categories from one SQL Server to another.
 
 				.DESCRIPTION
-					By default, all job categories are copied. The -JobCategories parameter is autopopulated for command-line completion and can be used to copy only specific job categories.
+					By default, all job categories are copied. The -JobCategories parameter is auto-populated for command-line completion and can be used to copy only specific job categories.
 
 					If the associated credential for the category does not exist on the destination, it will be skipped. If the job category already exists on the destination, it will be skipped unless -Force is used.
 			#>
@@ -190,7 +190,7 @@
 					Copy-OperatorCategory migrates operator categories from one SQL Server to another.
 
 				.DESCRIPTION
-					By default, all operator categories are copied. The -OperatorCategories parameter is autopopulated for command-line completion and can be used to copy only specific operator categories.
+					By default, all operator categories are copied. The -OperatorCategories parameter is auto-populated for command-line completion and can be used to copy only specific operator categories.
 
 					If the associated credential for the category does not exist on the destination, it will be skipped. If the operator category already exists on the destination, it will be skipped unless -Force is used.
 			#>
@@ -270,7 +270,7 @@
 					Copy-AlertCategory migrates alert categories from one SQL Server to another.
 
 				.DESCRIPTION
-					By default, all alert categories are copied. The -AlertCategories parameter is autopopulated for command-line completion and can be used to copy only specific alert categories.
+					By default, all alert categories are copied. The -AlertCategories parameter is auto-populated for command-line completion and can be used to copy only specific alert categories.
 
 					If the associated credential for the category does not exist on the destination, it will be skipped. If the alert category already exists on the destination, it will be skipped unless -Force is used.
 			#>

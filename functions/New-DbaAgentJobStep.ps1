@@ -95,7 +95,7 @@ Use this switch to disable any kind of verbose messages
 
 .NOTES
 Tags: Agent, Job, Job Step
-Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+Author: Sander Stad (@sqlstad, sqlstad.nl)
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -131,10 +131,10 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Parameter(Mandatory = $false)]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[string[]]$Job,
+		[object[]]$Job,
 		[Parameter(Mandatory = $false)]
 		[int]$StepId,
 		[Parameter(Mandatory = $true)]
@@ -197,7 +197,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 		
 		foreach ($instance in $sqlinstance) {
 			# Try connecting to the instance
-			Write-Message -Message "Attempting to connect to $instance" -Level Output
+			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
 			try {
 				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
@@ -215,13 +215,13 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 					# Create the job step object
 					try {
 						# Get the job
-						$smoJob = $Server.JobServer.Jobs[$j]
+						$currentjob = $Server.JobServer.Jobs[$j]
 						
 						# Create the job step
 						$JobStep = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobStep
 						
 						# Set the job where the job steps belongs to
-						$JobStep.Parent = $smoJob
+						$JobStep.Parent = $currentjob
 					}
 					catch {
 						Stop-Function -Message "Something went wrong creating the job step. `n$($_.Exception.Message)" -Target $instance -Continue
@@ -234,29 +234,43 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 						if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
 							$JobStep.Name = $StepName
 						}
-						elseif ($NewName -and $Force) {
-							Write-Message -Message "Step $StepName already exists for job. Force is used. Setting job step name to $NewName" -Level Verbose
+						elseif (($Server.JobServer.Jobs[$j].JobSteps.Name -contains $StepName) -and $Force) {
+							Write-Message -Message "Step $StepName already exists for job. Force is used. Removing existing step" -Level Verbose
+							
+							# Remove the job step based on the name
+							Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName
+
+							# Set the name job step object
+							$JobStep.Name = $StepName
 						}
 						else {
 							Stop-Function -Message "The step name $StepName already exists for job $j" -Target $instance -Continue
 						}
 					}
-					
-					if ($StepId) {
+					elseif ($StepId) {
 						# Check if the used step id is already in place
 						if ($Job.JobSteps.ID -notcontains $StepId) {
 							Write-Message -Message "Setting job step step id to $StepId" -Level Verbose
 							$JobStep.ID = $StepId
 						}
+						elseif (($Job.JobSteps.ID -contains $StepId) -and $Force) {
+							Write-Message -Message "Step ID $StepId already exists for job. Force is used. Removing existing step" -Level Verbose
+							
+							# Remove the existing job step
+							$StepName = ($Server.JobServer.Jobs['Job2'].JobSteps | Where-Object {$_.ID -eq 1}).Name
+							Remove-DbaAgentJobStep -SqlInstance $instance -Job $currentjob -StepName $StepName
+
+							# Set the ID job step object
+							$JobStep.ID = $StepId
+						}
 						else {
 							Stop-Function -Message "The step id $StepId already exists for job $j" -Target $instance -Continue
 						}
-						
 					}
-					else {
+					 else {
 						# Get the job step count
 						$JobStep.ID = $Job.JobSteps.Count + 1
-					}
+					} 
 					
 					if ($Subsystem) {
 						Write-Message -Message "Setting job step subsystem to $Subsystem" -Level Verbose
@@ -351,11 +365,11 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 					# Execute
 					if ($PSCmdlet.ShouldProcess($instance, "Creating the job step $StepName")) {
 						try {
-							Write-Message -Message "Creating the job step" -Level Output
+							Write-Message -Message "Creating the job step" -Level Verbose
 							
 							# Create the job step
 							$JobStep.Create()
-							$Job.Alter()
+							$currentjob.Alter()
 						}
 						catch {
 							Stop-Function -Message "Something went wrong creating the job step. `n$($_.Exception.Message)" -Target $instance -Continue
@@ -363,14 +377,14 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 					}
 					
 					# Return the job step
-					return $JobStep
+					$JobStep
 				}
 			} # foreach object job
 		} # foreach object instance
 	} # process
 	
 	end {
-		Write-Message -Message "Finished creating job step(s)." -Level Output
+		Write-Message -Message "Finished creating job step(s)" -Level Verbose
 	}
 }
 

@@ -36,7 +36,7 @@ Prompts you for confirmation before executing any changing operations within the
 Use this switch to disable any kind of verbose messages
 
 .NOTES 
-Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Step
 	
 Website: https://dbatools.io
@@ -71,7 +71,7 @@ Remove the job step from the job on multiple servers using pipeline
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Parameter(Mandatory = $false)]
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[object[]]$Job,
@@ -87,7 +87,7 @@ Remove the job step from the job on multiple servers using pipeline
 		foreach ($instance in $sqlinstance) {
 			
 			# Try connecting to the instance
-			Write-Message -Message "Attempting to connect to $instance" -Level Output
+			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
 			try {
 				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
@@ -134,6 +134,6 @@ Remove the job step from the job on multiple servers using pipeline
 	} # process
 	
 	end {
-		Write-Message -Message "Finished removing the jobs step(s)" -Level Output
+		Write-Message -Message "Finished removing the jobs step(s)" -Level Verbose
 	}
 }

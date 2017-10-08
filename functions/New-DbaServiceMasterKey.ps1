@@ -42,14 +42,14 @@ You will be prompted to securely enter your Service Key Password twice, then a m
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Security.SecureString]$Password,
 		[switch]$Silent
 	)
 		
 	process {
 		foreach ($instance in $SqlInstance) {
-			if (Was-bound -ParameterName Password -Not) {
+			if (Test-Bound -ParameterName Password -Not) {
 				$password = Read-Host -AsSecureString -Prompt "You must enter Service Key password for $instance"
 				$password2 = Read-Host -AsSecureString -Prompt "Type the password again"
 				

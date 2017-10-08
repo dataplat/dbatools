@@ -6,7 +6,7 @@ function Copy-DbaSqlDataCollector {
 		.DESCRIPTION
 			By default, all data collector objects are migrated. If the object already exists on the destination, it will be skipped unless -Force is used.
 
-			The -CollectionSet parameter is autopopulated for command-line completion and can be used to copy only specific objects.
+			The -CollectionSet parameter is auto-populated for command-line completion and can be used to copy only specific objects.
 
 		.PARAMETER Source
 			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2008 or higher.
@@ -31,10 +31,10 @@ function Copy-DbaSqlDataCollector {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER CollectionSet
-			The collection set(s) to process - this list is auto populated from the server. If unspecified, all collection sets will be processed.
+			The collection set(s) to process - this list is auto-populated from the server. If unspecified, all collection sets will be processed.
 
 		.PARAMETER ExcludeCollectionSet
-			The collection set(s) to exclude - this list is auto populated from the server
+			The collection set(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER NoServerReconfig
 			Upcoming parameter to enable server reconfiguration
@@ -87,11 +87,11 @@ function Copy-DbaSqlDataCollector {
 	param (
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Source,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
 		[DbaInstanceParameter]$Destination,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$DestinationSqlCredential,
 		[object[]]$CollectionSet,
 		[object[]]$ExcludeCollectionSet,
@@ -102,21 +102,11 @@ function Copy-DbaSqlDataCollector {
 
 	begin {
 
-		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.Collector") -eq $null) {
-			Stop-Function -Message "SMO version is too old. To migrate collection sets, you must have SQL Server Management Studio 2008 R2 or higher installed."
-			return
-		}
-
-		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
+		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential -MinimumVersion 10
 
 		$source = $sourceServer.DomainInstanceName
 		$destination = $destServer.DomainInstanceName
-
-		if ($sourceServer.VersionMajor -lt 10 -or $destServer.VersionMajor -lt 10) {
-			Stop-Function -Message "Collection Sets are only supported in SQL Server 2008 and above. Quitting."
-			return
-		}
 
 	}
 	process {

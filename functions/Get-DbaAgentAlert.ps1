@@ -11,7 +11,7 @@ FUNCTION Get-DbaAgentAlert {
 	This can be a collection and receive pipeline input.
 
 	.PARAMETER SqlCredential
-	PSCredential object to connect as. If not specified, currend Windows login will be used.
+	PSCredential object to connect as. If not specified, current Windows login will be used.
 
 	.NOTES
 	Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -40,7 +40,7 @@ FUNCTION Get-DbaAgentAlert {
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "Instance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]
+		[PSCredential]
 		$SqlCredential,
 		[switch]$Silent
 	)
@@ -69,11 +69,11 @@ FUNCTION Get-DbaAgentAlert {
 			foreach ($alert in $alerts) {
 				$lastraised = [dbadatetime]$alert.LastOccurrenceDate
 				
-				Add-Member -InputObject $alert -MemberType NoteProperty -Name ComputerName -value $server.NetName
-				Add-Member -InputObject $alert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-				Add-Member -InputObject $alert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-				Add-Member -InputObject $alert -MemberType NoteProperty Notifications -value $alert.EnumNotifications()
-				Add-Member -InputObject $alert -MemberType NoteProperty LastRaised -value $lastraised
+				Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name ComputerName -value $server.NetName
+				Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+				Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+				Add-Member -Force -InputObject $alert -MemberType NoteProperty Notifications -value $alert.EnumNotifications()
+				Add-Member -Force -InputObject $alert -MemberType NoteProperty LastRaised -value $lastraised
 				
 				Select-DefaultView -InputObject $alert -Property $defaults
 			}

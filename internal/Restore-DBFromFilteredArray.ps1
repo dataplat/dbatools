@@ -22,7 +22,7 @@ Function Restore-DBFromFilteredArray {
         [switch]$ScriptOnly,
         [switch]$VerifyOnly,
         [object]$filestructure,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [switch]$UseDestinationDefaultDirectories,
         [switch]$ReuseSourceFolderStructure,
         [switch]$Force,
@@ -87,13 +87,13 @@ Function Restore-DBFromFilteredArray {
             if (($ScriptOnly -eq $true) -or ($verifyonly -eq $true)) {
                 Write-Message -Level Verbose -Message "No need to close db for this operation"
             }
-            elseIf ($WithReplace -eq $true) {
+            elseIf ($ReplaceDatabase -eq $true -and $VerifyOnly -eq $false) {
                 if ($Pscmdlet.ShouldProcess("Killing processes in $dbname on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
                     try {
                         Write-Message -Level Verbose -Message "Set $DbName single_user to kill processes"
-                        Stop-DbaProcess -SqlInstance $Server -Databases $Dbname -WarningAction Silentlycontinue
+                        Stop-DbaProcess -SqlInstance $Server -Database $Dbname -WarningAction Silentlycontinue
                         if ($Continue -eq $false) {
-                            Invoke-DbaSqlcmd -ServerInstance:$SqlInstance -Credential:$SqlCredential -query "Alter database $DbName set offline with rollback immediate; alter database $DbName set restricted_user; Alter database $DbName set online with rollback immediate" -database master
+                            $server.Query("Alter database $DbName set offline with rollback immediate; alter database $DbName set restricted_user; Alter database $DbName set online with rollback immediate",'master')
                         }
                         $server.ConnectionContext.Connect()
                     }
@@ -115,15 +115,15 @@ Function Restore-DBFromFilteredArray {
             Foreach ($File in $InternalFiles) {
                 if ($File.BackupPath -notlike "http*") {
                     Write-Message -Level Verbose -Message "Checking $($File.BackupPath) exists"
-                    if ((Test-DbaSqlPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $File.BackupPath) -eq $false) {
-                        Write-Message -Level VeryVerbose "$($File.backupPath) is missing"
+                    if ((Test-DbaSqlPath -SqlInstance $server -Path $File.BackupPath) -eq $false) {
+                        Write-Message -Level VeryVerbose -Message "$($File.backupPath) is missing"
                         $MissingFiles += $File.BackupPath
                     }
                 }
             }
             if ($MissingFiles.Length -gt 0) {
                 Write-Message -Level Warning -Message "Files $($MissingFiles -Join ',') are missing, cannot progress"
-                return false
+                return $false
             }
         }
         $RestorePoints = @()
@@ -137,26 +137,38 @@ Function Restore-DBFromFilteredArray {
 
         foreach ($if in ($InternalFiles | Where-Object {$_.BackupTypeDescription -eq 'Transaction Log'} | Group-Object BackupSetGuid)) {
             #$RestorePoints  += [PSCustomObject]@{order=[Decimal]($if.Name); 'Files' = $if.group}
-            $RestorePoints += [PSCustomObject]@{order = [Decimal](($if.Group.backupstartdate | Sort-Object -Unique).ticks); 'Files' = $if.group}
+            $RestorePoints += [PSCustomObject]@{order = [Decimal]3; FirstLsn = [Decimal](($if.Group.FirstLsn | Sort-Object -Unique)); LastLsn = [Decimal](($if.Group.LastLsn | Sort-Object -Unique)); 'Files' = $if.group}
         }
-        $SortedRestorePoints = $RestorePoints | Sort-Object -property order
+        $restoreOrder = [Decimal]1
+        $SortedRestorePoints = $RestorePoints | Sort-Object -property order, FirstLsn, LastLsn | ForEach-Object { @([PSCustomObject]@{order = $restoreOrder; 'Files' = $_.Files}); $restoreOrder ++ }
         if ($ReuseSourceFolderStructure) {
-            Write-Message -Level Verbose -Message "Checking for folders for Reusing old structure"
+            Write-Message -Level Verbose -Message "Checking for files folders for Reusing old structure"
             foreach ($File in ($RestorePoints.Files.filelist.PhysicalName | Sort-Object -Unique)) {
                 Write-Message -Level VeryVerbose -Message "File = $file"
-                if ((Test-DbaSqlPath -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential) -ne $true) {
-                    if ((New-DbaSqlDirectory -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential).Created -ne $true) {
-                        Write-Message -Level Warning -Message "Destination File $File does not exist, and could not be created on $SqlInstance"
-
-                        return
+                if ((Test-DbaSqlPath -Path $File -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential) -ne $true) {
+                    Write-Message -Level VeryVerbose -Message "File doesn't exist, check for parent folder"
+                    if ((Test-DbaSqlPath -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential) -ne $true) {
+                        Write-Message -Level debug -Message "$(Split-Path -Path $File -Parent) does not exist on $sqlinstance"
+                        if ((New-DbaSqlDirectory -Path (Split-Path -Path $File -Parent) -SqlInstance:$SqlInstance -SqlCredential:$SqlCredential).Created -ne $true) {
+                            Stop-Function -message "Destination folder $(Split-Path -Path $File -Parent) does not exist, and could not be created on $SqlInstance" -TargetObject $file -Category 'DeviceError'
+                            return
+                        } 
+                        else {
+                            Write-Message -Level Veryverbose -Message "Folder $(Split-Path -Path $File -Parent) created on $sqlinstance"
+                        }   
                     }
                     else {
-                        Write-Message -Level Verbose -Message "Destination File $File  created on $SqlInstance"
+                        Write-Message -Level Veryverbose -Message "Folder $(Split-Path -Path $File -Parent) exists on $sqlinstance"
                     }
+
                 }
-                else {
-                    Write-Message -Level Verbose -Message "Destination File $File  exists on $SqlInstance"
-                }
+                elseif ($ReplaceDatabase -ne $True) {
+                    Write-Message -Level Veryverbose -Message "Bombing out created on $sqlinstance"
+                    #Stop-Function -message "Destination File $File  exists on $SqlInstance" -Target $file -Category 'DeviceError' -silent $true
+					Stop-Function -message "Destination File $File  exists on $SqlInstance" -Target $file -Category 'DeviceError' -silent $true
+					return
+                }    
+                Write-Message -Level Veryverbose -Message "past resuse tests"
             }
         }
         $RestoreCount = 0
@@ -193,22 +205,25 @@ Function Restore-DBFromFilteredArray {
                     Write-Message -Level Verbose -Message "Moving $($File.PhysicalName)"
                     $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
                     $MoveFile.LogicalFileName = $File.LogicalName
-                    $filename, $extension = (Split-Path $file.PhysicalName -leaf).split('.')
+                    $IoFile = [System.Io.FileInfo]$File.PhysicalName
+                    $Extension = $IoFile.Extension
+                    #$Filename  = (split-path $file.PhysicalName -leaf) -replace "\.$extension",""
+                    $FileName = $IoFile.BaseName
                     if ($ReplaceDbNameInFile) {
                         $Filename = $filename -replace $OldDatabaseName, $dbname
                     }
-                    if (Was-Bound "DestinationFilePrefix") {
+                    if (Test-Bound "DestinationFilePrefix") {
                         $Filename = $DestinationFilePrefix + $FileName
                     }
-                    if (Was-Bound "DestinationFileSuffix") {
+                    if (Test-Bound "DestinationFileSuffix") {
                         $Filename = $FileName + $DestinationFileSuffix
                     }
                     #Not happy with this, but leaving in in case someone can convince me to make it available
                     if ($DestinationFileNumber) {
                         $FileName = $FileName + '_' + $FileId + '_of_' + $RestoreFileCountFileCount
                     }
-                    if ($null -ne $extension) {
-                        $filename = $filename + '.' + $extension
+                    if (($null -ne $extension) -and ($extension -ne '')) {
+                        $filename = $filename + $extension
                     }
                     Write-Message -Level VeryVerbose -Message "past the checks"
                     if (($File.Type -eq 'L' -or $File.filetype -eq 'L') -and $DestinationLogDirectory -ne '') {
@@ -240,7 +255,7 @@ Function Restore-DBFromFilteredArray {
                 break
             }
             $LogicalFileMovesString = $LogicalFileMoves -Join ", `n"
-            Write-Message -Level VeryVerbose -Message "$LogicalFileMovesString"
+            Write-Message -Level VeryVerbose -Message "Logical File Move string: $LogicalFileMovesString"
 
             if ($MaxTransferSize) {
                 $Restore.MaxTransferSize = $MaxTransferSize
@@ -341,7 +356,7 @@ Function Restore-DBFromFilteredArray {
                         }
                     }
                     else {
-                        Write-Progress -id 2 -activity "Restoring $DbName to ServerName" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                        Write-Progress -id 2 -activity "Restoring $DbName to $ServerName" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                         $script = $Restore.Script($Server)
                         $Restore.sqlrestore($Server)
                         Write-Progress -id 2 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed
@@ -351,9 +366,8 @@ Function Restore-DBFromFilteredArray {
                     Write-Message -Level Verbose -Message "Failed, Closing Server connection"
                     $RestoreComplete = $False
                     $ExitError = $_.Exception.InnerException
-                    Write-Warning "$FunctionName - $ExitError" -WarningAction stop
-                    #Exit as once one restore has failed there's no point continuing
-                    break
+					Stop-Function -Message "Failed to restore db $DbName, stopping" -ErrorRecord $_
+					return
                 }
                 finally {
                     if ($ReuseSourceFolderStructure) {
@@ -376,14 +390,14 @@ Function Restore-DBFromFilteredArray {
                             RestoreComplete        = $RestoreComplete
                             BackupFilesCount       = $RestoreFiles.Count
                             RestoredFilesCount     = $RestoreFiles[0].Filelist.PhysicalName.count
-                            BackupSizeMB           = if ([bool]($RestoreFiles[0].psobject.Properties.Name -match 'BackupSizeMB')) { ($RestoreFiles | Measure-Object -Property BackupSizeMB -Sum).Sum } else { $null }
-                            CompressedBackupSizeMB = if ([bool]($RestoreFiles[0].psobject.Properties.Name -match 'CompressedBackupSizeMb')) { ($RestoreFiles | Measure-Object -Property CompressedBackupSizeMB -Sum).Sum } else { $null }
+                            BackupSizeMB           = if ([bool]($RestoreFiles[0].psobject.Properties.Name -contains 'BackupSizeMB')) { ($RestoreFiles | Measure-Object -Property BackupSizeMB -Sum).Sum } else { $null }
+                            CompressedBackupSizeMB = if ([bool]($RestoreFiles[0].psobject.Properties.Name -contains 'CompressedBackupSizeMb')) { ($RestoreFiles | Measure-Object -Property CompressedBackupSizeMB -Sum).Sum } else { $null }
                             BackupFile             = $RestoreFiles.BackupPath -Join ','
                             RestoredFile           = $RestoredFile
                             RestoredFileFull       = $RestoredFileFull
                             RestoreDirectory       = $RestoreDirectory
-                            BackupSize             = if ([bool]($RestoreFiles[0].psobject.Properties.Name -match 'BackupSize')) { ($RestoreFiles | Measure-Object -Property BackupSize -Sum).Sum } else { $null }
-                            CompressedBackupSize   = if ([bool]($RestoreFiles[0].psobject.Properties.Name -match 'CompressedBackupSize')) { ($RestoreFiles | Measure-Object -Property CompressedBackupSize -Sum).Sum } else { $null }
+                            BackupSize             = if ([bool]($RestoreFiles[0].psobject.Properties.Name -contains 'BackupSize')) { ($RestoreFiles | Measure-Object -Property BackupSize -Sum).Sum } else { $null }
+                            CompressedBackupSize   = if ([bool]($RestoreFiles[0].psobject.Properties.Name -contains 'CompressedBackupSize')) { ($RestoreFiles | Measure-Object -Property CompressedBackupSize -Sum).Sum } else { $null }
                             Script                 = $script
                             BackupFileRaw          = $RestoreFiles
                             ExitError              = $ExitError

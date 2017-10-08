@@ -7,16 +7,16 @@ Returns all views that contain a specific case-insensitive string or regex patte
 This function can either run against specific databases or all databases searching all user or user and system views.
 
 .PARAMETER SqlInstance
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input
+SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
 
 .PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, currend Windows login will be used.
+PSCredential object to connect as. If not specified, current Windows login will be used.
 
 .PARAMETER Database
-The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 .PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is autopopulated from the server
+The database(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER Pattern
 String pattern that you want to search for in the view textbody
@@ -33,7 +33,7 @@ By default system databases are ignored but you can include them within the sear
 Use this switch to disable any kind of verbose messages
 
 .NOTES
-Original Author: Cláudio Silva (@ClaudioESSilva)
+Author: Cláudio Silva (@ClaudioESSilva)
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -68,7 +68,7 @@ Searches in "mydb" database views for "runtime" in the textbody
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential]$SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,

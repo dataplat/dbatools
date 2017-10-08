@@ -13,10 +13,10 @@ function Get-DbaDatabaseFile {
 	Credentials to connect to the SQL Server instance if the calling user doesn't have permission
 
 	.PARAMETER Database
-	The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+	The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
 	.PARAMETER ExcludeDatabase
-	The database(s) to exclude - this list is autopopulated from the server
+	The database(s) to exclude - this list is auto-populated from the server
 
 	.PARAMETER DatabaseCollection
 	Internal Variable
@@ -51,7 +51,7 @@ function Get-DbaDatabaseFile {
 	param (
 		[parameter(ParameterSetName = "Pipe", Mandatory, ValueFromPipeline)]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
@@ -160,7 +160,7 @@ function Get-DbaDatabaseFile {
 					continue
 				}
 				Write-Message -Level Verbose -Message "Querying database $db"
-				$results = Invoke-DbaSqlcmd -ServerInstance $server -Query $sql -Database $db.name
+				$results = $server.Query($sql,$db.name)
 				
 				foreach ($result in $results) {
 					$size = [dbasize]($result.Size * 8192)
@@ -180,7 +180,7 @@ function Get-DbaDatabaseFile {
 						$VolumeFreeSpace = [dbasize]$result.VolumeFreeSpace
 					}
 					else {
-						$disks = Invoke-DbaSqlcmd -ServerInstance $server -Query "xp_fixeddrives" -Database $db.name
+						$disks = $server.Query("xp_fixeddrives",$db.name)
 						$free = $disks | Where-Object { $_.drive -eq $result.PhysicalName.Substring(0, 1) } | Select-Object 'MB Free' -ExpandProperty 'MB Free'
 						$VolumeFreeSpace = [dbasize]($free * 1024 * 1024)
 					}

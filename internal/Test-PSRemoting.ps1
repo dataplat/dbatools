@@ -11,29 +11,28 @@ https://www.petri.com/test-network-connectivity-powershell-test-connection-cmdle
     [Parameter(Position=0,Mandatory,HelpMessage = "Enter a computername",ValueFromPipeline)]
     [ValidateNotNullorEmpty()]
     [string]$Computername,
-    [System.Management.Automation.Credential()]$Credential = [System.Management.Automation.PSCredential]::Empty
+    $Credential = [System.Management.Automation.PSCredential]::Empty
   )
  
   Begin {
-    Write-Verbose -Message "Starting $($MyInvocation.Mycommand)"  
+    Write-Message -Level Verbose -Message "Starting $($MyInvocation.Mycommand)"
   } #begin
  
   Process {
-    Write-Verbose -Message "Testing $computername"
+    Write-Message -Level Verbose -Message "Testing $computername"
     Try {
       $r = Test-WSMan -ComputerName $Computername -Credential $Credential -Authentication Default -ErrorAction Stop
       $True 
     }
     Catch {
-      Write-Verbose $_.Exception.Message
-      $False
- 
+      Stop-Function -Message "Remote testing failed for computer $ComputerName" -Target $ComputerName -ErrorRecord $_ -Continue
+      return $false
     }
- 
+    
   } #Process
  
   End {
-    Write-Verbose -Message "Ending $($MyInvocation.Mycommand)"
+    Write-Message -Level Verbose -Message "Ending $($MyInvocation.Mycommand)"
   } #end
  
 } #close function

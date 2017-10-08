@@ -8,7 +8,7 @@ Gets SQL Agent Job Category information for each instance(s) of SQL Server.
  The Get-DbaJobCategory returns connected SMO object for SQL Agent Job Category information for each instance(s) of SQL Server.
 	
 .PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
 to be executed against multiple SQL Server instances.
 
 .PARAMETER SqlCredential
@@ -45,7 +45,7 @@ Returns all SQL Agent Job Categories for the local and sql2016 SQL Server instan
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[switch]$Silent
 	)
 	
@@ -65,9 +65,9 @@ Returns all SQL Agent Job Categories for the local and sql2016 SQL Server instan
 			
 			foreach ($jobCategory in $server.JobServer.JobCategories)
 			{
-				Add-Member -InputObject $jobCategory -MemberType NoteProperty -Name ComputerName -value $jobCategory.Parent.Parent.NetName
-				Add-Member -InputObject $jobCategory -MemberType NoteProperty -Name InstanceName -value $jobCategory.Parent.Parent.ServiceName
-				Add-Member -InputObject $jobCategory -MemberType NoteProperty -Name SqlInstance -value $jobCategory.Parent.Parent.DomainInstanceName
+				Add-Member -Force -InputObject $jobCategory -MemberType NoteProperty -Name ComputerName -value $jobCategory.Parent.Parent.NetName
+				Add-Member -Force -InputObject $jobCategory -MemberType NoteProperty -Name InstanceName -value $jobCategory.Parent.Parent.ServiceName
+				Add-Member -Force -InputObject $jobCategory -MemberType NoteProperty -Name SqlInstance -value $jobCategory.Parent.Parent.DomainInstanceName
 				
 				Select-DefaultView -InputObject $jobCategory -Property ComputerName, InstanceName, SqlInstance, ID, Name, CategoryType
 			}

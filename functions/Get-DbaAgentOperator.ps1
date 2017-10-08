@@ -11,13 +11,13 @@ function Get-DbaAgentOperator {
 			This can be a collection and receive pipeline input.
 
 		.PARAMETER SqlCredential
-			PSCredential object to connect as. If not specified, currend Windows login will be used.
+			PSCredential object to connect as. If not specified, current Windows login will be used.
 		
 		.PARAMETER Operator
-			The operator(s) to process - this list is autopopulated from the server. If unspecified, all operators will be processed.
+			The operator(s) to process - this list is auto-populated from the server. If unspecified, all operators will be processed.
 
 		.PARAMETER ExcludeOperator
-			The operator(s) to exclude - this list is autopopulated from the server
+			The operator(s) to exclude - this list is auto-populated from the server
 
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
@@ -58,7 +58,7 @@ function Get-DbaAgentOperator {
         [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
+        [PSCredential]
         $SqlCredential,
 		[object[]]$Operator,
 		[object[]]$ExcludeOperator,
@@ -98,11 +98,11 @@ function Get-DbaAgentOperator {
                 $jobs = $server.JobServer.jobs | Where-Object { $_.OperatorToEmail, $_.OperatorToNetSend, $_.OperatorToPage -contains $operator.Name }
                 $lastemail = [dbadatetime]$operator.LastEmailDate
 				
-                Add-Member -InputObject $operator -MemberType NoteProperty -Name ComputerName -Value $server.NetName
-                Add-Member -InputObject $operator -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-                Add-Member -InputObject $operator -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-                Add-Member -InputObject $operator -MemberType NoteProperty -Name RelatedJobs -Value $jobs
-                Add-Member -InputObject $operator -MemberType NoteProperty -Name LastEmail -Value $lastemail
+                Add-Member -Force -InputObject $operator -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+                Add-Member -Force -InputObject $operator -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                Add-Member -Force -InputObject $operator -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                Add-Member -Force -InputObject $operator -MemberType NoteProperty -Name RelatedJobs -Value $jobs
+                Add-Member -Force -InputObject $operator -MemberType NoteProperty -Name LastEmail -Value $lastemail
                 Select-DefaultView -InputObject $operator -Property $defaults
             }
         }

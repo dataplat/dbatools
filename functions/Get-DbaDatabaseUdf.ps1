@@ -63,7 +63,7 @@ Gets the User Defined Functions for the databases on Sql1 and Sql2/sqlexpress
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemUdf,
@@ -101,16 +101,16 @@ Gets the User Defined Functions for the databases on Sql1 and Sql2/sqlexpress
 					Write-Message -Message "No User Defined Functions exist in the $db database on $instance" -Target $db -Level Verbose
 					continue
 				}
-                if (Was-Bound -ParameterName ExcludeSystemUdf) {
+                if (Test-Bound -ParameterName ExcludeSystemUdf) {
                     $UserDefinedFunctions = $UserDefinedFunctions | Where-Object { $_.IsSystemObject -eq $false }
                 }
 
                 $UserDefinedFunctions | foreach {
 
-				Add-Member -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.NetName
-				Add-Member -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-				Add-Member -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-				Add-Member -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name
+				Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name ComputerName -value $server.NetName
+				Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+				Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+				Add-Member -Force -InputObject $_ -MemberType NoteProperty -Name Database -value $db.Name
 
 				Select-DefaultView -InputObject $_ -Property ComputerName, InstanceName, SqlInstance, Database, Schema, CreateDate, DateLastModified, Name, DataType
                 }

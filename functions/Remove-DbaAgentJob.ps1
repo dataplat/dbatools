@@ -34,7 +34,7 @@ Prompts you for confirmation before executing any changing operations within the
 Use this switch to disable any kind of verbose messages
 
 .NOTES 
-Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job
 	
 Website: https://dbatools.io
@@ -73,7 +73,7 @@ Removes the job from multiple servers using pipe line
         [object[]]$SqlInstance,
 
         [Parameter(Mandatory = $false)]
-        [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+        [PSCredential]$SqlCredential,
         
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -94,7 +94,7 @@ Removes the job from multiple servers using pipe line
         foreach ($instance in $sqlinstance) {
 
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Output
+            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
@@ -111,7 +111,7 @@ Removes the job from multiple servers using pipe line
                 else {   
                     # Get the job
                     try {
-                        $smoJob = $Server.JobServer.Jobs[$j] 
+                        $currentjob = $Server.JobServer.Jobs[$j] 
                     }
                     catch {
                         Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Target $instance -Continue
@@ -120,7 +120,7 @@ Removes the job from multiple servers using pipe line
                     # Delete the history
                     if (-not $KeepHistory) {
                         Write-Message -Message "Purging job history" -Level Verbose
-                        $smoJob.PurgeHistory()
+                        $currentjob.PurgeHistory()
                     }
 
                     # Execute 
@@ -131,12 +131,12 @@ Removes the job from multiple servers using pipe line
                             if ($KeepUnusedSchedule) {
                                 # Drop the job keeping the unused schedules
                                 Write-Message -Message "Removing job keeping unused schedules" -Level Verbose
-                                $smoJob.Drop($true) 
+                                $currentjob.Drop($true) 
                             }
                             else {
                                 # Drop the job removing the unused schedules
                                 Write-Message -Message "Removing job removing unused schedules" -Level Verbose
-                                $smoJob.Drop($false) 
+                                $currentjob.Drop($false) 
                             }
                     
                         }
@@ -151,6 +151,6 @@ Removes the job from multiple servers using pipe line
     } # process
 
     end {
-        Write-Message -Message "Finished removing jobs(s)." -Level Output
+        Write-Message -Message "Finished removing jobs(s)." -Level Verbose
     }
 }

@@ -10,7 +10,7 @@ Internal function. Ensures sysadmin account access on SQL Server.
 		[ValidateNotNullOrEmpty()]
 		[Alias("ServerInstance", "SqlServer")]
 		[object]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential
+		[PSCredential]$SqlCredential
 	)
 	
 	try

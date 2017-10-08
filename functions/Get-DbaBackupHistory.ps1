@@ -9,6 +9,8 @@ function Get-DbaBackupHistory {
 		Returns backup history details for some or all databases on a SQL Server.
 		
 		You can even get detailed information (including file path) for latest full, differential and log files.
+
+		Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present
 		
 		Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
 	
@@ -25,8 +27,8 @@ function Get-DbaBackupHistory {
 	.PARAMETER ExcludeDatabase
 		The database(s) to not process.
 	
-	.PARAMETER IgnoreCopyOnly
-		If set, Get-DbaBackupHistory will ignore CopyOnly backups
+	.PARAMETER IncludeCopyOnly
+		By default Get-DbaBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them
 	
 	.PARAMETER Force
 		Returns a boatload of information, the way SQL Server returns it
@@ -109,7 +111,7 @@ function Get-DbaBackupHistory {
 		Returns information about all Full backups for AdventureWorks2014 on sql2014
 	
 	.EXAMPLE
-		Get-DbaRegisteredServerName -SqlInstance sql2016 | Get-DbaBackupHistory
+		Get-DbaRegisteredServer -SqlInstance sql2016 | Get-DbaBackupHistory
 		
 		Returns database backup information for every database on every server listed in the Central Management Server on sql2016
 	
@@ -151,7 +153,7 @@ function Get-DbaBackupHistory {
 		$ExcludeDatabase,
 		
 		[switch]
-		$IgnoreCopyOnly,
+		$IncludeCopyOnly,
 		
 		[Parameter(ParameterSetName = "NoLast")]
 		[switch]
@@ -198,6 +200,11 @@ function Get-DbaBackupHistory {
 		Write-Message -Level System -Message "Active Parameterset: $($PSCmdlet.ParameterSetName)"
 		Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
 		
+		$IgnoreCopyOnly = $true
+		If ($IncludeCopyOnly -eq $True) {
+			$IgnoreCopyOnly = $false
+		}
+
 		$DeviceTypeMapping = @{
 			'Disk' = 2
 			'Permanent Disk Device' = 102
@@ -251,9 +258,14 @@ function Get-DbaBackupHistory {
 				$backupSizeColumn = 'compressed_backup_size'
 			}
 			
-			$databases = $server.Databases
-			if ($Database) {
-				$databases = $databases | Where-Object Name -In $Database
+			$databases = @()
+			if ($null -ne $Database) {
+				ForEach ($db in $Database){
+					$databases += [PScustomObject]@{name = $db}
+				}
+			}
+			else {
+				$databases = $server.Databases	
 			}
 			if ($ExcludeDatabase) {
 				$databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
@@ -265,7 +277,7 @@ function Get-DbaBackupHistory {
 			foreach($b in $BackupTypeFilter) {
 				$BackupTypeFilterRight = "IN ('" + ($BackupTypeFilter -Join "','") + "')"
 			}
-			
+
 			if ($last) {
 				
 				foreach ($db in $databases) {
@@ -275,10 +287,9 @@ function Get-DbaBackupHistory {
 					$allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType
 					$DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType
 					if ($DiffDb.LastLsn -gt $Fulldb.LastLsn -and  $DiffDb.DatabaseBackupLSN -eq $Fulldb.CheckPointLSN ) {
+						Write-Message -Level Verbose -Message "Valid Differential backup "
 						$Allbackups += $DiffDB
-
 						$TLogStartLSN = ($diffdb.FirstLsn -as [bigint])
-						$Allbackups += $DiffDB
 					}
 					else {
 						Write-Message -Level Verbose -Message "No Diff found"
@@ -290,16 +301,17 @@ function Get-DbaBackupHistory {
 						}
 					}
 					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $TLogstartLSN | Where-Object { 
-						$_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN 
+						$_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $Fulldb.LastRecoveryForkGuid
 					}
-					$Allbackups | Sort-Object LastLsn
+					#This line does the output for -Last!!!
+					$Allbackups |  Sort-Object -Property LastLsn, Type
 				
 				}
 				continue
 			}
 			
 			if ($LastFull -or $LastDiff -or $LastLog) {
-				$sql = @()
+				#$sql = @()
 				if ($LastFull) {
 					$first = 'D'; $second = 'P'
 				}
@@ -311,7 +323,7 @@ function Get-DbaBackupHistory {
 				}
 				$databases = $databases | Select-Object -Unique
 				foreach ($db in $databases) {
-					Write-Message -Level Verbose -Message "Processing $db" -Target $db
+					Write-Message -Level Verbose -Message "Processing $($db.name)" -Target $db
 					$wherecopyonly = $null
 					if ($IgnoreCopyOnly) { $wherecopyonly = "AND is_copy_only='0'" }
 					if ($DeviceTypeFilter) {
@@ -342,9 +354,11 @@ function Get-DbaBackupHistory {
  									a.checkpoint_lsn as 'CheckpointLsn',
  									a.last_lsn as 'Lastlsn',
  									a.software_major_version,
-									a.DeviceType
+									a.DeviceType,
+									a.is_copy_only,
+									a.last_recovery_fork_guid
 								FROM (SELECT
-								  RANK() OVER (ORDER BY backupset.backup_start_date DESC) AS 'BackupSetRank',
+								  RANK() OVER (ORDER BY backupset.last_lsn DESC) AS 'BackupSetRank',
 								  backupset.database_name AS [Database],
 								  backupset.user_name AS Username,
 								  backupset.backup_start_date AS Start,
@@ -382,7 +396,9 @@ function Get-DbaBackupHistory {
 								  backupset.checkpoint_lsn,
 								  backupset.last_lsn,
 								  backupset.software_major_version,
-								  mediaset.software_name AS Software
+								  mediaset.software_name AS Software,
+								  backupset.is_copy_only,
+								  backupset.last_recovery_fork_guid
 								FROM msdb..backupmediafamily AS mediafamily
 								JOIN msdb..backupmediaset AS mediaset
 								  ON mediafamily.media_set_id = mediaset.media_set_id
@@ -396,7 +412,6 @@ function Get-DbaBackupHistory {
 								ORDER BY a.Type;
 								"
 				}
-				
 				$sql = $sql -join "; "
 			}
 			else {
@@ -447,7 +462,9 @@ function Get-DbaBackupHistory {
 							  backupset.checkpoint_lsn as 'CheckpointLsn',
 							  backupset.last_lsn as 'Lastlsn',
 							  backupset.software_major_version,
-							  mediaset.software_name AS Software"
+							  mediaset.software_name AS Software,
+							  backupset.is_copy_only,
+							  backupset.last_recovery_fork_guid"
 				}
 				
 				$from = " FROM msdb..backupmediafamily mediafamily
@@ -466,14 +483,14 @@ function Get-DbaBackupHistory {
 				
 				if ($Last -or $LastFull -or $LastLog -or $LastDiff) {
 					$tempwhere = $wherearray -join " AND "
-					$wherearray += "type = 'Full' AND mediaset.media_set_id = (select top 1 mediaset.media_set_id $from $tempwhere order by backupset.backup_finish_date DESC)"
+					$wherearray += "type = 'Full' AND mediaset.media_set_id = (select top 1 mediaset.media_set_id $from $tempwhere order by backupset.last_lsn DESC)"
 				}
 				
 				if ($Since -ne $null) {
 					$wherearray += "backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
 				}
 				
-				if ($IgnoreCopyOnly) {
+				if ($IgnoreCopyOnly -eq $true) {
 					$wherearray += "is_copy_only='0'"
 				}
 				if ($DeviceTypeFilter) {
@@ -491,8 +508,9 @@ function Get-DbaBackupHistory {
 					$where = "$where $wherearray"
 				}
 				
-				$sql = "$select $from $where ORDER BY backupset.backup_finish_date DESC"
+				$sql = "$select $from $where ORDER BY backupset.last_lsn DESC"
 			}
+
 			Write-Message -Level Debug -Message $sql
 			Write-Message -Level SomewhatVerbose -Message "Executing sql query"
 			$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
@@ -513,7 +531,7 @@ function Get-DbaBackupHistory {
 								from msdb.dbo.backupfile where backup_set_id='$($Group.group[0].BackupSetID)'"
 					
 					Write-Message -Level Debug -Message "FileSQL: $fileSql"
-					
+	
 					$historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
 					$historyObject.ComputerName = $server.NetName
 					$historyObject.InstanceName = $server.ServiceName
@@ -537,9 +555,11 @@ function Get-DbaBackupHistory {
 					$historyObject.CheckpointLsn = $group.Group[0].checkpoint_lsn
 					$historyObject.LastLsn = $group.Group[0].Last_Lsn
 					$historyObject.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
+					$historyObject.IsCopyOnly = if($group.Group[0].is_copy_only -eq 1){$true}else{$false}
+					$HistoryObject.LastRecoveryForkGuid = $group.Group[0].last_recovery_fork_guid
 					$groupResults += $historyObject
 				}
-				$groupResults | Sort-Object -Property End -Descending
+				$groupResults | Sort-Object -Property LastLsn, Type
 			}
 		}
 	}

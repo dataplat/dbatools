@@ -8,8 +8,8 @@ Finds Logins in Active Directory groups that have logins on the SQL Instance.
 Outputs all the active directory groups members for a server, or limits it to find a specific AD user in the groups
 	
 .NOTES 
-Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-Original Author: Simone Bizzotto, @niphlod
+Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+Author: Simone Bizzotto, @niphlod
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 .PARAMETER SqlInstance 
 SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-collection and recieve pipeline input.
+collection and receive pipeline input.
 
 .PARAMETER SqlCredential
 PSCredential object to connect under. If not specified, current Windows login will be used.
@@ -57,7 +57,7 @@ Returns all active directory users within all windows AD groups that have logins
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[string[]]$Login
 	)
 	begin
