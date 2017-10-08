@@ -1,7 +1,7 @@
-function Test-DbaVirtualLogFile {
+function Get-DbaDbVirtualLogFile {
 	<#
 		.SYNOPSIS
-			Returns calculations on the database virtual log files for database on a SQL instance.
+			Returns database virtual log file information for database files on a SQL instance.
 
 		.DESCRIPTION
 			Having a transaction log file with too many virtual log files (VLFs) can hurt database performance.
@@ -39,34 +39,34 @@ function Test-DbaVirtualLogFile {
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
-			Tags: VLF, Database
+			Tags: VLF, Database, LogFile
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 		.LINK
-			https://dbatools.io/Test-DbaVirtualLogFile
+			https://dbatools.io/Get-DbaDbVirtualLogFile
 
 		.EXAMPLE
-			Test-DbaVirtualLogFile -SqlInstance sqlcluster
+			Get-DbaDbVirtualLogFile -SqlInstance sqlcluster
 
 			Returns all user database virtual log file counts for the sqlcluster instance.
 
 		.EXAMPLE
-			Test-DbaVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}
+			Get-DbaDbVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}
 
 			Returns user databases that have 50 or more VLFs.
 
 		.EXAMPLE
-			@('sqlserver','sqlcluster') | Test-DbaVirtualLogFile
+			@('sqlserver','sqlcluster') | Get-DbaDbVirtualLogFile
 
 			Returns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.
 
 		.EXAMPLE
-			Test-DbaVirtualLogFile -SqlInstance sqlcluster -Database db1, db2
+			Get-DbaDbVirtualLogFile -SqlInstance sqlcluster -Database db1, db2
 
-			Returns VLF counts for the db1 and db2 databases on sqlcluster.
+			Returns the VLF counts for the db1 and db2 databases on sqlcluster.
 	#>
 	[CmdletBinding()]
 	[OutputType([System.Collections.ArrayList])]
@@ -105,24 +105,24 @@ function Test-DbaVirtualLogFile {
 
 			foreach ($db in $dbs) {
 				try {
-					$data = Get-DbaDbVirtualLogFile -SqlInstance $server -Database $db.Name
-					$logFile = Get-DbaDatabaseFile -SqlInstance $server -Database $db.Name | Where-Object Type -eq 1
+					$data = $db.Query("DBCC LOGINFO")
 
-					$active = $data | Where-Object Status -EQ 2
-					$inactive = $data | Where-Object Status -EQ 0
-
-					[PSCustomObject]@{
-						ComputerName   = $server.NetName
-						InstanceName   = $server.ServiceName
-						SqlInstance    = $server.DomainInstanceName
-						Database       = $db.name
-						Total   = $data.Count
-						Inactive = if ($inactive -and $inactive.Count -eq $null) {1} else {$inactive.Count}
-						Active            = if ($active -and $active.Count -eq $null) {1} else {$active.Count}
-						LogFileName = $logFile.LogicalName -join ","
-						LogFileGrowth = $logFile.Growth -join ","
-						LogFileGrowthType = $logFile.GrowthType -join ","
-					} | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, TotalCount
+					foreach ($d in $data) {
+						[pscustomobject]@{
+							ComputerName   = $server.NetName
+							InstanceName   = $server.ServiceName
+							SqlInstance    = $server.DomainInstanceName
+							Database       = $db.Name
+							RecoveryUnitId = $d.RecoveryUnitId
+							FileId         = $d.FileId
+							FileSize       = $d.FileSize
+							StartOffset    = $d.StartOffset
+							FSeqNo         = $d.FSeqNo
+							Status         = $d.Status
+							Parity         = $d.Parity
+							CreateLsn      = $d.CreateLSN
+						}
+					}
 				}
 				catch {
 					Stop-Function -Message "Unable to query $($db.name) on $instance." -ErrorRecord $_ -Target $db -Continue
