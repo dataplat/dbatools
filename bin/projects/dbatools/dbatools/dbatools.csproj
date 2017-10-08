@@ -58,6 +58,8 @@
     <Compile Include="Configuration\Config.cs" />
     <Compile Include="Connection\ConnectionHost.cs" />
     <Compile Include="Database\Dependency.cs" />
+    <Compile Include="Utility\DbaPasswordHash.cs" />
+    <Compile Include="Utility\DbaPasswordHashVersion.cs" />
     <Compile Include="dbaSystem\SystemHost.cs" />
     <Compile Include="Exceptions\BloodyHellGiveMeSomethingToWorkWithException.cs" />
     <Compile Include="Maintenance\MaintenanceHost.cs" />
@@ -70,7 +72,7 @@
     <Compile Include="TypeConversion\DbaCredentialParameterConverter.cs" />
     <Compile Include="Utility\CredentialPrompt.cs" />
     <Compile Include="Validation\LinkedServerResult.cs" />
-    <Compile Include="Utility\DateTimeExtension.cs" />
+    <Compile Include="Utility\DbaToolsExtensionMethods.cs" />
     <Compile Include="Utility\DbaDate.cs" />
     <Compile Include="Utility\DbaDateTime.cs" />
     <Compile Include="Utility\DbaDateTimeBase.cs" />
