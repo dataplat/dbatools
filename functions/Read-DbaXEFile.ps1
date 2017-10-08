@@ -1,17 +1,20 @@
-﻿function Read-DbaXEventFile {
+﻿function Read-DbaXEFile {
  <#
 	.SYNOPSIS
 	Read XEvents from a xel or xem file
 
 	.DESCRIPTION
-	Read XEvents from a xel or xem file. Returns a weird Microsoft.SqlServer.XEvent.Linq.QueryableXEventData enumeration object.
-
+	Read XEvents from a xel or xem file. 
+	
 	.PARAMETER Path
 	The path to the file. This is relative to the computer executing the command. UNC paths supported.
 	
 	.PARAMETER Exact
 	By default, this command will add a wildcard to the Path because Eventing uses the file name as a template and adds characters. Use this to skip the addition of the wildcard.
 		
+	.PARAMETER Raw
+	Returns the Microsoft.SqlServer.XEvent.Linq.PublishedEvent enumeration object
+	
 	.PARAMETER Silent
 	If this switch is enabled, the internal messaging functions will be silenced.
 
@@ -22,15 +25,15 @@
 	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.LINK
-	https://dbatools.io/Read-DbaXEventFile
+	https://dbatools.io/Read-DbaXEFile
 
 	.EXAMPLE
-	Read-DbaXEventFile -SqlInstance ServerA\sql987 -Path C:\temp\deadocks.xel
+	Read-DbaXEFile -SqlInstance ServerA\sql987 -Path C:\temp\deadocks.xel
 
 	Returns events
 
 	.EXAMPLE
-	Get-DbaXEventSession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEventFile
+	Get-DbaXESession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEFile
 	
 	Reads remote xevents by acccessing the file over the admin UNC share
 
@@ -40,6 +43,7 @@
 		[parameter(Mandatory, ValueFromPipeline)]
 		[object[]]$Path,
 		[switch]$Exact,
+		[switch]$Raw,
 		[switch]$Silent
 	)
 	process {
@@ -74,7 +78,15 @@
 				Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
 			}
 			
-			New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
+			if ($raw) {
+				New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
+			}
+			else {
+				# Make it selectable, otherwise it's a weird enumeration
+				foreach ($row in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile))) {
+					Select-DefaultView -InputObject $row -Property Name, Timestamp, Fields, Actions
+				}
+			}
 		}
 	}
 }

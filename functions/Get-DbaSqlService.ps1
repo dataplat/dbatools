@@ -132,7 +132,8 @@ Function Get-DbaSqlService {
 			if ($Server.ComputerName) {
 				$Computer = $server.ComputerName
 				Write-Message -Level VeryVerbose -Message "Getting SQL Server namespace on $Computer" -Target $Computer
-				$namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction Ignore -Silent -Credential $credential | Sort-Object Name -Descending
+				try { $namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -Silent -Credential $credential | Sort-Object Name -Descending }
+				catch { }
 				if ($namespaces) {
 					$servicesTemp = @()
 					

@@ -32,7 +32,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	}
 	Context "Operations on databases" {
 		BeforeAll {
-			$server = Get-DbaInstance -SqlInstance $script:instance2
+			$server = Connect-DbaInstance -SqlInstance $script:instance2
 			$db1 = "dbatoolsci_SnapMe"
 			$db2 = "dbatoolsci_SnapMe2"
 			$db3 = "dbatoolsci_SnapMe3_Offline"
@@ -93,12 +93,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 				$ExpectedProps = 'ComputerName,Database,DatabaseCreated,InstanceName,Notes,PrimaryFilePath,SizeMB,SnapshotDb,SnapshotOf,SqlInstance,Status'.Split(',')
 				($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 			}
-
-			It "Has the correct default properties" {
-				$null = Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Force
-				$result = New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Silent -Database $db2
-				$ExpectedPropsDefault = 'ComputerName,Database,DatabaseCreated,InstanceName,Notes,PrimaryFilePath,SizeMB,SnapshotOf,SqlInstance,Status'.Split(',')
-				($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
+			
+			if (-not $env:appveyor) {
+				It "Has the correct default properties" {
+					$null = Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Force
+					$result = New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Silent -Database $db2
+					$ExpectedPropsDefault = 'ComputerName,Database,DatabaseCreated,InstanceName,Notes,PrimaryFilePath,SizeMB,SnapshotOf,SqlInstance,Status'.Split(',')
+					($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
+				}
 			}
 		}
 	}
