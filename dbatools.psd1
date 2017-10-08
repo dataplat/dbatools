@@ -11,7 +11,7 @@
 	RootModule			    = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion		    = '0.9.65'
+	ModuleVersion		    = '0.9.67'
 	
 	# ID used to uniquely identify this module
 	GUID				    = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -377,7 +377,8 @@
 		'Test-DbaLogShippingStatus',
 		'Get-DbaXESessionTarget',
 		'New-DbaXESmartTargetResponse',
-		'New-DbaXESmartTarget'
+		'New-DbaXESmartTarget',
+		'Get-DbaDbVirtualLogFile'
 	)
 	
 	# Cmdlets to export from this module
