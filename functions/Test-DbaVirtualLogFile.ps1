@@ -35,6 +35,9 @@ function Test-DbaVirtualLogFile {
 		.PARAMETER IncludeSystemDBs
 			If this switch is enabled, system database information will be displayed.
 
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
+
 		.NOTES
 			Tags: VLF, Database
 
