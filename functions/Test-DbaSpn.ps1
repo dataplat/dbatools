@@ -61,18 +61,16 @@ function Test-DbaSpn {
 	[cmdletbinding()]
 	param (
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[dbainstanceparameter[]]$ComputerName,
-		[Parameter(Mandatory = $false)]
+		[DbaInstance[]]$ComputerName,
 		[PSCredential]$Credential,
-		[Parameter(Mandatory = $false)]
 		[switch]$Silent
 	)
 	begin {
 		# spare the cmdlet to search for the same account over and over
-		$resultcache = @{ }
+		$resultCache = @{}
 	}
 	process {
-		foreach ($computer in $computername) {
+		foreach ($computer in $ComputerName) {
 			try {
 				$resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential -ErrorAction Stop
 			}
@@ -85,14 +83,14 @@ function Test-DbaSpn {
 				continue
 			}
 
-			$ipaddr = $resolved.IPAddress
-			$hostentry = $resolved.FullComputerName
+			$hostEntry = $resolved.FullComputerName
 
-			Write-Message -Message "Resolved ComputerName to FQDN: $hostentry" -Level Verbose
+			Write-Message -Message "Resolved ComputerName to FQDN: $hostEntry" -Level Verbose
 
 			$Scriptblock = {
 
-				Function Convert-SqlVersion {
+				function Convert-SqlVersion {
+					[cmdletbinding()]
 					param (
 						[version]$version
 					)
@@ -116,17 +114,20 @@ function Test-DbaSpn {
 				}
 
 				$spns = @()
-				$servername = $args[0]
-				$hostentry = $args[1]
-				$instancename = $args[2]
-				$instancecount = $wmi.ServerInstances.Count
-				Write-Verbose "Found $instancecount instances"
+				$servereName = $args[0]
+				$hostEntry = $args[1]
+				$instanceName = $args[2]
+				$instanceCount = $wmi.ServerInstances.Count
+
+				<# DO NOT use Write-Message as this is inside of a script block #>
+				Write-Verbose "Found $instanceCount instances"
 
 				foreach ($instance in $wmi.ServerInstances) {
 					$spn = [pscustomobject] @{
-						ComputerName           = $servername
-						InstanceName           = $instancename
-						SqlProduct             = $null #SKUNAME
+						ComputerName           = $servereName
+						InstanceName           = $instanceName
+						#SKUNAME
+						SqlProduct             = $null
 						InstanceServiceAccount = $null
 						RequiredSPN            = $null
 						IsSet                  = $false
@@ -136,69 +137,72 @@ function Test-DbaSpn {
 						DynamicPort            = $false
 						Warning                = "None"
 						Error                  = "None"
-						Credential             = $Credential # for piping
+						# for piping
+						Credential             = $Credential
 					}
 
 					$spn.InstanceName = $instance.Name
-					$InstanceName = $spn.InstanceName
+					$instanceName = $spn.InstanceName
 
-					Write-Verbose "Parsing $InstanceName"
+					<# DO NOT use Write-Message as this is inside of a script block #>
+					Write-Verbose "Parsing $instanceName"
 
-					$services = $wmi.services | Where-Object DisplayName -eq "SQL Server ($InstanceName)"
+					$services = $wmi.Services | Where-Object DisplayName -EQ "SQL Server ($instanceName)"
 					$spn.InstanceServiceAccount = $services.ServiceAccount
-					$spn.Cluster = ($services.advancedproperties | Where-Object Name -eq 'Clustered').Value
+					$spn.Cluster = ($services.advancedproperties | Where-Object Name -EQ 'Clustered').Value
 
 					if ($spn.Cluster) {
-						$hostentry = ($services.advancedproperties | Where-Object Name -eq 'VSNAME').Value.ToLower()
-						Write-Verbose "Found cluster $hostentry"
-						$hostentry = ([System.Net.Dns]::GetHostEntry($hostentry)).HostName
-						$spn.ComputerName = $hostentry
+						$hostEntry = ($services.advancedproperties | Where-Object Name -EQ 'VSNAME').Value.ToLower()
+						<# DO NOT use Write-Message as this is inside of a script block #>
+						Write-Verbose "Found cluster $hostEntry"
+						$hostEntry = ([System.Net.Dns]::GetHostEntry($hostEntry)).HostName
+						$spn.ComputerName = $hostEntry
 					}
 
-					$rawversion = [version]($services.advancedproperties | Where-Object Name -eq 'VERSION').Value #13.1.4001.0
+					$rawVersion = [version]($services.AdvancedProperties | Where-Object Name -EQ 'VERSION').Value
 
-					$version = Convert-SqlVersion $rawversion
-					$skuname = ($services.advancedproperties | Where-Object Name -eq 'SKUNAME').Value
+					$version = Convert-SqlVersion $rawVersion
+					$skuName = ($services.AdvancedProperties | Where-Object Name -EQ 'SKUNAME').Value
 
-					$spn.SqlProduct = "$version $skuname"
+					$spn.SqlProduct = "$version $skuName"
 
 					#is tcp enabled on this instance? If not, we don't need an spn, son
-					if ((($instance.serverprotocols | Where-Object { $_.Displayname -eq "TCP/IP" }).ProtocolProperties | Where-Object { $_.Name -eq "Enabled" }).Value -eq $true) {
+					if ((($instance.ServerProtocols | Where-Object { $_.Displayname -eq "TCP/IP" }).ProtocolProperties | Where-Object { $_.Name -eq "Enabled" }).Value -eq $true) {
+						<# DO NOT use Write-Message as this is inside of a script block #>
 						Write-Verbose "TCP is enabled, gathering SPN requirements"
 						$spn.TcpEnabled = $true
 						#Each instance has a default SPN of MSSQLSvc\<fqdn> or MSSSQLSvc\<fqdn>:Instance
 						if ($instance.Name -eq "MSSQLSERVER") {
-							$spn.RequiredSPN = "MSSQLSvc/$hostentry"
+							$spn.RequiredSPN = "MSSQLSvc/$hostEntry"
 						}
 						else {
-							$spn.RequiredSPN = "MSSQLSvc/" + $hostentry + ":" + $instance.name
+							$spn.RequiredSPN = "MSSQLSvc/" + $hostEntry + ":" + $instance.Name
 						}
 					}
 
 					$spns += $spn
 				}
 				# Now, for each spn, do we need a port set? Only if TCP is enabled and NOT DYNAMIC!
-				ForEach ($spn in $spns) {
+				foreach ($spn in $spns) {
 					$ports = @()
 
-					$ips = (($wmi.ServerInstances | Where-Object { $_.name -eq $spn.InstanceName }).ServerProtocols | Where-Object { $_.DisplayName -eq "TCP/IP" -and $_.IsEnabled -eq "True" }).IpAddresses
+					$ips = (($wmi.ServerInstances | Where-Object { $_.Name -eq $spn.InstanceName }).ServerProtocols | Where-Object { $_.DisplayName -eq "TCP/IP" -and $_.IsEnabled -eq "True" }).IpAddresses
 					$ipAllPort = $null
-					ForEach ($ip in $ips) {
+					foreach ($ip in $ips) {
 						if ($ip.Name -eq "IPAll") {
 							$ipAllPort = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TCPPort" }).Value
 							if (($ip.IpAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value -ne "") {
 								$ipAllPort = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value + "d"
 							}
-
 						}
 						else {
 							$enabled = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "Enabled" }).Value
 							$active = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "Active" }).Value
-							$TcpDynamicPorts = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value
-							if ($enabled -and $active -and $TcpDynamicPorts -eq "") {
+							$tcpDynamicPorts = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value
+							if ($enabled -and $active -and $tcpDynamicPorts -eq "") {
 								$ports += ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TCPPort" }).Value
 							}
-							elseif ($enabled -and $active -and $TcpDynamicPorts -ne "") {
+							elseif ($enabled -and $active -and $tcpDynamicPorts -ne "") {
 								$ports += $ipAllPort + "d"
 							}
 						}
@@ -209,7 +213,7 @@ function Test-DbaSpn {
 					}
 
 					$ports = $ports | Select-Object -Unique
-					ForEach ($port in $ports) {
+					foreach ($port in $ports) {
 						$newspn = $spn.PSObject.Copy()
 						if ($port -like "*d") {
 							$newspn.Port = ($port.replace("d", ""))
@@ -238,7 +242,7 @@ function Test-DbaSpn {
 			Write-Message -Message "Attempting to connect to SQL WMI on remote computer " -Level Verbose
 
 			try {
-				$spns = Invoke-ManagedComputerCommand -ComputerName $hostentry -ScriptBlock $Scriptblock -ArgumentList $computer.FullComputerName, $hostentry, $computer.InstanceName -Credential $Credential -ErrorAction Stop
+				$spns = Invoke-ManagedComputerCommand -ComputerName $hostEntry -ScriptBlock $Scriptblock -ArgumentList $computer.FullComputerName, $hostEntry, $computer.InstanceName -Credential $Credential -ErrorAction Stop
 			}
 			catch {
 				Stop-Function -Message "Couldn't connect to $computer" -ErrorRecord $_ -Continue
@@ -256,11 +260,11 @@ function Test-DbaSpn {
 
 				$serviceAccount = $spn.InstanceServiceAccount
 				# spare the cmdlet to search for the same account over and over
-				if ($spn.InstanceServiceAccount -notin $resultcache.Keys) {
+				if ($spn.InstanceServiceAccount -notin $resultCache.Keys) {
 					Write-Message -Message "searching for $serviceAccount" -Level Verbose
 					try {
 						$result = Get-DbaADObject -ADObject $serviceAccount -Type $searchfor -Credential $Credential -Silent
-						$resultcache[$spn.InstanceServiceAccount] = $result
+						$resultCache[$spn.InstanceServiceAccount] = $result
 					}
 					catch {
 						if (![System.String]::IsNullOrEmpty($spn.InstanceServiceAccount)) {
@@ -269,7 +273,7 @@ function Test-DbaSpn {
 					}
 				}
 				else {
-					$result = $resultcache[$spn.InstanceServiceAccount]
+					$result = $resultCache[$spn.InstanceServiceAccount]
 				}
 				if ($result.Count -gt 0) {
 					try {
