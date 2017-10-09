@@ -22,10 +22,6 @@ namespace Sqlcollaborative.Dbatools.Utility
             {
                 return (Byte / 1024d);
             }
-            set
-            {
-
-            }
         }
 
         /// <summary>
@@ -36,10 +32,6 @@ namespace Sqlcollaborative.Dbatools.Utility
             get
             {
                 return (Byte / 1048576d);
-            }
-            set
-            {
-
             }
         }
 
@@ -52,10 +44,6 @@ namespace Sqlcollaborative.Dbatools.Utility
             {
                 return (Byte / 1073741824d);
             }
-            set
-            {
-
-            }
         }
 
         /// <summary>
@@ -66,10 +54,6 @@ namespace Sqlcollaborative.Dbatools.Utility
             get
             {
                 return (Byte / 1099511627776d);
-            }
-            set
-            {
-
             }
         }
 
@@ -128,7 +112,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         /// <returns>True if equal, false elsewise</returns>
         public override bool Equals(object obj)
         {
-            return ((obj != null) && (obj is Size) && (Byte == ((Size)obj).Byte));
+            return (obj is Size && (Byte == ((Size)obj).Byte));
         }
 
         /// <summary>
