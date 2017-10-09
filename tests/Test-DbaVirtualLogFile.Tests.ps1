@@ -21,10 +21,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 		$defaultParamCount = 11
 		[object[]]$params = (Get-ChildItem function:\Test-DbaVirtualLogFile).Parameters.Keys
 		$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystemDbs', 'Silent'
-		it "Should contain our specific parameters" {
+		It "Should contain our specific parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}
-		it "Should only contain $paramCount parameters" {
+		It "Should only contain $paramCount parameters" {
 			$params.Count - $defaultParamCount | Should Be $paramCount
 		}
 	}
