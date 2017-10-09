@@ -109,9 +109,7 @@ function Stop-DbaProcess {
 		[string[]]$Program,
 		[parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Process")]
 		[object[]]$ProcessCollection,
-		
-		[switch]
-		$Silent
+		[switch]$Silent
 	)
 	
 	process {

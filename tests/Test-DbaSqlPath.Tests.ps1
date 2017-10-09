@@ -1,4 +1,4 @@
-﻿<#
+<#
 	The below statement stays in for every test you build.
 #>
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".ps1","")
@@ -17,10 +17,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 				- Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
 				- Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
 		#>
-		$paramCount = 3
+		$paramCount = 4
 		$defaultParamCount = 11
-		[object[]]$params = (Get-ChildItem function:\Test-DbaTempDbConfiguration).Parameters.Keys
-		$knownParameters = 'SqlInstance', 'SqlCredential', 'Silent'
+		[object[]]$params = (Get-ChildItem function:\Test-DbaSqlPath).Parameters.Keys
+		$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'Silent'
 		It "Should contain our specific parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}
@@ -31,23 +31,24 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 }
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+	BeforeAll {
+		$trueTest = (Get-DbaDatabaseFile -SqlInstance $script:instance2 -Database master)[0].PhysicalName
+		if ($trueTest.Length -eq 0) {
+			It "has failed setup" {
+				Set-TestInconclusive -message "Setup failed"
+			}
+		}
+		$falseTest = 'B:\FloppyDiskAreAwesome'
+	}
 	Context "Command actually works" {
-		$results = Test-DbaTempDbConfiguration -SqlInstance $script:instance2
-		It "Should have correct properties" {
-			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Rule,Recommended,CurrentSetting,IsBestPractice,Notes'.Split(',')
-			($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+		$result = Test-DbaSqlPath -SqlInstance $script:instance2 -Path $trueTest
+		It "Should only return true if the path IS accessible to the instance" {
+			$result | Should Be $true
 		}
 
-		$rule = 'File Location'
-		It "Should return false for IsBestPractice with rule: $rule" {
-			($results | Where-Object Rule -match $rule).IsBestPractice | Should Be $false
-		}
-		It "Should return false for Recommended with rule: $rule" {
-			($results | Where-Object Rule -match $rule).Recommended | Should Be $false
-		}
-		$rule = 'TF 1118 Enabled'
-		It "Should return true for IsBestPractice with rule: $rule" {
-			($results | Where-Object Rule -match $rule).Recommended | Should Be $true
+		$result = Test-DbaSqlPath -SqlInstance $script:instance2 -Path $falseTest
+		It "Should only return false if the path IS NOT accessible to the instance" {
+			$result | Should Be $false
 		}
 	}
 }
