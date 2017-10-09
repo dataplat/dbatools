@@ -1,4 +1,4 @@
-﻿<#
+<#
 	The below statement stays in for every test you build.
 #>
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".ps1","")
@@ -17,10 +17,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 				- Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
 				- Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
 		#>
-		$paramCount = 3
+		$paramCount = 6
 		$defaultParamCount = 11
-		[object[]]$params = (Get-ChildItem function:\Test-DbaTempDbConfiguration).Parameters.Keys
-		$knownParameters = 'SqlInstance', 'SqlCredential', 'Silent'
+		[object[]]$params = (Get-ChildItem function:\Test-DbaVirtualLogFile).Parameters.Keys
+		$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystemDbs', 'Silent'
 		It "Should contain our specific parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}
@@ -29,25 +29,35 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 		}
 	}
 }
-
+# Get-DbaNoun
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+	BeforeAll {
+		$server = Connect-DbaInstance -SqlInstance $script:instance1
+		$db1 = "dbatoolsci_testvlf"
+		$server.Query("CREATE DATABASE $db1")
+		$needed = Get-DbaDatabase -SqlInstance $script:instance1 -Database $db1
+		$setupright = $true
+		if ($needed.Count -ne 1) {
+			$setupright = $false
+			it "has failed setup" {
+				Set-TestInconclusive -message "Setup failed"
+			}
+		}
+	}
+	AfterAll {
+		Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db1
+	}
 	Context "Command actually works" {
-		$results = Test-DbaTempDbConfiguration -SqlInstance $script:instance2
+		$results = Test-DbaVirtualLogFile -SqlInstance $script:instance1 -Database $db1
 		It "Should have correct properties" {
-			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Rule,Recommended,CurrentSetting,IsBestPractice,Notes'.Split(',')
-			($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,Total,Inactive,Active,LogFileName,LogFileGrowth,LogFileGrowthType'.Split(',')
+			($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 		}
 
-		$rule = 'File Location'
-		It "Should return false for IsBestPractice with rule: $rule" {
-			($results | Where-Object Rule -match $rule).IsBestPractice | Should Be $false
-		}
-		It "Should return false for Recommended with rule: $rule" {
-			($results | Where-Object Rule -match $rule).Recommended | Should Be $false
-		}
-		$rule = 'TF 1118 Enabled'
-		It "Should return true for IsBestPractice with rule: $rule" {
-			($results | Where-Object Rule -match $rule).Recommended | Should Be $true
+		It "Should have database name of $db1" {
+			foreach ($result in $results) {
+				$result.Database | Should Be $db1
+			}
 		}
 	}
 }

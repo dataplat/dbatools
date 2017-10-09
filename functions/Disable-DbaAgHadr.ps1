@@ -40,7 +40,7 @@ function Disable-DbaAgHadr {
 		.EXAMPLE
 			Disable-DbaAgHadr -SqlInstance sql2016 -Force
 
-			Sets Hadr service to enabled for the instance sql2016, and restart the service to apply the change.
+			Sets Hadr service to disabled for the instance sql2016, and restart the service to apply the change.
 
 		.EXAMPLE
 			Disable-DbaAgHadr -SqlInstance sql2012\dev1 -Force
