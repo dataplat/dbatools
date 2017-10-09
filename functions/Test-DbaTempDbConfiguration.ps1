@@ -87,10 +87,10 @@ function Test-DbaTempDbConfiguration {
 			}
 			else {
 				$sql = "DBCC TRACEON (3604);DBCC TRACESTATUS(-1)"
-				$tfcheck = $server.Databases['tempdb'].Query($sql)
+				$tfCheck = $server.Databases['tempdb'].Query($sql)
 				$notes = 'KB328551 describes how TF 1118 can benefit performance.'
 
-				if (($tfcheck.TraceFlag -join ',').Contains('1118')) {
+				if (($tfCheck.TraceFlag -join ',').Contains('1118')) {
 					$value = [PSCustomObject]@{
 						ComputerName   = $server.NetName
 						InstanceName   = $server.ServiceName
@@ -119,15 +119,15 @@ function Test-DbaTempDbConfiguration {
 				$isBestPractice = $true
 			}
 
-			$value | Add-Member -Force -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
-			$value | Add-Member -Force -MemberType NoteProperty -Name Notes -Value $notes
+			Add-Member -Force -InputObject $value -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
+			Add-Member -Force -InputObject $value -MemberType NoteProperty -Name Notes -Value $notes
 			$result += $value
 			Write-Message -Level Verbose -Message "TF 1118 evaluated"
 
 			#get files and log files
 			$tempdbFiles = Get-DbaDatabaseFile -SqlInstance $server -Database tempdb
-			$datafiles = $tempdbFiles | Where-Object Type -ne 1
-			$logfiles = $tempdbFiles | Where-Object Type -eq 1
+			$dataFiles = $tempdbFiles | Where-Object Type -ne 1
+			$logFiles = $tempdbFiles | Where-Object Type -eq 1
 			Write-Message -Level Verbose -Message "TempDB file objects gathered"
 
 			$cores = $server.Processors
@@ -141,7 +141,7 @@ function Test-DbaTempDbConfiguration {
 				SqlInstance    = $server.DomainInstanceName
 				Rule           = 'File Count'
 				Recommended    = $cores
-				CurrentSetting = $datafiles.Count
+				CurrentSetting = $dataFiles.Count
 			}
 
 			if ($value.Recommended -ne $value.CurrentSetting -and $null -ne $value.Recommended) {
@@ -151,22 +151,22 @@ function Test-DbaTempDbConfiguration {
 				$isBestPractice = $true
 			}
 
-			$value | Add-Member -Force -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
-			$value | Add-Member -Force -MemberType NoteProperty -Name Notes -Value 'Microsoft recommends that the number of tempdb data files is equal to the number of logical cores up to 8.'
+			Add-Member -Force -InputObject $value -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
+			Add-Member -Force -InputObject $value -MemberType NoteProperty -Name Notes -Value 'Microsoft recommends that the number of tempdb data files is equal to the number of logical cores up to 8.'
 			$result += $value
 
 			Write-Message -Level Verbose -Message "File counts evaluated."
 
 			#test file growth
-			$percdata = $datafiles | Where-Object GrowthType -ne 'KB' | Measure-Object
-			$perclog = $logfiles  | Where-Object GrowthType -ne 'KB' | Measure-Object
+			$percData = $dataFiles | Where-Object GrowthType -ne 'KB' | Measure-Object
+			$percLog = $logFiles  | Where-Object GrowthType -ne 'KB' | Measure-Object
 
-			$totalcount = $percdata.count + $perclog.count
-			if ($totalcount -gt 0) {
-				$totalcount = $true
+			$totalCount = $percData.Count + $percLog.Count
+			if ($totalCount -gt 0) {
+				$totalCount = $true
 			}
 			else {
-				$totalcount = $false
+				$totalCount = $false
 			}
 
 			$value = [PSCustomObject]@{
@@ -175,7 +175,7 @@ function Test-DbaTempDbConfiguration {
 				SqlInstance    = $server.DomainInstanceName
 				Rule           = 'File Growth in Percent'
 				Recommended    = $false
-				CurrentSetting = $totalcount
+				CurrentSetting = $totalCount
 			}
 
 			if ($value.Recommended -ne $value.CurrentSetting -and $null -ne $value.Recommended) {
@@ -185,14 +185,14 @@ function Test-DbaTempDbConfiguration {
 				$isBestPractice = $true
 			}
 
-			$value | Add-Member -Force -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
-			$value | Add-Member -Force -MemberType NoteProperty -Name Notes -Value 'Set grow with explicit values, not by percent.'
+			Add-Member -Force -InputObject $value -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
+			Add-Member -Force -InputObject $value -MemberType NoteProperty -Name Notes -Value 'Set grow with explicit values, not by percent.'
 			$result += $value
 
 			Write-Message -Level Verbose -Message "File growth settings evaluated."
 			#test file Location
 
-			$cdata = ($datafiles | Where-Object PhysicalName -like 'C:*' | Measure-Object).Count + ($logfiles | Where-Object PhysicalName -like 'C:*' | Measure-Object).Count
+			$cdata = ($dataFiles | Where-Object PhysicalName -like 'C:*' | Measure-Object).Count + ($logFiles | Where-Object PhysicalName -like 'C:*' | Measure-Object).Count
 			if ($cdata -gt 0) {
 				$cdata = $true
 			}
@@ -216,19 +216,19 @@ function Test-DbaTempDbConfiguration {
 				$isBestPractice = $true
 			}
 
-			$value | Add-Member -Force -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
-			$value | Add-Member -Force -MemberType NoteProperty -Name Notes -Value "Do not place your tempdb files on C:\."
+			Add-Member -Force -InputObject $value -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
+			Add-Member -Force -InputObject $value -MemberType NoteProperty -Name Notes -Value "Do not place your tempdb files on C:\."
 			$result += $value
 
 			Write-Message -Level Verbose -Message "File locations evaluated."
 
 			#Test growth limits
-			$growthlimits = ($datafiles | Where-Object MaxSize -gt 0 | Measure-Object).Count + ($logfiles | Where-Object MaxSize -gt 0 | Measure-Object).Count
-			if ($growthlimits -gt 0) {
-				$growthlimits = $true
+			$growthLimits = ($dataFiles | Where-Object MaxSize -gt 0 | Measure-Object).Count + ($logFiles | Where-Object MaxSize -gt 0 | Measure-Object).Count
+			if ($growthLimits -gt 0) {
+				$growthLimits = $true
 			}
 			else {
-				$growthlimits = $false
+				$growthLimits = $false
 			}
 
 			$value = [PSCustomObject]@{
@@ -237,7 +237,7 @@ function Test-DbaTempDbConfiguration {
 				SqlInstance    = $server.DomainInstanceName
 				Rule           = 'File MaxSize Set'
 				Recommended    = $false
-				CurrentSetting = $growthlimits
+				CurrentSetting = $growthLimits
 			}
 
 			if ($value.Recommended -ne $value.CurrentSetting -and $null -ne $value.Recommended) {
@@ -247,8 +247,8 @@ function Test-DbaTempDbConfiguration {
 				$isBestPractice = $true
 			}
 
-			$value | Add-Member -Force -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
-			$value | Add-Member -Force -MemberType NoteProperty -Name Notes -Value "Consider setting your tempdb files to unlimited growth."
+			Add-Member -Force -InputObject $value -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
+			Add-Member -Force -InputObject $value -MemberType NoteProperty -Name Notes -Value "Consider setting your tempdb files to unlimited growth."
 			$result += $value
 
 			Write-Message -Level Verbose -Message "MaxSize values evaluated."
@@ -256,7 +256,6 @@ function Test-DbaTempDbConfiguration {
 			Select-DefaultView -InputObject $result -Property ComputerName, InstanceName, SqlInstance, Rule, Recommended, IsBestPractice
 		}
 	}
-
 	end {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlTempDbConfiguration
 	}
