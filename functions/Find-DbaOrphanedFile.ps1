@@ -17,7 +17,7 @@ function Find-DbaOrphanedFile {
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-			$cred = Get-Credential, then pass this $dcred to the -SqlCredential parameter.
+			$cred = Get-Credential, then pass this $cred to the -SqlCredential parameter.
 
 			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
