@@ -1,78 +1,88 @@
 #ValidationTags#FlowControl,Pipeline#
-Function Find-DbaOrphanedFile
-{
-<#
-.SYNOPSIS 
-Find-DbaOrphanedFile finds orphaned database files. Orphaned database files are files not associated with any attached database.
+function Find-DbaOrphanedFile {
+	<#
+		.SYNOPSIS 
+			Find-DbaOrphanedFile finds orphaned database files. Orphaned database files are files not associated with any attached database.
 
-.DESCRIPTION
-This command searches all directories associated with SQL database files for database files that are not currently in use by the SQL Server instance.
+		.DESCRIPTION
+			This command searches all directories associated with SQL database files for database files that are not currently in use by the SQL Server instance.
 
-By default, it looks for orphaned .mdf, .ldf and .ndf files in the root\data directory, the default data path, the default log path, the system paths and any directory in use by any attached directory.
+			By default, it looks for orphaned .mdf, .ldf and .ndf files in the root\data directory, the default data path, the default log path, the system paths and any directory in use by any attached directory.
 
-You can specify additional filetypes using the -FileType parameter, and additional paths to search using the -Path parameter.
+			You can specify additional filetypes using the -FileType parameter, and additional paths to search using the -Path parameter.
 
-.PARAMETER SqlInstance
-The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+		.PARAMETER SqlInstance
+			The SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER Path
-Used to specify extra directories to search in addition to the default data and log directories.
+			$cred = Get-Credential, then pass this $cred to the -SqlCredential parameter.
 
-.PARAMETER FileType
-Used to specify other filetypes in addition to mdf, ldf, ndf. No dot required, just pass the extension.
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.PARAMETER LocalOnly
-Shows only the local filenames
+            To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER RemoteOnly
-Shows only the remote filenames
+		.PARAMETER Path
+			Specifies one or more directories to search in addition to the default data and log directories.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+		.PARAMETER FileType
+			Specifies file extensions other than mdf, ldf and ndf to search for. Do not include the dot (".") when specifying the extension.
 
-.NOTES
-Tags: DisasterRecovery, Orphan
-Author: Sander Stad (@sqlstad), sqlstad.nl
-Requires: sysadmin access on SQL Servers
+		.PARAMETER LocalOnly
+			If this switch is enabled, only local filenames will be returned. Using this switch with multiple servers is not recommended since it does not return the associated server name.
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+		.PARAMETER RemoteOnly
+			If this switch is enabled, only remote filenames will be returned.
 
-Thanks to Paul Randal's notes on FILESTREAM which can be found at http://www.sqlskills.com/blogs/paul/filestream-directory-structure/
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
 
-.LINK
-https://dbatools.io/Find-DbaOrphanedFile
+		.NOTES
+			Tags: DisasterRecovery, Orphan
+			Author: Sander Stad (@sqlstad), sqlstad.nl
+			Requires: sysadmin access on SQL Servers
 
-.EXAMPLE
-Find-DbaOrphanedFile -SqlInstance sqlserver2014a
-Logs into the SQL Server "sqlserver2014a" using Windows credentials and searches for orphaned files. Returns server name, local filename, and unc path to file.
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.EXAMPLE   
-Find-DbaOrphanedFile -SqlInstance sqlserver2014a -SqlCredential $cred
-Logs into the SQL Server "sqlserver2014a" using alternative credentials and searches for orphaned files. Returns server name, local filename, and unc path to file.
+			Thanks to Paul Randal's notes on FILESTREAM which can be found at http://www.sqlskills.com/blogs/paul/filestream-directory-structure/
 
-.EXAMPLE   
-Find-DbaOrphanedFile -SqlInstance sql2014 -Path 'E:\Dir1', 'E:\Dir2'
-Finds the orphaned files in "E:\Dir1" and "E:Dir2" in addition to the default directories.
+		.LINK
+			https://dbatools.io/Find-DbaOrphanedFile
 
-.EXAMPLE   
-Find-DbaOrphanedFile -SqlInstance sql2014 -LocalOnly
-Returns only the local filepath. Using LocalOnly with multiple servers is not recommended since it does not return the associated server name.
+		.EXAMPLE
+			Find-DbaOrphanedFile -SqlInstance sqlserver2014a
 
-.EXAMPLE   
-Find-DbaOrphanedFile -SqlInstance sql2014 -RemoteOnly
-Returns only the remote filepath. Using LocalOnly with multiple servers is not recommended since it does not return the associated server name.
+			Connects to sqlserver2014a, authenticating with Windows credentials, and searches for orphaned files. Returns server name, local filename, and unc path to file.
 
-.EXAMPLE   
-Find-DbaOrphanedFile -SqlInstance sql2014, sql2016 -FileType fsf, mld
-Finds the orphaned ending with ".fsf" and ".mld" in addition to the default filetypes ".mdf", ".ldf", ".ndf" for both the servers sql2014 and sql2016.
+		.EXAMPLE   
+			Find-DbaOrphanedFile -SqlInstance sqlserver2014a -SqlCredential $cred
+
+			Connects to sqlserver2014a, authenticating with SQL Server authentication, and searches for orphaned files. Returns server name, local filename, and unc path to file.
+
+		.EXAMPLE   
+			Find-DbaOrphanedFile -SqlInstance sql2014 -Path 'E:\Dir1', 'E:\Dir2'
+
+			Finds the orphaned files in "E:\Dir1" and "E:Dir2" in addition to the default directories.
+
+		.EXAMPLE   
+			Find-DbaOrphanedFile -SqlInstance sql2014 -LocalOnly
+
+			Returns only the local filepaths for orphaned files.
+
+		.EXAMPLE   
+			Find-DbaOrphanedFile -SqlInstance sql2014 -RemoteOnly
 	
+			Returns only the remote filepath for orphaned files.
 
-#>
+		.EXAMPLE   
+			Find-DbaOrphanedFile -SqlInstance sql2014, sql2016 -FileType fsf, mld
+	
+			Finds the orphaned ending with ".fsf" and ".mld" in addition to the default filetypes ".mdf", ".ldf", ".ndf" for both the servers sql2014 and sql2016.
+
+	#>
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -89,7 +99,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 	)
 
 	begin {
-		function Get-SQLDirTreeQuery{
+		function Get-SQLDirTreeQuery {
 			param($PathList)
 			# use sysaltfiles in lower versions
 
@@ -124,7 +134,8 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			)
 			if ($smoserver.versionMajor -eq 8) {
 				$sql = "select filename from sysaltfiles"
-			} else {
+			}
+			else {
 				$sql = "select physical_name as filename from sys.master_files"
 			}
 
@@ -134,9 +145,9 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 
 			# Add support for Full Text Catalogs in Sql Server 2005 and below
 			if ($server.VersionMajor -lt 10) {
-				$databaselist = $smoserver.Databases | select Name, IsFullTextEnabled
+				$databaselist = $smoserver.Databases | Select-Object -property  Name, IsFullTextEnabled
 				foreach ($db in $databaselist) {
-					if($db.IsFullTextEnabled -eq $false) {
+					if ($db.IsFullTextEnabled -eq $false) {
 						continue
 					}
 					$database = $db.name
@@ -151,7 +162,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			return $dbfiletable.Tables.Filename
 		}
 
-		function Format-Path{
+		function Format-Path {
 			param ($path)
 
 			$path = $path.Trim()
@@ -167,8 +178,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 	}
 
 	process {
-		foreach ($instance in $SqlInstance)
-		{
+		foreach ($instance in $SqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
@@ -194,7 +204,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			foreach ($row in $datatable) {
 				$fullpath = [IO.Path]::combine($row.parent, $row.filename)
 				$dirtreefiles += [pscustomobject]@{
-					FullPath = $fullpath
+					FullPath   = $fullpath
 					Comparison = [IO.Path]::GetFullPath($(Format-Path $fullpath))
 				}
 			}
@@ -218,7 +228,7 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 			}
 
 			$dirtreematcher = @{}
-			foreach($el in $dirtreefiles) {
+			foreach ($el in $dirtreefiles) {
 				$dirtreematcher[$el.Comparison] = $el.Fullpath
 			}
 
@@ -231,11 +241,11 @@ Finds the orphaned ending with ".fsf" and ".mld" in addition to the default file
 					if ($filename -in $systemfiles) { continue }
 
 					$result = [pscustomobject]@{
-						Server = $server.name
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						Filename = $fullpath
+						Server         = $server.name
+						ComputerName   = $server.NetName
+						InstanceName   = $server.ServiceName
+						SqlInstance    = $server.DomainInstanceName
+						Filename       = $fullpath
 						RemoteFilename = Join-AdminUnc -Servername $server.netname -Filepath $fullpath
 					}
 
