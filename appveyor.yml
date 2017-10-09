@@ -56,7 +56,7 @@ test_script:
   # DLL unittests only in default scenario
   - ps: |
         if($env:SCENARIO -eq 'default') {
-          OpenCover.Console.exe -register:user -target:"vstest.console.exe" -targetargs:"/logger:Appveyor bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.Tests.dll" -output:"coverage.xml" -filter:"+[Sqlcollaborative.Dbatools*]*"
+          OpenCover.Console.exe -register:user -target:"vstest.console.exe" -targetargs:"/logger:Appveyor bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.Tests.dll" -output:"coverage.xml" -filter:"+[dbatools]*"
           codecov -f "coverage.xml" -t 19e6dc26-6d5b-489b-ad73-73845980e7bf
         }
   # "Test with native PS version"
