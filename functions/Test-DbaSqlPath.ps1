@@ -82,8 +82,7 @@ function Test-DbaSqlPath {
 			}
 
 			catch {
-				Stop-Function -Message "Failed to test the path $Path." -ErrorRecord $_ -Target $SqlInstance
-				return
+				Stop-Function -Message "Failed to test the path $Path." -ErrorRecord $_ -Target $instance -Continue
 			}
 			if ($fileExist[0] -eq 1 -or $fileExist[1] -eq 1) {
 				return $true
