@@ -8,12 +8,16 @@ function Invoke-DbaBalanceDataFiles {
 		When you have a large database with a single data file and add another file, SQL Server will only use the new file until it's about the same size.
 		You may want to balance the data between all the data files.
 
-		The command will check the server version and edition to see if the it allows for online index rebuilds.
+		The function will check the server version and edition to see if the it allows for online index rebuilds.
 		If the server does support it, it will try to rebuild the index online.
 		If the server doesn't support it, it will rebuild the index offline. Be carefull though, this can cause downtime
 
 		The tables must have a clustered index to be able to balance out the data.
-		The command does NOT yet support heaps.
+		The function does NOT yet support heaps.
+
+		The function will also check if the file groups are subject to balance out.
+		A file group whould have at least have 2 data files and should be writable.
+		If a table is within such a file group it will be subject for processing. If not the table will be skipped.
 
 	.PARAMETER SqlInstance
 		The SQL Server instance hosting the databases to be backed up.
@@ -27,9 +31,19 @@ function Invoke-DbaBalanceDataFiles {
 	.PARAMETER Table
 		The tables(s) of the database to process. If unspecified, all tables will be processed.
 
-	.PARAMETER OfflineRebuild
+	.PARAMETER RebuildOffline
 		Will set all the indexes to rebuild offline.
 		This option is also needed when the server version is below 2005.
+	
+	.PARAMETER WhatIf
+		Shows what would happen if the command were to run
+
+	.PARAMETER Confirm
+		Prompts for confirmation of every step. For example:
+
+		The server does not support online rebuilds of indexes. 
+		Do you want to rebuild the indexes offline?
+		[Y] Yes  [N] No   [?] Help (default is "Y"):
 
 	.PARAMETER Silent
 		If this switch is enabled, the internal messaging functions will be silenced.
@@ -44,6 +58,11 @@ function Invoke-DbaBalanceDataFiles {
 
 	.EXAMPLE 
 	Invoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1
+	
+	This command will distribute the data in database db1 on instance sql1
+
+	.EXAMPLE 
+	Invoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1 | Select-Object -ExpandProperty DataFilesEnd
 	
 	This command will distribute the data in database db1 on instance sql1
 
@@ -139,18 +158,30 @@ function Invoke-DbaBalanceDataFiles {
 
 		# Loop through each of the databases
 		foreach ($db in $DatabaseCollection) {
+			# Create the start time
+			$start = Get-Date
+
+			# Get the database files before all the alterations
+			Write-Message -Message "Retrieving data files before data move" -Level Verbose
+			$dataFilesStarting = Get-DbaDatabaseFile -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name | Where-Object {$_.TypeDescription -eq 'ROWS'} | Select-Object ID, LogicalName, PhysicalName, Size, UsedSpace, AvailableSpace | Sort-Object ID
 
 			Write-Message -Message "Processing database $db" -Level Output
 
 			# Check the datafiles of the database
 			$dataFiles = Get-DbaDatabaseFile -SqlInstance $SqlInstance -Database $db | Where-Object {$_.TypeDescription -eq 'ROWS'}
 			if ($dataFiles.Count -eq 1) {
+				# Set the success flag
+				$success = $false
+
 				Stop-Function -Message "Database $db only has one data file. Please add a data file to balance out the data" -Target $SqlInstance -Continue
 			}
 
 			# Check the tables parameter
 			if ($Table) {
 				if ($Table -notin $db.Table) {
+					# Set the success flag
+					$success = $false
+
 					Stop-Function -Message "One or more tables cannot be found in database $db on instance $SqlInstance" -Target $SqlInstance -Continue
 				}
 
@@ -160,64 +191,135 @@ function Invoke-DbaBalanceDataFiles {
 				$TableCollection = $db.Tables 
 			}
 
+			# Get the database file groups and check the aount of data files
+			Write-Message -Message "Retrieving file groups" -Level Verbose
+			$fileGroups = $Server.Databases[$db.Name].FileGroups
+			
+			# ARray to hold the file groups with properties
+			$balanceableTables = @()
+			
+			# Loop through each of the file groups
+			foreach ($fg in $fileGroups) {
+
+				# If there is less than 2 files balancing out data is not possible
+				if (($fg.Files.Count -ge 2) -and ($fg.Readonly -eq $false)) {
+					$balanceableTables += $fg.EnumObjects() | Where-Object {$_.GetType().Name -eq 'Table'}
+				}
+			}
+
+			$unsuccesfullTables = @()
+
 			# Loop through each of the tables
 			foreach ($tbl in $TableCollection) {
 
-				Write-Message -Message "Processing table $tbl" -Level Verbose
+				# Chck if the table balanceable
+				if ($tbl.Name -in $balanceableTables.Name) {
 
-				# Chck the tables and get the clustered indexes
-				if ($TableCollection.Indexes.Count -lt 1) {
-					Stop-Function -Message "Table $tbl does not contain any indexes" -Target $SqlInstance -Continue
-				}
-				else {
+					Write-Message -Message "Processing table $tbl" -Level Verbose
 
-					# Get all the clustered indexes for the table
-					$clusteredIndexes = $TableCollection.Indexes | Where-Object {$_.IndexType -eq 'ClusteredIndex'}
+					# Chck the tables and get the clustered indexes
+					if ($TableCollection.Indexes.Count -lt 1) {
+						# Set the success flag
+						$success = $false
 
-					if ($clusteredIndexes.Count -lt 1) {
-						Stop-Function -Message "No clustered indexes found in table $tbl" -Target $SqlInstance -Continue
+						Stop-Function -Message "Table $tbl does not contain any indexes" -Target $SqlInstance -Continue
 					}
-				} 
+					else {
 
-				# Loop through each of the clustered indexes and rebuild them
-				Write-Message -Message "$($clusteredIndexes.Count) clustered index(es) found for table $tbl" -Level Output
-				if ($PSCmdlet.ShouldProcess("Rebuilding indexes to balance data")) {
-					foreach ($ci in $clusteredIndexes) {
+						# Get all the clustered indexes for the table
+						$clusteredIndexes = $TableCollection.Indexes | Where-Object {$_.IndexType -eq 'ClusteredIndex'}
+
+						if ($clusteredIndexes.Count -lt 1) {
+							# Set the success flag
+							$success = $false
+
+							Stop-Function -Message "No clustered indexes found in table $tbl" -Target $SqlInstance -Continue
+						}
+					} 
+				
+					# Loop through each of the clustered indexes and rebuild them
+					Write-Message -Message "$($clusteredIndexes.Count) clustered index(es) found for table $tbl" -Level Verbose
+					if ($PSCmdlet.ShouldProcess("Rebuilding indexes to balance data")) {
+						foreach ($ci in $clusteredIndexes) {
 					
-						Write-Message -Message "Rebuilding index $($ci.Name)" -Level Output
+							Write-Message -Message "Rebuilding index $($ci.Name)" -Level Verbose
 
-						# Get the original index operation
-						[bool]$originalIndexOperation = $ci.OnlineIndexOperation
+							# Get the original index operation
+							[bool]$originalIndexOperation = $ci.OnlineIndexOperation
 
-						# Set the rebuild option to be either offline or online
-						if ($RebuildOffline) {
-							$ci.OnlineIndexOperation = $false
-						}
-						elseif ($serverVersion -ge 9 -and $supportOnlineRebuild -and -not $RebuildOffline) {
-							Write-Message -Message "Setting the index operation for index $($ci.Name) to online" -Level Verbose
-							$ci.OnlineIndexOperation = $true
-						}
+							# Set the rebuild option to be either offline or online
+							if ($RebuildOffline) {
+								$ci.OnlineIndexOperation = $false
+							}
+							elseif ($serverVersion -ge 9 -and $supportOnlineRebuild -and -not $RebuildOffline) {
+								Write-Message -Message "Setting the index operation for index $($ci.Name) to online" -Level Verbose
+								$ci.OnlineIndexOperation = $true
+							}
 
-						# Rebuild the index
-						try {
-							$ci.Rebuild()
-						}
-						catch {
+							# Rebuild the index
+							try {
+								$ci.Rebuild()
+
+								# Set the success flag
+								$success = $true
+							}
+							catch {
+								# Set the original index operation back for the index
+								$ci.OnlineIndexOperation = $originalIndexOperation
+
+								# Set the success flag
+								$success = $false
+
+								Stop-Function -Message "Something went wrong rebuilding index $($ci.Name). `n$($_.Exception.Message)" -ErrorRecord $_ -Target $SqlInstance -Continue
+							}
+
 							# Set the original index operation back for the index
+							Write-Message -Message "Setting the index operation for index $($ci.Name) back to the original value" -Level Verbose
 							$ci.OnlineIndexOperation = $originalIndexOperation
 
-							Stop-Function -Message "Something went wrong rebuilding index $($ci.Name). `n$($_.Exception.Message)" -ErrorRecord $_ -Target $SqlInstance -Continue
-						}
+						} # foreach index
 
-						# Set the original index operation back for the index
-						Write-Message -Message "Setting the index operation for index $($ci.Name) back to the original value" -Level Verbose
-						$ci.OnlineIndexOperation = $originalIndexOperation
-						
-					}
+					} # if process
+
+				} # if table is balanceable
+				else {
+					# Add the table to the unsuccesfull array
+					$unsuccesfullTables += $tbl.Name
+
+					# Set the success flag
+					$success = $false
+
+					Write-Message -Message "Table $tbl cannot be balanced out" -Level Verbose
 				}
 
 			} #foreach table		
 
+			# Create the end time
+			$end = Get-Date
+
+			# Create the time span
+			$timespan = New-TimeSpan -Start $start -End $end
+			$ts = [timespan]::fromseconds($timespan.TotalSeconds)
+			$elapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
+
+			# Get the database files after all the alterations
+			Write-Message -Message "Retrieving data files after data move" -Level Verbose
+			$dataFilesEnding = Get-DbaDatabaseFile -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name | Where-Object {$_.TypeDescription -eq 'ROWS'} | Select-Object ID, LogicalName, PhysicalName, Size, UsedSpace, AvailableSpace | Sort-Object ID
+
+			[pscustomobject]@{
+				ComputerName   = $server.NetName
+				InstanceName   = $server.ServiceName
+				SqlInstance    = $server.DomainInstanceName
+				Database       = $db.Name
+				Start          = $start
+				End            = $end
+				Elapsed        = $elapsed
+				Success        = $success
+				Unsuccesfull   = $unsuccesfullTables -join ","
+				DataFilesStart = $dataFilesStarting
+				DataFilesEnd   = $dataFilesEnding
+			} 
+			
 		} # foreach database
 
 	} # end process
