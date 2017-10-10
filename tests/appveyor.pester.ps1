@@ -100,9 +100,11 @@ if (-not $Finalize) {
 	Import-Module Pester
 	Set-Variable ProgressPreference -Value SilentlyContinue
 	# invoking a single invoke-pester consumes too much memory, let's go file by file
-	$AllTestsWithinScenario = Get-ChildItem -File -Path $ModuleBase\tests\$AllScenarioTests
+	$AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests
+	$counter = 0
 	foreach($f in $AllTestsWithinScenario) {
-		write-host -foreground yellow "going to run $f"
+		$counter += 1
+		Invoke-Pester -Script $f.FullName -Show None -PassThru | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$counter.xml"
 	}
 	#Invoke-Pester -Script $AllScenarioTests -Show None -PassThru | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion.xml"
 }
