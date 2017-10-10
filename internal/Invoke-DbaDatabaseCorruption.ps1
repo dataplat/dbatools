@@ -1,38 +1,52 @@
 function Invoke-DbaDatabaseCorruption {
   <#
       .SYNOPSIS
-      Utilizes the DBCC WRITEPAGE functionality to allow you to corrupt a specific database table for testing.  In no uncertain terms, this is a non-production command.
-      This will absolutely break your databases and that is its only purpose, please use it carefully.
+      Utilizes the DBCC WRITEPAGE functionality  to corrupt a specific database table for testing.  In no uncertain terms, this is a non-production command.
+      This will absolutely break your databases and that is its only purpose.
+      Using DBCC WritePage will definitely void any support options for your database.
+
       .DESCRIPTION
       This command can be used to verify your tests for corruption are successful, and to demo various scenarios for corrupting page data.
       This command will take an instance and database (and optionally a table) and set the database to single user mode, corrupt either the specified table or the first table it finds, and returns it to multi-user.
+
       .PARAMETER SqlInstance
       The SQL Server instance holding the databases to be removed.You must have sysadmin access and Server version must be SQL Server version 2000 or higher.
+
       .PARAMETER SqlCredential
       Allows you to login to Servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
       $cred = Get-Credential, this pass this $cred to the param.
       Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+
       .PARAMETER Database
       The single database you would like to corrupt, this command does not support multiple databases (on purpose.)
+
       .PARAMETER Table
       The specific table you want corrupted, if you do not choose one, the first user table (alphabetically) will be chosen for corruption.
+
       .PARAMETER WhatIf
       If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
       .PARAMETER Confirm
       If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
       .PARAMETER Silent
       If this switch is enabled, the internal messaging functions will be silenced.
+
       .NOTES
       Tags: Corruption, Testing
       Author: Constantine Kokkinos (@mobileck https://constantinekokkinos.com)
+      Reference: https://www.sqlskills.com/blogs/paul/dbcc-writepage/
       Website: https://dbatools.io
       Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
       License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+
       .LINK
       https://dbatools.io/Invoke-DbaDatabaseCorruption
+
       .EXAMPLE
       Invoke-DbaDatabaseCorruption -SqlInstance sql2016 -Database containeddb
       Prompts for confirmation then selects the first table in database containeddb and corrupts it (by putting database into single user mode, writing to garbage to its first non-iam page, and returning it to multi-user.)
+
       .EXAMPLE
       Invoke-DbaDatabaseCorruption -SqlInstance sql2016 -Database containeddb -Table Customers -Confirm:$false
       Does not prompt and immediately corrupts table customers in database containeddb on the sql2016 instance (by putting database into single user mode, writing to garbage to its first non-iam page, and returning it to multi-user.)
@@ -51,19 +65,19 @@ function Invoke-DbaDatabaseCorruption {
         [string]$Table,
         [switch]$Silent
     )
-
-    function Dbcc-ReadPage {
-      param (
-        $SqlInstance,
-        $Database,
-        $TableName,
-        $IndexID = 1
-      )
-      $DbccPage = "DBCC PAGE (N'$Database',N'$($TableName)',$IndexID)"
-      Write-Message -Level Verbose -Message "$DbccPage"
-      $pages = $SqlInstance.Query($DbccPage) | Where-Object { $_.IAMFID -ne [DBNull]::Value }
-      return $Pages
-    }
+    # For later if we want to do bit flipping.
+    # function Dbcc-ReadPage {
+    #   param (
+    #     $SqlInstance,
+    #     $Database,
+    #     $TableName,
+    #     $IndexID = 1
+    #   )
+    #   $DbccPage = "DBCC PAGE (N'$Database',N'$($TableName)',$IndexID)"
+    #   Write-Message -Level Verbose -Message "$DbccPage"
+    #   $pages = $SqlInstance.Query($DbccPage) | Where-Object { $_.IAMFID -ne [DBNull]::Value }
+    #   return $Pages
+    # }
 
     function Dbcc-Index  {
       param (
@@ -84,7 +98,7 @@ function Invoke-DbaDatabaseCorruption {
         $FileId = 1,
         $PageId,
         $Offset = 4000,
-        $NumberOfBytesToChange = 1,
+        $NumberOfBytesToChange = 8,
         $HexString = '0x45',
         $bypassbufferpool = 1
       )
