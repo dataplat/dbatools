@@ -33,7 +33,8 @@ param (
 	$PSVersion = $PSVersionTable.PSVersion.Major,
 	$TestFile = "TestResultsPS$PSVersion.xml",
 	$ProjectRoot = $ENV:APPVEYOR_BUILD_FOLDER,
-	$ModuleBase = $ProjectRoot
+	$ModuleBase = $ProjectRoot,
+	[switch]$IncludeCoverage
 )
 
 # Move to the project root
@@ -44,6 +45,44 @@ $global:dbatools_dotsourcemodule = $true
 Remove-Module dbatools -ErrorAction Ignore
 Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
 $ScriptAnalyzerRules = Get-ScriptAnalyzerRule
+
+function Get-CoverageIndications($path) {
+	# takes a test file path and figures out what to analyze for coverage (i.e. dependencies)
+	$CBHRex = [regex]'(?smi)<#(.*)#>'
+	$everything = (Get-Module dbatools).ExportedCommands.Values
+	$everyfunction = $everything.Name
+	$funcs = @()
+	# assuming Get-DbaFoo.Tests.ps1 wants coverage for "Get-DbaFoo"
+	$leaf = Split-Path $path -Leaf
+	$func_name += $leaf.Replace('.Tests.ps1', '')
+	if ($func_name -in $everyfunction) {
+		$funcs += $func_name
+		$f = $everything | Where-Object Name -eq $func_name
+		$source = $f.Definition
+		$CBH = $CBHRex.match($source).Value
+		$cmdonly = $source.Replace($CBH, '')
+		foreach($e in $everyfunction) {
+			# hacky, I know, but every occurrence of any function plus a space kinda denotes usage !?
+			$searchme = "$e "
+			if ($cmdonly.contains($searchme)) {
+				$funcs += $e
+			}
+		}
+	}
+	$testpaths = @()
+	$allfiles = Get-ChildItem -File -Path "$ModuleBase\internal", "$ModuleBase\functions" -Filter '*.ps1'
+	foreach($f in $funcs) {
+		# exclude always used functions ?!
+		if ($f -in ('Connect-SqlInstance', 'Select-DefaultView', 'Stop-Function', 'Write-Message')) { continue }
+		# can I find a correspondence to a physical file (again, on the convenience of having Get-DbaFoo.ps1 actually defining Get-DbaFoo)?
+		$res = $allfiles | Where-Object { $_.Name.Replace('.ps1', '') -eq $f }
+		if ($res.count -gt 0) {
+			$testpaths += $res.FullName
+		}
+	}
+	return @() + ($testpaths | Select-Object -Unique)
+}
+
 
 if (-not $Finalize) {
 	# Invoke pester.groups.ps1 to know which tests to run
@@ -104,6 +143,9 @@ if (-not $Finalize) {
 	$counter = 0
 	foreach($f in $AllTestsWithinScenario) {
 		$counter += 1
+		write-host -ForegroundColor yellow "Inspecting $f"
+		$CoverFiles = Get-CoverageIndications $f
+		write-host -ForegroundColor yellow "figured out coverage: $($CoverFiles -join ',')"
 		Invoke-Pester -Script $f.FullName -Show None -PassThru | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$counter.xml"
 	}
 	#Invoke-Pester -Script $AllScenarioTests -Show None -PassThru | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion.xml"
