@@ -38,6 +38,9 @@ param (
 
 # Move to the project root
 Set-Location $ModuleBase
+# required to calculate coverage
+$global:dbatools_dotsourcemodule = $true
+
 Remove-Module dbatools -ErrorAction Ignore
 Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
 $ScriptAnalyzerRules = Get-ScriptAnalyzerRule
@@ -96,7 +99,12 @@ if (-not $Finalize) {
 	Write-Output "Testing with PowerShell $PSVersion"
 	Import-Module Pester
 	Set-Variable ProgressPreference -Value SilentlyContinue
-	Invoke-Pester -Script $AllScenarioTests -Show None -OutputFormat NUnitXml -OutputFile "$ModuleBase\$TestFile" -PassThru | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion.xml"
+	# invoking a single invoke-pester consumes too much memory, let's go file by file
+	$AllTestsWithinScenario = Get-ChildItem -File -Path $ModuleBase\tests\$AllScenarioTests
+	foreach($f in $AllTestsWithinScenario) {
+		write-host -foreground yellow "going to run $f"
+	}
+	#Invoke-Pester -Script $AllScenarioTests -Show None -PassThru | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion.xml"
 }
 else {
 	# Unsure why we're uploading so I removed it for now
