@@ -41,7 +41,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
   $null = $Server.Query ("Create table dbo.[Example] ( id int identity );")
   Context "Fail if the specified table does not exist" {
     {
-      Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database "EmptyDatabase" -Table "DoesntExist$Uniqueifier"
+      Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database $db -Table "DoesntExist$Uniqueifier"
     } | Should Throw
   }
 
