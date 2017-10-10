@@ -1,7 +1,7 @@
 <#
 	The below statement stays in for every test you build.
 #>
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -45,10 +45,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		}
 	}
 	AfterAll {
-		Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db1
+		if (-not $appveyor) {
+			Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db1
+		}
 	}
+	
 	Context "Command actually works" {
 		$results = Test-DbaVirtualLogFile -SqlInstance $script:instance1 -Database $db1
+		
 		It "Should have correct properties" {
 			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,Total,Inactive,Active,LogFileName,LogFileGrowth,LogFileGrowthType'.Split(',')
 			($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
