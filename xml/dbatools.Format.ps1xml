@@ -1,6 +1,54 @@
 ﻿<?xml version="1.0" encoding="utf-16"?>
 <Configuration>
 	<ViewDefinitions>
+		<!-- Sqlcollaborative.Dbatools.Computer.DiskSpace -->
+		<View>
+			<Name>Sqlcollaborative.Dbatools.Computer.DiskSpace</Name>
+			<ViewSelectedBy>
+				<TypeName>Sqlcollaborative.Dbatools.Computer.DiskSpace</TypeName>
+			</ViewSelectedBy>
+			<TableControl>
+				<AutoSize/>
+				<TableHeaders>
+					<TableColumnHeader>
+						<Alignment>Right</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader/>
+					<TableColumnHeader/>
+					<TableColumnHeader/>
+					<TableColumnHeader/>
+					<TableColumnHeader/>
+					<TableColumnHeader/>
+				</TableHeaders>
+				<TableRowEntries>
+					<TableRowEntry>
+						<TableColumnItems>
+							<TableColumnItem>
+								<PropertyName>ComputerName</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>Name</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>Label</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>Capacity</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>Free</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>PercentFree</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>BlockSize</PropertyName>
+							</TableColumnItem>
+						</TableColumnItems>
+					</TableRowEntry>
+				</TableRowEntries>
+			</TableControl>
+		</View>
 		<!-- Sqlcollaborative.Dbatools.Configuration.Config -->
 		<View>
 			<Name>Sqlcollaborative.Dbatools.Configuration.Config</Name>
