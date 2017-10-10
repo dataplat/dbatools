@@ -20,6 +20,9 @@ The appveyor project root
 .PARAMETER ModuleBase
 The location of the module
 
+.PARAMETER IncludeCoverage
+Calculates coverage and sends it to codecov.io
+
 .EXAMPLE
 .\appveyor.pester.ps1
 Executes the test
@@ -46,7 +49,7 @@ Remove-Module dbatools -ErrorAction Ignore
 Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
 $ScriptAnalyzerRules = Get-ScriptAnalyzerRule
 
-function Get-CoverageIndications($path) {
+function Get-CoverageIndications($Path, $ModuleBase) {
 	# takes a test file path and figures out what to analyze for coverage (i.e. dependencies)
 	$CBHRex = [regex]'(?smi)<#(.*)#>'
 	$everything = (Get-Module dbatools).ExportedCommands.Values
@@ -83,6 +86,77 @@ function Get-CoverageIndications($path) {
 	return @() + ($testpaths | Select-Object -Unique)
 }
 
+function Get-CodecovReport($Results, $ModuleBase) {
+	#handle coverage https://docs.codecov.io/reference#upload
+	$report = @{'coverage'=@{}}
+	#needs correct casing to do the replace
+	$ModuleBase = (Resolve-Path $ModuleBase).Path
+	# things we wanna a report for (and later backfill if not tested)
+	$allfiles = Get-ChildItem -File -Path "$ModuleBase\internal", "$ModuleBase\functions" -Filter '*.ps1'
+	
+	$missed = $results.CodeCoverage | Select-Object -ExpandProperty MissedCommands | Sort-Object -Property File,Line -Unique
+	$hits = $results.CodeCoverage | Select-Object -ExpandProperty HitCommands | Sort-Object -Property File,Line -Unique
+	$LineCount = @{}
+	$hits | ForEach-Object {
+		$filename = $_.File.Replace("$ModuleBase\", '').Replace('\','/')
+		if ($filename -notin $report['coverage'].Keys) {
+			$report['coverage'][$filename] = @{}
+			$LineCount[$filename] = (Get-Content $_.File -Raw | Measure-Object -Line).Lines
+		}
+		$report['coverage'][$filename][$_.Line] = 1
+	}
+	
+	$missed | ForEach-Object {
+		$filename = $_.File.Replace("$ModuleBase\", '').Replace('\','/')
+		if ($filename -notin $report['coverage'].Keys) {
+			$report['coverage'][$filename] = @{}
+			$LineCount[$filename] = (Get-Content $_.File | Measure-Object -Line).Lines
+		}
+		if ($_.Line -notin $report['coverage'][$filename].Keys) {
+			#miss only if not already covered
+			$report['coverage'][$filename][$_.Line] = 0
+		}
+	}
+	
+	$newreport = @{'coverage'=[ordered]@{}}
+	foreach($fname in $report['coverage'].Keys) {
+		$Linecoverage = [ordered]@{}
+		for($i=1; $i -le $LineCount[$fname]; $i++){
+			if ($i -in $report['coverage'][$fname].Keys) {
+				$Linecoverage["$i"] = $report['coverage'][$fname][$i]
+			}
+		}
+		$newreport['coverage'][$fname] = $Linecoverage
+	}
+	
+	#backfill it
+	foreach($target in $allfiles) {
+		$target_relative = $target.FullName.Replace("$ModuleBase\", '').Replace('\','/')
+		if ($target_relative -notin $newreport['coverage'].Keys) {
+			$newreport['coverage'][$target_relative] = @{}
+		}
+	}
+	$newreport
+}
+
+function Send-CodecovReport($CodecovReport) {
+	$params = @{}
+	$params['branch'] = $env:APPVEYOR_REPO_BRANCH
+	$params['service'] = "appveyor"
+	$params['job'] = $env:APPVEYOR_ACCOUNT_NAME
+	if ($params['job']) { $params['job'] += '/' + $env:APPVEYOR_PROJECT_SLUG }
+	if ($params['job']) { $params['job'] += '/' + $env:APPVEYOR_BUILD_VERSION }
+	$params['build'] = $env:APPVEYOR_JOB_ID
+	$params['pr'] = $env:APPVEYOR_PULL_REQUEST_NUMBER
+	$params['slug'] = $env:APPVEYOR_REPO_NAME
+	$params['commit'] = $env:APPVEYOR_REPO_COMMIT
+	Add-Type -AssemblyName System.Web
+	$CodeCovParams = [System.Web.HttpUtility]::ParseQueryString([String]::Empty)
+	$params.GetEnumerator() | Where-Object Value | ForEach-Object { $CodeCovParams.Add($_.Name, $_.Value) }
+	$Request  = [System.UriBuilder]('https://codecov.io/upload/v2')
+	$Request.Query = $CodeCovParams.ToString()
+	Invoke-RestMethod -Uri $Request.Uri -Method Post -InFile $CodecovReport -ContentType 'multipart/form-data'
+}
 
 if (-not $Finalize) {
 	# Invoke pester.groups.ps1 to know which tests to run
@@ -140,15 +214,24 @@ if (-not $Finalize) {
 	Set-Variable ProgressPreference -Value SilentlyContinue
 	# invoking a single invoke-pester consumes too much memory, let's go file by file
 	$AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests
-	$counter = 0
+	$Counter = 0
 	foreach($f in $AllTestsWithinScenario) {
-		$counter += 1
-		write-host -ForegroundColor yellow "Inspecting $f"
-		$CoverFiles = Get-CoverageIndications $f
-		write-host -ForegroundColor yellow "figured out coverage: $($CoverFiles -join ',')"
-		Invoke-Pester -Script $f.FullName -Show None -PassThru | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$counter.xml"
+		$Counter += 1
+		$PesterSplat = @{
+			'Script'   = $f.FullName
+			'Show'     = 'None'
+			'PassThru' = $true
+		}
+		#opt-in
+		if ($IncludeCoverage) {
+			$CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
+			$PesterSplat['CodeCoverage'] = $CoverFiles
+			$PesterSplat['CodeCoverageOutputFile'] = "$ModuleBase\PesterCoverage$Counter.xml"
+		}
+		# Pester 4.0 outputs already what file is being ran. If we remove write-host from every test, we can time
+		# executions for each test script (i.e. Executing Get-DbaFoo .... Done (40 seconds))
+		Invoke-Pester @PesterSplat | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion$Counter.xml"
 	}
-	#Invoke-Pester -Script $AllScenarioTests -Show None -PassThru | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion.xml"
 }
 else {
 	# Unsure why we're uploading so I removed it for now
@@ -171,6 +254,7 @@ else {
 		Write-Output "You can download it from https://ci.appveyor.com/api/buildjobs/$($env:APPVEYOR_JOB_ID)/tests"
 	}
 	#>
+	
 	#What failed? How many tests did we run ?
 	$results = @(Get-ChildItem -Path "$ModuleBase\PesterResults*.xml" | Import-Clixml)
 	
@@ -196,5 +280,11 @@ else {
 			
 			throw "$failedcount tests failed."
 		}
+	}
+	#opt-in
+	if ($IncludeCoverage) {
+		$CodecovReport = Get-CodecovReport -Results $results -ModuleBase $ModuleBase
+		$CodecovReport | ConvertTo-Json -Depth 4 -Compress | Out-File -FilePath "$ModuleBase\PesterResultsCoverage.json" -Encoding utf8
+		Send-CodecovReport -CodecovReport "$ModuleBase\PesterResultsCoverage.json"
 	}
 }

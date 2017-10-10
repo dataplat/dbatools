@@ -59,7 +59,7 @@ test_script:
   # - ps: powershell.exe -version 3.0 -executionpolicy bypass -noprofile -file .\Tests\appveyor.pester.ps1
 
   # "Collecting and uploading results"
-  #- ps: .\Tests\appveyor.pester.ps1 -Finalize
+  - ps: .\Tests\appveyor.pester.ps1 -Finalize -IncludeCoverage
 
 #on_finish:
 #  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
