@@ -127,8 +127,14 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 	$Query = "EXEC master.dbo.sp_add_log_shipping_primary_secondary 
         @primary_database = N'$PrimaryDatabase' 
         ,@secondary_server = N'$SecondaryServer' 
-        ,@secondary_database = N'$SecondaryDatabase' 
-        ,@overwrite = 1;"
+		,@secondary_database = N'$SecondaryDatabase' "
+		
+	if ($ServerPrimary.Version.Major -gt 9) {
+		$Query += ",@overwrite = 1;"
+	}
+	else {
+		$Query += ";"
+	}
     
 	# Execute the query to add the log shipping primary
 	if ($PSCmdlet.ShouldProcess($SqlInstance, ("Configuring logshipping connecting the primary database $PrimaryDatabase to secondary database $SecondaryDatabase on $SqlInstance"))) {

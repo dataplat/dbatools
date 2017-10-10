@@ -216,7 +216,7 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 	}
 
 	# Set up the query
-	$Query = "EXEC sp_add_log_shipping_secondary_database  
+	$Query = "EXEC master.sp_add_log_shipping_secondary_database  
         @secondary_database = '$SecondaryDatabase'
         ,@primary_server = '$PrimaryServer'
         ,@primary_database = '$PrimaryDatabase' 
@@ -242,7 +242,12 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 		$Query += ",@max_transfer_size = $MaxTransferSize"
 	}
 
-	$Query += ",@overwrite = 1;"
+	if ($ServerSecondary.Version.Major -gt 9) {
+		$Query += ",@overwrite = 1;"
+	}
+	else {
+		$Query += ";"
+	}
     
 	# Execute the query to add the log shipping primary
 	if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance"))) {
