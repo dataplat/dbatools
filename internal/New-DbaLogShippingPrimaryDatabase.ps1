@@ -149,7 +149,7 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 	# Try connecting to the instance
 	Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
 	try {
-		$server = Connect-DbaSqlServer -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
 	catch {
 		Stop-Function -Message "Could not connect to Sql Server instance" -Target $SqlInstance -Continue
