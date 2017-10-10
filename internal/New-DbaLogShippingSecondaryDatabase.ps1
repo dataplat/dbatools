@@ -153,7 +153,7 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 	# Try connecting to the instance
 	Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
 	try {
-		$ServerSecondary = Connect-DbaSqlServer -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+		$ServerSecondary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
 	catch {
 		Stop-Function -Message "Could not connect to Sql Server instance $SqlInstance.`n$_" -Target $SqlInstance -Continue
@@ -162,7 +162,7 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 	# Try connecting to the instance
 	Write-Message -Message "Attempting to connect to $PrimaryServer" -Level Verbose
 	try {
-		$ServerPrimary = Connect-DbaSqlServer -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
+		$ServerPrimary = Connect-SqlInstance -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
 	}
 	catch {
 		Stop-Function -Message "Could not connect to Sql Server instance $PrimaryServer.`n$_" -Target $PrimaryServer -Continue
