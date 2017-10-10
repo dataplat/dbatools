@@ -54,6 +54,8 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Computer\DiskSpace.cs" />
+    <Compile Include="Computer\DriveType.cs" />
     <Compile Include="Database\BackupHistory.cs" />
     <Compile Include="Configuration\Config.cs" />
     <Compile Include="Connection\ConnectionHost.cs" />
