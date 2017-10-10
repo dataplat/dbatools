@@ -85,7 +85,7 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 	# Try connecting to the instance
 	Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
 	try {
-		$ServerPrimary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+		$ServerPrimary = Connect-DbaSqlServer -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
 	catch {
 		Stop-Function -Message "Could not connect to Sql Server instance" -Target $SqlInstance -Continue
@@ -94,7 +94,7 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 	# Try connecting to the instance
 	Write-Message -Message "Attempting to connect to $SecondaryServer" -Level Verbose
 	try {
-		$ServerSecondary = Connect-SqlInstance -SqlInstance $SecondaryServer -SqlCredential $SecondarySqlCredential
+		$ServerSecondary = Connect-DbaSqlServer -SqlInstance $SecondaryServer -SqlCredential $SecondarySqlCredential
 	}
 	catch {
 		Stop-Function -Message "Could not connect to Sql Server instance" -Target $SecondaryServer -Continue
@@ -127,8 +127,14 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 	$Query = "EXEC master.dbo.sp_add_log_shipping_primary_secondary 
         @primary_database = N'$PrimaryDatabase' 
         ,@secondary_server = N'$SecondaryServer' 
-        ,@secondary_database = N'$SecondaryDatabase' 
-        ,@overwrite = 1;"
+		,@secondary_database = N'$SecondaryDatabase' "
+		
+	if ($ServerPrimary.Version.Major -gt 9) {
+		$Query += ",@overwrite = 1;"
+	}
+	else {
+		$Query += ";"
+	}
     
 	# Execute the query to add the log shipping primary
 	if ($PSCmdlet.ShouldProcess($SqlInstance, ("Configuring logshipping connecting the primary database $PrimaryDatabase to secondary database $SecondaryDatabase on $SqlInstance"))) {
