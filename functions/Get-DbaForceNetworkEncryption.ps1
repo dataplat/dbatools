@@ -64,13 +64,13 @@ function Get-DbaForceNetworkEncryption {
 			
 			Write-Message -Level Verbose -Message "Resolving hostname"
 			$resolved = $null
-			$resolved = Resolve-DbaNetworkName -ComputerName $instance -Turbo
+			$resolved = Resolve-DbaNetworkName -ComputerName $instance
 			
 			if ($null -eq $resolved) {
 				Stop-Function -Message "Can't resolve $instance" -Target $instance -Continue -Category InvalidArgument
 			}
 			
-			Write-Message -Level Output -Message "Connecting to SQL WMI on $($instance.ComputerName)"
+			Write-Message -Level Verbose -Message "Connecting to SQL WMI on $($instance.ComputerName)"
 			try {
 				$sqlwmi = Invoke-ManagedComputerCommand -ComputerName $resolved.FQDN -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -eq "SQL Server ($($instance.InstanceName))"
 			}
@@ -98,17 +98,18 @@ function Get-DbaForceNetworkEncryption {
 			
 			if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 			
-			Write-Message -Level Output -Message "Regroot: $regroot" -Target $instance
-			Write-Message -Level Output -Message "ServiceAcct: $serviceaccount" -Target $instance
-			Write-Message -Level Output -Message "InstanceName: $instancename" -Target $instance
-			Write-Message -Level Output -Message "VSNAME: $vsname" -Target $instance
+			Write-Message -Level Verbose -Message "Regroot: $regroot" -Target $instance
+			Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount" -Target $instance
+			Write-Message -Level Verbose -Message "InstanceName: $instancename" -Target $instance
+			Write-Message -Level Verbose -Message "VSNAME: $vsname" -Target $instance
 			
 			$scriptblock = {
 				$regpath = "Registry::HKEY_LOCAL_MACHINE\$($args[0])\MSSQLServer\SuperSocketNetLib"
 				$cert = (Get-ItemProperty -Path $regpath -Name Certificate).Certificate
 				$forceencryption = (Get-ItemProperty -Path $regpath -Name ForceEncryption).ForceEncryption
 				
-				[pscustomobject]@{
+				# [pscustomobject] doesn't always work, unsure why. so return hashtable then turn it into  pscustomobject on client
+				@{
 					ComputerName		  = $env:COMPUTERNAME
 					InstanceName		  = $args[2]
 					SqlInstance		      = $args[1]
@@ -119,7 +120,10 @@ function Get-DbaForceNetworkEncryption {
 			
 			if ($PScmdlet.ShouldProcess("local", "Connecting to $instance")) {
 				try {
-					Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop | Select-Object -Property * -ExcludeProperty PSComputerName, RunspaceId, PSShowComputerName
+					$results = Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regroot, $vsname, $instancename -ScriptBlock $scriptblock -ErrorAction Stop -Raw
+					foreach ($result in $results) {
+						[pscustomobject]$result	
+					}
 				}
 				catch {
 					Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting!" -ErrorRecord $_ -Target $instance -Continue

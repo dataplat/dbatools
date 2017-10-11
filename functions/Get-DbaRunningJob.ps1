@@ -18,7 +18,7 @@ Replaces user friendly yellow warnings with bloody red exceptions of doom!
 Use this if you want the function to throw terminating errors you want to catch.
 
 .NOTES 
-Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0

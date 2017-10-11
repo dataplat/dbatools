@@ -23,7 +23,7 @@ function Find-DbaDatabaseGrowthEvent {
 
 		.NOTES
 			Tags: AutoGrow
-			Original Author: Aaron Nelson
+			Author: Aaron Nelson
 			Query Extracted from SQL Server Management Studio (SSMS) 2016.
 
 			Website: https://dbatools.io

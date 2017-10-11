@@ -111,7 +111,7 @@ function Get-DbaBackupHistory {
 		Returns information about all Full backups for AdventureWorks2014 on sql2014
 	
 	.EXAMPLE
-		Get-DbaRegisteredServerName -SqlInstance sql2016 | Get-DbaBackupHistory
+		Get-DbaRegisteredServer -SqlInstance sql2016 | Get-DbaBackupHistory
 		
 		Returns database backup information for every database on every server listed in the Central Management Server on sql2016
 	
@@ -329,7 +329,7 @@ function Get-DbaBackupHistory {
 					if ($DeviceTypeFilter) {
 						$DevTypeFilterWhere = "AND mediafamily.device_type $DeviceTypeFilterRight"
 					}
-					$sql = "
+					$sql += "
 								SELECT
 									a.BackupSetRank,
 									a.Server,
@@ -412,8 +412,7 @@ function Get-DbaBackupHistory {
 								ORDER BY a.Type;
 								"
 				}
-				
-				#$sql = $sql -join "; "
+				$sql = $sql -join "; "
 			}
 			else {
 				if ($Force -eq $true) {

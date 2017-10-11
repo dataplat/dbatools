@@ -87,7 +87,7 @@ The force parameter will ignore some errors in the parameters and assume default
 It will also remove the any present schedules with the same name for the specific job.
 
 .NOTES 
-Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Step
 	
 Website: https://dbatools.io
@@ -439,6 +439,6 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
     } # process
 
     end {
-        Write-Message -Message "Finished changing the job schedule(s)."-Level Output
+        Write-Message -Message "Finished changing the job schedule(s)" -Level Verbose
     }
 }

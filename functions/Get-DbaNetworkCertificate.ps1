@@ -46,7 +46,7 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
 			
 			Write-Message -Level Verbose -Message "Connecting to SQL WMI on $($computer.ComputerName)"
 			try {
-				$sqlwmis = Invoke-ManagedComputerCommand -Server $computer.ComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -match "SQL Server \("
+				$sqlwmis = Invoke-ManagedComputerCommand -ComputerName $computer.ComputerName -ScriptBlock { $wmi.Services } -Credential $Credential -ErrorAction Stop | Where-Object DisplayName -match "SQL Server \("
 			}
 			catch {
 				Stop-Function -Message $_ -Target $sqlwmi -Continue
@@ -75,10 +75,10 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
 				
 				if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $computer }
 				
-				Write-Message -Level Output -Message "Regroot: $regroot"
-				Write-Message -Level Output -Message "ServiceAcct: $serviceaccount"
-				Write-Message -Level Output -Message "InstanceName: $instancename"
-				Write-Message -Level Output -Message "VSNAME: $vsname"
+				Write-Message -Level Verbose -Message "Regroot: $regroot"
+				Write-Message -Level Verbose -Message "ServiceAcct: $serviceaccount"
+				Write-Message -Level Verbose -Message "InstanceName: $instancename"
+				Write-Message -Level Verbose -Message "VSNAME: $vsname"
 				
 				$scriptblock = {
 					$regroot = $args[0]
@@ -100,29 +100,28 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
 					if (!$cert) { continue }
 					
 					[pscustomobject]@{
-						ComputerName = $env:COMPUTERNAME
-						InstanceName = $instancename
-						SqlInstance = $vsname
-						ServiceAccount = $serviceaccount
-						FriendlyName = $cert.FriendlyName
-						DnsNameList = $cert.DnsNameList
-						Thumbprint = $cert.Thumbprint
-						Generated = $cert.NotBefore
-						Expires = $cert.NotAfter
-						IssuedTo = $cert.Subject
-						IssuedBy = $cert.Issuer
-						Certificate = $cert
+						ComputerName    = $env:COMPUTERNAME
+						InstanceName    = $instancename
+						SqlInstance	    = $vsname
+						ServiceAccount  = $serviceaccount
+						FriendlyName    = $cert.FriendlyName
+						DnsNameList	    = $cert.DnsNameList
+						Thumbprint	    = $cert.Thumbprint
+						Generated	    = $cert.NotBefore
+						Expires		    = $cert.NotAfter
+						IssuedTo	    = $cert.Subject
+						IssuedBy	    = $cert.Issuer
+						Certificate	    = $cert
 					}
 				}
 				
-				if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to get a list of certs")) {
-					try {
-						Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop |
-						Select-DefaultView -ExcludeProperty Certificate
-					}
-					catch {
-						Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue
-					}
+				Write-Message -Level Verbose -Message "Connecting to $computer to get a list of certs"
+				try {
+					Invoke-Command2 -ComputerName $computer.ComputerName -Credential $Credential -ArgumentList $regroot, $serviceaccount, $instancename, $vsname -ScriptBlock $scriptblock -ErrorAction Stop |
+					Select-DefaultView -ExcludeProperty Certificate
+				}
+				catch {
+					Stop-Function -Message $_ -ErrorRecord $_ -Target $ComputerName -Continue
 				}
 			}
 		}

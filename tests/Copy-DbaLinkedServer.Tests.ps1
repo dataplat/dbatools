@@ -2,17 +2,19 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-try {
-	$connstring = "Server=ADMIN:$script:instance1;Trusted_Connection=True"
-	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $script:instance1
-	$server.ConnectionContext.ConnectionString = $connstring
-	$server.ConnectionContext.Connect()
-	$server.ConnectionContext.Disconnect()
-	Clear-DbaSqlConnectionPool
-}
-catch {
-	Write-Host "DAC not working this round, likely due to Appveyor resources"
-	return
+if ($env:appveyor) {
+	try {
+		$connstring = "Server=ADMIN:$script:instance1;Trusted_Connection=True"
+		$server = New-Object Microsoft.SqlServer.Management.Smo.Server $script:instance1
+		$server.ConnectionContext.ConnectionString = $connstring
+		$server.ConnectionContext.Connect()
+		$server.ConnectionContext.Disconnect()
+		Clear-DbaSqlConnectionPool
+	}
+	catch {
+		Write-Host "DAC not working this round, likely due to Appveyor resources"
+		return
+	}
 }
 <#
 $dropsql = "EXEC master.dbo.sp_dropserver @server=N'dbatools-localhost', @droplogins='droplogins';
@@ -27,8 +29,8 @@ Clear-DbaSqlConnectionPool
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Create new linked server" {
-		$server1 = Connect-DbaSqlServer -SqlInstance $script:instance1
-		$server2 = Connect-DbaSqlServer -SqlInstance $script:instance2
+		$server1 = Connect-DbaInstance -SqlInstance $script:instance1
+		$server2 = Connect-DbaInstance -SqlInstance $script:instance2
 		try {
 			$server1.Query($dropsql)
 			$server2.Query($dropsql)

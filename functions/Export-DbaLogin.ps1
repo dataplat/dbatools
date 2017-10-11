@@ -10,44 +10,46 @@ function Export-DbaLogin {
 			The SQL Server instance name. SQL Server 2000 and above supported.
 
 		.PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+ 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-			SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Login
-			The login(s) to process - this list is auto-populated FROM the server. If unspecified, all logins will be processed.
+			The login(s) to process. Options for this list are auto-populated from the server. If unspecified, all logins will be processed.
 
 		.PARAMETER ExcludeLogin
-			The login(s) to exclude - this list is auto-populated FROM the server.
+			The login(s) to exclude. Options for this list are auto-populated from the server.
 
 		.PARAMETER Database
-			The database(s) to process - this list is auto-populated FROM the server. If unspecified, all databases will be processed.
+			The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
 		.PARAMETER FilePath
 			The file to write to.
 
 		.PARAMETER NoClobber
-			Do not overwrite file
+			If this switch is enabled, a file already existing at the path specified by FilePath will not be overwritten.
 
 		.PARAMETER Append
-			Append to file
+			If this switch is enabled, content will be appended to a file already existing at the path specified by FilePath. If the file does not exist, it will be created.
 
 		.PARAMETER NoJobs
-			Does not export the Jobs
+			If this switch is enabled, Agent job ownership will not be exported.
 
 		.PARAMETER NoDatabases
-			Does not export the databases
+			If this switch is enabled, mappings for databases will not be exported.
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Silent
-			USE this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
 			Tags: Export, Login
@@ -72,12 +74,12 @@ function Export-DbaLogin {
 		.EXAMPLE
 			Export-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -FilePath C:\temp\logins.sql
 
-			Exports ONLY logins netnerds and realcajun FROM sqlsever2014a to the file  C:\temp\logins.sql
+			Exports ONLY logins netnerds and realcajun FROM sqlserver2014a to the file  C:\temp\logins.sql
 
 		.EXAMPLE
 			Export-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting
 
-			Exports ONLY logins netnerds and realcajun FROM sqlsever2014a with the permissions on databases HR and Accounting
+			Exports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting
 	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
@@ -104,21 +106,25 @@ function Export-DbaLogin {
 	begin {
 
 		if ($FilePath) {
-			if ($FilePath -notlike "*\*") { $FilePath = ".\$filepath" }
+			if ($FilePath -notlike "*\*") {
+				$FilePath = ".\$filepath"
+			}
 			$directory = Split-Path $FilePath
 			$exists = Test-Path $directory
 
 			if ($exists -eq $false) {
-				Write-Message -Level Warning -Message "Parent directory $directory does not exist"
+				Write-Message -Level Warning -Message "Parent directory $directory does not exist."
 			}
 		}
 
 		$outsql = @()
 	}
 	process {
-		if (Test-FunctionInterrupt) { return }
+		if (Test-FunctionInterrupt) {
+			return
+		}
 
-		Write-Message -Level Verbose -Message "Connecting to $sqlinstance"
+		Write-Message -Level Verbose -Message "Connecting to $sqlinstance."
 		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
 		
 		if ($NoDatabases -eq $false) {
@@ -132,15 +138,15 @@ function Export-DbaLogin {
 			if ($Database) {
 				$DbsToMap = $DbsToMap | Where-Object Name -in $Database 
 			}
-			foreach($db in $DbsToMap) {
+			foreach ($db in $DbsToMap) {
 				if ($db.IsAccessible -eq $false) {
 					continue
 				}
 				$dbmap = $db.EnumLoginMappings()
-				foreach($el in $dbmap) {
+				foreach ($el in $dbmap) {
 					$DbMapping += [pscustomobject]@{
-						Database = $db.Name
-						UserName = $el.Username
+						Database  = $db.Name
+						UserName  = $el.Username
 						LoginName = $el.LoginName
 					}
 				}
@@ -150,10 +156,12 @@ function Export-DbaLogin {
 		foreach ($sourceLogin in $server.Logins) {
 			$userName = $sourceLogin.name
 
-			if ($Login -and $Login -notcontains $userName -or $ExcludeLogin -contains $userName) { continue }
+			if ($Login -and $Login -notcontains $userName -or $ExcludeLogin -contains $userName) {
+				continue
+			}
 
 			if ($userName.StartsWith("##") -or $userName -eq 'sa') {
-				Write-Message -Level Warning -Message "Skipping $userName"
+				Write-Message -Level Warning -Message "Skipping $userName."
 				continue
 			}
 
@@ -169,7 +177,7 @@ function Export-DbaLogin {
 
 			if ($Pscmdlet.ShouldProcess("Outfile", "Adding T-SQL for login $userName")) {
 				if ($FilePath) {
-					Write-Message -Level Output -Message "Exporting $userName"
+					Write-Message -Level Output -Message "Exporting $userName."
 				}
 				
 				$outsql += "`r`nUSE master`n"
@@ -196,9 +204,15 @@ function Export-DbaLogin {
 					$sourceLoginName = $sourceLogin.name
 
 					switch ($server.versionMajor) {
-						0 { $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM master.dbo.syslogins WHERE loginname='$sourceLoginName'" }
-						8 { $sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM dbo.syslogins WHERE name='$sourceLoginName'" }
-						9 { $sql = "SELECT CONVERT(VARBINARY(256),password_hash) as hashedpass FROM sys.sql_logins WHERE name='$sourceLoginName'" }
+						0 {
+							$sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM master.dbo.syslogins WHERE loginname='$sourceLoginName'"
+						}
+						8 {
+							$sql = "SELECT CONVERT(VARBINARY(256),password) AS hashedpass FROM dbo.syslogins WHERE name='$sourceLoginName'"
+						}
+						9 {
+							$sql = "SELECT CONVERT(VARBINARY(256),password_hash) as hashedpass FROM sys.sql_logins WHERE name='$sourceLoginName'"
+						}
 						default {
 							$sql = "SELECT CAST(CONVERT(varchar(256), CAST(LOGINPROPERTY(name,'PasswordHash') AS VARBINARY(256)), 1) AS NVARCHAR(max)) AS hashedpass FROM sys.server_principals WHERE principal_id = $($sourceLogin.id)"
 						}
@@ -213,11 +227,15 @@ function Export-DbaLogin {
 					}
 
 					if ($hashedPass.GetType().Name -ne "String") {
-						$passString = "0x"; $hashedPass | ForEach-Object { $passString += ("{0:X}" -f $_).PadLeft(2, "0") }
+						$passString = "0x"; $hashedPass | ForEach-Object {
+							$passString += ("{0:X}" -f $_).PadLeft(2, "0")
+						}
 						$hashedPass = $passString
 					}
 
-					$sid = "0x"; $sourceLogin.sid | ForEach-Object { $sid += ("{0:X}" -f $_).PadLeft(2, "0") }
+					$sid = "0x"; $sourceLogin.sid | ForEach-Object {
+						$sid += ("{0:X}" -f $_).PadLeft(2, "0")
+					}
 					$outsql += "IF NOT EXISTS (SELECT loginname FROM master.dbo.syslogins WHERE name = '$userName') CREATE LOGIN [$userName] WITH PASSWORD = $hashedPass HASHED, SID = $sid, DEFAULT_DATABASE = [$defaultDb], CHECK_POLICY = $checkPolicy, CHECK_EXPIRATION = $checkExpiration, DEFAULT_LANGUAGE = [$language]"
 				}
 				# Attempt to script out Windows User
@@ -244,8 +262,12 @@ function Export-DbaLogin {
 				$roleName = $role.Name
 
 				# SMO changed over time
-				try { $roleMembers = $role.EnumMemberNames() }
-				catch { $roleMembers = $role.EnumServerRoleMembers() }
+				try {
+					$roleMembers = $role.EnumMemberNames()
+				}
+				catch {
+					$roleMembers = $role.EnumServerRoleMembers()
+				}
 
 				if ($roleMembers -contains $userName) {
 					$outsql += "ALTER SERVER ROLE [$roleName] ADD MEMBER [$userName]"
@@ -293,7 +315,7 @@ function Export-DbaLogin {
 
 			if ($NoDatabases -eq $false) {
 				if ($userName -notin $DbMapping.LoginName) {
-					Write-Message -Level VeryVerbose -Message "Skipping as $userName is not mapped to an user of the databases"
+					Write-Message -Level VeryVerbose -Message "Skipping as $userName is not mapped to an user of the databases."
 					continue
 				}
 				$dbs = $sourceLogin.EnumDatabaseMappings()
@@ -309,7 +331,7 @@ function Export-DbaLogin {
 						$outsql += $sql
 					}
 					catch {
-						Write-Message -Level Warning -Message "User cannot be found in selected database"
+						Write-Message -Level Warning -Message "User cannot be found in selected database."
 					}
 
 					# Skipping updating dbowner

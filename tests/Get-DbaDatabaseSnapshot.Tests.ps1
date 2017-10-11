@@ -1,20 +1,28 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-
 
 # Targets only instance2 because it's the only one where Snapshots can happen
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Operations on snapshots" {
 		BeforeAll {
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			if ($env:appveyor) {
+				Get-Service | Where-Object { $_.DisplayName -match 'SQL Server (SQL2016)' } | Restart-Service -Force
+				
+				do {
+					Start-Sleep 1
+					$null = (& sqlcmd -S $script:instance2 -b -Q "select 1" -d master)
+				}
+				while ($lastexitcode -ne 0 -and $s++ -lt 10)
+			}
+			$server = Connect-DbaInstance -SqlInstance $script:instance2
 			$db1 = "dbatoolsci_GetSnap"
 			$db1_snap1 = "dbatoolsci_GetSnap_snapshotted1"
 			$db1_snap2 = "dbatoolsci_GetSnap_snapshotted2"
 			$db2 = "dbatoolsci_GetSnap2"
 			$db2_snap1 = "dbatoolsci_GetSnap2_snapshotted"
 			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2 -Force
-			Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2 | Remove-DbaDatabase
+			Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1,$db2 | Remove-DbaDatabase -Confirm:$false
 			$server.Query("CREATE DATABASE $db1")
 			$server.Query("CREATE DATABASE $db2")
 			$setupright = $true
@@ -31,7 +39,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		AfterAll {
 			Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1,$db2 -Force -ErrorAction SilentlyContinue
-			Remove-DbaDatabase -SqlInstance $script:instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
+			Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
 		}
 		
 		if ($setupright) {

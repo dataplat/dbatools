@@ -42,15 +42,52 @@ Remove-Module dbatools -ErrorAction Ignore
 Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
 $ScriptAnalyzerRules = Get-ScriptAnalyzerRule
 
+if (-not $Finalize) {
+	# Invoke pester.groups.ps1 to know which tests to run
+	. "$ModuleBase\tests\pester.groups.ps1"
+	# retrieve all .Tests.
+	$AllDbatoolsTests = Get-ChildItem -File -Path $ModuleBase\tests\*.Tests.ps1
+	# exclude "disabled"
+	$AllTests = $AllDbatoolsTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -notin $TestsRunGroups['disabled'] }
+	# only in appveyor, disable uncooperative tests
+	$AllTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -notin $TestsRunGroups['appveyor_disabled'] }
 
-# Inspect special words
-$TestsToRunMessage = "$($env:APPVEYOR_REPO_COMMIT_MESSAGE) $($env:APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED)"
-$TestsToRunRegex = [regex] '(?smi)\(do (?<do>[^)]+)\)'
-$TestsToRunMatch = $TestsToRunRegex.Match($TestsToRunMessage).Groups['do'].Value
-if ($TestsToRunMatch.Length -gt 0) {
-	$TestsToRun = "*$TestsToRunMatch*"
-} else {
-	$TestsToRun = "*.Tests.*"
+	# Inspect special words
+	$TestsToRunMessage = "$($env:APPVEYOR_REPO_COMMIT_MESSAGE) $($env:APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED)"
+	$TestsToRunRegex = [regex] '(?smi)\(do (?<do>[^)]+)\)'
+	$TestsToRunMatch = $TestsToRunRegex.Match($TestsToRunMessage).Groups['do'].Value
+	if ($TestsToRunMatch.Length -gt 0) {
+		$TestsToRun = "*$TestsToRunMatch*"
+		$AllTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -like $TestsToRun }
+		Write-Host -ForegroundColor DarkGreen "Commit message: Reduced to $($AllTests.Length) out of $($AllDbatoolsTests.Length) tests"
+		if ($AllTests.Length -eq 0) {
+			throw "something went wrong, nothing to test"
+		}
+	} else {
+		$TestsToRun = "*.Tests.*"
+	}
+
+
+	# do we have a scenario ?
+	if ($env:SCENARIO) {
+		# if so, do we have a group with tests to run ?
+		if ($env:SCENARIO -in $TestsRunGroups.Keys) {
+			$AllScenarioTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -in $TestsRunGroups[$env:SCENARIO] }
+		} else {
+			$AllScenarioTests = $AllTests
+			# we have a scenario, but no specific group. Let's run any other test
+			foreach($group in $TestsRunGroups.Keys) {
+				$AllScenarioTests = $AllScenarioTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -notin $TestsRunGroups[$group] }
+			}
+		}
+	} else {
+		$AllScenarioTests = $AllTests
+	}
+
+	Write-Host -ForegroundColor DarkGreen "Test Groups   : Reduced to $($AllScenarioTests.Length) out of $($AllDbatoolsTests.Length) tests"
+	if ($AllTests.Length -eq 0 -and $AllScenarioTests.Length -eq 0) {
+		throw "something went wrong, nothing to test"
+	}
 }
 
 #Run a test with the current version of PowerShell
@@ -59,7 +96,7 @@ if (-not $Finalize) {
 	Write-Output "Testing with PowerShell $PSVersion"
 	Import-Module Pester
 	Set-Variable ProgressPreference -Value SilentlyContinue
-	Invoke-Pester -Script "$ModuleBase\Tests\$TestsToRun" -Show None -OutputFormat NUnitXml -OutputFile "$ModuleBase\$TestFile" -PassThru | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion.xml"
+	Invoke-Pester -Script $AllScenarioTests -Show None -OutputFormat NUnitXml -OutputFile "$ModuleBase\$TestFile" -PassThru | Export-Clixml -Path "$ModuleBase\PesterResults$PSVersion.xml"
 }
 else {
 	# Unsure why we're uploading so I removed it for now
@@ -87,19 +124,6 @@ else {
 	
 	$totalcount = $results | Select-Object -ExpandProperty TotalCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
 	$failedcount = $results | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
-	
-	if ($TestsToRun -eq "*.Tests.*") {
-		# normal run without skipping
-		if ($totalcount -lt 10) {
-			Write-Warning "Something did not run properly"
-			throw "$totalcount tests ran, which is too little"
-		}
-	} else {
-		if ($totalcount -lt 1) {
-			Write-Warning "Glad you saved some CPU puppies, but no tests at all actually ran ($TestsToRun)"
-			throw "$totalcount tests ran, which is too little"
-		}
-	}
 	
 	
 	if ($failedcount -gt 0) {

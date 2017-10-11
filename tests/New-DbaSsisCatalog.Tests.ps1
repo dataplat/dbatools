@@ -6,7 +6,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Catalog is added properly" {
 		# database name is currently fixed
 		$database = "SSISDB"
-		$db = Get-DbaDatabase -SqlInstance $ssisserver -Database SSISDB
+		$db = Get-DbaDatabase -SqlInstance $ssisserver -Database $database
 		
 		if (-not $db) {
 			$password = ConvertTo-SecureString MyVisiblePassWord -AsPlainText -Force
@@ -26,7 +26,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 				It "creates the catalog" {
 					$results.Created | Should Be $true
 				}
-				Remove-DbaDatabase -SqlInstance $ssisserver -Database $database
+				Remove-DbaDatabase -Confirm:$false -SqlInstance $ssisserver -Database $database
 			}
 		}
 	}

@@ -10,7 +10,7 @@
     Instead of log entries, the error entries will be retrieved
 
     .NOTES
-	Original Author: Fred Weinmann (@FredWeinmann)
+	Author: Fred Weinmann (@FredWeinmann)
 	Tags: Debug
 
 	Website: https://dbatools.io
