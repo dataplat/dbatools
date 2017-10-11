@@ -43,8 +43,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		{ Invoke-DbaDatabaseCorruption -SqlInstance $server -Database $dbname -Table "DoesntExist$(New-Guid)" -Silent } | Should Throw
 	}
 	
-	$null = $db.Query("Create table dbo.[Example] ( id int); insert into example values (1)")
-	# Could test this in a few ways
+	$null = $db.Query("
+		CREATE TABLE dbo.[Example] (id int); 
+		INSERT dbo.[Example] 
+		SELECT top 1000 1 
+		FROM sys.objects")	
 	
 	It "Corrupt a single database" {
 		Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database $dbname -Confirm:$false | Select-Object -ExpandProperty Status | Should be "Corrupted"
