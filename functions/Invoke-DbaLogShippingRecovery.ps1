@@ -121,7 +121,7 @@
 			
 			Write-Message -Message "Attempting to connect to Sql Server" -Level Output
 			try {
-				$server = Connect-DbaSqlServer -SqlInstance $sqlinstance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $sqlinstance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance
