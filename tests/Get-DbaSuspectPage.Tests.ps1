@@ -10,11 +10,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$null = $Server.Query("Create Database [$dbname]")
 			$db = Get-DbaDatabase -SqlInstance $Server -Database $dbname
 		}
-		
 		AfterAll {
 			Remove-DbaDatabase -SqlInstance $Server -Database $dbname -Confirm:$false
 		}
-		
 		
 		$null = $db.Query("
 		CREATE TABLE dbo.[Example] (id int); 
@@ -22,17 +20,20 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		SELECT top 1000 1 
 		FROM sys.objects")
 		
+		# make darn sure suspect pages show up, run twice
 		try {
 			$null = Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
-			$null = $db.Query("select top 1 from example")
+			$null = $db.Query("select top 100 from example")
+			$null = $server.Query("ALTER DATABASE $dbname SET PAGE_VERIFY CHECKSUM  WITH NO_WAIT")
 			$null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue
 		} catch {} # should fail
 		
-		try { $null = $db.Query("select top 1 from example") } catch { }
-		try { $null = $db.Query("select top 1 from example") } catch { }
-		try { $null = $db.Query("select top 1 from example") } catch { }
-		try { $null = $db.Query("select top 1 from example") } catch { }
-		try { $null = Start-DbccCheck -Server $Server -dbname $dbname -Table -WarningAction SilentlyContinue } catch { }
+		try {
+			$null = Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+			$null = $db.Query("select top 100 from example")
+			$null = $server.Query("ALTER DATABASE $dbname SET PAGE_VERIFY CHECKSUM  WITH NO_WAIT")
+			$null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue
+		} catch { } # should fail
 		
 		$results = Get-DbaSuspectPage -SqlInstance $server
 		It "function should find at least one record in suspect_pages table" {
