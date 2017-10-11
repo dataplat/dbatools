@@ -1,56 +1,56 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Unit Tests" -Tags "UnitTests" {
-  Context "Validating Database Input" {
-    It "Should not allow you to corrupt system databases."{
-      {
-        Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database "master"
-      } | Should Throw
-    }
-    It "Should fail if more than one database is specified" {
-      {
-        Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database "Database1","Database2"
-      } | Should Throw
-    }
-  }
-
-  Context "It's Confirm impact should be high" {
-    $command = Get-Command Invoke-DbaDatabaseCorruption
-    $metadata = [System.Management.Automation.CommandMetadata]$command
-    $metadata.ConfirmImpact | Should Be 'High'
-  }
+	Context "Validating Database Input" {
+		Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database "master" -WarningAction SilentlyContinue -WarningVariable systemwarn
+		It "Should not allow you to corrupt system databases."{
+			$systemwarn -match 'may not corrupt system databases' | Should Be $true
+		}
+		It "Should fail if more than one database is specified" {
+			{ Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database "Database1", "Database2" -Silent } | Should Throw
+		}
+	}
+	
+	Context "It's Confirm impact should be high" {
+		$command = Get-Command Invoke-DbaDatabaseCorruption
+		$metadata = [System.Management.Automation.CommandMetadata]$command
+		$metadata.ConfirmImpact | Should Be 'High'
+	}
 }
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-  $Uniqueifier = New-Guid
-  $db = "InvokeDbaDatabaseCorruptionTest"
-  $Server = Connect-DbaSqlServer -SqlInstance $script:instance1
-
-  # Need a clean empty database
-  $null = $Server.Query("Create Database [$db]")
-
-  Context "Require at least a single table in the database specified" {
-    {
-      Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database $db
-    } | Should Throw
-  }
-
-  # Creating a table to make sure these are failing for different reasons
-  $null = $Server.Query ("Create table dbo.[Example] ( id int identity );")
-  Context "Fail if the specified table does not exist" {
-    {
-      Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database $db -Table "DoesntExist$Uniqueifier"
-    } | Should Throw
-  }
-
-  # Could test this in a few ways
-  Context "Corrupt a single database" {
-    Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database $db | Select-Object Status | Should be "Corrupted"
-    Backup-DbaDatabase -SqlInstance $script:instance1 -Verify -Database $db | Select-Object Verified | Should be $false
-  }
-
-  # Cleanup
-  $Server.Query("Drop Database [$db]")
+	BeforeAll {
+		$dbname = "dbatoolsci_InvokeDbaDatabaseCorruptionTest"
+		$Server = Connect-DbaInstance -SqlInstance $script:instance1
+		# Need a clean empty database
+		$null = $Server.Query("Create Database [$dbname]")
+		$db = Get-DbaDatabase -SqlInstance $Server -Database $dbname
+	}
+	
+	AfterAll {
+		# Cleanup
+		Remove-DbaDatabase -SqlInstance $Server -Database $dbname -Confirm:$false
+	}
+	
+	It "Require at least a single table in the database specified" {
+		{ Invoke-DbaDatabaseCorruption -SqlInstance $server -Database $dbname -Silent } | Should Throw
+	}
+	
+	# Creating a table to make sure these are failing for different reasons
+	It "Fail if the specified table does not exist" {
+		{ Invoke-DbaDatabaseCorruption -SqlInstance $server -Database $dbname -Table "DoesntExist$(New-Guid)" -Silent } | Should Throw
+	}
+	
+	$null = $db.Query("Create table dbo.[Example] ( id int); insert into example values (1)")
+	# Could test this in a few ways
+	
+	It "Corrupt a single database" {
+		Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database $dbname -Confirm:$false | Select-Object -ExpandProperty Status | Should be "Corrupted"
+	}
+	
+	It "fails a backup verify" {
+		Backup-DbaDatabase -SqlInstance $server -Verify -Database $dbname | Select-Object -ExpandProperty Verified | Should be $false
+	}
 }
