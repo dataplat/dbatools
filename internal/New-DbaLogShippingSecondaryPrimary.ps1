@@ -210,12 +210,12 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
                 ,@copy_job_name = N'$CopyJob' 
                 ,@restore_job_name = N'$RestoreJob' 
 				,@file_retention_period = $FileRetentionPeriod 
-				,@copy_job_id = @LS_Secondary__CopyJobId
-                ,@restore_job_id = @LS_Secondary__RestoreJobId
+				,@copy_job_id = @LS_Secondary__CopyJobId OUTPUT
+                ,@restore_job_id = @LS_Secondary__RestoreJobId OUTPUT
                 ,@secondary_id = @LS_Secondary__SecondaryId OUTPUT "
 	
-	if($MonitorServer){
-     	$Query += ",@monitor_server = N'$MonitorServer' 
+	if ($MonitorServer) {
+		$Query += ",@monitor_server = N'$MonitorServer' 
 				,@monitor_server_security_mode = $($MonitorServerSecurityMode) "
 	}
 	
@@ -226,7 +226,12 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
             ,@monitor_server_password = N'$MonitorPassword' "
 	}
     
-	$Query += ",@overwrite = 1;"
+	if ($ServerSecondary.Version.Major -gt 9) {
+		$Query += ",@overwrite = 1;"
+	}
+	else {
+		$Query += ";"
+	}
 
 	# Execute the query to add the log shipping primary
 	if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping making settings for the primary database to secondary database on $SqlInstance"))) {
