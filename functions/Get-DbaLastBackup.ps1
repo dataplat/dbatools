@@ -20,6 +20,9 @@ The database(s) to process - this list is auto-populated from the server. If uns
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is auto-populated from the server
 
+.PARAMETER Silent
+Use this switch to disable any kind of verbose messages
+
 .NOTES
 Tags: DisasterRecovery, Backup
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -62,17 +65,18 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 		$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$ExcludeDatabase
+		[object[]]$ExcludeDatabase,
+		[switch]$Silent
 	)
 
 	process {
 		foreach ($instance in $SqlInstance) {
-			Write-Verbose "Connecting to $instance"
+			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Write-Warning "Can't connect to $instance"
+				Write-Message -Level Warning -Message "Can't connect to $instance"
 				Continue
 			}
 
@@ -88,10 +92,10 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 
 			foreach ($db in $dbs) {
 				$result = $null
-				Write-Verbose "Processing $db on $instance"
+				Write-Message -Level Verbose -Message "Processing $db on $instance"
 
 				if ($db.IsAccessible -eq $false) {
-					Write-Warning "The database $db on server $instance is not accessible. Skipping database."
+					Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database."
 					Continue
 				}
 				# To avoid complicated manipulations on datetimes depending on locale settings and culture,
@@ -124,9 +128,9 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 					SqlInstance        = $server.DomainInstanceName
 					Database           = $db.name
 					RecoveryModel      = $db.recoverymodel
-					LastFullBackup     = if ($db.LastBackupdate -eq 0) { $null } else { $db.LastBackupdate.tostring() }
-					LastDiffBackup     = if ($db.LastDifferentialBackupDate -eq 0) { $null } else { $db.LastDifferentialBackupDate.tostring() }
-					LastLogBackup      = if ($db.LastLogBackupDate -eq 0) { $null } else { $db.LastLogBackupDate.tostring() }
+					LastFullBackup     = if ($db.LastBackupdate -eq 0) { $null } else { [DbaDateTime]$db.LastBackupdate}
+					LastDiffBackup     = if ($db.LastDifferentialBackupDate -eq 0) { $null } else { [DbaDateTime]$db.LastDifferentialBackupDate }
+					LastLogBackup      = if ($db.LastLogBackupDate -eq 0) { $null } else { [DbaDateTime]$db.LastLogBackupDate }
 					SinceFull          = $SinceFull
 					SinceDiff          = $SinceDiff
 					SinceLog           = $SinceLog

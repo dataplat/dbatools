@@ -58,8 +58,13 @@ Prompts then removes the databases containeddb and mydb on SQL Server sql2016
 Remove-DbaDatabase -SqlInstance sql2016 -Database containeddb -Confirm:$false
 
 Does not prompt and swiftly removes containeddb on SQL Server sql2016
+
+.EXAMPLE
+Get-DbaDatabase -SqlInstance server\instance -ExcludeAllSystemDb | Remove-DbaDatabase
+
+Removes all the user databases from server\instance
 #>
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', DefaultParameterSetName= "Default")]
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName= "Default")]
 	Param (
 		[parameter(, Mandatory, ParameterSetName = "instance")]
 		[Alias("ServerInstance", "SqlServer")]
@@ -115,7 +120,7 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 			catch {
 				try {
 					if ($Pscmdlet.ShouldProcess("$db on $server", "alter db set single_user with rollback immediate then drop")) {
-						$null = $server.Query("alter database $db set single_user with rollback immediate; drop database $db")
+						$null = $server.Query("if exists (select * from sys.databases where name = '$($db.name)' and state = 0) alter database $db set single_user with rollback immediate; drop database $db")
 
 						[pscustomobject]@{
 							ComputerName = $server.NetName

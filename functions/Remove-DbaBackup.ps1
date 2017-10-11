@@ -52,7 +52,7 @@ Prompts you for confirmation before executing any changing operations within the
 
 .NOTES
 Tags: Storage, DisasterRecovery, Backup
-Original Author: Chris Sommer, @cjsommer, www.cjsommer.com
+Author: Chris Sommer, @cjsommer, www.cjsommer.com
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire

@@ -234,17 +234,16 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 						}
 						foreach ($file in $fg.Files) {
 							$counter += 1
-							# fixed extension is hardcoded as "ss", which seems a "de-facto" standard
-							$fname = [IO.Path]::ChangeExtension($file.Filename, "ss")
-							$fname = [IO.Path]::Combine((Split-Path $fname -Parent), ("{0}_{1}" -f $DefaultSuffix, (Split-Path $fname -Leaf)))
-							
+							$basename = [IO.Path]::GetFileNameWithoutExtension($file.FileName)
+							$basepath = Split-Path $file.FileName -Parent
 							# change path if specified
 							if ($Path.Length -gt 0) {
-								$basename = Split-Path $fname -Leaf
-								# we need to avoid cases where basename is the same for multiple FG
-								$basename = '{0:0000}_{1}' -f $counter, $basename
-								$fname = [IO.Path]::Combine($Path, $basename)
+								$basepath = $Path
 							}
+							# we need to avoid cases where basename is the same for multiple FG
+							$fname = [IO.Path]::Combine($basepath, ("{0}_{1}_{2:0000}_{3:000}" -f $basename, $DefaultSuffix, (Get-Date).MilliSecond, $counter))
+							# fixed extension is hardcoded as "ss", which seems a "de-facto" standard
+							$fname = [IO.Path]::ChangeExtension($fname, "ss")
 							$CustomFileStructure[$fg.Name] += @{ 'name' = $file.name; 'filename' = $fname }
 						}
 					}

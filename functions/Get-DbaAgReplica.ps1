@@ -23,7 +23,7 @@ function Get-DbaAgReplica {
 
 		.NOTES
 			Tags: DisasterRecovery, AG, AvailabilityGroup, Replica
-			Original Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
+			Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -89,7 +89,7 @@ function Get-DbaAgReplica {
 					Add-Member -Force -InputObject $currentReplica -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
 					Add-Member -Force -InputObject $currentReplica -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 
-					$defaults = 'ComputerName','InstanceName','SqlInstance','Parent as AvailabilityGroup','Name as Replica','AvailabilityMode','BackupPriority','EndpointUrl','SessionTimeout','FailoverMode','ReadonlyRoutingList'
+					$defaults = 'ComputerName','InstanceName','SqlInstance','Parent as AvailabilityGroup','Name as Replica','Role','ConnectionState','RollupSynchronizationState','AvailabilityMode','BackupPriority','EndpointUrl','SessionTimeout','FailoverMode','ReadonlyRoutingList'
 					Select-DefaultView -InputObject $currentReplica -Property $defaults
 				}
 			}

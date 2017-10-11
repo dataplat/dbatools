@@ -1,4 +1,4 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -46,7 +46,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		It "Should login with newly created Sql Login (also tests credential login) and gets name" {
 			$password = ConvertTo-SecureString -Force -AsPlainText tester1
 			$cred = New-Object System.Management.Automation.PSCredential ("tester", $password)
-			$s = Connect-DbaSqlServer -SqlInstance $script:instance1 -Credential $cred
+			$s = Connect-DbaInstance -SqlInstance $script:instance1 -Credential $cred
 			$s.Name | Should Be $script:instance1
 		}
 	}

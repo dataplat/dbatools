@@ -1,5 +1,4 @@
-﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:FunctionHelpTestExceptions = @(
+﻿$global:FunctionHelpTestExceptions = @(
     "TabExpansion2"
 )
 

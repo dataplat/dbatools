@@ -97,77 +97,7 @@ namespace Sqlcollaborative.Dbatools.TabExpansion
         /// <summary>
         /// After this timespan of no requests to a server, the updates to its cache are disabled.
         /// </summary>
-        public static TimeSpan TeppUpdateTimeout = new TimeSpan(0, 30, 0);
+        public static TimeSpan TeppUpdateTimeout = new TimeSpan(0, 0, 30);
         #endregion Configuration
-
-        #region Updater
-        private static ScriptBlock TeppUpdateScript;
-
-        private static PowerShell TeppUdater;
-
-        /// <summary>
-        /// Setting this to true should cause the script running in the runspace to selfterminate, allowing a graceful selftermination.
-        /// </summary>
-        public static bool TeppUdaterStopper
-        {
-            get { return _TeppUdaterStopper; }
-        }
-        private static bool _TeppUdaterStopper;
-
-        /// <summary>
-        /// Set the script to use as part of the TEPP updater
-        /// </summary>
-        /// <param name="Script">The script to use</param>
-        public static void SetScript(ScriptBlock Script)
-        {
-            TeppUpdateScript = Script;
-        }
-
-        /// <summary>
-        /// Starts the TEPP Updater.
-        /// </summary>
-        public static void Start()
-        {
-            if (TeppUdater == null)
-            {
-                _TeppUdaterStopper = false;
-                TeppUdater = PowerShell.Create();
-                TeppUdater.AddScript(TeppUpdateScript.ToString());
-                TeppUdater.BeginInvoke();
-            }
-        }
-
-        /// <summary>
-        /// Gracefully stops the TEPP Updater
-        /// </summary>
-        public static void Stop()
-        {
-            _TeppUdaterStopper = true;
-
-            int i = 0;
-
-            // Wait up to 30 seconds for the running script to notice and kill itself
-            while ((TeppUdater.Runspace.RunspaceAvailability != RunspaceAvailability.Available) && (i < 300))
-            {
-                i++;
-                Thread.Sleep(100);
-            }
-
-            Kill();
-        }
-
-        /// <summary>
-        /// Very ungracefully kills the TEPP Updater. Use only in the most dire emergency.
-        /// </summary>
-        public static void Kill()
-        {
-            if (TeppUdater != null)
-            {
-                TeppUdater.Runspace.Close();
-                TeppUdater.Dispose();
-                TeppUdater = null;
-            }
-        }
-        #endregion Updater
     }
 }

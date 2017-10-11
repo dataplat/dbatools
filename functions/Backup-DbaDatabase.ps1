@@ -84,7 +84,7 @@ function Backup-DbaDatabase {
 
 		.NOTES
 			Tags: DisasterRecovery, Backup, Restore
-			Original Author: Stuart Moore (@napalmgram), stuart-moore.com
+			Author: Stuart Moore (@napalmgram), stuart-moore.com
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -117,7 +117,7 @@ function Backup-DbaDatabase {
 		[string]$BackupFileName,
 		[switch]$CopyOnly,
 		[ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
-		[string]$Type = "Database",
+		[string]$Type = 'Database',
 		[parameter(ParameterSetName = "NoPipe", Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$DatabaseCollection,
 		[switch]$CreateFolder,
@@ -232,9 +232,9 @@ function Backup-DbaDatabase {
 				Write-Message -Level Warning -Message "$failreason"
 			}
 			
-			$lastfull = $database.LastBackupDate.Year
+			$lastfull = $database.Refresh().LastBackupDate.Year
 			
-			if ($Type -ne "Database" -and $lastfull -eq 1) {
+			if ($Type -notin @("Database", "Full") -and $lastfull -eq 1) {
 				$failreason = "$database does not have an existing full backup, cannot take log or differentialbackup"
 				$failures += $failreason
 				Write-Message -Level Warning -Message "$failreason"
@@ -265,7 +265,7 @@ function Backup-DbaDatabase {
 			
 			if ($type -in 'diff', 'differential') {
 				Write-Message -Level VeryVerbose -Message "Creating differential backup"
-				$type = "Database"
+				$SMOBackuptype = "Database"
 				$backup.Incremental = $true
 				$outputType = 'Differential'
 			}
@@ -274,16 +274,17 @@ function Backup-DbaDatabase {
 				Write-Message -Level VeryVerbose -Message "Creating log backup"
 				$Suffix = "trn"
 				$OutputType = 'Log'
+				$SMOBackupType = 'Log'
 			}
 			
 			if ($type -in 'Full', 'Database') {
 				Write-Message -Level VeryVerbose -Message "Creating full backup"
-				$type = "Database"
+				$SMOBackupType = "Database"
 				$OutputType='Full'
 			}
 			
 			$backup.CopyOnly = $copyonly
-			$backup.Action = $type
+			$backup.Action = $SMOBackupType
 			if ('' -ne $AzureBaseUrl) {
 				$backup.CredentialName = $AzureCredential
 			}

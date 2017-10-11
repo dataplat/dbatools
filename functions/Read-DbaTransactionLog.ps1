@@ -29,7 +29,7 @@ Use this switch to disable any kind of verbose messages
 
 .NOTES
 Tags: Databases, Logs
-Original Author: Stuart Moore (@napalmgram), stuart-moore.com
+Author: Stuart Moore (@napalmgram), stuart-moore.com
 
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

@@ -4,50 +4,52 @@ function Copy-DbaEndpoint {
 			Copy-DbaEndpoint migrates server endpoints from one SQL Server to another.
 
 		.DESCRIPTION
-			By default, all endpoints are copied. The -Endpoints parameter is auto-populated for command-line completion and can be used to copy only specific endpoints.
+			By default, all endpoints are copied.
 
 			If the endpoint already exists on the destination, it will be skipped unless -Force is used.
 
 		.PARAMETER Source
-			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 		.PARAMETER SourceSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
 		.PARAMETER DestinationSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
 			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Endpoint
-			The endpoint(s) to process - this list is auto-populated from the server. If unspecified, all endpoints will be processed.
+			The endpoint(s) to process. This list is auto-populated from the server. If unspecified, all endpoints will be processed.
 
 		.PARAMETER ExcludeEndpoint
-			The endpoint(s) to exclude - this list is auto-populated from the server
+			The endpoint(s) to exclude. This list is auto-populated from the server.
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
-
-		.PARAMETER Force
-			Drops and recreates the endpoint if it exists
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 
+		.PARAMETER Force
+			If this switch is enabled, existing endpoints on Destination with matching names from Source will be dropped.
+			
 		.NOTES
 			Tags: Migration, Endpoint
 			Author: Chrissy LeMaire (@cl), netnerds.net
@@ -68,7 +70,7 @@ function Copy-DbaEndpoint {
 		.EXAMPLE
 			Copy-DbaEndpoint -Source sqlserver2014a -SourceSqlCredential $cred -Destination sqlcluster -Endpoint tg_noDbDrop -Force
 
-			Copies a single endpoint, the tg_noDbDrop endpoint from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an endpoint with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+			Copies only the tg_noDbDrop endpoint from sqlserver2014a to sqlcluster using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If an endpoint with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 		.EXAMPLE
 			Copy-DbaEndpoint -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
@@ -132,24 +134,24 @@ function Copy-DbaEndpoint {
 					continue
 				}
 				else {
-					if ($Pscmdlet.ShouldProcess($destination, "Dropping server endpoint $endpointName and recreating")) {
+					if ($Pscmdlet.ShouldProcess($destination, "Dropping server endpoint $endpointName and recreating.")) {
 						try {
-							Write-Message -Level Verbose -Message "Dropping server endpoint $endpointName"
+							Write-Message -Level Verbose -Message "Dropping server endpoint $endpointName."
 							$destServer.Endpoints[$endpointName].Drop()
 						}
 						catch {
 							$copyEndpointStatus.Status = "Failed"
 							$copyEndpointStatus
 
-							Stop-Function -Message "Issue dropping server endpoint" -Target $endpointName -InnerErrorRecord $_ -Continue
+							Stop-Function -Message "Issue dropping server endpoint." -Target $endpointName -InnerErrorRecord $_ -Continue
 						}
 					}
 				}
 			}
 
-			if ($Pscmdlet.ShouldProcess($destination, "Creating server endpoint $endpointName")) {
+			if ($Pscmdlet.ShouldProcess($destination, "Creating server endpoint $endpointName.")) {
 				try {
-					Write-Message -Level Verbose -Message "Copying server endpoint $endpointName"
+					Write-Message -Level Verbose -Message "Copying server endpoint $endpointName."
 					$destServer.Query($currentEndpoint.Script()) | Out-Null
 
 					$copyEndpointStatus.Status = "Successful"
@@ -159,7 +161,7 @@ function Copy-DbaEndpoint {
 					$copyEndpointStatus.Status = "Failed"
 					$copyEndpointStatus
 
-					Stop-Function -Message "Issue creating server endpoint" -Target $endpointName -InnerErrorRecord $_
+					Stop-Function -Message "Issue creating server endpoint." -Target $endpointName -InnerErrorRecord $_
 				}
 			}
 		}
