@@ -98,7 +98,7 @@ function Invoke-DbaDatabaseCorruption {
         $FileId = 1,
         $PageId,
         $Offset = 4000,
-        $NumberOfBytesToChange = 8,
+        $NumberOfBytesToChange = 1,
         $HexString = '0x45',
         $bypassbufferpool = 1
       )
