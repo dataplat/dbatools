@@ -1,6 +1,5 @@
-﻿Function Invoke-DbaLogShippingRecovery
-{
-<#
+﻿Function Invoke-DbaLogShippingRecovery {
+	<#
     .SYNOPSIS
         Invoke-DbaLogShippingRecovery recovers log shipped databases to a normal state to act upon a migration or disaster.
     
@@ -80,17 +79,12 @@
         Shows what would happen if the command were executed.
     
     .NOTES
-        Author: Sander Stad (@sqlstad), sqlstad.nl
-        Requires: sysadmin access on SQL Servers
-        
-        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-        Copyright (C) 2016 Chrissy LeMaire
-        
-        This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-        
-        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-        
-        You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		Author: Sander Stad (@sqlstad, sqlstad.nl)
+		Tags: Log Shipping, Recovery
+			
+		Website: https://dbatools.io
+		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
     
     .LINK
         https://dbatools.io/Invoke-DbaLogShippingRecovery
@@ -98,178 +92,80 @@
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param
 	(
-		[Parameter(Position = 1)]
+		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[object]$SqlInstance,
-		[Parameter(Mandatory = $false, Position = 2, ValueFromPipeline = $true)]
+		[Parameter(ValueFromPipeline = $true)]
 		[object[]]$Database,
-		[Parameter(Mandatory = $false, Position = 3)]
 		[PSCredential]$SqlCredential,
-		[Parameter(Mandatory = $false, Position = 4)]
 		[switch]$NoRecovery,
-		[Parameter(Mandatory = $false, Position = 5)]
 		[switch]$Silent,
-		[Parameter(Mandatory = $false, Position = 6)]
 		[switch]$Force,
-		[Parameter(Mandatory = $false, Position = 7)]
 		[int]$Delay = 5
 	)
 	
-	begin
-	{
-		# Setting the CIM session options
-		$SessionOption = New-CimSessionOption -Protocol DCom
-	}
-	# TODO - ADD -All switch and docs
-	process
-	{
-		if (!$sqlinstance -and !$database.name)
-		{
+	begin {
+		if (!$sqlinstance -and $database.Count -lt 1) {
 			# You can prolly do this with 
 			Stop-Function -Message "You must pipe an SMO database object or specify SqlInstance"
 			return
 		}
 		
-		if ($sqlinstance)
-		{
+		if ($sqlinstance) {
 			# Check the instance if it is a named instance
 			$servername, $instancename = $sqlinstance.Split("\")
 			
-			if ($null -eq $instancename)
-			{
+			if ($instancename -eq $null) {
 				$instancename = "MSSQLSERVER"
 			}
 			
-			$islocal = $false
-			
-			# Check if it's local or remote
-			if ($servername -in ".", "localhost", $env:ServerNamename, "127.0.0.1")
-			{
-				$islocal = $true
-			}
-			
-			Write-Message -Message "Attempting to connect to Sql Server" -Level 2
-			try
-			{
+			Write-Message -Message "Attempting to connect to Sql Server" -Level Output
+			try {
 				$server = Connect-SqlInstance -SqlInstance $sqlinstance -SqlCredential $SqlCredential
 			}
-			catch
-			{
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-				return
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance
 			}
 			
-			if (!$database)
-			{
+			if ($Force -and (!$database -or $database.Count -lt 1)) {
 				$database = $server.databases
 			}
-			else
-			{
-				$database = $server.databases | Where-Object Name -in $database
+			elseif (-not $Force -and (!$database -or $database.Count -lt 1)) {
+				Stop-Function -Message "Please enter one or more databases to recover from log shipping" -Target $instance 
+			}
+			else {
+				$databases = $server.databases | Where-Object Name -in $database
 			}
 		}
-		else
-		{
-			# get the connected SMO object from the $databases
-			$firstdb = $database[0]
-			$server = $firstdb.Parent
-			$servername, $instancename = $server.Name.Split("\")
-			
-			# Check if it's local or remote
-			if ($servername -in ".", "localhost", $env:ServerNamename, "127.0.0.1")
-			{
-				$islocal = $true
-			}
-			
-			if ($null -eq $instancename)
-			{
-				$instancename = "MSSQLSERVER"
-			}
+	}
+	
+	process {
+		# Try to get the agent service details
+		try {
+			# Start the service
+			$agentservice = Get-DbaSqlService -ComputerName $servername | Where-Object {($_.ComputerName -eq $servername) -and ($_.DisplayName -eq "SQL Server Agent ($instancename)")}
 		}
-		
-		#region CIM Session creation
-		$servername = $server.netname
-		Write-Message -Level Verbose -Message "Creating CimSession on $servername over WSMan"
-		
-		# in case it's piped and already connected
-		if ($cimsession.id -eq $null)
-		{
-			# Check if the CIM session needs to be created using a credential
-			if (!$Credential)
-			{
-				$cimsession = New-CimSession -ComputerName $servername -ErrorAction SilentlyContinue
-			}
-			else
-			{
-				$cimsession = New-CimSession -ComputerName $servername -ErrorAction SilentlyContinue -Credential $SqlCredential
-			}
-			
-			# Create a CIM session if it's not yet created
-			if ($cimsession.id -eq $null)
-			{
-				Write-Message -Level Verbose -Message "Creating CimSession on $servername over WSMan failed. Creating CimSession on $servername over DCom"
-				
-				if (!$Credential)
-				{
-					$cimsession = New-CimSession -ComputerName $servername -SessionOption $SessionOption -ErrorAction SilentlyContinue -Credential $SqlCredential
-				}
-				else
-				{
-					$cimsession = New-CimSession -ComputerName $servername -SessionOption $SessionOption -ErrorAction SilentlyContinue
-				}
-			}
-			
-			# Check if the CIM session was created successfully
-			if ($cimsession.id -eq $null)
-			{
-				Stop-Function -Message "Can't create CimSession on $servername"
-				return
-			}
+		catch {
+			# Stop the funcion when the service was unable to start
+			Stop-Function -Message "Unable to start SQL Server Agent Service" -ErrorRecord $_ -Target $sqlinstance
+			return
 		}
-		# Checking the status of the SQL Server Agent service
-		Write-Message -Message "Retrieving the status of the SQL Server Agent $secondarydb" -Level 2
-		
-		# Get the agent service from the CIM session
-		try
-		{
-			$agentservice = Get-CimInstance -CimSession $cimsession -classname Win32_Service -ErrorAction Stop | Where-Object { $_.DisplayName -eq "SQL Server Agent ($instancename)" }
-		}
-		catch
-		{
-			if ($_.Exception -match "namespace")
-			{
-				Stop-Function -Message "Can't get SQL Server Agent Info for '$server'. Unsupported operating system."
-			}
-			else
-			{
-				Stop-Function -Message "Can't get SQL Server Agent Info for '$server'. Check logs for more details."
-			}
-		}
-		#endregion CIM Session creation
-		
-		#region SQL Server Agent check
+
 		# Check if the service is running
-		if ($agentservice.State -ne 'Running')
-		{
-			# Check if the service needs to be started forcefully
-			if ($Force)
-			{
-				try
-				{
-					# Start the service
-					Invoke-CimMethod -MethodName StartService -CimSession $cimsession -InputObject $agentservice
+		if ($agentservice.State -ne 'Running') {
+
+			if ($Force) {
+				try {
+					Start-DbaSqlService -ComputerName $servername -InstanceName $instancename -Type Agent -Credential $SqlCredential
 				}
-				catch
-				{
+				catch {
 					# Stop the funcion when the service was unable to start
-					Stop-Function -Message "Unable to start SQL Server Agent Service" -InnerErrorRecord $_ -Target $sqlinstance
+					Stop-Function -Message "Unable to start SQL Server Agent Service" -ErrorRecord $_ -Target $sqlinstance
 					return
 				}
 			}
-			
 			# If the force switch and the silent switch are not set
-			if (!$Force -and !$Silent)
-			{
+			elseif (!$Force -and !$Silent) {
 				# Set up the parts for the user choice
 				$Title = "SQL Server Agent is not running"
 				$Info = "Do you want to start the SQL Server Agent service?"
@@ -279,212 +175,222 @@
 				$choice = $host.UI.PromptForChoice($Title, $Info, $Options, $Defaultchoice)
 				
 				# Check the given option 
-				if ($choice -eq 0)
-				{
-					try
-					{
+				if ($choice -eq 0) {
+					try {
 						# Start the service
-						 Invoke-CimMethod -MethodName StartService -CimSession $cimsession -InputObject $agentservice
+						Start-DbaSqlService -ComputerName $servername -InstanceName $instancename -Type Agent -Credential $SqlCredential
 					}
-					catch
-					{
+					catch {
 						# Stop the funcion when the service was unable to start
-						Stop-Function -Message "Unable to start SQL Server Agent Service" -InnerErrorRecord $_ -Target $sqlinstance
+						Stop-Function -Message "Unable to start SQL Server Agent Service" -ErrorRecord $_ -Target $sqlinstance
 						return
 					}
 				}
-				else
-				{
-					Stop-Function -Message "The SQL Server Agent service needs to be started to be able to recover the databases" -InnerErrorRecord $_ -Target $sqlinstance
+				else {
+					Stop-Function -Message "The SQL Server Agent service needs to be started to be able to recover the databases" -ErrorRecord $_ -Target $sqlinstance
 					return
 				}
 			}
-			
 			# If the force switch it not set and the silent switch is set
-			if (!$Force -and $Silent)
-			{
-				Stop-Function -Message "The SQL Server Agent service needs to be started to be able to recover the databases" -InnerErrorRecord $_ -Target $sqlinstance
+			elseif (!$Force -and $Silent) {
+				Stop-Function -Message "The SQL Server Agent service needs to be started to be able to recover the databases" -ErrorRecord $_ -Target $sqlinstance
 				return
 			}
+			# If nothing else matches and the agent service is not started
+			else {
+				Stop-Function -Message "The SQL Server Agent service needs to be started to be able to recover the databases" -ErrorRecord $_ -Target $sqlinstance
+				return
+			}
+
 		}
-		#endregion SQL Server Agent check
-		
-		Write-Message -Message "Started Log Shipping Recovery" -Level 2
-		foreach ($db in $database)
-		{
+
+		Write-Message -Message "Started Log Shipping Recovery" -Level Output
+
+		# Loop through all the databases
+		foreach ($db in $databases) {
 			# Query for retrieving the log shipping information
-			$query = "SELECT  lss.primary_server, lss.primary_database, lsd.secondary_database, lss.backup_source_directory,
-				        lss.backup_destination_directory, lss.last_copied_file, lss.last_copied_date,
-				        lsd.last_restored_file, sj1.name AS 'copyjob', sj2.name AS 'restorejob'
-				FROM    msdb.dbo.log_shipping_secondary AS lss
-				        INNER JOIN msdb.dbo.log_shipping_secondary_databases AS lsd ON lsd.secondary_id = lss.secondary_id
-						INNER JOIN msdb.dbo.sysjobs AS sj1 ON sj1.job_id = lss.copy_job_id
-						INNER JOIN msdb.dbo.sysjobs AS sj2 ON sj2.job_id = lss.restore_job_id 
-				WHERE lsd.secondary_database = '$db'"
-			
-			
+			$query = "SELECT lss.primary_server, lss.primary_database, lsd.secondary_database, lss.backup_source_directory,
+	lss.backup_destination_directory, lss.last_copied_file, lss.last_copied_date,
+	lsd.last_restored_file, sj1.name AS 'copyjob', sj2.name AS 'restorejob'
+FROM msdb.dbo.log_shipping_secondary AS lss
+	INNER JOIN msdb.dbo.log_shipping_secondary_databases AS lsd ON lsd.secondary_id = lss.secondary_id
+	INNER JOIN msdb.dbo.sysjobs AS sj1 ON sj1.job_id = lss.copy_job_id
+	INNER JOIN msdb.dbo.sysjobs AS sj2 ON sj2.job_id = lss.restore_job_id 
+WHERE lsd.secondary_database = '$($db.Name)'"
+
 			# Retrieve the log shipping information from the secondary instance
-			try
-			{
-				Write-Message -Message "Retrieving log shipping information from the secondary instance" -Level 5
-				$logshipping_details = Invoke-Sqlcmd2 -ServerInstance $server -Database msdb -Query $query
+			try {
+				Write-Message -Message "Retrieving log shipping information from the secondary instance" -Level Verbose
+				$logshipping_details = $server.Query($query)
 			}
-			catch
-			{
-				Stop-Function -Message "Error retrieving the log shipping details: $($_.Exception.Message)" -InnerErrorRecord $_ -Target $sqlinstance
-				
+			catch {
+				Stop-Function -Message "Error retrieving the log shipping details: $($_.Exception.Message)" -ErrorRecord $_ -Target $sqlinstance
 				return
 			}
-			
-			#region Log Shipping Recovery
-			# Check if the agent is running
-			if ($agentservice.State -ne 'Running')
-			{
-				Stop-Function -Message "The SQL Server Agent service needs to be started to be able to recover the databases" -InnerErrorRecord $_ -Target $sqlinstance
-				return
+
+			# Check if there are any databases to recover
+			if ($logshipping_details -eq $null) {
+				Stop-Function -Message "The database $db is not configured as a secondary database for log shipping." -Continue
 			}
-			else
-			{
-				# Check if there are any databases to recover
-				if ($logshipping_details -eq $null)
-				{
-					Stop-Function -Message "The database $db is not configured for log shipping." -Continue
-				}
-				else
-				{
-					# Loop through each of the log shipped databases
-					foreach ($ls in $logshipping_details)
-					{
-						$secondarydb = $ls.secondary_database
-						
-						# Check if the database is in the right state
-						if ($server.Databases[$secondarydb].Status -notin ('Normal, Standby', 'Standby', 'Restoring'))
-						{
-							Write-Message "The database $db doesn't have the right status to be recovered" -Level 3
-						}
-						else
-						{
-							Write-Message -Message "Started Recovery for $secondarydb" -Level 2
-							
-							#region Copy of remaining backup files
+			else {
+				# Loop through each of the log shipped databases
+				foreach ($ls in $logshipping_details) {
+					$secondarydb = $ls.secondary_database
+
+					# Check if the database is in the right state
+					if ($server.Databases[$secondarydb].Status -notin ('Normal, Standby', 'Standby', 'Restoring')) {
+						Stop-Function -Message "The database $db doesn't have the right status to be recovered" -Continue
+					}
+					else {
+						Write-Message -Message "Started Recovery for $secondarydb" -Level Verbose
+
+						# Get the last file from the backup source directory
+						<# !!!! set credentials !!! #>
+						$latestBackupSource = Get-ChildItem -Path $ls.backup_source_directory -filter ("*" + $ls.primary_database + "*") | Where-Object { ($_.Extension -eq '.trn') } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+
+						# Get al the backup files from the destination directory
+						<# !!!! set credentials !!! #>
+						$latestBackupDest = Get-ChildItem -Path $ls.backup_destination_directory -filter ("*" + $ls.primary_database + "*") | Where-Object { ($_.Extension -eq '.trn') } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+
+						# Check if source and destination directory are in sync
+						if ($latestBackupSource.Name -ne $latestBackupDest.Name) {
 							# Check if the backup source directory can be reached
-							if (Test-Path $ls.backup_source_directory)
-							{
-								# Get the last file from the backup source directory
-								$latestfile = Get-ChildItem -Path $ls.backup_source_directory -filter ("*" + $ls.primary_database + "*") | Where-Object { ($_.Extension -eq '.trn') } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+							if (Test-DbaSqlPath -SqlInstance $SqlInstance -Path $ls.backup_source_directory -SqlCredential $SqlCredential) {
 								
 								# Check if the latest file is also the latest copied file
-								if ($latestfile.Name -ne ([string]$ls.last_copied_file).Split('\')[-1])
-								{
-									Write-Message -Message "Synchronizing the latest transaction log backup file(s)" -Level 5
-									
+								if ($latestBackupSource.Name -ne ([string]$ls.last_copied_file).Split('\')[-1]) {
+									Write-Message -Message "Backup destination is not up-to-date" -Level Verbose
+
 									# Start the job to get the latest files
-									if ($PSCmdlet.ShouldProcess($sqlinstance, ("Starting copy job $($ls.copyjob)")))
-									{
-										$server.JobServer.Jobs[$ls.copyjob].Start()
-										
-										Write-Message -Message "Copying files to $($ls.backup_destination_directory)" -Level 5
-										
+									if ($PSCmdlet.ShouldProcess($sqlinstance, ("Starting copy job $($ls.copyjob)"))) {
+										Write-Message -Message "Starting copy job $($ls.copyjob)" -Level Verbose
+										try {
+											$server.JobServer.Jobs[$ls.copyjob].Start()
+										}
+										catch {
+											Stop-Function -Message "Something went wrong starting the restore job.`n$($_)" -ErrorRecord $_ -Target $sqlinstance
+										}
+
+										Write-Message -Message "Copying files to $($ls.backup_destination_directory)" -Level Verbose
+
 										# Check if the file has been copied
-										$query = "SELECT last_copied_file FROM msdb.dbo.log_shipping_secondary WHERE primary_database = '$($ls.primary_database)'"
-										$latestcopy = Invoke-Sqlcmd2 -ServerInstance $server -Database msdb -Query $query
+										$query = "SELECT last_copied_file FROM msdb.dbo.log_shipping_secondary WHERE primary_database = '$($ls.primary_database)' AND last_copied_file IS NOT NULL "
+										$latestcopy = $server.Query($query)
 										
-										Write-Message -Message "Waiting for the copy action to complete.." -Level 5
+										Write-Message -Message "Waiting for the copy action to complete.." -Level Verbose
 										
-										while ($latestfile.Name -ne ([string]$latestcopy.last_copied_file).Split('\')[-1])
-										{
+										while (($latestBackupSource.Name -ne ([string]$latestcopy.last_copied_file).Split('\')[-1])) {
 											# Sleep for while to let the files be copied
 											Start-Sleep -Seconds $Delay
-											
+
 											# Again get the latest file to check if the process can continue
-											$latestcopy = Invoke-Sqlcmd2 -ServerInstance $server -Database msdb -Query $query
+											$latestcopy = $server.Query($query)
 										}
-									}
-									Write-Message -Message "Copying of backup files finished" -Level 5
-								}
+
+										# Again get the latest file to check if the process can continue
+										$latestcopy = $server.Query($query)
+
+										# Check the lat outcome of the job
+										if ($server.JobServer.Jobs[$ls.copyjob].LastRunOutcome -eq 'Failed') {
+											Stop-Function -Message "The copy job for database $db failed. Please check the error log." -Continue
+										}
+
+										Write-Message -Message "Copying of backup files finished" -Level Verbose
+									} # if shoud process
+								} # if latest file name
+							} # if backup directory test
+							else {
+								Stop-Function -Message "Couldn't reach the backup source directory. Continuing..." -Continue
 							}
-							else
-							{
-								Write-Message -Message "Couldn't reach the backup source directory. Continuing..." -Level 5
-							}
-							#endregion Copy of remaining backup files
-							
-							# Disable the log shipping copy job on the secondary instance
-							if ($PSCmdlet.ShouldProcess($sqlinstance, "Disabling copy job $($ls.copyjob)"))
-							{
-								Write-Message -Message "Disabling copy job $($ls.copyjob)" -Level 5
+						} # check latest backup file is already in directory
+						
+
+						# Disable the log shipping copy job on the secondary instance
+						if ($PSCmdlet.ShouldProcess($sqlinstance, "Disabling copy job $($ls.copyjob)")) {
+							try {
+								Write-Message -Message "Disabling copy job $($ls.copyjob)" -Level Verbose
 								$server.JobServer.Jobs[$ls.copyjob].IsEnabled = $false
 								$server.JobServer.Jobs[$ls.copyjob].Alter()
 							}
-							
-							# Check if the file has been copied
-							$query = "SELECT last_restored_file FROM dbo.log_shipping_secondary_databases WHERE secondary_database = '$secondarydb'"
-							$latestrestore = Invoke-Sqlcmd2 -ServerInstance $server -Database msdb -Query $query
-							
-							#region Restore of remaining backup files
-							# Check if the last copied file is newer than the last restored file
-							if ($latestfile.Name -ne ([string]$latestrestore.last_restored_file).Split('\')[-1])
-							{
-								Write-Message -Message "Last file found has not yet been restored yet" -Level 5
-								# Start the restore job
-								if ($PSCmdlet.ShouldProcess($sqlinstance, ("Starting restore job " + $ls.restorejob)))
-								{
-									Write-Message -Message "Starting restore job $($ls.restorejob)" -Level 5
+							catch {
+								Stop-Function -Message "Something went wrong disabling the copy job.`n$($_)" -ErrorRecord $_ -Target $sqlinstance
+							}
+						}
+
+						# Check if the file has been copied
+						$query = "SELECT last_restored_file FROM msdb.dbo.log_shipping_secondary_databases WHERE secondary_database = '$secondarydb' AND last_restored_file IS NOT NULL"
+						$latestrestore = $server.Query($query)
+						
+						# Check if the last copied file is newer than the last restored file
+						if ((([string]$latestcopy.last_copied_file).Split('\')[-1] -ne ([string]$latestrestore.last_restored_file).Split('\')[-1]) -or (([string]$latestcopy.last_copied_file).Split('\')[-1]) -eq $null) {
+							Write-Message -Message "Restore is not up-to-date" -Level Verbose
+
+							# Start the restore job
+							if ($PSCmdlet.ShouldProcess($sqlinstance, ("Starting restore job " + $ls.restorejob))) {
+								Write-Message -Message "Starting restore job $($ls.restorejob)" -Level Verbose
+								try {
 									$server.JobServer.Jobs[$ls.restorejob].Start()
-									
-									Write-Message -Message "Waiting for the restore action to complete.." -Level 5
-									
-									# Check if the jobs is still running
-									while ($latestfile.Name -ne ([string]$latestrestore.last_restored_file).Split('\')[-1])
-									{
-										# Sleep for while to let the files be copied
-										Start-Sleep -Seconds $Delay
-										
-										# Again get the latest file to check if the process can continue
-										$latestrestore = Invoke-Sqlcmd2 -ServerInstance $server -Database msdb -Query $query
-									}
+								}
+								catch {
+									Stop-Function -Message "Something went wrong starting the restore job.`n$($_)" -ErrorRecord $_ -Target $sqlinstance
+								}
+								
+								Write-Message -Message "Waiting for the restore action to complete.." -Level Verbose
+
+								while ($latestBackupSource.Name -ne [string]($latestrestore.last_restored_file).Split('\')[-1]) {
+									# Sleep for while to let the files be copied
+									Start-Sleep -Seconds $Delay
+
+									# Again get the latest file to check if the process can continue
+									$latestrestore = $server.Query($query)
+								}
+								
+								# Again get the latest file to check if the process can continue
+								$latestrestore = $server.Query($query)
+
+								# Check the lat outcome of the job
+								if ($server.JobServer.Jobs[$ls.restorejob].LastRunOutcome -eq 'Failed') {
+									Stop-Function -Message "The restore job for database $db failed. Please check the error log." -Continue
 								}
 							}
-							#endregion Restore of remaining backup files
-							
-							# Disable the log shipping restore job on the secondary instance
-							if ($PSCmdlet.ShouldProcess($sqlinstance, "Disabling restore job $($ls.restorejob)"))
-							{
-								Write-Message -Message ("Disabling restore job " + $ls.restorejob) -Level 5
+						}
+
+						# Disable the log shipping restore job on the secondary instance
+						if ($PSCmdlet.ShouldProcess($sqlinstance, "Disabling restore job $($ls.restorejob)")) {
+							try {
+								Write-Message -Message ("Disabling restore job " + $ls.restorejob) -Level Verbose
 								$server.JobServer.Jobs[$ls.restorejob].IsEnabled = $false
 								$server.JobServer.Jobs[$ls.restorejob].Alter()
 							}
+							catch {
+								Stop-Function -Message "Something went wrong disabling the restore job.`n$($_)" -ErrorRecord $_ -Target $sqlinstance
+							}
 							
-							#region Restore database to normal state
-							# Check for the last time if everything is up-to-date
-							if ($latestfile.Name -eq [string]$latestrestore.last_restored_file.Split('\')[-1])
-							{
-								# Check if the database needs to recovered to it's notmal state
-								if ($NoRecovery -eq $false)
-								{
-									if ($PSCmdlet.ShouldProcess($secondarydb, "Restoring database with recovery"))
-									{
-										Write-Message -Message "Restoring the database to it's normal state" -Level 2
-										$query = "RESTORE DATABASE [$secondarydb] WITH RECOVERY"
-										Invoke-Sqlcmd2 -ServerInstance $server -Database master -Query $query
-									}
-								}
-								elseif ($NoRecovery -eq $true) # what else could norecovery be?
-								{
-									Write-Message -Message "Skipping restore with recovery" -Level 2
+						}
+
+						# Check for the last time if everything is up-to-date
+						if ($latestBackupSource.Name -eq [string]($latestrestore.last_restored_file).Split('\')[-1]) {
+							# Check if the database needs to recovered to it's notmal state
+							if ($NoRecovery -eq $false) {
+								if ($PSCmdlet.ShouldProcess($secondarydb, "Restoring database with recovery")) {
+									Write-Message -Message "Restoring the database to it's normal state" -Level Verbose
+									$query = "RESTORE DATABASE [$secondarydb] WITH RECOVERY"
+									$server.Query($query)
 								}
 							}
-							#endregion Restore database to normal state
+							else {
+								Write-Message -Message "Skipping restore with recovery" -Level Output
+							}
 						}
-					}
-				}
-				
-				Write-Message -Message ("Finished Recovery for $secondarydb") -Level 2
-				
-				# Reset the log ship details
-				$logshipping_details = $null
-			}
-			#endregion Log Shipping Recovery
-		}
-	}
+
+						Write-Message -Message ("Finished Recovery for $secondarydb") -Level Output
+						
+						# Reset the log ship details
+						$logshipping_details = $null
+
+					} # database in restorable mode
+				} # foreach ls details
+			} # ls details are not null
+		} # foreach database
+	} # process
 }
