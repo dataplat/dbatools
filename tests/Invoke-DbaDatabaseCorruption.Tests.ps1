@@ -55,7 +55,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	It "fails a backup verify" {
-		$result = Start-DbccCheck -Server $Server -dbname $dbname -Table $TableName 
+		$result = Start-DbccCheck -Server $Server -dbname $dbname
 		$result | Should Not Be 'Success'
 	}
 }
