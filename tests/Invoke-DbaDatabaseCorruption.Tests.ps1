@@ -24,6 +24,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
 		$dbname = "dbatoolsci_InvokeDbaDatabaseCorruptionTest"
 		$Server = Connect-DbaInstance -SqlInstance $script:instance1
+		$TableName = "Example"
 		# Need a clean empty database
 		$null = $Server.Query("Create Database [$dbname]")
 		$db = Get-DbaDatabase -SqlInstance $Server -Database $dbname
@@ -44,7 +45,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	$null = $db.Query("
-		CREATE TABLE dbo.[Example] (id int); 
+		CREATE TABLE dbo.[$TableName] (id int); 
 		INSERT dbo.[Example] 
 		SELECT top 1000 1 
 		FROM sys.objects")	
@@ -54,6 +55,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	It "fails a backup verify" {
-		Backup-DbaDatabase -SqlInstance $server -Verify -Database $dbname | Select-Object -ExpandProperty Verified | Should be $false
+		$result = Start-DbccCheck -Server $Server -dbname $dbname -Table $TableName 
+		$result | Should Not Be 'Success'
 	}
 }
