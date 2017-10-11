@@ -10,14 +10,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 					ON ALL SERVER FOR LOGON -- Tells you it's a logon trigger
 					AS
 					PRINT 'hello'"
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance1
+			$server = Connect-DbaInstance -SqlInstance $script:instance1
 			$server.Query($sql)
 		}
 		AfterAll {
 			$server.Query("DROP TRIGGER [$triggername] ON ALL SERVER")
 			
 			try {
-				$server1 = Connect-DbaSqlServer -SqlInstance $script:instance2
+				$server1 = Connect-DbaInstance -SqlInstance $script:instance2
 				$server1.Query("DROP TRIGGER [$triggername] ON ALL SERVER")
 			}
 			catch {

@@ -1,11 +1,11 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 # Targets only instance2 because it's the only one where Snapshots can happen
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
-		$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+		$server = Connect-DbaInstance -SqlInstance $script:instance2
 		$db1 = "dbatoolsci_RemoveSnap"
 		$db1_snap1 = "dbatoolsci_RemoveSnap_snapshotted1"
 		$db1_snap2 = "dbatoolsci_RemoveSnap_snapshotted2"

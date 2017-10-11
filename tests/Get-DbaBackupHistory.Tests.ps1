@@ -1,4 +1,4 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -27,8 +27,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	
 	Context "Get last history for single database" {
 		$results = Get-DbaBackupHistory -SqlInstance $script:instance1 -Database $dbname -Last
-		It "Should be more than one database" {
+		It "Should be 4 backups returned" {
 			$results.count | Should Be 4
+		}
+		It "First backup should be a Full Backup" {
+			$results[0].Type | Should be "Full"
+		}
+		It "Last Backup Should be a log backup" {
+			$results[-1].Type | Should Be "Log"
 		}
 	}
 	

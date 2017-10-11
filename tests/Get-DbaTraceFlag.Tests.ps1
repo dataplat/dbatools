@@ -6,7 +6,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Context "Verifying TraceFlag output" {
 		BeforeAll {
 			$safetraceflag = 3226
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$server = Connect-DbaInstance -SqlInstance $script:instance2
 			$startingtfs = $server.Query("DBCC TRACESTATUS(-1)")
 			$startingtfscount = $startingtfs.Count
 			

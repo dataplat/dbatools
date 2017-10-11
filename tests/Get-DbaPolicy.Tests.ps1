@@ -36,7 +36,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			EXEC msdb.dbo.sp_syspolicy_add_policy @name=N'dbatoolsci_TestPolicy', @condition_name=N'dbatoolsci_Condition', @policy_category=N'', @description=N'', @help_text=N'', @help_link=N'', @schedule_uid=N'00000000-0000-0000-0000-000000000000', @execution_mode=2, @is_enabled=True, @policy_id=@policy_id OUTPUT, @root_condition_name=N'', @object_set=N'dbatoolsci_TestPolicy_ObjectSet'
 			SELECT @policy_id"
 			
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$server = Connect-DbaInstance -SqlInstance $script:instance2
 			$conditionid = $server.ConnectionContext.ExecuteScalar($sqlconditionid)
 			$objectsetid = $server.ConnectionContext.ExecuteScalar($sqlobjectsetid)
 			$policyid = $server.ConnectionContext.ExecuteScalar($sqlpolicyid)

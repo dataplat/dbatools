@@ -114,9 +114,9 @@ New-DbaSqlConnectionString -SqlInstance sql2014
 Creates a connection string that connects using Windows Authentication
 
 .EXAMPLE
-Connect-DbaSqlServer -SqlInstance sql2016 | New-DbaSqlConnectionString
+Connect-DbaInstance -SqlInstance sql2016 | New-DbaSqlConnectionString
 
-Builds a connected SMO object using Connect-DbaSqlServer then extracts and displays the connection string
+Builds a connected SMO object using Connect-DbaInstance then extracts and displays the connection string
 
 .EXAMPLE
 $wincred = Get-Credential ad\sqladmin

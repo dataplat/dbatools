@@ -173,8 +173,8 @@ function Get-FilteredRestoreFile {
             #If we're continuing a restore, then we aren't going to be needing a full backup....
             $TlogStartlsn = 0
             if (!($continue)) {
-                $Fullbackup = $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq 'Database' -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1
-                $TlogStartlsn = $Fullbackup.FirstLSN
+                $Fullbackup = $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq 'Database' -and $RestoreTime -ge $_.BackupStartDate} | Sort-Object -Property LastLSN -descending | Select-Object -First 1
+                $TlogStartlsn = $Fullbackup.LastLsn
                 if ($Fullbackup -eq $null) {
                     Stop-Function -Message "No Full backup found to anchor the restore" -Continue -Target $database
                     break
@@ -199,7 +199,7 @@ function Get-FilteredRestoreFile {
             #Get latest Differential Backup
             #If we're doing a continue and the last restore wasn't a full db we can't use a diff, so skip
             if ($null -eq $lastrestore -or $lastrestore -eq 'Database'  ) {
-                $DiffbackupsLSN = ($SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.CheckpointLsn -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property BackupStartDate -descending | Select-Object -First 1).FirstLSN
+                $DiffbackupsLSN = ($SQLBackupdetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.CheckpointLsn -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property LastLSN -descending | Select-Object -First 1).FirstLSN
                 #Scan for striped differential backups
                 $Diffbackups = $SqlBackupDetails | Where-Object {$_.BackupTypeDescription -eq 'Database Differential' -and $_.DatabaseBackupLSN -eq $Fullbackup.CheckpointLsn -and $_.FirstLSN -eq $DiffBackupsLSN}
                 if ($null -ne $Diffbackups) {

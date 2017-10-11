@@ -56,6 +56,9 @@ Timeout in minutes. Defaults to infinity (shrinks can take a while.)
 
 .PARAMETER LogsOnly
 Only shrink the log file, not the entire database
+
+.PARAMETER ExcludeIndexStats
+Exclude statistics about fragmentation
 	
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
@@ -114,6 +117,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 		[string]$ShrinkMethod = "Default",
 		[int]$StatementTimeout = 0,
 		[switch]$LogsOnly,
+		[switch]$ExcludeIndexStats,
 		[switch]$Silent
 	)
 
@@ -201,7 +205,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 				}
 				else {
 					if ($Pscmdlet.ShouldProcess("$db on $instance", "Shrinking from $([int]$spaceavailableMB) MB space available to $([int]$desiredSpaceAvailable) MB space available")) {
-						if ($db.Tables.Indexes.Name -and $server.VersionMajor -gt 8) {
+						if ($db.Tables.Indexes.Name -and $server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false) {
 							Write-Message -Level Verbose -Message "Getting average fragmentation"
 							$startingfrag = ($server.Query($sql,$db.name) | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
 							$startingtopfrag = ($server.Query($sqltop1, $db.name)).avg_fragmentation_in_percent
@@ -249,8 +253,8 @@ Shrinks all databases on SQL2012 (not ideal for production)
 
 						Write-Message -Level Verbose -Message "Final database size: $([int]$dbsize) MB"
 						Write-Message -Level Verbose -Message "Final space available: $([int]$newSpaceAvailableMB) MB"
-
-						if ($db.Tables.Indexes.Name -and $server.VersionMajor -gt 8) {
+						
+						if ($db.Tables.Indexes.Name -and $server.VersionMajor -gt 8 -and $ExcludeIndexStats -eq $false) {
 							Write-Message -Level Verbose -Message "Refreshing indexes and getting average fragmentation"
 							$endingdefrag = ($server.Query($sql, $db.name) | Select-Object -ExpandProperty avg_fragmentation_in_percent | Measure-Object -Average).Average
 							$endingtopfrag = ($server.Query($sqltop1, $db.name)).avg_fragmentation_in_percent
@@ -272,7 +276,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						$notes = "Database shrinks can cause massive index fragmentation and negatively impact performance. You should now run DBCC INDEXDEFRAG or ALTER INDEX ... REORGANIZE"
 					}
 
-					[pscustomobject]@{
+					$object = [pscustomobject]@{
 						ComputerName                  = $server.NetName
 						InstanceName                  = $server.ServiceName
 						SqlInstance                   = $server.DomainInstanceName
@@ -292,6 +296,13 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						StartingTopIndexFragmentation = [math]::Round($startingtopfrag, 1)
 						EndingTopIndexFragmentation   = [math]::Round($endingtopfrag, 1)
 						Notes                         = $notes
+					}
+					
+					if ($ExcludeIndexStats) {
+						Select-DefaultView -InputObject $object -ExcludeProperty StartingAvgIndexFragmentation, EndingAvgIndexFragmentation, StartingTopIndexFragmentation, EndingTopIndexFragmentation
+					}
+					else {
+						$object
 					}
 				}
 			}

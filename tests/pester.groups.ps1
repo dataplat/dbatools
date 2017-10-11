@@ -4,7 +4,7 @@ $TestsRunGroups = @{
 	# run on scenario 2008R2
 	"2008R2"            = @(
 		'Add-DbaComputerCertificate',
-		'Connect-DbaSqlServer',
+		'Connect-DbaInstance',
 		'Get-DbaAgentJobs',
 		'Get-DbaAgentJobOutputFile',
 		'Get-DbaBackupHistory',
@@ -30,7 +30,6 @@ $TestsRunGroups = @{
 	)
 	# run on scenario 2016
 	"2016"              = @(
-		'Dismount-DbaDatabase',
 		'Get-DbaAgDatabase',
 		'Get-DbaAgHadr',
 		'Get-DbaAgReplica',
@@ -56,12 +55,15 @@ $TestsRunGroups = @{
 		'Start-DbaSqlService',
 		'Stop-DbaSqlService',
 		'Restart-DbaSqlService',
-		'Get-DbaSqlService'
+		'Get-DbaSqlService',
+		'Update-DbaSqlServiceAccount'
 	)
 	# do not run on appveyor
 	"appveyor_disabled" = @(
-		'Get-DbaDatabaseState'
+		'Get-DbaDatabaseState',
+		'Dismount-DbaDatabase'
 	)
+	
 	# do not run everywhere
 	"disabled"          = @()
 }

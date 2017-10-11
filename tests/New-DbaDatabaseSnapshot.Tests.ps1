@@ -1,19 +1,9 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 # Targets only instance2 because it's the only one where Snapshots can happen
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-	BeforeAll {
-		if ($env:appveyor) {
-			Get-Service | Where-Object { $_.DisplayName -match 'SQL Server (SQL2016)' } | Restart-Service -Force
-			do {
-				Start-Sleep 1
-				$null = (& sqlcmd -S $script:instance2 -b -Q "select 1" -d master)
-			}
-			while ($lastexitcode -ne 0 -and $s++ -lt 10)
-		}
-	}
 	Context "Parameter validation" {
 		It "Stops if no Database or AllDatabases" {
 			{ New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Silent } | Should Throw "You must specify"
@@ -32,7 +22,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	}
 	Context "Operations on databases" {
 		BeforeAll {
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$server = Connect-DbaInstance -SqlInstance $script:instance2
 			$db1 = "dbatoolsci_SnapMe"
 			$db2 = "dbatoolsci_SnapMe2"
 			$db3 = "dbatoolsci_SnapMe3_Offline"
@@ -93,12 +83,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 				$ExpectedProps = 'ComputerName,Database,DatabaseCreated,InstanceName,Notes,PrimaryFilePath,SizeMB,SnapshotDb,SnapshotOf,SqlInstance,Status'.Split(',')
 				($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 			}
-
 			It "Has the correct default properties" {
 				$null = Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Force
 				$result = New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Silent -Database $db2
-				$ExpectedPropsDefault = 'ComputerName,Database,DatabaseCreated,InstanceName,Notes,PrimaryFilePath,SizeMB,SnapshotOf,SqlInstance,Status'.Split(',')
-				($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
+				$ExpectedPropsDefault = 'ComputerName,Database,DatabaseCreated,InstanceName,PrimaryFilePath,SizeMB,SnapshotOf,SqlInstance,Status'.Split(',')
+				$DefaultProps = $result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames
+				@($DefaultProps | Where-Object {$ExpectedPropsDefault -notcontains $_}) -Join '' | Should Be ''
 			}
 		}
 	}

@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Setup" {
 		BeforeAll {
-			$server = Connect-DbaSqlServer $script:instance2
+			$server = Connect-DbaInstance $script:instance2
 			$regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
 			$dbstore = $regstore.DatabaseEngineServerGroup
 			
@@ -26,7 +26,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		AfterAll {
 			$newgroup.Drop()
-			$server = Connect-DbaSqlServer $script:instance1
+			$server = Connect-DbaInstance $script:instance1
 			$regstore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
 			$dbstore = $regstore.DatabaseEngineServerGroup
 			$groupstore = $dbstore.ServerGroups[$group]

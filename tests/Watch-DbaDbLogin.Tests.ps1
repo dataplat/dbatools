@@ -1,7 +1,7 @@
 <#
 	The below statement stays in for every test you build.
 #>
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -46,7 +46,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	}
 	$script:instance1, $script:instance2 | Out-File $testFile
 	AfterAll {
-		$null = (Connect-DbaSqlServer -SqlInstance $script:instance1).Databases[$databaseName].Query("DROP TABLE $tableName")
+		$null = (Connect-DbaInstance -SqlInstance $script:instance1).Databases[$databaseName].Query("DROP TABLE $tableName")
 	}
 	Context "Command actually works" {
 		Watch-DbaDbLogin -SqlInstance $script:instance1 -Database $databaseName -Table $tableName -ServersFromFile $testFile -Silent

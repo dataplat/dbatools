@@ -205,8 +205,10 @@ Function Restore-DBFromFilteredArray {
                     Write-Message -Level Verbose -Message "Moving $($File.PhysicalName)"
                     $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
                     $MoveFile.LogicalFileName = $File.LogicalName
-                    $Extension = ($file.PhysicalName.split('.'))[-1]
-                    $Filename  = (split-path $file.PhysicalName -leaf) -replace ".$extension",""
+                    $IoFile = [System.Io.FileInfo]$File.PhysicalName
+                    $Extension = $IoFile.Extension
+                    #$Filename  = (split-path $file.PhysicalName -leaf) -replace "\.$extension",""
+                    $FileName = $IoFile.BaseName
                     if ($ReplaceDbNameInFile) {
                         $Filename = $filename -replace $OldDatabaseName, $dbname
                     }
@@ -220,8 +222,8 @@ Function Restore-DBFromFilteredArray {
                     if ($DestinationFileNumber) {
                         $FileName = $FileName + '_' + $FileId + '_of_' + $RestoreFileCountFileCount
                     }
-                    if ($null -ne $extension) {
-                        $filename = $filename + '.' + $extension
+                    if (($null -ne $extension) -and ($extension -ne '')) {
+                        $filename = $filename + $extension
                     }
                     Write-Message -Level VeryVerbose -Message "past the checks"
                     if (($File.Type -eq 'L' -or $File.filetype -eq 'L') -and $DestinationLogDirectory -ne '') {
@@ -354,7 +356,7 @@ Function Restore-DBFromFilteredArray {
                         }
                     }
                     else {
-                        Write-Progress -id 2 -activity "Restoring $DbName to ServerName" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                        Write-Progress -id 2 -activity "Restoring $DbName to $ServerName" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                         $script = $Restore.Script($Server)
                         $Restore.sqlrestore($Server)
                         Write-Progress -id 2 -activity "Restoring $DbName to $ServerName" -status "Complete" -Completed

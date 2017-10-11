@@ -1,4 +1,4 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -7,7 +7,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		$traceconfig = Get-DbaSpConfigure -SqlInstance $script:instance2 -ConfigName DefaultTraceEnabled
 		
 		if ($traceconfig.RunningValue -eq $false) {
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$server = Connect-DbaInstance -SqlInstance $script:instance2
 			$server.Query("EXEC sp_configure 'show advanced options', 1;")
 			$server.Query("RECONFIGURE WITH OVERRIDE")
 			$server.Query("EXEC sp_configure 'default trace enabled', 1;")
