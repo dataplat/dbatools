@@ -54,7 +54,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database $dbname -Confirm:$false | Select-Object -ExpandProperty Status | Should be "Corrupted"
 	}
 	
-	It "fails a backup verify" {
+	It "Causes DBCC CHECKDB to fail" {
 		$result = Start-DbccCheck -Server $Server -dbname $dbname
 		$result | Should Not Be 'Success'
 	}
