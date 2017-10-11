@@ -1,44 +1,51 @@
-FUNCTION Get-DbaRunningJob
-{
-<#
-.SYNOPSIS
-Returns all non idle agent jobs running on the server.
+function Get-DbaRunningJob {
+	<#
+		.SYNOPSIS
+			Returns all non-idle Agent jobs running on the server.
 
-.DESCRIPTION
-This function returns agent jobs that active on the SQL Server instance when calling the command. The information is gathered the SMO JobServer.jobs and be returned either in detailed or standard format
+		.DESCRIPTION
+			This function returns agent jobs that active on the SQL Server instance when calling the command. The information is gathered the SMO JobServer.jobs and be returned either in detailed or standard format.
 
-.PARAMETER SqlInstance
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
+ 		.PARAMETER SqlInstance
+			The SQL Server instance to connect to.
 
-.PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, current Windows login will be used.
+        .PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER Silent
-Replaces user friendly yellow warnings with bloody red exceptions of doom!
-Use this if you want the function to throw terminating errors you want to catch.
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.NOTES 
-Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.LINK
-https://dbatools.io/Get-DbaRunningJob
+			To connect as a different Windows user, run PowerShell as that user.
 
-.EXAMPLE
-Get-DbaRunningJob -SqlInstance localhost
-Returns any active jobs on the localhost
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
 
-.EXAMPLE
-Get-DbaRunningJob -SqlInstance localhost -Detailed
-Returns a detailed output of any active jobs on the localhost
+		.NOTES 
+			Tags:
+			Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.EXAMPLE
-'localhost','localhost\namedinstance' | Get-DbaRunningJob
-Returns all active jobs on multiple instances piped into the function
+		.LINK
+			https://dbatools.io/Get-DbaRunningJob
 
-#>
+		.EXAMPLE
+			Get-DbaRunningJob -SqlInstance localhost
+
+			Returns any active jobs on localhost.
+
+		.EXAMPLE
+			Get-DbaRunningJob -SqlInstance localhost -Detailed
+
+			Returns a detailed output of any active jobs on localhost.
+
+		.EXAMPLE
+			'localhost','localhost\namedinstance' | Get-DbaRunningJob
+
+			Returns all active jobs on multiple instances piped into the function.
+	#>
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
@@ -48,41 +55,34 @@ Returns all active jobs on multiple instances piped into the function
 		[PSCredential]$SqlCredential,
 		[switch]$Silent
 	)
-	process
-	{
-		foreach ($instance in $SqlInstance)
-		{
-			try
-			{
+	process {
+		foreach ($instance in $SqlInstance) {
+			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
-			catch
-			{
-				Stop-Function -Message "Failed to connect to: $Server" -Target $server -ErrorRecord $_ -Continue
+			catch {
+				Stop-Function -Message "Failed to connect to: $Server." -Target $server -ErrorRecord $_ -Continue
 			}
 			
 			$jobs = $server.JobServer.jobs | Where-Object { $_.CurrentRunStatus -ne 'Idle' }
 			
-			IF (!$jobs)
-			{
-				Write-Message -Level Verbose -Message "No Jobs are currently running on: $Server"
+			if (!$jobs) {
+				Write-Message -Level Verbose -Message "No Jobs are currently running on: $Server."
 			}
-			else
-			{
-				foreach ($job in $jobs)
-				{
+			else {
+				foreach ($job in $jobs) {
 					[pscustomobject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						Name = $job.name
-						Category = $job.Category
+						ComputerName     = $server.NetName
+						InstanceName     = $server.ServiceName
+						SqlInstance      = $server.DomainInstanceName
+						Name             = $job.name
+						Category         = $job.Category
 						CurrentRunStatus = $job.CurrentRunStatus
-						CurrentRunStep = $job.CurrentRunStep
-						HasSchedule = $job.HasSchedule
-						LastRunDate = $job.LastRunDate
-						LastRunOutcome = $job.LastRunOutcome
-						JobStep = $job.JobSteps
+						CurrentRunStep   = $job.CurrentRunStep
+						HasSchedule      = $job.HasSchedule
+						LastRunDate      = $job.LastRunDate
+						LastRunOutcome   = $job.LastRunOutcome
+						JobStep          = $job.JobSteps
 					}
 				}
 			}
