@@ -20,8 +20,11 @@ function Test-DbaFullRecoveryModel {
 
 			To connect as a different Windows user, run PowerShell as that user.
 
-        .PARAMETER Database
-            Specifies one or more databases to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+		.PARAMETER Database
+			Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+
+		.PARAMETER ExcludeDatabase
+			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
 		.PARAMETER Detailed
 			If this switch is enabled, an additional "Notes" column is returned in the results.
