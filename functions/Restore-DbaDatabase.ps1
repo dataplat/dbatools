@@ -190,7 +190,7 @@ function Restore-DbaDatabase {
         
         This will take all of the files found under the folders c:\backups and \\server1\backups, and pipeline them into
         Restore-DbaDatabase. Restore-DbaDatabase will then scan all of the files, and restore all of the databases included
-        to the latest point in time covered by their backups. All data and log files will be moved to the default SQL Sever
+        to the latest point in time covered by their backups. All data and log files will be moved to the default SQL Server
         folder for those file types as defined on the target instance.
 
 	.EXAMPLE
