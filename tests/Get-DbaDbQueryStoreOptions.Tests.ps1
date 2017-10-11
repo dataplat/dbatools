@@ -8,7 +8,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	Context "Get some client protocols" {
 		foreach ($instance in ($script:instance1, $script:instance2)) {
-			$server = Connect-DbaSqlServer -SqlInstance $instance
+			$server = Connect-DbaInstance -SqlInstance $instance
 			$results = Get-DbaDbQueryStoreOptions -SqlInstance $instance -WarningVariable warning  3>&1
 			
 			if ($server.VersionMajor -lt 13) {

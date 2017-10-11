@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Context "Limited testing of Maintenance Solution installer" {
 		BeforeAll {
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$server = Connect-DbaInstance -SqlInstance $script:instance2
 			$server.Databases['tempdb'].Query("CREATE TABLE CommandLog (id int)")
 			}
 		AfterAll {

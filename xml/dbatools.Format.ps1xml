@@ -1,6 +1,54 @@
 ﻿<?xml version="1.0" encoding="utf-16"?>
 <Configuration>
 	<ViewDefinitions>
+		<!-- Sqlcollaborative.Dbatools.Computer.DiskSpace -->
+		<View>
+			<Name>Sqlcollaborative.Dbatools.Computer.DiskSpace</Name>
+			<ViewSelectedBy>
+				<TypeName>Sqlcollaborative.Dbatools.Computer.DiskSpace</TypeName>
+			</ViewSelectedBy>
+			<TableControl>
+				<AutoSize/>
+				<TableHeaders>
+					<TableColumnHeader>
+						<Alignment>Right</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader/>
+					<TableColumnHeader/>
+					<TableColumnHeader/>
+					<TableColumnHeader/>
+					<TableColumnHeader/>
+					<TableColumnHeader/>
+				</TableHeaders>
+				<TableRowEntries>
+					<TableRowEntry>
+						<TableColumnItems>
+							<TableColumnItem>
+								<PropertyName>ComputerName</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>Name</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>Label</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>Capacity</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>Free</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>PercentFree</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>BlockSize</PropertyName>
+							</TableColumnItem>
+						</TableColumnItems>
+					</TableRowEntry>
+				</TableRowEntries>
+			</TableControl>
+		</View>
 		<!-- Sqlcollaborative.Dbatools.Configuration.Config -->
 		<View>
 			<Name>Sqlcollaborative.Dbatools.Configuration.Config</Name>
@@ -336,8 +384,8 @@
 <!-- SIG # Begin signature block -->
 <!-- MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB -->
 <!-- gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR -->
-<!-- AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUKpBwT026vQwKDEpMHXXY6a71 -->
-<!-- 1g6ggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B -->
+<!-- AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUyWTI3fM4HrDuXYBtWFkX+LW/ -->
+<!-- kb6ggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B -->
 <!-- AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD -->
 <!-- VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz -->
 <!-- c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx -->
@@ -468,22 +516,22 @@
 <!-- c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr -->
 <!-- DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx -->
 <!-- DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq -->
-<!-- hkiG9w0BCQQxFgQU/hrP02kn1TD0yrBdtbgX3iNMbHkwDQYJKoZIhvcNAQEBBQAE -->
-<!-- ggEANTvqMp9NVI0/lsx6bM8oEUrgtSlkSX5ZSFTOHExQqd/RF0DQiJZfA8lIMgn5 -->
-<!-- plWoVnu7vEv9L7aWs1YHn777L7iGFoUNrdb9pjO3ubALyq/oRf1iVSfXK/Lfs/rW -->
-<!-- Nz1l43qLHT8VId5D2Mjl03MkT5+JMDc/j2d+MrSi0o7/LE53VeZ8kv4Xh91WW2/K -->
-<!-- CMvfr5AeGW9DTV331STeAEtc6kkv5wFcVVKyKAUFIh08IDtbLlYxCBOuA6r0a3Aq -->
-<!-- udxGfVwbuDduIMPsgrtSrDQF05zg/uTLC7QAzjDgnR3jrwYZYlgN+elFFgp/5LZy -->
-<!-- UzErHuHIPUUMduM8wO4VypNAPqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB -->
+<!-- hkiG9w0BCQQxFgQUrQoyy7X0aYG1gfFHTU4F2tGM5IAwDQYJKoZIhvcNAQEBBQAE -->
+<!-- ggEAOOPADYg9ZhaYi9jaO0npqxU3JxRI6EZzBgoVHFgD+6Es/Q2v9HJOYWasIrNq -->
+<!-- RsfPWGs7Ydpl3uvIIDCvsmeIGhoP+jCjDT7Lb3MmX6yFunACC7PC75D1xfYYec7o -->
+<!-- Zl9l2+dZIAErjKt7dvr4MNJPv7lq1D2ga9r+pUygYYK/St0tsdfNCiutz+VrnpBW -->
+<!-- tnmO88k1NeVlEycabD1DBS4YNPw3ftIVrQ+3av0YLD3MTS/68MoiaAqo+3UtImhD -->
+<!-- HxJCmw+tICQJ/YmkFS/oYKtXzsKd0NUDF8sKgYeKTqHychCtGId6qFQvrHBkqqJe -->
+<!-- y/e4sSfVf/fJRQS0qbF267rdRKGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB -->
 <!-- ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV -->
 <!-- BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg -->
 <!-- SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN -->
-<!-- AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwOTI2MTEwNDQ4WjAj -->
-<!-- BgkqhkiG9w0BCQQxFgQUCiQBSH2iFh942zUyoTv4F/l+FE4wDQYJKoZIhvcNAQEB -->
-<!-- BQAEggEAMIpYukcgEq/ml2JkwnOdrsYHujqvjQ/sa8vycVlvb0YE6nCT2Cnx9qbf -->
-<!-- M1Jli6LuwKrrwwJKnGkE+Valvurc3MFEO05frKSClCNAHTnc8bHa3dpNY7FyDsNV -->
-<!-- 26h8mnD04uPXyuSXI1L2IbTq8SCZFbzsa7BlaQlOU1FjSxzZq4eH+SsEoZlUvmqL -->
-<!-- cqdjQZkMtx0Bb1tfFJZwPZECQ/F6J5VpAAU+td8M88Hgzw2VTYM37RoUYjWkFxyu -->
-<!-- +CJ5exqjU4z3WIe9ULSSPhwOD7sUe35PhCBxJaLw9UYoA1Y4ACYnnbwnncfdmjJN -->
-<!-- RAfB1yTVoxmDeCk/LZNwhHCNM7bfCw== -->
+<!-- AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMDEwMTMyNjA1WjAj -->
+<!-- BgkqhkiG9w0BCQQxFgQUA9OT3sytyHlDe2h4Uhu6eBDZuxgwDQYJKoZIhvcNAQEB -->
+<!-- BQAEggEAFSStCBAM2mNOfLkwK/ujVVhL5wPpLR1gN4r0Y3eiI47/1RVd+/8sT8we -->
+<!-- bMD1/MLsqykJw6WphTrPVSLVdkeGuoM6nL2lTT/NouZcEiTvc3jpNiSh/qIZIipQ -->
+<!-- MxmJFcyV3nUbi8aXsx4FFWopKY8OLDUpJrnMKmqMABfUBJwTucxcO1T+1Lup2h/s -->
+<!-- ne/WzefwBySJMZ/hWTkk0Hj2Y3/aMrsgcbwzLI/5FjNHrpX6zHF313ghAAsEc2kL -->
+<!-- 8O5b9QuZ+l1zIqPbxhU7Te64yfA3k/YNPt0VC4TYD+IWXHwExlsauE0n8qTkJYIN -->
+<!-- W0o9pnd/3MzqBvYMD44WrSuEEFQELA== -->
 <!-- SIG # End signature block -->

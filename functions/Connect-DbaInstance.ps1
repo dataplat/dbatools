@@ -1,4 +1,4 @@
-function Connect-DbaSqlServer {
+function Connect-DbaInstance {
     <#
     .SYNOPSIS
         Creates a robust SMO SQL Server object.
@@ -125,42 +125,42 @@ function Connect-DbaSqlServer {
 		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
     
     .LINK
-        https://dbatools.io/Connect-DbaSqlServer
+        https://dbatools.io/Connect-DbaInstance
 
     .EXAMPLE
-        Connect-DbaSqlServer -SqlInstance sql2014
+        Connect-DbaInstance -SqlInstance sql2014
 
         Creates an SMO Server object that connects using Windows Authentication
 
     .EXAMPLE
         $wincred = Get-Credential ad\sqladmin
-        Connect-DbaSqlServer -SqlInstance sql2014 -Credential $wincred
+        Connect-DbaInstance -SqlInstance sql2014 -Credential $wincred
 
         Creates an SMO Server object that connects using alternative Windows credentials
 
     .EXAMPLE
         $sqlcred = Get-Credential sqladmin
-        $server = Connect-DbaSqlServer -SqlInstance sql2014 -Credential $sqlcred
+        $server = Connect-DbaInstance -SqlInstance sql2014 -Credential $sqlcred
 
         Login to sql2014 as SQL login sqladmin.
 
     .EXAMPLE
-        $server = Connect-DbaSqlServer -SqlInstance sql2014 -ClientName "my connection"
+        $server = Connect-DbaInstance -SqlInstance sql2014 -ClientName "my connection"
 
         Creates an SMO Server object that connects using Windows Authentication and uses the client name "my connection". So when you open up profiler or use extended events, you can search for "my connection".
 
     .EXAMPLE
-        $server = Connect-DbaSqlServer -SqlInstance sql2014 -AppendConnectionString "Packet Size=4096;AttachDbFilename=C:\MyFolder\MyDataFile.mdf;User Instance=true;"
+        $server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString "Packet Size=4096;AttachDbFilename=C:\MyFolder\MyDataFile.mdf;User Instance=true;"
 
         Creates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this can also be done via -PacketSize) and other connection attributes.
 
     .EXAMPLE
-        $server = Connect-DbaSqlServer -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover
+        $server = Connect-DbaInstance -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover
 
         Creates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover enabled.
 
     .EXAMPLE
-        $server = Connect-DbaSqlServer sql2016 -ApplicationIntent ReadOnly
+        $server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly
 
         Connects with ReadOnly ApplicationIntent.	
 #>	
@@ -198,7 +198,10 @@ function Connect-DbaSqlServer {
 		[string]$WorkstationId,
 		[string]$AppendConnectionString
 	)
-	
+	begin {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Connect-DbaSqlServer
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-DbaInstance
+	}
 	process {
 		if ($SqlInstance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
 			

@@ -29,8 +29,8 @@ Clear-DbaSqlConnectionPool
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Create new linked server" {
-		$server1 = Connect-DbaSqlServer -SqlInstance $script:instance1
-		$server2 = Connect-DbaSqlServer -SqlInstance $script:instance2
+		$server1 = Connect-DbaInstance -SqlInstance $script:instance1
+		$server2 = Connect-DbaInstance -SqlInstance $script:instance2
 		try {
 			$server1.Query($dropsql)
 			$server2.Query($dropsql)

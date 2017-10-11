@@ -1,4 +1,4 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1","")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -84,7 +84,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 		Context "When FirstLSN ne CheckPointLsn" {
 			$Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\chkptLSN-ne-firstLSN.json -raw)
 			Mock Read-DbaBackupHeader { $Header }
-			$RestoreDate =  Get-date "2017-07-18 09:00:00"
+			$RestoreDate = Get-date "2017-07-18 09:00:00"
 			$Output = Get-FilteredRestoreFile -SqlServer 'TestSQL' -Files "c:\dummy.txt" -RestoreTime $RestoreDate
 			$Output
 			It "Should return an array of 193 items" {
@@ -101,6 +101,28 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 			}
 			It "Should not contain the Log backup with LastLsn 17126786000011867500001 " {
 				($Output[0].values | Where-Object { $_.LastLsn -eq '17126786000011867500001' } | Measure-Object).count | Should Be 0
+			}
+		}
+		Context "When TLogs between full's FirstLsn and LastLsn" {
+			$Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\TLogBWFirstLastLsn.json -raw)
+			Mock Read-DbaBackupHeader { $Header }
+			$RestoreDate = Get-date "2017-07-18 09:00:00"
+			$Output = Get-FilteredRestoreFile -SqlServer 'TestSQL' -Files "c:\dummy.txt" -RestoreTime $RestoreDate
+			$Output
+			It "Should return an array of 3 items" {
+				$Output[0].values.count | Should be 3
+			}
+			It "Should return 1 Full backups" {
+				($Output[0].values | Where-Object { $_.BackupTypeDescription -eq 'Database' } | Measure-Object).count | Should Be 1
+			}
+			It "Should return 0 Diff backups" {
+				($Output[0].values | Where-Object { $_.BackupTypeDescription -eq 'Database Differential' } | Measure-Object).count | Should Be 0
+			}
+			It "Should return 2 log backups" {
+				($Output[0].values | Where-Object { $_.BackupTypeDescription -eq 'Transaction Log' } | Measure-Object).count | Should Be 2
+			}
+			It "Should not contain the Log backup with LastLsn 14975000000265600001 " {
+				($Output[0].values | Where-Object { $_.LastLsn -eq '14975000000265600001' } | Measure-Object).count | Should Be 0
 			}
 		}
 	}

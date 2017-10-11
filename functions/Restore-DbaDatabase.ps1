@@ -19,7 +19,7 @@ function Restore-DbaDatabase {
         Path to SQL Server backup files.
         
         Paths passed in as strings will be scanned using the desired method, default is a non recursive folder scan
-        Accepts multiple paths seperated by ','
+        Accepts multiple paths separated by ','
         
         Or it can consist of FileInfo objects, such as the output of Get-ChildItem or Get-Item. This allows you to work with
         your own filestructures as needed
@@ -96,7 +96,7 @@ function Restore-DbaDatabase {
     
     .PARAMETER RestoredDatababaseNamePrefix
         A string which will be prefixed to the start of the restore Database's Name
-        Useful if restoring a copy to the same sql sevrer for testing.
+        Useful if restoring a copy to the same sql server for testing.
     
     .PARAMETER TrustDbBackupHistory
         This switch can be used when piping the output of Get-DbaBackupHistory or Backup-DbaDatabase into this command.
@@ -130,7 +130,7 @@ function Restore-DbaDatabase {
 		The name of the SQL Server credential to be used if restoring from an Azure hosted backup
 
     .PARAMETER ReplaceDbNameInFile
-        If switch set and occurence of the original database's name in a data or log file will be replace with the name specified in the Databasename paramter
+        If switch set and occurence of the original database's name in a data or log file will be replace with the name specified in the Databasename parameter
         
 	.PARAMETER Silent
         Replaces user friendly yellow warnings with bloody red exceptions of doom!

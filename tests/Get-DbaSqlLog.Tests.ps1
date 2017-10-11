@@ -15,14 +15,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 			}
 			# (1) Cycle errorlog message: The error log has been reinitialized
 			$sql = "EXEC sp_cycle_errorlog;"
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance1
+			$server = Connect-DbaInstance -SqlInstance $script:instance1
 			$null = $server.Query($sql)
 
 			# (2) Need a login failure, source would be Logon
 			$pwd = "p0w3rsh3llrules" | ConvertTo-SecureString -Force -AsPlainText
 			$sqlCred = New-Object System.Management.Automation.PSCredential($login, $pwd)
 			try {
-				Connect-DbaSqlServer -SqlInstance $script:instance1 -Credential $sqlCred -ErrorVariable $whatever
+				Connect-DbaInstance -SqlInstance $script:instance1 -Credential $sqlCred -ErrorVariable $whatever
 			}
 			catch {}
 		}

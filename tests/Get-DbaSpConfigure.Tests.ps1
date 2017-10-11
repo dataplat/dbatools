@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Get configuration" {
-		$server = Connect-DbaSqlServer -SqlInstance $script:instance1
+		$server = Connect-DbaInstance -SqlInstance $script:instance1
 		$configs = $server.Query("sp_configure")
 		$remotequerytimeout = $configs | Where-Object name -match 'remote query timeout'
 		

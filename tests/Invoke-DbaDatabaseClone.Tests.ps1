@@ -8,7 +8,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	$clonedb2 = "dbatoolsci_clonetest_CLONE2"
 	Context "Command functions as expected" {
 		BeforeAll {
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$server = Connect-DbaInstance -SqlInstance $script:instance2
 			$server.Query("CREATE DATABASE $dbname")
 		}
 		
@@ -18,20 +18,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		
 		It "warns if SQL instance version is not supported" {
 			$results = Invoke-DbaDatabaseClone -SqlInstance $script:instance1 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable versionwarn
-			$versionwarn -match "Unsupported version" | Should Be $true
+			$versionwarn -match "required" | Should Be $true
 		}
 		
-		It "warns if destination database already exists" {
+		It -Skip "warns if destination database already exists" {
 			$results = Invoke-DbaDatabaseClone -SqlInstance $script:instance2 -Database $dbname -CloneDatabase tempdb -WarningAction SilentlyContinue -WarningVariable dbwarn
 			$dbwarn -match "exists" | Should Be $true
 		}
 		
-		It "warns if a system db is specified to clone" {
+		It -Skip "warns if a system db is specified to clone" {
 			$results = Invoke-DbaDatabaseClone -SqlInstance $script:instance2 -Database master -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable systemwarn
 			$systemwarn -match "user database" | Should Be $true
 		}
 		
-		$results = Invoke-DbaDatabaseClone -SqlInstance $script:instance2 -Database $dbname -CloneDatabase $clonedb #, $clonedb2
+		$results = Invoke-DbaDatabaseClone -SqlInstance $script:instance2 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue
 		
 		It -Skip "returns 2 results" {
 			$results.Count -eq 2 | Should Be $true

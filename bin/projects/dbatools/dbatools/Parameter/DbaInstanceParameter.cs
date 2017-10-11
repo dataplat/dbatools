@@ -409,10 +409,11 @@ namespace Sqlcollaborative.Dbatools.Parameter
                     }
                 }
 
-                if (Utility.Validation.IsValidComputerTarget(tempComputerName) && Utility.Validation.IsValidInstanceName(tempInstanceName))
+                if (Utility.Validation.IsValidComputerTarget(tempComputerName) && Utility.Validation.IsValidInstanceName(tempInstanceName, true))
                 {
                     _ComputerName = tempComputerName;
-                    _InstanceName = tempInstanceName;
+                    if ((tempInstanceName.ToLower() != "default") && (tempInstanceName.ToLower() != "mssqlserver"))
+                        _InstanceName = tempInstanceName;
                 }
 
                 else

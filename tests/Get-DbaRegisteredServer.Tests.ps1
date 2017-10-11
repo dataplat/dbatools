@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Context "Setup" {
 		BeforeAll {
-			$server = Connect-DbaSqlServer $script:instance1
+			$server = Connect-DbaInstance $script:instance1
 			$regStore = New-Object Microsoft.SqlServer.Management.RegisteredServers.RegisteredServersStore($server.ConnectionContext.SqlConnectionObject)
 			$dbStore = $regStore.DatabaseEngineServerGroup
 

@@ -15,5 +15,10 @@ namespace Sqlcollaborative.Dbatools.dbaSystem
         /// When this is set to true, functions must assume dbatools is in unattended mode. May not ask for user input of any kind.
         /// </summary>
         public static bool UnattendedMode = false;
+
+        /// <summary>
+        /// Path where the module was located when imported
+        /// </summary>
+        public static string ModuleBase;
     }
 }

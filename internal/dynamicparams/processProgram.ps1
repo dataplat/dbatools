@@ -22,8 +22,8 @@
 	$sqlCredential = $fakeBoundParameter['SqlCredential']
 	
 	try {
-		if ($sqlCredential) { $instance = Connect-DbaSqlServer -SqlInstance $server -ErrorAction Stop  }
-		else { $instance = Connect-DbaSqlServer -SqlInstance $server -ErrorAction Stop }
+		if ($sqlCredential) { $instance = Connect-SqlInstance -SqlInstance $server -ErrorAction Stop  }
+		else { $instance = Connect-SqlInstance -SqlInstance $server -ErrorAction Stop }
 		
 		$instance.EnumProcesses().Program | Select-Object -Unique | Where-DbaObject -Like "$wordToComplete*" | ForEach-Object {
 			if (-not ([string]::IsNullOrWhiteSpace($_))) { New-DbaTeppCompletionResult -CompletionText $_ -ToolTip $_ }

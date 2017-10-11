@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Parameters validation" {
 		BeforeAll {
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$server = Connect-DbaInstance -SqlInstance $script:instance2
 			$db1 = "dbatoolsci_dbsetstate_online"
 			$server.Query("CREATE DATABASE $db1")
 		}
@@ -49,7 +49,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	Context "Operations on databases" {
 		BeforeAll {
-			$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+			$server = Connect-DbaInstance -SqlInstance $script:instance2
 			$db1 = "dbatoolsci_dbsetstate_online"
 			$db2 = "dbatoolsci_dbsetstate_offline"
 			$db3 = "dbatoolsci_dbsetstate_emergency"

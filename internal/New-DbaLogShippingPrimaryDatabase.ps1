@@ -149,7 +149,7 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 	# Try connecting to the instance
 	Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
 	try {
-		$server = Connect-DbaSqlServer -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
 	catch {
 		Stop-Function -Message "Could not connect to Sql Server instance" -Target $SqlInstance -Continue
@@ -172,11 +172,11 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 		Write-Message -Message "Setting backup compression to 1." -Level Verbose
 		$BackupCompression = 1
 	}
-	elseif($CompressBackup -eq $false){
+	elseif ($CompressBackup -eq $false) {
 		Write-Message -Message "Setting backup compression to 0." -Level Verbose
 		$BackupCompression = 0
 	}
-	elseif(-not $CompressBackup) {
+	elseif (-not $CompressBackup) {
 		$defaultCompression = (Get-DbaSpConfigure -SqlInstance $SqlInstance -ConfigName DefaultBackupCompression).ConfiguredValue
 		Write-Message -Message "Setting backup compression to default value $defaultCompression." -Level Verbose
 		$BackupCompression = $defaultCompression
@@ -231,23 +231,26 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 	# Set the log shipping primary
 	$Query = "
         DECLARE @LS_BackupJobId AS uniqueidentifier;
-        DECLARE @LS_PrimaryId AS uniqueidentifier;
+		DECLARE @LS_PrimaryId AS uniqueidentifier;
         EXEC master.dbo.sp_add_log_shipping_primary_database 
             @database = N'$Database'
             ,@backup_directory = N'$BackupDirectory'
             ,@backup_share = N'$BackupShare'
             ,@backup_job_name = N'$BackupJob'
-            ,@backup_retention_period = $BackupRetention
-			,@backup_compression = $BackupCompression"
+			,@backup_retention_period = $BackupRetention"
+			
+	if ($SqlInstance.Version.Major -gt 9) {
+		$Query += ",@backup_compression = $BackupCompression"
+	}
 	
-	if($MonitorServer){
-            $Query += ",@monitor_server = N'$MonitorServer'
+	if ($MonitorServer) {
+		$Query += ",@monitor_server = N'$MonitorServer'
 			,@monitor_server_security_mode = $MonitorServerSecurityMode
 			,@threshold_alert = $ThressAlert
 			,@threshold_alert_enabled = $ThresholdAlertEnabled"
 	}
 
-	$Query +=",@backup_threshold = $BackupThreshold
+	$Query += ",@backup_threshold = $BackupThreshold
             ,@history_retention_period = $HistoryRetention
             ,@backup_job_id = @LS_BackupJobId OUTPUT
             ,@primary_id = @LS_PrimaryId OUTPUT "
@@ -258,7 +261,12 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
             ,@monitor_server_password = N'$MonitorPassword' "
 	}
 
-	$Query += ",@overwrite = 1;"
+	if ($server.Version.Major -gt 9) {
+		$Query += ",@overwrite = 1;"
+	}
+	else {
+		$Query += ";"
+	}
 
 	# Execute the query to add the log shipping primary
 	if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for primary database $Database on $SqlInstance"))) {

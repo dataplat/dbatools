@@ -59,7 +59,7 @@ function Test-DbaConnection {
 	#>
 	[CmdletBinding()]
 	param (
-		[Parameter(Mandatory = $true)]
+		[parameter(ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstance[]]$SqlInstance,
 		[PSCredential]$Credential,

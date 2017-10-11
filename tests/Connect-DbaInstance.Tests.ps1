@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "connection is properly made" {
-		$server = Connect-DbaSqlServer -SqlInstance $script:instance1 -ApplicationIntent ReadOnly
+		$server = Connect-DbaInstance -SqlInstance $script:instance1 -ApplicationIntent ReadOnly
 		
 		It "returns the proper name" {
 			$server.Name -eq $script:instance1 | Should Be $true

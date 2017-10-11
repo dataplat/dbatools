@@ -7,7 +7,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
 		$dbs = $testlastbackup, "dbatoolsci_lildb", "dbatoolsci_testrestore", "dbatoolsci_singlerestore"
 		$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbs | Remove-DbaDatabase -Confirm:$false
-		$server = Connect-DbaSqlServer -SqlInstance $script:instance2
+		$server = Connect-DbaInstance -SqlInstance $script:instance2
 		$random = Get-Random
 		$testlastbackup = "dbatoolsci_testlastbackup$random"
 		$dbs = $testlastbackup, "dbatoolsci_lildb", "dbatoolsci_testrestore", "dbatoolsci_singlerestore"
