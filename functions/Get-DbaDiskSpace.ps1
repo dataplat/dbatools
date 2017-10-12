@@ -173,7 +173,7 @@ function Get-DbaDiskSpace {
 					$countSqlDisks = -1
 					try { $countSqlDisks = $server.Query("Select count(*) as Count from sys.master_files where physical_name like '$($disk.Name)%'").Count }
 					catch { Write-Message -Level Warning -Message "Failed to query for master_files on $computer" -ErrorRecord $_ }
-					Add-Member -Force -InputObject $info -MemberType Noteproperty IsSqlDisk -value ($countSqlDisks -gt 0)
+					$info.IsSqlDisk = ($countSqlDisks -gt 0)
 				}
 				
 				$info

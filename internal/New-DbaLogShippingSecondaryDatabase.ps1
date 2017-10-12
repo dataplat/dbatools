@@ -216,7 +216,7 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 	}
 
 	# Set up the query
-	$Query = "EXEC master.sp_add_log_shipping_secondary_database  
+	$Query = "EXEC master.sys.sp_add_log_shipping_secondary_database  
         @secondary_database = '$SecondaryDatabase'
         ,@primary_server = '$PrimaryServer'
         ,@primary_database = '$PrimaryDatabase' 
@@ -257,7 +257,8 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 			$ServerSecondary.Query($Query)
 		}
 		catch {
-			Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query"  -InnerErrorRecord $_ -Target $SqlInstance -Continue
+			Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
+			Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query"  -ErrorRecord $_ -Target $SqlInstance -Continue
 		}
 	}
 
