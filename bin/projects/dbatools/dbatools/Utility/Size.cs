@@ -20,7 +20,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return (Byte / (double)1024);
+                return (Byte / 1024d);
             }
         }
 
@@ -31,7 +31,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return (Byte / (double)1048576);
+                return (Byte / 1048576d);
             }
         }
 
@@ -42,7 +42,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return (Byte / (double)1073741824);
+                return (Byte / 1073741824d);
             }
         }
 
@@ -53,7 +53,7 @@ namespace Sqlcollaborative.Dbatools.Utility
         {
             get
             {
-                return (Byte / (double)1099511627776);
+                return (Byte / 1099511627776d);
             }
         }
 
@@ -102,7 +102,7 @@ namespace Sqlcollaborative.Dbatools.Utility
             }
             if (Byte == -1)
                 return "Unlimited";
-            throw new ArgumentOutOfRangeException("Byte", string.Format("Invalid value of {0} for Byte", Byte));
+            return "";
         }
 
         /// <summary>

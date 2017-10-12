@@ -173,7 +173,7 @@ function Get-FilteredRestoreFile {
             #If we're continuing a restore, then we aren't going to be needing a full backup....
             $TlogStartlsn = 0
             if (!($continue)) {
-                $Fullbackup = $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq 'Database' -and $_.BackupStartDate -lt $RestoreTime} | Sort-Object -Property LastLSN -descending | Select-Object -First 1
+                $Fullbackup = $SQLBackupdetails | where-object {$_.BackupTypeDescription -eq 'Database' -and $RestoreTime -ge $_.BackupStartDate} | Sort-Object -Property LastLSN -descending | Select-Object -First 1
                 $TlogStartlsn = $Fullbackup.LastLsn
                 if ($Fullbackup -eq $null) {
                     Stop-Function -Message "No Full backup found to anchor the restore" -Continue -Target $database

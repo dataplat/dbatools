@@ -1,75 +1,79 @@
 function Get-DbaLastGoodCheckDb {
 	<#
-.SYNOPSIS
-Get date/time for last known good DBCC CHECKDB
+		.SYNOPSIS
+			Get date/time for last known good DBCC CHECKDB
 
-.DESCRIPTION
-Retrieves and compares the date/time for the last known good DBCC CHECKDB, as well as the creation date/time for the database.
+		.DESCRIPTION
+			Retrieves and compares the date/time for the last known good DBCC CHECKDB, as well as the creation date/time for the database.
 
-This function supports SQL Server 2005+
+			This function supports SQL Server 2005 and higher.
 
-Please note that this script uses the DBCC DBINFO() WITH TABLERESULTS. DBCC DBINFO has several known weak points, such as:
- - DBCC DBINFO is an undocumented feature/command.
- - The LastKnowGood timestamp is updated when a DBCC CHECKFILEGROUP is performed.
- - The LastKnowGood timestamp is updated when a DBCC CHECKDB WITH PHYSICAL_ONLY is performed.
- - The LastKnowGood timestamp does not get updated when a database in READ_ONLY.
+			Please note that this script uses the DBCC DBINFO() WITH TABLERESULTS. DBCC DBINFO has several known weak points, such as:
+			- DBCC DBINFO is an undocumented feature/command.
+			- The LastKnowGood timestamp is updated when a DBCC CHECKFILEGROUP is performed.
+			- The LastKnowGood timestamp is updated when a DBCC CHECKDB WITH PHYSICAL_ONLY is performed.
+			- The LastKnowGood timestamp does not get updated when a database in READ_ONLY.
 
-An empty ($null) LastGoodCheckDb result indicates that a good DBCC CHECKDB has never been performed.
+			An empty ($null) LastGoodCheckDb result indicates that a good DBCC CHECKDB has never been performed.
 
-SQL Server 2008R2 has a "bug" that causes each databases to possess two dbi_dbccLastKnownGood fields, instead of the normal one.
-This script will only display this function to only display the newest timestamp. If -Verbose is specified, the function will announce every time more than one dbi_dbccLastKnownGood fields is encountered.
+			SQL Server 2008R2 has a "bug" that causes each databases to possess two dbi_dbccLastKnownGood fields, instead of the normal one.
 
-.PARAMETER SqlInstance
-The SQL Server that you're connecting to.
+			This script will only display this function to only display the newest timestamp. If -Verbose is specified, the function will announce every time more than one dbi_dbccLastKnownGood fields is encountered.
 
-.PARAMETER SqlCredential
-Credential object used to connect to the SQL Server as a different user
+ 		.PARAMETER SqlInstance
+			The SQL Server instance to connect to.
 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        .PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto-populated from the server
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.NOTES
-Tags: CHECKDB, Database
-Author: Jakob Bindslet (jakob@bindslet.dk)
+			To connect as a different Windows user, run PowerShell as that user.
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+		.PARAMETER Database
+			Specifies one or more database(s) to process. If unspecified, all databases will be processed.
 
-.LINK
-DBCC CHECKDB:
-	https://msdn.microsoft.com/en-us/library/ms176064.aspx
-	http://www.sqlcopilot.com/dbcc-checkdb.html
-Data Purity:
-	http://www.sqlskills.com/blogs/paul/checkdb-from-every-angle-how-to-tell-if-data-purity-checks-will-be-run/
-	https://www.mssqltips.com/sqlservertip/1988/ensure-sql-server-data-purity-checks-are-performed/
+		.PARAMETER ExcludeDatabase
+			Specifies one or more database(s) to exclude from processing.
 
-.EXAMPLE
-Get-DbaLastGoodCheckDb -SqlInstance ServerA\sql987
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
 
-Returns a custom object displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, DaysSinceLastGoodCheckDb, Status and DataPurityEnabled
+		.NOTES
+			Tags: CHECKDB, Database
+			Author: Jakob Bindslet (jakob@bindslet.dk)
 
-.EXAMPLE
-Get-DbaLastGoodCheckDb -SqlInstance ServerA\sql987 -SqlCredential (Get-Credential sqladmin) | Format-Table -AutoSize
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-Returns a formatted table displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, DaysSinceLastGoodCheckDb, Status and DataPurityEnabled.
-Authenticates with SQL Server using alternative credentials.
+		.LINK
+			DBCC CHECKDB:
+				https://msdn.microsoft.com/en-us/library/ms176064.aspx
+				http://www.sqlcopilot.com/dbcc-checkdb.html
+			Data Purity:
+				http://www.sqlskills.com/blogs/paul/checkdb-from-every-angle-how-to-tell-if-data-purity-checks-will-be-run/
+				https://www.mssqltips.com/sqlservertip/1988/ensure-sql-server-data-purity-checks-are-performed/
 
-#>
+		.EXAMPLE
+			Get-DbaLastGoodCheckDb -SqlInstance ServerA\sql987
+
+			Returns a custom object displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, DaysSinceLastGoodCheckDb, Status and DataPurityEnabled
+
+		.EXAMPLE
+			Get-DbaLastGoodCheckDb -SqlInstance ServerA\sql987 -SqlCredential (Get-Credential sqladmin) | Format-Table -AutoSize
+
+			Returns a formatted table displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, DaysSinceLastGoodCheckDb, Status and DataPurityEnabled. Authenticates using SQL Server authentication.
+	#>
 	[CmdletBinding()]
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential]
-		$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
@@ -78,7 +82,7 @@ Authenticates with SQL Server using alternative credentials.
 	process {
 		foreach ($instance in $SqlInstance) {
 			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance"
+				Write-Message -Level Verbose -Message "Connecting to $instance."
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
@@ -100,7 +104,7 @@ Authenticates with SQL Server using alternative credentials.
 			}
 
 			foreach ($db in $dbs) {
-				Write-Message -Level Verbose -Message "Processing $db on $instances"
+				Write-Message -Level Verbose -Message "Processing $db on $instances."
 
 				if ($db.IsAccessible -eq $false) {
 					Stop-Function -Message "The database $db is not accessible. Skipping database." -Continue -Target $db
@@ -141,7 +145,9 @@ Authenticates with SQL Server using alternative credentials.
 					$Status = 'CheckDB should be performed'
 				}
 
-				if ($lastKnownGood -eq '1/1/1900 12:00:00 AM') { Remove-Variable -Name lastKnownGood, daysSinceCheckDb }
+				if ($lastKnownGood -eq '1/1/1900 12:00:00 AM') {
+					Remove-Variable -Name lastKnownGood, daysSinceCheckDb
+				}
 
 				[PSCustomObject]@{
 					ComputerName             = $server.NetName

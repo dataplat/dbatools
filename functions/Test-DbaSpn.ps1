@@ -1,108 +1,100 @@
 #ValidationTags#FlowControl,Pipeline#
-Function Test-DbaSpn {
-<#
-.SYNOPSIS 
-Test-DbaSpn will determine what SPNs *should* be set for a given server (and any instances of SQL running on it) and return
-whether the SPNs are set or not.
+function Test-DbaSpn {
+	<#
+		.SYNOPSIS
+			Test-DbaSpn will determine what SPNs *should* be set for a given server (and any instances of SQL running on it) and return
+			whether the SPNs are set or not.
 
-.DESCRIPTION
-This function is designed to take in a server name(s) and attempt to determine required SPNs. It was initially written to mimic the (previously)
-broken functionality of the Microsoft Kerberos Configuration manager and SQL Server 2016. The functon will connect to a remote server and,
-through WMI, discover all running intances of SQL Server. For any instances with TCP/IP enabled, the script will determine which port(s)
-the instances are listening on and generate the required SPNs. For named instances NOT using dynamic ports, the script will generate a port-
-based SPN for those instances as well.  At a minimum, the script will test a base, port-less SPN for each instance discovered.
+		.DESCRIPTION
+			This function is designed to take in a server name(s) and attempt to determine required SPNs. It was initially written to mimic the (previously)
+			broken functionality of the Microsoft Kerberos Configuration manager and SQL Server 2016. The functon will connect to a remote server and,
+			through WMI, discover all running intances of SQL Server. For any instances with TCP/IP enabled, the script will determine which port(s)
+			the instances are listening on and generate the required SPNs. For named instances NOT using dynamic ports, the script will generate a port-
+			based SPN for those instances as well.  At a minimum, the script will test a base, port-less SPN for each instance discovered.
 
-Once the required SPNs are generated, the script will connect to Active Directory and search for any of the SPNs (if any) that are already
-set.
+			Once the required SPNs are generated, the script will connect to Active Directory and search for any of the SPNs (if any) that are already
+			set.
 
-The function will return a custom object(s) that contains the server name checked, the instance name discovered, the account the service is
-running under, and what the "required" SPN should be. It will also return a boolean property indicating if the SPN is set in Active Directory
-or not.
+			The function will return a custom object(s) that contains the server name checked, the instance name discovered, the account the service is
+			running under, and what the "required" SPN should be. It will also return a boolean property indicating if the SPN is set in Active Directory
+			or not.
 
-.PARAMETER ComputerName
-The server name you want to discover any SQL Server instances on. This parameter is required.
+		.PARAMETER ComputerName
+			The computer you want to discover any SQL Server instances on. This parameter is required.
 
-.PARAMETER Credential
-The credential you want to use to connect to the remote server and active directory.
+		.PARAMETER Credential
+			The credential you want to use to connect to the remote server and active directory.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
 
+		.NOTES
+			Tags: SPN
+			Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
+			Editor: niphlod
 
-.NOTES
-Tags: SQLWMI, SPN
-Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
-Editor: niphlod
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+		.LINK
+			https://dbatools.io/Test-DbaSpn
 
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.EXAMPLE
+			Test-DbaSpn -ComputerName SQLSERVERA -Credential (Get-Credential)
 
-.LINK
-https://dbatools.io/Test-DbaSpn
+			Connects to a computer (SQLSERVERA) and queries WMI for all SQL instances and return "required" SPNs. It will then take each SPN it generates
+			and query Active Directory to make sure the SPNs are set.
 
-.EXAMPLE   
-Test-DbaSpn -ComputerName SQLSERVERA -Credential (Get-Credential)
+		.EXAMPLE
+			Test-DbaSpn -ComputerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
 
-Connects to a computer (SQLSERVERA) and queries WMI for all SQL instances and return "required" SPNs. It will then take each SPN it generates
-and query Active Directory to make sure the SPNs are set.
+			Connects to multiple computers (SQLSERVERA, SQLSERVERB) and queries WMI for all SQL instances and return "required" SPNs.
+			It will then take each SPN it generates and query Active Directory to make sure the SPNs are set.
 
-.EXAMPLE   
-Test-DbaSpn -ComputerName SQLSERVERA,SQLSERVERB -Credential (Get-Credential)
+		.EXAMPLE
+			Test-DbaSpn -ComputerName SQLSERVERC -Credential (Get-Credential)
 
-Connects to multiple computers (SQLSERVERA, SQLSERVERB) and queries WMI for all SQL instances and return "required" SPNs. 
-It will then take each SPN it generates and query Active Directory to make sure the SPNs are set.
-
-.EXAMPLE
-Test-DbaSpn -ComputerName SQLSERVERC -Credential (Get-Credential)
-
-Connects to a computer (SQLSERVERC) on a specified and queries WMI for all SQL instances and return "required" SPNs. 
-It will then take each SPN it generates and query Active Directory to make sure the SPNs are set. Note that the credential you pass must
-have be a valid login with appropriate rights on the domain
-
-#>
+			Connects to a computer (SQLSERVERC) on a specified and queries WMI for all SQL instances and return "required" SPNs.
+			It will then take each SPN it generates and query Active Directory to make sure the SPNs are set. Note that the credential you pass must have be a valid login with appropriate rights on the domain
+	#>
 	[cmdletbinding()]
 	param (
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[dbainstanceparameter[]]$ComputerName,
-		[Parameter(Mandatory = $false)]
+		[DbaInstance[]]$ComputerName,
 		[PSCredential]$Credential,
-		[Parameter(Mandatory = $false)]
 		[switch]$Silent
 	)
 	begin {
 		# spare the cmdlet to search for the same account over and over
-		$resultcache = @{ }
+		$resultCache = @{}
 	}
 	process {
-		foreach ($computer in $computername) {
+		foreach ($computer in $ComputerName) {
 			try {
 				$resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Credential $Credential -ErrorAction Stop
 			}
 			catch {
 				$resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -Turbo
 			}
-			
+
 			if ($null -eq $resolved.IPAddress) {
 				Write-Message -Level Warning -Message "Cannot resolve IP address, moving on."
 				continue
 			}
-			
-			$ipaddr = $resolved.IPAddress
-			$hostentry = $resolved.FullComputerName
-			
-			Write-Message -Message "Resolved ComputerName to FQDN: $hostentry" -Level Verbose
-			
+
+			$hostEntry = $resolved.FullComputerName
+
+			Write-Message -Message "Resolved ComputerName to FQDN: $hostEntry" -Level Verbose
+
 			$Scriptblock = {
-				
-				Function Convert-SqlVersion {
+
+				function Convert-SqlVersion {
+					[cmdletbinding()]
 					param (
 						[version]$version
 					)
-					
+
 					switch ($version.Major) {
 						9 { "SQL Server 2005" }
 						10 {
@@ -120,91 +112,97 @@ have be a valid login with appropriate rights on the domain
 						default { $version }
 					}
 				}
-				
+
 				$spns = @()
-				$servername = $args[0]
-				$hostentry = $args[1]
-				$instancename = $args[2]
-				$instancecount = $wmi.ServerInstances.Count
-				Write-Verbose "Found $instancecount instances"
-				
+				$servereName = $args[0]
+				$hostEntry = $args[1]
+				$instanceName = $args[2]
+				$instanceCount = $wmi.ServerInstances.Count
+
+				<# DO NOT use Write-Message as this is inside of a script block #>
+				Write-Verbose "Found $instanceCount instances"
+
 				foreach ($instance in $wmi.ServerInstances) {
 					$spn = [pscustomobject] @{
-						ComputerName = $servername
-						InstanceName = $instancename
-						SqlProduct = $null #SKUNAME
+						ComputerName           = $servereName
+						InstanceName           = $instanceName
+						#SKUNAME
+						SqlProduct             = $null
 						InstanceServiceAccount = $null
-						RequiredSPN = $null
-						IsSet = $false
-						Cluster = $false
-						TcpEnabled = $false
-						Port = $null
-						DynamicPort = $false
-						Warning = "None"
-						Error = "None"
-						Credential = $Credential # for piping
+						RequiredSPN            = $null
+						IsSet                  = $false
+						Cluster                = $false
+						TcpEnabled             = $false
+						Port                   = $null
+						DynamicPort            = $false
+						Warning                = "None"
+						Error                  = "None"
+						# for piping
+						Credential             = $Credential
 					}
-					
+
 					$spn.InstanceName = $instance.Name
-					$InstanceName = $spn.InstanceName
-					
-					Write-Verbose "Parsing $InstanceName"
-					
-					$services = $wmi.services | Where-Object DisplayName -eq "SQL Server ($InstanceName)"
+					$instanceName = $spn.InstanceName
+
+					<# DO NOT use Write-Message as this is inside of a script block #>
+					Write-Verbose "Parsing $instanceName"
+
+					$services = $wmi.Services | Where-Object DisplayName -EQ "SQL Server ($instanceName)"
 					$spn.InstanceServiceAccount = $services.ServiceAccount
-					$spn.Cluster = ($services.advancedproperties | Where-Object Name -eq 'Clustered').Value
-					
+					$spn.Cluster = ($services.advancedproperties | Where-Object Name -EQ 'Clustered').Value
+
 					if ($spn.Cluster) {
-						$hostentry = ($services.advancedproperties | Where-Object Name -eq 'VSNAME').Value.ToLower()
-						Write-Verbose "Found cluster $hostentry"
-						$hostentry = ([System.Net.Dns]::GetHostEntry($hostentry)).HostName
-						$spn.ComputerName = $hostentry
+						$hostEntry = ($services.advancedproperties | Where-Object Name -EQ 'VSNAME').Value.ToLower()
+						<# DO NOT use Write-Message as this is inside of a script block #>
+						Write-Verbose "Found cluster $hostEntry"
+						$hostEntry = ([System.Net.Dns]::GetHostEntry($hostEntry)).HostName
+						$spn.ComputerName = $hostEntry
 					}
-					
-					$rawversion = [version]($services.advancedproperties | Where-Object Name -eq 'VERSION').Value #13.1.4001.0
-					
-					$version = Convert-SqlVersion $rawversion
-					$skuname = ($services.advancedproperties | Where-Object Name -eq 'SKUNAME').Value
-					
-					$spn.SqlProduct = "$version $skuname"
-					
+
+					$rawVersion = [version]($services.AdvancedProperties | Where-Object Name -EQ 'VERSION').Value
+
+					$version = Convert-SqlVersion $rawVersion
+					$skuName = ($services.AdvancedProperties | Where-Object Name -EQ 'SKUNAME').Value
+
+					$spn.SqlProduct = "$version $skuName"
+
 					#is tcp enabled on this instance? If not, we don't need an spn, son
-					if ((($instance.serverprotocols | Where-Object { $_.Displayname -eq "TCP/IP" }).ProtocolProperties | Where-Object { $_.Name -eq "Enabled" }).Value -eq $true) {
+					if ((($instance.ServerProtocols | Where-Object { $_.Displayname -eq "TCP/IP" }).ProtocolProperties | Where-Object { $_.Name -eq "Enabled" }).Value -eq $true) {
+						<# DO NOT use Write-Message as this is inside of a script block #>
 						Write-Verbose "TCP is enabled, gathering SPN requirements"
 						$spn.TcpEnabled = $true
-						#Each instance has a default SPN of MSSQLSvc\<fqdn> or MSSSQLSvc\<fqdn>:Instance    
+						#Each instance has a default SPN of MSSQLSvc\<fqdn> or MSSSQLSvc\<fqdn>:Instance
 						if ($instance.Name -eq "MSSQLSERVER") {
-							$spn.RequiredSPN = "MSSQLSvc/$hostentry"
+							$spn.RequiredSPN = "MSSQLSvc/$hostEntry"
 						}
 						else {
-							$spn.RequiredSPN = "MSSQLSvc/" + $hostentry + ":" + $instance.name
+							$spn.RequiredSPN = "MSSQLSvc/" + $hostEntry + ":" + $instance.Name
 						}
 					}
-					
+
 					$spns += $spn
 				}
 				# Now, for each spn, do we need a port set? Only if TCP is enabled and NOT DYNAMIC!
-				ForEach ($spn in $spns) {
+				foreach ($spn in $spns) {
 					$ports = @()
-					
-					$ips = (($wmi.ServerInstances | Where-Object { $_.name -eq $spn.InstanceName }).ServerProtocols | Where-Object { $_.DisplayName -eq "TCP/IP" -and $_.IsEnabled -eq "True" }).IpAddresses
+
+					$ips = (($wmi.ServerInstances | Where-Object { $_.Name -eq $spn.InstanceName }).ServerProtocols | Where-Object { $_.DisplayName -eq "TCP/IP" -and $_.IsEnabled -eq "True" }).IpAddresses
 					$ipAllPort = $null
-					ForEach ($ip in $ips) {
+					foreach ($ip in $ips) {
 						if ($ip.Name -eq "IPAll") {
 							$ipAllPort = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TCPPort" }).Value
 							if (($ip.IpAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value -ne "") {
 								$ipAllPort = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value + "d"
 							}
-							
 						}
 						else {
 							$enabled = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "Enabled" }).Value
 							$active = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "Active" }).Value
-							$TcpDynamicPorts = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value
-							if ($enabled -and $active -and $TcpDynamicPorts -eq "") {
+							$tcpDynamicPorts = ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpDynamicPorts" }).Value
+							if ($enabled -and $active -and $tcpDynamicPorts -eq "") {
 								$ports += ($ip.IPAddressProperties | Where-Object { $_.Name -eq "TCPPort" }).Value
 							}
-							elseif ($enabled -and $active -and $TcpDynamicPorts -ne "") {
+							elseif ($enabled -and $active -and $tcpDynamicPorts -ne "") {
 								$ports += $ipAllPort + "d"
 							}
 						}
@@ -213,9 +211,9 @@ have be a valid login with appropriate rights on the domain
 						#IPAll overrides any set ports. Not sure why that's the way it is?
 						$ports = $ipAllPort
 					}
-					
+
 					$ports = $ports | Select-Object -Unique
-					ForEach ($port in $ports) {
+					foreach ($port in $ports) {
 						$newspn = $spn.PSObject.Copy()
 						if ($port -like "*d") {
 							$newspn.Port = ($port.replace("d", ""))
@@ -227,7 +225,7 @@ have be a valid login with appropriate rights on the domain
 							#If this is a named instance, replace the instance name with a port number (for non-dynamic ported named instances)
 							$newspn.Port = $port
 							$newspn.DynamicPort = $false
-							
+
 							if ($newspn.InstanceName -eq "MSSQLSERVER") {
 								$newspn.RequiredSPN = $newspn.RequiredSPN + ":" + $port
 							}
@@ -240,33 +238,33 @@ have be a valid login with appropriate rights on the domain
 				}
 				$spns
 			}
-			
+
 			Write-Message -Message "Attempting to connect to SQL WMI on remote computer " -Level Verbose
-			
+
 			try {
-				$spns = Invoke-ManagedComputerCommand -ComputerName $hostentry -ScriptBlock $Scriptblock -ArgumentList $computer.FullComputerName, $hostentry, $computer.InstanceName -Credential $Credential -ErrorAction Stop
+				$spns = Invoke-ManagedComputerCommand -ComputerName $hostEntry -ScriptBlock $Scriptblock -ArgumentList $computer.FullComputerName, $hostEntry, $computer.InstanceName -Credential $Credential -ErrorAction Stop
 			}
 			catch {
 				Stop-Function -Message "Couldn't connect to $computer" -ErrorRecord $_ -Continue
 			}
-			
+
 			#Now query AD for each required SPN
 			foreach ($spn in $spns) {
 				$searchfor = 'User'
-				
+
 				if ($spn.InstanceServiceAccount -eq 'LocalSystem' -or $spn.InstanceServiceAccount -like 'NT SERVICE\*') {
 					Write-Message -Level Verbose -Message "Virtual account detected, changing target registration to computername"
 					$spn.InstanceServiceAccount = "$($resolved.Domain)\$($resolved.ComputerName)$"
 					$searchfor = 'Computer'
 				}
-				
+
 				$serviceAccount = $spn.InstanceServiceAccount
 				# spare the cmdlet to search for the same account over and over
-				if ($spn.InstanceServiceAccount -notin $resultcache.Keys) {
+				if ($spn.InstanceServiceAccount -notin $resultCache.Keys) {
 					Write-Message -Message "searching for $serviceAccount" -Level Verbose
 					try {
 						$result = Get-DbaADObject -ADObject $serviceAccount -Type $searchfor -Credential $Credential -Silent
-						$resultcache[$spn.InstanceServiceAccount] = $result
+						$resultCache[$spn.InstanceServiceAccount] = $result
 					}
 					catch {
 						if (![System.String]::IsNullOrEmpty($spn.InstanceServiceAccount)) {
@@ -275,7 +273,7 @@ have be a valid login with appropriate rights on the domain
 					}
 				}
 				else {
-					$result = $resultcache[$spn.InstanceServiceAccount]
+					$result = $resultCache[$spn.InstanceServiceAccount]
 				}
 				if ($result.Count -gt 0) {
 					try {
@@ -297,7 +295,7 @@ have be a valid login with appropriate rights on the domain
 				if (!$spn.IsSet -and $spn.TcpEnabled) {
 					$spn.Error = "SPN missing"
 				}
-				
+
 				$spn | Select-DefaultView -ExcludeProperty Credential, DomainName
 			}
 		}
