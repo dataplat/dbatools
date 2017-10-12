@@ -17,10 +17,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 				- Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
 				- Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
 		#>
-		$paramCount = 6
+		$paramCount = 4
 		$defaultParamCount = 11
-		[object[]]$params = (Get-ChildItem function:\Test-DbaVirtualLogFile).Parameters.Keys
-		$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystemDbs', 'Silent'
+		[object[]]$params = (Get-ChildItem function:\Test-DbaSqlPath).Parameters.Keys
+		$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'Silent'
 		It "Should contain our specific parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}
@@ -29,39 +29,26 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 		}
 	}
 }
-# Get-DbaNoun
+
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
-		$server = Connect-DbaInstance -SqlInstance $script:instance1
-		$db1 = "dbatoolsci_testvlf"
-		$server.Query("CREATE DATABASE $db1")
-		$needed = Get-DbaDatabase -SqlInstance $script:instance1 -Database $db1
-		$setupright = $true
-		if ($needed.Count -ne 1) {
-			$setupright = $false
-			it "has failed setup" {
+		$trueTest = (Get-DbaDatabaseFile -SqlInstance $script:instance2 -Database master)[0].PhysicalName
+		if ($trueTest.Length -eq 0) {
+			It "has failed setup" {
 				Set-TestInconclusive -message "Setup failed"
 			}
 		}
+		$falseTest = 'B:\FloppyDiskAreAwesome'
 	}
-	AfterAll {
-		if (-not $appveyor) {
-			Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db1
-		}
-	}
-	
 	Context "Command actually works" {
-		$results = Test-DbaVirtualLogFile -SqlInstance $script:instance1 -Database $db1
-		
-		It "Should have correct properties" {
-			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,Total,Inactive,Active,LogFileName,LogFileGrowth,LogFileGrowthType'.Split(',')
-			($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+		$result = Test-DbaSqlPath -SqlInstance $script:instance2 -Path $trueTest
+		It "Should only return true if the path IS accessible to the instance" {
+			$result | Should Be $true
 		}
 
-		It "Should have database name of $db1" {
-			foreach ($result in $results) {
-				$result.Database | Should Be $db1
-			}
+		$result = Test-DbaSqlPath -SqlInstance $script:instance2 -Path $falseTest
+		It "Should only return false if the path IS NOT accessible to the instance" {
+			$result | Should Be $false
 		}
 	}
 }

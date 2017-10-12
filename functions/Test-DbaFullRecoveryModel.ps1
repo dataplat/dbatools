@@ -1,58 +1,59 @@
 function Test-DbaFullRecoveryModel {
 	<#
-	.SYNOPSIS
-		Find if database is really in the Full recovery model or not.
+		.SYNOPSIS
+			Find if database is really in the Full recovery model or not.
 
-	.DESCRIPTION
-		When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain.
-		This state is also known as 'pseudo-Simple'.
+		.DESCRIPTION
+			When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain. This state is also known as 'pseudo-Simple'.
 
-		Inspired by Paul Randal's post (http://www.sqlskills.com/blogs/paul/new-script-is-that-database-really-in-the-full-recovery-mode/)
+			Inspired by Paul Randal's post (http://www.sqlskills.com/blogs/paul/new-script-is-that-database-really-in-the-full-recovery-mode/)
 
-	.PARAMETER SqlInstance
-		The SQL Server instance.
+ 		.PARAMETER SqlInstance
+			The SQL Server instance to connect to.
 
-	.PARAMETER SqlCredential
-		Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+        .PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-		$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-		Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-	.PARAMETER Database
-		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+			To connect as a different Windows user, run PowerShell as that user.
 
-	.PARAMETER ExcludeDatabase
-		The database(s) to exclude - this list is auto-populated from the server
+		.PARAMETER Database
+			Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-	.PARAMETER Detailed
-		Returns default information plus 'Notes' column
+		.PARAMETER ExcludeDatabase
+			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
-	.NOTES
-		Tags: DisasterRecovery, Backup
-		Author: Claudio Silva (@ClaudioESSilva)
+		.PARAMETER Detailed
+			If this switch is enabled, an additional "Notes" column is returned in the results.
 
-		Website: https://dbatools.io
-		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+		.NOTES
+			Tags: DisasterRecovery, Backup
+			Author: Claudio Silva (@ClaudioESSilva)
 
-	.LINK
-		https://dbatools.io/Test-DbaFullRecoveryModel
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-	.EXAMPLE
-		Test-DbaFullRecoveryModel -SqlInstance sql2005
+		.LINK
+			https://dbatools.io/Test-DbaFullRecoveryModel
 
-		Shows all databases which actual configured recovery model is FULL and says if they are really in FULL recovery model or not
+		.EXAMPLE
+			Test-DbaFullRecoveryModel -SqlInstance sql2005
 
-	.EXAMPLE
-		Test-DbaFullRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne "FULL"}
+			Shows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL recovery model.
 
-		Only shows the databases that are in 'pseudo-simple' mode.
+		.EXAMPLE
+			Test-DbaFullRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne "FULL"}
 
-	.EXAMPLE
-		Test-DbaFullRecoveryModel -SqlInstance sql2008 | Sort-Object Server, ActualRecoveryModel -Descending
+			Only shows the databases that are in 'pseudo-simple' mode.
 
-		Shows all databases which actual configured recovery model is FULL and says if they are really in FULL recovery model or not. Will show in first place the ones that are in 'pseudo-simple' mode.
+		.EXAMPLE
+			Test-DbaFullRecoveryModel -SqlInstance sql2008 | Sort-Object Server, ActualRecoveryModel -Descending
+
+			Shows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL recovery model. The Sort-Object will cause the databases in 'pseudo-simple' mode to show first.
 	#>
 	[CmdletBinding()]
 	[OutputType("System.Collections.ArrayList")]
@@ -63,8 +64,7 @@ function Test-DbaFullRecoveryModel {
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[PSCredential]
-		$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[switch]$Detailed
 	)
 

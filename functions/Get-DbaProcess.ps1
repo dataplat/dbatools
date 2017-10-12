@@ -6,42 +6,48 @@ function Get-DbaProcess {
 		.DESCRIPTION
 			This command displays processes associated with a spid, login, host, program or database.
 			
-			Thanks to Michael J Swart at https://sqlperformance.com/2017/07/sql-performance/find-database-connection-leaks for the
-			query to get the last executed SQL statement, minutesasleep and host process ID
+			Thanks to Michael J Swart at https://sqlperformance.com/2017/07/sql-performance/find-database-connection-leaks for the	query to get the last executed SQL statement, minutesasleep and host process ID.
 	
-		.PARAMETER SqlInstance
-			The SQL Server instance.
+ 		.PARAMETER SqlInstance
+			The SQL Server instance to connect to.
 
-		.PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. 
+        .PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Spid
-			This parameter is auto-populated from -SqlInstance. You can specify one or more Spids (including blocking spids) to be displayed.
+			Specifies one or more process IDs (Spid) to be displayed. Options for this parameter are auto-populated from the server.
 
 		.PARAMETER Login
-			This parameter is auto-populated from-SqlInstance and allows only login names that have active processes. You can specify one or more logins whose processes will be displayed.
-
+			Specifies one or more Login names with active processes to look for. Options for this parameter are auto-populated from the server.
+			
 		.PARAMETER Hostname
-			This parameter is auto-populated from -SqlInstance and allows only host names that have active processes. You can specify one or more Hosts whose processes will be displayed.
+			Specifies one or more hostnames with active processes to look for. Options for this parameter are auto-populated from the server.
 
 		.PARAMETER Program
-			This parameter is auto-populated from -SqlInstance and allows only program names that have active processes. You can specify one or more Programs whose processes will be displayed.
+			Specifies one or more program names with active processes to look for. Options for this parameter are auto-populated from the server.
 
 		.PARAMETER Database
-			This parameter is auto-populated from -SqlInstance and allows only database names that have active processes. You can specify one or more Databases whose processes will be displayed.
+			Specifies one or more databases with active processes to look for. Options for this parameter are auto-populated from the server.	
 
 		.PARAMETER ExcludeSpid
-			This parameter is auto-populated from -SqlInstance. You can specify one or more Spids to exclude from being displayed (goes well with Logins).
+			Specifies one ore more process IDs to exclude from display. Options for this parameter are auto-populated from the server.
 
-			Exclude is the last filter to run, so even if a Spid matches, for example, Hosts, if it's listed in Exclude it wil be excluded.
+			This is the last filter to run, so even if a Spid matches another filter, it will be excluded by this filter.
 
 		.PARAMETER NoSystemSpid
-			Ignores the System Spids
+			If this switch is enabled, system Spids will be ignored.
 			
 		.PARAMETER Silent
-		Use this switch to disable any kind of verbose messages
+			If this switch is enabled, the internal messaging functions will be silenced.
 	
 		.NOTES 
+			Tags:
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -52,12 +58,12 @@ function Get-DbaProcess {
 		.EXAMPLE
 			Get-DbaProcess -SqlInstance sqlserver2014a -Login base\ctrlb, sa
 
-			Shows information about the processes for base\ctrlb and sa on sqlserver2014a. Uses Windows Authentication to login to sqlserver2014a.
+			Shows information about the processes for base\ctrlb and sa on sqlserver2014a. Windows Authentication is used in connecting to sqlserver2014a.
 
 		.EXAMPLE   
 			Get-DbaProcess -SqlInstance sqlserver2014a -SqlCredential $credential -Spid 56, 77
 				
-			Shows information about the processes for spid 56 and 57. Uses alternative (SQL or Windows) credentials to login to sqlserver2014a.
+			Shows information about the processes for spid 56 and 57. Uses alternative (SQL or Windows) credentials to authenticate to sqlserver2014a.
 
 		.EXAMPLE   
 			Get-DbaProcess -SqlInstance sqlserver2014a -Program 'Microsoft SQL Server Management Studio'
@@ -75,8 +81,7 @@ function Get-DbaProcess {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential]
-		$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[int[]]$Spid,
 		[int[]]$ExcludeSpid,
 		[string[]]$Database,
@@ -90,7 +95,7 @@ function Get-DbaProcess {
 	process {
 		foreach ($instance in $sqlinstance) {
 			
-			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+			Write-Message -Message "Attempting to connect to $instance." -Level Verbose
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
@@ -134,7 +139,7 @@ function Get-DbaProcess {
 				$allsessions += $processes | Where-Object { $Database -contains $_.Database -and $_.Spid -notin $allsessions.Spid }
 			}
 						
-			if (Test-Bound -not 'Login','Spid','ExcludeSpid','Host', 'Program','Database') {
+			if (Test-Bound -not 'Login', 'Spid', 'ExcludeSpid', 'Host', 'Program', 'Database') {
 				$allsessions = $processes
 			}
 			

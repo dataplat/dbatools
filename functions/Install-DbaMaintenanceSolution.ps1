@@ -55,7 +55,7 @@ function Install-DbaMaintenanceSolution {
     .EXAMPLE
         Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72
     
-        Installs Ola Hallengren's Solution objects on RES14224 in the master database. 
+        Installs Ola Hallengren's Solution objects on RES14224 in the DBA database. 
         Backups will default to the default Backup Directory. 
         If the Maintenance Solution already exists, the script will be halted.
    

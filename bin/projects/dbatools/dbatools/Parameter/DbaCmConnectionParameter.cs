@@ -143,5 +143,15 @@ namespace Sqlcollaborative.Dbatools.Parameter
                     break;
             }
         }
+
+        /// <summary>
+        /// Creates a new DbaCmConnectionParameter based on an instance parameter
+        /// </summary>
+        /// <param name="Instance">The instance to interpret</param>
+        public DbaCmConnectionParameter(DbaInstanceParameter Instance)
+            : this(Instance.ComputerName)
+        {
+
+        }
     }
 }

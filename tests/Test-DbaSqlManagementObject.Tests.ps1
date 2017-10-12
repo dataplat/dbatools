@@ -17,10 +17,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 				- Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
 				- Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
 		#>
-		$paramCount = 6
+		$paramCount = 4
 		$defaultParamCount = 11
-		[object[]]$params = (Get-ChildItem function:\Get-DbaDbVirtualLogFile).Parameters.Keys
-		$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IncludeSystemDbs', 'Silent'
+		[object[]]$params = (Get-ChildItem Function:\Test-DbaSqlManagementObject).Parameters.Keys
+		$knownParameters = 'ComputerName', 'Credential', 'VersionNumber', 'Silent'
 		it "Should contain our specific parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}
@@ -29,35 +29,24 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 		}
 	}
 }
-# Get-DbaNoun
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
-		$server = Connect-DbaInstance -SqlInstance $script:instance2
-		$db1 = "dbatoolsci_getvlf"
-		$server.Query("CREATE DATABASE $db1")
-		$needed = Get-DbaDatabase -SqlInstance $script:instance2 -Database $db1
-		$setupright = $true
-		if ($needed.Count -ne 1) {
-			$setupright = $false
-			it "has failed setup" {
-				Set-TestInconclusive -message "Setup failed"
-			}
-		}
-	}
-	AfterAll {
-		Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1
+		$versionMajor = (Connect-DbaInstance -SqlInstance $script:instance2).VersionMajor
 	}
 	Context "Command actually works" {
-		$results = Get-DbaDbVirtualLogFile -SqlInstance $script:instance2 -Database $db1
+		$trueResults = Test-DbaSqlManagementObject -ComputerName $script:instance2 -VersionNumber $versionMajor
 		It "Should have correct properties" {
-			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,RecoveryUnitId,FileId,FileSize,StartOffset,FSeqNo,Status,Parity,CreateLSN'.Split(',')
-			($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+			$ExpectedProps = 'ComputerName,Version,Exists'.Split(',')
+			($trueResults[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 		}
 
-		It "Should have database name of $db1" {
-			foreach ($result in $results) {
-				$result.Database | Should Be $db1
-			}
+		It "Should return true for VersionNumber $versionMajor" {
+			$trueResults.Exists | Should Be $true
+		}
+
+		$falseResults = Test-DbaSqlManagementObject -ComputerName $script:instance2 -VersionNumber -1
+		It "Should return false for VersionNumber -1" {
+			$falseResults.Exists | Should Be $false
 		}
 	}
 }
