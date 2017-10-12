@@ -133,7 +133,7 @@ function Get-CodecovReport($Results, $ModuleBase) {
 	foreach($target in $allfiles) {
 		$target_relative = $target.FullName.Replace("$ModuleBase\", '').Replace('\','/')
 		if ($target_relative -notin $newreport['coverage'].Keys) {
-			$newreport['coverage'][$target_relative] = @{}
+			$newreport['coverage'][$target_relative] = @{"1" = $null}
 		}
 	}
 	$newreport
