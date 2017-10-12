@@ -704,14 +704,14 @@ The script will show a message that the copy destination has not been supplied a
 								if (-not $IsDestinationLocal -and $DestinationCredential) {
 									Invoke-Command2 -ComputerName $DestinationServerName -Credential $DestinationCredential -ScriptBlock {
 										Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
-										New-Item -Path $CopyDestinationFolder -ItemType Directory -Force:$Force -Credential $DestinationCredential | Out-Null
+										New-Item -Path $CopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
 									}
 								}
 								# If the server is local and the credential is set
 								elseif ($DestinationCredential) {
 									Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
 										Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
-										New-Item -Path $CopyDestinationFolder -ItemType Directory -Force:$Force -Credential $DestinationCredential | Out-Null
+										New-Item -Path $CopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
 									}
 								}
 								# If the server is local and the credential is not set
@@ -736,7 +736,7 @@ The script will show a message that the copy destination has not been supplied a
 					# Try to create the copy destination on the local server
 					try {
 						Write-Message -Message "Creating copy destination folder $CopyDestinationFolder" -Level Verbose
-						New-Item $CopyDestinationFolder -ItemType Directory -Force:$Force -Credential $DestinationCredential | Out-Null
+						New-Item $CopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
 						Write-Message -Message "Copy destination $CopyDestinationFolder created." -Level Verbose
 					}
 					catch {
@@ -758,14 +758,31 @@ The script will show a message that the copy destination has not been supplied a
 		}
 
 		# Check the backup compression
-		if ($CompressBackup) {
-			Write-Message -Message "Setting backup compression to 1." -Level Verbose
-			[bool]$BackupCompression = 1
+		if ($SourceServer.Version.Major -gt 9) {
+			if ($CompressBackup) {
+				Write-Message -Message "Setting backup compression to 1." -Level Verbose
+				[bool]$BackupCompression = 1
+			}
+			else {
+				$backupServerSetting = (Get-DbaSpConfigure -SqlInstance $SourceSqlInstance -ConfigName DefaultBackupCompression).ConfiguredValue
+				Write-Message -Message "Setting backup compression to default server setting $backupServerSetting." -Level Verbose
+				[bool]$BackupCompression = $backupServerSetting
+			}
 		}
 		else {
-			$backupServerSetting = (Get-DbaSpConfigure -SqlInstance $SourceSqlInstance -ConfigName DefaultBackupCompression).ConfiguredValue
-			Write-Message -Message "Setting backup compression to default server setting $backupServerSetting." -Level Verbose
-			[bool]$BackupCompression = $backupServerSetting
+			Write-Message -Message "Source server $SourceServer does not support backup compression" -Level Verbose
+		}
+
+		# Check the database parameter
+		if ($Database) {
+			if ($Database -notin $SourceServer.Databases.Name) {
+				Stop-Function -Message "One or more databases cannot be found on instance on instance $SourceSqlInstance" -Target $SourceSqlInstance -Continue
+			}
+
+			$DatabaseCollection = $SourceServer.Databases | Where-Object { $_.Name -in $Database }
+		}
+		else {
+			Stop-Function -Message "Please supply a database to set up log shipping for" -Target $SourceSqlInstance -Continue
 		}
 
 		# Set the database mode
@@ -1059,642 +1076,641 @@ The script will show a message that the copy destination has not been supplied a
 	process {
 
 		if (Test-FunctionInterrupt) { return }
-        
-		foreach ($db in $Database) {
-			# Check if the database is present on the source sql server
-			if (($SourceServer.Databases).Name -notcontains $db) {
-				Write-Message -Message "Database $db is not available on instance $SourceSqlInstance" -Warning
+		
+		# Loop through each of the databases
+		foreach ($db in $DatabaseCollection) {
+			
+			# Check the status of the database
+			if($db.RecoveryModel -ne 'Full'){
+				Stop-Function -Message  "Database $db is not in FULL recovery mode" -Target $SourceSqlInstance -Continue
+			}
+ 				
+			if ($BackupLocalPath) {
+				if ($BackupLocalPath.EndsWith("\")) {
+					$DatabaseBackupLocalPath = "$BackupLocalPath$($db.Name)"
+				}
+				else {
+					$DatabaseBackupLocalPath = "$BackupLocalPath\$($db.Name)"
+				}
 			}
 			else {
-				Write-Message -Message "Start configuring log shipping for database $db on instance $SourceSqlInstance" -Level Output	
- 				
-				if ($BackupLocalPath) {
-					if ($BackupLocalPath.EndsWith("\")) {
-						$DatabaseBackupLocalPath = "$BackupLocalPath$db"
-					}
-					else {
-						$DatabaseBackupLocalPath = "$BackupLocalPath\$db"
-					}
+				$BackupLocalPath = $BackupNetworkPath
+
+				if ($BackupLocalPath.EndsWith("\")) {
+					$DatabaseBackupLocalPath = "$BackupLocalPath$($db.Name)"
 				}
 				else {
-					$BackupLocalPath = $BackupNetworkPath
+					$DatabaseBackupLocalPath = "$BackupLocalPath\$($db.Name)"
+				}
+			}
+			Write-Message -Message "Backup local path set to $DatabaseBackupLocalPath." -Level Verbose
 
-					if ($BackupLocalPath.EndsWith("\")) {
-						$DatabaseBackupLocalPath = "$BackupLocalPath$db"
+			# Setting the backup network path for the database
+			if ($BackupNetworkPath.EndsWith("\")) {
+				$DatabaseBackupNetworkPath = "$BackupNetworkPath$($db.Name)"
+			}
+			else {
+				$DatabaseBackupNetworkPath = "$BackupNetworkPath\$($db.Name)"
+			}
+			Write-Message -Message "Backup network path set to $DatabaseBackupNetworkPath." -Level Verbose
+
+
+			# Checking if the database network path exists
+			Write-Message -Message "Testing database backup network path $DatabaseBackupNetworkPath" -Level Verbose
+			if ((Test-DbaSqlPath -Path $DatabaseBackupNetworkPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {	
+				# To to create the backup directory for the database 
+				try {
+					Write-Message -Message "Database backup network path $DatabaseBackupNetworkPath not found. Trying to create it.." -Level Verbose
+
+					Invoke-Command2 -Credential $SourceCredential -ScriptBlock {
+						Write-Message -Message "Creating backup folder $DatabaseBackupNetworkPath" -Level Verbose
+						New-Item -Path $DatabaseBackupNetworkPath -ItemType Directory -Credential $SourceCredential -Force:$Force | Out-Null
+					}
+				}
+				catch {
+					Stop-Function -Message "Something went wrong creating the directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+				}   
+			}
+
+			# Check if the backup job name is set
+			if ($BackupJob) {
+				$DatabaseBackupJob = "$BackupJob_$($db.Name)"
+			}
+			else {
+				$DatabaseBackupJob = "LSBackup_$($db.Name)"
+			}
+			Write-Message -Message "Backup job name set to $DatabaseBackupJob" -Level Verbose
+
+			# Check if the backup job schedule name is set
+			if ($BackupSchedule) {
+				$DatabaseBackupSchedule = "$BackupSchedule_$($db.Name)"
+			}
+			else {
+				$DatabaseBackupSchedule = "LSBackupSchedule_$($db.Name)"
+			}
+			Write-Message -Message "Backup job schedule name set to $DatabaseBackupSchedule" -Level Verbose
+
+			# Set the database suffix
+			if ($SecondaryDatabaseSuffix) {
+				$SecondaryDatabase = "$($($db.Name))_$($SecondaryDatabaseSuffix)"
+			}
+			else {
+				$SecondaryDatabase = $($db.Name)
+			}
+            
+			# Check if secondary database is present on secondary instance
+			if (-not $Force -and ($DestinationServer.Databases[$SecondaryDatabase].Status -ne 'Restoring') -and ($DestinationServer.Databases.Name -contains $SecondaryDatabase)) {
+				Stop-Function -Message "Secondary database already exists on instance $DestinationSqlInstance." -InnerErrorRecord $_ -Target $DestinationSqlInstance -Continue
+			}
+
+			# Check if the secondary database exists on the secondary instance
+			if ($DestiationServer.Databases.Name -notcontains $SecondaryDatabase) {
+				# Check if force is being used and no option to generate the full backup is set
+				if ($Force -and -not ($GenerateFullBackup -or $UseExistingFullBackup)) {
+					# Set the option to generate a full backup
+					Write-Message -Message "Set option to initialize secondary database with full backup." -Level Verbose
+					$GenerateFullBackup = $true
+				}
+				elseif (-not $Force -and -not $GenerateFullBackup -and -not $UseExistingFullBackup) {
+					# Set up the confirm part
+					$message = "The database $SecondaryDatabase does not exist on instance $DestinationSqlInstance. `nDo you want to initialize it by generating a full backup?"
+					$choiceYes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Answer Yes."
+					$choiceNo = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Answer No."
+					$options = [System.Management.Automation.Host.ChoiceDescription[]]($choiceYes, $choiceNo)
+					$result = $host.ui.PromptForChoice($title, $message, $options, 0)
+				
+					# Check the result from the confirm
+					switch ($result) {
+						# If yes
+						0 {
+							# Set the option to generate a full backup
+							Write-Message -Message "Set option to initialize secondary database with full backup." -Level Verbose
+							$GenerateFullBackup = $true
+						}
+						1 {
+							Stop-Function -Message "The database is not initialized on the secondary instance. `nPlease initialize the database on the secondary instance, use -GenerateFullbackup or use -Force." -Target $DestinationSqlInstance 
+							return
+						} 
+					} # switch
+				}
+			}
+				
+
+			# Check the parameters for initialization of the secondary database
+			if ($GenerateFullBackup -or $UseExistingFullBackup) {
+				# Check if the restore data and log folder are set
+				if (-not $RestoreDataFolder -or -not $RestoreLogFolder) {
+					Write-Message -Message "Restore data folder or restore log folder are not set. Using server defaults" -Level Verbose
+
+					# Get the default data folder
+					if (-not $RestoreDataFolder) {
+						$DatabaseRestoreDataFolder = $DestinationServer.DefaultFile  
 					}
 					else {
-						$DatabaseBackupLocalPath = "$BackupLocalPath\$db"
+						# Set the restore data folder
+						if ($RestoreDataFolder.EndsWith("\")) {
+							$DatabaseRestoreDataFolder = "$RestoreDataFolder$($db.Name)"
+						}
+						else {
+							$DatabaseRestoreDataFolder = "$RestoreDataFolder\$($db.Name)"
+						}
 					}
-				}
-				Write-Message -Message "Backup local path set to $DatabaseBackupLocalPath." -Level Verbose
+                    
+					Write-Message -Message "Restore data folder set to $DatabaseRestoreDataFolder" -Level Verbose
 
-				# Setting the backup network path for the database
-				if ($BackupNetworkPath.EndsWith("\")) {
-					$DatabaseBackupNetworkPath = "$BackupNetworkPath$db"
-				}
+					# Get the default log folder
+					if (-not $RestoreLogFolder) {
+						$DatabaseRestoreLogFolder = $DestinationServer.DefaultLog
+					}
+
+					Write-Message -Message "Restore log folder set to $DatabaseRestoreLogFolder" -Level Verbose
+
+					# Check if the restore data folder exists
+					Write-Message -Message "Testing database restore data path $DatabaseRestoreDataFolder" -Level Verbose
+					if ((Test-DbaSqlPath  -Path $DatabaseRestoreDataFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {	
+						if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore data folder $DatabaseRestoreDataFolder on $DestinationServerName")) {
+							# Try creating the data folder
+							try {
+								Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+									Write-Message -Message "Creating data folder $DatabaseRestoreDataFolder" -Level Verbose
+									New-Item -Path $DatabaseRestoreDataFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+								}
+							}
+							catch {
+								Stop-Function -Message "Something went wrong creating the restore data directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+							}
+						}
+					}
+
+					# Check if the restore log folder exists
+					Write-Message -Message "Testing database restore log path $DatabaseRestoreLogFolder" -Level Verbose
+					if ((Test-DbaSqlPath  -Path $DatabaseRestoreLogFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
+						if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore log folder $DatabaseRestoreLogFolder on $DestinationServerName")) {
+							# Try creating the log folder
+							try {
+								Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
+									
+								Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+									Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
+									New-Item -Path $DatabaseRestoreLogFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
+								}
+							}
+							catch {
+								Stop-Function -Message "Something went wrong creating the restore log directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+							}
+						}
+					}
+				} 
 				else {
-					$DatabaseBackupNetworkPath = "$BackupNetworkPath\$db"
+                    
 				}
-				Write-Message -Message "Backup network path set to $DatabaseBackupNetworkPath." -Level Verbose
 
+				# Chech if the full backup patk can be reached
+				if ($FullBackupPath) {
+					Write-Message -Message "Testing full backup path $FullBackupPath" -Level Verbose
+					if ((Test-DbaSqlPath -Path $FullBackupPath -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
+						Stop-Function -Message ("The path to the full backup could not be reached. Check the path and/or the crdential. `n$($_.Exception.Message)") -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+					}
+				} 
+				elseif ($UseExistingFullBackup) {
+					Write-Message -Message "No path to the full backup is set. Trying to retrieve the last full backup for $db from $SourceSqlInstance" -Level Verbose
 
-				# Checking if the database network path exists
-				Write-Message -Message "Testing database backup network path $DatabaseBackupNetworkPath" -Level Verbose
-				if ((Test-DbaSqlPath -Path $DatabaseBackupNetworkPath -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {	
-					# To to create the backup directory for the database 
+					# Get the last full backup
+					$LastBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -Databases $($db.Name) -LastFull -Credential $SourceSqlCredential
+
+					# Check if there was a last backup
+					if ($LastBackup -ne $null) {
+						# Test the path to the backup
+						Write-Message -Message "Testing last backup path $(($LastBackup[-1]).Path[-1])" -Level Verbose
+						if ((Test-DbaSqlPath -Path ($LastBackup[-1]).Path[-1] -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
+							Stop-Function -Message "The full backup could not be found on $($LastBackup.Path). Check path and/or credentials. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+						}
+						# Check if the source for the last full backup is remote and the backup is on a shared location
+						elseif (($LastBackup.Computername -ne $SourceServerName) -and (($LastBackup[-1]).Path[-1].StartsWith('\\') -eq $false)) {
+							Stop-Function -Message "The last full backup is not located on shared location. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+						}
+						else {
+							$FullBackupPath = $LastBackup.Path  
+							Write-Message -Message "Full backup found for $db. Path $FullBackupPath" -Level Verbose    
+						}
+					}
+					else {
+						Write-Message -Message "No Full backup found for $db." -Level Output  
+					}
+				}  
+			}
+
+			# Set the copy destination folder to include the database name
+			if ($CopyDestinationFolder.EndsWith("\")) {
+				$DatabaseCopyDestinationFolder = "$CopyDestinationFolder$($db.Name)"
+			}
+			else {
+				$DatabaseCopyDestinationFolder = "$CopyDestinationFolder\$($db.Name)"
+			}
+			Write-Message -Message "Copy destination folder set to $DatabaseCopyDestinationFolder." -Level Verbose
+
+			# Check if the copy job name is set
+			if ($CopyJob) {
+				$DatabaseCopyJob = "$CopyJob_$SourceServerName_$($db.Name)"
+			}
+			else {
+				$DatabaseCopyJob = "LSCopy_$SourceServerName_$($db.Name)"                    
+			}
+			Write-Message -Message "Copy job name set to $DatabaseCopyJob" -Level Verbose
+
+			# Check if the copy job schedule name is set
+			if ($CopySchedule) {
+				$DatabaseCopySchedule = "$CopySchedule_$($db.Name)"
+			}
+			else {
+				$DatabaseCopySchedule = "LSCopySchedule_$($db.Name)"
+				Write-Message -Message "Copy job schedule name set to $DatabaseCopySchedule" -Level Verbose                    
+			}
+
+			# Check if the copy destination folder exists
+			Write-Message -Message "Testing database copy destination path $DatabaseCopyDestinationFolder" -Level Verbose
+			if ((Test-DbaSqlPath -Path $DatabaseCopyDestinationFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
+				if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating copy destination folder on $DestinationServerName")) {
 					try {
-						Write-Message -Message "Database backup network path $DatabaseBackupNetworkPath not found. Trying to create it.." -Level Verbose
-
-						Invoke-Command2 -Credential $SourceCredential -ScriptBlock {
-							Write-Message -Message "Creating backup folder $DatabaseBackupNetworkPath" -Level Verbose
-							New-Item -Path $DatabaseBackupNetworkPath -ItemType Directory -Force:$Force -Credential $SourceCredential | Out-Null
+						Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
+							Write-Message -Message "Copy destination folder $DatabaseCopyDestinationFolder not found. Trying to create it.. ." -Level Verbose
+							New-Item -Path $DatabaseCopyDestinationFolder -ItemType Directory -Credential $DestinationCredential -Force:$Force | Out-Null
 						}
 					}
 					catch {
-						Stop-Function -Message "Something went wrong creating the directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
-					}   
+						Stop-Function -Message "Something went wrong creating the database copy destination folder. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $DestinationServerName -Continue
+					}
 				}
+			}
 
-				# Check if the backup job name is set
-				if ($BackupJob) {
-					$DatabaseBackupJob = "$BackupJob_$db"
-				}
-				else {
-					$DatabaseBackupJob = "LSBackup_$db"
-				}
-				Write-Message -Message "Backup job name set to $DatabaseBackupJob" -Level Verbose
+			# Check if the restore job name is set
+			if ($RestoreJob) {
+				$DatabaseRestoreJob = "$RestoreJob_$SourceServerName_$($db.Name)"
+			}
+			else {
+				$DatabaseRestoreJob = "LSRestore_$DestinationServerName_$($db.Name)"
+			}
+			Write-Message -Message "Restore job name set to $DatabaseRestoreJob" -Level Verbose
 
-				# Check if the backup job schedule name is set
-				if ($BackupSchedule) {
-					$DatabaseBackupSchedule = "$BackupSchedule_$db"
-				}
-				else {
-					$DatabaseBackupSchedule = "LSBackupSchedule_$db"
-				}
-				Write-Message -Message "Backup job schedule name set to $DatabaseBackupSchedule" -Level Verbose
+			# Check if the restore job schedule name is set
+			if ($RestoreSchedule) {
+				$DatabaseRestoreSchedule = "$RestoreSchedule_$($db.Name)"
+			}
+			else {
+				$DatabaseRestoreSchedule = "LSRestoreSchedule_$($db.Name)"
+			}
+			Write-Message -Message "Restore job schedule name set to $DatabaseRestoreSchedule" -Level Verbose
 
-				# Set the database suffix
-				if ($SecondaryDatabaseSuffix) {
-					$SecondaryDatabase = "$($db)_$($SecondaryDatabaseSuffix)"
+			# If the database needs to be backed up first
+			if ($PSCmdlet.ShouldProcess($SourceSqlInstance, "Backing up database $db")) {
+				if ($GenerateFullBackup) {
+					Write-Message -Message "Generating full backup." -Level Output
+					Write-Message -Message "Backing up database $db to $DatabaseBackupNetworkPath" -Level Output
+                    
+					$Timestamp = Get-Date -format "yyyyMMddHHmmss"
+
+					$LastBackup = Backup-DbaDatabase -SqlInstance $SourceSqlInstance `
+						-SqlCredential $SourceSqlCredential `
+						-BackupDirectory $DatabaseBackupNetworkPath `
+						-BackupFileName "FullBackup_$($db.Name)_PreLogShipping_$Timestamp.bak" `
+						-Databases $($db.Name) `
+						-Type Full 
+
+					Write-Message -Message "Backup completed." -Level Output
+
+					# Get the last full backup path
+					$FullBackupPath = $LastBackup.BackupPath  
+
+					Write-Message -Message "Backup is located at $FullBackupPath" -Level Verbose
 				}
-				else {
-					$SecondaryDatabase = $db
-				}
+			}
             
-				# Check if secondary database is present on secondary instance
-				if (-not $Force -and ($DestinationServer.Databases.Name -contains $SecondaryDatabase)) {
-					Stop-Function -Message "Secondary database already exists on instance $DestinationSqlInstance." -InnerErrorRecord $_ -Target $DestinationSqlInstance -Continue
+			# Check of the MonitorServerSecurityMode value is of type string and set the integer value
+			if ($PrimaryMonitorServerSecurityMode -notin 0, 1) {
+				$PrimaryMonitorServerSecurityMode = switch ($PrimaryMonitorServerSecurityMode) {
+					"SQLSERVER" { 0 } "WINDOWS" { 1 } default { 1 }
+				}
+			}
+
+			# Check the primary monitor server
+			if ($Force -and (-not$PrimaryMonitorServer -or [string]$PrimaryMonitorServer -eq '' -or $PrimaryMonitorServer -eq $null)) {
+				Write-Message -Message "Setting monitor server for primary server to $SourceSqlInstance." -Level Output
+				$PrimaryMonitorServer = $SourceSqlInstance
+			}
+
+			# Check the PrimaryMonitorServerSecurityMode if it's SQL Server authentication
+			if ($PrimaryMonitorServerSecurityMode -eq 0) {
+				if ($PrimaryMonitorServerLogin) {
+					Stop-Function -Message "The PrimaryMonitorServerLogin cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
 				}
 
-				# Check if the secondary database exists on the secondary instance
-				if ($DestiationServer.Databases.Name -notcontains $SecondaryDatabase) {
-					# Check if force is being used and no option to generate the full backup is set
-					if ($Force -and -not ($GenerateFullBackup -or $UseExistingFullBackup)) {
-						# Set the option to generate a full backup
-						Write-Message -Message "Set option to initialize secondary database with full backup." -Level Verbose
-						$GenerateFullBackup = $true
-					}
-					elseif (-not $Force -and -not $GenerateFullBackup -and -not $UseExistingFullBackup){
-						# Set up the confirm part
-						$message = "The database $SecondaryDatabase does not exist on instance $DestinationSqlInstance. `nDo you want to initialize it by generating a full backup?"
-						$choiceYes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Answer Yes."
-						$choiceNo = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Answer No."
-						$options = [System.Management.Automation.Host.ChoiceDescription[]]($choiceYes, $choiceNo)
-						$result = $host.ui.PromptForChoice($title, $message, $options, 0)
-				
-						# Check the result from the confirm
-						switch ($result) {
-							# If yes
-							0 {
-								# Set the option to generate a full backup
-								Write-Message -Message "Set option to initialize secondary database with full backup." -Level Verbose
-								$GenerateFullBackup = $true
-							}
-							1 {
-								Stop-Function -Message "The database is not initialized on the secondary instance. `nPlease initialize the database on the secondary instance, use -GenerateFullbackup or use -Force." -Target $DestinationSqlInstance 
-								return
-							} 
-						} # switch
-					}
+				if ($PrimaryMonitorServerPassword) {
+					Stop-Function -Message "The PrimaryMonitorServerPassword cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $ -Continue
 				}
-				
+			}
 
-				# Check the parameters for initialization of the secondary database
+			# Check of the SecondaryMonitorServerSecurityMode value is of type string and set the integer value
+			if ($SecondaryMonitorServerSecurityMode -notin 0, 1) {
+				$SecondaryMonitorServerSecurityMode = switch ($SecondaryMonitorServerSecurityMode) {
+					"SQLSERVER" { 0 } "WINDOWS" { 1 } default { 1 }
+				}
+			}
+
+			# Check the secondary monitor server
+			if ($Force -and (-not $SecondaryMonitorServer -or [string]$SecondaryMonitorServer -eq '' -or $SecondaryMonitorServer -eq $null)) {
+				Write-Message -Message "Setting secondary monitor server for $DestinationSqlInstance to $SourceSqlInstance." -Level Verbose
+				$SecondaryMonitorServer = $SourceSqlInstance
+			}
+
+			# Check the MonitorServerSecurityMode if it's SQL Server authentication
+			if ($SecondaryMonitorServerSecurityMode -eq 0) {
+				if ($SecondaryMonitorServerLogin) {
+					Stop-Function -Message "The SecondaryMonitorServerLogin cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+				}
+
+				if ($SecondaryMonitorServerPassword) {
+					Stop-Function -Message "The SecondaryMonitorServerPassword cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+				}
+			}
+
+			# Now that all the checks have been done we can start with the fun stuff !
+
+			# Restore the full backup
+			if ($PSCmdlet.ShouldProcess($DestinationSqlInstance, "Restoring database $db to $SecondaryDatabase on $DestinationSqlInstance")) {
 				if ($GenerateFullBackup -or $UseExistingFullBackup) {
-					# Check if the restore data and log folder are set
-					if (-not $RestoreDataFolder -or -not $RestoreLogFolder) {
-						Write-Message -Message "Restore data folder or restore log folder are not set. Using server defaults" -Level Verbose
-
-						# Get the default data folder
-						if (-not $RestoreDataFolder) {
-							$DatabaseRestoreDataFolder = $DestinationServer.DefaultFile  
-						}
-						else {
-							# Set the restore data folder
-							if ($RestoreDataFolder.EndsWith("\")) {
-								$DatabaseRestoreDataFolder = "$RestoreDataFolder$db"
+					try {   
+						Write-Message -Message "Start database restore" -Level Output
+						if ($NoRecovery -or (-not $Standby)) {
+							if ($Force) {
+								Restore-DbaDatabase -SqlServer $DestinationSqlInstance `
+									-SqlCredential $DestinationSqlCredential `
+									-Path $FullBackupPath `
+									-DestinationFilePrefix $SecondaryDatabaseSuffix `
+									-DestinationDataDirectory $DatabaseRestoreDataFolder `
+									-DestinationLogDirectory $DatabaseRestoreLogFolder `
+									-DatabaseName $SecondaryDatabase `
+									-NoRecovery `
+									-WithReplace | Out-Null
 							}
 							else {
-								$DatabaseRestoreDataFolder = "$RestoreDataFolder\$db"
+								Restore-DbaDatabase -SqlServer $DestinationSqlInstance `
+									-SqlCredential $DestinationSqlCredential `
+									-Path $FullBackupPath `
+									-DestinationFilePrefix $SecondaryDatabaseSuffix `
+									-DestinationDataDirectory $DatabaseRestoreDataFolder `
+									-DestinationLogDirectory $DatabaseRestoreLogFolder `
+									-DatabaseName $SecondaryDatabase `
+									-NoRecovery | Out-Null
 							}
 						}
-                    
-						Write-Message -Message "Restore data folder set to $DatabaseRestoreDataFolder" -Level Verbose
-
-						# Get the default log folder
-						if (-not $RestoreLogFolder) {
-							$DatabaseRestoreLogFolder = $DestinationServer.DefaultLog
-						}
-
-						Write-Message -Message "Restore log folder set to $DatabaseRestoreLogFolder" -Level Verbose
-
-						# Check if the restore data folder exists
-						Write-Message -Message "Testing database restore data path $DatabaseRestoreDataFolder" -Level Verbose
-						if ((Test-DbaSqlPath  -Path $DatabaseRestoreDataFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {	
-							if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore data folder $DatabaseRestoreDataFolder on $DestinationServerName")) {
-								# Try creating the data folder
-								try {
-									Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
-										Write-Message -Message "Creating data folder $DatabaseRestoreDataFolder" -Level Verbose
-										New-Item -Path $DatabaseRestoreDataFolder -ItemType Directory -Force:$Force -Credential $DestinationCredential | Out-Null
-									}
-								}
-								catch {
-									Stop-Function -Message "Something went wrong creating the restore data directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
-								}
-							}
-						}
-
-						# Check if the restore log folder exists
-						Write-Message -Message "Testing database restore log path $DatabaseRestoreLogFolder" -Level Verbose
-						if ((Test-DbaSqlPath  -Path $DatabaseRestoreLogFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
-							if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating database restore log folder $DatabaseRestoreLogFolder on $DestinationServerName")) {
-								# Try creating the log folder
-								try {
-									Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
-									
-									Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
-										Write-Message -Message "Restore log folder $DatabaseRestoreLogFolder not found. Trying to create it.." -Level Verbose
-										New-Item -Path $DatabaseRestoreLogFolder -ItemType Directory -Force:$Force -Credential $DestinationCredential | Out-Null
-									}
-								}
-								catch {
-									Stop-Function -Message "Something went wrong creating the restore log directory. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
-								}
-							}
-						}
-					} 
-					else {
-                    
-					}
-
-					# Chech if the full backup patk can be reached
-					if ($FullBackupPath) {
-						Write-Message -Message "Testing full backup path $FullBackupPath" -Level Verbose
-						if ((Test-DbaSqlPath -Path $FullBackupPath -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
-							Stop-Function -Message ("The path to the full backup could not be reached. Check the path and/or the crdential. `n$($_.Exception.Message)") -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
-						}
-					} 
-					elseif ($UseExistingFullBackup) {
-						Write-Message -Message "No path to the full backup is set. Trying to retrieve the last full backup for $db from $SourceSqlInstance" -Level Verbose
-
-						# Get the last full backup
-						$LastBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -Databases $db -LastFull -Credential $SourceSqlCredential
-
-						# Check if there was a last backup
-						if ($LastBackup -ne $null) {
-							# Test the path to the backup
-							Write-Message -Message "Testing last backup path $(($LastBackup[-1]).Path[-1])" -Level Verbose
-							if ((Test-DbaSqlPath -Path ($LastBackup[-1]).Path[-1] -SqlInstance $SourceSqlInstance -SqlCredential $SourceCredential) -ne $true) {
-								Stop-Function -Message "The full backup could not be found on $($LastBackup.Path). Check path and/or credentials. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
-							}
-							# Check if the source for the last full backup is remote and the backup is on a shared location
-							elseif (($LastBackup.Computername -ne $SourceServerName) -and (($LastBackup[-1]).Path[-1].StartsWith('\\') -eq $false)) {
-								Stop-Function -Message "The last full backup is not located on shared location. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
-							}
-							else {
-								$FullBackupPath = $LastBackup.Path  
-								Write-Message -Message "Full backup found for $db. Path $FullBackupPath" -Level Verbose    
-							}
-						}
-						else {
-							Write-Message -Message "No Full backup found for $db." -Level Output  
-						}
-					}  
-				}
-
-				# Set the copy destination folder to include the database name
-				if ($CopyDestinationFolder.EndsWith("\")) {
-					$DatabaseCopyDestinationFolder = "$CopyDestinationFolder$db"
-				}
-				else {
-					$DatabaseCopyDestinationFolder = "$CopyDestinationFolder\$db"
-				}
-				Write-Message -Message "Copy destination folder set to $DatabaseCopyDestinationFolder." -Level Verbose
-
-				# Check if the copy job name is set
-				if ($CopyJob) {
-					$DatabaseCopyJob = "$CopyJob_$SourceServerName_$db"
-				}
-				else {
-					$DatabaseCopyJob = "LSCopy_$SourceServerName_$db"                    
-				}
-				Write-Message -Message "Copy job name set to $DatabaseCopyJob" -Level Verbose
-
-				# Check if the copy job schedule name is set
-				if ($CopySchedule) {
-					$DatabaseCopySchedule = "$CopySchedule_$db"
-				}
-				else {
-					$DatabaseCopySchedule = "LSCopySchedule_$db"
-					Write-Message -Message "Copy job schedule name set to $DatabaseCopySchedule" -Level Verbose                    
-				}
-
-				# Check if the copy destination folder exists
-				Write-Message -Message "Testing database copy destination path $DatabaseCopyDestinationFolder" -Level Verbose
-				if ((Test-DbaSqlPath -Path $DatabaseCopyDestinationFolder -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
-					if ($PSCmdlet.ShouldProcess($DestinationServerName, "Creating copy destination folder on $DestinationServerName")) {
-						try {
-							Invoke-Command2 -Credential $DestinationCredential -ScriptBlock {
-								Write-Message -Message "Copy destination folder $DatabaseCopyDestinationFolder not found. Trying to create it.. ." -Level Verbose
-								New-Item -Path $DatabaseCopyDestinationFolder -ItemType Directory -Force:$Force -Credential $DestinationCredential | Out-Null
-							}
-						}
-						catch {
-							Stop-Function -Message "Something went wrong creating the database copy destination folder. `n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $DestinationServerName -Continue
-						}
-					}
-				}
-
-				# Check if the restore job name is set
-				if ($RestoreJob) {
-					$DatabaseRestoreJob = "$RestoreJob_$SourceServerName_$db"
-				}
-				else {
-					$DatabaseRestoreJob = "LSRestore_$DestinationServerName_$db"
-				}
-				Write-Message -Message "Restore job name set to $DatabaseRestoreJob" -Level Verbose
-
-				# Check if the restore job schedule name is set
-				if ($RestoreSchedule) {
-					$DatabaseRestoreSchedule = "$RestoreSchedule_$db"
-				}
-				else {
-					$DatabaseRestoreSchedule = "LSRestoreSchedule_$db"
-				}
-				Write-Message -Message "Restore job schedule name set to $DatabaseRestoreSchedule" -Level Verbose
-
-				# If the database needs to be backed up first
-				if ($PSCmdlet.ShouldProcess($SourceSqlInstance, "Backing up database $db")) {
-					if ($GenerateFullBackup) {
-						Write-Message -Message "Generating full backup." -Level Output
-						Write-Message -Message "Backing up database $db to $DatabaseBackupNetworkPath" -Level Output
-                    
-						$Timestamp = Get-Date -format "yyyyMMddHHmmss"
-
-						$LastBackup = Backup-DbaDatabase -SqlInstance $SourceSqlInstance `
-							-SqlCredential $SourceSqlCredential `
-							-BackupDirectory $DatabaseBackupNetworkPath `
-							-BackupFileName "FullBackup_$db_PreLogShipping_$Timestamp.bak" `
-							-Databases $db `
-							-Type Full 
-
-						Write-Message -Message "Backup completed." -Level Output
-
-						# Get the last full backup path
-						$FullBackupPath = $LastBackup.BackupPath  
-
-						Write-Message -Message "Backup is located at $FullBackupPath" -Level Verbose
-					}
-				}
-            
-				# Check of the MonitorServerSecurityMode value is of type string and set the integer value
-				if ($PrimaryMonitorServerSecurityMode -notin 0, 1) {
-					$PrimaryMonitorServerSecurityMode = switch ($PrimaryMonitorServerSecurityMode) {
-						"SQLSERVER" { 0 } "WINDOWS" { 1 } default { 1 }
-					}
-				}
-
-				# Check the primary monitor server
-				if ($Force -and (-not$PrimaryMonitorServer -or [string]$PrimaryMonitorServer -eq '' -or $PrimaryMonitorServer -eq $null)) {
-					Write-Message -Message "Setting monitor server for primary server to $SourceSqlInstance." -Level Output
-					$PrimaryMonitorServer = $SourceSqlInstance
-				}
-
-				# Check the PrimaryMonitorServerSecurityMode if it's SQL Server authentication
-				if ($PrimaryMonitorServerSecurityMode -eq 0) {
-					if ($PrimaryMonitorServerLogin) {
-						Stop-Function -Message "The PrimaryMonitorServerLogin cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
-					}
-
-					if ($PrimaryMonitorServerPassword) {
-						Stop-Function -Message "The PrimaryMonitorServerPassword cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $ -Continue
-					}
-				}
-
-				# Check of the SecondaryMonitorServerSecurityMode value is of type string and set the integer value
-				if ($SecondaryMonitorServerSecurityMode -notin 0, 1) {
-					$SecondaryMonitorServerSecurityMode = switch ($SecondaryMonitorServerSecurityMode) {
-						"SQLSERVER" { 0 } "WINDOWS" { 1 } default { 1 }
-					}
-				}
-
-				# Check the secondary monitor server
-				if ($Force -and (-not $SecondaryMonitorServer -or [string]$SecondaryMonitorServer -eq '' -or $SecondaryMonitorServer -eq $null)) {
-					Write-Message -Message "Setting secondary monitor server for $DestinationSqlInstance to $SourceSqlInstance." -Level Verbose
-					$SecondaryMonitorServer = $SourceSqlInstance
-				}
-
-				# Check the MonitorServerSecurityMode if it's SQL Server authentication
-				if ($SecondaryMonitorServerSecurityMode -eq 0) {
-					if ($SecondaryMonitorServerLogin) {
-						Stop-Function -Message "The SecondaryMonitorServerLogin cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
-					}
-
-					if ($SecondaryMonitorServerPassword) {
-						Stop-Function -Message "The SecondaryMonitorServerPassword cannot be empty when using SQL Server authentication." -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
-					}
-				}
-
-				# Now that all the checks have been done we can start with the fun stuff !
-
-				# Restore the full backup
-				if ($PSCmdlet.ShouldProcess($DestinationSqlInstance, "Restoring database $db to $SecondaryDatabase on $DestinationSqlInstance")) {
-					if ($GenerateFullBackup -or $UseExistingFullBackup) {
-						try {   
-							Write-Message -Message "Start database restore" -Level Output
-							if ($NoRecovery -or (-not $Standby)) {
-								if ($Force) {
-									Restore-DbaDatabase -SqlServer $DestinationSqlInstance `
-										-SqlCredential $DestinationSqlCredential `
-										-Path $FullBackupPath `
-										-DestinationFilePrefix $SecondaryDatabaseSuffix `
-										-DestinationDataDirectory $DatabaseRestoreDataFolder `
-										-DestinationLogDirectory $DatabaseRestoreLogFolder `
-										-DatabaseName $SecondaryDatabase `
-										-NoRecovery `
-										-WithReplace | Out-Null
-								}
-								else {
-									Restore-DbaDatabase -SqlServer $DestinationSqlInstance `
-										-SqlCredential $DestinationSqlCredential `
-										-Path $FullBackupPath `
-										-DestinationFilePrefix $SecondaryDatabaseSuffix `
-										-DestinationDataDirectory $DatabaseRestoreDataFolder `
-										-DestinationLogDirectory $DatabaseRestoreLogFolder `
-										-DatabaseName $SecondaryDatabase `
-										-NoRecovery | Out-Null
-								}
-							}
                         
-							# If the database needs to be in standby
-							if ($Standby) {
-								# Setup the path to the standby file
-								$StandbyFile = "$DatabaseCopyDestinationFolder\$SecondaryDatabase_RollbackUndo.bak"
+						# If the database needs to be in standby
+						if ($Standby) {
+							# Setup the path to the standby file
+							$StandbyFile = "$DatabaseCopyDestinationFolder\$SecondaryDatabase_RollbackUndo.bak"
 
-								if ($DestinationSqlCredential -ne $null) {
-									Restore-SqlDatabase -ServerInstance $DestinationSqlInstance `
-										-SqlCredential $DestinationSqlCredential `
-										-Database $SecondaryDatabase `
-										-BackupFile $FullBackupPath `
-										-ReplaceDatabase `
-										-StandbyFile $StandbyFile 
-								}
-								else {
-									<# 
+							if ($DestinationSqlCredential -ne $null) {
+								Restore-SqlDatabase -ServerInstance $DestinationSqlInstance `
+									-SqlCredential $DestinationSqlCredential `
+									-Database $SecondaryDatabase `
+									-BackupFile $FullBackupPath `
+									-ReplaceDatabase `
+									-StandbyFile $StandbyFile 
+							}
+							else {
+								<# 
                                     As soon as the Restore-SqlDatabase is able to restore to standby the code below needs to 
                                     be replaced with the supporting function from dbtools
                                     #>
                                 
-									# Create the backup device
-									$BackupDeviceItem = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $FullBackupPath, 'File'
+								# Create the backup device
+								$BackupDeviceItem = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem $FullBackupPath, 'File'
 
-									# Create the restore object
-									$Restore = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'
+								# Create the restore object
+								$Restore = New-Object 'Microsoft.SqlServer.Management.Smo.Restore'
 
-									# Set the properties of the restore object
-									$Restore.Database = $SecondaryDatabase
-									$Restore.Devices.Add($BackupDeviceItem)
-									$Restore.StandbyFile = $StandbyFile
+								# Set the properties of the restore object
+								$Restore.Database = $SecondaryDatabase
+								$Restore.Devices.Add($BackupDeviceItem)
+								$Restore.StandbyFile = $StandbyFile
 
-									# If force is needed replace the database
-									if ($Force) {
-										$Restore.ReplaceDatabase = 1
+								# If force is needed replace the database
+								if ($Force) {
+									$Restore.ReplaceDatabase = 1
+								}
+
+								# Setup the physical file name
+								$PhysicalFileName = $SecondaryDatabase
+
+								# Number to use in case of multiple data files
+								$DataFileNumber = 0
+
+								# Loop through the files
+								foreach ($File in $Restore.ReadFileList($DestinationSqlInstance)) {
+									# Create the relocate object to place the files in somewhere else
+									$RelocateFile = New-Object 'Microsoft.SqlServer.Management.Smo.RelocateFile'
+									$RelocateFile.LogicalFileName = $File.LogicalName
+
+									# Use the number in the physical file name if there are multiple data files
+									if ($DataFileNumber -gt 1) {
+										$PhysicalFileName += "_$DataFileNumber.ndf"
+									}
+									else {
+										$PhysicalFileName += ".mdf"
+									}
+                                    
+									# Check the type of the file
+									if ($File.Type -eq 'D') {
+
+										$RelocateFile.PhysicalFileName = "$DatabaseRestoreDataFolder\$PhysicalFileName"
+
+										$DataFileNumber ++;
+									}
+									else {
+										$RelocateFile.PhysicalFileName = "$DatabaseRestoreLogFolder\$SecondaryDatabase.ldf"
 									}
 
-									# Setup the physical file name
-									$PhysicalFileName = $SecondaryDatabase
-
-									# Number to use in case of multiple data files
-									$DataFileNumber = 0
-
-									# Loop through the files
-									foreach ($File in $Restore.ReadFileList($DestinationSqlInstance)) {
-										# Create the relocate object to place the files in somewhere else
-										$RelocateFile = New-Object 'Microsoft.SqlServer.Management.Smo.RelocateFile'
-										$RelocateFile.LogicalFileName = $File.LogicalName
-
-										# Use the number in the physical file name if there are multiple data files
-										if ($DataFileNumber -gt 1) {
-											$PhysicalFileName += "_$DataFileNumber.ndf"
-										}
-										else {
-											$PhysicalFileName += ".mdf"
-										}
-                                    
-										# Check the type of the file
-										if ($File.Type -eq 'D') {
-
-											$RelocateFile.PhysicalFileName = "$DatabaseRestoreDataFolder\$PhysicalFileName"
-
-											$DataFileNumber ++;
-										}
-										else {
-											$RelocateFile.PhysicalFileName = "$DatabaseRestoreLogFolder\$SecondaryDatabase.ldf"
-										}
-
-										# Add the relocate objects to the restore
-										$Restore.RelocateFiles.Add($RelocateFile) | Out-Null
-									}    
-									# Execute the restore
-									$Restore.SqlRestore($DestinationSqlInstance)
+									# Add the relocate objects to the restore
+									$Restore.RelocateFiles.Add($RelocateFile) | Out-Null
+								}    
+								# Execute the restore
+								$Restore.SqlRestore($DestinationSqlInstance)
                                 
-								}
 							}
 						}
-						catch {
-							Stop-Function -Message "Something went wrong restoring the secondary database.`n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
-						}
+					}
+					catch {
+						Stop-Function -Message "Something went wrong restoring the secondary database.`n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+					}
                     
-						Write-Message -Message "Restore completed." -Level Output
-					}
+					Write-Message -Message "Restore completed." -Level Output
 				}
-            
-				#region Set up log shipping on the primary instance
-				# Set up log shipping on the primary instance
-				if ($PSCmdlet.ShouldProcess($SourceSqlInstance, "Configuring logshipping for primary database $db on $SourceSqlInstance")) {
-					try {
-
-						Write-Message -Message "Configuring logshipping for primary database" -Level Output
-
-						New-DbaLogShippingPrimaryDatabase -SqlInstance $SourceSqlInstance `
-							-SqlCredential $SourceSqlCredential `
-							-Database $db `
-							-BackupDirectory $DatabaseBackupLocalPath `
-							-BackupJob $DatabaseBackupJob `
-							-BackupRetention $BackupRetention `
-							-BackupShare $DatabaseBackupNetworkPath `
-							-BackupThreshold $BackupThreshold `
-							-CompressBackup:$BackupCompression `
-							-HistoryRetention $HistoryRetention `
-							-MonitorServer $PrimaryMonitorServer `
-							-MonitorServerSecurityMode $PrimaryMonitorServerSecurityMode `
-							-MonitorCredential $PrimaryMonitorCredential `
-							-ThresholdAlertEnabled:$PrimaryThresholdAlertEnabled `
-							-Force:$Force 
-                        
-						# Check if the backup job needs to be enabled or disabled
-						if ($BackupScheduleDisabled) {
-							Set-DbaAgentJob -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Job $DatabaseBackupJob -Disabled
-							Write-Message -Message "Disabling backup job $DatabaseBackupJob" -Level Output
-						}
-						else {
-							Set-DbaAgentJob -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Job $DatabaseBackupJob -Enabled
-							Write-Message -Message "Enabling backup job $DatabaseBackupJob" -Level Output
-						}
-
-						Write-Message -Message "Create backup job schedule $DatabaseBackupSchedule" -Level Output
-
-						$BackupJobSchedule = New-DbaAgentSchedule -SqlInstance $SourceSqlInstance `
-							-SqlCredential $SourceSqlCredential `
-							-Job $DatabaseBackupJob `
-							-Schedule $DatabaseBackupSchedule `
-							-FrequencyType $BackupScheduleFrequencyType `
-							-FrequencyInterval $BackupScheduleFrequencyInterval `
-							-FrequencySubdayType $BackupScheduleFrequencySubdayType `
-							-FrequencySubdayInterval $BackupScheduleFrequencySubdayInterval `
-							-FrequencyRelativeInterval $BackupScheduleFrequencyRelativeInterval `
-							-FrequencyRecurrenceFactor $BackupScheduleFrequencyRecurrenceFactor `
-							-StartDate $BackupScheduleStartDate `
-							-EndDate $BackupScheduleEndDate `
-							-StartTime $BackupScheduleStartTime `
-							-EndTime $BackupScheduleEndTime `
-							-Force:$Force
-                  
-						Write-Message -Message "Configuring logshipping from primary to secondary database." -Level Output
-
-						New-DbaLogShippingPrimarySecondary -SqlInstance $SourceSqlInstance `
-							-SqlCredential $SourceSqlCredential `
-							-PrimaryDatabase $db `
-							-SecondaryDatabase $SecondaryDatabase `
-							-SecondaryServer $DestinationSqlInstance `
-							-SecondarySqlCredential $DestinationSqlCredential
-					}
-					catch {
-						Stop-Function -Message "Something went wrong setting up log shipping for primary instance.`n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
-					}
-				}
-				#endregion Set up log shipping on the primary instance
-
-				#region Set up log shipping on the secondary instance
-				# Set up log shipping on the secondary instance
-				if ($PSCmdlet.ShouldProcess($DestinationSqlInstance, "Configuring logshipping for secondary database $SecondaryDatabase on $DestinationSqlInstance")) {
-					try {
-
-						Write-Message -Message "Configuring logshipping from secondary database $SecondaryDatabase to primary database $db." -Level Output
-
-						New-DbaLogShippingSecondaryPrimary -SqlInstance $DestinationSqlInstance `
-							-SqlCredential $DestinationSqlCredential `
-							-BackupSourceDirectory $DatabaseBackupNetworkPath `
-							-BackupDestinationDirectory $DatabaseCopyDestinationFolder `
-							-CopyJob $DatabaseCopyJob `
-							-FileRetentionPeriod $BackupRetention `
-							-MonitorServer $SecondaryMonitorServer `
-							-MonitorServerSecurityMode $SecondaryMonitorServerSecurityMode `
-							-MonitorCredential $SecondaryMonitorCredential `
-							-PrimaryServer $SourceSqlInstance `
-							-PrimaryDatabase $db `
-							-RestoreJob $DatabaseRestoreJob `
-							-Force:$Force
-
-						Write-Message -Message "Create copy job schedule $DatabaseCopySchedule" -Level Output
-
-						$CopyJobSchedule = New-DbaAgentSchedule -SqlInstance $DestinationSqlInstance `
-							-SqlCredential $DestinationSqlCredential `
-							-Job $DatabaseCopyJob `
-							-Schedule $DatabaseCopySchedule `
-							-FrequencyType $CopyScheduleFrequencyType `
-							-FrequencyInterval $CopyScheduleFrequencyInterval `
-							-FrequencySubdayType $CopyScheduleFrequencySubdayType `
-							-FrequencySubdayInterval $CopyScheduleFrequencySubdayInterval `
-							-FrequencyRelativeInterval $CopyScheduleFrequencyRelativeInterval `
-							-FrequencyRecurrenceFactor $CopyScheduleFrequencyRecurrenceFactor `
-							-StartDate $CopyScheduleStartDate `
-							-EndDate $CopyScheduleEndDate `
-							-StartTime $CopyScheduleStartTime `
-							-EndTime $CopyScheduleEndTime `
-							-Force:$Force
-
-						Write-Message -Message "Create restore job schedule $DatabaseRestoreSchedule" -Level Output
-
-						$RestoreJobSchedule = New-DbaAgentSchedule -SqlInstance $DestinationSqlInstance `
-							-SqlCredential $DestinationSqlCredential `
-							-Job $DatabaseRestoreJob `
-							-Schedule $DatabaseRestoreSchedule `
-							-FrequencyType $RestoreScheduleFrequencyType `
-							-FrequencyInterval $RestoreScheduleFrequencyInterval `
-							-FrequencySubdayType $RestoreScheduleFrequencySubdayType `
-							-FrequencySubdayInterval $RestoreScheduleFrequencySubdayInterval `
-							-FrequencyRelativeInterval $RestoreScheduleFrequencyRelativeInterval `
-							-FrequencyRecurrenceFactor $RestoreScheduleFrequencyRecurrenceFactor `
-							-StartDate $RestoreScheduleStartDate `
-							-EndDate $RestoreScheduleEndDate `
-							-StartTime $RestoreScheduleStartTime `
-							-EndTime $RestoreScheduleEndTime `
-							-Force:$Force
-
-						Write-Message -Message "Configuring logshipping for secondary database." -Level Output
-
-						New-DbaLogShippingSecondaryDatabase -SqlInstance $DestinationSqlInstance `
-							-SqlCredential $DestinationSqlCredential `
-							-SecondaryDatabase $SecondaryDatabase `
-							-PrimaryServer $SourceSqlInstance `
-							-PrimaryDatabase $db `
-							-RestoreDelay $RestoreDelay `
-							-RestoreMode $DatabaseStatus `
-							-DisconnectUsers:$DisconnectUsers `
-							-RestoreThreshold $RestoreThreshold `
-							-ThresholdAlertEnabled:$SecondaryThresholdAlertEnabled `
-							-HistoryRetention $HistoryRetention
-
-						# Check if the copy job needs to be enabled or disabled
-						if ($CopyScheduleDisabled) {
-							Set-DbaAgentJob -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Disabled
-						}
-						else {
-							Set-DbaAgentJob -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Enabled    
-						}
-
-						# Check if the restore job needs to be enabled or disabled
-						if ($RestoreScheduleDisabled) {
-							Set-DbaAgentJob -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseRestoreJob -Disabled
-						}
-						else {
-							Set-DbaAgentJob -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseRestoreJob -Enabled    
-						}
-
-					}
-					catch {
-						Stop-Function -Message "Something went wrong setting up log shipping for secondary instance.`n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $DestinationSqlInstance -Continue
-					}
-				}
-				#endregion Set up log shipping on the secondary instance
-
-				Write-Message -Message "Completed configuring log shipping for database $db" -Level Output
 			}
+            
+			#region Set up log shipping on the primary instance
+			# Set up log shipping on the primary instance
+			if ($PSCmdlet.ShouldProcess($SourceSqlInstance, "Configuring logshipping for primary database $db on $SourceSqlInstance")) {
+				try {
 
-		}
-	}
+					Write-Message -Message "Configuring logshipping for primary database" -Level Output
+
+					New-DbaLogShippingPrimaryDatabase -SqlInstance $SourceSqlInstance `
+						-SqlCredential $SourceSqlCredential `
+						-Database $($db.Name) `
+						-BackupDirectory $DatabaseBackupLocalPath `
+						-BackupJob $DatabaseBackupJob `
+						-BackupRetention $BackupRetention `
+						-BackupShare $DatabaseBackupNetworkPath `
+						-BackupThreshold $BackupThreshold `
+						-CompressBackup:$BackupCompression `
+						-HistoryRetention $HistoryRetention `
+						-MonitorServer $PrimaryMonitorServer `
+						-MonitorServerSecurityMode $PrimaryMonitorServerSecurityMode `
+						-MonitorCredential $PrimaryMonitorCredential `
+						-ThresholdAlertEnabled:$PrimaryThresholdAlertEnabled `
+						-Force:$Force 
+                        
+					# Check if the backup job needs to be enabled or disabled
+					if ($BackupScheduleDisabled) {
+						Set-DbaAgentJob -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Job $DatabaseBackupJob -Disabled
+						Write-Message -Message "Disabling backup job $DatabaseBackupJob" -Level Output
+					}
+					else {
+						Set-DbaAgentJob -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Job $DatabaseBackupJob -Enabled
+						Write-Message -Message "Enabling backup job $DatabaseBackupJob" -Level Output
+					}
+
+					Write-Message -Message "Create backup job schedule $DatabaseBackupSchedule" -Level Output
+
+					$BackupJobSchedule = New-DbaAgentSchedule -SqlInstance $SourceSqlInstance `
+						-SqlCredential $SourceSqlCredential `
+						-Job $DatabaseBackupJob `
+						-Schedule $DatabaseBackupSchedule `
+						-FrequencyType $BackupScheduleFrequencyType `
+						-FrequencyInterval $BackupScheduleFrequencyInterval `
+						-FrequencySubdayType $BackupScheduleFrequencySubdayType `
+						-FrequencySubdayInterval $BackupScheduleFrequencySubdayInterval `
+						-FrequencyRelativeInterval $BackupScheduleFrequencyRelativeInterval `
+						-FrequencyRecurrenceFactor $BackupScheduleFrequencyRecurrenceFactor `
+						-StartDate $BackupScheduleStartDate `
+						-EndDate $BackupScheduleEndDate `
+						-StartTime $BackupScheduleStartTime `
+						-EndTime $BackupScheduleEndTime `
+						-Force:$Force
+                  
+					Write-Message -Message "Configuring logshipping from primary to secondary database." -Level Output
+
+					New-DbaLogShippingPrimarySecondary -SqlInstance $SourceSqlInstance `
+						-SqlCredential $SourceSqlCredential `
+						-PrimaryDatabase $($db.Name) `
+						-SecondaryDatabase $SecondaryDatabase `
+						-SecondaryServer $DestinationSqlInstance `
+						-SecondarySqlCredential $DestinationSqlCredential
+				}
+				catch {
+					Stop-Function -Message "Something went wrong setting up log shipping for primary instance.`n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $SourceSqlInstance -Continue
+				}
+			}
+			#endregion Set up log shipping on the primary instance
+
+			#region Set up log shipping on the secondary instance
+			# Set up log shipping on the secondary instance
+			if ($PSCmdlet.ShouldProcess($DestinationSqlInstance, "Configuring logshipping for secondary database $SecondaryDatabase on $DestinationSqlInstance")) {
+				try {
+
+					Write-Message -Message "Configuring logshipping from secondary database $SecondaryDatabase to primary database $db." -Level Output
+
+					New-DbaLogShippingSecondaryPrimary -SqlInstance $DestinationSqlInstance `
+						-SqlCredential $DestinationSqlCredential `
+						-BackupSourceDirectory $DatabaseBackupNetworkPath `
+						-BackupDestinationDirectory $DatabaseCopyDestinationFolder `
+						-CopyJob $DatabaseCopyJob `
+						-FileRetentionPeriod $BackupRetention `
+						-MonitorServer $SecondaryMonitorServer `
+						-MonitorServerSecurityMode $SecondaryMonitorServerSecurityMode `
+						-MonitorCredential $SecondaryMonitorCredential `
+						-PrimaryServer $SourceSqlInstance `
+						-PrimaryDatabase $($db.Name) `
+						-RestoreJob $DatabaseRestoreJob `
+						-Force:$Force
+
+					Write-Message -Message "Create copy job schedule $DatabaseCopySchedule" -Level Output
+
+					$CopyJobSchedule = New-DbaAgentSchedule -SqlInstance $DestinationSqlInstance `
+						-SqlCredential $DestinationSqlCredential `
+						-Job $DatabaseCopyJob `
+						-Schedule $DatabaseCopySchedule `
+						-FrequencyType $CopyScheduleFrequencyType `
+						-FrequencyInterval $CopyScheduleFrequencyInterval `
+						-FrequencySubdayType $CopyScheduleFrequencySubdayType `
+						-FrequencySubdayInterval $CopyScheduleFrequencySubdayInterval `
+						-FrequencyRelativeInterval $CopyScheduleFrequencyRelativeInterval `
+						-FrequencyRecurrenceFactor $CopyScheduleFrequencyRecurrenceFactor `
+						-StartDate $CopyScheduleStartDate `
+						-EndDate $CopyScheduleEndDate `
+						-StartTime $CopyScheduleStartTime `
+						-EndTime $CopyScheduleEndTime `
+						-Force:$Force
+
+					Write-Message -Message "Create restore job schedule $DatabaseRestoreSchedule" -Level Output
+
+					$RestoreJobSchedule = New-DbaAgentSchedule -SqlInstance $DestinationSqlInstance `
+						-SqlCredential $DestinationSqlCredential `
+						-Job $DatabaseRestoreJob `
+						-Schedule $DatabaseRestoreSchedule `
+						-FrequencyType $RestoreScheduleFrequencyType `
+						-FrequencyInterval $RestoreScheduleFrequencyInterval `
+						-FrequencySubdayType $RestoreScheduleFrequencySubdayType `
+						-FrequencySubdayInterval $RestoreScheduleFrequencySubdayInterval `
+						-FrequencyRelativeInterval $RestoreScheduleFrequencyRelativeInterval `
+						-FrequencyRecurrenceFactor $RestoreScheduleFrequencyRecurrenceFactor `
+						-StartDate $RestoreScheduleStartDate `
+						-EndDate $RestoreScheduleEndDate `
+						-StartTime $RestoreScheduleStartTime `
+						-EndTime $RestoreScheduleEndTime `
+						-Force:$Force
+
+					Write-Message -Message "Configuring logshipping for secondary database." -Level Output
+
+					New-DbaLogShippingSecondaryDatabase -SqlInstance $DestinationSqlInstance `
+						-SqlCredential $DestinationSqlCredential `
+						-SecondaryDatabase $SecondaryDatabase `
+						-PrimaryServer $SourceSqlInstance `
+						-PrimaryDatabase $($db.Name) `
+						-RestoreDelay $RestoreDelay `
+						-RestoreMode $DatabaseStatus `
+						-DisconnectUsers:$DisconnectUsers `
+						-RestoreThreshold $RestoreThreshold `
+						-ThresholdAlertEnabled:$SecondaryThresholdAlertEnabled `
+						-HistoryRetention $HistoryRetention
+
+					# Check if the copy job needs to be enabled or disabled
+					if ($CopyScheduleDisabled) {
+						Set-DbaAgentJob -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Disabled
+					}
+					else {
+						Set-DbaAgentJob -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseCopyJob -Enabled    
+					}
+
+					# Check if the restore job needs to be enabled or disabled
+					if ($RestoreScheduleDisabled) {
+						Set-DbaAgentJob -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseRestoreJob -Disabled
+					}
+					else {
+						Set-DbaAgentJob -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Job $DatabaseRestoreJob -Enabled    
+					}
+
+				}
+				catch {
+					Stop-Function -Message "Something went wrong setting up log shipping for secondary instance.`n$($_.Exception.Message)" -InnerErrorRecord $_ -Target $DestinationSqlInstance -Continue
+				}
+			}
+			#endregion Set up log shipping on the secondary instance
+
+			Write-Message -Message "Completed configuring log shipping for database $db" -Level Output
+
+		} # for each database
+	} # end process
 
 	end {
 		Write-Message -Message "Finished setting up log shipping." -Level Verbose
