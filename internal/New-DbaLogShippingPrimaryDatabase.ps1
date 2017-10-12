@@ -232,7 +232,7 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 	$Query = "
         DECLARE @LS_BackupJobId AS uniqueidentifier;
 		DECLARE @LS_PrimaryId AS uniqueidentifier;
-        EXEC master.dbo.sp_add_log_shipping_primary_database 
+        EXEC master.sys.sp_add_log_shipping_primary_database 
             @database = N'$Database'
             ,@backup_directory = N'$BackupDirectory'
             ,@backup_share = N'$BackupShare'
@@ -276,8 +276,8 @@ New-DbaLogShippingPrimaryDatabase -SqlInstance sql1 -Database DB1 -BackupDirecto
 			$server.Query($Query)
 		}
 		catch {
-			Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$($Query)" -InnerErrorRecord $_ -Target $SqlInstance
-			return
+			Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
+			Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$($Query)" -ErrorRecord $_ -Target $SqlInstance -Continue
 		}
 	}
 
