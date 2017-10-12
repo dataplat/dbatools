@@ -55,15 +55,18 @@ Returns SQL Instance properties on sql2 and sql4
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-			$props = $server.information.properties
-      foreach ($prop in $props) {
-        Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
-        Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-        Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-				Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'Information'
-				Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Name, Value, PropertyType
-      }
-      $props = $server.useroptions.properties
+			try {
+				$props = $server.information.properties
+				foreach ($prop in $props) {
+					Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+					Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+					Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+					Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'Information'
+					Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Name, Value, PropertyType
+				}
+			}
+			catch { } # SMO bug sometimes complains w/e
+			$props = $server.useroptions.properties
 			foreach ($prop in $props) {
 				Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
 				Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
@@ -71,7 +74,7 @@ Returns SQL Instance properties on sql2 and sql4
 				Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name PropertyType -Value 'UserOption'
 				Select-DefaultView -InputObject $prop -Property ComputerName, InstanceName, SqlInstance, Name, Value, PropertyType
 			}
-      $props = $server.settings.properties
+			$props = $server.settings.properties
 			foreach ($prop in $props) {
 				Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name ComputerName -Value $server.NetName
 				Add-Member -Force -InputObject $prop -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
