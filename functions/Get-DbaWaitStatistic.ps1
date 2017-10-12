@@ -813,6 +813,7 @@
 		INNER JOIN [Waits] AS [W2]
 		    ON [W2].[RowNum] <= [W1].[RowNum]
 		GROUP BY [W1].[RowNum] HAVING SUM ([W2].[Percentage]) - MAX([W1].[Percentage]) < $Threshold"
+		Write-Warning $sql
 		
 	}
 	process {
