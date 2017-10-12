@@ -63,6 +63,11 @@ namespace Sqlcollaborative.Dbatools.Computer
         /// </summary>
         public DriveType Type { get; set; }
 
+        /// <summary>
+        /// Whether the drive is a sql disk. Nullable, because it is an optional property and may not always be included, thus a third state is necessary.
+        /// </summary>
+        public Nullable<bool> IsSqlDisk { get; set; }
+
         #region Legacy Properties
         /// <summary>
         /// The computer that was scanned. Legacy-Name
