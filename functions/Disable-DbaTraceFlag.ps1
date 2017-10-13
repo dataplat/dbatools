@@ -58,30 +58,38 @@ function Disable-DbaTraceFlag {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$current = Get-DbaTraceFlag -SqlInstance $server
+			$current = Get-DbaTraceFlag -SqlInstance $server -Silent
 			
 			foreach ($tf in $TraceFlag) {
-				
+				$TraceFlagInfo = [pscustomobject]@{
+					SourceServer    = $server.NetName
+					InstanceName 	= $server.ServiceName
+					SqlInstance 	= $server.DomainInstanceName
+					TraceFlag	    = $tf
+					Status          = $null
+					Notes           = $null
+					DateTime        = [DbaDateTime](Get-Date)
+				}
 				if ($tf -notin $current.TraceFlag) {
-					Write-Message -Level Warning -Message "Trace Flag is $tf not currently enabled on $instance"
+					$TraceFlagInfo.Status = 'Skipped'
+					$TraceFlagInfo.Notes = "Trace Flag is not running."
+					$TraceFlagInfo
+					Write-Message -Level Warning -Message "Trace Flag $tf is not currently running on $instance"
 					continue
 				}
 				
 				try {
 					$query = "DBCC TRACEOFF ($tf, -1)"
 					$server.Query($query)
-					
-					[pscustomobject]@{
-						ComputerName	 = $server.NetName
-						InstanceName	 = $server.ServiceName
-						SqlInstance	     = $server.DomainInstanceName
-						TraceFlag	     = $tf
-						Status		     = "Disabled"
-					}
 				}
 				catch {
+					$TraceFlagInfo.Status = "Failed"
+					$TraceFlagInfo.Notes = $_.Exception.Message
+					$TraceFlagInfo
 					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
 				}
+				$TraceFlagInfo.Status = "Successful"
+				$TraceFlagInfo
 			}
 		}
 	}
