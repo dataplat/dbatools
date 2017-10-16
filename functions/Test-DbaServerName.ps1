@@ -64,7 +64,7 @@ function Test-DbaServerName {
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[DbaInstance[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
 		[switch]$Detailed,
 		[switch]$NoWarning,
@@ -101,7 +101,7 @@ function Test-DbaServerName {
 				$serverInstanceName = "$netname\$instance"
 			}
 
-			$serverinfo = [PSCustomObject]@{
+			$serverInfo = [PSCustomObject]@{
 				ComputerName   = $server.NetName
 				InstanceName   = $server.ServiceName
 				SqlInstance    = $server.DomainInstanceName
@@ -114,16 +114,17 @@ function Test-DbaServerName {
 
 			$reasons = @()
 			$serverName = "SQL Server Reporting Services ($instance)"
-			$netBiosName = $server.ComputerNamePhysicalNetBIOS
-			Write-Message -Level Verbose -Message  "Checking for $serverName on $netBiosName"
-			$rs = $null
+#			$netBiosName = $server.ComputerNamePhysicalNetBIOS
 
+			Write-Message -Level Verbose -Message "Checking for $serverName on $netBiosName"
+			$rs = $null
 			try {
-				$rs = Get-Service -ComputerName $netBiosName -DisplayName $serverName -ErrorAction SilentlyContinue
+				$resolved = Resolve-DbaNetworkName -ComputerName $instance.ComputerName
+				$rs = Get-DbaSqlService Get-Service -ComputerName $netBiosName -DisplayName $serverName -ErrorAction SilentlyContinue
 			}
 			catch {
 				if ($NoWarning -eq $false) {
-					Write-Message -Level Warning -Message  "Can't contact $netBiosName using Get-Service. This means the script will not be able to automatically restart SQL services."
+					Write-Message -Level Warning -Message  "Can't contact $netBiosName using Get-Service. This means the script will not be able to automatically restart SQL Services."
 				}
 			}
 
@@ -134,56 +135,56 @@ function Test-DbaServerName {
 				else {
 					$rstext = "Reporting Services ($instance) exists. When it is started again, it must be updated."
 				}
-				$serverinfo.Warnings = $rstext
+				$serverInfo.Warnings = $rstext
 			}
 			else {
-				$serverinfo.Warnings = "N/A"
+				$serverInfo.Warnings = "N/A"
 			}
 
 			# check for mirroring
-			$mirroreddb = $server.Databases | Where-Object { $_.IsMirroringEnabled -eq $true }
+			$mirroredDb = $server.Databases | Where-Object { $_.IsMirroringEnabled -eq $true }
 
-			Write-Debug "Found the following mirrored dbs: $($mirroreddb.name)"
+			Write-Debug "Found the following mirrored dbs: $($mirroredDb.Name)"
 
-			if ($mirroreddb.Length -gt 0) {
-				$dbs = $mirroreddb.name -join ", "
+			if ($mirroredDb.Length -gt 0) {
+				$dbs = $mirroredDb.Name -join ", "
 				$reasons += "Databases are being mirrored: $dbs"
 			}
 
 			# check for replication
-			$sql = "select name from sys.databases where is_published = 1 or is_subscribed =1 or is_distributor = 1"
-			Write-Debug $sql
-			$replicatedb = $server.ConnectionContext.ExecuteWithResults($sql).Tables
+			$sql = "SELECT name FROM sys.databases WHERE is_published = 1 OR is_subscribed = 1 OR is_distributor = 1"
+			Write-Message -Level Debug -Message "SQL Statement: $sql"
+			$replicatedDb = $server.Query($sql)
 
-			if ($replicatedb.name.Length -gt 0) {
-				$dbs = $replicatedb.name -join ", "
-				$reasons += "Databases are involved in replication: $dbs"
+			if ($replicatedDb.Count -gt 0) {
+				$dbs = $replicatedDb.Name -join ", "
+				$reasons += "Database(s) are involved in replication: $dbs"
 			}
 
 			# check for even more replication
-			$sql = "select srl.remote_name as RemoteLoginName from sys.remote_logins srl join sys.sysservers sss on srl.server_id = sss.srvid"
-			Write-Debug $sql
-			$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables
+			$sql = "SELECT srl.remote_name as RemoteLoginName FROM sys.remote_logins srl JOIN sys.sysservers sss ON srl.server_id = sss.srvid"
+			Write-Message -Level Debug -Message "SQL Statement: $sql"
+			$results = $server.Query($sql)
 
-			if ($results.RemoteLoginName.Length -gt 0) {
-				$remotelogins = $results.RemoteLoginName -join ", "
-				$reasons += "Remote logins still exist: $remotelogins"
+			if ($results.RemoteLoginName.Count -gt 0) {
+				$remoteLogins = $results.RemoteLoginName -join ", "
+				$reasons += "Remote logins still exist: $remoteLogins"
 			}
 
 			if ($reasons.Length -gt 0) {
-				$serverinfo.Updatable = $false
-				$serverinfo.Blockers = $reasons
+				$serverInfo.Updatable = $false
+				$serverInfo.Blockers = $reasons
 			}
 			else {
-				$serverinfo.Updatable = $true
-				$serverinfo.Blockers = "N/A"
+				$serverInfo.Updatable = $true
+				$serverInfo.Blockers = "N/A"
 			}
 
 			if ($detailed) {
-				$serverinfo
+				$serverInfo
 			}
 			else {
-				$serverinfo | Select-DefaultView -ExcludeProperty Warnings, Blockers
+				Select-DefaultView -InputObject $serverInfo -ExcludeProperty Warnings, Blockers
 			}
 		}
 	}
