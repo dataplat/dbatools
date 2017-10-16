@@ -157,7 +157,7 @@ function Test-DbaIdentityUsage {
 			$dbs = $server.Databases
 
 			if ($Database) {
-				$dbs = $dbs | Where-Object {$Database -contains $_.Name}
+				$dbs = $dbs | Where-Object Name -In $Database
 			}
 
 			if ($ExcludeDatabase) {
@@ -165,17 +165,24 @@ function Test-DbaIdentityUsage {
 			}
 
 			if ($ExcludeSystemDb) {
-				$dbs = $dbs | Where-Object IsSystemObject -eq $false
+				$dbs = $dbs | Where-Object IsSystemObject -EQ $false
 			}
 
 			foreach ($db in $dbs) {
 				Write-Message -Level Verbose -Message "Processing $db on $instance"
 
 				if ($db.IsAccessible -eq $false) {
-					Stop-Function -Message "The database $db is not accessible. Skipping database." -Continue
+					Stop-Function -Message "The database $db is not accessible. Skipping." -Continue
 				}
 
-				foreach ($row in $db.ExecuteWithResults($sql).Tables[0]) {
+				try {
+					$results = $db.Query($sql)
+				}
+				catch {
+					Stop-Function -Message "Error capturing data on $db" -Target $instance -ErrorRecord $_ -Exception $_.Exception -Continue
+				}
+
+				foreach ($row in $results) {
 					if ($row.PercentUsed -eq [System.DBNull]::Value) {
 						continue
 					}
@@ -195,7 +202,7 @@ function Test-DbaIdentityUsage {
 							MaxNumberRows  = $row.MaxNumberRows
 							NumberOfUses   = $row.NumberOfUses
 							PercentUsed    = $row.PercentUsed
-						}
+						} | Select-DefaultView -Exclude MaxNumberRows, NumberOfUses
 					}
 				}
 			}
