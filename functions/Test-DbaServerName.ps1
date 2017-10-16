@@ -121,10 +121,10 @@ function Test-DbaServerName {
 			$rs = $null
 			if ($SkipSsrs -eq $false -or $NoWarning -eq $false) {
 				try {
-					$rs = Get-DbaSqlService -ComputerName Whatever -Instance $server.ServiceName -Type SSRS -Silent -WarningAction Stop
+					$rs = Get-DbaSqlService -ComputerName $instance.ComputerName -Instance $server.ServiceName -Type SSRS -Silent -WarningAction Stop
 				}
 				catch {
-					Write-Message -Level Warning -Message  "Unable to pull information on $ssrsService. This means the script will not be able to automatically restart SQL Services." -ErrorRecord $_ -Target $instance
+					Write-Message -Level Warning -Message  "Unable to pull information on $ssrsService." -ErrorRecord $_ -Target $instance
 				}
 			}
 
