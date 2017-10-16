@@ -74,6 +74,7 @@ function Test-DbaIdentityUsage {
 	)
 
 	begin {
+		Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NoSystemDb
 
 		$sql = ";WITH CT_DT AS
 		(
