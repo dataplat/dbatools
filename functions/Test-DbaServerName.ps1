@@ -27,8 +27,8 @@ function Test-DbaServerName {
 		.PARAMETER Detailed
 			If this switch is enabled, additional details are returned including whether the server name is updatable. If the server name is not updatable, the reason why will be returned.
 
-		.PARAMETER NoWarning
-			If this switch is enabled, no warning will be displayed if SQL Server Reporting Services can't be checked due to a failure to connect via Get-Service.
+		.PARAMETER SkipSsrs
+			If this switch is enabled, checking for SQL Server Reporting Services will be skipped.
 
 		.PARAMETER Silent
 			Use this switch to disable any kind of verbose messages
@@ -67,12 +67,14 @@ function Test-DbaServerName {
 		[DbaInstance[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
 		[switch]$Detailed,
-		[switch]$NoWarning,
+		[Alias("NoWarning")]
+		[switch]$SkipSsrs,
 		[switch]$Silent
 	)
 
 	begin {
 		Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
+		Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NoWarning
 	}
 	process {
 
@@ -113,27 +115,25 @@ function Test-DbaServerName {
 			}
 
 			$reasons = @()
-			$serverName = "SQL Server Reporting Services ($instance)"
-#			$netBiosName = $server.ComputerNamePhysicalNetBIOS
+			$ssrsService = "SQL Server Reporting Services ($instance)"
 
 			Write-Message -Level Verbose -Message "Checking for $serverName on $netBiosName"
 			$rs = $null
-			try {
-				$resolved = Resolve-DbaNetworkName -ComputerName $instance.ComputerName
-				$rs = Get-DbaSqlService Get-Service -ComputerName $netBiosName -DisplayName $serverName -ErrorAction SilentlyContinue
-			}
-			catch {
-				if ($NoWarning -eq $false) {
-					Write-Message -Level Warning -Message  "Can't contact $netBiosName using Get-Service. This means the script will not be able to automatically restart SQL Services."
+			if ($SkipSsrs -eq $false -or $NoWarning -eq $false) {
+				try {
+					$rs = Get-DbaSqlService -ComputerName Whatever -Instance $server.ServiceName -Type SSRS -Silent -WarningAction Stop
+				}
+				catch {
+					Write-Message -Level Warning -Message  "Unable to pull information on $ssrsService. This means the script will not be able to automatically restart SQL Services." -ErrorRecord $_ -Target $instance
 				}
 			}
 
-			if ($rs.Length -gt 0) {
-				if ($rs.Status -eq 'Running') {
-					$rstext = "Reporting Services ($instance) must be stopped and updated."
+			if ($rs -ne $null -or $rs.Count -gt 0) {
+				if ($rs.State -eq 'Running') {
+					$rstext = "$ssrsService must be stopped and updated."
 				}
 				else {
-					$rstext = "Reporting Services ($instance) exists. When it is started again, it must be updated."
+					$rstext = "$ssrsService exists. When it is started again, it must be updated."
 				}
 				$serverInfo.Warnings = $rstext
 			}
