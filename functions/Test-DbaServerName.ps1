@@ -15,7 +15,7 @@ function Test-DbaServerName {
 		.PARAMETER SqlInstance
 			The SQL Server that you're connecting to.
 
-		.PARAMETER Credential
+		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$scred = Get-Credential, then pass $scred object to the -Credential parameter.
@@ -30,8 +30,11 @@ function Test-DbaServerName {
 		.PARAMETER NoWarning
 			If this switch is enabled, no warning will be displayed if SQL Server Reporting Services can't be checked due to a failure to connect via Get-Service.
 
+		.PARAMETER Silent
+			Use this switch to disable any kind of verbose messages
+
 		.NOTES
-			Tags: SPN
+			Tags: SPN, ServerName
 			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 			Copyright (C) 2016 Chrissy LeMaire
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -55,78 +58,70 @@ function Test-DbaServerName {
 			Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
 
 			If a Rename is required, it will also show Updatable, and Reasons if the servername is not updatable.
-		#>
+	#>
 	[CmdletBinding()]
 	[OutputType([System.Collections.ArrayList])]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]$Credential,
+		[PSCredential]$SqlCredential,
 		[switch]$Detailed,
-		[switch]$NoWarning
+		[switch]$NoWarning,
+		[switch]$Silent
 	)
 
 	process {
 
-		foreach ($servername in $SqlInstance) {
+		foreach ($instance in $SqlInstance) {
+			Write-Verbose "Attempting to connect to $instance"
 			try {
-				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
 			}
 			catch {
-				Write-Message -Level Warning -Message  "Can't connect to $servername. Moving on."
-				Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
-			if ($server.isClustered) {
-				Write-Message -Level Warning -Message  "$servername is a cluster. Renaming clusters is not supported by Microsoft."
+			if ($server.IsClustered) {
+				Write-Message -Level Warning -Message  "$instance is a cluster. Renaming clusters is not supported by Microsoft."
 			}
 
-			if ($server.VersionMajor -eq 8) {
-				if ($servercount -eq 1 -and $SqlInstance.count -eq 1) {
-					throw "SQL Server 2000 not supported."
-				}
-				else {
-					Write-Message -Level Warning -Message  "SQL Server 2000 not supported. Skipping $servername."
-					Continue
-				}
-			}
-
-			$SqlInstancename = $server.ConnectionContext.ExecuteScalar("select @@servername")
+			$sqlInstanceName = $server.Query("SELECT @@servername AS ServerName").ServerName
 			$instance = $server.InstanceName
 
 			if ($instance.length -eq 0) {
-				$serverinstancename = $server.NetName
+				$serverInstanceName = $server.NetName
 				$instance = "MSSQLSERVER"
 			}
 			else {
 				$netname = $server.NetName
-				$serverinstancename = "$netname\$instance"
+				$serverInstanceName = "$netname\$instance"
 			}
 
 			$serverinfo = [PSCustomObject]@{
-				ServerInstanceName = $serverinstancename
-				SqlServerName      = $SqlInstancename
-				IsEqual            = $serverinstancename -eq $SqlInstancename
-				RenameRequired     = $serverinstancename -ne $SqlInstancename
-				Updatable          = "N/A"
-				Warnings           = $null
-				Blockers           = $null
+				ComputerName   = $server.NetName
+				InstanceName   = $server.ServiceName
+				SqlInstance    = $server.DomainInstanceName
+				IsEqual        = $serverInstanceName -eq $sqlInstanceName
+				RenameRequired = $serverInstanceName -ne $sqlInstanceName
+				Updatable      = "N/A"
+				Warnings       = $null
+				Blockers       = $null
 			}
 
 			if ($Detailed) {
 				$reasons = @()
-				$servicename = "SQL Server Reporting Services ($instance)"
-				$netbiosname = $server.ComputerNamePhysicalNetBIOS
-				Write-Message -Level Verbose -Message  "Checking for $servicename on $netbiosname"
+				$serverName = "SQL Server Reporting Services ($instance)"
+				$netBiosName = $server.ComputerNamePhysicalNetBIOS
+				Write-Message -Level Verbose -Message  "Checking for $serverName on $netBiosName"
 				$rs = $null
 
 				try {
-					$rs = Get-Service -ComputerName $netbiosname -DisplayName $servicename -ErrorAction SilentlyContinue
+					$rs = Get-Service -ComputerName $netBiosName -DisplayName $serverName -ErrorAction SilentlyContinue
 				}
 				catch {
 					if ($NoWarning -eq $false) {
-						Write-Message -Level Warning -Message  "Can't contact $netbiosname using Get-Service. This means the script will not be able to automatically restart SQL services."
+						Write-Message -Level Warning -Message  "Can't contact $netBiosName using Get-Service. This means the script will not be able to automatically restart SQL services."
 					}
 				}
 
@@ -182,7 +177,7 @@ function Test-DbaServerName {
 					$serverinfo.Blockers = "N/A"
 				}
 			}
-			
+
 			if ($Detailed) {
 				$serverinfo
 			}
