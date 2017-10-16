@@ -71,6 +71,9 @@ function Test-DbaServerName {
 		[switch]$Silent
 	)
 
+	begin {
+		Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
+	}
 	process {
 
 		foreach ($instance in $SqlInstance) {
@@ -89,7 +92,7 @@ function Test-DbaServerName {
 			$sqlInstanceName = $server.Query("SELECT @@servername AS ServerName").ServerName
 			$instance = $server.InstanceName
 
-			if ($instance.length -eq 0) {
+			if ($instance.Length -eq 0) {
 				$serverInstanceName = $server.NetName
 				$instance = "MSSQLSERVER"
 			}
@@ -109,76 +112,74 @@ function Test-DbaServerName {
 				Blockers       = $null
 			}
 
-			if ($Detailed) {
-				$reasons = @()
-				$serverName = "SQL Server Reporting Services ($instance)"
-				$netBiosName = $server.ComputerNamePhysicalNetBIOS
-				Write-Message -Level Verbose -Message  "Checking for $serverName on $netBiosName"
-				$rs = $null
+			$reasons = @()
+			$serverName = "SQL Server Reporting Services ($instance)"
+			$netBiosName = $server.ComputerNamePhysicalNetBIOS
+			Write-Message -Level Verbose -Message  "Checking for $serverName on $netBiosName"
+			$rs = $null
 
-				try {
-					$rs = Get-Service -ComputerName $netBiosName -DisplayName $serverName -ErrorAction SilentlyContinue
-				}
-				catch {
-					if ($NoWarning -eq $false) {
-						Write-Message -Level Warning -Message  "Can't contact $netBiosName using Get-Service. This means the script will not be able to automatically restart SQL services."
-					}
-				}
-
-				if ($rs.length -gt 0) {
-					if ($rs.Status -eq 'Running') {
-						$rstext = "Reporting Services ($instance) must be stopped and updated."
-					}
-					else {
-						$rstext = "Reporting Services ($instance) exists. When it is started again, it must be updated."
-					}
-					$serverinfo.Warnings = $rstext
-				}
-				else {
-					$serverinfo.Warnings = "N/A"
-				}
-
-				# check for mirroring
-				$mirroreddb = $server.Databases | Where-Object { $_.IsMirroringEnabled -eq $true }
-
-				Write-Debug "Found the following mirrored dbs: $($mirroreddb.name)"
-
-				if ($mirroreddb.length -gt 0) {
-					$dbs = $mirroreddb.name -join ", "
-					$reasons += "Databases are being mirrored: $dbs"
-				}
-
-				# check for replication
-				$sql = "select name from sys.databases where is_published = 1 or is_subscribed =1 or is_distributor = 1"
-				Write-Debug $sql
-				$replicatedb = $server.ConnectionContext.ExecuteWithResults($sql).Tables
-
-				if ($replicatedb.name.length -gt 0) {
-					$dbs = $replicatedb.name -join ", "
-					$reasons += "Databases are involved in replication: $dbs"
-				}
-
-				# check for even more replication
-				$sql = "select srl.remote_name as RemoteLoginName from sys.remote_logins srl join sys.sysservers sss on srl.server_id = sss.srvid"
-				Write-Debug $sql
-				$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables
-
-				if ($results.RemoteLoginName.length -gt 0) {
-					$remotelogins = $results.RemoteLoginName -join ", "
-					$reasons += "Remote logins still exist: $remotelogins"
-				}
-
-				if ($reasons.length -gt 0) {
-					$serverinfo.Updatable = $false
-					$serverinfo.Blockers = $reasons
-				}
-				else {
-					$serverinfo.Updatable = $true
-					$serverinfo.Blockers = "N/A"
+			try {
+				$rs = Get-Service -ComputerName $netBiosName -DisplayName $serverName -ErrorAction SilentlyContinue
+			}
+			catch {
+				if ($NoWarning -eq $false) {
+					Write-Message -Level Warning -Message  "Can't contact $netBiosName using Get-Service. This means the script will not be able to automatically restart SQL services."
 				}
 			}
 
-			if ($Detailed) {
+			if ($rs.Length -gt 0) {
+				if ($rs.Status -eq 'Running') {
+					$rstext = "Reporting Services ($instance) must be stopped and updated."
+				}
+				else {
+					$rstext = "Reporting Services ($instance) exists. When it is started again, it must be updated."
+				}
+				$serverinfo.Warnings = $rstext
+			}
+			else {
+				$serverinfo.Warnings = "N/A"
+			}
+
+			# check for mirroring
+			$mirroreddb = $server.Databases | Where-Object { $_.IsMirroringEnabled -eq $true }
+
+			Write-Debug "Found the following mirrored dbs: $($mirroreddb.name)"
+
+			if ($mirroreddb.Length -gt 0) {
+				$dbs = $mirroreddb.name -join ", "
+				$reasons += "Databases are being mirrored: $dbs"
+			}
+
+			# check for replication
+			$sql = "select name from sys.databases where is_published = 1 or is_subscribed =1 or is_distributor = 1"
+			Write-Debug $sql
+			$replicatedb = $server.ConnectionContext.ExecuteWithResults($sql).Tables
+
+			if ($replicatedb.name.Length -gt 0) {
+				$dbs = $replicatedb.name -join ", "
+				$reasons += "Databases are involved in replication: $dbs"
+			}
+
+			# check for even more replication
+			$sql = "select srl.remote_name as RemoteLoginName from sys.remote_logins srl join sys.sysservers sss on srl.server_id = sss.srvid"
+			Write-Debug $sql
+			$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables
+
+			if ($results.RemoteLoginName.Length -gt 0) {
+				$remotelogins = $results.RemoteLoginName -join ", "
+				$reasons += "Remote logins still exist: $remotelogins"
+			}
+
+			if ($reasons.Length -gt 0) {
+				$serverinfo.Updatable = $false
+				$serverinfo.Blockers = $reasons
+			}
+			else {
+				$serverinfo.Updatable = $true
+				$serverinfo.Blockers = "N/A"
+			}
+
+			if ($detailed) {
 				$serverinfo
 			}
 			else {
