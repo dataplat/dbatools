@@ -56,7 +56,7 @@ Function Get-DbaTempdbUsage {
 				Stop-Function -Message "This function is only supported in SQL Server 2008 or higher." -Continue
 			}
 			
-            $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
+			$sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
         ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
         SERVERPROPERTY('ServerName') AS SqlInstance,
         t.session_id AS Spid,
@@ -122,7 +122,7 @@ WHERE   t.session_id != @@SPID
   AND   (tdb.UserObjectAllocated - tdb.UserObjectDeallocated + tdb.InternalObjectAllocated - tdb.InternalObjectDeallocated) != 0
 OPTION (RECOMPILE);"
 			
-			$server.ConnectionContext.ExecuteWithResults($sql).Tables
+			$server.Query($sql)
 		}
 	}
 }
