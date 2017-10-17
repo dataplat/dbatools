@@ -5,34 +5,25 @@ Function Test-PSRemoting {
 Jeff Hicks
 https://www.petri.com/test-network-connectivity-powershell-test-connection-cmdlet
 #>
-  [cmdletbinding()]
- 
-  Param(
-    [Parameter(Position=0,Mandatory,HelpMessage = "Enter a computername",ValueFromPipeline)]
-    [ValidateNotNullorEmpty()]
-    [string]$Computername,
-    $Credential = [System.Management.Automation.PSCredential]::Empty
-  )
- 
-  Begin {
-    Write-Message -Level Verbose -Message "Starting $($MyInvocation.Mycommand)"
-  } #begin
- 
-  Process {
-    Write-Message -Level Verbose -Message "Testing $computername"
-    Try {
-      $r = Test-WSMan -ComputerName $Computername -Credential $Credential -Authentication Default -ErrorAction Stop
-      $True 
-    }
-    Catch {
-      Stop-Function -Message "Remote testing failed for computer $ComputerName" -Target $ComputerName -ErrorRecord $_ -Continue
-      return $false
-    }
-    
-  } #Process
- 
-  End {
-    Write-Message -Level Verbose -Message "Ending $($MyInvocation.Mycommand)"
-  } #end
- 
+	[cmdletbinding()]
+	param(
+	[Parameter(Position=0,Mandatory,ValueFromPipeline)]
+	[DbaInstance]$ComputerName,
+	$Credential = [System.Management.Automation.PSCredential]::Empty,
+	[switch]$Silent
+	)
+
+	process {
+		Write-Message -Level VeryVerbose -Message "Testing $($ComputerName.Computername)"
+		try {
+			$r = Test-WSMan -ComputerName $ComputerName.ComputerName -Credential $Credential -Authentication Default -ErrorAction Stop
+			$true
+		}
+		catch {
+			Write-Message -Level Verbose -Message "Testing $($ComputerName.Computername)" -Target $ComputerName -ErrorRecord $_
+			$false
+		}
+
+	} #Process
+
 } #close function
