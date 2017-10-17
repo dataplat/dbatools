@@ -27,7 +27,7 @@ function Test-DbaServerName {
 		.PARAMETER Detailed
 			If this switch is enabled, additional details are returned including whether the server name is updatable. If the server name is not updatable, the reason why will be returned.
 
-		.PARAMETER SkipSsrs
+		.PARAMETER ExcludeSsrs
 			If this switch is enabled, checking for SQL Server Reporting Services will be skipped.
 
 		.PARAMETER Silent
@@ -54,6 +54,11 @@ function Test-DbaServerName {
 			Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
 
 		.EXAMPLE
+			Test-DbaServerName -SqlInstance sqlserver2014a, sql2016 -ExcludeSsrs
+
+			Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016, but skips validating if SSRS is installed on both instances.
+
+		.EXAMPLE
 			Test-DbaServerName -SqlInstance sqlserver2014a, sql2016 -Detailed
 
 			Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
@@ -69,7 +74,7 @@ function Test-DbaServerName {
 		[PSCredential]$SqlCredential,
 		[switch]$Detailed,
 		[Alias("NoWarning")]
-		[switch]$SkipSsrs,
+		[switch]$ExcludeSsrs,
 		[switch]$Silent
 	)
 
