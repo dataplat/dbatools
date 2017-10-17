@@ -1,70 +1,77 @@
 ﻿function Get-DbaWaitStatistic {
-	<# 
-	.SYNOPSIS
-		Displays wait statistics
+	<#
+		.SYNOPSIS
+			Displays wait statistics
 
-	.DESCRIPTION 
-		This command is based off of Paul Randal's post "Wait statistics, or please tell me where it hurts"
-	
-		Returns:
-					WaitType
-					Category
-					WaitSeconds
-					ResourceSeconds
-					SignalSeconds
-					WaitCount
-					Percentage
-					AverageWaitSeconds
-					AverageResourceSeconds
-					AverageSignalSeconds
-					URL
-	
-		Reference: https://www.sqlskills.com/blogs/paul/wait-statistics-or-please-tell-me-where-it-hurts/
+		.DESCRIPTION
+			This command is based off of Paul Randal's post "Wait statistics, or please tell me where it hurts"
 
-	.PARAMETER SqlInstance
-		Allows you to specify a comma separated list of servers to query. This command supports SQL Server 2005 and above.
+			Returns:
+						WaitType
+						Category
+						WaitSeconds
+						ResourceSeconds
+						SignalSeconds
+						WaitCount
+						Percentage
+						AverageWaitSeconds
+						AverageResourceSeconds
+						AverageSignalSeconds
+						URL
 
-	.PARAMETER SqlCredential
-		Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-		$cred = Get-Credential, this pass this $cred to the param. 
+			Reference: https://www.sqlskills.com/blogs/paul/wait-statistics-or-please-tell-me-where-it-hurts/
 
-	.PARAMETER Threshold
-		Threshold, in percentage of all waits on the system. Default per Paul's post is 95%.
-	
-	.PARAMETER IncludeIgnorable
-		Some waits are no big deal and can be safely ignored in most circumstances. If you've got weird issues with mirroring or AGs.
+		.PARAMETER SqlInstance
+			The SQL Server instance. Server version must be SQL Server version 2005 or higher.
 
-	.PARAMETER Silent 
-		Use this switch to disable any kind of verbose messages
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-	.NOTES 
-		Tags: WaitStatistic
-		Website: https://dbatools.io
-		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+				$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-	.LINK
-		https://dbatools.io/Get-DbaWaitStatistic
+				Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-	.EXAMPLE
-		Get-DbaWaitStatistic -SqlInstance sql2008, sqlserver2012
-		Check wait statistics for servers sql2008 and sqlserver2012
+			To connect as a different Windows user, run PowerShell as that user.
 
-	.EXAMPLE
-		Get-DbaWaitStatistic -SqlInstance sql2008 -Threshold 98 -IncludeIgnorable
-		Check wait statistics on server sql2008 for thresholds above 98% and include wait stats that are most often, but not always, ignorable
+		.PARAMETER Threshold
+			Threshold, in percentage of all waits on the system. Default per Paul's post is 95%.
 
-	.EXAMPLE
-		Get-DbaWaitStatistic -SqlInstance sql2008 | Select *
-		Shows detailed notes, if available, from Paul's post
-	
-	.EXAMPLE
-		$output = Get-DbaWaitStatistic -SqlInstance sql2008
-		$output
-		foreach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }
-	
-		Displays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.
-	
+		.PARAMETER IncludeIgnorable
+			Some waits are no big deal and can be safely ignored in most circumstances. If you've got weird issues with mirroring or AGs.
+
+		.PARAMETER Silent
+			If this switch is enabled, the internal messaging functions will be silenced.
+
+		.NOTES
+			Tags: WaitStatistic
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+
+		.LINK
+			https://dbatools.io/Get-DbaWaitStatistic
+
+		.EXAMPLE
+			Get-DbaWaitStatistic -SqlInstance sql2008, sqlserver2012
+
+			Check wait statistics for servers sql2008 and sqlserver2012
+
+		.EXAMPLE
+			Get-DbaWaitStatistic -SqlInstance sql2008 -Threshold 98 -IncludeIgnorable
+
+			Check wait statistics on server sql2008 for thresholds above 98% and include wait stats that are most often, but not always, ignorable
+
+		.EXAMPLE
+			Get-DbaWaitStatistic -SqlInstance sql2008 | Select *
+
+			Shows detailed notes, if available, from Paul's post
+
+		.EXAMPLE
+			$output = Get-DbaWaitStatistic -SqlInstance sql2008
+			$output
+			foreach ($row in ($output | Sort-Object -Unique Url)) { Start-Process ($row).Url }
+
+			Displays the output then loads the associated sqlskills website for each result. Opens one tab per unique URL.
 	#>
 	[CmdletBinding()]
 	param (
@@ -76,9 +83,9 @@
 		[switch]$IncludeIgnorable,
 		[switch]$Silent
 	)
-	
+
 	begin {
-		
+
 		$details = [pscustomobject]@{
 			CXPACKET                              = "This indicates parallelism, not necessarily that there's a problem. The coordinator thread in a parallel query always accumulates these waits. If the parallel threads are not given equal amounts of work to do, or one thread blocks, the waiting threads will also accumulate CXPACKET waits, which will make them aggregate a lot faster – this is a problem. One thread may have a lot more to do than the others, and so the whole query is blocked while the long-running thread completes. If this is combined with a high number of PAGEIOLATCH_XX waits, it could be large parallel table scans going on because of incorrect non-clustered indexes, or a bad query plan. If neither of these are the issue, you might want to try setting MAXDOP to 4, 2, or 1 for the offending queries (or possibly the whole instance). Make sure that if you have a NUMA system that you try setting MAXDOP to the number of cores in a single NUMA node first to see if that helps the problem. You also need to consider the MAXDOP effect on a mixed-load system. Play with the cost threshold for parallelism setting (bump it up to, say, 25) before reducing the MAXDOP of the whole instance. And don't forget Resource Governor in Enterprise Edition of  SQL Server 2008 onward that allows DOP governing for a particular group of connections to the server."
 			PAGEIOLATCH_XX                        = "This is where SQL Server is waiting for a data page to be read from disk into memory. It may indicate a bottleneck at the IO subsystem level (which is a common knee-jerk response to seeing these), but why is the I/O subsystem having to service so many reads? It could be buffer pool/memory pressure (i.e. not enough memory for the workload), a sudden change in query plans causing a large parallel scan instead of a seek, plan cache bloat, or a number of other things. Don't assume the root cause is the I/O subsystem."
@@ -116,10 +123,10 @@
 			PREEMPTIVE_OS_QUERYREGISTRY           = "These are SQL Server switching to preemptive scheduling mode to call out to Windows for something. These were added for 2008 and aren't documented anywhere except through the links to my waits library."
 			SQLTRACE_LOCK                         = "Part of SQL Trace. I would add this to the list of waits to filter out and re-run the wait stats query."
 		}
-		
+
 		# Thanks Brentg Ozar via https://gist.github.com/BrentOzar/42e82ee0603a1917c17d74c3fca26d34
 		# Thanks Marcin Gminski‏ via https://www.dropbox.com/s/x3zr7u18tc1ojey/WaitStats.sql?dl=0
-		
+
 		$category = [pscustomobject]@{
 			ASYNC_IO_COMPLETION                             = 'Other Disk IO'
 			ASYNC_NETWORK_IO                                = 'Network IO'
@@ -754,7 +761,7 @@
 			XE_TIMER_MUTEX                                  = 'Other'
 			XE_TIMER_TASK_DONE                              = 'Other'
 		}
-		
+
 		$ignorable = 'BROKER_EVENTHANDLER', 'BROKER_RECEIVE_WAITFOR', 'BROKER_TASK_STOP',
 		'BROKER_TO_FLUSH', 'BROKER_TRANSMITTER', 'CHECKPOINT_QUEUE',
 		'CHKPT', 'CLR_AUTO_EVENT', 'CLR_MANUAL_EVENT', 'CLR_SEMAPHORE',
@@ -765,7 +772,7 @@
 		'HADR_NOTIFICATION_DEQUEUE', 'HADR_TIMER_TASK', 'HADR_WORK_QUEUE',
 		'KSOURCE_WAKEUP', 'LAZYWRITER_SLEEP', 'LOGMGR_QUEUE',
 		'MEMORY_ALLOCATION_EXT', 'ONDEMAND_TASK_QUEUE', 'PREEMPTIVE_SP_SERVER_DIAGNOSTICS',
-		'PARALLEL_REDO_WORKER_WAIT_WORK', 'PREEMPTIVE_HADR_LEASE_MECHANISM', 
+		'PARALLEL_REDO_WORKER_WAIT_WORK', 'PREEMPTIVE_HADR_LEASE_MECHANISM',
 		'PREEMPTIVE_OS_LIBRARYOPS', 'PREEMPTIVE_OS_COMOPS', 'PREEMPTIVE_OS_CRYPTOPS',
 		'PREEMPTIVE_OS_PIPEOPS', 'PREEMPTIVE_OS_AUTHENTICATIONOPS',
 		'PREEMPTIVE_OS_GENERICOPS', 'PREEMPTIVE_OS_VERIFYTRUST',
@@ -785,7 +792,7 @@
 		'WAIT_XTP_OFFLINE_CKPT_NEW_LOG', 'WAIT_XTP_CKPT_CLOSE', 'WAIT_XTP_RECOVERY',
 		'XE_BUFFERMGR_ALLPROCESSED_EVENT', 'XE_DISPATCHER_JOIN',
 		'XE_DISPATCHER_WAIT', 'XE_LIVE_TARGET_TVF', 'XE_TIMER_EVENT'
-		
+
 		$sql = "WITH [Waits] AS
 		(SELECT
 			[wait_type],
@@ -818,33 +825,33 @@
 	process {
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-			
+
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-			
+
 			if ($IncludeIgnorable) {
-				$excludecolumns = 'Notes'
+				$excludeColumns = 'Notes'
 			}
 			else {
-				$excludecolumns = 'Notes', 'Ignorable'
+				$excludeColumns = 'Notes', 'Ignorable'
 			}
-			
+
 			foreach ($row in $server.Query($sql)) {
-				$waittype = $row.WaitType
+				$waitType = $row.WaitType
 				if (-not $IncludeIgnorable) {
-					if ($ignorable -contains $waittype) { continue }
+					if ($ignorable -contains $waitType) { continue }
 				}
-				
+
 				[PSCustomObject]@{
 					ComputerName           = $server.NetName
 					InstanceName           = $server.ServiceName
 					SqlInstance            = $server.DomainInstanceName
-					WaitType               = $waittype
-					Category               = ($category).$waittype
+					WaitType               = $waitType
+					Category               = ($category).$waitType
 					WaitSeconds            = $row.WaitSeconds
 					ResourceSeconds        = $row.ResourceSeconds
 					SignalSeconds          = $row.SignalSeconds
@@ -853,10 +860,10 @@
 					AverageWaitSeconds     = $row.AvgWaitSeconds
 					AverageResourceSeconds = $row.AvgResSeconds
 					AverageSignalSeconds   = $row.AvgSigSeconds
-					Ignorable              = ($ignorable -contains $waittype)
+					Ignorable              = ($ignorable -contains $waitType)
 					URL                    = $row.URL
-					Notes                  = ($details).$waittype
-				} | Select-DefaultView -ExcludeProperty $excludecolumns
+					Notes                  = ($details).$waitType
+				} | Select-DefaultView -ExcludeProperty $excludeColumns
 			}
 		}
 	}
