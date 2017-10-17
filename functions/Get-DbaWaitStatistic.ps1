@@ -193,7 +193,7 @@
 			FT_METADATA_MUTEX                               = 'Full Text Search'
 			FT_PROPERTYLIST_CACHE                           = 'Full Text Search'
 			FT_RESTART_CRAWL                                = 'Full Text Search'
-			FULLTEXT GATHERER                               = 'Full Text Search'
+			'FULLTEXT GATHERER'                             = 'Full Text Search'
 			HADR_AG_MUTEX                                   = 'Replication'
 			HADR_AR_CRITICAL_SECTION_ENTRY                  = 'Replication'
 			HADR_AR_MANAGER_MUTEX                           = 'Replication'
