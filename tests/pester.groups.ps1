@@ -23,10 +23,11 @@ $TestsRunGroups = @{
 		'Invoke-DbaCycleErrorLog',
 		'Invoke-DbaDiagnosticQuery',
 		'Mount-DbaDatabase',
-		'Remove-DbaDatabase -Confirm:$false',
+		'Remove-DbaDatabase',
 		'Restore-DbaDatabase',
 		'Set-DbaSpConfigure',
-		'Test-DbaIdentityUsage'
+		'Test-DbaIdentityUsage',
+		'Get-DbaSuspectPage'
 	)
 	# run on scenario 2016
 	"2016"              = @(
