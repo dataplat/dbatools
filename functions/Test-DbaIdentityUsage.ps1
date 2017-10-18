@@ -106,15 +106,15 @@ function Test-DbaIdentityUsage {
 
 				  CAST (
 						(CASE
-							WHEN CONVERT(bigint, increment_value) < 0 THEN
-								ABS(CONVERT(bigint,dt.MinValue)
-								- CONVERT(bigint, seed_value)
-								- (CASE WHEN CONVERT(bigint, seed_value) <> 0 THEN ABS(CONVERT(bigint, increment_value)) ELSE 0 END))
+							WHEN CONVERT(Numeric(20, 0), increment_value) < 0 THEN
+								ABS(CONVERT(Numeric(20, 0),dt.MinValue)
+								- CONVERT(Numeric(20, 0), seed_value)
+								- (CASE WHEN CONVERT(Numeric(20, 0), seed_value) <> 0 THEN ABS(CONVERT(Numeric(20, 0), increment_value)) ELSE 0 END))
 							ELSE
-								CONVERT(bigint,dt.MaxValue)
-								- CONVERT(bigint, seed_value)
-								+ (CASE WHEN CONVERT(bigint, seed_value) <> 0 THEN ABS(CONVERT(bigint, increment_value)) ELSE 0 END)
-						END) / ABS(CONVERT(bigint, increment_value))
+								CONVERT(Numeric(20, 0),dt.MaxValue)
+								- CONVERT(Numeric(20, 0), seed_value)
+								+ (CASE WHEN CONVERT(Numeric(20, 0), seed_value) <> 0 THEN ABS(CONVERT(Numeric(20, 0), increment_value)) ELSE 0 END)
+						END) / ABS(CONVERT(Numeric(20, 0), increment_value))
 					AS Numeric(20, 0)) AS MaxNumberRows
 
 			FROM sys.identity_columns a
@@ -129,8 +129,8 @@ function Test-DbaIdentityUsage {
 		CTE_2
 		AS
 		(
-		SELECT SchemaName, TableName, ColumnName, CONVERT(BIGINT, SeedValue) AS SeedValue, CONVERT(BIGINT, IncrementValue) AS IncrementValue, LastValue, ABS(CONVERT(FLOAT,MaxNumberRows)) AS MaxNumberRows, NumberOfUses,
-			   CONVERT(Numeric(18,2), ((CONVERT(Float, NumberOfUses) / ABS(CONVERT(FLOAT,MaxNumberRows)) * 100))) AS [PercentUsed]
+		SELECT SchemaName, TableName, ColumnName, CONVERT(BIGINT, SeedValue) AS SeedValue, CONVERT(BIGINT, IncrementValue) AS IncrementValue, LastValue, ABS(CONVERT(NUMERIC(20,0),MaxNumberRows)) AS MaxNumberRows, NumberOfUses,
+			   CONVERT(Numeric(18,2), ((CONVERT(Float, NumberOfUses) / ABS(CONVERT(Numeric(20, 0),MaxNumberRows)) * 100))) AS [PercentUsed]
 		  FROM CTE_1
 		)
 		SELECT DB_NAME() as DatabaseName, SchemaName, TableName, ColumnName, SeedValue, IncrementValue, LastValue, MaxNumberRows, NumberOfUses, [PercentUsed]
