@@ -27,7 +27,8 @@ $TestsRunGroups = @{
 		'Restore-DbaDatabase',
 		'Set-DbaSpConfigure',
 		'Test-DbaIdentityUsage',
-		'Get-DbaSuspectPage'
+		'Get-DbaSuspectPage',
+		'Invoke-DbaDatabaseCorruption'
 	)
 	# run on scenario 2016
 	"2016"              = @(
