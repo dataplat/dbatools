@@ -119,6 +119,15 @@ Describe "$commandname Unit Test" -Tags Unittest {
 				$LATEST = $Versions | Where-Object SP -contains "LATEST"
 				$LATEST.SP.Count | Should Be 2
 			}
+			# see https://github.com/sqlcollaborative/dbatools/pull/2466
+			It "KBList has only numbers on it" {
+				$NotNumbers = $Versions.KBList | Where-Object { $_ } | Where-Object { $_ -notmatch '^[\d]+$' }
+				if ($NotNumbers.Count -ne 0) {
+					foreach($Nn in $NotNumbers) {
+						$Nn | Should Be "Composed by integers"
+					}
+				}
+			}
 		}
 	}
 }
