@@ -108,7 +108,7 @@ function Test-DbaSpn {
 						11 { "SQL Server 2012" }
 						12 { "SQL Server 2014" }
 						13 { "SQL Server 2016" }
-						14 { "SQL Server vNext" }
+						14 { "SQL Server 2017" }
 						default { $version }
 					}
 				}
@@ -242,7 +242,7 @@ function Test-DbaSpn {
 			Write-Message -Message "Attempting to connect to SQL WMI on remote computer " -Level Verbose
 
 			try {
-				$spns = Invoke-ManagedComputerCommand -ComputerName $hostEntry -ScriptBlock $Scriptblock -ArgumentList $computer.FullComputerName, $hostEntry, $computer.InstanceName -Credential $Credential -ErrorAction Stop
+				$spns = Invoke-ManagedComputerCommand -ComputerName $hostEntry -ScriptBlock $Scriptblock -ArgumentList $resolved.FullComputerName, $hostEntry, $computer.InstanceName -Credential $Credential -ErrorAction Stop
 			}
 			catch {
 				Stop-Function -Message "Couldn't connect to $computer" -ErrorRecord $_ -Continue
@@ -251,17 +251,19 @@ function Test-DbaSpn {
 			#Now query AD for each required SPN
 			foreach ($spn in $spns) {
 				$searchfor = 'User'
-
 				if ($spn.InstanceServiceAccount -eq 'LocalSystem' -or $spn.InstanceServiceAccount -like 'NT SERVICE\*') {
 					Write-Message -Level Verbose -Message "Virtual account detected, changing target registration to computername"
 					$spn.InstanceServiceAccount = "$($resolved.Domain)\$($resolved.ComputerName)$"
 					$searchfor = 'Computer'
+				} elseif ($spn.InstanceServiceAccount -like '*\*$') {
+					Write-Message -Level Verbose -Message "Managed Service Account detected"
+					$searchfor = 'Computer'
 				}
-
+				
 				$serviceAccount = $spn.InstanceServiceAccount
 				# spare the cmdlet to search for the same account over and over
 				if ($spn.InstanceServiceAccount -notin $resultCache.Keys) {
-					Write-Message -Message "searching for $serviceAccount" -Level Verbose
+					Write-Message -Message "Searching for $serviceAccount" -Level Verbose
 					try {
 						$result = Get-DbaADObject -ADObject $serviceAccount -Type $searchfor -Credential $Credential -Silent
 						$resultCache[$spn.InstanceServiceAccount] = $result
