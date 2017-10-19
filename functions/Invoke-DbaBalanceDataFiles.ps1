@@ -49,7 +49,7 @@ function Invoke-DbaBalanceDataFiles {
 		If this switch is enabled, the internal messaging functions will be silenced.
 
 	.PARAMETER Force
-		This will disable the check for enough disk space for the action to be succesfull.
+		This will disable the check for enough disk space for the action to be successful.
 		Use this with caution!!
 
 	.NOTES 
@@ -96,275 +96,263 @@ function Invoke-DbaBalanceDataFiles {
 		[switch]$Force
 	)
 	
-	begin {
-		Write-Message -Message "Starting balancing out data files" -Level Verbose
-		
-		# Try connecting to the instance
-		Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
-		try {
-			$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-		}
-		catch {
-			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
-		}
-		
-		# Check the database parameter
-		if ($Database) {
-			if ($Database -notin $server.Databases.Name) {
-				Stop-Function -Message "One or more databases cannot be found on instance on instance $SqlInstance" -Target $SqlInstance -Continue
-			}
-			
-			$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $Database }
-		}
-		else {
-			Stop-Function -Message "Please supply a database to balance out" -Target $SqlInstance -Continue
-		}
-		
-		# Get the server version
-		$serverVersion = $server.Version.Major
-		
-		# Check edition of the sql instance
-		if ($RebuildOffline) {
-			Write-Message -Message "Continuing with offline rebuild." -Level Verbose
-		}
-		elseif (-not $RebuildOffline -and ($serverVersion -lt 9 -or (([string]$Server.Edition -notlike "Developer*") -and ($Server.Edition -notlike "Enterprise*")))) {
-			# Set up the confirm part
-			$message = "The server does not support online rebuilds of indexes. `nDo you want to rebuild the indexes offline?"
-			$choiceYes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Answer Yes."
-			$choiceNo = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Answer No."
-			$options = [System.Management.Automation.Host.ChoiceDescription[]]($choiceYes, $choiceNo)
-			$result = $host.ui.PromptForChoice($title, $message, $options, 0)
-			
-			# Check the result from the confirm
-			switch ($result) {
-				# If yes
-				0 {
-					# Set the option to generate a full backup
-					Write-Message -Message "Continuing with offline rebuild." -Level Verbose
-					
-					[bool]$supportOnlineRebuild = $false
-				}
-				1 {
-					Stop-Function -Message "You chose to not allow offline rebuilds of indexes. Use -RebuildOffline" -Target $SqlInstance
-					return
-				}
-			} # switch
-		}
-		elseif ($serverVersion -ge 9 -and (([string]$Server.Edition -like "Developer*") -or ($Server.Edition -like "Enterprise*"))) {
-			[bool]$supportOnlineRebuild = $true
-		}
-		
-		
-	}
-	
 	process {
 		
-		if (Test-FunctionInterrupt) { return }
+		Write-Message -Message "Starting balancing out data files" -Level Verbose
 		
-		# Loop through each of the databases
-		foreach ($db in $DatabaseCollection) {
-			
-			if (-not $Force) {
-				# Check the amount of disk space available
-				$query = "
-SELECT	SUBSTRING(physical_name, 0, 4) AS 'Drive' ,
-		SUM(( size * 8 ) / 1024) AS 'SizeMB'
-FROM	sys.master_files
-WHERE	DB_NAME(database_id) = '$($db.Name)'
-GROUP BY SUBSTRING(physical_name, 0, 4);			
-			"
-				# Execute the query
-				$dbDiskUsage = $Server.Query($query)
-				
-				# Get the free space for each drive
-				$diskFreeSpace = Get-DbaDiskSpace -ComputerName sstad-pc -CheckForSql | Select-Object @{ Name = 'Drive'; Expression = { $_.Name } }, @{ Name = 'FreeMB'; Expression = { $_.FreeInGB * 1024 } }
-				
-				# Loop through each of the drives to see if the size of files on that 
-				# particular disk do not exceed the free space of that disk
-				foreach ($d in $dbDiskUsage) {
-					$freeSpace = $diskFreeSpace | Where-Object { $_.Drive -eq $d.drive } | Select-Object FreeMB
-					
-					if ($d.SizeMB -gt $freeSpace.FreeMB) {
-						# Set the success flag
-						$success = $false
-						
-						Stop-Function -Message "The available space may not be sufficient to continue the process. Please use -Force to skip this check." -Target $SqlInstance -Continue
-						return
-					}
-				}
+		foreach ($instance in $sqlinstance) {
+			# Try connecting to the instance
+			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+			try {
+				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			# Create the start time
-			$start = Get-Date
+			# Check the database parameter
+			if ($Database) {
+				if ($Database -notin $server.Databases.Name) {
+					Stop-Function -Message "One or more databases cannot be found on instance on instance $instance" -Target $instance -Continue
+				}
+				
+				$DatabaseCollection = $server.Databases | Where-Object { $_.Name -in $Database }
+			}
+			else {
+				Stop-Function -Message "Please supply a database to balance out" -Target $instance -Continue
+			}
 			
-			# Check if the function needs to continue
-			if ($success) {
-				# Get the database files before all the alterations
-				Write-Message -Message "Retrieving data files before data move" -Level Verbose
-				$dataFilesStarting = Get-DbaDatabaseFile -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name | Where-Object { $_.TypeDescription -eq 'ROWS' } | Select-Object ID, LogicalName, PhysicalName, Size, UsedSpace, AvailableSpace | Sort-Object ID
+			# Get the server version
+			$serverVersion = $server.Version.Major
+			
+			# Check edition of the sql instance
+			if ($RebuildOffline) {
+				Write-Message -Message "Continuing with offline rebuild." -Level Verbose
+			}
+			elseif (-not $RebuildOffline -and ($serverVersion -lt 9 -or (([string]$Server.Edition -notmatch "Developer") -and ($Server.Edition -notmatch "Enterprise")))) {
+				# Set up the confirm part
+				$message = "The server does not support online rebuilds of indexes. `nDo you want to rebuild the indexes offline?"
+				$choiceYes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Answer Yes."
+				$choiceNo = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Answer No."
+				$options = [System.Management.Automation.Host.ChoiceDescription[]]($choiceYes, $choiceNo)
+				$result = $host.ui.PromptForChoice($title, $message, $options, 0)
 				
-				Write-Message -Message "Processing database $db" -Level Verbose
-				
-				# Check the datafiles of the database
-				$dataFiles = Get-DbaDatabaseFile -SqlInstance $SqlInstance -Database $db | Where-Object { $_.TypeDescription -eq 'ROWS' }
-				if ($dataFiles.Count -eq 1) {
-					# Set the success flag
-					$success = $false
-					
-					Stop-Function -Message "Database $db only has one data file. Please add a data file to balance out the data" -Target $SqlInstance -Continue
-				}
-				
-				# Check the tables parameter
-				if ($Table) {
-					if ($Table -notin $db.Table) {
-						# Set the success flag
-						$success = $false
+				# Check the result from the confirm
+				switch ($result) {
+					# If yes
+					0 {
+						# Set the option to generate a full backup
+						Write-Message -Message "Continuing with offline rebuild." -Level Verbose
 						
-						Stop-Function -Message "One or more tables cannot be found in database $db on instance $SqlInstance" -Target $SqlInstance -Continue
+						[bool]$supportOnlineRebuild = $false
 					}
-					
-					$TableCollection = $db.Tables | Where-Object { $_.Name -in $Table }
-				}
-				else {
-					$TableCollection = $db.Tables
-				}
-				
-				# Get the database file groups and check the aount of data files
-				Write-Message -Message "Retrieving file groups" -Level Verbose
-				$fileGroups = $Server.Databases[$db.Name].FileGroups
-				
-				# ARray to hold the file groups with properties
-				$balanceableTables = @()
-				
-				# Loop through each of the file groups
-				
-				foreach ($fg in $fileGroups) {
-					
-					# If there is less than 2 files balancing out data is not possible
-					if (($fg.Files.Count -ge 2) -and ($fg.Readonly -eq $false)) {
-						$balanceableTables += $fg.EnumObjects() | Where-Object { $_.GetType().Name -eq 'Table' }
+					1 {
+						Stop-Function -Message "You chose to not allow offline rebuilds of indexes. Use -RebuildOffline" -Target $instance
+						return
 					}
-				}
+				} # switch
+			}
+			elseif ($serverVersion -ge 9 -and (([string]$Server.Edition -like "Developer*") -or ($Server.Edition -like "Enterprise*"))) {
+				[bool]$supportOnlineRebuild = $true
+			}
+			
+			# Loop through each of the databases
+			foreach ($db in $DatabaseCollection) {
+				$dataFilesStarting = Get-DbaDatabaseFile -SqlInstance $server -Database $db.Name | Where-Object { $_.TypeDescription -eq 'ROWS' } | Select-Object ID, LogicalName, PhysicalName, Size, UsedSpace, AvailableSpace | Sort-Object ID
 				
-				$unsuccesfullTables = @()
-				
-				# Loop through each of the tables
-				foreach ($tbl in $TableCollection) {
+				if (-not $Force) {
+					# Check the amount of disk space available
+					$query = "SELECT SUBSTRING(physical_name, 0, 4) AS 'Drive' ,
+										SUM(( size * 8 ) / 1024) AS 'SizeMB'
+								FROM	sys.master_files
+								WHERE	DB_NAME(database_id) = '$($db.Name)'
+								GROUP BY SUBSTRING(physical_name, 0, 4)"
+					# Execute the query
+					$dbDiskUsage = $Server.Query($query)
 					
-					# Chck if the table balanceable
-					if ($tbl.Name -in $balanceableTables.Name) {
-						
-						Write-Message -Message "Processing table $tbl" -Level Verbose
-						
-						# Chck the tables and get the clustered indexes
-						if ($TableCollection.Indexes.Count -lt 1) {
+					# Get the free space for each drive
+					$diskFreeSpace = $Server.Query("xp_fixeddrives") | Select-Object Drive, @{ Name = 'FreeMB'; Expression = { $_.'MB free' } }
+					
+					# Loop through each of the drives to see if the size of files on that 
+					# particular disk do not exceed the free space of that disk
+					foreach ($d in $dbDiskUsage) {
+						$freeSpace = $diskFreeSpace | Where-Object { $_.Drive -eq $d.Drive.Trim(':\') } | Select-Object FreeMB
+						if ($d.SizeMB -gt $freeSpace.FreeMB) {
 							# Set the success flag
 							$success = $false
 							
-							Stop-Function -Message "Table $tbl does not contain any indexes" -Target $SqlInstance -Continue
+							Stop-Function -Message "The available space may not be sufficient to continue the process. Please use -Force to try anyway." -Target $instance -Continue
+							return
 						}
-						else {
-							
-							# Get all the clustered indexes for the table
-							$clusteredIndexes = $TableCollection.Indexes | Where-Object { $_.IndexType -eq 'ClusteredIndex' }
-							
-							if ($clusteredIndexes.Count -lt 1) {
-								# Set the success flag
-								$success = $false
-								
-								Stop-Function -Message "No clustered indexes found in table $tbl" -Target $SqlInstance -Continue
-							}
-						}
-						
-						# Loop through each of the clustered indexes and rebuild them
-						Write-Message -Message "$($clusteredIndexes.Count) clustered index(es) found for table $tbl" -Level Verbose
-						if ($PSCmdlet.ShouldProcess("Rebuilding indexes to balance data")) {
-							foreach ($ci in $clusteredIndexes) {
-								
-								Write-Message -Message "Rebuilding index $($ci.Name)" -Level Verbose
-								
-								# Get the original index operation
-								[bool]$originalIndexOperation = $ci.OnlineIndexOperation
-								
-								# Set the rebuild option to be either offline or online
-								if ($RebuildOffline) {
-									$ci.OnlineIndexOperation = $false
-								}
-								elseif ($serverVersion -ge 9 -and $supportOnlineRebuild -and -not $RebuildOffline) {
-									Write-Message -Message "Setting the index operation for index $($ci.Name) to online" -Level Verbose
-									$ci.OnlineIndexOperation = $true
-								}
-								
-								# Rebuild the index
-								try {
-									$ci.Rebuild()
-									
-									# Set the success flag
-									$success = $true
-								}
-								catch {
-									# Set the original index operation back for the index
-									$ci.OnlineIndexOperation = $originalIndexOperation
-									
-									# Set the success flag
-									$success = $false
-									
-									Stop-Function -Message "Something went wrong rebuilding index $($ci.Name). `n$($_.Exception.Message)" -ErrorRecord $_ -Target $SqlInstance -Continue
-								}
-								
-								# Set the original index operation back for the index
-								Write-Message -Message "Setting the index operation for index $($ci.Name) back to the original value" -Level Verbose
-								$ci.OnlineIndexOperation = $originalIndexOperation
-								
-							} # foreach index
-							
-						} # if process
-						
-					} # if table is balanceable
-					else {
-						# Add the table to the unsuccesfull array
-						$unsuccesfullTables += $tbl.Name
-						
+					}
+				}
+				
+				# Create the start time
+				$start = Get-Date
+				
+				# Check if the function needs to continue
+				if ($success) {
+					# Get the database files before all the alterations
+					Write-Message -Message "Retrieving data files before data move" -Level Verbose
+					Write-Message -Message "Processing database $db" -Level Verbose
+					
+					# Check the datafiles of the database
+					$dataFiles = Get-DbaDatabaseFile -SqlInstance $instance -Database $db | Where-Object { $_.TypeDescription -eq 'ROWS' }
+					if ($dataFiles.Count -eq 1) {
 						# Set the success flag
 						$success = $false
 						
-						Write-Message -Message "Table $tbl cannot be balanced out" -Level Verbose
+						Stop-Function -Message "Database $db only has one data file. Please add a data file to balance out the data" -Target $instance -Continue
 					}
 					
-				} #foreach table		
-			}
+					# Check the tables parameter
+					if ($Table) {
+						if ($Table -notin $db.Table) {
+							# Set the success flag
+							$success = $false
+							
+							Stop-Function -Message "One or more tables cannot be found in database $db on instance $instance" -Target $instance -Continue
+						}
+						
+						$TableCollection = $db.Tables | Where-Object { $_.Name -in $Table }
+					}
+					else {
+						$TableCollection = $db.Tables
+					}
+					
+					# Get the database file groups and check the aount of data files
+					Write-Message -Message "Retrieving file groups" -Level Verbose
+					$fileGroups = $Server.Databases[$db.Name].FileGroups
+					
+					# ARray to hold the file groups with properties
+					$balanceableTables = @()
+					
+					# Loop through each of the file groups
+					
+					foreach ($fg in $fileGroups) {
+						
+						# If there is less than 2 files balancing out data is not possible
+						if (($fg.Files.Count -ge 2) -and ($fg.Readonly -eq $false)) {
+							$balanceableTables += $fg.EnumObjects() | Where-Object { $_.GetType().Name -eq 'Table' }
+						}
+					}
+					
+					$unsuccessfulTables = @()
+					
+					# Loop through each of the tables
+					foreach ($tbl in $TableCollection) {
+						
+						# Chck if the table balanceable
+						if ($tbl.Name -in $balanceableTables.Name) {
+							
+							Write-Message -Message "Processing table $tbl" -Level Verbose
+							
+							# Chck the tables and get the clustered indexes
+							if ($TableCollection.Indexes.Count -lt 1) {
+								# Set the success flag
+								$success = $false
+								
+								Stop-Function -Message "Table $tbl does not contain any indexes" -Target $instance -Continue
+							}
+							else {
+								
+								# Get all the clustered indexes for the table
+								$clusteredIndexes = $TableCollection.Indexes | Where-Object { $_.IndexType -eq 'ClusteredIndex' }
+								
+								if ($clusteredIndexes.Count -lt 1) {
+									# Set the success flag
+									$success = $false
+									
+									Stop-Function -Message "No clustered indexes found in table $tbl" -Target $instance -Continue
+								}
+							}
+							
+							# Loop through each of the clustered indexes and rebuild them
+							Write-Message -Message "$($clusteredIndexes.Count) clustered index(es) found for table $tbl" -Level Verbose
+							if ($PSCmdlet.ShouldProcess("Rebuilding indexes to balance data")) {
+								foreach ($ci in $clusteredIndexes) {
+									
+									Write-Message -Message "Rebuilding index $($ci.Name)" -Level Verbose
+									
+									# Get the original index operation
+									[bool]$originalIndexOperation = $ci.OnlineIndexOperation
+									
+									# Set the rebuild option to be either offline or online
+									if ($RebuildOffline) {
+										$ci.OnlineIndexOperation = $false
+									}
+									elseif ($serverVersion -ge 9 -and $supportOnlineRebuild -and -not $RebuildOffline) {
+										Write-Message -Message "Setting the index operation for index $($ci.Name) to online" -Level Verbose
+										$ci.OnlineIndexOperation = $true
+									}
+									
+									# Rebuild the index
+									try {
+										$ci.Rebuild()
+										
+										# Set the success flag
+										$success = $true
+									}
+									catch {
+										# Set the original index operation back for the index
+										$ci.OnlineIndexOperation = $originalIndexOperation
+										
+										# Set the success flag
+										$success = $false
+										
+										Stop-Function -Message "Something went wrong rebuilding index $($ci.Name). `n$($_.Exception.Message)" -ErrorRecord $_ -Target $instance -Continue
+									}
+									
+									# Set the original index operation back for the index
+									Write-Message -Message "Setting the index operation for index $($ci.Name) back to the original value" -Level Verbose
+									$ci.OnlineIndexOperation = $originalIndexOperation
+									
+								} # foreach index
+								
+							} # if process
+							
+						} # if table is balanceable
+						else {
+							# Add the table to the unsuccessful array
+							$unsuccessfulTables += $tbl.Name
+							
+							# Set the success flag
+							$success = $false
+							
+							Write-Message -Message "Table $tbl cannot be balanced out" -Level Verbose
+						}
+						
+					} #foreach table		
+				}
+				
+				# Create the end time
+				$end = Get-Date
+				
+				# Create the time span
+				$timespan = New-TimeSpan -Start $start -End $end
+				$ts = [timespan]::fromseconds($timespan.TotalSeconds)
+				$elapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
+				
+				# Get the database files after all the alterations
+				Write-Message -Message "Retrieving data files after data move" -Level Verbose
+				$dataFilesEnding = Get-DbaDatabaseFile -SqlInstance $server -Database $db.Name | Where-Object { $_.TypeDescription -eq 'ROWS' } | Select-Object ID, LogicalName, PhysicalName, Size, UsedSpace, AvailableSpace | Sort-Object ID
+				
+				[pscustomobject]@{
+					ComputerName	 = $server.NetName
+					InstanceName	 = $server.ServiceName
+					SqlInstance	     = $server.DomainInstanceName
+					Database		 = $db.Name
+					Start		     = $start
+					End			     = $end
+					Elapsed		     = $elapsed
+					Success		     = $success
+					Unsuccessful	 = $unsuccessfulTables -join ","
+					DataFilesStart   = $dataFilesStarting
+					DataFilesEnd	 = $dataFilesEnding
+				}
+				
+			} # foreach database
 			
-			# Create the end time
-			$end = Get-Date
-			
-			# Create the time span
-			$timespan = New-TimeSpan -Start $start -End $end
-			$ts = [timespan]::fromseconds($timespan.TotalSeconds)
-			$elapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
-			
-			# Get the database files after all the alterations
-			Write-Message -Message "Retrieving data files after data move" -Level Verbose
-			$dataFilesEnding = Get-DbaDatabaseFile -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name | Where-Object { $_.TypeDescription -eq 'ROWS' } | Select-Object ID, LogicalName, PhysicalName, Size, UsedSpace, AvailableSpace | Sort-Object ID
-			
-			[pscustomobject]@{
-				ComputerName    = $server.NetName
-				InstanceName    = $server.ServiceName
-				SqlInstance	    = $server.DomainInstanceName
-				Database	    = $db.Name
-				Start		    = $start
-				End			    = $end
-				Elapsed		    = $elapsed
-				Success		    = $success
-				Unsuccesfull    = $unsuccesfullTables -join ","
-				DataFilesStart  = $dataFilesStarting
-				DataFilesEnd    = $dataFilesEnding
-			}
-			
-		} # foreach database
-		
-	} # end process
-	
-	end {
-		Write-Message -Message "Finished balancing out data files" -Level Verbose
+		} # end process
 	}
 }
