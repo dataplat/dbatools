@@ -131,6 +131,9 @@ function Restore-DbaDatabase {
 
     .PARAMETER ReplaceDbNameInFile
         If switch set and occurence of the original database's name in a data or log file will be replace with the name specified in the Databasename paramter
+    
+    .PARAMETER Recover
+        If set will perform recovery on the indicated database
         
 	.PARAMETER Silent
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
@@ -245,32 +248,58 @@ function Restore-DbaDatabase {
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$DatabaseName,
+        [parameter(ParameterSet="Restore")]
         [String]$DestinationDataDirectory,
+        [parameter(ParameterSet="Restore")]
         [String]$DestinationLogDirectory,
+        [parameter(ParameterSet="Restore")]
         [DateTime]$RestoreTime = (Get-Date).addyears(1),
+        [parameter(ParameterSet="Restore")]
         [switch]$NoRecovery,
+        [parameter(ParameterSet="Restore")]
         [switch]$WithReplace,
+        [parameter(ParameterSet="Restore")]
         [Switch]$XpDirTree,
         [switch]$OutputScriptOnly,
+        [parameter(ParameterSet="Restore")]
         [switch]$VerifyOnly,
+        [parameter(ParameterSet="Restore")]
         [switch]$MaintenanceSolutionBackup,
+        [parameter(ParameterSet="Restore")]
         [hashtable]$FileMapping,
+        [parameter(ParameterSet="Restore")]
         [switch]$IgnoreLogBackup,
+        [parameter(ParameterSet="Restore")]
         [switch]$useDestinationDefaultDirectories,
+        [parameter(ParameterSet="Restore")]
         [switch]$ReuseSourceFolderStructure,
+        [parameter(ParameterSet="Restore")]
         [string]$DestinationFilePrefix = '',
+        [parameter(ParameterSet="Restore")]
         [string]$RestoredDatababaseNamePrefix,
+        [parameter(ParameterSet="Restore")]
         [switch]$TrustDbBackupHistory,
+        [parameter(ParameterSet="Restore")]
         [int]$MaxTransferSize,
+        [parameter(ParameterSet="Restore")]
         [int]$BlockSize,
+        [parameter(ParameterSet="Restore")]
         [int]$BufferCount,
-        [switch]$DirectoryRecurse,
+        [parameter(ParameterSet="Restore")]
+        [switch]$DirectoryRecurse,     
         [switch]$Silent,
+        [parameter(ParameterSet="Restore")]
         [string]$StandbyDirectory,
+        [parameter(ParameterSet="Restore")]
         [switch]$Continue,
         [string]$AzureCredential,
+        [parameter(ParameterSet="Restore")]
         [switch]$ReplaceDbNameInFile,
-        [string]$DestinationFileSuffix
+        [parameter(ParameterSet="Restore")]
+        [string]$DestinationFileSuffix,
+        [parameter(ParameterSet="Recovery")]
+        [switch]$Recover
+
     )
     begin {
         Write-Message -Level InternalComment -Message "Starting"
