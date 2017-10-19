@@ -54,7 +54,7 @@ function Register-DbaRunspace {
 	)
 	
 	if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($Name.ToLower())) {
-		Write-Message -Level Verbose -Message "Updating runspace: <c='Green'>$($Name.ToLower())</c>" -Target $Name.ToLower() -Silent $Silent
+		Write-Message -Level Verbose -Message "Updating runspace: <c='Green'>$($Name.ToLower())</c>" -Target $Name.ToLower() -EnableException $EnableException
 		[Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$Name.ToLower()].SetScript($ScriptBlock)
 	}
 	else {
