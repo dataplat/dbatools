@@ -1,4 +1,4 @@
-﻿function Set-DbaPrivilege {
+function Set-DbaPrivilege {
   <#
       .SYNOPSIS
       Adds the SQL Service account to local privileges on one or more computers. 
@@ -14,7 +14,7 @@
       .PARAMETER Credential
       Credential object used to connect to the computer as a different user.
 	
-	  .PARAMETER Silent 
+	  .PARAMETER EnableException 
 	  Use this switch to disable any kind of verbose messages.
 	
 	  .PARAMETER Type 
@@ -51,7 +51,7 @@
         [Parameter(Mandatory=$true)]
         [ValidateSet('IFI','LPIM','BatchLogon')]
         [string[]]$Type,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

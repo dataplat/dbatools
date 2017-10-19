@@ -19,7 +19,7 @@ $cred = Get-Credential, then pass $cred variable to this parameter.
 
 Windows Authentication will be used when SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -53,7 +53,7 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

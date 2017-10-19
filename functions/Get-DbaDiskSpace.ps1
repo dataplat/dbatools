@@ -36,7 +36,7 @@ function Get-DbaDiskSpace {
 			
 			This will increase the runtime of the function by seconds or even minutes per volume.
 		
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			A description of the Silent parameter.
 		
 		.PARAMETER WhatIf
@@ -112,7 +112,7 @@ function Get-DbaDiskSpace {
 		[PSCredential]$Credential,
 		[Alias('Detailed', 'AllDrives')][Switch]$Force,
 		[Switch]$CheckFragmentation,
-		[Switch]$Silent
+		[Switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
@@ -137,8 +137,8 @@ function Get-DbaDiskSpace {
 				continue
 			}
 			
-			try { $disks = Get-DbaCmObject -ComputerName $computer.ComputerName -Query "SELECT * FROM Win32_Volume$condition" -Credential $Credential -Namespace root\CIMv2 -ErrorAction Stop -WarningAction SilentlyContinue -Silent }
-			catch { Stop-Function -Message "Failed to connect to $computer." -Silent $Silent -ErrorRecord $_ -Target $computer.ComputerName -Continue }
+			try { $disks = Get-DbaCmObject -ComputerName $computer.ComputerName -Query "SELECT * FROM Win32_Volume$condition" -Credential $Credential -Namespace root\CIMv2 -ErrorAction Stop -WarningAction SilentlyContinue -EnableException }
+			catch { Stop-Function -Message "Failed to connect to $computer." -EnableException $EnableException -ErrorRecord $_ -Target $computer.ComputerName -Continue }
 			
 			if ($CheckForSql) {
 				try {

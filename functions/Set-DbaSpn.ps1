@@ -24,7 +24,7 @@ The credential you want to use to connect to Active Directory to make the change
 .PARAMETER NoDelegation
 Skips setting the delegation
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .PARAMETER Confirm
@@ -87,7 +87,7 @@ Displays what would happen trying to set all missing SPNs for sql2016
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
 		[PSCredential]$Credential,
 		[switch]$NoDelegation,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process
@@ -100,11 +100,11 @@ Displays what would happen trying to set all missing SPNs for sql2016
 		}
 		try
 		{
-			$Result = Get-DbaADObject -ADObject $ServiceAccount -Type $searchfor -Credential $Credential -Silent
+			$Result = Get-DbaADObject -ADObject $ServiceAccount -Type $searchfor -Credential $Credential -EnableException
 		}
 		catch
 		{
-			Stop-Function -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($ServiceAccount). $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ServiceAccount
+			Stop-Function -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($ServiceAccount). $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_ -Target $ServiceAccount
 		}
 		if ($Result.Count -gt 0)
 		{
@@ -114,7 +114,7 @@ Displays what would happen trying to set all missing SPNs for sql2016
 				Stop-Function -Message "The SQL Service account ($ServiceAccount) has been found, but you don't have enough permission to inspect its properties $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ServiceAccount
 			}
 		} else {
-			Stop-Function -Message "The SQL Service account ($ServiceAccount) has not been found" -Silent $Silent -Target $ServiceAccount
+			Stop-Function -Message "The SQL Service account ($ServiceAccount) has not been found" -EnableException $EnableException -Target $ServiceAccount
 		}
 		# Cool! Add an SPN
 		$delegate = $true

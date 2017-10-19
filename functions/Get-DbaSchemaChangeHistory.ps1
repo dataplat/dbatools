@@ -26,7 +26,7 @@ function Get-DbaSchemaChangeHistory {
 	.PARAMETER Object
 	The name of a SQL Server object you want to look for changes on
 
-	.PARAMETER Silent 
+	.PARAMETER EnableException 
 	Use this switch to disable any kind of verbose messages
 	
 	.NOTES
@@ -75,7 +75,7 @@ function Get-DbaSchemaChangeHistory {
 		[object[]]$ExcludeDatabase,
 		[DbaDateTime]$Since,
 		[string[]]$Object,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

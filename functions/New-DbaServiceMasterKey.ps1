@@ -1,4 +1,4 @@
-﻿function New-DbaServiceMasterKey {
+function New-DbaServiceMasterKey {
 <#
 .SYNOPSIS
 Creates a new service master key
@@ -21,7 +21,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 
-.PARAMETER Silent 
+.PARAMETER EnableException 
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -44,7 +44,7 @@ You will be prompted to securely enter your Service Key Password twice, then a m
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
 		[Security.SecureString]$Password,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 		
 	process {

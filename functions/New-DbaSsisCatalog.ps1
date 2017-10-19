@@ -24,7 +24,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 	
-.PARAMETER Silent 
+.PARAMETER EnableException 
 Use this switch to disable any kind of verbose messages
 
 .NOTES 
@@ -64,7 +64,7 @@ Creates the SSIS Catalog on server DEV01 with the specified password.
 		[parameter(Mandatory = $true)]
 		[Security.SecureString]$Password,
 		[string]$SsisCatalog = "SSISDB",
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

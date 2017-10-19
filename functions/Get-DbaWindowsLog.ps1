@@ -1,4 +1,4 @@
-﻿function Get-DbaWindowsLog {
+function Get-DbaWindowsLog {
 <#
 	.SYNOPSIS
 		Gets Windows Application events associated with an instance
@@ -31,7 +31,7 @@
 		These processes will cause considerable CPU load, so a low limit is advisable in most scenarios.
 		Any value lower than 1 disables the limit
 	
-	.PARAMETER Silent 
+	.PARAMETER EnableException 
 		Use this switch to disable any kind of verbose messages
 	
 	.NOTES
@@ -76,7 +76,7 @@
 		$MaxRemoteThreads = 2,
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	
 	begin {

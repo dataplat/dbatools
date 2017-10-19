@@ -15,7 +15,7 @@ function Get-DbaSuspectPage {
 		.PARAMETER Database
 		The database to return. If unspecified, all records will be returned.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 		Use this switch to disable any kind of verbose messages
 			
 		.NOTES
@@ -44,7 +44,7 @@ function Get-DbaSuspectPage {
 		[DbaInstanceParameter[]]$SqlInstance,
 		[object]$Database,
        		[PSCredential]$SqlCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

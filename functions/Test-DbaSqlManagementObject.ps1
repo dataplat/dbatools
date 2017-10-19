@@ -1,4 +1,4 @@
-﻿function Test-DbaSqlManagementObject {
+function Test-DbaSqlManagementObject {
 	<#
 		.SYNOPSIS
 			Tests to see if the SMO version specified exists on the computer.
@@ -15,7 +15,7 @@
 		.PARAMETER VersionNumber
 			This is the specific version number you are looking for and the return will be True.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -42,7 +42,7 @@
 		[PSCredential]$Credential,
 		[Parameter(Mandatory)]
 		[int[]]$VersionNumber,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

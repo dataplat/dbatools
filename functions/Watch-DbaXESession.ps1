@@ -1,4 +1,4 @@
-﻿function Watch-DbaXESession {
+function Watch-DbaXESession {
  <#
 	.SYNOPSIS
 	Watch live XEvent Data as it happens
@@ -23,7 +23,7 @@
 	.PARAMETER SessionObject
 	Internal parameter
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 	If this switch is enabled, the internal messaging functions will be silenced.
 
 	.NOTES
@@ -68,7 +68,7 @@
 		[parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
 		[Microsoft.SqlServer.Management.XEvent.Session]$SessionObject,
 		[switch]$Raw,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		if (-not $SqlInstance) {

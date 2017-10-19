@@ -1,4 +1,4 @@
-﻿function Copy-DbaCredential {
+function Copy-DbaCredential {
 	<#
 		.SYNOPSIS
 			Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another while maintaining Credential passwords.
@@ -51,7 +51,7 @@
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -96,7 +96,7 @@
 		[object[]]$CredentialIdentity,
 		[object[]]$ExcludeCredentialIdentity,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
@@ -394,6 +394,6 @@
 		Copy-Credential $credentials -force:$force
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCredential
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCredential
 	}
 }

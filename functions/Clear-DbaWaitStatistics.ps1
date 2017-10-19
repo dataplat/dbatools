@@ -1,4 +1,4 @@
-﻿function Clear-DbaWaitStatistics {
+function Clear-DbaWaitStatistics {
 	<# 
 	.SYNOPSIS 
 		Clears wait statistics
@@ -21,7 +21,7 @@
 	.PARAMETER Confirm
 		If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-	.PARAMETER Silent 
+	.PARAMETER EnableException 
 		Use this switch to disable any kind of verbose messages
 
 	.NOTES 
@@ -47,7 +47,7 @@
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstance[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($instance in $SqlInstance) {

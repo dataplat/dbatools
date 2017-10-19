@@ -21,7 +21,7 @@ function Get-DbaDatabaseEncryption {
 	.PARAMETER IncludeSystemDBs
 		Switch parameter that when used will display system database information.
 		
-	.PARAMETER Silent 
+	.PARAMETER EnableException 
 		Use this switch to disable any kind of verbose messages.
 		
 	.NOTES 
@@ -64,7 +64,7 @@ function Get-DbaDatabaseEncryption {
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
         [switch]$IncludeSystemDBs,
-        [switch]$Silent
+        [switch][Alias('Silent')]$EnableException
     )
 	
     process {

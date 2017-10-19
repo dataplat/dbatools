@@ -23,7 +23,7 @@ Function Set-DbaTcpPort {
     .PARAMETER IpAddress
         Wich IpAddress should the portchange , if omitted allip (0.0.0.0) will be changed with the new portnumber.
     
-    .PARAMETER Silent
+    .PARAMETER EnableException
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
         Use this if you want the function to throw terminating errors you want to catch.
     
@@ -69,7 +69,7 @@ Function Set-DbaTcpPort {
 		[ValidateRange(1, 65535)]
 		[int]$Port,
 		[IpAddress[]]$IpAddress,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

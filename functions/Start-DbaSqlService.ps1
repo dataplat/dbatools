@@ -27,7 +27,7 @@ Function Start-DbaSqlService {
     .PARAMETER ServiceCollection
     A collection of services from Get-DbaSqlService
 
-    .PARAMETER Silent
+    .PARAMETER EnableException
     Use this switch to disable any kind of verbose messages
 
     .PARAMETER WhatIf
@@ -82,7 +82,7 @@ Function Start-DbaSqlService {
 		[object[]]$ServiceCollection,
 		[int]$Timeout = 30,
 		[PSCredential]$Credential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		$processArray = @()
@@ -104,6 +104,6 @@ Function Start-DbaSqlService {
 		if ($processArray) {
 			Update-ServiceStatus -ServiceCollection $processArray -Action 'start' -Timeout $Timeout -Silent $Silent
 		}
-		else { Write-Message -Level Warning -Silent $Silent -Message "No SQL Server services found with current parameters." }
+		else { Write-Message -Level Warning -EnableException $EnableException -Message "No SQL Server services found with current parameters." }
 	}
 }

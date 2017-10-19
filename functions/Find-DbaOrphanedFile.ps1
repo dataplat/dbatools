@@ -35,7 +35,7 @@ function Find-DbaOrphanedFile {
 		.PARAMETER RemoteOnly
 			If this switch is enabled, only remote filenames will be returned.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -95,7 +95,7 @@ function Find-DbaOrphanedFile {
 		[string[]]$FileType,
 		[switch]$LocalOnly,
 		[switch]$RemoteOnly,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

@@ -33,7 +33,7 @@ Warning - this will likely make it super slow if you run it on all databases.
 .PARAMETER IncludeSystemDatabases
 By default system databases are ignored but you can include them within the search using this parameter
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -82,7 +82,7 @@ Searches in "mydb" database triggers for "runtime" in the textbody
         [string]$TriggerLevel = 'All',
         [switch]$IncludeSystemObjects,
         [switch]$IncludeSystemDatabases,
-        [switch]$Silent
+        [switch]$[Alias('Silent')]$EnableException
     )
 
     begin {

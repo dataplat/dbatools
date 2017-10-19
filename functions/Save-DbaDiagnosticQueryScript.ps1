@@ -1,4 +1,4 @@
-﻿function Save-DbaDiagnosticQueryScript {
+function Save-DbaDiagnosticQueryScript {
   <#
 .SYNOPSIS 
 Save-DbaDiagnosticQueryScript downloads the most recent version of all Glenn Berry DMV scripts
@@ -15,7 +15,7 @@ The function Invoke-DbaDiagnosticQuery will try to download these scripts automa
 .PARAMETER Path
 Specifies the path to the output
 	
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -36,7 +36,7 @@ If Path is not specified, the "My Documents" location will be used.
   [CmdletBinding()]
   param (
     [System.IO.FileInfo]$Path = [Environment]::GetFolderPath("mydocuments"),
-    [Switch]$Silent
+    [Switch][Alias('Silent')]$EnableException
   )
 	
   if (-not (Test-Path $Path)) {

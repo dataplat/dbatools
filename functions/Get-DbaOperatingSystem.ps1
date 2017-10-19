@@ -12,7 +12,7 @@ function Get-DbaOperatingSystem {
 		.PARAMETER Credential
 			Alternate credential object to use for accessing the target computer(s).
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -42,7 +42,7 @@ function Get-DbaOperatingSystem {
 		[Alias("cn", "host", "Server")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential]$Credential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($computer in $ComputerName) {
@@ -69,7 +69,7 @@ function Get-DbaOperatingSystem {
 					$os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved -Credential $Credential -Silent
 				}
 				else {
-					$os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved -Silent
+					$os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved -EnableException
 				}
 			}
 			catch {
@@ -82,7 +82,7 @@ function Get-DbaOperatingSystem {
 					$tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved -Credential $Credential -Silent
 				}
 				else {
-					$tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved -Silent
+					$tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved -EnableException
 				}
 			}
 			catch {
@@ -95,7 +95,7 @@ function Get-DbaOperatingSystem {
 					$powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved -Credential $Credential -Silent | Select-Object ElementName, InstanceId, IsActive
 				}
 				else {
-					$powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved -Silent | Select-Object ElementName, InstanceId, IsActive
+					$powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved -EnableException | Select-Object ElementName, InstanceId, IsActive
 				}
 			}
 			catch {

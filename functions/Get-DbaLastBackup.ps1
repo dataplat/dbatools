@@ -20,7 +20,7 @@ The database(s) to process - this list is auto-populated from the server. If uns
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -66,7 +66,7 @@ Returns a gridview displaying Server, Database, RecoveryModel, LastFullBackup, L
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

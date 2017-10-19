@@ -30,7 +30,7 @@ Function Stop-DbaSqlService {
 	.PARAMETER Force
 	Use this switch to stop dependent services before proceeding with the specified service
 
-	.PARAMETER Silent
+	.PARAMETER EnableException
 	Use this switch to disable any kind of verbose messages
 
 	.PARAMETER WhatIf
@@ -94,7 +94,7 @@ Function Stop-DbaSqlService {
 		[int]$Timeout = 30,
 		[PSCredential]$Credential,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		$processArray = @()
@@ -129,6 +129,6 @@ Function Stop-DbaSqlService {
 		if ($processArray) {
 			Update-ServiceStatus -ServiceCollection $processArray -Action 'stop' -Timeout $Timeout -Silent $Silent
 		}
-		else { Stop-Function -Silent $Silent -Message "No SQL Server services found with current parameters." -Category ObjectNotFound }
+		else { Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters." -Category ObjectNotFound }
 	}
 }

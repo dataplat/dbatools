@@ -320,7 +320,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .PARAMETER Force
@@ -603,7 +603,7 @@ The script will show a message that the copy destination has not been supplied a
 
 		[switch]$Force,
 
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

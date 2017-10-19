@@ -51,7 +51,7 @@ function Copy-DbaSqlPolicyManagement {
 		.PARAMETER Confirm
 			Prompts you for confirmation before executing any changing operations within the command.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -101,7 +101,7 @@ function Copy-DbaSqlPolicyManagement {
 		[object[]]$Condition,
 		[object[]]$ExcludeCondition,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -284,6 +284,6 @@ function Copy-DbaSqlPolicyManagement {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlPolicyManagement
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlPolicyManagement
 	}
 }

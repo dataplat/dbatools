@@ -1,4 +1,4 @@
-﻿function Add-DbaComputerCertificate {
+function Add-DbaComputerCertificate {
 <#
 	.SYNOPSIS
 		Adds a computer certificate - useful for older systems.
@@ -27,7 +27,7 @@
 	.PARAMETER Folder
 		Certificate folder. Default is My (Personal).
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		If this switch is enabled, the internal messaging functions will be silenced.
 	
 	.PARAMETER WhatIf
@@ -62,7 +62,7 @@
 		[string]$Path,
 		[string]$Store = "LocalMachine",
 		[string]$Folder = "My",
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

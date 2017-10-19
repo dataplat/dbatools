@@ -1,4 +1,4 @@
-﻿function Get-DbaCmObject {
+function Get-DbaCmObject {
 <#
 	.SYNOPSIS
 		Retrieves Wmi/Cim-Style information from computers.
@@ -40,7 +40,7 @@
 		By default, Get-DbaCmObject will throw a terminating exception when connecting to a target is impossible in silent mode.
 		Setting this switch will cause it write a non-terminating exception and continue with the next computer.
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		Replaces user friendly yellow warnings with bloody red exceptions of doom!
 		Use this if you want the function to throw terminating errors you want to catch.
 	
@@ -97,7 +97,7 @@
 		$SilentlyContinue,
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	
 	Begin {

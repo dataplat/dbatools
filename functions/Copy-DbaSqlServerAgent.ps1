@@ -44,7 +44,7 @@ function Copy-DbaSqlServerAgent {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.PARAMETER Force
@@ -88,7 +88,7 @@ function Copy-DbaSqlServerAgent {
 		[Switch]$DisableJobsOnDestination,
 		[Switch]$DisableJobsOnSource,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -153,6 +153,6 @@ function Copy-DbaSqlServerAgent {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlServerAgent
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlServerAgent
 	}
 }

@@ -37,7 +37,7 @@ Prompts for confirmation of every step.
 .PARAMETER PipelineSnapshot
 Internal parameter
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -93,7 +93,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		[object]$PipelineSnapshot,
 		[switch]$AllSnapshots,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

@@ -30,7 +30,7 @@ function Test-DbaServerName {
 		.PARAMETER ExcludeSsrs
 			If this switch is enabled, checking for SQL Server Reporting Services will be skipped.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -75,7 +75,7 @@ function Test-DbaServerName {
 		[switch]$Detailed,
 		[Alias("NoWarning")]
 		[switch]$ExcludeSsrs,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

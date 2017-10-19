@@ -1,4 +1,4 @@
-﻿function Get-DbaDatabaseCertificate {
+function Get-DbaDatabaseCertificate {
 	<#
 .SYNOPSIS
 Gets database certificates
@@ -21,7 +21,7 @@ Database(s) to ignore when retrieving certificates.
 .PARAMETER Certificate
 Get specific certificate
 
-.PARAMETER Silent 
+.PARAMETER EnableException 
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -55,7 +55,7 @@ Gets the cert1 certificate within the db1 database
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[object[]]$Certificate,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

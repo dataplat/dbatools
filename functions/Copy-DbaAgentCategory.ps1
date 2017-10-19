@@ -1,4 +1,4 @@
-﻿function Copy-DbaAgentCategory {
+function Copy-DbaAgentCategory {
 	<#
 		.SYNOPSIS
 			Copy-DbaAgentCategory migrates SQL Agent categories from one SQL Server to another. This is similar to sp_add_category.
@@ -59,7 +59,7 @@
 		.PARAMETER Force
 			If this switch is enabled, the Category will be dropped and recreated on Destination.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -103,7 +103,7 @@
 		[ValidateSet('Job', 'Alert', 'Operator')]
 		[string[]]$CategoryType,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -398,6 +398,6 @@
 		Copy-JobCategory
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAgentCategory
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAgentCategory
 	}
 }

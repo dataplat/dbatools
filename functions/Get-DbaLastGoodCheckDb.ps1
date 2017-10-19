@@ -38,7 +38,7 @@ function Get-DbaLastGoodCheckDb {
 		.PARAMETER ExcludeDatabase
 			Specifies one or more database(s) to exclude from processing.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -77,7 +77,7 @@ function Get-DbaLastGoodCheckDb {
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($instance in $SqlInstance) {

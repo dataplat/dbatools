@@ -1,4 +1,4 @@
-﻿Function Get-DbaDatabasePartitionScheme {
+Function Get-DbaDatabasePartitionScheme {
 	<#
 .SYNOPSIS
 Gets database Partition Schemes
@@ -18,7 +18,7 @@ To get users from specific database(s)
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is auto populated from the server
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -58,7 +58,7 @@ Gets the Partition Schemes for the databases on Sql1 and Sql2/sqlexpress
 		[PSCredential]$SqlCredential,
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

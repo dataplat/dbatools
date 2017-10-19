@@ -1,4 +1,4 @@
-﻿function Copy-DbaAgentProxyAccount {
+function Copy-DbaAgentProxyAccount {
 	<#
 		.SYNOPSIS
 			Copy-DbaAgentProxyAccount migrates proxy accounts from one SQL Server to another.
@@ -41,7 +41,7 @@
 		.PARAMETER Force
 			If this switch is enabled, the Operator will be dropped and recreated on Destination.
 
-		.PARAMETER Silent 
+		.PARAMETER EnableException 
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -82,7 +82,7 @@
 		[PSCredential]
 		$DestinationSqlCredential,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -193,6 +193,6 @@
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlProxyAccount
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlProxyAccount
 	}
 }

@@ -31,7 +31,7 @@ function Test-DbaConnectionAuthScheme {
 
 			To connect as a different Windows user, run PowerShell as that user.
 
-			.PARAMETER Silent
+			.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -69,7 +69,7 @@ function Test-DbaConnectionAuthScheme {
 		[switch]$Kerberos,
 		[switch]$Ntlm,
 		[switch]$Detailed,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

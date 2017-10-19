@@ -51,7 +51,7 @@ function Stop-DbaProcess {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 			
 		.NOTES 
@@ -109,7 +109,7 @@ function Stop-DbaProcess {
 		[string[]]$Program,
 		[parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Process")]
 		[object[]]$ProcessCollection,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

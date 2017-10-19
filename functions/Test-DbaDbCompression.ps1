@@ -1,4 +1,4 @@
-﻿function Test-DbaDbCompression {
+function Test-DbaDbCompression {
 <#
 	.SYNOPSIS
 		Returns tables and indexes with preferred compression setting.
@@ -40,7 +40,7 @@
 	.PARAMETER ExcludeDatabase
 		The database(s) to exclude - this list is autopopulated from the server
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		Replaces user friendly yellow warnings with bloody red exceptions of doom!
 		Use this if you want the function to throw terminating errors you want to catch.
 	
@@ -92,7 +92,7 @@
 		[PSCredential]$SqlCredential,
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

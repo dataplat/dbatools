@@ -39,7 +39,7 @@ Run only instance level queries
 .PARAMETER DatabaseSpecific
 Run only database level queries
 	
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages or progress bars
 	
 .PARAMETER Confirm
@@ -84,7 +84,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 		[switch]$UseSelectionHelper,
 		[switch]$InstanceOnly,
 		[switch]$DatabaseSpecific,
-		[switch]$Silent
+		[switch]$[Alias('Silent')]$EnableException
 	)
 	
 	begin {

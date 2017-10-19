@@ -44,7 +44,7 @@ function Copy-DbaCustomError {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.PARAMETER Force
@@ -95,7 +95,7 @@ function Copy-DbaCustomError {
 		[object[]]$CustomError,
 		[object[]]$ExcludeCustomError,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -177,6 +177,6 @@ function Copy-DbaCustomError {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCustomError
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCustomError
 	}
 }

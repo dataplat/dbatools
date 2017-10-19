@@ -48,7 +48,7 @@ function Copy-DbaSqlDataCollector {
 		.PARAMETER Force
 			If collection sets exists on destination server, it will be dropped and recreated.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -97,7 +97,7 @@ function Copy-DbaSqlDataCollector {
 		[object[]]$ExcludeCollectionSet,
 		[switch]$NoServerReconfig,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -250,6 +250,6 @@ function Copy-DbaSqlDataCollector {
 	}
 	end {
 		if (Test-FunctionInterrupt) { return }
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDataCollector
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlDataCollector
 	}
 }

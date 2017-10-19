@@ -21,7 +21,7 @@ function Get-DbaDatabaseFile {
 	.PARAMETER DatabaseCollection
 	Internal Variable
 	
-	.PARAMETER Silent 
+	.PARAMETER EnableException 
 	Use this switch to disable any kind of verbose messages
 
 	.NOTES
@@ -56,7 +56,7 @@ function Get-DbaDatabaseFile {
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[object[]]$DatabaseCollection,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 		
 	)
 	

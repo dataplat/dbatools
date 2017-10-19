@@ -1,4 +1,4 @@
-﻿function Copy-DbaAgentAlert {
+function Copy-DbaAgentAlert {
 	<#
 		.SYNOPSIS
 			Copy-DbaAgentAlert migrates alerts from one SQL Server to another.
@@ -50,7 +50,7 @@
 		.PARAMETER Force
 			If this switch is enabled, the Alert will be dropped and recreated on Destination.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -94,7 +94,7 @@
 		[object[]]$ExcludeAlert,
 		[switch]$IncludeDefaults,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -305,6 +305,6 @@
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAlert
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAlert
 	}
 }

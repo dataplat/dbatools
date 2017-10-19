@@ -1,4 +1,4 @@
-﻿Function Get-DbaClientAlias {
+Function Get-DbaClientAlias {
 <#
 	.SYNOPSIS 
 	Creates/updates a sql alias for the specified server - mimics cliconfg.exe
@@ -12,7 +12,7 @@
 	.PARAMETER Credential
 	Allows you to login to remote computers using alternative credentials
 
-	.PARAMETER Silent
+	.PARAMETER EnableException
 	Use this switch to disable any kind of verbose messages
 
 	.NOTES
@@ -37,7 +37,7 @@
 	Param (
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential]$Credential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

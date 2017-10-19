@@ -24,7 +24,7 @@ Function Get-DbaSqlService {
 	.PARAMETER ServiceName
 	Can be used to specify service names explicitly, without looking for service types/instances.
 
-	.PARAMETER Silent
+	.PARAMETER EnableException
 	Use this switch to disable any kind of verbose messages
 	
 	.NOTES
@@ -84,7 +84,7 @@ Function Get-DbaSqlService {
 		[string[]]$Type,
 		[Parameter(ParameterSetName = "ServiceName")]
 		[string[]]$ServiceName,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	BEGIN {
@@ -223,7 +223,7 @@ Function Get-DbaSqlService {
 				}
 			}
 			else {
-				Stop-Function -Silent $Silent -Message "Failed to connect to $Computer" -Continue
+				Stop-Function -EnableException $EnableException -Message "Failed to connect to $Computer" -Continue
 			}
 		}
 	}

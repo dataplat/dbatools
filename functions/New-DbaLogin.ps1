@@ -66,7 +66,7 @@ function New-DbaLogin {
 	.PARAMETER Confirm 
 	Prompts you for confirmation before executing any changing operations within the command 
 	
-	.PARAMETER Silent 
+	.PARAMETER EnableException 
 	Use this switch to disable any kind of verbose messages
 	
 	.NOTES
@@ -155,7 +155,7 @@ function New-DbaLogin {
 		[switch]$Disabled,
 		[switch]$NewSid,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
@@ -207,7 +207,7 @@ function New-DbaLogin {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Silent $Silent -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -EnableException $EnableException -Continue
 			}
 			
 			foreach ($loginItem in $loginCollection) {

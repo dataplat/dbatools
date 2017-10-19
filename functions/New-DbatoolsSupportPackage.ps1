@@ -1,4 +1,4 @@
-﻿function New-DbatoolsSupportPackage {
+function New-DbatoolsSupportPackage {
     <#
     .SYNOPSIS
     Creates a package of troubleshooting information that can be used by dbatools to help debug issues.
@@ -23,7 +23,7 @@
 	Name of additional variables to attach.
 	This allows you to add the content of variables to the support package, if you believe them to be relevant to the case.
     
-    .PARAMETER Silent
+    .PARAMETER EnableException
     Replaces user friendly yellow warnings with bloody red exceptions of doom!
     Use this if you want the function to throw terminating errors you want to catch.
 
@@ -52,7 +52,7 @@
         $Variables,
         
         [switch]
-        $Silent
+        [Alias('Silent')]$EnableException
     )
     
     BEGIN {

@@ -70,7 +70,7 @@ function Copy-DbaLogin {
 		.PARAMETER Force
 			If this switch is enabled, the Login(s) will be dropped and recreated on Destination. Logins that own Agent jobs cannot be dropped at this time.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -144,7 +144,7 @@ function Copy-DbaLogin {
 		[hashtable]$LoginRenameHashtable,
 		[switch]$KillActiveConnection,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -537,6 +537,6 @@ function Copy-DbaLogin {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlLogin
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlLogin
 	}
 }

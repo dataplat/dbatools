@@ -35,7 +35,7 @@ Shows what would happen if the command were to run
 .PARAMETER Confirm
 Prompts for confirmation of every step.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -73,7 +73,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 		[object[]]$ExcludeDatabase,
 		[object[]]$Snapshot,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

@@ -38,7 +38,7 @@ function Test-DbaLogShippingStatus {
 	By default all the information will be returned. 
 	If this parameter is used you get an overview with the SQL Instance, Database, Instance Type and the status
 
-	.PARAMETER Silent
+	.PARAMETER EnableException
 	Use this switch to disable any kind of verbose messages
 
 	.NOTES 
@@ -90,7 +90,7 @@ function Test-DbaLogShippingStatus {
 		[switch]$Simple,
 		[switch]$Primary,
 		[switch]$Secondary,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

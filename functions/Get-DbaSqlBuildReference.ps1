@@ -19,7 +19,7 @@ Function Get-DbaSqlBuildReference {
 	.PARAMETER Update
 		Looks online for the most up to date reference, replacing the local one.
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		Use this switch to disable any kind of verbose messages
 	
 	.EXAMPLE
@@ -75,7 +75,7 @@ Function Get-DbaSqlBuildReference {
 		$Update,
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	
 	begin {
@@ -168,11 +168,11 @@ Function Get-DbaSqlBuildReference {
 			}
 			catch {
 				try {
-					Write-Message -Level Verbose -Silent $Silent -Message "Probably using a proxy for internet access, trying default proxy settings"
+					Write-Message -Level Verbose -EnableException $Silent -Message "Probably using a proxy for internet access, trying default proxy settings"
 					(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
 					$WebContent = Invoke-WebRequest $url -ErrorAction Stop
 				} catch {
-					Write-Message -Level Warning -Silent $Silent -Message "Couldn't download updated index from $url"
+					Write-Message -Level Warning -EnableException $Silent -Message "Couldn't download updated index from $url"
 					return
 				}
 			}
@@ -193,12 +193,12 @@ Function Get-DbaSqlBuildReference {
 				$Silent
 			)
 			
-			Write-Message -Level Verbose -Silent $Silent -Message "Looking for $Build"
+			Write-Message -Level Verbose -EnableException $Silent -Message "Looking for $Build"
 			
 			$IdxVersion = $Data | Where-Object Version -like "$($Build.Major).$($Build.Minor).*"
 			$Detected = @{ }
 			$Detected.MatchType = 'Approximate'
-			Write-Message -Level Verbose -Silent $Silent -Message "We have $($IdxVersion.Length) builds in store for this Release"
+			Write-Message -Level Verbose -EnableException $Silent -Message "We have $($IdxVersion.Length) builds in store for this Release"
 			If ($IdxVersion.Length -eq 0) {
 				Write-Message -Level Warning -Silent $Silent -Message "No info in store for this Release"
 				$Detected.Warning = "No info in store for this Release"
@@ -239,7 +239,7 @@ Function Get-DbaSqlBuildReference {
 		$moduledirectory = $MyInvocation.MyCommand.Module.ModuleBase
 		
 		try {
-			$IdxRef = Get-DbaSqlBuildReferenceIndex -Moduledirectory $moduledirectory -Update $Update -Silent $Silent
+			$IdxRef = Get-DbaSqlBuildReferenceIndex -Moduledirectory $moduledirectory -Update $Update -Silent $EnableException
 		}
 		catch {
 			Stop-Function -Message "Error loading SQL build reference" -ErrorRecord $_
@@ -267,7 +267,7 @@ Function Get-DbaSqlBuildReference {
 			}
 			#endregion Ensure the connection is established
 			
-			$Detected = Resolve-DbaSqlBuild -Build $server.Version -Data $IdxRef -Silent $Silent
+			$Detected = Resolve-DbaSqlBuild -Build $server.Version -Data $IdxRef -Silent $EnableException
 			
 			[PSCustomObject]@{
 				SqlInstance    = $server.DomainInstanceName
@@ -283,7 +283,7 @@ Function Get-DbaSqlBuildReference {
 		}
 		
 		foreach ($buildstr in $Build) {
-			$Detected = Resolve-DbaSqlBuild -Build $buildstr -Data $IdxRef -Silent $Silent
+			$Detected = Resolve-DbaSqlBuild -Build $buildstr -Data $IdxRef -Silent $EnableException
 			
 			[PSCustomObject]@{
 				SqlInstance    = $null

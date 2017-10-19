@@ -20,7 +20,7 @@ The account you want the SPN remove from
 .PARAMETER Credential
 The credential you want to use to connect to Active Directory to make the changes
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .PARAMETER Confirm
@@ -79,7 +79,7 @@ Removes all set SPNs for sql2005 and the relative delegations
 		[string]$ServiceAccount,
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
 		[PSCredential]$Credential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {
@@ -89,10 +89,10 @@ Removes all set SPNs for sql2005 and the relative delegations
 			$searchfor = 'Computer'
 		}
 		try {
-			$Result = Get-DbaADObject -ADObject $ServiceAccount -Type $searchfor -Credential $Credential -Silent
+			$Result = Get-DbaADObject -ADObject $ServiceAccount -Type $searchfor -Credential $Credential -EnableException
 		}
 		catch {
-			Stop-Function -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($ServiceAccount). $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ServiceAccount
+			Stop-Function -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($ServiceAccount). $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_ -Target $ServiceAccount
 		}
 		if ($Result.Count -gt 0) {
 			try {
@@ -103,7 +103,7 @@ Removes all set SPNs for sql2005 and the relative delegations
 			}
 		}
 		else {
-			Stop-Function -Message "The SQL Service account ($ServiceAccount) has not been found" -Silent $Silent -Target $ServiceAccount
+			Stop-Function -Message "The SQL Service account ($ServiceAccount) has not been found" -EnableException $EnableException -Target $ServiceAccount
 		}
 		
 		# Cool! Remove an SPN

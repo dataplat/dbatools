@@ -1,4 +1,4 @@
-﻿Function Remove-DbaClientAlias {
+Function Remove-DbaClientAlias {
 <#
 	.SYNOPSIS 
 	Removes a sql alias for the specified server - mimics cliconfg.exe
@@ -15,7 +15,7 @@
 	.PARAMETER Alias
 	The alias to be deleted
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 	Use this switch to disable any kind of verbose messages
 
 	.NOTES
@@ -45,7 +45,7 @@
 		[parameter(Mandatory, ValueFromPipelineByPropertyName)]
 		[Alias('AliasName')]
 		[string]$Alias,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

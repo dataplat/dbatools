@@ -1,4 +1,4 @@
-﻿function Get-DbaSqlLog {
+function Get-DbaSqlLog {
 <#
 	.SYNOPSIS
 		Gets the "SQL Error Log" of an instance
@@ -30,7 +30,7 @@
 	.PARAMETER Before
 		Filter the results based on datetime value.
 
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		Use this switch to disable any kind of verbose messages
 
 	.NOTES
@@ -91,7 +91,7 @@
 		[string]$Text,
 		[datetime]$After,
 		[datetime]$Before,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($instance in $SqlInstance) {

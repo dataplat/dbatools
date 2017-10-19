@@ -20,7 +20,7 @@ Credential object used to connect to the SQL Server as a different user
 .PARAMETER Simple
 Shows concise information including Server name, Database name, and the date the last time backups were performed
 
-.PARAMETER Silent 
+.PARAMETER EnableException 
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -61,7 +61,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 		[dbainstanceparameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential]$Credential,
 		[switch]$Simple,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

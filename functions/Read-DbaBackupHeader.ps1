@@ -27,7 +27,7 @@ Returns detailed information about the files within the backup
 .PARAMETER AzureCredential
 Name of the SQL Server credential that should be used for Azure storage access	
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Switch to silence the internal messaging functions
 
 
@@ -113,7 +113,7 @@ Gets the backup header information from the SQL Server backup file stored at htt
         $AzureCredential,
         
         [switch]
-        $Silent
+        [Alias('Silent')]$EnableException
     )
     
     begin {

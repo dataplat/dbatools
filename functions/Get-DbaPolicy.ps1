@@ -21,7 +21,7 @@ Function Get-DbaPolicy {
 	.PARAMETER IncludeSystemObject
 	By default system objects are filtered out. Use this parameter to INCLUDE them .
 
-	.PARAMETER Silent
+	.PARAMETER EnableException
 	If this switch is enabled, the internal messaging functions will be silenced. 
 
 	.NOTES
@@ -61,7 +61,7 @@ Function Get-DbaPolicy {
 		[string[]]$Policy,
 		[string[]]$Category,
 		[switch]$IncludeSystemObject,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

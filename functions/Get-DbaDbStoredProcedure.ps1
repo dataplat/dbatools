@@ -1,4 +1,4 @@
-﻿function Get-DbaDbStoredProcedure {
+function Get-DbaDbStoredProcedure {
 	<#
 		.SYNOPSIS
 			Gets database Stored Procedures
@@ -21,7 +21,7 @@
 		.PARAMETER ExcludeSystemSp
 			This switch removes all system objects from the Stored Procedure collection
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -66,7 +66,7 @@
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemSp,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

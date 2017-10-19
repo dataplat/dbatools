@@ -1,4 +1,4 @@
-﻿function Get-DbaComputerCertificate {
+function Get-DbaComputerCertificate {
 <#
 	.SYNOPSIS
 		Simplifies finding computer certificates that are candidates for using with SQL Server's network encryption
@@ -24,7 +24,7 @@
 	.PARAMETER Thumbprint
 		Return certificate based on thumbprint
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		Use this switch to disable any kind of verbose messages
 	
 	.EXAMPLE
@@ -56,7 +56,7 @@
 		[string]$Folder = "My",
 		[string]$Path,
 		[string[]]$Thumbprint,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

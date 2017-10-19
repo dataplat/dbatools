@@ -39,7 +39,7 @@ function Backup-DbaDatabaseCertificate {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.PARAMETER WhatIf
@@ -117,7 +117,7 @@ function Backup-DbaDatabaseCertificate {
 		[string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
 		[parameter(ValueFromPipeline, ParameterSetName = "collection")]
 		[Microsoft.SqlServer.Management.Smo.Certificate[]]$CertificateCollection,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

@@ -1,4 +1,4 @@
-﻿function New-DbaCmConnection {
+function New-DbaCmConnection {
     <#
         .SYNOPSIS
             Generates a connection object for use in remote computer management.
@@ -59,7 +59,7 @@
             Specify a set of options to use when connecting to the target computer using CIM over DCOM.
             Use 'New-CimSessionOption' to create such an object.
 
-        .PARAMETER Silent
+        .PARAMETER EnableException
             Replaces user friendly yellow warnings with bloody red exceptions of doom!
             Use this if you want the function to throw terminating errors you want to catch.
 
@@ -127,7 +127,7 @@
         [Microsoft.Management.Infrastructure.Options.DComSessionOptions]
         $CimDCOMOptions,
         [switch]
-        $Silent
+        [Alias('Silent')]$EnableException
     )
 
     begin {

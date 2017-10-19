@@ -31,7 +31,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -58,7 +58,7 @@ Imports all the certificates in the specified path.
 		[object[]]$Path,
 		[object]$Database = "master",
 		[Security.SecureString]$Password = (Read-Host "Password" -AsSecureString),
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

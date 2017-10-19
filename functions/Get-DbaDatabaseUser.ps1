@@ -1,4 +1,4 @@
-﻿Function Get-DbaDatabaseUser {
+Function Get-DbaDatabaseUser {
 	<#
 .SYNOPSIS
 Gets database users
@@ -21,7 +21,7 @@ The database(s) to exclude - this list is auto populated from the server
 .PARAMETER ExcludeSystemUser
 This switch removes all system objects from the user collection
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -67,7 +67,7 @@ Gets the users for the databases on Sql1 and Sql2/sqlexpress
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemUser,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

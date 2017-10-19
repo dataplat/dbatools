@@ -90,7 +90,7 @@ function Expand-DbaTLogResponsibly {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
         .NOTES
@@ -158,7 +158,7 @@ function Expand-DbaTLogResponsibly {
         [parameter(Position = 10, ParameterSetName = 'Shrink')]
         [AllowEmptyString()]
         [string]$BackupDirectory,
-        [switch]$Silent
+        [switch][Alias('Silent')]$EnableException
     )
 	
     begin {
@@ -507,7 +507,7 @@ function Expand-DbaTLogResponsibly {
     END {
         $server.ConnectionContext.Disconnect()
         Write-Message -Level Verbose -Message "Process finished $((Get-Date) - ($initialTime))"
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Expand-SqlTLogResponsibly
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Expand-SqlTLogResponsibly
     }
 }
 

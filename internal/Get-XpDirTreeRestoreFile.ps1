@@ -15,7 +15,7 @@ function Get-XpDirTreeRestoreFile {
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server as a different user
     
-    .PARAMETER Silent
+    .PARAMETER EnableException
         Setting this to true will disable all verbosity.
     
     .EXAMPLE
@@ -31,7 +31,7 @@ function Get-XpDirTreeRestoreFile {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[bool]$Silent = $false
+		[bool][Alias('Silent')]$EnableException = $false
 	)
 	
 	Write-Message -Level InternalComment -Message "Starting"

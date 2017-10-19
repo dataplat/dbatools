@@ -1,4 +1,4 @@
-﻿function Get-DbaDependency
+function Get-DbaDependency
 {
     <#
         .SYNOPSIS
@@ -27,7 +27,7 @@
             Includes the object whose dependencies are retrieves itself.
             Useful when exporting an entire logic structure in order to recreate it in another database.
         
-        .PARAMETER Silent
+        .PARAMETER EnableException
             Replaces user friendly yellow warnings with bloody red exceptions of doom!
             Use this if you want the function to throw terminating errors you want to catch.
         
@@ -58,7 +58,7 @@
         $IncludeSelf,
         
         [switch]
-        $Silent
+        [Alias('Silent')]$EnableException
     )
     
     Begin
@@ -95,13 +95,13 @@
             
             $urnCollection = New-Object Microsoft.SqlServer.Management.Smo.UrnCollection
             
-            Write-Message -Silent $Silent -Level 5 -Message "Adding $Object which is a $($Object.urn.Type)" -FunctionName $FunctionName
+            Write-Message -EnableException $Silent -Level 5 -Message "Adding $Object which is a $($Object.urn.Type)" -FunctionName $FunctionName
             $urnCollection.Add([Microsoft.SqlServer.Management.Sdk.Sfc.Urn]$Object.urn)
             
             #now we set up an event listnenr go get progress reports
             $progressReportEventHandler = [Microsoft.SqlServer.Management.Smo.ProgressReportEventHandler] {
                 $name = $_.Current.GetAttribute('Name');
-                Write-Message -Silent $Silent -Level 5 -Message "Analysed $name" -FunctionName $FunctionName
+                Write-Message -EnableException $Silent -Level 5 -Message "Analysed $name" -FunctionName $FunctionName
             }
             $scripter.add_DiscoveryProgress($progressReportEventHandler)
             
@@ -224,7 +224,7 @@
     {
         foreach ($Item in $InputObject)
         {
-            Write-Message -Silent $Silent -Level 5 -Message "Processing: $Item"
+            Write-Message -EnableException $EnableException -Level 5 -Message "Processing: $Item"
             if ($null -eq $Item.urn)
             {
                 Stop-Function -Message "$Item is not a valid SMO object" -Silent $Silent -Category InvalidData -Continue -Target $Item
@@ -243,7 +243,7 @@
             
             $server = $parent
             
-            $tree = Get-DependencyTree -Object $Item -AllowSystemObjects $false -Server $server -FunctionName (Get-PSCallStack)[0].COmmand -Silent $Silent -EnumParents $Parents
+            $tree = Get-DependencyTree -Object $Item -AllowSystemObjects $false -Server $server -FunctionName (Get-PSCallStack)[0].COmmand -Silent $EnableException -EnumParents $Parents
             $limitCount = 2
             if ($IncludeSelf) { $limitCount = 1 }
             if ($tree.Count -lt $limitCount)

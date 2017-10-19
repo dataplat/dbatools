@@ -1,4 +1,4 @@
-﻿foreach ($item in (Get-ChildItem "$script:PSModuleRoot\internal\maintenance" -Filter *.ps1)) {
+foreach ($item in (Get-ChildItem "$script:PSModuleRoot\internal\maintenance" -Filter *.ps1)) {
 	if ($script:doDotSource) { . $item.FullName }
 	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($item.FullName))), $null, $null) }
 }
@@ -21,7 +21,7 @@ $scriptBlock = {
 			$tasksDone = @()
 			while ($task = [Sqlcollaborative.Dbatools.Maintenance.MaintenanceHost]::GetNextTask($tasksDone)) {
 				try { ([ScriptBlock]::Create($task.ScriptBlock.ToString())).Invoke() }
-				catch { Write-Message -Silent $false -Level Verbose -Message "[Maintenance] Task '$($task.Name)' failed to execute: $_" -ErrorRecord $_ -FunctionName "task:Maintenance" -Target $task }
+				catch { Write-Message -EnableException $false -Level Verbose -Message "[Maintenance] Task '$($task.Name)' failed to execute: $_" -ErrorRecord $_ -FunctionName "task:Maintenance" -Target $task }
 				$task.LastExecution = Get-Date
 				$tasksDone += $task.Name
 			}

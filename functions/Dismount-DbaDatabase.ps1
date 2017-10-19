@@ -1,4 +1,4 @@
-﻿function Dismount-DbaDatabase {
+function Dismount-DbaDatabase {
 	<#
 		.SYNOPSIS
 			Detach a SQL Server Database.
@@ -39,7 +39,7 @@
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -81,7 +81,7 @@
 		[Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
 		[Switch]$UpdateStatistics,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($instance in $SqlInstance) {

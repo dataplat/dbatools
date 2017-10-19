@@ -20,7 +20,7 @@ Credential object used to connect to the SQL Server as a different user
 .PARAMETER IncludeWindows
 Includes the Windows Server Install date information 
 
-.PARAMETER Silent 
+.PARAMETER EnableException 
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -70,7 +70,7 @@ Returns an object with SQL Instance install date as a string for every server li
 		[PSCredential]
 		$Credential,
 		[Switch]$IncludeWindows,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

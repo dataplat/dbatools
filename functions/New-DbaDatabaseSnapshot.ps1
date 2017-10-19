@@ -46,7 +46,7 @@ in the snapshot. To create a "partial" snapshot, you need to pass -Force explici
 NB: You can't then restore the Database from the newly-created snapshot.
 For details, check https://msdn.microsoft.com/en-us/library/bb895334.aspx
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -98,7 +98,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		[string]$NameSuffix,
 		[string]$Path,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

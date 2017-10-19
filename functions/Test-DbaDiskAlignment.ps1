@@ -41,7 +41,7 @@ function Test-DbaDiskAlignment {
         .PARAMETER NoSqlCheck
             If this switch is enabled, the disk(s) will not be checked for SQL Server data or log files.
         
-        .PARAMETER Silent
+        .PARAMETER EnableException
             If this switch is enabled, the internal messaging functions will be silenced.	
         
         .EXAMPLE
@@ -93,7 +93,7 @@ function Test-DbaDiskAlignment {
 		[System.Management.Automation.PSCredential]$Credential,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$NoSqlCheck,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0.0" -Parameter 'Detailed' 

@@ -1,4 +1,4 @@
-﻿function Get-DbaTraceFlag {
+function Get-DbaTraceFlag {
 	<#
 		.SYNOPSIS
 			Get global Trace Flag(s) information for each instance(s) of SQL Server.
@@ -15,7 +15,7 @@
 		.PARAMETER TraceFlag
 			Use this switch to filter to a specific Trace Flag.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages.
 
 		.NOTES
@@ -54,7 +54,7 @@
 		[PSCredential]
 		$SqlCredential,
 		[int[]]$TraceFlag,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

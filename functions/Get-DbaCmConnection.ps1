@@ -1,4 +1,4 @@
-﻿function Get-DbaCmConnection {
+function Get-DbaCmConnection {
     <#
     .SYNOPSIS
     Retrieves windows management connections from the cache
@@ -12,7 +12,7 @@
     .PARAMETER UserName
     Username on credentials to look for. Will not find connections using the default windows credentials.
 
-    .PARAMETER Silent
+    .PARAMETER EnableException
     Replaces user friendly yellow warnings with bloody red exceptions of doom!
     Use this if you want the function to throw terminating errors you want to catch.
 
@@ -55,7 +55,7 @@
         $UserName = "*",
 
         [switch]
-        $Silent
+        [Alias('Silent')]$EnableException
     )
 
     BEGIN {

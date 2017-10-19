@@ -15,7 +15,7 @@ function Get-DbaTraceFile {
 		.PARAMETER Default
 		Switch that will only return the information for the default system trace
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 		Use this switch to disable any kind of verbose messages
 			
 		.NOTES
@@ -45,7 +45,7 @@ function Get-DbaTraceFile {
 		[DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [switch]$Default,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

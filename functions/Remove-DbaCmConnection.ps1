@@ -1,4 +1,4 @@
-﻿function Remove-DbaCmConnection {
+function Remove-DbaCmConnection {
     <#
     .SYNOPSIS
     Removes connection objects from the connection cache used for remote computer management.
@@ -10,7 +10,7 @@
     The computer whose connection to remove.
     Accepts both text as well as the output of Get-DbaCmConnection.
 
-    .PARAMETER Silent
+    .PARAMETER EnableException
     Replaces user friendly yellow warnings with bloody red exceptions of doom!
     Use this if you want the function to throw terminating errors you want to catch.
 	
@@ -42,7 +42,7 @@
         $ComputerName,
 
         [switch]
-        $Silent
+        [Alias('Silent')]$EnableException
     )
 
     BEGIN {

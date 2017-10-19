@@ -30,7 +30,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES 
@@ -86,7 +86,7 @@ Removes the job from multiple servers using pipe line
         [switch]$KeepUnusedSchedule,
         
         [Parameter(Mandatory = $false)]
-        [switch]$Silent
+        [switch][Alias('Silent')]$EnableException
     )
 
     process {

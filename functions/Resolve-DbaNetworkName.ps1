@@ -46,7 +46,7 @@ function Resolve-DbaNetworkName {
 			so it may fail spectacularly for disjoin-domain setups. Also, everyone has its own DNS (i.e. results may vary
 			changing the computer where the function runs)
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages.
 
 		.NOTES
@@ -89,7 +89,7 @@ function Resolve-DbaNetworkName {
 		[PSCredential] $Credential,
 		[Alias('FastParrot')]
 		[switch]$Turbo,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Test-ElevationRequirement {
 	<#
@@ -26,7 +26,7 @@ function Test-ElevationRequirement {
 		.PARAMETER NoStop
 			Does not call stop-function when the test fails, rather only returns $false instead
 	
-		.PARAMETER Silent
+		.PARAMETER EnableException
 		    Replaces user friendly yellow warnings with bloody red exceptions of doom!
 		    Use this if you want the function to throw terminating errors you want to catch.
 		
@@ -68,7 +68,7 @@ function Test-ElevationRequirement {
 		$NoStop,
 		
 		[bool]
-		$Silent = $Silent
+		[Alias('Silent')]$EnableException = $Silent
 	)
 	
 	$isElevated = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)

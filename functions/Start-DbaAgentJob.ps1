@@ -1,4 +1,4 @@
-﻿FUNCTION Start-DbaAgentJob {
+FUNCTION Start-DbaAgentJob {
 	<#
 		.SYNOPSIS
 			Starts a running SQL Server Agent Job.
@@ -30,7 +30,7 @@
 		.PARAMETER Confirm 
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 	
 		.NOTES
@@ -74,7 +74,7 @@
 		[parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Object")]
 		[Microsoft.SqlServer.Management.Smo.Agent.Job[]]$JobCollection,
 		[switch]$Wait,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

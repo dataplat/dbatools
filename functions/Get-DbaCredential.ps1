@@ -22,7 +22,7 @@ Note: if spaces exist in the credential name, you will have to type "" or '' aro
 Auto-populated list of Credentials from Source to be excluded from the migration
 
 	
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages.
 
 .NOTES
@@ -55,7 +55,7 @@ Returns all SQL Credentials for the local and sql2016 SQL Server instances
 		[PSCredential]$SqlCredential,
 		[object[]]$CredentialIdentity,
 		[object[]]$ExcludeCredentialIdentity,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	PROCESS

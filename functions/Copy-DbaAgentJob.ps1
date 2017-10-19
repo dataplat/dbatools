@@ -1,4 +1,4 @@
-﻿function Copy-DbaAgentJob {
+function Copy-DbaAgentJob {
 	<#
 		.SYNOPSIS
 			Copy-DbaAgentJob migrates jobs from one SQL Server to another.
@@ -53,7 +53,7 @@
 		.PARAMETER Force
 			If this switch is enabled, the Job will be dropped and recreated on Destination.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -97,7 +97,7 @@
 		[switch]$DisableOnSource,
 		[switch]$DisableOnDestination,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -268,6 +268,6 @@
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlJob
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlJob
 	}
 }

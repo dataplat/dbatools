@@ -43,7 +43,7 @@ function Set-DbaJobOwner {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.LINK
@@ -81,7 +81,7 @@ function Set-DbaJobOwner {
 		[object[]]$ExcludeJob,
 		[Alias("TargetLogin")]
 		[string]$Login,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

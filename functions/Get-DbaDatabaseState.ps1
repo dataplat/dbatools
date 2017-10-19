@@ -24,7 +24,7 @@ The database(s) to process - this list is auto-populated from the server. If uns
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages and allow exceptions
 
 .NOTES
@@ -70,7 +70,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

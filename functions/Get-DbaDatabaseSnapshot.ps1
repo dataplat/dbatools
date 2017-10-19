@@ -25,7 +25,7 @@ Return information for only specific snapshots
 .PARAMETER ExcludeSnapshot
 The snapshot(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -69,7 +69,7 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
         [object[]]$ExcludeDatabase,
         [object[]]$Snapshot,
         [object[]]$ExcludeSnapshot,
-        [switch]$Silent
+        [switch][Alias('Silent')]$EnableException
     )
 
     process {

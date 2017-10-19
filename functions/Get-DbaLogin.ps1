@@ -27,7 +27,7 @@ function Get-DbaLogin {
 		.PARAMETER HasAccess
 			Filters on the SMO property to return Logins that has access to the instance of SQL Server.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -88,7 +88,7 @@ function Get-DbaLogin {
 		[switch]$HasAccess,
 		[switch]$Locked,
 		[switch]$Disabled,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

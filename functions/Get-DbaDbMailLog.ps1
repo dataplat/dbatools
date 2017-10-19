@@ -1,4 +1,4 @@
-﻿function Get-DbaDbMailLog {
+function Get-DbaDbMailLog {
 <#
 	.SYNOPSIS
 		Gets the DBMail log from a SQL instance
@@ -18,7 +18,7 @@
 	.PARAMETER Type
 	Narrow the results by type. Valid values include Error, Warning, Success, Information, Internal
 	
-	.PARAMETER Silent 
+	.PARAMETER EnableException 
 		Use this switch to disable any kind of verbose messages
 	
 	.NOTES
@@ -58,7 +58,7 @@
 		[DateTime]$Since,
 		[ValidateSet('Error', 'Warning', 'Success', 'Information', 'Internal')]
 		[string[]]$Type,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($instance in $SqlInstance) {

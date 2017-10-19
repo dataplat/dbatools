@@ -1,4 +1,4 @@
-﻿function Test-DbaCmConnection {
+function Test-DbaCmConnection {
     <#
     .SYNOPSIS
         Tests over which paths a computer can be managed.
@@ -32,7 +32,7 @@
 	.PARAMETER Force
 		If this switch is enabled, the Alert will be dropped and recreated on Destination.
 
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		If this switch is enabled, the internal messaging functions will be silenced.
 
 	.NOTES
@@ -76,7 +76,7 @@
         $Force,
 
         [switch]
-        $Silent
+        [Alias('Silent')]$EnableException
     )
 
     Begin {

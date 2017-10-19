@@ -18,7 +18,7 @@ Function Update-ServiceStatus {
 	.PARAMETER Action
 	Start or stop.
 
-	.PARAMETER Silent
+	.PARAMETER EnableException
 	Use this switch to disable any kind of verbose messages
 
 	.PARAMETER WhatIf
@@ -58,7 +58,7 @@ Function Update-ServiceStatus {
 		[string[]]$Action,
 		[int]$Timeout = 30,
 		[PSCredential] $Credential,
-		[bool]$Silent
+		[bool][Alias('Silent')]$EnableException
 	)
 	begin {
 		$callStack = Get-PSCallStack
@@ -190,7 +190,7 @@ Function Update-ServiceStatus {
 					}
 				}
 				else {
-					Stop-Function -FunctionName $callerName -Message "Unknown object in pipeline - make sure to use Get-DbaSqlService cmdlet" -Silent $Silent
+					Stop-Function -FunctionName $callerName -Message "Unknown object in pipeline - make sure to use Get-DbaSqlService cmdlet" -EnableException $EnableException
 					Return
 				}
 			}

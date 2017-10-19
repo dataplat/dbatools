@@ -50,7 +50,7 @@ function Get-DbaHelpIndex {
 		.PARAMETER FormatResults
 			Returns the numerical data in a more user readable format (numerical separator will depend on localization settings).
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -114,7 +114,7 @@ function Get-DbaHelpIndex {
 		[switch]$IncludeStats,
 		[switch]$IncludeDataTypes,
 		[switch]$FormatResults,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

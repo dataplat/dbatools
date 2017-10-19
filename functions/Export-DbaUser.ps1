@@ -43,7 +43,7 @@ function Export-DbaUser {
 		.PARAMETER Confirm
 			Prompts you for confirmation before executing any changing operations within the command.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -102,7 +102,7 @@ function Export-DbaUser {
 		[Alias("NoOverwrite")]
 		[switch]$NoClobber,
 		[switch]$Append,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -437,7 +437,7 @@ function Export-DbaUser {
 		else {
 			$sql
 		}
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Export-SqlUser
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlUser
 	}
 }
 

@@ -1,4 +1,4 @@
-﻿function Export-DbaScript {
+function Export-DbaScript {
 	<#
 		.SYNOPSIS
 			Exports scripts from SQL Management Objects (SMO)
@@ -43,7 +43,7 @@
 		.PARAMETER Confirm
 			Prompts you for confirmation before executing any changing operations within the command
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -96,7 +96,7 @@
 		[switch]$Passthru,
 		[switch]$NoClobber,
 		[switch]$Append,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

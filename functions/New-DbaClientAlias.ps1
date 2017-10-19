@@ -1,4 +1,4 @@
-﻿Function New-DbaClientAlias {
+Function New-DbaClientAlias {
 <#
 	.SYNOPSIS 
 	Creates/updates a sql alias for the specified server - mimics cliconfg.exe
@@ -21,7 +21,7 @@
 	.PARAMETER Protocol
 	The protocol for the connection, either TCPIP or NetBIOS. Defaults to TCPIP.
 
-	.PARAMETER Silent
+	.PARAMETER EnableException
 	Use this switch to disable any kind of verbose messages
 
 	.NOTES
@@ -53,7 +53,7 @@
 		[string]$Alias,
 		[ValidateSet("TCPIP", "NamedPipes")]
 		[string]$Protocol = "TCPIP",
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

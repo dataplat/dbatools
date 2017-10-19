@@ -1,4 +1,4 @@
-﻿function Copy-DbaAgentSharedSchedule {
+function Copy-DbaAgentSharedSchedule {
 	<#
 		.SYNOPSIS
 			Copy-DbaAgentSharedSchedule migrates shared job schedules from one SQL Server to another.
@@ -41,7 +41,7 @@
 		.PARAMETER Force
 			If this switch is enabled, the Operator will be dropped and recreated on Destination.
 
-		.PARAMETER Silent 
+		.PARAMETER EnableException 
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -77,7 +77,7 @@
 		[PSCredential]
 		$DestinationSqlCredential,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -159,6 +159,6 @@
         }
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlSharedSchedule
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSharedSchedule
 	}
 }

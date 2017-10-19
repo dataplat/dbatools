@@ -19,7 +19,7 @@ function Get-DbaAgentOperator {
 		.PARAMETER ExcludeOperator
 			The operator(s) to exclude - this list is auto-populated from the server
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -62,7 +62,7 @@ function Get-DbaAgentOperator {
         $SqlCredential,
 		[object[]]$Operator,
 		[object[]]$ExcludeOperator,
-        [switch]$Silent
+        [switch][Alias('Silent')]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {

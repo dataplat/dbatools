@@ -33,7 +33,7 @@ function Watch-DbaDbLogin {
 
 			To connect as a different Windows user, run PowerShell as that user.
 
-        .PARAMETER Silent
+        .PARAMETER EnableException
             If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -78,7 +78,7 @@ function Watch-DbaDbLogin {
 
 		# File with one server per line
 		[string]$ServersFromFile,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {
@@ -168,6 +168,6 @@ function Watch-DbaDbLogin {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Watch-SqlDbLogin
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Watch-SqlDbLogin
 	}
 }

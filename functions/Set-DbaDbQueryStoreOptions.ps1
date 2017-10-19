@@ -52,7 +52,7 @@ function Set-DbaDbQueryStoreOptions {
 			Performing the operation "Changing Desired State" on target "pubs on SQL2016\VNEXT".
 			[Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -108,7 +108,7 @@ function Set-DbaDbQueryStoreOptions {
         [ValidateSet('Auto', 'Off')]
         [string[]]$CleanupMode,
         [int64]$StaleQueryThreshold,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
     )
     begin {
         $ExcludeDatabase += 'master','tempdb'

@@ -20,7 +20,7 @@ function Register-DbaRunspace {
 	.PARAMETER Name
 		The name to register the scriptblock under.
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		This parameters disables user-friendly warnings and enables the throwing of exceptions.
 		This is less user friendly, but allows catching exceptions in calling scripts.
 	
@@ -49,7 +49,7 @@ function Register-DbaRunspace {
 		$Name,
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	
 	if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($Name.ToLower())) {
@@ -57,7 +57,7 @@ function Register-DbaRunspace {
 		[Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$Name.ToLower()].SetScript($ScriptBlock)
 	}
 	else {
-		Write-Message -Level Verbose -Message "Registering runspace: <c='Green'>$($Name.ToLower())</c>" -Target $Name.ToLower() -Silent $Silent
+		Write-Message -Level Verbose -Message "Registering runspace: <c='Green'>$($Name.ToLower())</c>" -Target $Name.ToLower() -EnableException $EnableException
 		[Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$Name.ToLower()] = New-Object Sqlcollaborative.Dbatools.Runspace.RunspaceContainer($Name.ToLower(), $ScriptBlock)
 	}
 }

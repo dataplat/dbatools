@@ -1,4 +1,4 @@
-﻿Function Get-DbaDatabaseView {
+Function Get-DbaDatabaseView {
 	<#
 .SYNOPSIS
 Gets database views
@@ -21,7 +21,7 @@ The database(s) to exclude - this list is auto populated from the server
 .PARAMETER ExcludeSystemView
 This switch removes all system objects from the view collection
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -67,7 +67,7 @@ Gets the views for the databases on Sql1 and Sql2/sqlexpress
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemView,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

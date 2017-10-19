@@ -1,4 +1,4 @@
-﻿function Set-DbaConfig
+function Set-DbaConfig
 {
 	<#
 		.SYNOPSIS
@@ -34,7 +34,7 @@
 			Setting this parameter causes the system to treat this configuration as a default setting. If the configuration already exists, no changes will be performed.
 			Useful in scenarios where for some reason it is not practical to automatically set defaults before loading userprofiles.
     
-        .PARAMETER Silent
+        .PARAMETER EnableException
             Replaces user friendly yellow warnings with bloody red exceptions of doom!
             Use this if you want the function to throw terminating errors you want to catch.
     
@@ -96,7 +96,7 @@
         $Default,
         
         [switch]
-        $Silent,
+        [Alias('Silent')]$EnableException,
         
         [switch]
         $DisableHandler

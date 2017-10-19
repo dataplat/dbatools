@@ -66,7 +66,7 @@ function Find-DbaDuplicateIndex {
 		.PARAMETER Force
 			If this switch is enabled, the DROP statement(s) will be executed instead of being written to the output file.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES 
@@ -622,6 +622,6 @@ function Find-DbaDuplicateIndex {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlDuplicateIndex
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlDuplicateIndex
 	}
 }

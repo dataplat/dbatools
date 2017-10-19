@@ -132,7 +132,7 @@ function Restore-DbaDatabase {
     .PARAMETER ReplaceDbNameInFile
         If switch set and occurence of the original database's name in a data or log file will be replace with the name specified in the Databasename parameter
         
-	.PARAMETER Silent
+	.PARAMETER EnableException
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
         Use this if you want the function to throw terminating errors you want to catch.
     
@@ -265,7 +265,7 @@ function Restore-DbaDatabase {
         [int]$BlockSize,
         [int]$BufferCount,
         [switch]$DirectoryRecurse,
-        [switch]$Silent,
+        [switch][Alias('Silent')]$EnableException,
         [string]$StandbyDirectory,
         [switch]$Continue,
         [string]$AzureCredential,

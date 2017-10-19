@@ -63,7 +63,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .PARAMETER Force
@@ -127,7 +127,7 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
 		[ValidateNotNullOrEmpty()]
 		[string]$RestoreJob,
 
-		[switch]$Silent,
+		[switch][Alias('Silent')]$EnableException,
 
 		[switch]$Force
 	)

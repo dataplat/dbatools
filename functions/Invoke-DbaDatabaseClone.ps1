@@ -1,4 +1,4 @@
-﻿function Invoke-DbaDatabaseClone {
+function Invoke-DbaDatabaseClone {
 	<# 
 	.SYNOPSIS 
 		Clones a database schema and statistics
@@ -30,7 +30,7 @@
 	.PARAMETER UpdateStatistics
 		Update the statistics prior to cloning (per Microsoft Tiger Team formula)
 	
-	.PARAMETER Silent 
+	.PARAMETER EnableException 
 		Use this switch to disable any kind of verbose messages
 
 	.NOTES 
@@ -61,7 +61,7 @@
 		[object]$Database,
 		[string[]]$CloneDatabase,
 		[switch]$UpdateStatistics,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

@@ -44,7 +44,7 @@ function Copy-DbaEndpoint {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.PARAMETER Force
@@ -90,7 +90,7 @@ function Copy-DbaEndpoint {
 		[object[]]$Endpoint,
 		[object[]]$ExcludeEndpoint,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -167,6 +167,6 @@ function Copy-DbaEndpoint {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlEndpoint
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlEndpoint
 	}
 }

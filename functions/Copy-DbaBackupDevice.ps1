@@ -44,7 +44,7 @@ function Copy-DbaBackupDevice {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -84,7 +84,7 @@ function Copy-DbaBackupDevice {
 		[PSCredential]$DestinationSqlCredential,
 		[object[]]$BackupDevice,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
@@ -219,6 +219,6 @@ function Copy-DbaBackupDevice {
 		} #end foreach backupDevice
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlBackupDevice
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlBackupDevice
 	}
 }

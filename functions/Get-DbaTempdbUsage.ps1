@@ -18,7 +18,7 @@ Function Get-DbaTempdbUsage {
     .PARAMETER Confirm 
 	Prompts you for confirmation before executing any changing operations within the command.
 	
-    .PARAMETER Silent
+    .PARAMETER EnableException
 	Use this switch to disable any kind of verbose messages
 	
     .NOTES
@@ -40,7 +40,7 @@ Function Get-DbaTempdbUsage {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

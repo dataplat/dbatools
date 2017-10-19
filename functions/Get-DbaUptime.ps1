@@ -25,7 +25,7 @@ function Get-DbaUptime {
 
 			$wincred = Get-Credential, then pass $wincred object to the -WindowsCredential parameter.
 			
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -63,7 +63,7 @@ function Get-DbaUptime {
 		[Alias("Credential")]
 		[PSCredential]$SqlCredential,
 		[PSCredential]$WindowsCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

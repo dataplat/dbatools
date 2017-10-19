@@ -1,4 +1,4 @@
-﻿function Copy-DbaDatabaseMail {
+function Copy-DbaDatabaseMail {
 	<#
 	.SYNOPSIS
 		Migrates Mail Profiles, Accounts, Mail Servers and Mail Server Configs from one SQL Server to another.
@@ -39,7 +39,7 @@
 	.PARAMETER Confirm
 		If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		If this switch is enabled, the internal messaging functions will be silenced.
 
 	.PARAMETER Force
@@ -89,7 +89,7 @@
 		[PSCredential]$SourceSqlCredential,
 		[PSCredential]$DestinationSqlCredential,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -416,6 +416,6 @@
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDatabaseMail
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlDatabaseMail
 	}
 }

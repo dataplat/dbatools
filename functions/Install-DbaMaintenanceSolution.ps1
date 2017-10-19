@@ -43,7 +43,7 @@ function Install-DbaMaintenanceSolution {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
-    .PARAMETER Silent
+    .PARAMETER EnableException
         Use this switch to disable any kind of verbose messages
 
     .NOTES
@@ -109,7 +109,7 @@ function Install-DbaMaintenanceSolution {
         [ValidateSet('All', 'Backup', 'IntegrityCheck', 'IndexOptimize')]
         [string]$Solution = 'All',
         [switch]$InstallJobs,
-        [switch]$Silent
+        [switch][Alias('Silent')]$EnableException
     )
     
     process {

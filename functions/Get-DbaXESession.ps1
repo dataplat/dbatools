@@ -15,7 +15,7 @@ function Get-DbaXESession {
 	.PARAMETER Session
 	Only return specific sessions. This parameter is auto-populated.
 		
-	.PARAMETER Silent
+	.PARAMETER EnableException
 	If this switch is enabled, the internal messaging functions will be silenced.
 
 	.NOTES
@@ -52,7 +52,7 @@ function Get-DbaXESession {
 		[PSCredential]$SqlCredential,
 		[Alias("Sessions")]
 		[object[]]$Session,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
@@ -60,7 +60,7 @@ function Get-DbaXESession {
 			Stop-Function -Message "SMO version is too old. To collect Extended Events, you must have SQL Server Management Studio 2012 or higher installed."
 		}
 		
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-DbaXEsSession
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaXEsSession
 	}
 	
 	process {

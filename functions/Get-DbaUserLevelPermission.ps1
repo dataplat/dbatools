@@ -1,4 +1,4 @@
-﻿function Get-DbaUserLevelPermission {
+function Get-DbaUserLevelPermission {
 	<# 
 	.SYNOPSIS 
 		Displays detailed permissions information for the server and database roles and securables.
@@ -34,7 +34,7 @@
     .PARAMETER IncludeSystemObjects
         Allows you to include output on sys schema objects.
 
-	.PARAMETER Silent 
+	.PARAMETER EnableException 
 		Use this switch to disable any kind of verbose messages (this is required)
 
     .NOTES
@@ -74,7 +74,7 @@
 		[switch]$ExcludeSystemDatabase,
 		[switch]$IncludePublicGuest,
 		[switch]$IncludeSystemObjects,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	BEGIN {

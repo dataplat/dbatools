@@ -30,7 +30,7 @@ The Folders names that contain the environments
 The Folders names to exclude. Acts as a filter for folders containing environments, best user without 'Folder' parameter
 to get variables for all folders but excluded ones
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .EXAMPLE
@@ -109,7 +109,7 @@ You should have received a copy of the GNU General Public License along with thi
 		[object[]]$Folder,
 		[parameter(Mandatory = $false)]
 		[object[]]$FolderExclude,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

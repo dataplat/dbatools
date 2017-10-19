@@ -1,4 +1,4 @@
-﻿Function Get-DbaDatabaseMasterKey {
+Function Get-DbaDatabaseMasterKey {
 	<#
 .SYNOPSIS
 Gets specified database master key
@@ -24,7 +24,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -53,7 +53,7 @@ Gets the master key for the db1 database
 		[PSCredential]$SqlCredential,
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

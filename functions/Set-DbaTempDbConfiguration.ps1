@@ -63,7 +63,7 @@ function Set-DbaTempDbConfiguration {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.LINK
@@ -111,7 +111,7 @@ function Set-DbaTempDbConfiguration {
 		[string]$OutFile,
 		[switch]$OutputScriptOnly,
 		[switch]$DisableGrowth,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		$sql = @()
@@ -274,6 +274,6 @@ function Set-DbaTempDbConfiguration {
 		}
 	}
 	end { 
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Set-SqlTempDbConfiguration
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Set-SqlTempDbConfiguration
 	}
 }

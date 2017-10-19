@@ -18,7 +18,7 @@ function Disable-DbaTraceFlag {
 	.PARAMETER TraceFlag
 		Trace flag number to enable globally
 	
-	.PARAMETER Silent 
+	.PARAMETER EnableException 
 		Use this switch to disable any kind of verbose messages (this is required)
 
 	.NOTES 
@@ -44,7 +44,7 @@ function Disable-DbaTraceFlag {
 		[PSCredential]$SqlCredential,
 		[parameter(Mandatory)]
 		[int[]]$TraceFlag,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {
@@ -58,7 +58,7 @@ function Disable-DbaTraceFlag {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$current = Get-DbaTraceFlag -SqlInstance $server -Silent
+			$current = Get-DbaTraceFlag -SqlInstance $server -EnableException
 			
 			foreach ($tf in $TraceFlag) {
 				$TraceFlagInfo = [pscustomobject]@{

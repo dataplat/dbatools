@@ -18,7 +18,7 @@ function Get-DbaAgReplica {
 		.PARAMETER Replica
 			Specify the replica to pull information on, is dependent up name that you want to get information on.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -57,7 +57,7 @@ function Get-DbaAgReplica {
 		[parameter(ValueFromPipeline = $true)]
 		[object[]]$AvailabilityGroup,
 		[object[]]$Replica,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

@@ -1,4 +1,4 @@
-﻿function Set-DbaDbCompression {
+function Set-DbaDbCompression {
 <#
 	.SYNOPSIS
 		Sets tables and indexes with preferred compression setting.
@@ -29,7 +29,7 @@
     .PARAMETER PercentCompression
 		    Will only work on the tables/indexes that have the calculated savings at and higher for the given number provided.	
     
-    .PARAMETER Silent
+    .PARAMETER EnableException
 		    Replaces user friendly yellow warnings with bloody red exceptions of doom!
 		    Use this if you want the function to throw terminating errors you want to catch.
     
@@ -82,7 +82,7 @@
 		[int]$MaxRunTime,
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[int]$PercentCompression,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

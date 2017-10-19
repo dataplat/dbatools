@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Set-DbaNetworkCertificate {
 <#
@@ -27,7 +27,7 @@ function Set-DbaNetworkCertificate {
 	.PARAMETER Thumbprint
 		The thumbprint of the target certificate
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		Use this switch to disable any kind of verbose messages
 	
 	.PARAMETER WhatIf
@@ -73,7 +73,7 @@ function Set-DbaNetworkCertificate {
 		$Thumbprint,
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	
 	process {

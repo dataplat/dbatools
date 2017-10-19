@@ -1,4 +1,4 @@
-﻿FUNCTION Get-DbaJobCategory
+FUNCTION Get-DbaJobCategory
 {
 <#
 .SYNOPSIS
@@ -14,7 +14,7 @@ to be executed against multiple SQL Server instances.
 .PARAMETER SqlCredential
 SqlCredential object to connect as. If not specified, current Windows login will be used.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages.
 
 .NOTES
@@ -46,7 +46,7 @@ Returns all SQL Agent Job Categories for the local and sql2016 SQL Server instan
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	PROCESS

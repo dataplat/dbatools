@@ -1,4 +1,4 @@
-﻿function Get-DbaDefaultPath {
+function Get-DbaDefaultPath {
 <#
 	.SYNOPSIS
 		Gets the default SQL Server paths for data, logs and backups
@@ -12,7 +12,7 @@
 	.PARAMETER SqlCredential
 		Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 	
-	.PARAMETER Silent 
+	.PARAMETER EnableException 
 		Use this switch to disable any kind of verbose messages
 	
 	.NOTES
@@ -44,7 +44,7 @@
 		[Alias("Credential")]
 		[PSCredential]
 		$SqlCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($instance in $SqlInstance) {

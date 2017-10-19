@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Get-DbaBackupHistory {
 	<#
@@ -60,7 +60,7 @@ function Get-DbaBackupHistory {
 	.PARAMETER LastLsn
 		Internal parameter: filter out backup history with last_lsn greater than this value (this helps speed up the retrieval process without resorting to process the full history)
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		Replaces user friendly yellow warnings with bloody red exceptions of doom!
 		Use this if you want the function to throw terminating errors you want to catch.
 	
@@ -193,7 +193,7 @@ function Get-DbaBackupHistory {
 		[string[]]$Type,
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	
 	begin {

@@ -29,7 +29,7 @@ Function Set-DbaMaxMemory {
         .PARAMETER Collection
             Results of Get-DbaMaxMemory to be passed into the command
     
-        .PARAMETER Silent
+        .PARAMETER EnableException
             Replaces user friendly yellow warnings with bloody red exceptions of doom!
             Use this if you want the function to throw terminating errors you want to catch.
     
@@ -79,7 +79,7 @@ Function Set-DbaMaxMemory {
 		[int]$MaxMB,
 		[Parameter(ValueFromPipeline = $True)]
 		[object]$Collection,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		if ((Test-Bound -Not -Parameter SqlInstance) -and (Test-Bound -Not -Parameter Collection)) {

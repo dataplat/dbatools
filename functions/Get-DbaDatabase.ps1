@@ -1,4 +1,4 @@
-﻿function Get-DbaDatabase {
+function Get-DbaDatabase {
     <#
 		.SYNOPSIS
 			Gets SQL Database information for each database that is present on the target instance(s) of SQL Server.
@@ -71,7 +71,7 @@
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -169,7 +169,7 @@
 		[datetime]$NoFullBackupSince,
 		[switch]$NoLogBackup,
 		[datetime]$NoLogBackupSince,
-		[switch]$Silent,
+		[switch][Alias('Silent')]$EnableException,
 		[switch]$IncludeLastUsed
 	)
 	

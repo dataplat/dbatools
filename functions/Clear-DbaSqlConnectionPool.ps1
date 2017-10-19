@@ -16,7 +16,7 @@ function Clear-DbaSqlConnectionPool {
 	.PARAMETER Credential
 		Alternate credential object to use for accessing the target computer(s).
 
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		Use this switch to disable any kind of verbose messages.
 
 	.NOTES
@@ -45,7 +45,7 @@ function Clear-DbaSqlConnectionPool {
 		[Alias("cn", "host", "Server")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential]$Credential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

@@ -29,7 +29,7 @@ function Invoke-DbaDatabaseCorruption {
       .PARAMETER Confirm
       If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-      .PARAMETER Silent
+      .PARAMETER EnableException
       If this switch is enabled, the internal messaging functions will be silenced.
 
       .NOTES
@@ -63,7 +63,7 @@ function Invoke-DbaDatabaseCorruption {
         [parameter(Mandatory)]
         [string]$Database,
         [string]$Table,
-        [switch]$Silent
+        [switch][Alias('Silent')]$EnableException
     )
     # For later if we want to do bit flipping.
     # function Dbcc-ReadPage {

@@ -33,7 +33,7 @@ Allows you to limit the scope to queries with a specified average execution time
 .PARAMETER NoSystemDb
 Allows you to suppress output on system databases
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages.
 
 .NOTES
@@ -82,7 +82,7 @@ limiting results to queries with more than 200 total executions and an execution
 		[int]$MinExecMs = 500,
 		[parameter(Position = 4, Mandatory = $false)]
 		[switch]$NoSystemDb,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

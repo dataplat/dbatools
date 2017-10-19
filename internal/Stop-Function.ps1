@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Stop-Function
 {
@@ -19,7 +19,7 @@ function Stop-Function
 		.PARAMETER Message
 			A message to pass along, explaining just what the error was.
 		
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Whether the silent switch was set in the calling function.
 			If true, it will throw an error.
 			If false, it will print a warning.
@@ -91,7 +91,7 @@ function Stop-Function
         $Message,
         
         [bool]
-        $Silent = $Silent,
+        [Alias('Silent')]$EnableException = $Silent,
         
         [Parameter(ParameterSetName = 'Plain')]
         [Parameter(ParameterSetName = 'Exception')]
@@ -161,7 +161,7 @@ function Stop-Function
 		$records += New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $Category, $targetToAdd)
 		
 		# Manage Debugging
-		Write-Message -Level Warning -Message $Message -Silent $Silent -FunctionName $FunctionName -Target $targetToAdd -ErrorRecord $records -OverrideExceptionMessage:$true
+		Write-Message -Level Warning -Message $Message -EnableException $EnableException -FunctionName $FunctionName -Target $targetToAdd -ErrorRecord $records -OverrideExceptionMessage:$true
 	}
 	
 	

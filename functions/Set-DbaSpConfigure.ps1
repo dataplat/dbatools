@@ -1,4 +1,4 @@
-﻿function Set-DbaSpConfigure {
+function Set-DbaSpConfigure {
 	<#
 		.SYNOPSIS
 			Changes the server level system configuration (sys.configuration/sp_configure) value for a given configuration
@@ -30,7 +30,7 @@
 			Strict: Interrupt if the configuration already has the same value as the one specified.
 			Lazy:   Silently skip over instances that already have this configuration at the specified value.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.PARAMETER Confirm 
@@ -86,7 +86,7 @@
 		$Mode = 'Strict',
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	
 	begin {

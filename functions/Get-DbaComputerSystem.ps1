@@ -15,7 +15,7 @@ function Get-DbaComputerSystem {
 		.PARAMETER IncludeAws
 			If computer is hosted in AWS Infrastructure as a Service (IaaS), additional information will be included.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -51,7 +51,7 @@ function Get-DbaComputerSystem {
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential]$Credential,
 		[switch]$IncludeAws,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($computer in $ComputerName) {

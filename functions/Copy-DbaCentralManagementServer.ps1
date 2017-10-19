@@ -1,4 +1,4 @@
-﻿function Copy-DbaCentralManagementServer {
+function Copy-DbaCentralManagementServer {
 	<#
 		.SYNOPSIS
 			Migrates SQL Server Central Management groups and server instances from one SQL Server to another.
@@ -49,7 +49,7 @@
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 			
 		.NOTES
@@ -94,7 +94,7 @@
 		[object[]]$CMSGroup,
 		[switch]$SwitchServerName,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		function Invoke-ParseServerGroup {
@@ -316,6 +316,6 @@
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCentralManagementServer
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCentralManagementServer
 	}
 }

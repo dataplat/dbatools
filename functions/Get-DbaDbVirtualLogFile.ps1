@@ -35,7 +35,7 @@ function Get-DbaDbVirtualLogFile {
 		.PARAMETER IncludeSystemDBs
 			If this switch is enabled, system database information will be displayed.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -78,7 +78,7 @@ function Get-DbaDbVirtualLogFile {
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[switch]$IncludeSystemDBs,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

@@ -34,7 +34,7 @@ function Get-DbaTopResourceUsage {
 	.PARAMETER Limit
 		By default, these query the Top 20 worst offenders (though more than 20 results can be returend if each of the top 20 have more than 1 subsequent result)
 	
-	.PARAMETER Silent 
+	.PARAMETER EnableException 
 		Use this switch to disable any kind of verbose messages (this is required)
 
 	.NOTES 
@@ -79,7 +79,7 @@ function Get-DbaTopResourceUsage {
 		[ValidateSet("All", "Duration", "Frequency", "IO", "CPU")]
 		[string[]]$Type = "All",
 		[int]$Limit = 20,
-		[switch]$Silent,
+		[switch][Alias('Silent')]$EnableException,
 		[switch]$ExcludeSystem
 	)
 	

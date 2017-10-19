@@ -21,7 +21,7 @@ function Test-DbaConnection {
 
 			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Replaces user friendly yellow warnings with bloody red exceptions of doom!
 			Use this if you want the function to throw terminating errors you want to catch.
 
@@ -64,7 +64,7 @@ function Test-DbaConnection {
 		[DbaInstance[]]$SqlInstance,
 		[PSCredential]$Credential,
 		[PSCredential]$SqlCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($instance in $SqlInstance) {
@@ -149,7 +149,7 @@ function Test-DbaConnection {
 			
 			# TCP Port
 			try {
-				$tcpport = (Get-DbaTcpPort -SqlInstance $server -Silent).Port
+				$tcpport = (Get-DbaTcpPort -SqlInstance $server -EnableException).Port
 			}
 			catch {
 				$tcpport = $_
@@ -192,6 +192,6 @@ function Test-DbaConnection {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlConnection
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlConnection
 	}
 }

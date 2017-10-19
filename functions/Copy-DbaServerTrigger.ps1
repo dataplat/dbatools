@@ -45,7 +45,7 @@ function Copy-DbaServerTrigger {
 		.PARAMETER Force
 			Drops and recreates the Trigger if it exists
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -88,7 +88,7 @@ function Copy-DbaServerTrigger {
 		[object[]]$ServerTrigger,
 		[object[]]$ExcludeServerTrigger,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -184,6 +184,6 @@ function Copy-DbaServerTrigger {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlServerTrigger
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlServerTrigger
 	}
 }

@@ -41,7 +41,7 @@ function Repair-DbaOrphanUser {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.EXAMPLE
@@ -95,7 +95,7 @@ function Repair-DbaOrphanUser {
 		[parameter(Mandatory = $false, ValueFromPipeline = $true)]
 		[object[]]$Users,
 		[switch]$RemoveNotExisting,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {
@@ -229,6 +229,6 @@ function Repair-DbaOrphanUser {
 		$totaltime = ($start.Elapsed)
 		Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime."
 
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Repair-SqlOrphanUser
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Repair-SqlOrphanUser
 	}
 }

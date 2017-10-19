@@ -86,7 +86,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .PARAMETER Force
@@ -176,7 +176,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 		[Parameter(Mandatory = $false)]
 		[string]$ProxyName,
 		[Parameter(Mandatory = $false)]
-		[switch]$Silent,
+		[switch][Alias('Silent')]$EnableException,
 		[Parameter(Mandatory = $false)]
 		[switch]$Force
 	)

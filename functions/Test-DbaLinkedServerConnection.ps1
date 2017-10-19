@@ -1,4 +1,4 @@
-﻿function Test-DbaLinkedServerConnection
+function Test-DbaLinkedServerConnection
 {
 <#
 .SYNOPSIS
@@ -13,7 +13,7 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Silent 
+.PARAMETER EnableException 
 Use this switch to disable any kind of verbose messages
 	
 .NOTES
@@ -66,7 +66,7 @@ Test all Linked Servers for the SQL Server instances sql2016, sql2014 and sql201
         $SqlCredential,
         
         [switch]
-        $Silent
+        [Alias('Silent')]$EnableException
     )
     
     begin

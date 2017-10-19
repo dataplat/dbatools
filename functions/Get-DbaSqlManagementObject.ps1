@@ -1,4 +1,4 @@
-﻿function Get-DbaSqlManagementObject {
+function Get-DbaSqlManagementObject {
 	<#
 		.SYNOPSIS
 			Gets SQL Mangaement Object versions installed on the machine.
@@ -17,7 +17,7 @@
 			This is the specific version number you are looking for. The function will look 
 			for that version only.
 		
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 		
 		.NOTES
@@ -50,7 +50,7 @@
 		[PSCredential]
 		$Credential,
 		[int]$VersionNumber,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin

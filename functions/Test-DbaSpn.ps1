@@ -25,7 +25,7 @@ function Test-DbaSpn {
 		.PARAMETER Credential
 			The credential you want to use to connect to the remote server and active directory.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -63,7 +63,7 @@ function Test-DbaSpn {
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[DbaInstance[]]$ComputerName,
 		[PSCredential]$Credential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		# spare the cmdlet to search for the same account over and over

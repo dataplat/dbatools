@@ -23,7 +23,7 @@ function Disable-DbaAgHadr {
 		.PARAMETER Force
 			Will restart SQL Server and SQL Server Agent service to apply the change.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -54,7 +54,7 @@ function Disable-DbaAgHadr {
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$Credential,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		$Enabled = 0
@@ -71,7 +71,7 @@ function Disable-DbaAgHadr {
 
 			try {
 				Write-Message -Level Verbose -Message "Checking current Hadr setting for $computer"
-				$computerFullName = (Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -Silent).FullComputerName
+				$computerFullName = (Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -EnableException).FullComputerName
 				$currentState = Get-DbaAgHadr -SqlInstance $instance
 			}
 			catch {

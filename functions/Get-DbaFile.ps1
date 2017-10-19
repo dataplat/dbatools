@@ -25,7 +25,7 @@ Used to specify filter by filetype. No dot required, just pass the extension.
 .PARAMETER Depth
 Used to specify recursive folder depth.  Default is 1, non-recursive.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 	
 .NOTES
@@ -73,7 +73,7 @@ Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql201
 		[string[]]$Path,
 		[string[]]$FileType,
 		[int]$Depth = 1,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		$sql = ""

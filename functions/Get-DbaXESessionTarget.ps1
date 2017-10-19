@@ -1,4 +1,4 @@
-﻿function Get-DbaXESessionTarget {
+function Get-DbaXESessionTarget {
  <#
 	.SYNOPSIS
 	Get a list of Extended Events Session Targets
@@ -21,7 +21,7 @@
 	.PARAMETER SessionObject
 	Internal pipeline parameter
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 	If this switch is enabled, the internal messaging functions will be silenced.
 
 	.NOTES
@@ -58,7 +58,7 @@
 		[string[]]$Target,
 		[parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
 		[Microsoft.SqlServer.Management.XEvent.Session[]]$SessionObject,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

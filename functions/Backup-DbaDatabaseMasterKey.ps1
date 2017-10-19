@@ -30,7 +30,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 If this switch is enabled, the internal messaging functions will be silenced.
 
 .NOTES
@@ -68,7 +68,7 @@ Logs into sql2016 with Windows credentials then backs up db1's keys to the \\nas
 		[object[]]$ExcludeDatabase,
 		[Security.SecureString]$Password,
 		[string]$Path,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

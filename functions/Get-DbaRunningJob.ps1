@@ -18,7 +18,7 @@ function Get-DbaRunningJob {
 
 			To connect as a different Windows user, run PowerShell as that user.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES 
@@ -53,7 +53,7 @@ function Get-DbaRunningJob {
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential]$SqlCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($instance in $SqlInstance) {

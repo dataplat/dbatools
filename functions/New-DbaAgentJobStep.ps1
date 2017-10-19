@@ -90,7 +90,7 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -174,7 +174,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 		[string]$ProxyName,
 		[Parameter(Mandatory = $false)]
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

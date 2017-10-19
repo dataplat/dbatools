@@ -1,4 +1,4 @@
-﻿Function Get-DbaDatabaseUdf {
+Function Get-DbaDatabaseUdf {
 	<#
 .SYNOPSIS
 Gets database User Defined Functions
@@ -21,7 +21,7 @@ The database(s) to exclude - this list is auto populated from the server
 .PARAMETER ExcludeSystemUdf
 This switch removes all system objects from the UDF collection
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -67,7 +67,7 @@ Gets the User Defined Functions for the databases on Sql1 and Sql2/sqlexpress
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
         [switch]$ExcludeSystemUdf,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

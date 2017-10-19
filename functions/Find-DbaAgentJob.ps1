@@ -47,7 +47,7 @@ function Find-DbaAgentJob {
 		.PARAMETER Since
 			Datetime object used to narrow the results to a date
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -129,7 +129,7 @@ function Find-DbaAgentJob {
 		[string[]]$Category,
 		[string]$Owner,
 		[datetime]$Since,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		if ($IsFailed, [boolean]$JobName, [boolean]$StepName, [boolean]$LastUsed.ToString(), $IsDisabled, $IsNotScheduled, $IsNoEmailNotification, [boolean]$Category, [boolean]$Owner, [boolean]$ExcludeJobName -notcontains $true) {

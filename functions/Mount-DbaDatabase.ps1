@@ -1,4 +1,4 @@
-﻿function Mount-DbaDatabase {
+function Mount-DbaDatabase {
 	<#
 		.SYNOPSIS
 			Attach a SQL Server Database - aliased to Attach-DbaDatabase
@@ -36,7 +36,7 @@
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -80,7 +80,7 @@
 		[string]$DatabaseOwner,
 		[ValidateSet('None','RebuildLog','EnableBroker','NewBroker', 'ErrorBrokerConversations')]
 		[string]$AttachOption = "None",
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {		
 		foreach ($instance in $SqlInstance) {

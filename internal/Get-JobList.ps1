@@ -14,7 +14,7 @@ function Get-JobList {
 		Object of job steps to filter on, also supports wildcard patterns
 	.PARAMETER Not
 		Reverse results where object returned excludes filtered content.
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		Shhhhhhh
 	.EXAMPLE
 		Get-JobList -SqlInstance sql2016
@@ -59,7 +59,7 @@ function Get-JobList {
 		[string[]]$JobFilter,
 		[string[]]$StepFilter,
 		[switch]$Not,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		$server= Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential

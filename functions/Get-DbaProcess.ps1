@@ -43,7 +43,7 @@ function Get-DbaProcess {
 		.PARAMETER NoSystemSpid
 			If this switch is enabled, system Spids will be ignored.
 			
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 	
 		.NOTES 
@@ -89,7 +89,7 @@ function Get-DbaProcess {
 		[string[]]$Hostname,
 		[string[]]$Program,
 		[switch]$NoSystemSpid,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

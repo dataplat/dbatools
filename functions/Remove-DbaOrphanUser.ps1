@@ -44,7 +44,7 @@ function Remove-DbaOrphanUser {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -103,7 +103,7 @@ function Remove-DbaOrphanUser {
 		[parameter(Mandatory = $false, ValueFromPipeline = $true)]
 		[object[]]$User,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {
@@ -346,6 +346,6 @@ function Remove-DbaOrphanUser {
 			Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
 		}
 
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Remove-SqlOrphanUser
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Remove-SqlOrphanUser
 	}
 }

@@ -24,7 +24,7 @@ function Get-DbaAvailabilityGroup {
 		.PARAMETER IsPrimary
 			If this switch is enabled, a boolean indicating whether SqlInstance is the Primary replica in the AG is returned.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -66,7 +66,7 @@ function Get-DbaAvailabilityGroup {
 		[PSCredential]$SqlCredential,
 		[object[]]$AvailabilityGroup,
 		[switch]$IsPrimary,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

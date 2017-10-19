@@ -1,4 +1,4 @@
-﻿function Register-DbaMaintenanceTask {
+function Register-DbaMaintenanceTask {
 	<#
 		.SYNOPSIS
 			Allows scheduling maintenance tasks, that are perfomed in the background.
@@ -32,7 +32,7 @@
 			How important is this task?
 			If multiple tasks are due at the same maintenance cycle, the more critical one will be processed first.
 		
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			This parameters disables user-friendly warnings and enables the throwing of exceptions.
 			This is less user friendly, but allows catching exceptions in calling scripts.
 		
@@ -65,7 +65,7 @@
 		$Priority = "Medium",
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	
 	#region Case: Task already registered

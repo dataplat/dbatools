@@ -1,4 +1,4 @@
-﻿function New-DbaDatabaseMasterKey {
+function New-DbaDatabaseMasterKey {
 <#
 .SYNOPSIS
 Creates a new database master key
@@ -24,7 +24,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 
-.PARAMETER Silent 
+.PARAMETER EnableException 
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -55,7 +55,7 @@ Suppresses all prompts to install but prompts to securely enter your password an
 		[object[]]$Database = "master",
 		[parameter(Mandatory)]
 		[Security.SecureString]$Password = (Read-Host "Password" -AsSecureString),
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

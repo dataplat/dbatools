@@ -1,4 +1,4 @@
-﻿function Set-DbaAgentJobOutputFile {
+function Set-DbaAgentJobOutputFile {
 	<#
 		.Synopsis
 			Set the output file for a step within an Agent job.
@@ -27,7 +27,7 @@
 		.PARAMETER Confirm
 			Prompts you for confirmation before executing any changing operations within the command.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Replaces user friendly yellow warnings with bloody red exceptions of doom!
 
 		.NOTES
@@ -74,7 +74,7 @@
 		[ValidateNotNull()]
 		[ValidateNotNullOrEmpty()]
 		[string]$OutputFile,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	foreach ($instance in $sqlinstance) {

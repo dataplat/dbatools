@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Enable-DbaForceNetworkEncryption {
 	<#
 		.SYNOPSIS
@@ -21,7 +21,7 @@ function Enable-DbaForceNetworkEncryption {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 	
 		.EXAMPLE
@@ -53,7 +53,7 @@ function Enable-DbaForceNetworkEncryption {
 		[DbaInstanceParameter[]]
 		$SqlInstance = $env:COMPUTERNAME,
 		[PSCredential]$Credential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		

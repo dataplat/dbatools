@@ -1,4 +1,4 @@
-﻿function Get-DbaDbMailHistory {
+function Get-DbaDbMailHistory {
 <#
 	.SYNOPSIS
 		Gets the history of mail sent from a SQL instance
@@ -18,7 +18,7 @@
 	.PARAMETER Status
 	Narrow the results by status. Valid values include Unsent, Sent, Failed and Retrying
 	
-	.PARAMETER Silent 
+	.PARAMETER EnableException 
 		Use this switch to disable any kind of verbose messages
 	
 	.NOTES
@@ -58,7 +58,7 @@
 		[DateTime]$Since,
 		[ValidateSet('Unsent', 'Sent','Failed','Retrying')]
 		[string]$Status,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($instance in $SqlInstance) {

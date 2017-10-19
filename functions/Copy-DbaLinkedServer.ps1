@@ -49,7 +49,7 @@ function Copy-DbaLinkedServer {
 		.PARAMETER Force
 			By default, if a Linked Server exists on the source and destination, the Linked Server is not copied over. Specifying -force will drop and recreate the Linked Server on the Destination server.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -87,7 +87,7 @@ function Copy-DbaLinkedServer {
 		[object[]]$ExcludeLinkedServer,
 		[switch]$UpgradeSqlClient,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		$null = Test-ElevationRequirement -ComputerName $Source.ComputerName
@@ -426,6 +426,6 @@ function Copy-DbaLinkedServer {
 		Copy-DbaLinkedServers $LinkedServer -Force:$force
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlLinkedServer
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlLinkedServer
 	}
 }

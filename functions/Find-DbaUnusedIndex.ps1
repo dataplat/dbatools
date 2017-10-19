@@ -45,7 +45,7 @@ function Find-DbaUnusedIndex {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -98,7 +98,7 @@ function Find-DbaUnusedIndex {
 		[string]$FilePath,
 		[switch]$NoClobber,
 		[switch]$Append,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

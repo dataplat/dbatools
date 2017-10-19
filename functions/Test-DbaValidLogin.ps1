@@ -33,7 +33,7 @@ function Test-DbaValidLogin {
 		.PARAMETER Detailed
 			If this switch is enabled, more detailed results are returned. This includes the Active Directory account type and whether the login on SQL Server is enabled or disabled.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -75,7 +75,7 @@ function Test-DbaValidLogin {
 		[string]$FilterBy = "None",
 		[string[]]$IgnoreDomains,
 		[switch]$Detailed,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -161,7 +161,7 @@ function Test-DbaValidLogin {
 				Write-Message -Message "Parsing Login $adLogin." -Level Verbose
 				$exists = $false
 				try {
-					$u = Get-DbaADObject -ADObject $adLogin -Type User -Silent
+					$u = Get-DbaADObject -ADObject $adLogin -Type User -EnableException
 					$foundUser = $u.GetUnderlyingObject()
 					$foundSid = $foundUser.ObjectSid.Value -join ''
 					if ($foundUser) {

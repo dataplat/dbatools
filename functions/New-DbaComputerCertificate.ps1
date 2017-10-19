@@ -1,4 +1,4 @@
-﻿function New-DbaComputerCertificate {
+function New-DbaComputerCertificate {
 <#
 	.SYNOPSIS
 		Creates a new computer certificate useful for Forcing Encryption
@@ -58,7 +58,7 @@
 	.PARAMETER SelfSigned
 		Creates a self-signed certificate. All other parameters can still apply except CaServer and CaName because the command does not go and get the certificate signed.
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		Use this switch to disable any kind of verbose messages
 	
 	.PARAMETER WhatIf
@@ -119,7 +119,7 @@
 		[string]$Folder = "My",
 		[string[]]$Dns,
 		[switch]$SelfSigned,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		$englishCodes = 9, 1033, 2057, 3081, 4105, 5129, 6153, 7177, 8201, 9225

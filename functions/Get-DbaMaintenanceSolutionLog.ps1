@@ -23,7 +23,7 @@ Consider only files generated since this date
 .PARAMETER Path
 Where to search for log files. By default it's the SQL instance errorlogpath path
 
-.PARAMETER Silent 
+.PARAMETER EnableException 
 Use this switch to disable any kind of verbose messages
 
 .NOTES 
@@ -79,7 +79,7 @@ Gets the outcome of the IndexOptimize job on sqlserver2014a, the other options a
 		[string[]]$LogType = 'IndexOptimize',
 		[datetime]$Since,
 		[string]$Path,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		function process-block ($block) {

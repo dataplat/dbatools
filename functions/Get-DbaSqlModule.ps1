@@ -1,4 +1,4 @@
-﻿Function Get-DbaSqlModule {
+Function Get-DbaSqlModule {
   <# 
 	.SYNOPSIS 
 	Displays all objects in sys.sys_modules after specified modification date.  Works on SQL Server 2008 and above.
@@ -33,7 +33,7 @@
 	.PARAMETER NoSystemObjects
 	Allows you to suppress output on system objects
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 	Use this switch to disable any kind of verbose messages
 	
 	.NOTES 
@@ -78,7 +78,7 @@
     [string[]]$Type,
     [switch]$NoSystemDb,
     [switch]$NoSystemObjects,
-    [switch]$Silent
+    [switch][Alias('Silent')]$EnableException
   )
 	
   begin {

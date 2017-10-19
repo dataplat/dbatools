@@ -1,4 +1,4 @@
-﻿Function Invoke-DbaLogShippingRecovery {
+Function Invoke-DbaLogShippingRecovery {
 	<#
     .SYNOPSIS
         Invoke-DbaLogShippingRecovery recovers log shipped databases to a normal state to act upon a migration or disaster.
@@ -37,7 +37,7 @@
         Allows you to choose to not restore the database to a functional state (Normal) in the final steps of the process.
         By default the database is restored to a functional state (Normal).
     
-    .PARAMETER Silent
+    .PARAMETER EnableException
         Use this switch to disable any kind of verbose messages
     
     .PARAMETER Force
@@ -99,7 +99,7 @@
 		[object[]]$Database,
 		[PSCredential]$SqlCredential,
 		[switch]$NoRecovery,
-		[switch]$Silent,
+		[switch][Alias('Silent')]$EnableException,
 		[switch]$Force,
 		[int]$Delay = 5
 	)

@@ -96,7 +96,7 @@ function New-DbaAgentSchedule {
 			The force parameter will ignore some errors in the parameters and assume defaults.
 			It will also remove the any present schedules with the same name for the specific job.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -141,7 +141,7 @@ function New-DbaAgentSchedule {
 		[string]$StartTime,
 		[string]$EndTime,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

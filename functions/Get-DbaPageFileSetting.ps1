@@ -18,7 +18,7 @@ This can be the name of a computer, a SMO object, an IP address or a SQL Instanc
 .PARAMETER Credential
 Credential object used to connect to the Computer as a different user
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages and allow exceptions
 
 .NOTES
@@ -50,7 +50,7 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 		[Alias("cn", "host", "ServerInstance", "Server", "SqlServer")]
 		[object]$ComputerName,
 		[PSCredential] $Credential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	PROCESS
 	{

@@ -31,7 +31,7 @@ Search for the object in all domains connected to the current one. If you are un
 using this switch will search through all domains in your forest and also in the ones that are trusted. This is HEAVY, but it can save
 some headaches.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -92,13 +92,13 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 
 		$Credential,
 		[switch]$SearchAllDomains,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	BEGIN {
 		try {
 			Add-Type -AssemblyName System.DirectoryServices.AccountManagement
 		} catch {
-			Stop-Function -Message "Failed to load the required module $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_
+			Stop-Function -Message "Failed to load the required module $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_
 			return
 		}
 		switch ($Type) {
@@ -129,7 +129,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 				$found = $searchClass::FindByIdentity($ctx, $IdentityType, $obj)
 				$found
 			} catch {
-				Stop-Function -Message "Errors trying to connect to the domain $Domain $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ADObj
+				Stop-Function -Message "Errors trying to connect to the domain $Domain $($_.Exception.Message)" -EnableException $Silent -InnerErrorRecord $_ -Target $ADObj
 			}
 		}
 	}
@@ -184,7 +184,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 					}
 				}
 			} else {
-				Write-Message -Message "Searching for $obj under domain $domain in $IdentityType format" -Level 4 -Silent $Silent
+				Write-Message -Message "Searching for $obj under domain $domain in $IdentityType format" -Level 4 -EnableException $EnableException
 				Get-DbaADObjectInternal -Domain $Domain -IdentityType $IdentityType -obj $obj
 			}
 			

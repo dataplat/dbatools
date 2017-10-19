@@ -19,7 +19,7 @@ Function Get-DbaStartupParameter {
     .PARAMETER Simple
         Shows a simplified output including only Server, Master Data Path, Master Log path, ErrorLog, TraceFlags and ParameterString
     
-    .PARAMETER Silent
+    .PARAMETER EnableException
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
         Use this if you want the function to throw terminating errors you want to catch.
     
@@ -59,7 +59,7 @@ Function Get-DbaStartupParameter {
         $Simple,
         
         [switch]
-        $Silent
+        [Alias('Silent')]$EnableException
     )
     
     process {

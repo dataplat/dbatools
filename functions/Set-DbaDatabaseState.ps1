@@ -67,7 +67,7 @@ For most options, this translates to istantly rolling back any open transactions
 that may be stopping the process.
 For -Detached it is required to break mirroring and Availability Groups
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages and allow exceptions
 
 .PARAMETER DatabaseCollection
@@ -136,7 +136,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 		[switch]$RestrictedUser,
 		[switch]$MultiUser,
 		[switch]$Force,
-		[switch]$Silent,
+		[switch][Alias('Silent')]$EnableException,
 		[parameter(Mandatory = $true, ValueFromPipeline, ParameterSetName = "Database")]
 		[PsCustomObject[]]$DatabaseCollection
 	)

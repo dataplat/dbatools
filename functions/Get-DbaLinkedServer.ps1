@@ -19,7 +19,7 @@ function Get-DbaLinkedServer {
 		.PARAMETER ExcludeLinkedServer
 			The linked server(s) to exclude - this list is auto-populated from the server
 	
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -45,7 +45,7 @@ function Get-DbaLinkedServer {
 		[PSCredential]$SqlCredential,
 		[object[]]$LinkedServer,
 		[object[]]$ExcludeLinkedServer,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	foreach ($Instance in $SqlInstance) {
 		try {

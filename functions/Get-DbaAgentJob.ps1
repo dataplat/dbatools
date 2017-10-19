@@ -21,7 +21,7 @@ FUNCTION Get-DbaAgentJob {
 		.PARAMETER NoDisabledJobs
 			Switch will exclude disabled jobs from the output.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages.
 
 		.NOTES
@@ -75,7 +75,7 @@ FUNCTION Get-DbaAgentJob {
 		[object[]]$Job,
 		[object[]]$ExcludeJob,
 		[switch]$NoDisabledJobs,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

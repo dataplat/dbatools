@@ -1,4 +1,4 @@
-﻿Function Install-DbaFirstResponderKit {
+Function Install-DbaFirstResponderKit {
 <#
 .SYNOPSIS
 Installs or updates the First Responder Kit stored procedures.
@@ -21,7 +21,7 @@ Database to store the FRK stored procs, typically master and master by default
 Use SqlCredential to connect to SqlInstance with SQL authentication. 
 If SqlCredential is not specified, Windows authentication will be used.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES 
@@ -69,7 +69,7 @@ Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authe
 		[PSCredential]
 		$SqlCredential,
 		[object]$Database = "master",
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

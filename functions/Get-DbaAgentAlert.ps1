@@ -20,7 +20,7 @@ FUNCTION Get-DbaAgentAlert {
 	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-	.PARAMETER Silent
+	.PARAMETER EnableException
 	Use this switch to disable any kind of verbose messages
 
 	.LINK
@@ -42,7 +42,7 @@ FUNCTION Get-DbaAgentAlert {
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]
 		$SqlCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

@@ -42,7 +42,7 @@ function Copy-DbaSpConfigure {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -89,7 +89,7 @@ function Copy-DbaSpConfigure {
 		$DestinationSqlCredential,
 		[object[]]$ConfigName,
 		[object[]]$ExcludeConfigName,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -162,6 +162,6 @@ function Copy-DbaSpConfigure {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlSpConfigure
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSpConfigure
 	}
 }

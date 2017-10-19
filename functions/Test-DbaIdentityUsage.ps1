@@ -27,7 +27,7 @@ function Test-DbaIdentityUsage {
 		.PARAMETER ExcludeSystemDb
 			Allows you to suppress output on system databases
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -70,7 +70,7 @@ function Test-DbaIdentityUsage {
 		[parameter(Position = 2, Mandatory = $false)]
 		[Alias("NoSystemDb")]
 		[switch]$ExcludeSystemDb,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

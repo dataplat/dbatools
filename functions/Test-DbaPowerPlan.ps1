@@ -24,7 +24,7 @@ function Test-DbaPowerPlan {
 		.PARAMETER Detailed
 			If this switch is enabled, a detailed list will be returned. This parameter will be removed in 1.0.
 
-		.PARAMETER Silent 
+		.PARAMETER EnableException 
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -60,7 +60,7 @@ function Test-DbaPowerPlan {
 		[PSCredential]$Credential,
 		[string]$CustomPowerPlan,
 		[switch]$Detailed,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

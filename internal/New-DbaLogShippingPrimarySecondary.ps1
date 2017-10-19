@@ -34,7 +34,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES 
@@ -79,7 +79,7 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 		[System.Management.Automation.PSCredential]
 		$SecondarySqlCredential,
 
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	# Try connecting to the instance

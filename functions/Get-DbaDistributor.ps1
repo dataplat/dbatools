@@ -14,7 +14,7 @@ function Get-DbaDistributor {
         $cred = Get-Credential, this pass this $cred to the param. 
         Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.  
     
-	.PARAMETER Silent 
+	.PARAMETER EnableException 
         Use this switch to disable any kind of verbose messages
     
 	.NOTES 
@@ -38,7 +38,7 @@ function Get-DbaDistributor {
 		[DbaInstanceParameter[]]$SqlInstance,
 		[parameter(Position = 1)]
 		[PSCredential]$SqlCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.RMO") -eq $null) {

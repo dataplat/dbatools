@@ -26,7 +26,7 @@ function Test-DbaTempDbConfiguration {
 
 			To connect as a different Windows user, run PowerShell as that user.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -57,7 +57,7 @@ function Test-DbaTempDbConfiguration {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstance[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		$result = @()
@@ -257,6 +257,6 @@ function Test-DbaTempDbConfiguration {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlTempDbConfiguration
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlTempDbConfiguration
 	}
 }

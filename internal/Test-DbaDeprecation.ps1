@@ -1,4 +1,4 @@
-﻿function Test-DbaDeprecation
+function Test-DbaDeprecation
 {
     <#
         .SYNOPSIS
@@ -37,7 +37,7 @@
             This function will generate a default message. However, this may not always be appropriate.
             Use CustomMessage to tailor a response to the necessity of the moment.
         
-        .PARAMETER Silent
+        .PARAMETER EnableException
             Replaces user friendly yellow warnings with bloody red exceptions of doom!
             Use this if you want the function to throw terminating errors you want to catch.
         
@@ -77,7 +77,7 @@
         $CustomMessage,
         
         [bool]
-        $Silent = $Silent
+        [Alias('Silent')]$EnableException = $Silent
     )
     
     switch ($PSCmdlet.ParameterSetName)

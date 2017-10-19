@@ -1,4 +1,4 @@
-﻿function Copy-DbaQueryStoreConfig {
+function Copy-DbaQueryStoreConfig {
 	<#
 		.SYNOPSIS
 			Copies the configuration of a Query Store enabled database and sets the copied configuration on other databases.
@@ -48,7 +48,7 @@
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -85,7 +85,7 @@
 		[object[]]$DestinationDatabase,
 		[object[]]$Exclude,
 		[switch]$AllDatabases,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	BEGIN {

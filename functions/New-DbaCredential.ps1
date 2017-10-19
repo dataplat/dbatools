@@ -1,4 +1,4 @@
-﻿function New-DbaCredential {
+function New-DbaCredential {
 <#
 .SYNOPSIS
 Creates a new SQL Server credential
@@ -36,7 +36,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command 
 
-.PARAMETER Silent 
+.PARAMETER EnableException 
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -72,7 +72,7 @@ Suppresses all prompts to install but prompts to securely enter your password an
 		[string]$MappedClassType = "None",
 		[string]$ProviderName,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

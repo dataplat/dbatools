@@ -42,7 +42,7 @@ By default system databases are ignored but you can include them within the sear
 The minimum percentage of column names that should match between the matching and matched objects.
     Entries with no matches are eliminated
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -96,7 +96,7 @@ Searches AdventureWorks database and lists all tables/views with its correspondi
 		[switch]$ExcludeViews,
 		[switch]$IncludeSystemDatabases,
 		[int]$MatchPercentThreshold,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

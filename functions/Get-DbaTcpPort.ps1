@@ -24,7 +24,7 @@ function Get-DbaTcpPort {
 		.PARAMETER ExcludeIpv6
 			If this switch is enabled, IPv6 information is excluded from detailed output.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -68,7 +68,7 @@ function Get-DbaTcpPort {
 		[switch]$Detailed,
 		[Alias("Ipv4")]
 		[switch]$ExcludeIpv6,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

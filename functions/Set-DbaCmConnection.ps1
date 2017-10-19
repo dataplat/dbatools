@@ -1,4 +1,4 @@
-﻿function Set-DbaCmConnection {
+function Set-DbaCmConnection {
 <#
 	.SYNOPSIS
 		Configures a connection object for use in remote computer management.
@@ -89,7 +89,7 @@
 		These can be configured globally using the dbatools configuration system and overridden locally on a per-connection basis.
 		For a list of all available settings, use "Get-DbaConfig -Module ComputerManagement".
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		Replaces user friendly yellow warnings with bloody red exceptions of doom!
 		Use this if you want the function to throw terminating errors you want to catch.
 	
@@ -179,7 +179,7 @@
         $ResetConfiguration,
 
         [switch]
-        $Silent
+        [Alias('Silent')]$EnableException
     )
 
     BEGIN {

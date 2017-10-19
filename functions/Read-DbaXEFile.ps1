@@ -1,4 +1,4 @@
-﻿function Read-DbaXEFile {
+function Read-DbaXEFile {
  <#
 	.SYNOPSIS
 	Read XEvents from a xel or xem file
@@ -15,7 +15,7 @@
 	.PARAMETER Raw
 	Returns the Microsoft.SqlServer.XEvent.Linq.PublishedEvent enumeration object
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 	If this switch is enabled, the internal messaging functions will be silenced.
 
 	.NOTES
@@ -44,7 +44,7 @@
 		[object[]]$Path,
 		[switch]$Exact,
 		[switch]$Raw,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($file in $path) {

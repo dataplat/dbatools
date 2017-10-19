@@ -36,7 +36,7 @@ function Test-DbaJobOwner {
 		.PARAMETER Detailed
 			If this switch is enabled, a list of all jobs and whether or not their owner matches Login is returned.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -74,7 +74,7 @@ function Test-DbaJobOwner {
 		[Alias("TargetLogin")]
 		[string]$Login,
 		[switch]$Detailed,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

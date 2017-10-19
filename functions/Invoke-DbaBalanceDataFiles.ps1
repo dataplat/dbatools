@@ -45,7 +45,7 @@ function Invoke-DbaBalanceDataFiles {
 		Do you want to rebuild the indexes offline?
 		[Y] Yes  [N] No   [?] Help (default is "Y"):
 
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		If this switch is enabled, the internal messaging functions will be silenced.
 
 	.PARAMETER Force
@@ -92,7 +92,7 @@ function Invoke-DbaBalanceDataFiles {
 		[Alias("Tables")]
 		[object[]]$Table,
 		[switch]$RebuildOffline,
-		[switch]$Silent,
+		[switch][Alias('Silent')]$EnableException,
 		[switch]$Force
 	)
 	

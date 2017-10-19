@@ -14,7 +14,7 @@ to be executed against multiple SQL Server instances.
 .PARAMETER Credential
 PSCredential object to connect as. If not specified, current Windows login will be used.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages.
 
 .NOTES
@@ -41,7 +41,7 @@ Returns all Security Audits for the local and sql2016 SQL Server instances
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$Credential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {
@@ -72,6 +72,6 @@ Returns all Security Audits for the local and sql2016 SQL Server instances
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlServerAudit
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlServerAudit
 	}
 }

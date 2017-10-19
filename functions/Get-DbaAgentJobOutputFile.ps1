@@ -1,4 +1,4 @@
-﻿function Get-DbaAgentJobOutputFile {
+function Get-DbaAgentJobOutputFile {
     <#
 		.Synopsis
 			Returns the Output File for each step of one or many agent job with the Job Names provided dynamically if 
@@ -22,7 +22,7 @@
 		.PARAMETER ExcludeJob
 			The job(s) to exclude - this list is auto-populated from the server
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -97,7 +97,7 @@
         [PSCredential]$SqlCredential,
         [object[]]$Job,
         [object[]]$ExcludeJob,
-        [switch]$Silent
+        [switch][Alias('Silent')]$EnableException
     )
 
     process {

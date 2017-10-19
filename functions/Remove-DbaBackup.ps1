@@ -41,7 +41,7 @@ Checks the archive bit before deletion. If the file is "ready for archiving" (wh
 .PARAMETER RemoveEmptyBackupFolder
 Remove any empty folders after the cleanup process is complete.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .PARAMETER WhatIf
@@ -118,7 +118,7 @@ It will also remove any backup folders that no longer contain backup files.
 		[parameter(Mandatory = $false)]
 		[switch]$RemoveEmptyBackupFolder = $false,
 
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	BEGIN
@@ -179,12 +179,12 @@ It will also remove any backup folders that no longer contain backup files.
 	PROCESS
 	{
 		# Process stuff
-		Write-Message -Message "Started" -Level 3 -Silent $Silent
-		Write-Message -Message "Removing backups from $Path" -Level 3 -Silent $Silent
+		Write-Message -Message "Started" -Level 3 -EnableException $EnableException
+		Write-Message -Message "Removing backups from $Path" -Level 3 -EnableException $EnableException
 		# Convert Retention Value to an actual DateTime
 		try {
 			$RetentionDate = Convert-UserFriendlyRetentionToDatetime -UserFriendlyRetention $RetentionPeriod
-			Write-Message -Message "Backup Retention Date set to $RetentionDate" -Level 5 -Silent $Silent
+			Write-Message -Message "Backup Retention Date set to $RetentionDate" -Level 5 -EnableException $EnableException
 		} catch {
 			Stop-Function -Message "Failed to interpret retention time!" -ErrorRecord $_
 		}
@@ -221,7 +221,7 @@ It will also remove any backup folders that no longer contain backup files.
 		if ($EnumErrors) {
 			Write-Message "Errors encountered enumerating files" -Level Warning -ErrorRecord $EnumErrors
 		}
-		Write-Message -Message "File Cleaning ended" -Level 3 -Silent $Silent
+		Write-Message -Message "File Cleaning ended" -Level 3 -EnableException $EnableException
 		# Cleanup empty backup folders.
 		if ($RemoveEmptyBackupFolder) {
 			Write-Message -Message "Removing empty folders" -Level 3 -Silent $Silent

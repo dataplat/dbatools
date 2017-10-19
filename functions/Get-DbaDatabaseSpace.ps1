@@ -1,4 +1,4 @@
-﻿function Get-DbaDatabaseSpace {
+function Get-DbaDatabaseSpace {
 	<#
 		.SYNOPSIS
 			Returns database file space information for database files on a SQL instance.
@@ -29,7 +29,7 @@
 		.PARAMETER IncludeSystemDBs
 			If this switch is enabled, system databases will be processed. By default, only user databases are processed.
 		
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 		
 		.EXAMPLE
@@ -70,7 +70,7 @@
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[switch]$IncludeSystemDBs,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

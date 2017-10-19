@@ -117,7 +117,7 @@ function Read-DbaTraceFile {
 		PlanHandle
 		GroupID
 			
-		.PARAMETER Silent
+		.PARAMETER EnableException
 		Use this switch to disable any kind of verbose messages
 			
 		.NOTES
@@ -162,7 +162,7 @@ function Read-DbaTraceFile {
 		[string[]]$ApplicationName,
 		[string[]]$ObjectName,
 		[string]$Where,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

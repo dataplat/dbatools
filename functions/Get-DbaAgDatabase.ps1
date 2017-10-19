@@ -22,7 +22,7 @@ function Get-DbaAgDatabase {
 		.PARAMETER Database
 			Specify the database(s) to pull information for. This list is auto-populated from the server for tab completion. Multiple databases can be specified. If none are specified all databases will be processed.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -61,7 +61,7 @@ function Get-DbaAgDatabase {
 		[parameter(ValueFromPipeline = $true)]
 		[object[]]$AvailabilityGroup,
 		[object[]]$Database,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

@@ -25,7 +25,7 @@ function Get-DbaRegisteredServer {
 		.PARAMETER ResolveNetworkName
 			Also return the NetBIOS name and IP addresses(s) of each server.
 	
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -70,7 +70,7 @@ function Get-DbaRegisteredServer {
 		[object[]]$ExcludeGroup,
 		[switch]$ExcludeCmsServer,
 		[switch]$ResolveNetworkName,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		function Find-CmsGroup {
@@ -117,7 +117,7 @@ function Get-DbaRegisteredServer {
 		$servers = @()
 		foreach ($instance in $SqlInstance) {
 			try {
-				$cmsStore = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential -Silent:$Silent
+				$cmsStore = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException:$Silent
 			}
 			catch {
 				Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue

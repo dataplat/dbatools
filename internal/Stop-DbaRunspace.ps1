@@ -20,7 +20,7 @@ function Stop-DbaRunspace {
 	.PARAMETER Runspace
 		The runspace to stop. Returned by Get-DbaRunspace
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		This parameters disables user-friendly warnings and enables the throwing of exceptions.
 		This is less user friendly, but allows catching exceptions in calling scripts.
 	
@@ -40,7 +40,7 @@ function Stop-DbaRunspace {
 		$Runspace,
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	
 	process {
@@ -58,7 +58,7 @@ function Stop-DbaRunspace {
 				}
 			}
 			else {
-				Stop-Function -Message "Failed to stop runspace: <c='em'>$($item.ToLower())</c> | No runspace registered under this name!" -Silent $Silent -Category InvalidArgument -Target $item.ToLower() -Continue
+				Stop-Function -Message "Failed to stop runspace: <c='em'>$($item.ToLower())</c> | No runspace registered under this name!" -EnableException $EnableException -Category InvalidArgument -Target $item.ToLower() -Continue
 			}
 		}
 		
@@ -68,7 +68,7 @@ function Stop-DbaRunspace {
 				$item.Stop()
 			}
 			catch {
-				Stop-Function -Message "Failed to stop runspace: <c='em'>$($item.Name.ToLower())</c>" -Silent $Silent -Target $item -Continue
+				Stop-Function -Message "Failed to stop runspace: <c='em'>$($item.Name.ToLower())</c>" -EnableException $EnableException -Target $item -Continue
 			}
 		}
 	}

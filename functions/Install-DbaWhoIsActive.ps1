@@ -34,7 +34,7 @@ function Install-DbaWhoIsActive {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 		
 		.PARAMETER Force
@@ -78,7 +78,7 @@ function Install-DbaWhoIsActive {
 		[ValidateScript({Test-Path -Path $_ -PathType Leaf})]
 		[string]$LocalFile,
 		[object]$Database,
-		[switch]$Silent,
+		[switch][Alias('Silent')]$EnableException,
 		[switch]$Force
 	)
 	
@@ -236,6 +236,6 @@ function Install-DbaWhoIsActive {
         if ($PSCmdlet.ShouldProcess($env:computername, "Post-install cleanup")) {
             Get-Item $sqlfile | Remove-Item
         }
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Install-SqlWhoIsActive
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Install-SqlWhoIsActive
 	}
 }

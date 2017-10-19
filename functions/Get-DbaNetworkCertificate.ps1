@@ -1,4 +1,4 @@
-﻿function Get-DbaNetworkCertificate {
+function Get-DbaNetworkCertificate {
 <#
 .SYNOPSIS
 Simplifies finding computer certificates that are candidates for using with SQL Server's network encryption
@@ -12,7 +12,7 @@ The target SQL Server - defaults to localhost. If target is a cluster, you must 
 .PARAMETER Credential
 Allows you to login to $ComputerName using alternative credentials.
 
-.PARAMETER Silent 
+.PARAMETER EnableException 
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -38,7 +38,7 @@ Gets computer certificates on sql2016 that are being used for SQL Server network
 		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential]$Credential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

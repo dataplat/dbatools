@@ -26,7 +26,7 @@ function Export-DbaDiagnosticQuery {
         .PARAMETER NoQueryExport
             Use this switch to suppress exporting of .sql files
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of Output messages
 
 		.NOTES
@@ -61,7 +61,7 @@ function Export-DbaDiagnosticQuery {
 		[string]$Suffix = "$(Get-Date -format 'yyyyMMddHHmmssms')",
         [switch]$NoPlanExport,
         [switch]$NoQueryExport,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

@@ -1,4 +1,4 @@
-﻿Function Get-DbaLocaleSetting
+Function Get-DbaLocaleSetting
 {
   <#
       .SYNOPSIS
@@ -15,7 +15,7 @@
       .PARAMETER Credential
       Credential object used to connect to the computer as a different user.
 
-      .PARAMETER Silent
+      .PARAMETER EnableException
       Use this switch to disable any kind of verbose messages and allow exceptions
 
       .NOTES
@@ -52,7 +52,7 @@
     [Alias("cn","host","Server")]
     [string[]]$ComputerName = $env:COMPUTERNAME,
     [PSCredential] $Credential,
-    [switch]$Silent
+    [switch][Alias('Silent')]$EnableException
   )
 
   BEGIN

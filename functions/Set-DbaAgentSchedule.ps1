@@ -79,7 +79,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .PARAMETER Force
@@ -162,7 +162,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
         [Parameter(Mandatory = $false)]
         [string]$EndTime,
         [Parameter(Mandatory = $false)]
-        [switch]$Silent,
+        [switch][Alias('Silent')]$EnableException,
         [Parameter(Mandatory = $false)]
         [switch]$Force
     )

@@ -47,7 +47,7 @@ function Copy-DbaResourceGovernor {
 		.PARAMETER Force
 			If this switch is enabled, the policies will be dropped and recreated on Destination.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -90,7 +90,7 @@ function Copy-DbaResourceGovernor {
 		[object[]]$ResourcePool,
 		[object[]]$ExcludeResourcePool,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -268,6 +268,6 @@ function Copy-DbaResourceGovernor {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlResourceGovernor
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlResourceGovernor
 	}
 }

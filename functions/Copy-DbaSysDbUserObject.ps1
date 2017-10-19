@@ -38,7 +38,7 @@ function Copy-DbaSysDbUserObject {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -66,7 +66,7 @@ function Copy-DbaSysDbUserObject {
 		[ValidateNotNullOrEmpty()]
 		[DbaInstanceParameter]$Destination,
 		[PSCredential]$DestinationSqlCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
@@ -137,6 +137,6 @@ function Copy-DbaSysDbUserObject {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlSysDbUserObjects
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSysDbUserObjects
 	}
 }

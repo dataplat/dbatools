@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Get-DbaForceNetworkEncryption {
 <#
@@ -16,7 +16,7 @@ function Get-DbaForceNetworkEncryption {
 	.PARAMETER Credential
 		Allows you to login to the computer (not sql instance) using alternative Windows credentials
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		Use this switch to Enable any kind of verbose messages
 	
 	.PARAMETER WhatIf
@@ -54,7 +54,7 @@ function Get-DbaForceNetworkEncryption {
 		$Credential,
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	process {
 		

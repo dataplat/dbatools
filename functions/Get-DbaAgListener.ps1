@@ -22,7 +22,7 @@ function Get-DbaAgListener {
 		.PARAMETER Listener
 			Specify the Listener name that you want to get information on.
 
-        .PARAMETER Silent
+        .PARAMETER EnableException
             If this switch is enabled, the internal messaging functions will be silenced.
 
         .NOTES
@@ -57,7 +57,7 @@ function Get-DbaAgListener {
         [parameter(ValueFromPipeline = $true)]
         [object[]]$AvailabilityGroup,
 		[object[]]$Listener,
-        [switch]$Silent
+        [switch][Alias('Silent')]$EnableException
     )
 
     process {

@@ -1,4 +1,4 @@
-﻿function Get-DbaWaitStatistic {
+function Get-DbaWaitStatistic {
 	<#
 		.SYNOPSIS
 			Displays wait statistics
@@ -39,7 +39,7 @@
 		.PARAMETER IncludeIgnorable
 			Some waits are no big deal and can be safely ignored in most circumstances. If you've got weird issues with mirroring or AGs.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -81,7 +81,7 @@
 		[PSCredential]$SqlCredential,
 		[int]$Threshold = 95,
 		[switch]$IncludeIgnorable,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

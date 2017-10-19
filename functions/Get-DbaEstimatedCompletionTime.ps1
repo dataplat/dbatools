@@ -1,4 +1,4 @@
-﻿function Get-DbaEstimatedCompletionTime {
+function Get-DbaEstimatedCompletionTime {
 <#
 .SYNOPSIS
 Gets execution and estimated completion time information for queries
@@ -36,7 +36,7 @@ The database(s) to process - this list is auto-populated from the server. If uns
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER Silent 
+.PARAMETER EnableException 
 Use this switch to disable any kind of verbose messages.
 
 .NOTES
@@ -78,7 +78,7 @@ Gets estimated completion times for queries performed against the Northwind, pub
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

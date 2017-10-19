@@ -24,7 +24,7 @@ Database to read the transaction log of
 .PARAMETER IgnoreLimit
 Switch to indicate that you wish to bypass the recommended limits of the function
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -55,7 +55,7 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 		[parameter(Mandatory = $true)]
 		[object]$Database,
 		[Switch]$IgnoreLimit,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	try {

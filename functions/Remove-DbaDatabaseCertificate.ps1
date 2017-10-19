@@ -1,4 +1,4 @@
-﻿function Remove-DbaDatabaseCertificate {
+function Remove-DbaDatabaseCertificate {
 <#
 .SYNOPSIS
 Deletes specified database certificate
@@ -24,7 +24,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 
-.PARAMETER Silent 
+.PARAMETER EnableException 
 Use this switch to disable any kind of verbose messages
 
 .PARAMETER CertificateCollection 
@@ -60,7 +60,7 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
 		[object[]]$Certificate,
 		[parameter(ValueFromPipeline, ParameterSetName = "collection")]
 		[Microsoft.SqlServer.Management.Smo.Certificate[]]$CertificateCollection,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		

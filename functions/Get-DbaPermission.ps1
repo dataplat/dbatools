@@ -32,7 +32,7 @@ Shows also information on Server Level Permissions
 .PARAMETER NoSystemObjects
 Excludes all permissions on system securables
 
-.PARAMETER Silent 
+.PARAMETER EnableException 
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -81,7 +81,7 @@ Returns a custom object with permissions for the master database
 		[object[]]$ExcludeDatabase,
 		[switch]$IncludeServerLevel,
 		[switch]$NoSystemObjects,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

@@ -1,4 +1,4 @@
-﻿function Remove-DbaDatabaseMasterKey {
+function Remove-DbaDatabaseMasterKey {
 	<#
 	.SYNOPSIS
 		Deletes specified database master key
@@ -31,7 +31,7 @@
 		Report: Create a report object as part of the output
 		The default action can be adjusted by using Set-DbaConfig to change the 'message.mode.default' configuration
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		Use this switch to disable any kind of verbose messages
 	
 	.PARAMETER WhatIf
@@ -89,7 +89,7 @@
 		$Mode = (Get-DbaConfigValue -Name 'message.mode.default' -Fallback "Strict"),
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	
 	begin {

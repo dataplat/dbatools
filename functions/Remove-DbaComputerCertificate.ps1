@@ -1,4 +1,4 @@
-﻿function Remove-DbaComputerCertificate {
+function Remove-DbaComputerCertificate {
 <#
 	.SYNOPSIS
 		Removes a computer certificate - useful for removing easily certs from remote computers
@@ -21,7 +21,7 @@
 	.PARAMETER Folder
 		Certificate folder
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		Use this switch to disable any kind of verbose messages
 	
 	.PARAMETER WhatIf
@@ -61,7 +61,7 @@
 		[string[]]$Thumbprint,
 		[string]$Store = "LocalMachine",
 		[string]$Folder="My",
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

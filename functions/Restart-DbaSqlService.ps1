@@ -27,7 +27,7 @@ Function Restart-DbaSqlService {
 	.PARAMETER ServiceCollection
 	A collection of services from Get-DbaSqlService
 
-	.PARAMETER Silent
+	.PARAMETER EnableException
 	Use this switch to disable any kind of verbose messages
 
 	.PARAMETER WhatIf
@@ -90,7 +90,7 @@ Function Restart-DbaSqlService {
 		[int]$Timeout = 30,
 		[PSCredential]$Credential,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		$processArray = @()
@@ -133,6 +133,6 @@ Function Restart-DbaSqlService {
 				Update-ServiceStatus -ServiceCollection $services -Action 'restart' -Timeout $Timeout -Silent $Silent
 			}
 		}
-		else { Stop-Function -Silent $Silent -Message "No SQL Server services found with current parameters." }
+		else { Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters." }
 	}
 }

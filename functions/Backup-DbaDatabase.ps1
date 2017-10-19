@@ -79,7 +79,7 @@ function Backup-DbaDatabase {
 		.PARAMETER AzureCredential
 			The name of the credential on the SQL instance that can write to the AzureBaseUrl.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -130,7 +130,7 @@ function Backup-DbaDatabase {
 		[int]$BufferCount,
 		[string]$AzureBaseUrl,
 		[string]$AzureCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

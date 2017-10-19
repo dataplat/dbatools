@@ -31,7 +31,7 @@ Function Out-DbaDataTable {
 	.PARAMETER Raw
 		Creates a datatable with all strings - no attempt to parse out datatypes is made
 	
-	.PARAMETER Silent
+	.PARAMETER EnableException
 		Use this switch to disable any kind of verbose messages
 	
 	.EXAMPLE
@@ -89,7 +89,7 @@ Function Out-DbaDataTable {
 		[string]$SizeType = "Int64",
 		[switch]$IgnoreNull,
 		[switch]$Raw,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	Begin {

@@ -22,7 +22,7 @@ function Test-DbaSqlPath {
 		.PARAMETER Path
 			The Path to test. This can be a file or directory
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.OUTPUTS
@@ -62,7 +62,7 @@ function Test-DbaSqlPath {
 		[PSCredential]$SqlCredential,
 		[Parameter(Mandatory = $true)]
 		[string]$Path,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {
@@ -93,6 +93,6 @@ function Test-DbaSqlPath {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlPath
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlPath
 	}
 }

@@ -1,4 +1,4 @@
-﻿function Remove-DbaDatabase {
+function Remove-DbaDatabase {
 <#
 .SYNOPSIS
 Drops a database, hopefully even the really stuck ones.
@@ -31,7 +31,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
+.PARAMETER EnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -79,7 +79,7 @@ Removes all the user databases from server\instance
 		[Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "databases")]
 		[Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
 		[switch]$IncludeSystemDb,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

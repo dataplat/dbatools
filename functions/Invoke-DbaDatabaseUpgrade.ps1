@@ -1,4 +1,4 @@
-﻿Function Invoke-DbaDatabaseUpgrade {
+Function Invoke-DbaDatabaseUpgrade {
 <#
 	.SYNOPSIS
 	Take a database and upgrades it to compatibility of the SQL Instance its hosted on. Based on https://thomaslarock.com/2014/06/upgrading-to-sql-server-2014-a-dozen-things-to-check/
@@ -49,7 +49,7 @@
 	Performing the operation "Update database" on target "pubs on SQL2016\VNEXT".
 	[Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
 
-	.PARAMETER Silent
+	.PARAMETER EnableException
 	Use this switch to disable any kind of verbose messages
 
 
@@ -106,7 +106,7 @@
 		[switch]$Force,
 		[parameter(ValueFromPipeline)]
 		[Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		

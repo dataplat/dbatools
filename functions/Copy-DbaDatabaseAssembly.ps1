@@ -1,4 +1,4 @@
-﻿function Copy-DbaDatabaseAssembly {
+function Copy-DbaDatabaseAssembly {
 	<#
 		.SYNOPSIS
 			Copy-DbaDatabaseAssembly migrates assemblies from one SQL Server to another.
@@ -46,7 +46,7 @@
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.PARAMETER Force
@@ -92,7 +92,7 @@
 		[object[]]$Assembly,
 		[object[]]$ExcludeAssembly,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 
@@ -227,6 +227,6 @@
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDatabaseAssembly
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlDatabaseAssembly
 	}
 }

@@ -26,7 +26,7 @@ function Invoke-DbaCycleErrorLog {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -64,7 +64,7 @@ function Invoke-DbaCycleErrorLog {
 		[PSCredential]$SqlCredential,
 		[ValidateSet('instance', 'agent')]
 		[string]$Type,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

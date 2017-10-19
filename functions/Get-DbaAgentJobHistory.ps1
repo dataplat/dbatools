@@ -1,4 +1,4 @@
-﻿function Get-DbaAgentJobHistory {
+function Get-DbaAgentJobHistory {
 	<#
 		.SYNOPSIS
 			Gets execution history of SQL Agent Job on instance(s) of SQL Server.
@@ -39,7 +39,7 @@
 		.PARAMETER JobCollection
 			An array of SMO jobs
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 
 		.NOTES
@@ -117,7 +117,7 @@
 		[switch]$WithOutputFile,
 		[parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Collection")]
 		[Microsoft.SqlServer.Management.Smo.Agent.Job]$JobCollection,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

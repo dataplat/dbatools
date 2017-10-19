@@ -47,7 +47,7 @@ function Copy-DbaServerAuditSpecification {
 		.PARAMETER Force
 			If this switch is enabled, the Audits Specifications will be dropped and recreated on Destination.
 
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			If this switch is enabled, the internal messaging functions will be silenced.
 
 		.NOTES
@@ -88,7 +88,7 @@ function Copy-DbaServerAuditSpecification {
 		[object[]]$AuditSpecification,
 		[object[]]$ExcludeAuditSpecification,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -192,6 +192,6 @@ function Copy-DbaServerAuditSpecification {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAuditSpecification
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAuditSpecification
 	}
 }
