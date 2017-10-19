@@ -117,7 +117,8 @@ function Write-Message {
 		$Level = "Warning",
 		
 		[bool]
-		[Alias('Silent')]$EnableException = $Silent,
+		[Alias('Silent')]
+		$EnableException = $EnableException,
 		
 		[string]
 		$FunctionName = ((Get-PSCallStack)[0].Command),

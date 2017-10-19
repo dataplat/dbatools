@@ -86,43 +86,44 @@ function Stop-Function
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding(DefaultParameterSetName = 'Plain')]
     Param (
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Message,
-        
-        [bool]
-        [Alias('Silent')]$EnableException = $Silent,
-        
-        [Parameter(ParameterSetName = 'Plain')]
-        [Parameter(ParameterSetName = 'Exception')]
-        [System.Management.Automation.ErrorCategory]
-        $Category = ([System.Management.Automation.ErrorCategory]::NotSpecified),
-        
-        [Parameter(ParameterSetName = 'Exception')]
-        [Alias('InnerErrorRecord')]
-        [System.Management.Automation.ErrorRecord[]]
-        $ErrorRecord,
-        
-        [string]
-        $FunctionName = ((Get-PSCallStack)[0].Command),
-        
-        [object]
+		[Parameter(Mandatory = $true)]
+		[string]
+		$Message,
+
+		[bool]
+		[Alias('Silent')]
+		$EnableException = $EnableException,
+
+		[Parameter(ParameterSetName = 'Plain')]
+		[Parameter(ParameterSetName = 'Exception')]
+		[System.Management.Automation.ErrorCategory]
+		$Category = ([System.Management.Automation.ErrorCategory]::NotSpecified),
+
+		[Parameter(ParameterSetName = 'Exception')]
+		[Alias('InnerErrorRecord')]
+		[System.Management.Automation.ErrorRecord[]]
+		$ErrorRecord,
+
+		[string]
+		$FunctionName = ((Get-PSCallStack)[0].Command),
+
+		[object]
 		$Target,
-		
+
 		[System.Exception]
 		$Exception,
-		
+
 		[switch]
 		$OverrideExceptionMessage,
-        
-        [switch]
-        $Continue,
-        
-        [switch]
-        $SilentlyContinue,
-        
-        [string]
-        $ContinueLabel
+
+		[switch]
+		$Continue,
+
+		[switch]
+		$SilentlyContinue,
+
+		[string]
+		$ContinueLabel
     )
 	
 	#region Handle Input Objects
