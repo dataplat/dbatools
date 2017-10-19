@@ -8,12 +8,12 @@ Function Invoke-DbaRecovery
 [CmdletBinding(SupportsShouldProcess = $true)]
 param (
     [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-    [string[]]$DatabaseName
+    [string[]]$DatabaseName,
     [parameter(Mandatory = $true)]
     [Alias("ServerInstance", "SqlServer")]
     [DbaInstanceParameter]$SqlInstance,
     [PSCredential]$SqlCredential
-}
+)
 Begin{}
 Process{
     ForEach ($Database in $DatabaseName){
@@ -52,4 +52,5 @@ Process{
             return
         }
     }
+}
 }
