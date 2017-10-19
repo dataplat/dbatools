@@ -32,8 +32,6 @@ artifacts:
   - path: msbuild.log
     name: MSBuild Log
 
-  - path: coverage_orig.xml
-    name: OpenCover original report
   - path: coverage.xml
     name: OpenCover report
 
@@ -70,7 +68,7 @@ test_script:
               -register:user `
               -target:"vstest.console.exe" `
               -targetargs:"/logger:Appveyor bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.Tests.dll" `
-              -output:"coverage_orig.xml" `
+              -output:"coverage.xml" `
               -filter:"+[dbatools]*" `
               -returntargetcode
           codecov -f "coverage.xml"
