@@ -1,6 +1,7 @@
 ﻿# See http://www.appveyor.com/docs/appveyor-yml for many more options
 
 build: false
+version: 0.9.{build}
 
 # Set build info
 environment: 
