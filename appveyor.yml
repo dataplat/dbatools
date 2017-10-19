@@ -73,7 +73,6 @@ test_script:
               -output:"coverage_orig.xml" `
               -filter:"+[dbatools]*" `
               -returntargetcode
-          .\Tests\appveyor.opencoverfix.ps1
           codecov -f "coverage.xml"
         }
 
