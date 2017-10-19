@@ -245,63 +245,63 @@ function Restore-DbaDatabase {
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName="Restore")]
         [object[]]$Path,
         [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [string]$DatabaseName,
-        [parameter(ParameterSet="Restore")]
+        [string[]]$DatabaseName,
+        [parameter(ParameterSetName="Restore")]
         [String]$DestinationDataDirectory,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [String]$DestinationLogDirectory,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [DateTime]$RestoreTime = (Get-Date).addyears(1),
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [switch]$NoRecovery,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [switch]$WithReplace,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [Switch]$XpDirTree,
         [switch]$OutputScriptOnly,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [switch]$VerifyOnly,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [switch]$MaintenanceSolutionBackup,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [hashtable]$FileMapping,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [switch]$IgnoreLogBackup,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [switch]$useDestinationDefaultDirectories,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [switch]$ReuseSourceFolderStructure,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [string]$DestinationFilePrefix = '',
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [string]$RestoredDatababaseNamePrefix,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [switch]$TrustDbBackupHistory,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [int]$MaxTransferSize,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [int]$BlockSize,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [int]$BufferCount,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [switch]$DirectoryRecurse,     
         [switch]$Silent,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [string]$StandbyDirectory,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [switch]$Continue,
         [string]$AzureCredential,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [switch]$ReplaceDbNameInFile,
-        [parameter(ParameterSet="Restore")]
+        [parameter(ParameterSetName="Restore")]
         [string]$DestinationFileSuffix,
-        [parameter(ParameterSet="Recovery")]
+        [parameter(ParameterSetName="Recovery")]
         [switch]$Recover
 
     )
@@ -361,6 +361,13 @@ function Restore-DbaDatabase {
             $ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential
             $WithReplace = $true 
             #$ContinuePoints
+        }
+
+        if ($DatabaseName.count -ge 2 -and $true -ne $Recover ) {
+            Stop-Function -Message "Only a single Database name can be specified for restores" 
+            return
+        } elseif ($DatabaseName.count -eq 1){
+            [string]$DatabaseName = $DatabaseName[0]
         }
 		
         try {
