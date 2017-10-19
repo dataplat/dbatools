@@ -325,4 +325,64 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
     }
+
+    Context "Setup for Recovery Tests" {
+        $DatabaseName = 'rectest'
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName
+        It "Should have restored everything successfully" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+        }  
+        $check = Get-DbaDatabase -SqlInstance $script:instance1 -DatabaseName $DatabaseName
+        It "Should return 1 database" {
+            $check.count | Should Be 1
+        }
+        It "Should be a database in Restoring state" {
+            $check.status | Should Be 'Restoring'
+        }        
+    }
+
+    Context "Test recovery via parameter" {
+        $DatabaseName = 'rectest'
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Recover -DatabaseName $DatabaseName 
+        It "Should have restored everything successfully" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+        }  
+        $check = Get-DbaDatabase -SqlInstance $script:instance1 -DatabaseName $DatabaseName
+        It "Should return 1 database" {
+            $check.count | Should Be 1
+        }
+        It "Should be a database in Restoring state" {
+            'Normal' -in $check.status | Should Be $True
+        }        
+    }
+
+    Context "Setup for Recovery Tests" {
+        $DatabaseName = 'rectest'
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName
+        It "Should have restored everything successfully" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+        }  
+        $check = Get-DbaDatabase -SqlInstance $script:instance1 -DatabaseName $DatabaseName
+        It "Should return 1 database" {
+            $check.count | Should Be 1
+        }
+        It "Should be a database in Restoring state" {
+            $check.status | Should Be 'Restoring'
+        }        
+    }
+
+    Context "Test recovery via pipeline" {
+        $DatabaseName = 'rectest'
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -DatabaseName $DatabaseName | Restore-DbaDatabase -SqlInstance $script:instance1 -Recover -DatabaseName $DatabaseName 
+        It "Should have restored everything successfully" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+        }  
+        $check = Get-DbaDatabase -SqlInstance $script:instance1 -DatabaseName $DatabaseName
+        It "Should return 1 database" {
+            $check.count | Should Be 1
+        }
+        It "Should be a database in Restoring state" {
+            'Normal' -in $check.status | Should Be $True
+        }        
+    }
 }
