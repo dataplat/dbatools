@@ -25,11 +25,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 	}
 	AfterAll {
-		Invoke-DbaBalanceDataFiles -SqlInstance $server -Database $dbname -RebuildOffline
+		Remove-DbaDatabase -SqlInstance $server -Database $dbname -Confirm:$false
 	}
 	
 	Context "Disks are properly retreived" {
-		$results = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME
+		$results = Invoke-DbaBalanceDataFiles -SqlInstance $server -Database $dbname -RebuildOffline
 		It -Skip "returns $dbname for Database" {
 			$results.Database -eq $dbname | Should Be $true
 		}
