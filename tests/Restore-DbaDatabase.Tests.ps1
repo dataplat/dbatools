@@ -358,7 +358,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Setup for Recovery Tests" {
         $DatabaseName = 'rectest'
-        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
         }  
@@ -383,6 +383,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "Should be a database in Restoring state" {
             'Normal' -in $check.status | Should Be $True
+        }        
+    }
+
+    Context "Checking we cope with a port number (#244_" {
+        $DatabaseName = 'rectest'
+        $results = Restore-DbaDatabase -SqlInstance $script:instance3 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak  -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
+        It "Should have restored everything successfully" {
+            ($results.RestoreComplete -contains $false) | Should be $False
         }        
     }
 }
