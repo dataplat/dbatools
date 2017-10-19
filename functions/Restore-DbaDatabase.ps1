@@ -134,7 +134,7 @@ function Restore-DbaDatabase {
     
     .PARAMETER Recover
         If set will perform recovery on the indicated database
-        
+
 	.PARAMETER Silent
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
         Use this if you want the function to throw terminating errors you want to catch.
@@ -200,7 +200,7 @@ function Restore-DbaDatabase {
 		$files = Get-ChildItem C:\dbatools\db1
 
 		#Restore database to a point in time
-		$files | Restore-DbaDatabase -SqlServer server\instance1 `
+		$files | Restore-DbaDatabase -SqlInstance server\instance1 `
 					-DestinationFilePrefix prefix -DatabaseName Restored  `
 					-RestoreTime (get-date "14:58:30 22/05/2017") `
 					-NoRecovery -WithReplace -StandbyDirectory C:\dbatools\standby 
@@ -209,14 +209,14 @@ function Restore-DbaDatabase {
 		Invoke-Sqlcmd2 -ServerInstance server\instance1 -Query "select top 1 * from Restored.dbo.steps order by dt desc"
 
 		#Not quite there so let's roll on a bit:
-		$files | Restore-DbaDatabase -SqlServer server\instance1 `
+		$files | Restore-DbaDatabase -SqlInstance server\instance1 `
 					-DestinationFilePrefix prefix -DatabaseName Restored `
 					-continue -WithReplace -RestoreTime (get-date "15:09:30 22/05/2017") `
 					-StandbyDirectory C:\dbatools\standby
 
 		Invoke-Sqlcmd2 -ServerInstance server\instance1 -Query "select top 1 * from restored.dbo.steps order by dt desc"
 
-		Restore-DbaDatabase -SqlServer server\instance1 `
+		Restore-DbaDatabase -SqlInstance server\instance1 `
 					-DestinationFilePrefix prefix -DatabaseName Restored `
 					-continue -WithReplace 
 		
@@ -226,6 +226,10 @@ function Restore-DbaDatabase {
 		And finally we continue by rolling it all the way forward to the latest point in the backup.
 		At each step, only the log files needed to roll the database forward are restored.
     
+    .EXAMPLE
+        Restore-DbaDatabase -SqlInstance server\instance1 -Path c:\backups -DatabseName example1 -WithNoRecovery
+        Restore-DbaDatabase -SqlInstance server\instance1 -Recover -DatabaseName example1
+
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
         Original Author: Stuart Moore (@napalmgram), stuart-moore.com
