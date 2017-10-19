@@ -40,8 +40,8 @@ artifacts:
 before_test:
  
   # Install opencov and codecov to parse results
-  - choco install opencover.portable
-  - choco install codecov
+  - choco install opencover.portable -r --no-progress
+  - choco install codecov -r --no-progress
 
   # grab appveyor lab files
   - ps: .\Tests\appveyor.prep.ps1
