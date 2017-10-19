@@ -14,7 +14,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		$db.Query("ALTER DATABASE $dbname ADD FILE (NAME = secondfile, FILENAME = '$defaultdata\$dbname-secondaryfg.ndf') TO FILEGROUP SECONDARYFG")
 		
 		$db.Query("CREATE TABLE table1 (ID1 INT IDENTITY PRIMARY KEY, Name1 varchar(10))")
-		$db.Query("CREATE TABLE table2 (ID2 INT IDENTITY PRIMARY KEY, Name2 varchar(10)) on SECONDARYFG")
+		$db.Query("CREATE TABLE table2 (ID2 INT IDENTITY PRIMARY KEY, Name2 varchar(10))")
 		
 		$sqlvalues = New-Object System.Collections.ArrayList
 		1 .. 1000 | ForEach-Object { $null = $sqlvalues.Add("('some value')") }
