@@ -35,8 +35,10 @@ function Get-DbaTopResourceUsage {
 		By default, these query the Top 20 worst offenders (though more than 20 results can be returend if each of the top 20 have more than 1 subsequent result)
 	
 	.PARAMETER EnableException 
-		Use this switch to disable any kind of verbose messages (this is required)
-
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 	.NOTES 
 		Tags: Query, Performance
 		Website: https://dbatools.io

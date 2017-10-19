@@ -45,10 +45,10 @@ function Write-Message {
 			Either one of the strings or its respective number will do as input.
 		
 		.PARAMETER EnableException
-			Whether the silent switch was set in the calling function.
-			If true, it will write errors, if any, but not write to the screen without explicit override using -Debug or -Verbose.
-			If false, it will print a warning if in wrning mode. It will also be willing to write a message to the screen, if the level is within the range configured for that.
-		
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.PARAMETER FunctionName
 			The name of the calling function.
 			Will be automatically set, but can be overridden when necessary.

@@ -21,9 +21,10 @@ function Register-DbaRunspace {
 		The name to register the scriptblock under.
 	
 	.PARAMETER EnableException
-		This parameters disables user-friendly warnings and enables the throwing of exceptions.
-		This is less user friendly, but allows catching exceptions in calling scripts.
-	
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 	.EXAMPLE
 		PS C:\> Register-DbaRunspace -ScriptBlock $scriptBlock -Name 'mymodule.maintenance'
 	

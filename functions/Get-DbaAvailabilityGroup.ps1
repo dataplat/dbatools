@@ -25,8 +25,10 @@ function Get-DbaAvailabilityGroup {
 			If this switch is enabled, a boolean indicating whether SqlInstance is the Primary replica in the AG is returned.
 
 		.PARAMETER EnableException
-			If this switch is enabled, the internal messaging functions will be silenced.
-
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: DisasterRecovery, AG, AvailabilityGroup
 			Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)

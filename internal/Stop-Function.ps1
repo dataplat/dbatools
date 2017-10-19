@@ -20,10 +20,10 @@ function Stop-Function
 			A message to pass along, explaining just what the error was.
 		
 		.PARAMETER EnableException
-			Whether the silent switch was set in the calling function.
-			If true, it will throw an error.
-			If false, it will print a warning.
-		
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.PARAMETER Category
 			What category does this termination belong to?
 			Mandatory so long as no inner exception is passed.
