@@ -243,7 +243,7 @@ function Restore-DbaDatabase {
         
         You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName="Restore")]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName="Restore")]
         [object[]]$Path,
