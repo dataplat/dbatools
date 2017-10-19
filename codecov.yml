@@ -1,4 +1,4 @@
 ﻿comment: false
 
 fixes:
-  - "dbatools/*::bin/projects/dbatools/dbatools/"
+  - "dbatools/::bin/projects/dbatools/dbatools/"
