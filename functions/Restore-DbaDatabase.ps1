@@ -660,7 +660,9 @@ function Restore-DbaDatabase {
                 }
                 $OldDatabaseName = ($FilteredFiles | Select-Object -Property DatabaseName -unique).DatabaseName
                 IF ($DatabaseName -eq '') {
-                    $DatabaseName = $RestoredDatababaseNamePrefix + ($FilteredFiles | Select-Object -Property DatabaseName -unique).DatabaseName
+                    #Workaround 
+                    $dbnametmp = ($FilteredFiles | Select-Object -Property DatabaseName -unique).split(',') 
+                    $DatabaseName = $RestoredDatababaseNamePrefix + $dbnametmp
                     Write-Message -Level Verbose -Message "Dbname set from backup = $DatabaseName"
                 }
                 
