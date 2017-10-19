@@ -378,8 +378,7 @@
 		'Get-DbaXESessionTarget',
 		'New-DbaXESmartTargetResponse',
 		'New-DbaXESmartTarget',
-		'Get-DbaDbVirtualLogFile',
-		'Invoke-DbaBalanceDataFiles'
+		'Get-DbaDbVirtualLogFile'
 	)
 	
 	# Cmdlets to export from this module
