@@ -55,33 +55,41 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
+		[PSCredential]$Credential,
 		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {
 		foreach ($instance in $SqlInstance) {
-			Write-Message -Level Verbose -Message "Counting the running SQL Server instances on $instance"
+			Write-Message -Level VeryVerbose -Message "Processing $instance" -Target $instance
 			
 			try {
-				# Get number of instances running
-				$ipaddr = Resolve-SqlIpAddress -SqlInstance $instance
-				$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' -and $_.Status -eq 'Running' }
-				$instancecount = $sqlservices.count
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Write-Message -Level Warning -Message "Couldn't get accurate SQL Server instance count on $instance. Defaulting to 1."
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
+			
+			Write-Message -Level Verbose -Target $instance -Message "Retrieving maximum memory statistics from $instance"
+			$serverMemory = Get-DbaMaxMemory -SqlInstance $server
+			try {
+				Write-Message -Level Verbose -Target $instance -Message "Retrieving number of instances from $($instance.ComputerName)"
+				if ($Credential) { $serverService = Get-DbaSqlService -ComputerName $instance -Credential $Credential -EnableException }
+				else { $serverService = Get-DbaSqlService -ComputerName $instance -EnableException }
+				$instancecount = ($serverService | Where-Object InstanceName | Group-Object InstanceName | Measure-Object Count).Count
+			}
+			catch {
+				Write-Message -Level Warning -Message "Couldn't get accurate SQL Server instance count on $instance. Defaulting to 1." -Target $instance -ErrorRecord $_
 				$instancecount = 1
 			}
 			
-			$server = Get-DbaMaxMemory -SqlInstance $instance -SqlCredential $SqlCredential
-			
-			if ($null -eq $server) {
+			if ($null -eq $serverMemory) {
 				continue
 			}
 			$reserve = 1
 			
-			$maxmemory = $server.SqlMaxMB
-			$totalmemory = $server.TotalMB
+			$maxmemory = $serverMemory.SqlMaxMB
+			$totalmemory = $serverMemory.TotalMB
 			
 			if ($totalmemory -ge 4096) {
 				$currentCount = $totalmemory
@@ -104,10 +112,10 @@ Find all servers in CMS that have Max SQL memory set to higher than the total me
 			$recommendedMax = $recommendedMax/$instancecount
 			
 			[pscustomobject]@{
-				Server   = $server.Server
-				ComputerName = $server.ComputerName
-				InstanceName = $server.InstanceName
-				SqlInstance = $server.SqlInstance
+				Server   = $serverMemory.Server
+				ComputerName = $serverMemory.ComputerName
+				InstanceName = $serverMemory.InstanceName
+				SqlInstance = $serverMemory.SqlInstance
 				InstanceCount = $instancecount
 				TotalMB  = [int]$totalmemory
 				SqlMaxMB = [int]$maxmemory
