@@ -409,4 +409,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($results.RestoreComplete -contains $false) | Should be $False
         }        
     }
+
+    Context "All user databases are removed post history test" {
+        $results = Get-DbaDatabase -SqlInstance $script:instance2,14333 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+        It "Should say the status was dropped" {
+            Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
+        }
+    }
 }
