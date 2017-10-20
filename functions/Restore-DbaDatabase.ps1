@@ -135,7 +135,7 @@ function Restore-DbaDatabase {
     .PARAMETER Recover
         If set will perform recovery on the indicated database
 
-    .PARAMETER Silent
+	.PARAMETER Silent
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
         Use this if you want the function to throw terminating errors you want to catch.
     

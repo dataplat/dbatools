@@ -374,7 +374,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Setup for Recovery Tests" {
         $DatabaseName = 'rectest'
-        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
         }  
