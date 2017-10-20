@@ -86,7 +86,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 
-.PARAMETER Silent 
+.PARAMETER SiEnableException
 Use this switch to disable any kind of verbose messages
 
 .NOTES
@@ -164,8 +164,7 @@ After the work has been completed, we can push the original startup parameters b
 		[switch]$IncreasedExtents,
 		[switch]$TraceFlagsOverride,
 		[object]$StartUpConfig,
-		[switch]$Silent
-        
+		[switch]$S[Alias('Silent')]$EnableException        
     )
     process {
         try {
@@ -362,14 +361,10 @@ After the work has been completed, we can push the original startup parameters b
         if ($pscmdlet.ShouldProcess("Setting Sql Server start parameters on $SqlInstance to $ParameterString")) {
             try {
                 if ($Credential) {
-                    $response = Invoke-ManagedComputerCommand -Server $instance -Credential $Credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -Silent
-                    $output = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential -Silent
-                    Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
+                    $response = Invoke-ManagedComputerCommand -Server $instance -Credential $Credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -S-EnableException                    $output = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential -S-EnableException                    Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
                 }
                 else {
-                    $response = Invoke-ManagedComputerCommand -Server $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -Silent
-                    $output = Get-DbaStartupParameter -SqlInstance $server -Silent
-                    Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
+                    $response = Invoke-ManagedComputerCommand -Server $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -S-EnableException                    $output = Get-DbaStartupParameter -SqlInstance $server -S-EnableException                    Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
                 }
                 
                 $output

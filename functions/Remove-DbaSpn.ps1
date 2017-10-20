@@ -20,9 +20,11 @@ The account you want the SPN remove from
 .PARAMETER Credential
 The credential you want to use to connect to Active Directory to make the changes
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .PARAMETER Confirm
 Turns confirmations before changes on or off
 
@@ -79,7 +81,7 @@ Removes all set SPNs for sql2005 and the relative delegations
 		[string]$ServiceAccount,
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
 		[PSCredential]$Credential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {
@@ -89,21 +91,21 @@ Removes all set SPNs for sql2005 and the relative delegations
 			$searchfor = 'Computer'
 		}
 		try {
-			$Result = Get-DbaADObject -ADObject $ServiceAccount -Type $searchfor -Credential $Credential -Silent
+			$Result = Get-DbaADObject -ADObject $ServiceAccount -Type $searchfor -Credential $Credential -EnableException
 		}
 		catch {
-			Stop-Function -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($ServiceAccount). $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ServiceAccount
+			Stop-Function -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($ServiceAccount). $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_ -Target $ServiceAccount
 		}
 		if ($Result.Count -gt 0) {
 			try {
 				$adentry = $Result.GetUnderlyingObject()
 			}
 			catch {
-				Stop-Function -Message "The SQL Service account ($ServiceAccount) has been found, but you don't have enough permission to inspect its properties $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ServiceAccount
+				Stop-Function -Message "The SQL Service account ($ServiceAccount) has been found, but you don't have enough permission to inspect its properties $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_ -Target $ServiceAccount
 			}
 		}
 		else {
-			Stop-Function -Message "The SQL Service account ($ServiceAccount) has not been found" -Silent $Silent -Target $ServiceAccount
+			Stop-Function -Message "The SQL Service account ($ServiceAccount) has not been found" -EnableException $EnableException -Target $ServiceAccount
 		}
 		
 		# Cool! Remove an SPN
@@ -127,7 +129,7 @@ Removes all set SPNs for sql2005 and the relative delegations
 				}
 			}
 		catch {
-			Write-Message -Message "Could not remove SPN. $($_.Exception.Message)" -Level Warning -Silent $Silent -ErrorRecord $_ -Target $ServiceAccountWrite
+			Write-Message -Message "Could not remove SPN. $($_.Exception.Message)" -Level Warning -EnableException $EnableException -ErrorRecord $_ -Target $ServiceAccountWrite
 			$set = $true
 			$status = "Failed to remove SPN"
 			$delegate = $false
@@ -165,7 +167,7 @@ Removes all set SPNs for sql2005 and the relative delegations
 						$status = "Successfully removed delegation"
 					}
 					catch {
-						Write-Message -Message "Could not remove delegation. $($_.Exception.Message)" -Level Warning -Silent $Silent -ErrorRecord $_ -Target $ServiceAccount
+						Write-Message -Message "Could not remove delegation. $($_.Exception.Message)" -Level Warning -EnableException $EnableException -ErrorRecord $_ -Target $ServiceAccount
 						$set = $true
 						$status = "Failed to remove delegation"
 					}

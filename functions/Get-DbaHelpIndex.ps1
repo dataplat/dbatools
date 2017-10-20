@@ -50,9 +50,11 @@ function Get-DbaHelpIndex {
 		.PARAMETER FormatResults
 			Returns the numerical data in a more user readable format (numerical separator will depend on localization settings).
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: Indexes
 			Author: Nic Cain, https://sirsql.net/
@@ -114,7 +116,7 @@ function Get-DbaHelpIndex {
 		[switch]$IncludeStats,
 		[switch]$IncludeDataTypes,
 		[switch]$FormatResults,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

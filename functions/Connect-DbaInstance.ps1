@@ -199,8 +199,8 @@ function Connect-DbaInstance {
 		[string]$AppendConnectionString
 	)
 	begin {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Connect-DbaSqlServer
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-DbaInstance
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Connect-DbaSqlServer
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaInstance
 	}
 	process {
 		if ($SqlInstance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {

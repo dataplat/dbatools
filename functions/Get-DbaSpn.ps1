@@ -18,9 +18,11 @@ The accounts you want to retrieve set SPNs for.
 .PARAMETER Credential
 User credential to connect to the remote servers or active directory.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Tags: SPN
 Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
@@ -57,7 +59,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 		[string[]]$AccountName,
 		[Parameter(Mandatory = $false)]
 		[PSCredential]$Credential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin
 	{
@@ -72,7 +74,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
 				}
 				try
 				{
-					$Result = Get-DbaADObject -ADObject $account -Type $searchfor -Credential $Credential -Silent
+					$Result = Get-DbaADObject -ADObject $account -Type $searchfor -Credential $Credential -EnableException
 				}
 				catch
 				{

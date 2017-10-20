@@ -1,4 +1,4 @@
-﻿Function Invoke-DbaLogShippingRecovery {
+Function Invoke-DbaLogShippingRecovery {
 	<#
     .SYNOPSIS
         Invoke-DbaLogShippingRecovery recovers log shipped databases to a normal state to act upon a migration or disaster.
@@ -37,9 +37,11 @@
         Allows you to choose to not restore the database to a functional state (Normal) in the final steps of the process.
         By default the database is restored to a functional state (Normal).
     
-    .PARAMETER Silent
-        Use this switch to disable any kind of verbose messages
-    
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
     .PARAMETER Force
         Use this parameter to force the function to continue and perform any adjusting actions to successfully execute
     
@@ -99,7 +101,7 @@
 		[object[]]$Database,
 		[PSCredential]$SqlCredential,
 		[switch]$NoRecovery,
-		[switch]$Silent,
+		[switch][Alias('Silent')]$EnableException,
 		[switch]$Force,
 		[int]$Delay = 5
 	)
@@ -165,7 +167,7 @@
 				}
 			}
 			# If the force switch and the silent switch are not set
-			elseif (!$Force -and !$Silent) {
+			elseif (!$Force -and !$EnableException) {
 				# Set up the parts for the user choice
 				$Title = "SQL Server Agent is not running"
 				$Info = "Do you want to start the SQL Server Agent service?"
@@ -192,7 +194,7 @@
 				}
 			}
 			# If the force switch it not set and the silent switch is set
-			elseif (!$Force -and $Silent) {
+			elseif (!$Force -and $EnableException) {
 				Stop-Function -Message "The SQL Server Agent service needs to be started to be able to recover the databases" -ErrorRecord $_ -Target $sqlinstance
 				return
 			}

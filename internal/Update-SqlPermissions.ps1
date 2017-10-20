@@ -10,7 +10,7 @@ function Update-SqlPermissions {
 			Destination Server
 		.PARAMETER DestLogin
 			Destination Login
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
@@ -27,7 +27,7 @@ function Update-SqlPermissions {
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[object]$DestLogin,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	$destination = $DestServer.DomainInstanceName
