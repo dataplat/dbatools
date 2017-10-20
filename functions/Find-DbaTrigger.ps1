@@ -84,7 +84,7 @@ Searches in "mydb" database triggers for "runtime" in the textbody
         [string]$TriggerLevel = 'All',
         [switch]$IncludeSystemObjects,
         [switch]$IncludeSystemDatabases,
-        [switch]$[Alias('Silent')]$EnableException
+        [switch][Alias('Silent')]$EnableException
     )
 
     begin {

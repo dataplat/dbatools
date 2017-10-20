@@ -164,7 +164,7 @@ After the work has been completed, we can push the original startup parameters b
 		[switch]$IncreasedExtents,
 		[switch]$TraceFlagsOverride,
 		[object]$StartUpConfig,
-		[switch]$S[Alias('Silent')]$EnableException        
+		[switch][Alias('Silent')]$EnableException        
     )
     process {
         try {
