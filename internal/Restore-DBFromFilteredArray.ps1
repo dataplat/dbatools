@@ -31,7 +31,7 @@ Function Restore-DBFromFilteredArray {
         [int]$MaxTransferSize,
         [int]$BlockSize,
         [int]$BufferCount,
-        [switch]$Silent,
+        [switch][Alias('Silent')]$EnableException,
         [string]$StandbyDirectory,
         [switch]$Continue,
         [string]$AzureCredential,

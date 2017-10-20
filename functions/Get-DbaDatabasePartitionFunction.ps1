@@ -1,4 +1,4 @@
-﻿Function Get-DbaDatabasePartitionFunction {
+Function Get-DbaDatabasePartitionFunction {
 	<#
 .SYNOPSIS
 Gets database Partition Functions
@@ -18,9 +18,11 @@ To get users from specific database(s)
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is auto populated from the server
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Tags: Databases
 Author: Klaas Vandenberghe ( @PowerDbaKlaas )
@@ -58,7 +60,7 @@ Gets the Partition Functions for the databases on Sql1 and Sql2/sqlexpress
 		[PSCredential]$SqlCredential,
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

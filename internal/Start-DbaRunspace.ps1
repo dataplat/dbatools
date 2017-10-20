@@ -13,10 +13,11 @@ function Start-DbaRunspace {
 	.PARAMETER Runspace
 		The runspace to launch. Returned by Get-DbaRunspace
 	
-	.PARAMETER Silent
-		This parameters disables user-friendly warnings and enables the throwing of exceptions.
-		This is less user friendly, but allows catching exceptions in calling scripts.
-	
+	.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 	.EXAMPLE
 		PS C:\> Start-DbaRunspace -Name 'mymodule.maintenance'
 		
@@ -33,7 +34,7 @@ function Start-DbaRunspace {
 		$Runspace,
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	
 	process {
@@ -51,7 +52,7 @@ function Start-DbaRunspace {
 				}
 			}
 			else {
-				Stop-Function -Message "Failed to start runspace: <c='em'>$($item.ToLower())</c> | No runspace registered under this name!" -Silent $Silent -Category InvalidArgument -Tag "fail", "argument", "runspace", "start" -Target $item.ToLower() -Continue
+				Stop-Function -Message "Failed to start runspace: <c='em'>$($item.ToLower())</c> | No runspace registered under this name!" -EnableException $EnableException -Category InvalidArgument -Tag "fail", "argument", "runspace", "start" -Target $item.ToLower() -Continue
 			}
 		}
 		
@@ -61,7 +62,7 @@ function Start-DbaRunspace {
 				$item.Start()
 			}
 			catch {
-				Stop-Function -Message "Failed to start runspace: <c='em'>$($item.Name.ToLower())</c>" -Silent $Silent -Target $item -Continue
+				Stop-Function -Message "Failed to start runspace: <c='em'>$($item.Name.ToLower())</c>" -EnableException $EnableException -Target $item -Continue
 			}
 		}
 	}

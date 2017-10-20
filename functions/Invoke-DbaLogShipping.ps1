@@ -320,9 +320,11 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
 It will also remove the any present schedules with the same name for the specific job.
@@ -603,7 +605,7 @@ The script will show a message that the copy destination has not been supplied a
 
 		[switch]$Force,
 
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

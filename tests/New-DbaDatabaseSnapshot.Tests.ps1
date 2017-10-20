@@ -1,4 +1,4 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -6,7 +6,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Context "Parameter validation" {
 		It "Stops if no Database or AllDatabases" {
-			{ New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Silent } | Should Throw "You must specify"
+			{ New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -EnableException } | Should Throw "You must specify"
 		}
 		It "Is nice by default" {
 			{ New-DbaDatabaseSnapshot -SqlInstance $script:instance2 *> $null } | Should Not Throw "You must specify"
@@ -15,7 +15,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
 	Context "Operations on not supported databases" {
 		It "Doesn't support model, master or tempdb" {
-			$result = New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Silent -Database model,master,tempdb
+			$result = New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -EnableException -Database model,master,tempdb
 			$result | Should Be $null
 		}
 

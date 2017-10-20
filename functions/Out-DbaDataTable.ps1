@@ -31,9 +31,11 @@ Function Out-DbaDataTable {
 	.PARAMETER Raw
 		Creates a datatable with all strings - no attempt to parse out datatypes is made
 	
-	.PARAMETER Silent
-		Use this switch to disable any kind of verbose messages
-	
+	.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 	.EXAMPLE
 		Get-Service | Out-DbaDataTable
 		
@@ -89,7 +91,7 @@ Function Out-DbaDataTable {
 		[string]$SizeType = "Int64",
 		[switch]$IgnoreNull,
 		[switch]$Raw,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	Begin {

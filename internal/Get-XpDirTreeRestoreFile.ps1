@@ -15,9 +15,11 @@ function Get-XpDirTreeRestoreFile {
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server as a different user
     
-    .PARAMETER Silent
-        Setting this to true will disable all verbosity.
-    
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
     .EXAMPLE
         PS C:\> Get-XpDirTreeRestoreFile -Path '\\foo\bar\' -SqlInstance $SqlInstance
     
@@ -31,7 +33,7 @@ function Get-XpDirTreeRestoreFile {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[bool]$Silent = $false
+		[bool][Alias('Silent')]$EnableException = $false
 	)
 	
 	Write-Message -Level InternalComment -Message "Starting"

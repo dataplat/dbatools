@@ -103,9 +103,11 @@ function Copy-DbaDatabase {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
-			If this switch is enabled, the internal messaging functions will be silenced.
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.PARAMETER Force
 			If this switch is enabled, existing databases on Destination with matching names from Source will be dropped. If using -DetachReattach, mirrors will be broken and the database(s) dropped from Availability Groups.
 
@@ -236,10 +238,10 @@ function Copy-DbaDatabase {
 		$Force,
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	begin {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDatabase
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlDatabase
 
 		$CopyOnly = -not $NoCopyOnly
 		function Join-AdminUnc {

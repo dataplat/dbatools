@@ -42,9 +42,11 @@ function Update-DbaSqlServiceAccount {
 	.PARAMETER Confirm 
 	Prompts you for confirmation before executing any changing operations within the command. 
 
-	.PARAMETER Silent 
-	Use this switch to disable any kind of verbose messages
-
+	.PARAMETER EnableException 
+	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+	This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+	
 	.NOTES
 	Author: Kirill Kravtsov (@nvarscar)
 
@@ -95,7 +97,7 @@ function Update-DbaSqlServiceAccount {
 		[securestring]$OldPassword = (New-Object System.Security.SecureString),
 		[Alias("Password")]
 		[securestring]$NewPassword = (New-Object System.Security.SecureString),
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		$svcCollection = @()
@@ -237,7 +239,7 @@ function Update-DbaSqlServiceAccount {
 				Select-DefaultView -InputObject $serviceObject -Property ComputerName, ServiceName, State, StartName, Status, Message
 			}
 			Else {
-				Stop-Function -Message "The service $($svc.ServiceName) has not been found on $($svc.ComputerName)" -Silent $Silent -Continue
+				Stop-Function -Message "The service $($svc.ServiceName) has not been found on $($svc.ComputerName)" -EnableException $EnableException -Continue
 			}
 		}
 	}
