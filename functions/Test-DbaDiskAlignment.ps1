@@ -110,7 +110,7 @@ function Test-DbaDiskAlignment {
 				[bool]$NoSqlCheck,
 				[string]$ComputerName,
 				[System.Management.Automation.PSCredential]$SqlCredential,
-				[bool]$Silent = $Silent
+				[bool]$EnableException = $EnableException
 			)
             
 			$SqlInstances = @()

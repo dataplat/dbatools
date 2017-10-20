@@ -15,13 +15,13 @@ function Test-ElevationRequirement {
 			This most be a localhost variety, for it to be able to fail.
 		
 		.PARAMETER Continue
-			When using the native capability to terminate on fail, this will call continue in non-silent mode.
+			When using the native capability to terminate on fail, this will call continue in non-EnableException mode.
 		
 		.PARAMETER ContinueLabel
 			When using the native capability to terminate on fail, and using a continue mode, the continue will continue with this label.
 		
 		.PARAMETER SilentlyContinue
-			When using the native capability to terminate on fail, this will call continue in silent mode.
+			When using the native capability to terminate on fail, this will call continue in EnableException mode.
 		
 		.PARAMETER NoStop
 			Does not call stop-function when the test fails, rather only returns $false instead
@@ -69,7 +69,8 @@ function Test-ElevationRequirement {
 		$NoStop,
 		
 		[bool]
-		[Alias('Silent')]$EnableException = $Silent
+		[Alias('Silent')]
+		$EnableException = $EnableException
 	)
 	
 	$isElevated = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)

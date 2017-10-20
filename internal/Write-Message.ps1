@@ -38,7 +38,7 @@ function Write-Message {
 			The specific level of verbosity preference can be configured using the settings of the message.maximum and message.minimum namespace.
 			
 			In addition, it is possible to select the level "Warning" which moves the message out of the configurable range:
-			The user will always be shown this message, unless he silences the entire thing with -Silent
+			The user will always be shown this message, unless he silences the entire thing with -EnableException
 			
 			Possible levels:
 			Critical (1), Important / Output (2), Significant (3), VeryVerbose (4), Verbose (5), SomewhatVerbose (6), System (7), Debug (8), InternalComment (9), Warning (666)
@@ -75,7 +75,7 @@ function Write-Message {
 			If an ErrorRecord was passed, it is possible to add the object on which the error eccoured, in order to simplify debugging / troubleshooting.
 		
 		.EXAMPLE
-			PS C:\> Write-Message -Message 'Connecting to Database1' -Level 4 -Silent $Silent
+			PS C:\> Write-Message -Message 'Connecting to Database1' -Level 4 -EnableException $EnableException
 			
 			Writes the message 'Connecting to Database1'. By default, this will be
 			- Written to the in-memory message log
@@ -84,7 +84,7 @@ function Write-Message {
 			- Written to the Debug stream (Write-Debug)
 		
 		.EXAMPLE
-			PS C:\> Write-Message -Message "Connecting to Database 2 failed" -Silent $silent -Warning -ErrorRecord $_ -Target $Database
+			PS C:\> Write-Message -Message "Connecting to Database 2 failed" -EnableException $EnableException -Warning -ErrorRecord $_ -Target $Database
 			
 			Writes the message "Connecting to Database 2 failed". By default, this will be
 			- Written to the in-memory message log
@@ -117,7 +117,8 @@ function Write-Message {
 		$Level = "Warning",
 		
 		[bool]
-		[Alias('Silent')]$EnableException = $Silent,
+		[Alias('Silent')]
+		$EnableException = $EnableException,
 		
 		[string]
 		$FunctionName = ((Get-PSCallStack)[0].Command),

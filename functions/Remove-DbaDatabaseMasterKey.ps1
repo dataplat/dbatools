@@ -102,7 +102,7 @@ function Remove-DbaDatabaseMasterKey {
 				
 				$mode = $Mode,
 				
-				$Silent = $Silent
+				$EnableException = $EnableException
 			)
 			$server = $masterkey.Parent.Parent
 			$instance = $server.DomainInstanceName

@@ -36,8 +36,8 @@ function Get-DbaCmObject {
 		- Ignores timeout on bad connections
 	
 	.PARAMETER SilentlyContinue
-		Use in conjunction with the -Silent switch.
-		By default, Get-DbaCmObject will throw a terminating exception when connecting to a target is impossible in silent mode.
+		Use in conjunction with the -EnableException switch.
+		By default, Get-DbaCmObject will throw a terminating exception when connecting to a target is impossible in exception enabled mode.
 		Setting this switch will cause it write a non-terminating exception and continue with the next computer.
 	
 	.PARAMETER EnableException

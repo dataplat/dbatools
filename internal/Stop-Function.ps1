@@ -14,7 +14,7 @@ function Stop-Function
 			It also allows simple integration into loops.
 			
 			Note:
-			When calling this function with the intent to terminate the calling function in non-silent mode too, you need to add a return below the call.
+			When calling this function with the intent to terminate the calling function in non-EnableException mode too, you need to add a return below the call.
 		
 		.PARAMETER Message
 			A message to pass along, explaining just what the error was.
@@ -44,7 +44,7 @@ function Stop-Function
 		.PARAMETER Target
 			The object that was processed when the error was thrown.
 			For example, if you were trying to process a Database Server object when the processing failed, add the object here.
-			This object will be in the error record (which will be written, even in non-silent mode, just won't show it).
+			This object will be in the error record (which will be written, even in non-EnableException mode, just won't show it).
 			If you specify such an object, it becomes simple to actually figure out, just where things failed at.
 		
 		.PARAMETER Exception
@@ -68,15 +68,15 @@ function Stop-Function
 			Helpful when trying to continue on an upper level named loop.
 		
 		.EXAMPLE
-			Stop-Function -Message "Foo failed bar!" -Silent $Silent -ErrorRecord $_
+			Stop-Function -Message "Foo failed bar!" -EnableException $EnableException -ErrorRecord $_
 			return
 			
-			Depending on whether $silent is true or false it will:
+			Depending on whether $EnableException is true or false it will:
 			- Throw a bloody terminating error. Game over.
 			- Write a nice warning about how Foo failed bar, then terminate the function. The return on the next line will then end the calling function.
 		
 		.EXAMPLE
-			Stop-Function -Message "Foo failed bar!" -Silent $Silent -Category InvalidOperation -Target $foo -Continue
+			Stop-Function -Message "Foo failed bar!" -EnableException $EnableException -Category InvalidOperation -Target $foo -Continue
 			
 			Depending on whether $silent is true or false it will:
 			- Throw a bloody terminating error. Game over.
@@ -91,7 +91,8 @@ function Stop-Function
         $Message,
         
         [bool]
-        [Alias('Silent')]$EnableException = $Silent,
+		[Alias('Silent')]
+		$EnableException = $EnableException,
         
         [Parameter(ParameterSetName = 'Plain')]
         [Parameter(ParameterSetName = 'Exception')]
@@ -165,8 +166,8 @@ function Stop-Function
 	}
 	
 	
-    
-    #region Silent Mode
+	
+	#region EnableException Mode
     if ($EnableException)
     {
         if ($SilentlyContinue)
@@ -181,14 +182,14 @@ function Stop-Function
 		
 		# Removed the bottom below because it should be up to the developer to tell the user if its continuing or what
 		# It also seems like it's terminating the function as a whole, even if it continues on to the next server
-		# Write-Message -Message "Terminating function!" -Level 9 -Silent $Silent -FunctionName $FunctionName
+		# Write-Message -Message "Terminating function!" -Level 9 -EnableException $EnableException -FunctionName $FunctionName
         
         
         throw $records[0]
     }
-    #endregion Silent Mode
-    
-    #region Non-Silent Mode
+	#endregion EnableException Mode
+	
+	#region Non-EnableException Mode
     else
     {
         # This ensures that the error is stored in the $error variable AND has its Stacktrace (simply adding the record would lack the stacktrace)
@@ -209,9 +210,9 @@ function Stop-Function
 			
 			# Removed the bottom below because it should be up to the developer to tell the user if its continuing or what
 			# It also seems like it's terminating the function as a whole, even if it continues on to the next server
-			# Write-Message -Message "Terminating function!" -Warning -Silent $Silent -FunctionName $FunctionName
+			# Write-Message -Message "Terminating function!" -Warning -EnableException $EnableException -FunctionName $FunctionName
             return
         }
     }
-    #endregion Non-Silent Mode
+	#endregion Non-EnableException Mode
 }

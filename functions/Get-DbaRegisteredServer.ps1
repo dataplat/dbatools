@@ -119,11 +119,10 @@ function Get-DbaRegisteredServer {
 		$servers = @()
 		foreach ($instance in $SqlInstance) {
 			try {
-				$cmsStore = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException:$Silent
+				$cmsStore = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
 			}
 			catch {
 				Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
-				return
 			}
 
 			if (Test-Bound -ParameterName ExcludeGroup) {

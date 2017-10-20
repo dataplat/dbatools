@@ -183,7 +183,7 @@ function Update-DbaSqlServiceAccount {
 	}
 	end {
 		foreach ($svc in $svcCollection) {
-			if ($serviceObject = Get-DbaSqlService -ComputerName $svc.ComputerName -ServiceName $svc.ServiceName -Credential $Credential -EnableException:$Silent) {
+			if ($serviceObject = Get-DbaSqlService -ComputerName $svc.ComputerName -ServiceName $svc.ServiceName -Credential $Credential -EnableException:$EnableException) {
 				$outMessage = $outStatus = $agent = $null
 				if ($actionType -eq 'Password' -and $NewPassword.Length -eq 0) {
 					$currentPassword = Read-Host -Prompt "New password for $($serviceObject.StartName) ($($svc.ServiceName) on $($svc.ComputerName))" -AsSecureString
@@ -204,12 +204,12 @@ function Update-DbaSqlServiceAccount {
 					try {
 						if ($actionType -eq 'Account') {
 							Write-Message -Level Verbose -Message "Attempting an account change for service $($svc.ServiceName) on $($svc.ComputerName)"
-							$null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptAccountChange -ArgumentList @($svc.ServiceName, $currentCredential.UserName, $currentCredential.GetNetworkCredential().Password) -EnableException:$Silent
+							$null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptAccountChange -ArgumentList @($svc.ServiceName, $currentCredential.UserName, $currentCredential.GetNetworkCredential().Password) -EnableException:$EnableException
 							$outMessage = "The login account for the service has been successfully set."
 						}
 						elseif ($actionType -eq 'Password') {
 							Write-Message -Level Verbose -Message "Attempting a password change for service $($svc.ServiceName) on $($svc.ComputerName)"
-							$null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptPasswordChange -ArgumentList @($svc.ServiceName, (New-Object System.Management.Automation.PSCredential ("user", $OldPassword)).GetNetworkCredential().Password, (New-Object System.Management.Automation.PSCredential ("user", $currentPassword)).GetNetworkCredential().Password) -EnableException:$Silent
+							$null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptPasswordChange -ArgumentList @($svc.ServiceName, (New-Object System.Management.Automation.PSCredential ("user", $OldPassword)).GetNetworkCredential().Password, (New-Object System.Management.Automation.PSCredential ("user", $currentPassword)).GetNetworkCredential().Password) -EnableException:$EnableException
 							$outMessage = "The password has been successfully changed."
 						}
 						$outStatus = 'Successful'
@@ -233,7 +233,7 @@ function Update-DbaSqlServiceAccount {
 						}
 					}
 				}
-				$serviceObject = Get-DbaSqlService -ComputerName $svc.ComputerName -ServiceName $svc.ServiceName -Credential $Credential -EnableException:$Silent
+				$serviceObject = Get-DbaSqlService -ComputerName $svc.ComputerName -ServiceName $svc.ServiceName -Credential $Credential -EnableException:$EnableException
 				Add-Member -Force -InputObject $serviceObject -NotePropertyName Message -NotePropertyValue $outMessage
 				Add-Member -Force -InputObject $serviceObject -NotePropertyName Status -NotePropertyValue $outStatus
 				Select-DefaultView -InputObject $serviceObject -Property ComputerName, ServiceName, State, StartName, Status, Message

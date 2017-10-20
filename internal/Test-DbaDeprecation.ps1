@@ -78,7 +78,8 @@ function Test-DbaDeprecation
         $CustomMessage,
         
         [bool]
-        [Alias('Silent')]$EnableException = $Silent
+		[Alias('Silent')]
+		$EnableException = $EnableException
     )
     
     switch ($PSCmdlet.ParameterSetName)
@@ -93,8 +94,8 @@ function Test-DbaDeprecation
             {
                 if ($CustomMessage) { $Message = $CustomMessage }
                 else { $Message = "Using the parameter $Parameter is deprecated. This parameter will be removed in version $DeprecatedOn, check in the documentation what parameter to use instead" }
-                
-                Write-Message -Message $Message -Level Warning -Silent $Silent -FunctionName $FunctionName -Once "Deprecated.Alias.$Alias"
+				
+				Write-Message -Message $Message -Level Warning -EnableException $EnableException -FunctionName $FunctionName -Once "Deprecated.Alias.$Alias"
             }
         }
         
@@ -104,8 +105,8 @@ function Test-DbaDeprecation
             {
                 if ($CustomMessage) { $Message = $CustomMessage }
                 else { $Message = "Using the alias $Alias is deprecated. This alias will be removed in version $DeprecatedOn, use $FunctionName instead" }
-                
-                Write-Message -Message $Message -Level Warning -Silent $Silent -FunctionName $FunctionName -Once "Deprecated.Alias.$Alias"
+				
+				Write-Message -Message $Message -Level Warning -EnableException $EnableException -FunctionName $FunctionName -Once "Deprecated.Alias.$Alias"
             }
         }
     }

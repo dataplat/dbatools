@@ -92,7 +92,7 @@ Function Get-DbaSqlBuildReference {
 				$Update,
 				
 				[bool]
-				$Silent
+				$EnableException
 			)
 			
 			$orig_idxfile = "$Moduledirectory\bin\dbatools-buildref-index.json"
@@ -100,7 +100,7 @@ Function Get-DbaSqlBuildReference {
 			$writable_idxfile = Join-Path $DbatoolsData "dbatools-buildref-index.json"
 			
 			if (-not (Test-Path $orig_idxfile)) {
-				Write-Message -Level Warning -EnableException $Silent -Message "Unable to read local SQL build reference file. Check your module integrity!"
+				Write-Message -Level Warning -EnableException $EnableException -Message "Unable to read local SQL build reference file. Check your module integrity!"
 			}
 			
 			if ((-not (Test-Path $orig_idxfile)) -and (-not (Test-Path $writable_idxfile))) {
@@ -132,7 +132,7 @@ Function Get-DbaSqlBuildReference {
 				}
 				# If Update is passed, try to fetch from online resource and store into the writeable
 				if ($Update) {
-					$WebContent = Get-DbaSqlBuildReferenceIndexOnline -Silent $Silent
+					$WebContent = Get-DbaSqlBuildReferenceIndexOnline -EnableException $EnableException
 					if ($null -ne $WebContent) {
 						$webdata_content = $WebContent.Content | ConvertFrom-Json
 						$webdata_time = Get-Date $webdata_content.LastUpdated
@@ -152,7 +152,7 @@ Function Get-DbaSqlBuildReference {
 			
 			$LastUpdated = Get-Date -Date $result.LastUpdated
 			if ($LastUpdated -lt (Get-Date).AddDays(-45)) {
-				Write-Message -Level Warning -EnableException $Silent -Message "Index is stale, last update on: $(Get-Date -Date $LastUpdated -Format s), try the -Update parameter to fetch the most up to date index"
+				Write-Message -Level Warning -EnableException $EnableException -Message "Index is stale, last update on: $(Get-Date -Date $LastUpdated -Format s), try the -Update parameter to fetch the most up to date index"
 			}
 			
 			$result.Data | Select-Object @{ Name = "VersionObject"; Expression = { [version]$_.Version } }, *
@@ -162,7 +162,7 @@ Function Get-DbaSqlBuildReference {
 			[CmdletBinding()]
 			Param (
 				[bool]
-				$Silent
+				$EnableException
 			)
 			$url = Get-DbaConfigValue -Name 'assets.sqlbuildreference'
 			try {
@@ -170,11 +170,11 @@ Function Get-DbaSqlBuildReference {
 			}
 			catch {
 				try {
-					Write-Message -Level Verbose -EnableException $Silent -Message "Probably using a proxy for internet access, trying default proxy settings"
+					Write-Message -Level Verbose -EnableException $EnableException -Message "Probably using a proxy for internet access, trying default proxy settings"
 					(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
 					$WebContent = Invoke-WebRequest $url -ErrorAction Stop
 				} catch {
-					Write-Message -Level Warning -EnableException $Silent -Message "Couldn't download updated index from $url"
+					Write-Message -Level Warning -EnableException $EnableException -Message "Couldn't download updated index from $url"
 					return
 				}
 			}
@@ -192,17 +192,17 @@ Function Get-DbaSqlBuildReference {
 				$Data,
 				
 				[bool]
-				$Silent
+				$EnableException
 			)
 			
-			Write-Message -Level Verbose -EnableException $Silent -Message "Looking for $Build"
+			Write-Message -Level Verbose -EnableException $EnableException -Message "Looking for $Build"
 			
 			$IdxVersion = $Data | Where-Object Version -like "$($Build.Major).$($Build.Minor).*"
 			$Detected = @{ }
 			$Detected.MatchType = 'Approximate'
-			Write-Message -Level Verbose -EnableException $Silent -Message "We have $($IdxVersion.Length) builds in store for this Release"
+			Write-Message -Level Verbose -EnableException $EnableException -Message "We have $($IdxVersion.Length) builds in store for this Release"
 			If ($IdxVersion.Length -eq 0) {
-				Write-Message -Level Warning -EnableException $Silent -Message "No info in store for this Release"
+				Write-Message -Level Warning -EnableException $EnableException -Message "No info in store for this Release"
 				$Detected.Warning = "No info in store for this Release"
 			}
 			else {
@@ -241,7 +241,7 @@ Function Get-DbaSqlBuildReference {
 		$moduledirectory = $MyInvocation.MyCommand.Module.ModuleBase
 		
 		try {
-			$IdxRef = Get-DbaSqlBuildReferenceIndex -Moduledirectory $moduledirectory -Update $Update -Silent $EnableException
+			$IdxRef = Get-DbaSqlBuildReferenceIndex -Moduledirectory $moduledirectory -Update $Update -EnableException $EnableException
 		}
 		catch {
 			Stop-Function -Message "Error loading SQL build reference" -ErrorRecord $_
@@ -269,7 +269,7 @@ Function Get-DbaSqlBuildReference {
 			}
 			#endregion Ensure the connection is established
 			
-			$Detected = Resolve-DbaSqlBuild -Build $server.Version -Data $IdxRef -Silent $EnableException
+			$Detected = Resolve-DbaSqlBuild -Build $server.Version -Data $IdxRef -EnableException $EnableException
 			
 			[PSCustomObject]@{
 				SqlInstance    = $server.DomainInstanceName
@@ -285,7 +285,7 @@ Function Get-DbaSqlBuildReference {
 		}
 		
 		foreach ($buildstr in $Build) {
-			$Detected = Resolve-DbaSqlBuild -Build $buildstr -Data $IdxRef -Silent $EnableException
+			$Detected = Resolve-DbaSqlBuild -Build $buildstr -Data $IdxRef -EnableException $EnableException
 			
 			[PSCustomObject]@{
 				SqlInstance    = $null

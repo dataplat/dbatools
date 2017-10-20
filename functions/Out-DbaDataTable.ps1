@@ -196,7 +196,7 @@ Function Out-DbaDataTable {
 		if (!$InputObject) {
 			if ($IgnoreNull) {
 				# If the object coming down the pipeline is null and the IgnoreNull parameter is set, ignore it.
-				Write-Message -Level Warning -Message "The InputObject from the pipe is null. Skipping." -EnableException:$Silent
+				Write-Message -Level Warning -Message "The InputObject from the pipe is null. Skipping."
 			}
 			else {
 				# If the object coming down the pipeline is null, add an empty row and then skip to next.

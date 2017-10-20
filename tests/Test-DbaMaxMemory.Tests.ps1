@@ -16,7 +16,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         Context 'Validate input arguments' {
             It 'No "SQL Server" Windows service is running on the host' {
                 Mock Get-Service { throw ParameterArgumentValidationError }
-                { Test-DbaMaxMemory -SqlInstance 'localhost' -$Silent } | Should Throw
+                { Test-DbaMaxMemory -SqlInstance 'localhost' -EnableException } | Should Throw
             }
             
             It 'SqlInstance parameter is empty throws an exception' {

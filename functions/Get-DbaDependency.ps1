@@ -83,7 +83,7 @@ function Get-DbaDependency
                 $FunctionName,
                 
                 [bool]
-                $Silent
+                $EnableException
             )
             
             $scripter = New-Object Microsoft.SqlServer.Management.Smo.Scripter
@@ -96,13 +96,13 @@ function Get-DbaDependency
             
             $urnCollection = New-Object Microsoft.SqlServer.Management.Smo.UrnCollection
             
-            Write-Message -EnableException $Silent -Level 5 -Message "Adding $Object which is a $($Object.urn.Type)" -FunctionName $FunctionName
+            Write-Message -EnableException $EnableException -Level 5 -Message "Adding $Object which is a $($Object.urn.Type)" -FunctionName $FunctionName
             $urnCollection.Add([Microsoft.SqlServer.Management.Sdk.Sfc.Urn]$Object.urn)
             
             #now we set up an event listnenr go get progress reports
             $progressReportEventHandler = [Microsoft.SqlServer.Management.Smo.ProgressReportEventHandler] {
                 $name = $_.Current.GetAttribute('Name');
-                Write-Message -EnableException $Silent -Level 5 -Message "Analysed $name" -FunctionName $FunctionName
+                Write-Message -EnableException $EnableException -Level 5 -Message "Analysed $name" -FunctionName $FunctionName
             }
             $scripter.add_DiscoveryProgress($progressReportEventHandler)
             
@@ -244,7 +244,7 @@ function Get-DbaDependency
             
             $server = $parent
             
-            $tree = Get-DependencyTree -Object $Item -AllowSystemObjects $false -Server $server -FunctionName (Get-PSCallStack)[0].COmmand -Silent $EnableException -EnumParents $Parents
+            $tree = Get-DependencyTree -Object $Item -AllowSystemObjects $false -Server $server -FunctionName (Get-PSCallStack)[0].COmmand -EnableException $EnableException -EnumParents $Parents
             $limitCount = 2
             if ($IncludeSelf) { $limitCount = 1 }
             if ($tree.Count -lt $limitCount)
