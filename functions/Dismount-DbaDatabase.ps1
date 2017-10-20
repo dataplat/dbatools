@@ -1,4 +1,4 @@
-﻿function Dismount-DbaDatabase {
+function Dismount-DbaDatabase {
 	<#
 		.SYNOPSIS
 			Detach a SQL Server Database.
@@ -39,9 +39,11 @@
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
-			If this switch is enabled, the internal messaging functions will be silenced.
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: Database
 			Website: https://dbatools.io
@@ -81,7 +83,7 @@
 		[Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
 		[Switch]$UpdateStatistics,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($instance in $SqlInstance) {

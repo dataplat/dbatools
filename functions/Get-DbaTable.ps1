@@ -1,4 +1,4 @@
-﻿function Get-DbaTable {
+function Get-DbaTable {
 <#
 .SYNOPSIS
 Returns a summary of information on the tables
@@ -28,9 +28,11 @@ If the object has special characters please wrap them in square brackets [ ].
 This dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
 The correct way to find table named 'First.Table' on schema 'dbo' is passing dbo.[First.Table]
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Tags: Database, Tables
 Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
@@ -75,7 +77,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 		[object[]]$ExcludeDatabase,
 		[switch]$IncludeSystemDBs,
 		[string[]]$Table,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

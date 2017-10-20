@@ -1,4 +1,4 @@
-﻿function Get-DbaDbMailHistory {
+function Get-DbaDbMailHistory {
 <#
 	.SYNOPSIS
 		Gets the history of mail sent from a SQL instance
@@ -18,9 +18,11 @@
 	.PARAMETER Status
 	Narrow the results by status. Valid values include Unsent, Sent, Failed and Retrying
 	
-	.PARAMETER Silent 
-		Use this switch to disable any kind of verbose messages
-	
+	.PARAMETER EnableException 
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 	.NOTES
 		Tags: Logging
 		Website: https://dbatools.io
@@ -58,7 +60,7 @@
 		[DateTime]$Since,
 		[ValidateSet('Unsent', 'Sent','Failed','Retrying')]
 		[string]$Status,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($instance in $SqlInstance) {

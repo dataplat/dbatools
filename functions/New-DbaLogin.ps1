@@ -66,8 +66,10 @@ function New-DbaLogin {
 	.PARAMETER Confirm 
 	Prompts you for confirmation before executing any changing operations within the command 
 	
-	.PARAMETER Silent 
-	Use this switch to disable any kind of verbose messages
+	.PARAMETER EnableException 
+	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+	This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 	
 	.NOTES
 	Tags: Login
@@ -155,7 +157,7 @@ function New-DbaLogin {
 		[switch]$Disabled,
 		[switch]$NewSid,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
@@ -163,7 +165,7 @@ function New-DbaLogin {
 			if ($Sid.GetType().Name -ne 'Byte[]') {
 				foreach ($symbol in $Sid.TrimStart("0x").ToCharArray()) {
 					if ($symbol -notin "0123456789ABCDEF".ToCharArray()) {
-						Stop-Function -Message "Sid has invalid character '$symbol', cannot proceed." -Category InvalidArgument -Silent $Silent
+						Stop-Function -Message "Sid has invalid character '$symbol', cannot proceed." -Category InvalidArgument -EnableException $EnableException
 						return
 					}
 				}
@@ -181,7 +183,7 @@ function New-DbaLogin {
 	process {
 		#At least one of those should be specified
 		if (!($Login -or $InputObject)) {
-			Stop-Function -Message "No logins have been specified." -Category InvalidArgument -Silent $Silent
+			Stop-Function -Message "No logins have been specified." -Category InvalidArgument -EnableException $EnableException
 			Return
 		}
 		
@@ -189,7 +191,7 @@ function New-DbaLogin {
 		if ($InputObject) {
 			$loginCollection += $InputObject
 			if ($Login) {
-				Stop-Function -Message "Parameter -Login is not supported when processing objects from -InputObject. If you need to rename the logins, please use -LoginRenameHashtable." -Category InvalidArgument -Silent $Silent
+				Stop-Function -Message "Parameter -Login is not supported when processing objects from -InputObject. If you need to rename the logins, please use -LoginRenameHashtable." -Category InvalidArgument -EnableException $EnableException
 				Return
 			}
 		}
@@ -207,7 +209,7 @@ function New-DbaLogin {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Silent $Silent -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -EnableException $EnableException -Continue
 			}
 			
 			foreach ($loginItem in $loginCollection) {
@@ -276,7 +278,7 @@ function New-DbaLogin {
 				}
 				
 				if (($server.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($loginType -eq 'SqlLogin')) {
-					Write-Message -Level Warning -Message "$instance does not have Mixed Mode enabled. [$loginName] is an SQL Login. Enable mixed mode authentication after the migration completes to use this type of login." -Silent $Silent
+					Write-Message -Level Warning -Message "$instance does not have Mixed Mode enabled. [$loginName] is an SQL Login. Enable mixed mode authentication after the migration completes to use this type of login." -EnableException $EnableException
 				}
 				
 				if ($Sid) {
@@ -334,12 +336,12 @@ function New-DbaLogin {
 								$existingLogin.Drop()
 							}
 							catch {
-								Stop-Function -Message "Could not remove existing login $loginName on $instance, skipping." -Target $loginName -Silent $Silent -Continue
+								Stop-Function -Message "Could not remove existing login $loginName on $instance, skipping." -Target $loginName -EnableException $EnableException -Continue
 							}
 						}
 					}
 					else {
-						Stop-Function -Message "Login $loginName already exists on $instance and -Force was not specified" -Target $loginName -Silent $Silent -Continue
+						Stop-Function -Message "Login $loginName already exists on $instance and -Force was not specified" -Target $loginName -EnableException $EnableException -Continue
 					}
 				}
 				
@@ -453,7 +455,7 @@ function New-DbaLogin {
 								$newLoginStatus.Status = "Failed"
 								$newLoginStatus.Notes = $_.Exception.GetBaseException().Message
 								$newLoginStatus
-								Stop-Function -Message "Failed to add $loginName to $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Silent $Silent -Continue 3>$null
+								Stop-Function -Message "Failed to add $loginName to $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -EnableException $EnableException -Continue 3>$null
 							}
 						}
 						
@@ -474,7 +476,7 @@ function New-DbaLogin {
 									$newLoginStatus.Status = "Failed"
 									$newLoginStatus.Notes = $_.Exception.GetBaseException().Message
 									$newLoginStatus
-									Stop-Function -Message "Failed to disable $loginName on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Silent $Silent -Continue 3>$null
+									Stop-Function -Message "Failed to disable $loginName on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -EnableException $EnableException -Continue 3>$null
 								}
 							}
 						}
@@ -482,7 +484,7 @@ function New-DbaLogin {
 						$newLoginStatus
 					}
 					catch {
-						Stop-Function -Message "Failed to create login $loginName on $instance. Exception: $($_.Exception.InnerException)" -Target $credential -Silent $Silent -InnerErrorRecord $_ -Continue
+						Stop-Function -Message "Failed to create login $loginName on $instance. Exception: $($_.Exception.InnerException)" -Target $credential -EnableException $EnableException -InnerErrorRecord $_ -Continue
 					}
 				}
 			}

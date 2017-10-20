@@ -20,9 +20,11 @@ Credential object used to connect to the SQL Server as a different user
 .PARAMETER IncludeWindows
 Includes the Windows Server Install date information 
 
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException 
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Tags: CIM 
 Author: Mitchell Hamann (@SirCaptainMitch), mitchellhamann.com
@@ -70,7 +72,7 @@ Returns an object with SQL Instance install date as a string for every server li
 		[PSCredential]
 		$Credential,
 		[Switch]$IncludeWindows,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {
@@ -99,7 +101,7 @@ Returns an object with SQL Instance install date as a string for every server li
 			
 			if ($IncludeWindows) {
 				try {
-					[DbaDateTime]$windowsInstallDate = (Get-DbaCmObject -ClassName win32_OperatingSystem -ComputerName $WindowsServerName -Credential $Credential -Silent).InstallDate
+					[DbaDateTime]$windowsInstallDate = (Get-DbaCmObject -ClassName win32_OperatingSystem -ComputerName $WindowsServerName -Credential $Credential -EnableException).InstallDate
 				}
 				catch {
 					Stop-Function -Message "Failed to connect to: $WindowsServerName" -Continue -Target $instance -ErrorRecord $_

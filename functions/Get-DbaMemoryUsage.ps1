@@ -20,9 +20,11 @@ Credential object used to connect to the SQL Server as a different user
 .PARAMETER Simple
 Shows concise information including Server name, Database name, and the date the last time backups were performed
 
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException 
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Tags: Memory
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -61,7 +63,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 		[dbainstanceparameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential]$Credential,
 		[switch]$Simple,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

@@ -46,9 +46,11 @@ in the snapshot. To create a "partial" snapshot, you need to pass -Force explici
 NB: You can't then restore the Database from the newly-created snapshot.
 For details, check https://msdn.microsoft.com/en-us/library/bb895334.aspx
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Tags: DisasterRecovery, Snapshot, Restore, Databases
 Author: niphlod
@@ -98,7 +100,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		[string]$NameSuffix,
 		[string]$Path,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
@@ -140,7 +142,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 	}
 	process {
 		if (!$Database -and $AllDatabases -eq $false) {
-			Stop-Function -Message "You must specify a -AllDatabases or -Database to continue" -Silent $Silent
+			Stop-Function -Message "You must specify a -AllDatabases or -Database to continue" -EnableException $EnableException
 			return
 		}
 		
@@ -155,7 +157,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 			#Checks for path existence
 			if ($Path.Length -gt 0) {
 				if (!(Test-DbaSqlPath -SqlInstance $instance -Path $Path)) {
-					Stop-Function -Message "$instance cannot access the directory $Path" -ErrorRecord $_ -Target $instance -Continue -Silent $Silent
+					Stop-Function -Message "$instance cannot access the directory $Path" -ErrorRecord $_ -Target $instance -Continue -EnableException $EnableException
 				}
 			}
 			
@@ -189,7 +191,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 				}
 			}
 			if($sourcedbs.Length -gt 1 -and $Name) {
-				Stop-Function -Message "You passed the Name parameter that is fixed but selected multiple databases to snapshot: use the NameSuffix parameter" -Continue -Silent $Silent
+				Stop-Function -Message "You passed the Name parameter that is fixed but selected multiple databases to snapshot: use the NameSuffix parameter" -Continue -EnableException $EnableException
 			}
 			foreach ($db in $sourcedbs) {
 				if ($NameSuffix.Length -gt 0) {

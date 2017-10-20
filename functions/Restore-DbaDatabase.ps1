@@ -132,10 +132,11 @@ function Restore-DbaDatabase {
     .PARAMETER ReplaceDbNameInFile
         If switch set and occurence of the original database's name in a data or log file will be replace with the name specified in the Databasename parameter
         
-	.PARAMETER Silent
-        Replaces user friendly yellow warnings with bloody red exceptions of doom!
-        Use this if you want the function to throw terminating errors you want to catch.
-    
+	.PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
 	.PARAMETER Confirm
         Prompts to confirm certain actions
     
@@ -265,7 +266,7 @@ function Restore-DbaDatabase {
         [int]$BlockSize,
         [int]$BufferCount,
         [switch]$DirectoryRecurse,
-        [switch]$Silent,
+        [switch][Alias('Silent')]$EnableException,
         [string]$StandbyDirectory,
         [switch]$Continue,
         [string]$AzureCredential,
@@ -582,10 +583,10 @@ function Restore-DbaDatabase {
                 }
                 catch {
 					if ($_.CategoryInfo.Category -like "DeviceError") {
-						Stop-Function -Message "Restore of $databasename failed, $_" -ErrorRecord $_ -Silent $silent
+						Stop-Function -Message "Restore of $databasename failed, $_" -ErrorRecord $_ -EnableException $EnableException
 					}
 					else {
-						Stop-Function -Message "Restore of $databasename failed" -ErrorRecord $_ -Silent $silent
+						Stop-Function -Message "Restore of $databasename failed" -ErrorRecord $_ -EnableException $EnableException
 					}
 					$Completed = 'unsuccessfully'
                     return

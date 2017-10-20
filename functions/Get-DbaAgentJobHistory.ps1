@@ -1,4 +1,4 @@
-﻿function Get-DbaAgentJobHistory {
+function Get-DbaAgentJobHistory {
 	<#
 		.SYNOPSIS
 			Gets execution history of SQL Agent Job on instance(s) of SQL Server.
@@ -39,9 +39,11 @@
 		.PARAMETER JobCollection
 			An array of SMO jobs
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: Job, Agent
 			Author: Klaas Vandenberghe ( @PowerDbaKlaas )
@@ -117,7 +119,7 @@
 		[switch]$WithOutputFile,
 		[parameter(Mandatory, ValueFromPipeline, ParameterSetName = "Collection")]
 		[Microsoft.SqlServer.Management.Smo.Agent.Job]$JobCollection,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

@@ -66,9 +66,11 @@ function Find-DbaDuplicateIndex {
 		.PARAMETER Force
 			If this switch is enabled, the DROP statement(s) will be executed instead of being written to the output file.
 
-		.PARAMETER Silent
-			If this switch is enabled, the internal messaging functions will be silenced.
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES 
 			Author: Claudio Silva (@ClaudioESSilva)
 			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -622,6 +624,6 @@ function Find-DbaDuplicateIndex {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlDuplicateIndex
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlDuplicateIndex
 	}
 }
