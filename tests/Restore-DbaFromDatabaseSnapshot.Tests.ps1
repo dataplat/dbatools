@@ -1,4 +1,4 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -44,7 +44,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	Context "Parameters validation" {
 		It "Stops if no Database or Snapshot" {
-			{ Restore-DbaFromDatabaseSnapshot -SqlInstance $script:instance2 -Silent } | Should Throw "You must specify"
+			{ Restore-DbaFromDatabaseSnapshot -SqlInstance $script:instance2 -EnableException } | Should Throw "You must specify"
 		}
 		It "Is nice by default" {
 			{ Restore-DbaFromDatabaseSnapshot -SqlInstance $script:instance2 *> $null } | Should Not Throw "You must specify"

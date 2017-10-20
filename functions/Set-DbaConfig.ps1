@@ -1,4 +1,4 @@
-﻿function Set-DbaConfig
+function Set-DbaConfig
 {
 	<#
 		.SYNOPSIS
@@ -34,10 +34,11 @@
 			Setting this parameter causes the system to treat this configuration as a default setting. If the configuration already exists, no changes will be performed.
 			Useful in scenarios where for some reason it is not practical to automatically set defaults before loading userprofiles.
     
-        .PARAMETER Silent
-            Replaces user friendly yellow warnings with bloody red exceptions of doom!
-            Use this if you want the function to throw terminating errors you want to catch.
-    
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            
         .PARAMETER DisableHandler
             Internal Use Only.
             This parameter disables the configuration handlers.
@@ -96,7 +97,7 @@
         $Default,
         
         [switch]
-        $Silent,
+        [Alias('Silent')]$EnableException,
         
         [switch]
         $DisableHandler
@@ -125,7 +126,7 @@
             $TestResult = [Sqlcollaborative.Dbatools.Configuration.Config]::ConfigHandler[$FullName].Invoke($Value)
             if (-not $TestResult.Success)
             {
-                Stop-Function -Message "Failed to process configuration: $($TestResult.Message)" -Silent $Silent -Category InvalidResult -Target $Value
+                Stop-Function -Message "Failed to process configuration: $($TestResult.Message)" -EnableException $EnableException -Category InvalidResult -Target $Value
                 return
             }
         }

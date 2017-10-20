@@ -1,4 +1,4 @@
-﻿function Get-DbaDbMailLog {
+function Get-DbaDbMailLog {
 <#
 	.SYNOPSIS
 		Gets the DBMail log from a SQL instance
@@ -18,9 +18,11 @@
 	.PARAMETER Type
 	Narrow the results by type. Valid values include Error, Warning, Success, Information, Internal
 	
-	.PARAMETER Silent 
-		Use this switch to disable any kind of verbose messages
-	
+	.PARAMETER EnableException 
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 	.NOTES
 		Tags: Logging
 		Website: https://dbatools.io
@@ -58,7 +60,7 @@
 		[DateTime]$Since,
 		[ValidateSet('Error', 'Warning', 'Success', 'Information', 'Internal')]
 		[string[]]$Type,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($instance in $SqlInstance) {

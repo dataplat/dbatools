@@ -36,9 +36,11 @@ function Get-DbaDiskSpace {
 			
 			This will increase the runtime of the function by seconds or even minutes per volume.
 		
-		.PARAMETER Silent
-			A description of the Silent parameter.
-		
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.PARAMETER WhatIf
 			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 		
@@ -112,7 +114,7 @@ function Get-DbaDiskSpace {
 		[PSCredential]$Credential,
 		[Alias('Detailed', 'AllDrives')][Switch]$Force,
 		[Switch]$CheckFragmentation,
-		[Switch]$Silent
+		[Switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
@@ -137,8 +139,8 @@ function Get-DbaDiskSpace {
 				continue
 			}
 			
-			try { $disks = Get-DbaCmObject -ComputerName $computer.ComputerName -Query "SELECT * FROM Win32_Volume$condition" -Credential $Credential -Namespace root\CIMv2 -ErrorAction Stop -WarningAction SilentlyContinue -Silent }
-			catch { Stop-Function -Message "Failed to connect to $computer." -Silent $Silent -ErrorRecord $_ -Target $computer.ComputerName -Continue }
+			try { $disks = Get-DbaCmObject -ComputerName $computer.ComputerName -Query "SELECT * FROM Win32_Volume$condition" -Credential $Credential -Namespace root\CIMv2 -ErrorAction Stop -WarningAction SilentlyContinue -EnableException }
+			catch { Stop-Function -Message "Failed to connect to $computer." -EnableException $EnableException -ErrorRecord $_ -Target $computer.ComputerName -Continue }
 			
 			if ($CheckForSql) {
 				try {

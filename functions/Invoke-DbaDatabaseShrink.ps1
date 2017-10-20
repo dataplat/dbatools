@@ -1,4 +1,4 @@
-﻿function Invoke-DbaDatabaseShrink {
+function Invoke-DbaDatabaseShrink {
 	<#
 .SYNOPSIS
 Shrinks all files in a database. This is a command that should rarely be used.
@@ -70,9 +70,11 @@ Are you sure you want to perform this action?
 Performing the operation "Shrink database" on target "pubs on SQL2016\VNEXT".
 [Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Tags: Shrink, Databases
 
@@ -118,7 +120,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 		[int]$StatementTimeout = 0,
 		[switch]$LogsOnly,
 		[switch]$ExcludeIndexStats,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

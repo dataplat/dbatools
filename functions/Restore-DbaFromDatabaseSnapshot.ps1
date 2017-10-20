@@ -35,9 +35,11 @@ Shows what would happen if the command were to run
 .PARAMETER Confirm
 Prompts for confirmation of every step.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Tags: DisasterRecovery, Snapshot, Backup, Restore, Database
 Author: niphlod
@@ -73,7 +75,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 		[object[]]$ExcludeDatabase,
 		[object[]]$Snapshot,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

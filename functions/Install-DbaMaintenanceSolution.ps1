@@ -43,9 +43,11 @@ function Install-DbaMaintenanceSolution {
     .PARAMETER Confirm
         Prompts you for confirmation before executing any changing operations within the command.
 
-    .PARAMETER Silent
-        Use this switch to disable any kind of verbose messages
-
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
     .NOTES
         Author: Viorel Ciucu, viorel.ciucu@gmail.com, cviorel.com
 
@@ -109,7 +111,7 @@ function Install-DbaMaintenanceSolution {
         [ValidateSet('All', 'Backup', 'IntegrityCheck', 'IndexOptimize')]
         [string]$Solution = 'All',
         [switch]$InstallJobs,
-        [switch]$Silent
+        [switch][Alias('Silent')]$EnableException
     )
     
     process {

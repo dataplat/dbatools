@@ -22,7 +22,7 @@ Function Invoke-ManagedComputerCommand {
 			The arguments to pass to your scriptblock.
 			Access them within the scriptblock using the automatic variable $args
 		
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Left in for legacy reasons. This command will throw no matter what
 	#>	
 	[CmdletBinding()]
@@ -44,12 +44,12 @@ Function Invoke-ManagedComputerCommand {
 		$ArgumentList,
 		
 		[switch]
-		$Silent # Left in for legacy but this command needs to throw
+		[Alias('Silent')]$EnableException # Left in for legacy but this command needs to throw
 	)
 	
 	$computer = $ComputerName.ComputerName
 	
-	$null = Test-ElevationRequirement -ComputerName $computer -Silent $true
+	$null = Test-ElevationRequirement -ComputerName $computer -EnableException $true
 	
 	$resolved = Resolve-DbaNetworkName -ComputerName $computer
 	$ipaddr = $resolved.IpAddress
