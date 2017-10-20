@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . $PSScriptRoot\..\internal\Stop-Function.ps1
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
-    Context "Testing non-silent: Explicit call" {
+	Context "Testing non-EnableException: Explicit call" {
         try
         {
             $warning = Stop-Function -Message "Nonsilent Foo" -EnableException $false -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
@@ -41,8 +41,8 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             $record.FullyQualifiedErrorId | Should Be "dbatools_Invoke-Pester,Stop-Function"
         }
     }
-    
-    Context "Testing non-silent: In try/catch" {
+	
+	Context "Testing non-EnableException: In try/catch" {
         try
         {
             try
@@ -99,8 +99,8 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             $ExceptionName | Should Be "System.Management.Automation.RuntimeException"
         }
     }
-    
-    Context "Testing non-silent: Continue & ContinueLabel" {
+	
+	Context "Testing non-EnableException: Continue & ContinueLabel" {
         Mock -CommandName "Write-Warning" -MockWith { Param ($Message) }
         
         #region Run Tests

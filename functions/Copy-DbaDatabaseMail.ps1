@@ -75,9 +75,9 @@ function Copy-DbaDatabaseMail {
 		Shows what would happen if the command were executed.
 	
 	.EXAMPLE
-		Copy-DbaDatabaseMail -Source sqlserver2014a -Destination sqlcluster -Silent:$true
+		Copy-DbaDatabaseMail -Source sqlserver2014a -Destination sqlcluster -EnableException
 
-		Performs execution of function, but disables output of all messages
+		Performs execution of function, and will throw a terminating exception if something breaks
 	#>
 	[cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (

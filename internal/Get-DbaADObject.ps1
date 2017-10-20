@@ -78,7 +78,7 @@ Get-DbaADObject -ADObject "contoso\SqlInstance2014$" -Type Group
 Searches in the contoso domain for a SqlInstance2014 computer (remember the ending $ for computer objects)
 
 .EXAMPLE
-Get-DbaADObject -ADObject "contoso\ctrlb" -Type User -Silent
+Get-DbaADObject -ADObject "contoso\ctrlb" -Type User -EnableException
 
 Searches in the contoso domain for a ctrlb user, suppressing all error messages and throw exceptions that can be caught instead
 
@@ -118,7 +118,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 			}
 		}
 		
-		function Get-DbaADObjectInternal($Domain, $IdentityType, $obj, $Silent) {
+		function Get-DbaADObjectInternal($Domain, $IdentityType, $obj, $EnableException) {
 			try {
 				# can we simply resolve the passed domain ? This has the benefit of raising almost instantly if the domain is not valid
 				$Context = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext('Domain', $Domain)
@@ -131,7 +131,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 				$found = $searchClass::FindByIdentity($ctx, $IdentityType, $obj)
 				$found
 			} catch {
-				Stop-Function -Message "Errors trying to connect to the domain $Domain $($_.Exception.Message)" -EnableException $Silent -InnerErrorRecord $_ -Target $ADObj
+				Stop-Function -Message "Errors trying to connect to the domain $Domain $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_ -Target $ADObj
 			}
 		}
 	}
@@ -161,7 +161,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 				Write-Message -Message "Searching for $obj under all domains in $IdentityType format" -Level 4 -EnableException $EnableException
 				# if we're lucky, we can resolve the domain right away
 				try {
-					Get-DbaADObjectInternal -Domain $Domain -IdentityType $IdentityType -obj $obj -Silent $true
+					Get-DbaADObjectInternal -Domain $Domain -IdentityType $IdentityType -obj $obj -EnableException $true
 				} catch {
 					# if not, let's build up all domains
 					$ForestObject = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
