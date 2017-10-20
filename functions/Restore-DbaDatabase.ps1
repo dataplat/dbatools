@@ -570,7 +570,7 @@ function Restore-DbaDatabase {
                     Continue
                     
                 }
-                $RestoreComplete  = $false
+                $RestoreComplete  = $true
                 $RecoverSql  = "RESTORE DATABASE $Database WITH RECOVERY"
                 Write-Message -Message "rsql - $RecoverSql" -level verbose
                 Try{
