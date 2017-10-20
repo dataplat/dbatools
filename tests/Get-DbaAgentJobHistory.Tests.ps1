@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 		$paramCount = 10
 		$defaultParamCount = 11
 		[object[]]$params = (Get-ChildItem function:\Get-DbaAgentJobHistory).Parameters.Keys
-		$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'StartDate', 'EndDate', 'NoJobSteps', 'WithOutputFile', 'JobCollection', 'Silent'
+		$knownParameters = 'SqlInstance', 'SqlCredential', 'Job', 'ExcludeJob', 'StartDate', 'EndDate', 'NoJobSteps', 'WithOutputFile', 'JobCollection', 'EnableException'
 		It "Contains our specific parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}
