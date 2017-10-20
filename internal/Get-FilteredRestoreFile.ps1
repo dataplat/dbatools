@@ -167,7 +167,7 @@ function Get-FilteredRestoreFile {
             $Results = @()
             Write-Message -Level VeryVerbose -Message "Find Newest Full backup - $($_.DatabaseName)"
 
-            $ServerName, $databaseName = $Database.Name.split(',').trim()
+            $ServerName, $databaseName = $Database.Values
 
             Write-verbose "dbname = $databasename"
             $SQLBackupdetails = $AllSQLBackupdetails | Where-Object {$_.ServerName -eq $ServerName -and $_.DatabaseName -eq $DatabaseName.trim()}
