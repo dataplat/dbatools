@@ -40,7 +40,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 				($Output[0].values | Where-Object { $_.BackupTypeDescription -eq 'Transaction Log' } | Measure-Object).count | Should Be 5
 			}
 		}
-		Context "Server/database names and file paths have commas" {
+		Context "Server/database names and file paths have commas and spaces" {
 			$Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreCommaIssues.json -raw)
 			Mock Read-DbaBackupHeader { $Header }
 			$Output = Get-FilteredRestoreFile -SqlServer 'TestSQL\Testinstance,12345' -Files "c:\dumm,y.txt"
