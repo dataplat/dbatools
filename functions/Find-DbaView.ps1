@@ -78,7 +78,7 @@ Searches in "mydb" database views for "runtime" in the textbody
         [string]$Pattern,
         [switch]$IncludeSystemObjects,
         [switch]$IncludeSystemDatabases,
-        [switch]$[Alias('Silent')]$EnableException
+        [switch][Alias('Silent')]$EnableException
     )
 
     begin {

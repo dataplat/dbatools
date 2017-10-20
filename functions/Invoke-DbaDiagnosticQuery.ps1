@@ -86,7 +86,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 		[switch]$UseSelectionHelper,
 		[switch]$InstanceOnly,
 		[switch]$DatabaseSpecific,
-		[switch]$[Alias('Silent')]$EnableException
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
