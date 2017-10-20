@@ -1,53 +1,51 @@
 Function Test-DbaMaxMemory {
-<# 
-.SYNOPSIS 
-Calculates the recommended value for SQL Server 'Max Server Memory' configuration setting. Works on SQL Server 2000-2014.
-
-.DESCRIPTION 
-Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this script displays a SQL Server's: 
-total memory, currently configured SQL max memory, and the calculated recommendation.
-
-Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment. 
-
-.PARAMETER SqlInstance
-Allows you to specify a comma separated list of servers to query.
-
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-
-$cred = Get-Credential, then pass $cred variable to this parameter. 
-
-Windows Authentication will be used when SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
-
-.PARAMETER EnableException
+<#
+	.SYNOPSIS
+		Calculates the recommended value for SQL Server 'Max Server Memory' configuration setting. Works on SQL Server 2000-2014.
+	
+	.DESCRIPTION
+		Inspired by Jonathan Kehayias's post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this script displays a SQL Server's:
+		total memory, currently configured SQL max memory, and the calculated recommendation.
+		
+		Jonathan notes that the formula used provides a *general recommendation* that doesn't account for everything that may be going on in your specific environment.
+	
+	.PARAMETER SqlInstance
+		Allows you to specify a comma separated list of servers to query.
+	
+	.PARAMETER SqlCredential
+		Windows or Sql Login Credential with permission to log into the SQL instance
+	
+	.PARAMETER Credential
+		Windows Credential with permission to log on to the server running the SQL instance
+	
+	.PARAMETER EnableException
 		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+	
+	.EXAMPLE
+		Test-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012
 		
-.NOTES
-Tags: Memory
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-.LINK 
-https://dbatools.io/Test-DbaMaxMemory
-
-.EXAMPLE   
-Test-DbaMaxMemory -SqlInstance sqlcluster,sqlserver2012
-
-Calculate the 'Max Server Memory' settings for all servers within the SQL Server Central Management Server "sqlcluster"
-
-.EXAMPLE 
-Test-DbaMaxMemory -SqlInstance sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory 
-
-Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647) and set it to recommended value. 
-
+		Calculate the 'Max Server Memory' settings for all servers within the SQL Server Central Management Server "sqlcluster"
+	
+	.EXAMPLE
+		Test-DbaMaxMemory -SqlInstance sqlcluster | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } | Set-DbaMaxMemory
+		
+		Find all servers in CMS that have Max SQL memory set to higher than the total memory of the server (think 2147483647) and set it to recommended value.
+	
+	.NOTES
+		Tags: Memory
+		dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+		Copyright (C) 2016 Chrissy LeMaire
+		
+		This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		
+		This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+		
+		You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	
+	.LINK
+		https://dbatools.io/Test-DbaMaxMemory
 #>
 	[CmdletBinding()]
 	param (
