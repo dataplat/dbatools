@@ -348,7 +348,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
         }  
-        $check = Get-DbaDatabase -SqlInstance $script:instance1 -DatabaseName $DatabaseName
+        $check = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
         It "Should return 1 database" {
             $check.count | Should Be 1
         }
@@ -363,7 +363,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
         }  
-        $check = Get-DbaDatabase -SqlInstance $script:instance1 -DatabaseName $DatabaseName
+        $check = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
         It "Should return 1 database" {
             $check.count | Should Be 1
         }
@@ -378,7 +378,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
         }  
-        $check = Get-DbaDatabase -SqlInstance $script:instance1 -DatabaseName $DatabaseName
+        $check = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
         It "Should return 1 database" {
             $check.count | Should Be 1
         }
@@ -389,11 +389,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Test recovery via pipeline" {
         $DatabaseName = 'rectest'
-        $results = Get-DbaDatabase -SqlInstance $script:instance1 -DatabaseName $DatabaseName | Restore-DbaDatabase -SqlInstance $script:instance1 -Recover -DatabaseName $DatabaseName 
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName | Restore-DbaDatabase -SqlInstance $script:instance1 -Recover 
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
         }  
-        $check = Get-DbaDatabase -SqlInstance $script:instance1 -DatabaseName $DatabaseName
+        $check = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
         It "Should return 1 database" {
             $check.count | Should Be 1
         }
