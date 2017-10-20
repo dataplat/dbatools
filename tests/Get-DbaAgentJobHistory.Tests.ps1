@@ -119,7 +119,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
 				)
 			}
 			It "Throws when NoJobSteps and WithOutputFile" {
-				{ Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -NoJobSteps -WithOutputFile -Silent } | Should Throw
+				{ Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -NoJobSteps -WithOutputFile -EnableException } | Should Throw
 			}
 			It "Returns full history by default" {
 				$Results = @()

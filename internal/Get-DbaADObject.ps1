@@ -31,9 +31,11 @@ Search for the object in all domains connected to the current one. If you are un
 using this switch will search through all domains in your forest and also in the ones that are trusted. This is HEAVY, but it can save
 some headaches.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Author: Niphlod, https://github.com/niphlod
 
@@ -92,13 +94,13 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 
 		$Credential,
 		[switch]$SearchAllDomains,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	BEGIN {
 		try {
 			Add-Type -AssemblyName System.DirectoryServices.AccountManagement
 		} catch {
-			Stop-Function -Message "Failed to load the required module $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_
+			Stop-Function -Message "Failed to load the required module $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_
 			return
 		}
 		switch ($Type) {
@@ -129,7 +131,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 				$found = $searchClass::FindByIdentity($ctx, $IdentityType, $obj)
 				$found
 			} catch {
-				Stop-Function -Message "Errors trying to connect to the domain $Domain $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ADObj
+				Stop-Function -Message "Errors trying to connect to the domain $Domain $($_.Exception.Message)" -EnableException $Silent -InnerErrorRecord $_ -Target $ADObj
 			}
 		}
 	}
@@ -142,7 +144,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 				# we can also take the object@domain format
 				$Splitted = $ADObj.Split("@")
 				if ($Splitted.Length -ne 2) {
-					Stop-Function -Message "You need to pass ADObject either DOMAIN\object or object@domain format" -Continue -Silent $Silent
+					Stop-Function -Message "You need to pass ADObject either DOMAIN\object or object@domain format" -Continue -EnableException $EnableException
 				} else {
 					if($IdentityType -ne 'UserPrincipalName') {
 						$obj, $Domain = $Splitted
@@ -156,7 +158,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 				$Domain, $obj = $Splitted
 			}
 			if ($SearchAllDomains) {
-				Write-Message -Message "Searching for $obj under all domains in $IdentityType format" -Level 4 -Silent $Silent
+				Write-Message -Message "Searching for $obj under all domains in $IdentityType format" -Level 4 -EnableException $EnableException
 				# if we're lucky, we can resolve the domain right away
 				try {
 					Get-DbaADObjectInternal -Domain $Domain -IdentityType $IdentityType -obj $obj -Silent $true
@@ -165,7 +167,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 					$ForestObject = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
 					$AllDomains = $ForestObject.Domains.Name
 					foreach($ForestDomain in $AllDomains) {
-						Write-Message -Message "Searching for $obj under domain $ForestDomain in $IdentityType format" -Level 4 -Silent $Silent
+						Write-Message -Message "Searching for $obj under domain $ForestDomain in $IdentityType format" -Level 4 -EnableException $EnableException
 						$found = Get-DbaADObjectInternal -Domain $ForestDomain -IdentityType $IdentityType -obj $obj
 						if ($found) {
 							$found
@@ -175,7 +177,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 					# we are very unlucky, let's search also in all trusted domains
 					$AllTrusted = ($ForestObject.GetAllTrustRelationships().TopLevelNames | where Status -eq 'Enabled').Name
 					foreach($ForestDomain in $AllTrusted) {
-						Write-Message -Message "Searching for $obj under domain $ForestDomain in $IdentityType format" -Level 4 -Silent $Silent
+						Write-Message -Message "Searching for $obj under domain $ForestDomain in $IdentityType format" -Level 4 -EnableException $EnableException
 						$found = Get-DbaADObjectInternal -Domain $ForestDomain -IdentityType $IdentityType -obj $obj
 						if ($found) {
 							$found
@@ -184,7 +186,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 					}
 				}
 			} else {
-				Write-Message -Message "Searching for $obj under domain $domain in $IdentityType format" -Level 4 -Silent $Silent
+				Write-Message -Message "Searching for $obj under domain $domain in $IdentityType format" -Level 4 -EnableException $EnableException
 				Get-DbaADObjectInternal -Domain $Domain -IdentityType $IdentityType -obj $obj
 			}
 			

@@ -1,4 +1,4 @@
-﻿function Get-DbaConfigValue
+function Get-DbaConfigValue
 {
 	<#
 		.SYNOPSIS
@@ -56,7 +56,7 @@
     
     if ($NotNull -and ($temp -eq $null))
     {
-        Stop-Function -Message "No Configuration Value available for $Name" -Silent $false -Category InvalidData -Target $Name
+        Stop-Function -Message "No Configuration Value available for $Name" -EnableException $false -Category InvalidData -Target $Name
     }
     else
     {

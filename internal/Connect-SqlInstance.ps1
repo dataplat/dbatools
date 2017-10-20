@@ -101,7 +101,7 @@ function Connect-SqlInstance {
 		[DbaInstanceParameter]$ConvertedSqlInstance = [DbaInstanceParameter]($SqlInstance | Select-Object -First 1)
 		
 		if ($SqlInstance.Count -gt 1) {
-			Write-Message -Level Warning -Silent $true -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)"
+			Write-Message -Level Warning -EnableException $true -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)"
 		}
 	}
 	#endregion Safely convert input into instance parameters

@@ -18,9 +18,11 @@ function Get-DbaAgReplica {
 		.PARAMETER Replica
 			Specify the replica to pull information on, is dependent up name that you want to get information on.
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: DisasterRecovery, AG, AvailabilityGroup, Replica
 			Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
@@ -57,7 +59,7 @@ function Get-DbaAgReplica {
 		[parameter(ValueFromPipeline = $true)]
 		[object[]]$AvailabilityGroup,
 		[object[]]$Replica,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

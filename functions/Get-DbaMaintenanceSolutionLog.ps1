@@ -23,9 +23,11 @@ Consider only files generated since this date
 .PARAMETER Path
 Where to search for log files. By default it's the SQL instance errorlogpath path
 
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException 
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES 
 Author: Klaas Vandenberghe ( @powerdbaklaas )
 Author: Simone Bizzotto ( @niphlod )
@@ -79,7 +81,7 @@ Gets the outcome of the IndexOptimize job on sqlserver2014a, the other options a
 		[string[]]$LogType = 'IndexOptimize',
 		[datetime]$Since,
 		[string]$Path,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		function process-block ($block) {

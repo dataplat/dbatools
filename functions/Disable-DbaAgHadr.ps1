@@ -23,9 +23,11 @@ function Disable-DbaAgHadr {
 		.PARAMETER Force
 			Will restart SQL Server and SQL Server Agent service to apply the change.
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: DisasterRecovery, AG, AvailabilityGroup
 			Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
@@ -54,7 +56,7 @@ function Disable-DbaAgHadr {
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$Credential,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		$Enabled = 0
@@ -71,7 +73,7 @@ function Disable-DbaAgHadr {
 
 			try {
 				Write-Message -Level Verbose -Message "Checking current Hadr setting for $computer"
-				$computerFullName = (Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -Silent).FullComputerName
+				$computerFullName = (Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -EnableException).FullComputerName
 				$currentState = Get-DbaAgHadr -SqlInstance $instance
 			}
 			catch {

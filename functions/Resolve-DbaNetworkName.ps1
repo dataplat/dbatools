@@ -46,9 +46,11 @@ function Resolve-DbaNetworkName {
 			so it may fail spectacularly for disjoin-domain setups. Also, everyone has its own DNS (i.e. results may vary
 			changing the computer where the function runs)
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages.
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: Network, Resolve
 			Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -89,7 +91,7 @@ function Resolve-DbaNetworkName {
 		[PSCredential] $Credential,
 		[Alias('FastParrot')]
 		[switch]$Turbo,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {
@@ -199,11 +201,11 @@ function Resolve-DbaNetworkName {
 							}
 						}
 						if (Test-Bound "Credential") {
-							$conn = Get-DbaCmObject -ClassName win32_ComputerSystem -Computer $RemoteComputer -Credential $Credential -Silent
+							$conn = Get-DbaCmObject -ClassName win32_ComputerSystem -Computer $RemoteComputer -Credential $Credential -EnableException
 							$DNSSuffix = Invoke-Command2 -Computer $RemoteComputer -ScriptBlock $ScBlock -Credential $Credential -ErrorAction Stop
 						}
 						else {
-							$conn = Get-DbaCmObject -ClassName win32_ComputerSystem -Computer $RemoteComputer -Silent
+							$conn = Get-DbaCmObject -ClassName win32_ComputerSystem -Computer $RemoteComputer -EnableException
 							$DNSSuffix = Invoke-Command2 -Computer $RemoteComputer -ScriptBlock $ScBlock -ErrorAction Stop
 						}
 					}
