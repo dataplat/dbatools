@@ -152,7 +152,7 @@ function Copy-DbaAgentAlert {
 				DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
 
-			if ($Alert -and $Alert -notcontains $alertName -and $ExcludeAlert -contains $alertName) {
+			if (($Alert -and $Alert -notcontains $alertName) -or ($ExcludeAlert -and $ExcludeAlert -contains $alertName)) {
 				continue
 			}
 
