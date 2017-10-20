@@ -365,8 +365,8 @@ function Restore-DbaDatabase {
                 $WithReplace = $true 
                 #$ContinuePoints
             }
-            if ($null -ne $DatabaseName -and $DatabaseName.count -le 1){
-               # [string]$DatabaseName = $DatabaseName
+            if (!($PSBoundParameters.ContainsKey("DataBasename"))){
+               $PipeDatabaseName = $true
             }
         }
         
@@ -387,6 +387,7 @@ function Restore-DbaDatabase {
     process {
         if (Test-FunctionInterrupt) { return }
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
+            if ($PipeDatabaseName -eq $true){$DatabaseName  = ''}
             Write-Message -message "ParameterSet  = Restore" -Level Verbose
             foreach ($f in $path) {
                 if ($TrustDbBackupHistory) {
