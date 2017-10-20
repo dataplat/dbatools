@@ -205,7 +205,7 @@ function Repair-DbaOrphanUser {
 							if ($RemoveNotExisting -eq $true) {
 								if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
 									Write-Message -Level Verbose -Message "Calling 'Remove-DbaOrphanUser'."
-									Remove-DbaOrphanUser -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $db.Name -Users $UsersToRemove
+									Remove-DbaOrphanUser -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $db.Name -User $UsersToRemove
 								}
 							}
 						}
