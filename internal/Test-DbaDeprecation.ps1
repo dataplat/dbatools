@@ -78,7 +78,8 @@ function Test-DbaDeprecation
         $CustomMessage,
         
         [bool]
-        [Alias('Silent')]$EnableException = $Silent
+		[Alias('Silent')]
+		$EnableException = $EnableException
     )
     
     switch ($PSCmdlet.ParameterSetName)
