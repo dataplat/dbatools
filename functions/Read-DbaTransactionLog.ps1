@@ -24,9 +24,11 @@ Database to read the transaction log of
 .PARAMETER IgnoreLimit
 Switch to indicate that you wish to bypass the recommended limits of the function
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Tags: Databases, Logs
 Author: Stuart Moore (@napalmgram), stuart-moore.com
@@ -55,7 +57,7 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
 		[parameter(Mandatory = $true)]
 		[object]$Database,
 		[Switch]$IgnoreLimit,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	try {

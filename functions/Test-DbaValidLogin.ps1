@@ -33,9 +33,11 @@ function Test-DbaValidLogin {
 		.PARAMETER Detailed
 			If this switch is enabled, more detailed results are returned. This includes the Active Directory account type and whether the login on SQL Server is enabled or disabled.
 
-		.PARAMETER Silent
-			If this switch is enabled, the internal messaging functions will be silenced.
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
 			Author: Chrissy LeMaire (@cl), netnerds.net
@@ -75,7 +77,7 @@ function Test-DbaValidLogin {
 		[string]$FilterBy = "None",
 		[string[]]$IgnoreDomains,
 		[switch]$Detailed,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -161,7 +163,7 @@ function Test-DbaValidLogin {
 				Write-Message -Message "Parsing Login $adLogin." -Level Verbose
 				$exists = $false
 				try {
-					$u = Get-DbaADObject -ADObject $adLogin -Type User -Silent
+					$u = Get-DbaADObject -ADObject $adLogin -Type User -EnableException
 					$foundUser = $u.GetUnderlyingObject()
 					$foundSid = $foundUser.ObjectSid.Value -join ''
 					if ($foundUser) {
@@ -245,7 +247,7 @@ function Test-DbaValidLogin {
 				Write-Message -Message "Parsing Login $adLogin on $server." -Level Verbose
 				$exists = $false
 				if ($true) {
-					$u = Get-DbaADObject -ADObject $adLogin -Type Group -Silent
+					$u = Get-DbaADObject -ADObject $adLogin -Type Group -EnableException
 					$foundUser = $u.GetUnderlyingObject()
 					if ($foundUser) {
 						$exists = $true

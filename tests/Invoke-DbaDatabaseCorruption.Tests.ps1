@@ -1,4 +1,4 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -9,7 +9,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests" {
 			$systemwarn -match 'may not corrupt system databases' | Should Be $true
 		}
 		It "Should fail if more than one database is specified" {
-			{ Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database "Database1", "Database2" -Silent } | Should Throw
+			{ Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database "Database1", "Database2" -EnableException } | Should Throw
 		}
 	}
 	
@@ -36,12 +36,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	It "Require at least a single table in the database specified" {
-		{ Invoke-DbaDatabaseCorruption -SqlInstance $server -Database $dbname -Silent } | Should Throw
+		{ Invoke-DbaDatabaseCorruption -SqlInstance $server -Database $dbname -EnableException } | Should Throw
 	}
 	
 	# Creating a table to make sure these are failing for different reasons
 	It "Fail if the specified table does not exist" {
-		{ Invoke-DbaDatabaseCorruption -SqlInstance $server -Database $dbname -Table "DoesntExist$(New-Guid)" -Silent } | Should Throw
+		{ Invoke-DbaDatabaseCorruption -SqlInstance $server -Database $dbname -Table "DoesntExist$(New-Guid)" -EnableException } | Should Throw
 	}
 	
 	$null = $db.Query("

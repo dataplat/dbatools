@@ -33,9 +33,11 @@ function Watch-DbaDbLogin {
 
 			To connect as a different Windows user, run PowerShell as that user.
 
-        .PARAMETER Silent
-            If this switch is enabled, the internal messaging functions will be silenced.
-
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            
 		.NOTES
 			Tags: Login
 			Author: Chrissy LeMaire (@cl), netnerds.net
@@ -78,7 +80,7 @@ function Watch-DbaDbLogin {
 
 		# File with one server per line
 		[string]$ServersFromFile,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {
@@ -104,7 +106,7 @@ function Watch-DbaDbLogin {
 		#>
 		if ($SqlCms) {
 			try {
-				$servers = Get-DbaRegisteredServerName -SqlInstance $SqlCms -SqlCredential $SqlCredential -Silent
+				$servers = Get-DbaRegisteredServerName -SqlInstance $SqlCms -SqlCredential $SqlCredential -EnableException
 			}
 			catch {
 				Stop-Function -Message "The CMS server, $SqlCms, was not accessible." -Target $SqlCms -ErrorRecord $_
@@ -168,6 +170,6 @@ function Watch-DbaDbLogin {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Watch-SqlDbLogin
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Watch-SqlDbLogin
 	}
 }

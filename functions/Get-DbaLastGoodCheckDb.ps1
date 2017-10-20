@@ -38,9 +38,11 @@ function Get-DbaLastGoodCheckDb {
 		.PARAMETER ExcludeDatabase
 			Specifies one or more database(s) to exclude from processing.
 
-		.PARAMETER Silent
-			If this switch is enabled, the internal messaging functions will be silenced.
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: CHECKDB, Database
 			Author: Jakob Bindslet (jakob@bindslet.dk)
@@ -77,7 +79,7 @@ function Get-DbaLastGoodCheckDb {
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($instance in $SqlInstance) {

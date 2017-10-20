@@ -30,9 +30,11 @@ function Test-DbaServerName {
 		.PARAMETER ExcludeSsrs
 			If this switch is enabled, checking for SQL Server Reporting Services will be skipped.
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: SPN, ServerName
 
@@ -75,7 +77,7 @@ function Test-DbaServerName {
 		[switch]$Detailed,
 		[Alias("NoWarning")]
 		[switch]$ExcludeSsrs,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -127,7 +129,7 @@ function Test-DbaServerName {
 			$rs = $null
 			if ($SkipSsrs -eq $false -or $NoWarning -eq $false) {
 				try {
-					$rs = Get-DbaSqlService -ComputerName $instance.ComputerName -Instance $server.ServiceName -Type SSRS -Silent -WarningAction Stop
+					$rs = Get-DbaSqlService -ComputerName $instance.ComputerName -Instance $server.ServiceName -Type SSRS -EnableException -WarningAction Stop
 				}
 				catch {
 					Write-Message -Level Warning -Message  "Unable to pull information on $ssrsService." -ErrorRecord $_ -Target $instance

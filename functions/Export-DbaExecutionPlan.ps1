@@ -271,9 +271,7 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 			}
 			catch
 			{
-				Write-Warning $_
-				continue
-				# Stop-Function -Message $_.Exception -Silent $Silent -InnerErrorRecord $_ -Target $filename
+				Stop-Function -Message $_.Exception.Message -ErrorRecord $_ -Target $filename -Continue
 			}
 		}
 	}

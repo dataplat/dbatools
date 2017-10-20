@@ -48,9 +48,11 @@ function Measure-DbaBackupThroughput {
 		.PARAMETER DeviceType
 			Specifies one or more DeviceTypes to use in filtering backup sets. Valid values are "Disk", "Permanent Disk Device", "Tape", "Permanent Tape Device", "Pipe", "Permanent Pipe Device" and "Virtual Device", as well as custom integers for your own DeviceTypes.
 
-		.PARAMETER Silent
-			If this switch is enabled, the internal messaging functions will be silenced.
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: DisasterRecovery, Backup, Databases
 
@@ -107,7 +109,7 @@ function Measure-DbaBackupThroughput {
 		[ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
 		[string]$Type = "Full",
 		[string[]]$DeviceType,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

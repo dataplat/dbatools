@@ -11,7 +11,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 		#>
 		$defaultParamCount = 11
 		[object[]]$params = (Get-ChildItem function:\Test-PSRemoting).Parameters.Keys
-		$knownParameters = 'ComputerName', 'Credential', 'Silent'
+		$knownParameters = 'ComputerName', 'Credential', 'EnableException'
 		It "Contains our specific parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}

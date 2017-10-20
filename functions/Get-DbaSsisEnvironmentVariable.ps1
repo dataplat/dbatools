@@ -30,9 +30,11 @@ The Folders names that contain the environments
 The Folders names to exclude. Acts as a filter for folders containing environments, best user without 'Folder' parameter
 to get variables for all folders but excluded ones
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .EXAMPLE
 Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -Folder DWH_ETL
 
@@ -109,7 +111,7 @@ You should have received a copy of the GNU General Public License along with thi
 		[object[]]$Folder,
 		[parameter(Mandatory = $false)]
 		[object[]]$FolderExclude,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {
