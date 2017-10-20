@@ -206,7 +206,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 				if (!$scriptpart.DBSpecific -and !$DatabaseSpecific) {
 					if ($PSCmdlet.ShouldProcess($instance, $scriptpart.QueryName)) {
 						$counter++
-						if (!$$EnableException {
+						if (-not $EnableException) {
 							Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query data from $instance" -Status "Processing $counter of $scriptcount" -CurrentOperation $scriptpart.QueryName -PercentComplete (($counter / $scriptcount) * 100)
 						}
 						
@@ -255,7 +255,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 						$dbname = $currentdb.name
 						if ($PSCmdlet.ShouldProcess(('{0} ({1})' -f $instance, $currentdb.name), $scriptpart.QueryName)) {
 							
-							if (!$$EnableException { Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query data from $dbname on $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100) }
+							if (-not $EnableException) { Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query data from $dbname on $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100) }
 							Write-Message -Level Output -Message "Collecting diagnostic query data from $dbname for $($scriptpart.QueryName) on $instance"
 							try {
 								$result = $server.Query($scriptpart.Text,$currentdb.Name)
