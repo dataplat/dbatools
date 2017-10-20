@@ -310,7 +310,7 @@ function Restore-DbaDatabase {
     begin {
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Debug -Message "Parameters bound: $($PSBoundParameters.Keys -join ", ")"
-		
+		#[string]$DatabaseName = 'testparam'
         #region Validation
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
             $useDestinationDefaultDirectories = $true
@@ -366,7 +366,7 @@ function Restore-DbaDatabase {
                 #$ContinuePoints
             }
             if ($null -ne $DatabaseName -and $DatabaseName.count -le 1){
-                [string]$DatabaseName = $DatabaseName
+               # [string]$DatabaseName = $DatabaseName
             }
         }
         
@@ -387,6 +387,7 @@ function Restore-DbaDatabase {
     process {
         if (Test-FunctionInterrupt) { return }
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
+            Write-Message -message "ParameterSet  = Restore" -Level Verbose
             foreach ($f in $path) {
                 if ($TrustDbBackupHistory) {
                     Write-Message -Level Verbose -Message "Trust Database Backup History Set"
@@ -594,12 +595,15 @@ function Restore-DbaDatabase {
     end {
         if (Test-FunctionInterrupt) { return }
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
+            Write-Message -message "ParameterSet - end  = Restore" -Level Verbose
+            
+
             if ($null -ne $DatabaseName) {
                 If (($DatabaseName -in ($server.Databases.name)) -and ($WithReplace -eq $false)) {
-                    Stop-Function -Message "$DatabaseName exists on Sql Instance $SqlInstance , must specify WithReplace to continue" 
+                    Stop-Function -Message "here $DatabaseName exists on Sql Instance $SqlInstance , must specify WithReplace to continue" -Target $file -Category 'DeviceError' -silent $true
                     break
                 }
-            }
+            }   
             
             if ($isLocal -eq $false) {
                 Write-Message -Level Verbose -Message "Remote server, checking folders"
@@ -634,7 +638,8 @@ function Restore-DbaDatabase {
             }
             #$BackupFiles 
             #return
-            Write-Message -Level Verbose -Message "sorting uniquely"
+            [String]$DatabaseName = $DatabaseName
+            Write-Message -Level Verbose -Message "sorting uniquely - $DatabaseName"
             $AllFilteredFiles = $backupFiles | sort-object -property fullname,position -unique | Get-FilteredRestoreFile -SqlInstance $SqlInstance -RestoreTime $RestoreTime -SqlCredential $SqlCredential -IgnoreLogBackup:$IgnoreLogBackup -TrustDbBackupHistory:$TrustDbBackupHistory -continue:$continue -ContinuePoints:$ContinuePoints -DatabaseName $DatabaseName -AzureCredential $AzureCredential
             
             Write-Message -Level Verbose -Message "$($AllFilteredFiles.count) dbs to restore"
@@ -661,7 +666,7 @@ function Restore-DbaDatabase {
                 $OldDatabaseName = ($FilteredFiles | Select-Object -Property DatabaseName -unique).DatabaseName
                 IF ($DatabaseName -eq '') {
                     #Workaround 
-                    $dbnametmp = ($FilteredFiles | Select-Object -Property DatabaseName -unique).split(',') 
+                    $dbnametmp = ($FilteredFiles | Select-Object -Property DatabaseName -unique).databaseName.split(',') 
                     $DatabaseName = $RestoredDatababaseNamePrefix + $dbnametmp
                     Write-Message -Level Verbose -Message "Dbname set from backup = $DatabaseName"
                 }
