@@ -15,9 +15,11 @@ function Get-DbaClientProtocol {
 		.PARAMETER Credential
 			Credential object used to connect to the computer as a different user.
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: Protocol
 			Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -56,7 +58,7 @@ function Get-DbaClientProtocol {
 		[Alias("cn", "host", "Server")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential] $Credential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {
@@ -64,13 +66,13 @@ function Get-DbaClientProtocol {
 			$server = Resolve-DbaNetworkName -ComputerName $computer -Credential $credential
 			if ( $server.FullComputerName ) {
 				$computer = $server.FullComputerName
-				Write-Message -Level Verbose -Message "Getting SQL Server namespace on $computer" -Silent $Silent
+				Write-Message -Level Verbose -Message "Getting SQL Server namespace on $computer" -EnableException $EnableException
                 $namespace = Get-DbaCmObject -ComputerName $computer -Namespace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name LIke 'ComputerManagement%'" -ErrorAction SilentlyContinue |
 					Where-Object {(Get-DbaCmObject -ComputerName $computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ClientNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0} |
 					Sort-Object Name -Descending | Select-Object -First 1
 
 				if ( $namespace.Name ) {
-					Write-Message -Level Verbose -Message "Getting Cim class ClientNetworkProtocol in Namespace $($namespace.Name) on $computer" -Silent $Silent
+					Write-Message -Level Verbose -Message "Getting Cim class ClientNetworkProtocol in Namespace $($namespace.Name) on $computer" -EnableException $EnableException
 					try {
 						$prot = Get-DbaCmObject -ComputerName $computer -Namespace $("root\Microsoft\SQLServer\" + $namespace.Name) -ClassName ClientNetworkProtocol -ErrorAction SilentlyContinue
 
@@ -83,11 +85,11 @@ function Get-DbaClientProtocol {
 						}
 					}
 					catch {
-						Write-Message -Level Warning -Message "No Sql ClientNetworkProtocol found on $computer" -Silent $Silent
+						Write-Message -Level Warning -Message "No Sql ClientNetworkProtocol found on $computer" -EnableException $EnableException
 					}
 				} #if namespace
 					else {
-						Write-Message -Level Warning -Message "No ComputerManagement Namespace on $computer. Please note that this function is available from SQL 2005 up." -Silent $Silent
+						Write-Message -Level Warning -Message "No ComputerManagement Namespace on $computer. Please note that this function is available from SQL 2005 up." -EnableException $EnableException
 				} #else no namespace
 			} #if computername
 			else {

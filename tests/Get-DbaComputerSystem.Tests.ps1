@@ -11,8 +11,8 @@ Describe "Get-DbaComputerSystem Unit Tests" -Tag "UnitTests" {
 			it "should have a parameter named Credential" {
 				$params.ContainsKey("Credential") | Should Be $true
 			}
-			it "should have a parameter named Silent" {
-				$params.ContainsKey("Silent") | Should Be $true
+			it "should have a parameter named EnableException" {
+				$params.ContainsKey("EnableException") | Should Be $true
 			}
 		}
 		Context "Validate input" {

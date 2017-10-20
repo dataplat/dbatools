@@ -27,9 +27,11 @@ Function Restart-DbaSqlService {
 	.PARAMETER ServiceCollection
 	A collection of services from Get-DbaSqlService
 
-	.PARAMETER Silent
-	Use this switch to disable any kind of verbose messages
-
+	.PARAMETER EnableException
+	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+	This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+	
 	.PARAMETER WhatIf
 	Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
@@ -90,7 +92,7 @@ Function Restart-DbaSqlService {
 		[int]$Timeout = 30,
 		[PSCredential]$Credential,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		$processArray = @()
@@ -99,7 +101,7 @@ Function Restart-DbaSqlService {
 			if ($InstanceName) { $serviceParams.InstanceName = $InstanceName }
 			if ($Type) { $serviceParams.Type = $Type }
 			if ($Credential) { $serviceParams.Credential = $Credential }
-			if ($Silent) { $serviceParams.Silent = $Silent }
+			if ($EnableException) { $serviceParams.Silent = $EnableException }
 			$serviceCollection = Get-DbaSqlService @serviceParams
 		}
 	}
@@ -119,20 +121,20 @@ Function Restart-DbaSqlService {
 					Type         = 'Agent'
 				}
 				if ($Credential) { $serviceParams.Credential = $Credential }
-				if ($Silent) { $serviceParams.Silent = $Silent }
+				if ($EnableException) { $serviceParams.Silent = $EnableException }
 				$processArray += @(Get-DbaSqlService @serviceParams)
 			}
 		}
 		if ($processArray) {
-			$services = Update-ServiceStatus -ServiceCollection $processArray -Action 'stop' -Timeout $Timeout -Silent $Silent
+			$services = Update-ServiceStatus -ServiceCollection $processArray -Action 'stop' -Timeout $Timeout -EnableException $EnableException
 			foreach ($service in ($services | Where-Object { $_.Status -eq 'Failed'})) {
 				$service
 			}
 			$services = $services | Where-Object { $_.Status -eq 'Successful'}
 			if ($services) {
-				Update-ServiceStatus -ServiceCollection $services -Action 'restart' -Timeout $Timeout -Silent $Silent
+				Update-ServiceStatus -ServiceCollection $services -Action 'restart' -Timeout $Timeout -EnableException $EnableException
 			}
 		}
-		else { Stop-Function -Silent $Silent -Message "No SQL Server services found with current parameters." }
+		else { Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters." }
 	}
 }

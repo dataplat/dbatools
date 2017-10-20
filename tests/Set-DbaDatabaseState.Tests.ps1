@@ -13,14 +13,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1
 		}
 		It "Stops if no Database or AllDatabases" {
-			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Silent } | Should Throw "You must specify"
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -EnableException } | Should Throw "You must specify"
 		}
 		It "Is nice by default" {
 			{ Set-DbaDatabaseState -SqlInstance $script:instance2 *> $null } | Should Not Throw "You must specify"
 		}
 		It "Errors out when multiple 'access' params are passed with Silent" {
-			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -SingleUser -RestrictedUser -Silent } | Should Throw "You can only specify one of: -SingleUser,-RestrictedUser,-MultiUser"
-			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -MultiUser -RestrictedUser -Silent } | Should Throw "You can only specify one of: -SingleUser,-RestrictedUser,-MultiUser"
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -SingleUser -RestrictedUser -EnableException } | Should Throw "You can only specify one of: -SingleUser,-RestrictedUser,-MultiUser"
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -MultiUser -RestrictedUser -EnableException } | Should Throw "You can only specify one of: -SingleUser,-RestrictedUser,-MultiUser"
 		}
 		It "Errors out when multiple 'access' params are passed without Silent" {
 			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -SingleUser -RestrictedUser *> $null } | Should Not Throw
@@ -29,8 +29,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$result | Should Be $null
 		}
 		It "Errors out when multiple 'status' params are passed with Silent" {
-			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Offline -Online -Silent } | Should Throw "You can only specify one of: -Online,-Offline,-Emergency,-Detached"
-			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Emergency -Online -Silent } | Should Throw "You can only specify one of: -Online,-Offline,-Emergency,-Detached"
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Offline -Online -EnableException } | Should Throw "You can only specify one of: -Online,-Offline,-Emergency,-Detached"
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Emergency -Online -EnableException } | Should Throw "You can only specify one of: -Online,-Offline,-Emergency,-Detached"
 		}
 		It "Errors out when multiple 'status' params are passed without Silent" {
 			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Offline -Online *> $null } | Should Not Throw
@@ -39,7 +39,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$result | Should Be $null
 		}
 		It "Errors out when multiple 'rw' params are passed with Silent" {
-			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -ReadOnly -ReadWrite -Silent } | Should Throw "You can only specify one of: -ReadOnly,-ReadWrite"
+			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -ReadOnly -ReadWrite -EnableException } | Should Throw "You can only specify one of: -ReadOnly,-ReadWrite"
 		}
 		It "Errors out when multiple 'rw' params are passed without Silent" {
 			{ Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -ReadOnly -ReadWrite *> $null } | Should Not Throw

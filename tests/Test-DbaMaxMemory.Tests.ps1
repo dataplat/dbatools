@@ -15,8 +15,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     InModuleScope dbatools {
         Context 'Validate input arguments' {
             It 'No "SQL Server" Windows service is running on the host' {
-                Mock Get-Service { throw ParameterArgumentValidationError }
-                { Test-DbaMaxMemory -SqlInstance 'localhost' -$Silent } | Should Throw
+                { Test-DbaMaxMemory -SqlInstance 'ABC' -EnableException } | Should Throw
             }
             
             It 'SqlInstance parameter is empty throws an exception' {
@@ -32,22 +31,34 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         }
         
         Context 'Validate functionality - Single Instance' {
-            Mock Resolve-SqlIpAddress -MockWith { return '10.0.0.1' }
-            Mock Get-Service -MockWith {
-                # Mocking Get-Service using PSCustomObject does not work. It needs to be mocked as object instead.               
-                $service = New-Object System.ServiceProcess.ServiceController
-                $service.DisplayName = 'SQL Server (ABC)'
-                Add-Member -Force -InputObject $service -MemberType NoteProperty -Name Status -Value 'Running'
-                return $service
+			Mock Connect-SqlInstance -MockWith {
+				"nothing"
+			}
+			
+			Mock Get-DbaMaxMemory -MockWith {
+				New-Object PSObject -Property @{
+					ComputerName = "SQL2016"
+					InstanceName = "MSSQLSERVER"
+					SqlInstance	 = "SQL2016"
+					TotalMB		 = 4096
+					SqlMaxMB	 = 2147483647
+				}
+			}
+			
+			Mock Get-DbaSqlService -MockWith {
+				New-Object PSObject -Property @{
+					InstanceName  = "foo"
+					State = "Running"
+				}
             }
             
             It 'Connect to SQL Server' {
                 Mock Get-DbaMaxMemory -MockWith { }
                 
                 $result = Test-DbaMaxMemory -SqlInstance 'ABC'
-                
-                Assert-MockCalled Resolve-SqlIpAddress -Scope It -Times 1
-                Assert-MockCalled Get-Service -Scope It -Times 1
+				
+				Assert-MockCalled Connect-SqlInstance -Scope It -Times 1
+				Assert-MockCalled Get-DbaSqlService -Scope It -Times 1
                 Assert-MockCalled Get-DbaMaxMemory -Scope It -Times 1
             }
             

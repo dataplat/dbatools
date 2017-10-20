@@ -12,12 +12,12 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests'{
 			It "Should throw on an invalid SQL Connection" {
 				#mock Test-SQLConnection {(1..12) | %{[System.Collections.ArrayList]$t += @{ConnectSuccess = $false}}}
 				Mock Connect-SqlInstance { throw }
-				{ Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -Silent $true } | Should Throw
+				{ Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException $true } | Should Throw
 			}
 			It "Should throw if SQL Server can't see the path" {
 				Mock Test-DbaSqlPath { $false }
 				Mock Connect-SqlInstance { [DbaInstanceParameter]"bad\bad" }
-				{ Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -Silent $true } | Should Throw
+				{ Get-XpDirTreeRestoreFile -path c:\dummy -SqlInstance bad\bad -EnableException $true } | Should Throw
 			}
 		}
 		Context "Non recursive filestructure" {
@@ -25,7 +25,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests'{
 			$array = (@{ subdirectory = 'full.bak'; depth = 1; file = 1 },
 				@{ subdirectory = 'full2.bak'; depth = 1; file = 1 })
 			Mock Invoke-Sqlcmd2 { $array } -ParameterFilter { $Query -and $Query -eq "EXEC master.sys.xp_dirtree 'c:\temp\',1,1;" }
-			$results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -Silent $true
+			$results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -EnableException $true
 			It "Should return an array of 2 files" {
 				$results.count | Should Be 2
 			}
@@ -45,7 +45,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests'{
 			$array2 = (@{ subdirectory = 'fulllow.bak'; depth = 1; file = 1 },
 				@{ subdirectory = 'full2low.bak'; depth = 1; file = 1 })
 			Mock Invoke-Sqlcmd2 { $array2 } -ParameterFilter { $query -and $query -eq "EXEC master.sys.xp_dirtree 'c:\temp\recurse\',1,1;" }
-			$results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -Silent $true
+			$results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -EnableException $true
 			It "Should return array of 4 files - recursion" {
 				$results.count | Should Be 4
 			}
