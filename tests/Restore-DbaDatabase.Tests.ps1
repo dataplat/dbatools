@@ -402,9 +402,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }        
     }
 
-    Context "Checking we cope with a port number (#244_" {
+    Context "Checking we cope with a port number (#244)" {
         $DatabaseName = 'rectest'
-        $results = Restore-DbaDatabase -SqlInstance $script:instance3 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak  -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
+        $results = Restore-DbaDatabase -SqlInstance $script:instance2,14333 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak  -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
         }        
