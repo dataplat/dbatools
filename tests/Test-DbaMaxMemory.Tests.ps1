@@ -15,7 +15,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     InModuleScope dbatools {
         Context 'Validate input arguments' {
             It 'No "SQL Server" Windows service is running on the host' {
-                { Test-DbaMaxMemory -SqlInstance 'localhost' -EnableException } | Should Throw
+                { Test-DbaMaxMemory -SqlInstance 'ABC' -EnableException } | Should Throw
             }
             
             It 'SqlInstance parameter is empty throws an exception' {
