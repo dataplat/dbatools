@@ -404,14 +404,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
     Context "Checking we cope with a port number (#244)" {
         $DatabaseName = 'rectest'
-        $results = Restore-DbaDatabase -SqlInstance $script:instance2,14333 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak  -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1_detailed -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak  -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
         }        
     }
 
     Context "All user databases are removed post history test" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance2,14333 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Get-DbaDatabase -SqlInstance $script:instance1_detailed -NoSystemDb | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
