@@ -269,7 +269,7 @@ function Test-DbaMigrationConstraint {
 	END {
 		$sourceserver.ConnectionContext.Disconnect()
 		$destserver.ConnectionContext.Disconnect()
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlMigrationConstraint
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlMigrationConstraint
 	}
 }
 

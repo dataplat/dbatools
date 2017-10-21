@@ -14,7 +14,7 @@ Takes a SQL instance and checks for databases with a redo_start_lsn value, and r
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [switch]$silent
+        [switch][Alias('Silent')]$EnableException
 	)
 
 

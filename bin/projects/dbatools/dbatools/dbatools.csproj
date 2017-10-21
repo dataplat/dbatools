@@ -56,6 +56,8 @@
   <ItemGroup>
     <Compile Include="Computer\DiskSpace.cs" />
     <Compile Include="Computer\DriveType.cs" />
+    <Compile Include="Configuration\ConfigScope.cs" />
+    <Compile Include="Configuration\ConfigurationHost.cs" />
     <Compile Include="Database\BackupHistory.cs" />
     <Compile Include="Configuration\Config.cs" />
     <Compile Include="Connection\ConnectionHost.cs" />

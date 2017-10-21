@@ -545,6 +545,6 @@ function Copy-DbaSsisCatalog {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlSsisCatalog
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSsisCatalog
 	}
 }

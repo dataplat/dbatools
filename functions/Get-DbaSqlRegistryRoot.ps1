@@ -1,4 +1,4 @@
-﻿function Get-DbaSqlRegistryRoot {
+function Get-DbaSqlRegistryRoot {
 <#
 .SYNOPSIS
 Uses SQL WMI to find the Registry Root of each SQL Server instance on a computer
@@ -12,9 +12,11 @@ The target computer. This is not a SQL Server service, though if you pass a name
 .PARAMETER Credential
 Allows you to login to $ComputerName using alternative Windows credentials
 
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException 
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Tags: Configuration, Registry
 
@@ -37,7 +39,7 @@ Gets the registry root for all instances on server1
 		[parameter(ValueFromPipeline)]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential]$Credential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

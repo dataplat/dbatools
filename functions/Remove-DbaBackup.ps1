@@ -41,9 +41,11 @@ Checks the archive bit before deletion. If the file is "ready for archiving" (wh
 .PARAMETER RemoveEmptyBackupFolder
 Remove any empty folders after the cleanup process is complete.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -118,7 +120,7 @@ It will also remove any backup folders that no longer contain backup files.
 		[parameter(Mandatory = $false)]
 		[switch]$RemoveEmptyBackupFolder = $false,
 
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	BEGIN
@@ -179,19 +181,19 @@ It will also remove any backup folders that no longer contain backup files.
 	PROCESS
 	{
 		# Process stuff
-		Write-Message -Message "Started" -Level 3 -Silent $Silent
-		Write-Message -Message "Removing backups from $Path" -Level 3 -Silent $Silent
+		Write-Message -Message "Started" -Level 3 -EnableException $EnableException
+		Write-Message -Message "Removing backups from $Path" -Level 3 -EnableException $EnableException
 		# Convert Retention Value to an actual DateTime
 		try {
 			$RetentionDate = Convert-UserFriendlyRetentionToDatetime -UserFriendlyRetention $RetentionPeriod
-			Write-Message -Message "Backup Retention Date set to $RetentionDate" -Level 5 -Silent $Silent
+			Write-Message -Message "Backup Retention Date set to $RetentionDate" -Level 5 -EnableException $EnableException
 		} catch {
 			Stop-Function -Message "Failed to interpret retention time!" -ErrorRecord $_
 		}
 
 		# Filter out unarchived files if -CheckArchiveBit parameter is used
 		if ($CheckArchiveBit) {
-			Write-Message -Message "Removing only archived files" -Level 5 -Silent $Silent
+			Write-Message -Message "Removing only archived files" -Level 5 -EnableException $EnableException
 			Filter DbaArchiveBitFilter {
 				If ($_.Attributes -notmatch "Archive") {
 					$_
@@ -221,10 +223,10 @@ It will also remove any backup folders that no longer contain backup files.
 		if ($EnumErrors) {
 			Write-Message "Errors encountered enumerating files" -Level Warning -ErrorRecord $EnumErrors
 		}
-		Write-Message -Message "File Cleaning ended" -Level 3 -Silent $Silent
+		Write-Message -Message "File Cleaning ended" -Level 3 -EnableException $EnableException
 		# Cleanup empty backup folders.
 		if ($RemoveEmptyBackupFolder) {
-			Write-Message -Message "Removing empty folders" -Level 3 -Silent $Silent
+			Write-Message -Message "Removing empty folders" -Level 3 -EnableException $EnableException
 			(Get-ChildItem -Directory -Path $Path -Recurse -ErrorAction SilentlyContinue -ErrorVariable EnumErrors).FullName |
 				Sort-Object -Descending |
 					Foreach-Object {
@@ -252,7 +254,7 @@ It will also remove any backup folders that no longer contain backup files.
 			if ($EnumErrors) {
 				Write-Message "Errors encountered enumerating folders" -Level Warning -ErrorRecord $EnumErrors
 			}
-			Write-Message -Message "Removed empty folders" -Level 3 -Silent $Silent
+			Write-Message -Message "Removed empty folders" -Level 3 -EnableException $EnableException
 		}
 	}
 }

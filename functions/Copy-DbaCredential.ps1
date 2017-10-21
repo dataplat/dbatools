@@ -1,4 +1,4 @@
-﻿function Copy-DbaCredential {
+function Copy-DbaCredential {
 	<#
 		.SYNOPSIS
 			Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another while maintaining Credential passwords.
@@ -51,9 +51,11 @@
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
-			If this switch is enabled, the internal messaging functions will be silenced.
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: WSMan, Migration
 			Author: Chrissy LeMaire (@cl), netnerds.net
@@ -96,7 +98,7 @@
 		[object[]]$CredentialIdentity,
 		[object[]]$ExcludeCredentialIdentity,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
@@ -394,6 +396,6 @@
 		Copy-Credential $credentials -force:$force
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCredential
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCredential
 	}
 }

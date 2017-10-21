@@ -203,7 +203,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "All user databases are removed post ola-style test" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
-            $results.ForEach{ $_.Status | Should Be "Dropped" }
+            $results | ForEach{ $_.Status | Should Be "Dropped" }
         }
     }
 	
@@ -337,6 +337,81 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	
     Context "All user databases are removed post history test" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+        It "Should say the status was dropped" {
+            Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
+        }
+    }
+
+    Context "Setup for Recovery Tests" {
+        $DatabaseName = 'rectest'
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
+        It "Should have restored everything successfully" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+        }  
+        $check = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
+        It "Should return 1 database" {
+            $check.count | Should Be 1
+        }
+        It "Should be a database in Restoring state" {
+            $check.status | Should Be 'Restoring'
+        }        
+    }
+
+    Context "Test recovery via parameter" {
+        $DatabaseName = 'rectest'
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Recover -DatabaseName $DatabaseName 
+        It "Should have restored everything successfully" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+        }  
+        $check = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
+        It "Should return 1 database" {
+            $check.count | Should Be 1
+        }
+        It "Should be a database in Restoring state" {
+            'Normal' -in $check.status | Should Be $True
+        }        
+    }
+
+    Context "Setup for Recovery Tests" {
+        $DatabaseName = 'rectest'
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
+        It "Should have restored everything successfully" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+        }  
+        $check = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
+        It "Should return 1 database" {
+            $check.count | Should Be 1
+        }
+        It "Should be a database in Restoring state" {
+            $check.status | Should Be 'Restoring'
+        }        
+    }
+
+    Context "Test recovery via pipeline" {
+        $DatabaseName = 'rectest'
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName | Restore-DbaDatabase -SqlInstance $script:instance1 -Recover 
+        It "Should have restored everything successfully" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+        }  
+        $check = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
+        It "Should return 1 database" {
+            $check.count | Should Be 1
+        }
+        It "Should be a database in Restoring state" {
+            'Normal' -in $check.status | Should Be $True
+        }        
+    }
+
+    Context "Checking we cope with a port number (#244)" {
+        $DatabaseName = 'rectest'
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1_detailed -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak  -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
+        It "Should have restored everything successfully" {
+            ($results.RestoreComplete -contains $false) | Should be $False
+        }        
+    }
+
+    Context "All user databases are removed post history test" {
+        $results = Get-DbaDatabase -SqlInstance $script:instance1_detailed -NoSystemDb | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
