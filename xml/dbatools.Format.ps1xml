@@ -1,5 +1,29 @@
 ﻿<?xml version="1.0" encoding="utf-16"?>
 <Configuration>
+	<Controls>
+        <Control>
+            <Name>Configuration-GroupingFormat</Name>
+            <CustomControl>
+                <CustomEntries>
+                    <CustomEntry>
+                        <CustomItem>
+                            <Frame>
+                                <LeftIndent>4</LeftIndent>
+                                <CustomItem>
+                                    <Text>Module: </Text>
+                                    <ExpressionBinding>
+                                    	<PropertyName>Module</PropertyName>
+                                    </ExpressionBinding>
+                                    <NewLine/>
+                                </CustomItem> 
+                            </Frame>
+                        </CustomItem>
+                    </CustomEntry>
+                </CustomEntries>
+            </CustomControl>
+        </Control>
+    </Controls>
+	
 	<ViewDefinitions>
 		<!-- Sqlcollaborative.Dbatools.Computer.DiskSpace -->
 		<View>
@@ -53,20 +77,23 @@
 				</TableRowEntries>
 			</TableControl>
 		</View>
+		
 		<!-- Sqlcollaborative.Dbatools.Configuration.Config -->
 		<View>
 			<Name>Sqlcollaborative.Dbatools.Configuration.Config</Name>
 			<ViewSelectedBy>
 				<TypeName>Sqlcollaborative.Dbatools.Configuration.Config</TypeName>
 			</ViewSelectedBy>
+			<GroupBy>
+                <PropertyName>Module</PropertyName> 
+                <CustomControlName>Configuration-GroupingFormat</CustomControlName>  
+            </GroupBy>
 			<TableControl>
 				<AutoSize/>
 				<TableHeaders>
-					<TableColumnHeader>
-						<Label>Name</Label>
-					</TableColumnHeader>
 					<TableColumnHeader/>
 					<TableColumnHeader>
+						<Label>Value</Label>
 						<Alignment>Left</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
@@ -77,15 +104,16 @@
 					<TableRowEntry>
 						<TableColumnItems>
 							<TableColumnItem>
+								<PropertyName>FullName</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
 								<ScriptBlock>
-              $_.Module + "." + $_.Name
+			if ($null -ne $_.Value)
+			{
+              if ($_.Value.ToString().Length -le 20) { $_.Value.ToString() }
+              else { $_.Value.ToString().SubString(0,17) + "..." }
+			}
 								</ScriptBlock>
-							</TableColumnItem>
-							<TableColumnItem>
-								<PropertyName>Type</PropertyName>
-							</TableColumnItem>
-							<TableColumnItem>
-								<PropertyName>Value</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>Description</PropertyName>
@@ -95,6 +123,7 @@
 				</TableRowEntries>
 			</TableControl>
 		</View>
+		
 		<!-- Sqlcollaborative.Dbatools.Connection.ManagementConnection -->
 		<View>
 			<Name>Sqlcollaborative.Dbatools.Connection.ManagementConnection</Name>
@@ -144,6 +173,7 @@
 				</TableRowEntries>
 			</TableControl>
 		</View>
+		
 		<!-- Sqlcollaborative.Dbatools.Database.Dependency -->
 		<View>
 			<Name>Sqlcollaborative.Dbatools.Database.Dependency</Name>
@@ -198,6 +228,7 @@
 				</TableRowEntries>
 			</TableControl>
 		</View>
+		
 		<!-- Sqlcollaborative.Dbatools.Database.BackupHistory -->
 		<View>
 			<Name>Sqlcollaborative.Dbatools.Database.BackupHistory</Name>
@@ -258,6 +289,7 @@
 				</TableRowEntries>
 			</TableControl>
 		</View>
+		
 		<!-- Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord -->
 		<View>
 			<Name>Sqlcollaborative.Dbatools.dbaSystemDbatoolsExceptionRecord</Name>
@@ -301,6 +333,7 @@
 				</TableRowEntries>
 			</TableControl>
 		</View>
+		
 		<!-- Sqlcollaborative.Dbatools.dbaSystem.LogEntry -->
 		<View>
 			<Name>Sqlcollaborative.Dbatools.dbaSystem.LogEntry</Name>
@@ -344,6 +377,7 @@
 				</TableRowEntries>
 			</TableControl>
 		</View>
+		
 		<!-- Sqlcollaborative.Dbatools.Validation.LinkedServerResult -->
 		<View>
 			<Name>Sqlcollaborative.Dbatools.Validation.LinkedServerResult</Name>
