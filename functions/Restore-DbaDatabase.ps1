@@ -294,7 +294,7 @@ function Restore-DbaDatabase {
         [int]$BufferCount,
         [parameter(ParameterSetName="Restore")]
         [switch]$DirectoryRecurse,     
-        [switch]$Silent,
+        [switch]$EnableException ,
         [parameter(ParameterSetName="Restore")]
         [string]$StandbyDirectory,
         [parameter(ParameterSetName="Restore")]
@@ -602,7 +602,7 @@ function Restore-DbaDatabase {
 
             if ($null -ne $DatabaseName) {
                 If (($DatabaseName -in ($server.Databases.name)) -and ($WithReplace -eq $false)) {
-                    Stop-Function -Message "here $DatabaseName exists on Sql Instance $SqlInstance , must specify WithReplace to continue" -Target $file -Category 'DeviceError' -silent $true
+                    Stop-Function -Message "$DatabaseName exists on Sql Instance $SqlInstance , must specify WithReplace to continue" -Target $file -Category 'DeviceError' -EnableException  $true
                     break
                 }
             }   
@@ -680,10 +680,10 @@ function Restore-DbaDatabase {
                     }
                     catch {
                         if ($_.CategoryInfo.Category -like "DeviceError") {
-                            Stop-Function -Message "Restore of $databasename failed, $_" -ErrorRecord $_ -Silent $silent
+                            Stop-Function -Message "Restore of $databasename failed, $_" -ErrorRecord $_ -EnableException  $EnableException 
                         }
                         else {
-                            Stop-Function -Message "Restore of $databasename failed" -ErrorRecord $_ -Silent $silent
+                            Stop-Function -Message "Restore of $databasename failed" -ErrorRecord $_ -EnableException  $EnableException 
                         }
                         $Completed = 'unsuccessfully'
                         return
