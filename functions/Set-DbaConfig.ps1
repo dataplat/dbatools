@@ -6,7 +6,7 @@ function Set-DbaConfig
 		
 		.DESCRIPTION
 			This function creates or changes configuration values.
-			These are used in a larger framework to provide dynamic configuration information outside the PowerShell variable system.
+			These are used in dbatools to provide dynamic configuration information outside the PowerShell variable system.
 		
 		.PARAMETER Name
 			Name of the configuration entry. If an entry of exactly this non-casesensitive name already exists, its value will be overwritten.
@@ -55,6 +55,20 @@ function Set-DbaConfig
 			Creates a configuration entry named "User" with the value "Friedrich"
 	
 		.EXAMPLE
+			PS C:\> Set-DbaConfig -Name 'mymodule.User' -Value "Friedrich" -Description "The user under which the show must go on." -Handler $scriptBlock -Initialize -Validation String
+			
+			Creates a configuration entry ...
+			- Named "mymodule.user"
+			- With the value "Friedrich"
+			- It adds a description as noted
+			- It registers the scriptblock stored in $scriptBlock as handler
+			- It initializes the script. This block only executes the first time a it is run like this. Subsequent calls will be ignored.
+			- It registers the basic string input type validator
+			This is the default example for modules using the configuration system.
+			Note: While the -Handler parameter is optional, it is important to add it at the initial initialize call, if you are planning to add it.
+			Only then will the system validate previous settings (such as what a user might have placed in his user profile)
+	
+		.EXAMPLE
 			PS C:\> Set-DbaConfig 'ConfigLink' 'https://www.example.com/config.xml' 'Company' -Hidden
 	
 			Creates a configuration entry named "ConfigLink" in the "Company" module with the value 'https://www.example.com/config.xml'.
@@ -70,85 +84,193 @@ function Set-DbaConfig
 			Author: Friedrich Weinmann
             Tags: Config
 	#>
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
-    [CmdletBinding()]
-    Param (
-        [Parameter(Mandatory = $true, Position = 0)]
-        [string]
-        $Name,
-        
-        [Parameter(Mandatory = $true, Position = 1)]
-        [AllowNull()]
-        [AllowEmptyCollection()]
-        [AllowEmptyString()]
-        $Value,
-        
-        [Parameter(Position = 2)]
-        [string]
-        $Module,
-        
-        [string]
-        $Description,
-        
-        [switch]
-        $Hidden,
-        
-        [switch]
-        $Default,
-        
-        [switch]
-        [Alias('Silent')]$EnableException,
-        
-        [switch]
-        $DisableHandler
-    )
-    
-    #region Prepare Names
-    $Name = $Name.ToLower()
-    if ($Module) { $Module = $Module.ToLower() }
-    
-    if (-not $PSBoundParameters.ContainsKey("Module") -and ($Name -match ".+\..+"))
-    {
-        $r = $Name | select-string "^(.+?)\..+" -AllMatches
-        $Module = $r.Matches[0].Groups[1].Value
-        $Name = $Name.Substring($Module.Length + 1)
-    }
-    
-    If ($Module) { $FullName = $Module, $Name -join "." }
-    else { $FullName = $Name }
-    #endregion Prepare Names
-    
-    #region Process Configuration Event Handlers
-    if (-not $DisableHandler)
-    {
-        if ([Sqlcollaborative.Dbatools.Configuration.Config]::ConfigHandler[$FullName])
-        {
-            $TestResult = [Sqlcollaborative.Dbatools.Configuration.Config]::ConfigHandler[$FullName].Invoke($Value)
-            if (-not $TestResult.Success)
-            {
-                Stop-Function -Message "Failed to process configuration: $($TestResult.Message)" -EnableException $EnableException -Category InvalidResult -Target $Value
-                return
-            }
-        }
-    }
-    #endregion Process Configuration Event Handlers
-    
-    #region Process Record
-    if (([Sqlcollaborative.Dbatools.Configuration.Config]::Cfg[$FullName]) -and (-not $Default))
-    {
-        if ($PSBoundParameters.ContainsKey("Hidden")) { [Sqlcollaborative.Dbatools.Configuration.Config]::Cfg[$FullName].Hidden = $Hidden }
-        [Sqlcollaborative.Dbatools.Configuration.Config]::Cfg[$FullName].Value = $Value
-        if ($PSBoundParameters.ContainsKey("Description")) { [Sqlcollaborative.Dbatools.Configuration.Config]::Cfg[$FullName].Description = $Description }
-    }
-    elseif (-not [Sqlcollaborative.Dbatools.Configuration.Config]::Cfg[$FullName])
-    {
-        $Config = New-Object Sqlcollaborative.Dbatools.Configuration.Config
-        $Config.Name = $name
-        $Config.Module = $Module
-        $Config.Description = $Description
-        $Config.Value = $Value
-        $Config.Hidden = $Hidden
-        [Sqlcollaborative.Dbatools.Configuration.Config]::Cfg[$FullName] = $Config
-    }
-    #endregion Process Record
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+	[CmdletBinding(DefaultParameterSetName = "FullName")]
+	Param (
+		[Parameter(ParameterSetName = "FullName", Position = 0, Mandatory = $true)]
+		[string]
+		$FullName,
+		
+		[Parameter(ParameterSetName = "Module", Position = 1, Mandatory = $true)]
+		[string]
+		$Name,
+		
+		[Parameter(ParameterSetName = "Module", Position = 0)]
+		[string]
+		$Module,
+		
+		[Parameter(ParameterSetName = "FullName", Position = 1)]
+		[Parameter(ParameterSetName = "Module", Position = 2)]
+		[AllowNull()]
+		[AllowEmptyCollection()]
+		[AllowEmptyString()]
+		$Value,
+		
+		[string]
+		$Description,
+		
+		[string]
+		$Validation,
+		
+		[System.Management.Automation.ScriptBlock]
+		$Handler,
+		
+		[switch]
+		$Hidden,
+		
+		[switch]
+		$Default,
+		
+		[switch]
+		$Initialize,
+		
+		[switch]
+		$DisableValidation,
+		
+		[switch]
+		$DisableHandler,
+		
+		[switch]
+		$EnableException
+	)
+	
+	#region Prepare Names
+	if ($PSCmdlet.ParameterSetName -eq "FullName")
+	{
+		if (-not $FullName.Trim(".").Contains("."))
+		{
+			Stop-Function -Message "Invalid Name: $FullName ! At least one '.' is required, to separate module from name" -EnableException $EnableException -Category InvalidArgument
+			return
+		}
+		
+		$Module = $FullName.Split(".")[0].ToLower().Trim(".")
+		$Name = $FullName.Substring(($Module.Length + 1)).ToLower().Trim(".")
+		$internalFullName = $FullName.ToLower().Trim(".")
+	}
+	else
+	{
+		$Name = $Name.ToLower().Trim(".")
+		if ($Module) { $Module = $Module.ToLower().Trim(".") }
+		
+		if ((Test-Bound -ParameterName "Module" -Not) -and ($Name -match ".+\..+"))
+		{
+			$r = $Name | select-string "^(.+?)\..+" -AllMatches
+			$Module = $r.Matches[0].Groups[1].Value
+			$Name = $Name.Substring($Module.Length + 1)
+		}
+		elseif ((Test-Bound -ParameterName "Module" -Not) -and ($Name -notmatch ".+\..+"))
+		{
+			Stop-Function -Message "Invalid Name: $Name ! At least one '.' is required when not explicitly specifying a module name, to separate module from name" -EnableException $EnableException -Category InvalidArgument
+			return
+		}
+		
+		If ($Module) { $internalFullName = $Module, $Name -join "." }
+		else { $internalFullName = $Name }
+	}
+	#endregion Prepare Names
+	
+	#region Prepare runtime and kill execution as needed
+	if ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.ContainsKey($internalFullName))
+	{
+		$itExists = $true
+		$itIsInitialized = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].Initialized
+		$itIsEnforced = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].PolicyEnforced
+	}
+	else
+	{
+		$itExists = $false
+		$itIsInitialized = $false
+		$itIsEnforced = $false
+	}
+	
+	if ($itExists -and $Default) { return }
+	if ($itIsInitialized -and $Initialize) { return }
+	if ($itIsEnforced -and (-not $Initialize))
+	{
+		Stop-Function -Message "Could not update configuration due to policy settings: $internalFullName" -EnableException $EnableException -Category PermissionDenied
+		return
+	}
+	
+	if (Test-Bound -ParameterName "Validation")
+	{
+		if (-not ([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Validation.Keys -contains $Validation.ToLower()))
+		{
+			Stop-Function -Message "Invalid validation name: $Validation. Supported validations: $([Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Validation.Keys -join ", ")" -Category InvalidArgument -Target $Name
+			return
+		}
+	}
+	#endregion Prepare runtime and kill execution as needed
+	
+	#region Initializing a configuration
+	if ($Initialize)
+	{
+		if ($itExists)
+		{
+			$oldValue = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].Value
+			$cfg = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName]
+		}
+		else { $cfg = New-Object PSFramework.Configuration.Config }
+		$cfg.Name = $Name
+		$cfg.Module = $Module
+		$cfg.Description = $Description
+		$cfg.Value = $Value
+		$cfg.Handler = $Handler
+		if ($Validation) { $cfg.Validation = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Validation[$Validation.ToLower()] }
+		$cfg.Hidden = $Hidden
+		$cfg.Initialized = $true
+		[Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName] = $cfg
+		
+		if ($itExists) { Set-DbaConfig -Name $internalFullName -Value $oldValue }
+	}
+	#endregion Initializing a configuration
+	
+	#region Regular configuration update
+	else
+	{
+		if (-not $itExists)
+		{
+			$cfg = New-Object PSFramework.Configuration.Config
+			$cfg.Name = $Name
+			$cfg.Module = $Module
+			$cfg.Description = $Description
+			$cfg.Handler = $Handler
+			if ($Validation) { $cfg.Validation = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Validation[$Validation.ToLower()] }
+			$cfg.Hidden = $Hidden
+			[Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName] = $cfg
+			
+			Set-DbaConfig -Name $internalFullName -Value $Value
+			return
+		}
+		
+		else
+		{
+			[Sqlcollaborative.Dbatools.Configuration.Config]$cfg = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName]
+			if ((-not $DisableValidation) -and ($cfg.Validation) -and (Test-Bound -ParameterName "Value"))
+			{
+				$testResult = $cfg.Validation.Invoke($Value)
+				if (-not $TestResult.Success)
+				{
+					Stop-Function -Message "Could not update configuration $internalFullName | Failed validation: $($testResult.Message)" -EnableException $EnableException -Category InvalidResult -Target $internalFullName
+					return
+				}
+				$Value = $testResult.Value
+			}
+			if ((-not $DisableHandler) -and ($cfg.Handler) -and (Test-Bound -ParameterName "Value"))
+			{
+				try { $cfg.Handler.Invoke($Value) }
+				catch
+				{
+					Stop-Function -Message "Could not update configuration $internalFullName | Failed handling $_" -EnableException $EnableException -Category InvalidResult -Target $internalFullName
+					return
+				}
+			}
+			
+			if (Test-Bound -ParameterName "Hidden") { [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].Hidden = $Hidden }
+			if (Test-Bound -ParameterName "Value") { [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].Value = $Value }
+			if (Test-Bound -ParameterName "Description") { [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].Description = $Description }
+			if (Test-Bound -ParameterName "Handler") { [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].Handler = $Handler }
+			if (Test-Bound -ParameterName "Validation") { [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].Validation = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Validation[$Validation.ToLower()] }
+		}
+	}
+	#endregion Regular configuration update
 }
