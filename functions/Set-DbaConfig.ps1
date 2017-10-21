@@ -209,7 +209,7 @@ function Set-DbaConfig
 			$oldValue = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].Value
 			$cfg = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName]
 		}
-		else { $cfg = New-Object PSFramework.Configuration.Config }
+		else { $cfg = New-Object Sqlcollaborative.Dbatools.Configuration.Config }
 		$cfg.Name = $Name
 		$cfg.Module = $Module
 		$cfg.Description = $Description
@@ -229,7 +229,7 @@ function Set-DbaConfig
 	{
 		if (-not $itExists)
 		{
-			$cfg = New-Object PSFramework.Configuration.Config
+			$cfg = New-Object Sqlcollaborative.Dbatools.Configuration.Config
 			$cfg.Name = $Name
 			$cfg.Module = $Module
 			$cfg.Description = $Description
