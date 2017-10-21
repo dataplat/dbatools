@@ -157,7 +157,7 @@ function Get-FilteredRestoreFile {
                 Write-Message -Level Verbose -Message "Continue set, so filtering to these databases :$($continuePoints.Database -join ',')"
                 #$ignore = $Databases | Where-Object {$_.DatabaseName -notin ($continuePoints.Database)} | select-Object DatabaseName
                 #Write-Verbose "Ignoring these: $($ignore -join ',')"
-                $Databases = $Databases | Where-Object {(($_.Name -split ',')[1]).trim() -in ($continuePoints.Database)}
+                $Databases = $Databases | Where-Object {$_.Values[1] -in ($continuePoints.Database)}
                 
             }
         } 
@@ -167,10 +167,10 @@ function Get-FilteredRestoreFile {
             $Results = @()
             Write-Message -Level VeryVerbose -Message "Find Newest Full backup - $($_.DatabaseName)"
 
-            $ServerName, $databaseName = $Database.Name.split(',').trim()
+            $ServerName, $databaseName = $Database.Values
 
             Write-verbose "dbname = $databasename"
-            $SQLBackupdetails = $AllSQLBackupdetails | Where-Object {$_.ServerName -eq $ServerName -and $_.DatabaseName -eq $DatabaseName.trim()}
+            $SQLBackupdetails = $AllSQLBackupdetails | Where-Object {$_.ServerName -eq $ServerName -and $_.DatabaseName -eq $DatabaseName}
             #If we're continuing a restore, then we aren't going to be needing a full backup....
             $TlogStartlsn = 0
             if (!($continue)) {
