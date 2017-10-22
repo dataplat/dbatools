@@ -134,10 +134,10 @@ function Remove-DbaBackup {
 			}
 
 			switch ($Units) {
-				'h' { $UnitString = 'Hours'; [datetime]$ReturnDatetime = (Get-Date).AddHours( - $Value)  }
-				'd' { $UnitString = 'Days'; [datetime]$ReturnDatetime = (Get-Date).AddDays( - $Value)   }
-				'w' { $UnitString = 'Weeks'; [datetime]$ReturnDatetime = (Get-Date).AddDays( - $Value * 7) }
-				'm' { $UnitString = 'Months'; [datetime]$ReturnDatetime = (Get-Date).AddMonths( - $Value) }
+				'h' { $UnitString = 'Hours'; [datetime]$ReturnDatetime = (Get-Date).AddHours(-$Value)  }
+				'd' { $UnitString = 'Days'; [datetime]$ReturnDatetime = (Get-Date).AddDays(-$Value)   }
+				'w' { $UnitString = 'Weeks'; [datetime]$ReturnDatetime = (Get-Date).AddDays(-$Value * 7) }
+				'm' { $UnitString = 'Months'; [datetime]$ReturnDatetime = (Get-Date).AddMonths(-$Value) }
 			}
 			$ReturnDatetime
 		}
