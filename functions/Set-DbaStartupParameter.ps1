@@ -29,7 +29,7 @@ Path to the log file for the Master database
 path to the SQL Server error log file 
 
 .PARAMETER TraceFlags
-A comma seperated list of TraceFlags to be applied at SQL Server startup
+A comma separated list of TraceFlags to be applied at SQL Server startup
 By default these will be appended to any existing trace flags set
 
 .PARAMETER CommandPromptStart
@@ -93,13 +93,10 @@ Using this switch turns this "nice by default" feature off and enables you to ca
 
 .NOTES
 Author: Stuart Moore (@napalmgram), stuart-moore.com
-
+Tags: 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE 
 Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser
@@ -118,7 +115,7 @@ Shows what would happen if you attempted to configure the SQL Instance sql2016 t
 
 .EXAMPLE
 Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -TraceFlags 8032,8048
-This will appened Trace Flags 8032 and 8048 to the startup parameters
+This will append Trace Flags 8032 and 8048 to the startup parameters
 
 .EXAMPLE
 Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride

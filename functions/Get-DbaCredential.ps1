@@ -1,6 +1,5 @@
-FUNCTION Get-DbaCredential
-{
-<#
+FUNCTION Get-DbaCredential {
+	<#
 .SYNOPSIS
 Gets SQL Credential information for each instance(s) of SQL Server.
 
@@ -32,11 +31,7 @@ Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.	
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Get-DbaCredential
@@ -60,17 +55,13 @@ Returns all SQL Credentials for the local and sql2016 SQL Server instances
 		[switch][Alias('Silent')]$EnableException
 	)
 	
-	PROCESS
-	{
-		foreach ($instance in $SqlInstance)
-		{
+	PROCESS {
+		foreach ($instance in $SqlInstance) {
 			Write-Verbose "Attempting to connect to $instance"
-			try
-			{
+			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
-			catch
-			{
+			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
@@ -84,8 +75,7 @@ Returns all SQL Credentials for the local and sql2016 SQL Server instances
 				$credential = $credential | Where-Object { $CredentialIdentity -notcontains $_.Name }
 			}
 			
-			foreach ($currentcredential in $credential)
-			{
+			foreach ($currentcredential in $credential) {
 				Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name ComputerName -value $currentcredential.Parent.NetName
 				Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name InstanceName -value $currentcredential.Parent.ServiceName
 				Add-Member -Force -InputObject $currentcredential -MemberType NoteProperty -Name SqlInstance -value $currentcredential.Parent.DomainInstanceName
