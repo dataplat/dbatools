@@ -72,8 +72,7 @@ function Get-DbaBackupInformation {
         [string[]]$SourceInstance,
         [Switch]$XpDirTree,
         [switch]$Recurse,
-        [switch]$EnableException,
-        [swicth]$Anonymise
+        [switch]$EnableException
       
     )
     begin {
