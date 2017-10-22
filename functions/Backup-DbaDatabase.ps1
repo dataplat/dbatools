@@ -107,7 +107,7 @@ function Backup-DbaDatabase {
 
 			Performs a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql credential "dbatoolscred" registered on the sql2016 instance.
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default")]
+	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(ParameterSetName = "Pipe", Mandatory = $true)]
 		[DbaInstanceParameter[]]$SqlInstance,
@@ -335,13 +335,15 @@ function Backup-DbaDatabase {
 					if ($CreateFolder) {
 						$Path = $path + $PathDivider + $Database.name
 						Write-Message -Level Verbose -Message "Creating Folder $Path"
-						if (((New-DbaSqlDirectory -SqlInstance $server -SqlCredential $SqlCredential -Path $path).Created -eq $false) -and '' -eq $AzureBaseUrl) {
-							$failreason = "Cannot create or write to folder $path"
-							$failures += $failreason
-							Write-Message -Level Warning -Message "$failreason"
-						}
-						else {
-							$FinalBackupPath += "$path$PathDivider$BackupFileName.$suffix"
+						if ($Pscmdlet.ShouldProcess($server.Name, "Creating folder $path")) {
+							if (((New-DbaSqlDirectory -SqlInstance $server -SqlCredential $SqlCredential -Path $path).Created -eq $false) -and '' -eq $AzureBaseUrl) {
+								$failreason = "Cannot create or write to folder $path"
+								$failures += $failreason
+								Write-Message -Level Warning -Message "$failreason"
+							}
+							else {
+								$FinalBackupPath += "$path$PathDivider$BackupFileName.$suffix"
+							}
 						}
 					}
 					else {
@@ -425,37 +427,39 @@ function Backup-DbaDatabase {
 				Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 				
 				try {
-					$backup.SqlBackup($server)
-					$script = $backup.Script($server)
-					Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
-					$BackupComplete = $true
-					$Filelist = @()
-					$FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
-					$FileList += $server.Databases[$dbname].LogFiles | Select-Object @{ Name = "FileType"; Expression = { "L" } }, @{ Name = "Type"; Expression = { "L" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
-					$Verified = $false
-					if ($Verify) {
-						$verifiedresult = [PSCustomObject]@{
-							SqlInstance = $server.name
-							DatabaseName = $dbname
-							BackupComplete = $BackupComplete
-							BackupFilesCount = $FinalBackupPath.count
-							BackupFile = (Split-Path $FinalBackupPath -leaf)
-							BackupFolder = (Split-Path $FinalBackupPath | Sort-Object -Unique)
-							BackupPath = ($FinalBackupPath | Sort-Object -Unique)
-							Script = $script
-							Notes = $failures -join (',')
-							FullName = ($FinalBackupPath | Sort-Object -Unique)
-							FileList = $FileList
-							SoftwareVersionMajor = $server.VersionMajor
-							Type = $outputType
-						} | Restore-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
-						if ($verifiedResult[0] -eq "Verify successful") {
-							$failures += $verifiedResult[0]
-							$Verified = $true
-						}
-						else {
-							$failures += $verifiedResult[0]
-							$Verified = $false
+					if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbname to $backupfile")) {
+							$backup.SqlBackup($server)
+						$script = $backup.Script($server)
+						Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
+						$BackupComplete = $true
+						$Filelist = @()
+						$FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
+						$FileList += $server.Databases[$dbname].LogFiles | Select-Object @{ Name = "FileType"; Expression = { "L" } }, @{ Name = "Type"; Expression = { "L" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
+						$Verified = $false
+						if ($Verify) {
+							$verifiedresult = [PSCustomObject]@{
+								SqlInstance = $server.name
+								DatabaseName = $dbname
+								BackupComplete = $BackupComplete
+								BackupFilesCount = $FinalBackupPath.count
+								BackupFile = (Split-Path $FinalBackupPath -leaf)
+								BackupFolder = (Split-Path $FinalBackupPath | Sort-Object -Unique)
+								BackupPath = ($FinalBackupPath | Sort-Object -Unique)
+								Script = $script
+								Notes = $failures -join (',')
+								FullName = ($FinalBackupPath | Sort-Object -Unique)
+								FileList = $FileList
+								SoftwareVersionMajor = $server.VersionMajor
+								Type = $outputType
+							} | Restore-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
+							if ($verifiedResult[0] -eq "Verify successful") {
+								$failures += $verifiedResult[0]
+								$Verified = $true
+							}
+							else {
+								$failures += $verifiedResult[0]
+								$Verified = $false
+							}
 						}
 					}
 				}
