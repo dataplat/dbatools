@@ -69,7 +69,7 @@ function Test-DbaMaxDop {
 		[Switch]$Detailed
 	)
 	
-	BEGIN {
+	begin {
 		$notesDopLT = "Before changing MaxDop, consider that the lower value may have been intentionally set."
 		$notesDopGT = "Before changing MaxDop, consider that the higher value may have been intentionally set."
 		$notesDopZero = "This is the default setting. Consider using the recommended value instead."
@@ -78,7 +78,7 @@ function Test-DbaMaxDop {
 		$collection = @()
 	}
 	
-	PROCESS {
+	process {
 		$hasscopedconfiguration = $false
 		
 		foreach ($servername in $SqlInstance) {
@@ -214,7 +214,7 @@ function Test-DbaMaxDop {
 			
 		}
 	}
-	END {
+	end {
 		if ($Detailed) {
 			if ($hasscopedconfiguration) {
 				return ($collection | Select-Object Instance, InstanceVersion, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, NUMANodes, NumberOfCores, Notes)
