@@ -33,7 +33,6 @@ function Get-DbaBackupInformation {
 
     .PARAMETER SourceInstance
         If provided only backup originating from this destination will be returned. This SQL instance will not be connected to or involved in this work
-
     .PARAMETER XpDirTree
         Switch that indicated file scanning should be performed by the SQL Server instance using xp_dirtree
         This will scan recursively from the passed in path
@@ -73,7 +72,8 @@ function Get-DbaBackupInformation {
         [string[]]$SourceInstance,
         [Switch]$XpDirTree,
         [switch]$Recurse,
-        [switch]$EnableException
+        [switch]$EnableException,
+        [swicth]$Anonymise
       
     )
     begin {
@@ -102,12 +102,12 @@ function Get-DbaBackupInformation {
             }
         }
         
-        $FileDetails = $Files | Read-DbaBackupHeader -SqlInstance localhost\sqlexpress2016
-        if (Test-Bound 'SourceInstance') {
+        $FileDetails = $Files | Read-DbaBackupHeader -SqlInstance $SqlInstance -SqlCredential $sqlcredential
+        if (Was-Bound 'SourceInstance') {
             $FileDetails = $FileDetails | Where-Object {$_.ServerName -in $SourceInstance}
         }
 
-        if (Test-Bound 'DatabaseName') {
+        if (Was-Bound 'DatabaseName') {
             $FileDetails = $FileDetails | Where-Object {$_.DatabaseName -in $DatabaseName}
         }
 
