@@ -55,10 +55,19 @@ function Get-DbaBackupInformation {
         Shows what would happen if the command would execute, but does not actually perform the command
     
     .EXAMPLE
-        Restore-DbaDatabase -SqlInstance server1\instance1 -Path \\server2\backups
-        
-        Scans all the backup files in \\server2\backups, filters them and restores the database to server1\instance1
-    
+        Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse
+
+        Will use the Server1 instance to recursively read all backup files under c:\backups, and return a dbatool BackupHistory object
+
+    .EXAMPLE
+        $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse
+        $Backups | ConvertTo-Json | Out-File c:\backups.json
+        #Copy the file c:\backus.json to another machine via preferred technique, and the on 2nd machine:
+        $backups = Get-Content c:\backups.json | ConvertFrom-Json
+        $backups | Restore-DbaDatabase -SqlInstance Server2 -TrustDbBackupHistory
+
+        This allows you to move backup history across servers, or to preserve backuphistory even after the original server has been purged
+
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
@@ -102,11 +111,11 @@ function Get-DbaBackupInformation {
         }
         
         $FileDetails = $Files | Read-DbaBackupHeader -SqlInstance $SqlInstance -SqlCredential $sqlcredential
-        if (Was-Bound 'SourceInstance') {
+        if (Test-Bound 'SourceInstance') {
             $FileDetails = $FileDetails | Where-Object {$_.ServerName -in $SourceInstance}
         }
 
-        if (Was-Bound 'DatabaseName') {
+        if (Test-Bound 'DatabaseName') {
             $FileDetails = $FileDetails | Where-Object {$_.DatabaseName -in $DatabaseName}
         }
 
@@ -125,7 +134,7 @@ function Get-DbaBackupInformation {
             $historyObject.Path = $Group.Group.BackupPath
             $historyObject.TotalSize = (Measure-Object $Group.Group.BackupSizeMB -sum).sum
             $historyObject.Type = $group.Group[0].BackupTypeDescription
-            $historyObject.BackupSetId = $group[0].BackupSetGUID
+            $historyObject.BackupSetId = $group.group[0].BackupSetGUID
             $historyObject.DeviceType = 'Disk'
             $historyObject.FullName = $Group.Group.BackupPath
             $historyObject.FileList = $Group.Group[0].FileList
