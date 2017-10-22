@@ -79,8 +79,9 @@ function Get-DbaBackupInformation {
         [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
         [string[]]$DatabaseName,
         [string[]]$SourceInstance,
+        [switch]$XpNoRecurse,
         [Switch]$XpDirTree,
-        [switch]$Recurse,
+        [switch]$DirectoryRecurse,
         [switch]$EnableException
       
     )

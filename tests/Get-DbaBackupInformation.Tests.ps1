@@ -22,11 +22,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $dbname2 = "dbatoolsci_Backuphistory2_$random"
 		$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname2 | Remove-DbaDatabase -Confirm:$false
 		$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname2 -DestinationFilePrefix $dbname2
-		$db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2
-		$db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
-		$db | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
-		$db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
-		$db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
+		$db2 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2
+		$db2 | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
+		$db2 | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
+		$db2 | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
+		$db2 | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
 		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -Type Full
     
     }
@@ -38,13 +38,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     
     Context "Get last history for all database" {
 		$results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir
-		It "Should be 4 backups returned" {
+		It "Should be 8 backups returned" {
 			$results.count | Should Be 8
 		}
-		It "2 backups should be Full Backup" {
+		It "Should return 2 full backus" {
 			($results | Where-Object {$_.Type -eq 'Database'}).count | Should be 2
 		}
-		It "4 Backups Should be log backups" {
+		It "Should return 4 log backups" {
 			($results | Where-Object {$_.Type -eq 'Transaction Log'}).count | Should be 4
         }
     }
@@ -66,7 +66,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Get last history for one instance" {
-		$results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -SourceInstance $dbname2
+		$results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -SourceInstance $script:instance2
 		It "Should be 4 backups returned" {
 			$results.count | Should Be 4
 		}
@@ -79,5 +79,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should only be backups of $dbname2"{
             ($results | Where-Object {$_.SqlInsance -ne $dbname2 }).count | Should Be 0
         }
+    }
+
+    Context "Check the export/import of backup history" {
+        $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -SourceInstance $script:instance1
+        $results | ConverTo-Json | Out-File "$DestBackuDir\history.json"
+        $import = Get-Content "$DestBackuDir\history.json" -Raw | ConvertFrom-Json
+        $results = $import | Restore-DbaDatabse -SqlInstance $script:instance1 -DestinationFilePrefix hist -RestoredDatababaseNamePrefix hist -TrustDbBackupHistory
+        It "Should restore cleanly" {
+            ($results | Where-Object {$_.RestoreComplete -eq $false}).count | Should be 0
+        }
+		
     }
 }
