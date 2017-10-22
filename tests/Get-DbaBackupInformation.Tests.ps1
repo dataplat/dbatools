@@ -37,7 +37,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     
     Context "Get last history for all database" {
-		$results = Get-DbaBackupHistory -SqlInstance $script:instance1 -Path $DestBackupDir
+		$results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir
 		It "Should be 4 backups returned" {
 			$results.count | Should Be 8
 		}
@@ -50,7 +50,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Get last history for one database" {
-		$results = Get-DbaBackupHistory -SqlInstance $script:instance1 -Path $DestBackupDir -DatabaseName $dbname2
+		$results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -DatabaseName $dbname2
 		It "Should be 4 backups returned" {
 			$results.count | Should Be 4
 		}
@@ -66,7 +66,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Get last history for one instance" {
-		$results = Get-DbaBackupHistory -SqlInstance $script:instance1 -Path $DestBackupDir -SourceInstance $dbname2
+		$results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -SourceInstance $dbname2
 		It "Should be 4 backups returned" {
 			$results.count | Should Be 4
 		}
