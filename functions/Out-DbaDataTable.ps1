@@ -1,7 +1,7 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 Function Out-DbaDataTable {
-<#
+	<#
 	.SYNOPSIS
 		Creates a DataTable for an object
 	
@@ -62,9 +62,7 @@ Function Out-DbaDataTable {
 	.NOTES
 		dbatools PowerShell module (https://dbatools.io)
 		Copyright (C) 2016 Chrissy LeMaire
-		This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-		This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-		You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 	
 	.LINK
 		https://dbatools.io/Out-DbaDataTable
@@ -73,18 +71,18 @@ Function Out-DbaDataTable {
 	[OutputType([System.Object[]])]
 	param (
 		[Parameter(Position = 0,
-				   Mandatory = $true,
-				   ValueFromPipeline = $true)]
+			Mandatory = $true,
+			ValueFromPipeline = $true)]
 		[AllowNull()]
 		[PSObject[]]$InputObject,
 		[Parameter(Position = 1)]
 		[ValidateSet("Ticks",
-					 "TotalDays",
-					 "TotalHours",
-					 "TotalMinutes",
-					 "TotalSeconds",
-					 "TotalMilliseconds",
-					 "String")]
+			"TotalDays",
+			"TotalHours",
+			"TotalMinutes",
+			"TotalSeconds",
+			"TotalMilliseconds",
+			"String")]
 		[ValidateNotNullOrEmpty()]
 		[string]$TimeSpanType = "TotalMilliseconds",
 		[ValidateSet("Int64", "Int32", "String")]
@@ -188,7 +186,7 @@ Function Out-DbaDataTable {
 		
 		# The shouldCreateColumns variable will be set to false as soon as the column definition has been added to the data table.
 		# This is to avoid that the rare scenario when columns are not created because the first object is null, which can be accepted.
-		# This means that we cannot relly on the first object to create columns, hence this variable.
+		# This means that we cannot rely on the first object to create columns, hence this variable.
 		$ShouldCreateCollumns = $true
 	}
 	
@@ -235,8 +233,8 @@ Function Out-DbaDataTable {
 										# Ends up here when the type is not possible to get so the call to ConvertType fails.
 										# In that case we make a string out of it. (in this scenario its often that a script property points to a null value so we can't get the type)
 										$converted = @{
-											type  = 'System.String'
-											Value = $property.value
+											type    = 'System.String'
+											Value   = $property.value
 											Special = $false
 										}
 									}
@@ -272,11 +270,12 @@ Function Out-DbaDataTable {
 							}
 						}
 						
-                        try {
-                            $propValueLength = $property.value.length
-                        } catch {
-                            $propValueLength = 0
-                        }
+						try {
+							$propValueLength = $property.value.length
+						}
+						catch {
+							$propValueLength = 0
+						}
 						if ($propValueLength -gt 0) {
 							if ($property.value.ToString() -eq 'System.Object[]' -or $property.value.ToString() -eq 'System.String[]') {
 								$datarow.Item($property.Name) = $property.value -join ", "
@@ -307,6 +306,6 @@ Function Out-DbaDataTable {
 	
 	End {
 		Write-Message -Level InternalComment -Message "Finished"
-		return @( ,($datatable))
+		return @( , ($datatable))
 	}
 }

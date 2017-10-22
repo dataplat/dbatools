@@ -1,6 +1,5 @@
-Function New-DbaSqlDirectory
-{
-<#
+Function New-DbaSqlDirectory {
+	<#
 .SYNOPSIS
 Creates new path as specified by the path variable
 
@@ -24,25 +23,14 @@ credentials being passed as credentials. To connect as a different Windows user,
 
 
 .NOTES
+Tags: 
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: Admin access to server (not SQL Services),
 Remoting must be enabled and accessible if $SqlInstance is not local
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/New-DbaSqlDirectory
@@ -59,7 +47,7 @@ New-DbaSqlDirectory -SqlInstance sqlcluster -SqlCredential $credential -Path L:\
 If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\OLAP it will do and return $true, if not it will return $false. Uses a SqlCredential to connect
 #>
 	[CmdletBinding()]
-    [OutputType([bool])]
+	[OutputType([bool])]
 	param (
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
@@ -75,8 +63,7 @@ If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\
 	
 	$exists = Test-DbaSqlPath -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Path $Path
 	
-	if ($exists)
-	{
+	if ($exists) {
 		Write-Warning "$Path already exists"
 		return
 	}
@@ -84,19 +71,17 @@ If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\
 	$sql = "EXEC master.dbo.xp_create_subdir'$path'"
 	Write-Debug $sql
 	
-	try
-	{
-        $query = $server.Query($sql)
-        $Created = $true
-    }
-    catch
-    {
-        $Created = $false
+	try {
+		$query = $server.Query($sql)
+		$Created = $true
+	}
+	catch {
+		$Created = $false
 	}
 	
 	[pscustomobject]@{
-		Server = $SqlInstance
-		Path = $Path
+		Server  = $SqlInstance
+		Path    = $Path
 		Created = $Created
 	}   
 }
