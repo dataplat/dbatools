@@ -181,6 +181,7 @@ Gets the backup header information from the SQL Server backup file stored at htt
                     }
                     Return
                 }
+
                 $fl = $datatable.Columns.Add("FileList", [object])
                 #$datatable.rows[0].FileList = $allfiles.rows
                 
@@ -215,7 +216,8 @@ Gets the backup header information from the SQL Server backup file stored at htt
                     $row.BackupPath = $file
                     try {
                         $restore.FileNumber = $BackupSlot
-                        $allfiles = $restore.ReadFileList($server)
+                        #Select-Object does a quick and dirty conversion from datatable to PS object
+                        $allfiles = $restore.ReadFileList($server) | select-object *
                     }
                     catch {
                         $shortname = Split-Path $file -Leaf
@@ -231,7 +233,7 @@ Gets the backup header information from the SQL Server backup file stored at htt
                     }
                     $row.FileList = $allfiles
                     $BackupSlot++
-                    
+                   
                 }
             }
             else {
