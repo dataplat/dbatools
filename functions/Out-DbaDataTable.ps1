@@ -219,7 +219,8 @@ Function Out-DbaDataTable {
 				}
 				else {
 					$datarow = $datatable.NewRow()
-					foreach ($property in $object.PsObject.get_properties()) {
+					$objectProperties = $object.PsObject.get_properties()
+					foreach ($property in $objectProperties) {
 						# The converted variable will get the result from the ConvertType function and used for type and value conversion when adding to the datatable.
 						$converted = @{ }
 						if ($ShouldCreateCollumns) {
@@ -265,8 +266,8 @@ Function Out-DbaDataTable {
 						else {
 							# This is where we end up if the columns has been created in the data table.
 							# We still need to check for special columns again, to make sure that the value is converted properly.
-							if ($property.value -isnot [System.DBNull]) {
-								if ($specialColumns.Keys -contains $property.Name) {
+							if ($specialColumns.ContainsKey($property.Name)) {
+                                if ($property.value -isnot [System.DBNull]) {
 									$converted = ConvertType -type $specialColumns.($property.Name) -value $property.Value -timespantype $TimeSpanType -sizetype $SizeType
 								}
 							}
@@ -278,18 +279,26 @@ Function Out-DbaDataTable {
                             $propValueLength = 0
                         }
 						if ($propValueLength -gt 0) {
-							if ($property.value.ToString() -eq 'System.Object[]' -or $property.value.ToString() -eq 'System.String[]') {
-								$datarow.Item($property.Name) = $property.value -join ", "
+							# If the typename was a special typename we want to use the value returned from ConvertType instead.
+							# We might get error if we try to change the value for $property.value if it is read-only. That's why we use $converted.value instead.
+							if ($converted.special) {
+								$datarow.Item($property.Name) = $converted.value
 							}
 							else {
-								# If the typename was a special typename we want to use the value returned from ConvertType instead.
-								# We might get error if we try to change the value for $property.value if it is read-only. That's why we use $converted.value instead.
-								if ($converted.special) {
-									$datarow.Item($property.Name) = $converted.value
-								}
-								else {
-									$datarow.Item($property.Name) = $property.value
-								}
+                                if ($property.value.ToString().length -eq 15) {
+                                    if ($property.value.ToString() -eq 'System.Object[]') {
+                                        $datarow.Item($property.Name) = $property.value -join ", "
+							        } 
+                                    elseif ($property.value.ToString() -eq 'System.String[]') {
+                                        $datarow.Item($property.Name) = $property.value -join ", "
+                                    }
+                                    else {
+                                        $datarow.Item($property.Name) = $property.value
+                                    }
+                                }
+                                else {
+    								$datarow.Item($property.Name) = $property.value
+                                }
 							}
 						}
 					}
