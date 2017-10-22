@@ -16,19 +16,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		$db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
 		$db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
 		$db | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
-		$db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
-		$db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
-		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -Type Full
-        $dbname2 = "dbatoolsci_Backuphistory2_$random"
+        $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
+        
+		$dbname2 = "dbatoolsci_Backuphistory2_$random"
 		$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname2 | Remove-DbaDatabase -Confirm:$false
-		$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname2 -DestinationFilePrefix $dbname2
+		$null = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname2 -DestinationFilePrefix $dbname2
 		$db2 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2
 		$db2 | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
 		$db2 | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
-		$db2 | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
-		$db2 | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
-		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -Type Full
-    
+        $db2 | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
+		
     }
     
     AfterAll {
@@ -39,13 +36,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Get last history for all database" {
 		$results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir
 		It "Should be 8 backups returned" {
-			$results.count | Should Be 8
+			$results.count | Should Be 6
 		}
 		It "Should return 2 full backus" {
 			($results | Where-Object {$_.Type -eq 'Database'}).count | Should be 2
 		}
 		It "Should return 4 log backups" {
-			($results | Where-Object {$_.Type -eq 'Transaction Log'}).count | Should be 4
+			($results | Where-Object {$_.Type -eq 'Transaction Log'}).count | Should be 2
         }
     }
 
@@ -83,7 +80,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     Context "Check the export/import of backup history" {
         $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -SourceInstance $script:instance1
-        $results | ConverTo-Json | Out-File "$DestBackuDir\history.json"
+        $results | ConvertTo-Json | Out-File "$DestBackuDir\history.json"
         $import = Get-Content "$DestBackuDir\history.json" -Raw | ConvertFrom-Json
         $results = $import | Restore-DbaDatabse -SqlInstance $script:instance1 -DestinationFilePrefix hist -RestoredDatababaseNamePrefix hist -TrustDbBackupHistory
         It "Should restore cleanly" {
