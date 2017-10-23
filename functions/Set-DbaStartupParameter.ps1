@@ -65,7 +65,7 @@ Collecting information for the DBCC SQLPERF command
 Collecting information for some dynamic management views
 Many extended-events event points
 
-** Warning *\* When you use the �x startup option, the information that is available for you to diagnose performance and functional problems with SQL Server is greatly reduced.
+** Warning *\* When you use the -x startup option, the information that is available for you to diagnose performance and functional problems with SQL Server is greatly reduced.
 	
 .PARAMETER SingleUserDetails
 The username for single user
@@ -360,10 +360,14 @@ After the work has been completed, we can push the original startup parameters b
         if ($pscmdlet.ShouldProcess("Setting Sql Server start parameters on $SqlInstance to $ParameterString")) {
             try {
                 if ($Credential) {
-                    $response = Invoke-ManagedComputerCommand -Server $instance -Credential $Credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -S-EnableException                    $output = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential -S-EnableException                    Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
+                    $response = Invoke-ManagedComputerCommand -ComputerName $instance -Credential $Credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
+                    $output = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential -EnableException
+                    Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
                 }
                 else {
-                    $response = Invoke-ManagedComputerCommand -Server $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -S-EnableException                    $output = Get-DbaStartupParameter -SqlInstance $server -S-EnableException                    Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
+                    $response = Invoke-ManagedComputerCommand -ComputerName $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
+                    $output = Get-DbaStartupParameter -SqlInstance $server -EnableException
+                    Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
                 }
                 
                 $output
