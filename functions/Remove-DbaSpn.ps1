@@ -1,6 +1,6 @@
 #ValidationTags#FlowControl,Pipeline#
 Function Remove-DbaSpn {
-<#
+	<#
 .SYNOPSIS
 Removes an SPN for a given service account in active directory and also removes delegation to the same SPN, if found
 
@@ -37,9 +37,7 @@ Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
 
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Remove-DbaSpn
@@ -87,7 +85,7 @@ Removes all set SPNs for sql2005 and the relative delegations
 	process {
 		Write-Message -Message "Looking for account $ServiceAccount..." -Level Verbose
 		$searchfor = 'User'
-		if($ServiceAccount.EndsWith('$')) {
+		if ($ServiceAccount.EndsWith('$')) {
 			$searchfor = 'Computer'
 		}
 		try {
@@ -128,19 +126,19 @@ Removes all set SPNs for sql2005 and the relative delegations
 					$status = "Successfully removed SPN"
 				}
 			}
-		catch {
-			Write-Message -Message "Could not remove SPN. $($_.Exception.Message)" -Level Warning -EnableException $EnableException -ErrorRecord $_ -Target $ServiceAccountWrite
-			$set = $true
-			$status = "Failed to remove SPN"
-			$delegate = $false
-		}
+			catch {
+				Write-Message -Message "Could not remove SPN. $($_.Exception.Message)" -Level Warning -EnableException $EnableException -ErrorRecord $_ -Target $ServiceAccountWrite
+				$set = $true
+				$status = "Failed to remove SPN"
+				$delegate = $false
+			}
 		
 			[pscustomobject]@{
-				Name = $spn
+				Name           = $spn
 				ServiceAccount = $ServiceAccount
-				Property = "servicePrincipalName"
-				IsSet = $set
-				Notes = $status
+				Property       = "servicePrincipalName"
+				IsSet          = $set
+				Notes          = $status
 			}
 		}
 		# if we removed the SPN, we should clean up also the delegation
@@ -150,11 +148,11 @@ Removes all set SPNs for sql2005 and the relative delegations
 				# even if we removed the SPN, delegation could have been not set at all. We should not raise an error
 				if ($adentry.Properties['msDS-AllowedToDelegateTo'] -notcontains $spn) {
 					[pscustomobject]@{
-						Name = $spn
+						Name           = $spn
 						ServiceAccount = $ServiceAccount
-						Property = "msDS-AllowedToDelegateTo"
-						IsSet = $false
-						Notes = "Delegation not found"
+						Property       = "msDS-AllowedToDelegateTo"
+						IsSet          = $false
+						Notes          = "Delegation not found"
 					}
 				}
 				else {
@@ -173,11 +171,11 @@ Removes all set SPNs for sql2005 and the relative delegations
 					}
 					
 					[pscustomobject]@{
-						Name = $spn
+						Name           = $spn
 						ServiceAccount = $ServiceAccount
-						Property = "msDS-AllowedToDelegateTo"
-						IsSet = $set
-						Notes = $status
+						Property       = "msDS-AllowedToDelegateTo"
+						IsSet          = $set
+						Notes          = $status
 					}
 				}
 			}

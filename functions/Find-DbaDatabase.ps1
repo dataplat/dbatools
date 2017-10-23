@@ -1,8 +1,7 @@
-Function Find-DbaDatabase
-{
-<#
+Function Find-DbaDatabase {
+	<#
 .SYNOPSIS
-Find database/s on multiple servers that match critea you input
+Find database/s on multiple servers that match criteria you input
 
 .DESCRIPTION
 Allows you to search SQL Server instances for database that have either the same name, owner or service broker guid.
@@ -33,9 +32,7 @@ Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
 
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
  https://dbatools.io/Find-DbaDatabase
@@ -67,49 +64,38 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 		[switch]$Exact,
 		[switch]$Detailed
 	)
-	process
-	{
-		foreach ($instance in $SqlInstance)
-		{
-			try
-			{
+	process {
+		foreach ($instance in $SqlInstance) {
+			try {
 				Write-Verbose "Connecting to $instance"
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
-			catch
-			{
+			catch {
 				Write-Warning "Failed to connect to: $instance"
 				continue
 			}
 			
-			if ($exact -eq $true)
-			{
+			if ($exact -eq $true) {
 				$dbs = $server.Databases | Where-Object { $_.$property -eq $pattern }
 			}
-			else
-			{
-				try
-				{
+			else {
+				try {
 					$dbs = $server.Databases | Where-Object { $_.$property.ToString() -match $pattern }
 				}
-				catch
-				{
-					# they prolly put aterisks thinking it's a like
+				catch {
+					# they probably put asterisks thinking it's a like
 					$Pattern = $Pattern -replace '\*', ''
 					$Pattern = $Pattern -replace '\%', ''
 					$dbs = $server.Databases | Where-Object { $_.$property.ToString() -match $pattern }
 				}
 			}
 			
-			foreach ($db in $dbs)
-			{
-				if ($Detailed)
-				{
+			foreach ($db in $dbs) {
+				if ($Detailed) {
 					$extendedproperties = @()
-					foreach ($xp in $db.ExtendedProperties)
-					{
+					foreach ($xp in $db.ExtendedProperties) {
 						$extendedproperties += [PSCustomObject]@{
-							Name = $db.ExtendedProperties[$xp.Name].Name
+							Name  = $db.ExtendedProperties[$xp.Name].Name
 							Value = $db.ExtendedProperties[$xp.Name].Value
 						}
 					}
@@ -117,32 +103,31 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 					if ($extendedproperties.count -eq 0) { $extendedproperties = 0 }
 					
 					[PSCustomObject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $server.Name
-						Name = $db.Name
-						SizeMB = $db.Size
-						Owner = $db.Owner
-						CreateDate = $db.CreateDate
-						ServiceBrokerGuid = $db.ServiceBrokerGuid
-						Tables = ($db.Tables | Where-Object { $_.IsSystemObject -eq $false }).Count
-						StoredProcedures = ($db.StoredProcedures | Where-Object { $_.IsSystemObject -eq $false }).Count
-						Views = ($db.Views | Where-Object { $_.IsSystemObject -eq $false }).Count
+						ComputerName       = $server.NetName
+						InstanceName       = $server.ServiceName
+						SqlInstance        = $server.Name
+						Name               = $db.Name
+						SizeMB             = $db.Size
+						Owner              = $db.Owner
+						CreateDate         = $db.CreateDate
+						ServiceBrokerGuid  = $db.ServiceBrokerGuid
+						Tables             = ($db.Tables | Where-Object { $_.IsSystemObject -eq $false }).Count
+						StoredProcedures   = ($db.StoredProcedures | Where-Object { $_.IsSystemObject -eq $false }).Count
+						Views              = ($db.Views | Where-Object { $_.IsSystemObject -eq $false }).Count
 						ExtendedProperties = $extendedproperties
-						Database = $db
+						Database           = $db
 					} | Select-DefaultView -ExcludeProperty Database
 				}
-				else
-				{
+				else {
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
-						SqlInstance = $server.Name
-						Name = $db.Name
-						SizeMB = $db.Size
-						Owner = $db.Owner
-						CreateDate = $db.CreateDate
-						Database = $db
+						SqlInstance  = $server.Name
+						Name         = $db.Name
+						SizeMB       = $db.Size
+						Owner        = $db.Owner
+						CreateDate   = $db.CreateDate
+						Database     = $db
 					} | Select-DefaultView -ExcludeProperty Database
 				}
 			}
