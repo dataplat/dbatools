@@ -47,7 +47,7 @@ $global:dbatools_dotsourcemodule = $true
 
 Remove-Module dbatools -ErrorAction Ignore
 Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
-$ScriptAnalyzerRules = Get-ScriptAnalyzerRule
+
 
 function Get-CoverageIndications($Path, $ModuleBase) {
 	# takes a test file path and figures out what to analyze for coverage (i.e. dependencies)
@@ -331,6 +331,5 @@ else {
 	if ($IncludeCoverage) {
 		$CodecovReport = Get-CodecovReport -Results $results -ModuleBase $ModuleBase
 		$CodecovReport | ConvertTo-Json -Depth 4 -Compress | Out-File -FilePath "$ModuleBase\PesterResultsCoverage.json" -Encoding utf8
-		Send-CodecovReport -CodecovReport "$ModuleBase\PesterResultsCoverage.json"
 	}
 }
