@@ -1353,7 +1353,7 @@
     },
     {
         "CommandName":  "Get-DbaLastGoodCheckDb",
-        "Description":  "Retrieves and compares the date/time for the last known good DBCC CHECKDB, as well as the creation date/time for the database.\n\nThis function supports SQL Server 2005+\n\nPlease note that this script uses the DBCC DBINFO() WITH TABLERESULTS. DBCC DBINFO has several known weak points, such as:\n - DBCC DBINFO is an undocumented feature/command.\n - The LastKnowGood timestamp is updated when a DBCC CHECKFILEGROUP is performed.\n - The LastKnowGood timestamp is updated when a DBCC CHECKDB WITH PHYSICAL_ONLY is performed.\n - The LastKnowGood timestamp does not get updated when a database in READ_ONLY.\n\nAn empty ($null) LastGoodCheckDb result indicates that a good DBCC CHECKDB has never been performed.\n\nSQL Server 2008R2 has a \"bug\" that causes each databases to possess two dbi_dbccLastKnownGood fields, instead of the normal one.\nThis script will only display this function to only display the newest timestamp. If -Verbose is specified, the function will announce every time more than one dbi_dbccLastKnownGood fields is encountered.",
+        "Description":  "Retrieves and compares the date/time for the last known good DBCC CHECKDB, as well as the creation date/time for the database.\n\nThis function supports SQL Server 2005 and higher.\n\nPlease note that this script uses the DBCC DBINFO() WITH TABLERESULTS. DBCC DBINFO has several known weak points, such as:\n- DBCC DBINFO is an undocumented feature/command.\n- The LastKnowGood timestamp is updated when a DBCC CHECKFILEGROUP is performed.\n- The LastKnowGood timestamp is updated when a DBCC CHECKDB WITH PHYSICAL_ONLY is performed.\n- The LastKnowGood timestamp does not get updated when a database in READ_ONLY.\n\nAn empty ($null) LastGoodCheckDb result indicates that a good DBCC CHECKDB has never been performed.\n\nSQL Server 2008R2 has a \"bug\" that causes each databases to possess two dbi_dbccLastKnownGood fields, instead of the normal one.\n\nThis script will only display this function to only display the newest timestamp. If -Verbose is specified, the function will announce every time more than one dbi_dbccLastKnownGood fields is encountered.",
         "Tags":  [
                      "CHECKDB",
                      "Database"
@@ -1362,7 +1362,7 @@
         "Synopsis":  "Get date/time for last known good DBCC CHECKDB",
         "Name":  "Get-DbaLastGoodCheckDb",
         "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLastGoodCheckDb -SqlInstance ServerA\\sql987\r\n\r\nReturns a custom object displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, \r\nDaysSinceLastGoodCheckDb, Status and DataPurityEnabled\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLastGoodCheckDb -SqlInstance ServerA\\sql987 -SqlCredential (Get-Credential sqladmin) | Format-Table \r\n-AutoSize\r\n\r\nReturns a formatted table displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, \r\nDaysSinceLastGoodCheckDb, Status and DataPurityEnabled.\r\nAuthenticates with SQL Server using alternative credentials.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLastGoodCheckDb -SqlInstance ServerA\\sql987\r\n\r\nReturns a custom object displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, \r\nDaysSinceLastGoodCheckDb, Status and DataPurityEnabled\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaLastGoodCheckDb -SqlInstance ServerA\\sql987 -SqlCredential (Get-Credential sqladmin) | Format-Table \r\n-AutoSize\r\n\r\nReturns a formatted table displaying Server, Database, DatabaseCreated, LastGoodCheckDb, DaysSinceDbCreated, \r\nDaysSinceLastGoodCheckDb, Status and DataPurityEnabled. Authenticates using SQL Server authentication.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaLinkedServer",
@@ -1513,11 +1513,12 @@
     },
     {
         "CommandName":  "Get-DbaProcess",
-        "Description":  "This command displays processes associated with a spid, login, host, program or database.\n\nThanks to Michael J Swart at https://sqlperformance.com/2017/07/sql-performance/find-database-connection-leaks for the\nquery to get the last executed SQL statement, minutesasleep and host process ID",
+        "Description":  "This command displays processes associated with a spid, login, host, program or database.\n\nThanks to Michael J Swart at https://sqlperformance.com/2017/07/sql-performance/find-database-connection-leaks for the\tquery to get the last executed SQL statement, minutesasleep and host process ID.",
+        "Tags":  "",
         "Synopsis":  "This command displays SQL Server processes.",
         "Name":  "Get-DbaProcess",
         "Links":  "https://dbatools.io/Get-DbaProcess",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaProcess -SqlInstance sqlserver2014a -Login base\\ctrlb, sa\r\n\r\nShows information about the processes for base\\ctrlb and sa on sqlserver2014a. Uses Windows Authentication to login to \r\nsqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaProcess -SqlInstance sqlserver2014a -SqlCredential $credential -Spid 56, 77\r\n\r\nShows information about the processes for spid 56 and 57. Uses alternative (SQL or Windows) credentials to login to \r\nsqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaProcess -SqlInstance sqlserver2014a -Program \u0027Microsoft SQL Server Management Studio\u0027\r\n\r\nShows information about the processes that were created in Microsoft SQL Server Management Studio.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaProcess -SqlInstance sqlserver2014a -Host workstationx, server100\r\n\r\nShows information about the processes that were initiated by hosts (computers/clients) workstationx and server 1000.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaProcess -SqlInstance sqlserver2014a -Login base\\ctrlb, sa\r\n\r\nShows information about the processes for base\\ctrlb and sa on sqlserver2014a. Windows Authentication is used in \r\nconnecting to sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaProcess -SqlInstance sqlserver2014a -SqlCredential $credential -Spid 56, 77\r\n\r\nShows information about the processes for spid 56 and 57. Uses alternative (SQL or Windows) credentials to authenticate \r\nto sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaProcess -SqlInstance sqlserver2014a -Program \u0027Microsoft SQL Server Management Studio\u0027\r\n\r\nShows information about the processes that were created in Microsoft SQL Server Management Studio.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaProcess -SqlInstance sqlserver2014a -Host workstationx, server100\r\n\r\nShows information about the processes that were initiated by hosts (computers/clients) workstationx and server 1000.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaQueryExecutionTime",
@@ -1586,12 +1587,13 @@
     },
     {
         "CommandName":  "Get-DbaRunningJob",
-        "Description":  "This function returns agent jobs that active on the SQL Server instance when calling the command. The information is gathered the SMO JobServer.jobs and be returned either in detailed or standard format",
+        "Description":  "This function returns agent jobs that active on the SQL Server instance when calling the command. The information is gathered the SMO JobServer.jobs and be returned either in detailed or standard format.",
+        "Tags":  "",
         "Author":  "Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/",
-        "Synopsis":  "Returns all non idle agent jobs running on the server.",
+        "Synopsis":  "Returns all non-idle Agent jobs running on the server.",
         "Name":  "Get-DbaRunningJob",
         "Links":  "https://dbatools.io/Get-DbaRunningJob",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRunningJob -SqlInstance localhost\r\n\r\nReturns any active jobs on the localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRunningJob -SqlInstance localhost -Detailed\r\n\r\nReturns a detailed output of any active jobs on the localhost\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e\u0027localhost\u0027,\u0027localhost\\namedinstance\u0027 | Get-DbaRunningJob\r\n\r\nReturns all active jobs on multiple instances piped into the function\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRunningJob -SqlInstance localhost\r\n\r\nReturns any active jobs on localhost.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRunningJob -SqlInstance localhost -Detailed\r\n\r\nReturns a detailed output of any active jobs on localhost.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e\u0027localhost\u0027,\u0027localhost\\namedinstance\u0027 | Get-DbaRunningJob\r\n\r\nReturns all active jobs on multiple instances piped into the function.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaSchemaChangeHistory",
@@ -1910,7 +1912,7 @@
     },
     {
         "CommandName":  "Get-DbaWaitStatistic",
-        "Description":  "This command is based off of Paul Randal\u0027s post \"Wait statistics, or please tell me where it hurts\"\n\nReturns:    \n\t\t\tWaitType\n\t\t\tCategory\n\t\t\tWaitSeconds\n\t\t\tResourceSeconds\n\t\t\tSignalSeconds\n\t\t\tWaitCount\n\t\t\tPercentage\n\t\t\tAverageWaitSeconds\n\t\t\tAverageResourceSeconds\n\t\t\tAverageSignalSeconds\n\t\t\tURL\n\nReference: https://www.sqlskills.com/blogs/paul/wait-statistics-or-please-tell-me-where-it-hurts/",
+        "Description":  "This command is based off of Paul Randal\u0027s post \"Wait statistics, or please tell me where it hurts\"\n\nReturns:\n\t\t\tWaitType\n\t\t\tCategory\n\t\t\tWaitSeconds\n\t\t\tResourceSeconds\n\t\t\tSignalSeconds\n\t\t\tWaitCount\n\t\t\tPercentage\n\t\t\tAverageWaitSeconds\n\t\t\tAverageResourceSeconds\n\t\t\tAverageSignalSeconds\n\t\t\tURL\n\nReference: https://www.sqlskills.com/blogs/paul/wait-statistics-or-please-tell-me-where-it-hurts/",
         "Tags":  "WaitStatistic",
         "Synopsis":  "Displays wait statistics",
         "Name":  "Get-DbaWaitStatistic",
@@ -1980,7 +1982,7 @@
         "Synopsis":  "Download and Install SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)",
         "Name":  "Install-DbaMaintenanceSolution",
         "Links":  "http://dbatools.io/Install-DbaMaintenanceSolution",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72\r\n\r\nInstalls Ola Hallengren\u0027s Solution objects on RES14224 in the master database. \r\nBackups will default to the default Backup Directory. \r\nIf the Maintenance Solution already exists, the script will be halted.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -ReplaceExisting -CleanupTime 72 -LogToTable \r\n-Solution \"Backup\" -BackupLocation \"Z:\\SQLBackup\" -InstallJobs\r\n\r\n\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation \"Z:\\SQLBackup\" -CleanupTime 72\r\n\r\nThis will create the Ola Hallengren\u0027s Solution objects. Existing objects are not affected in any way.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation \"Z:\\SQLBackup\" -CleanupTime \r\n72 -ReplaceExisting\r\n\r\nThis will drop and then recreate the Ola Hallengren\u0027s Solution objects\r\nThe cleanup script will drop and recreate:\r\n    - TABLE [dbo].[CommandLog]\r\n    - STORED PROCEDURE [dbo].[CommandExecute]\r\n    - STORED PROCEDURE [dbo].[DatabaseBackup]\r\n    - STORED PROCEDURE [dbo].[DatabaseIntegrityCheck]\r\n    - STORED PROCEDURE [dbo].[IndexOptimize]\r\n\r\nThe follwing SQL Agent jobs will be deleted:\r\n    - \u0027Output File Cleanup\u0027\r\n    - \u0027IndexOptimize - USER_DATABASES\u0027\r\n    - \u0027sp_delete_backuphistory\u0027\r\n    - \u0027DatabaseBackup - USER_DATABASES - LOG\u0027\r\n    - \u0027DatabaseBackup - SYSTEM_DATABASES - FULL\u0027\r\n    - \u0027DatabaseBackup - USER_DATABASES - FULL\u0027\r\n    - \u0027sp_purge_jobhistory\u0027\r\n    - \u0027DatabaseIntegrityCheck - SYSTEM_DATABASES\u0027\r\n    - \u0027CommandLog Cleanup\u0027\r\n    - \u0027DatabaseIntegrityCheck - USER_DATABASES\u0027\r\n    - \u0027DatabaseBackup - USER_DATABASES - DIFF\u0027\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72\r\n\r\nInstalls Ola Hallengren\u0027s Solution objects on RES14224 in the DBA database. \r\nBackups will default to the default Backup Directory. \r\nIf the Maintenance Solution already exists, the script will be halted.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -ReplaceExisting -CleanupTime 72 -LogToTable \r\n-Solution \"Backup\" -BackupLocation \"Z:\\SQLBackup\" -InstallJobs\r\n\r\n\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation \"Z:\\SQLBackup\" -CleanupTime 72\r\n\r\nThis will create the Ola Hallengren\u0027s Solution objects. Existing objects are not affected in any way.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation \"Z:\\SQLBackup\" -CleanupTime \r\n72 -ReplaceExisting\r\n\r\nThis will drop and then recreate the Ola Hallengren\u0027s Solution objects\r\nThe cleanup script will drop and recreate:\r\n    - TABLE [dbo].[CommandLog]\r\n    - STORED PROCEDURE [dbo].[CommandExecute]\r\n    - STORED PROCEDURE [dbo].[DatabaseBackup]\r\n    - STORED PROCEDURE [dbo].[DatabaseIntegrityCheck]\r\n    - STORED PROCEDURE [dbo].[IndexOptimize]\r\n\r\nThe follwing SQL Agent jobs will be deleted:\r\n    - \u0027Output File Cleanup\u0027\r\n    - \u0027IndexOptimize - USER_DATABASES\u0027\r\n    - \u0027sp_delete_backuphistory\u0027\r\n    - \u0027DatabaseBackup - USER_DATABASES - LOG\u0027\r\n    - \u0027DatabaseBackup - SYSTEM_DATABASES - FULL\u0027\r\n    - \u0027DatabaseBackup - USER_DATABASES - FULL\u0027\r\n    - \u0027sp_purge_jobhistory\u0027\r\n    - \u0027DatabaseIntegrityCheck - SYSTEM_DATABASES\u0027\r\n    - \u0027CommandLog Cleanup\u0027\r\n    - \u0027DatabaseIntegrityCheck - USER_DATABASES\u0027\r\n    - \u0027DatabaseBackup - USER_DATABASES - DIFF\u0027\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Install-DbaWatchUpdate",
@@ -2081,7 +2083,11 @@
     {
         "CommandName":  "Invoke-DbaLogShippingRecovery",
         "Description":  "By default all the databases for a particular instance are recovered.\nIf the database is in the right state, either standby or recovering, the process will try to recover the database.\n\nAt first the function will check if the backup source directory can still be reached.\nIf so it will look up the last transaction log backup for the database. If that backup file is not the last copied file the log shipping copy job will be started.\nIf the directory cannot be reached for the function will continue to the restoring process.\nAfter the copy job check is performed the job is disabled to prevent the job to run.\n\nFor the restore the log shipping status is checked in the msdb database.\nIf the last restored file is not the same as the last file name found, the log shipping restore job will be executed.\nAfter the restore job check is performed the job is disabled to prevent the job to run\n\nThe last part is to set the databse online by restoring the databases with recovery",
-        "Author":  "Sander Stad (@sqlstad), sqlstad.nl",
+        "Tags":  [
+                     "Log Shipping",
+                     "Recovery"
+                 ],
+        "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
         "Synopsis":  "Invoke-DbaLogShippingRecovery recovers log shipped databases to a normal state to act upon a migration or disaster.",
         "Name":  "Invoke-DbaLogShippingRecovery",
         "Links":  "https://dbatools.io/Invoke-DbaLogShippingRecovery",
@@ -2816,12 +2822,13 @@
     },
     {
         "CommandName":  "Set-DbaMaxDop",
-        "Description":  "Uses the Test-DbaMaxDop command to get the recommended value if -MaxDop parameter is not specified.\n\nThese are just general recommendations for SQL Server and are a good starting point for setting the \"max degree of parallelism\" option.\nYou can set MaxDop database scoped configurations if the server is version 2016.\n\nTHIS CODE IS PROVIDED \"AS IS\", WITH NO WARRANTIES.",
+        "Description":  "Uses the Test-DbaMaxDop command to get the recommended value if -MaxDop parameter is not specified.\n\nThese are just general recommendations for SQL Server and are a good starting point for setting the \"max degree of parallelism\" option.\n\nYou can set MaxDop database scoped configurations if the server is version 2016 or higher",
+        "Tags":  "",
         "Author":  "Claudio Silva (@claudioessilva)",
-        "Synopsis":  "Sets SQL Server max dop then displays information relating to SQL Server Max DOP configuration settings. Works on SQL Server 2005-2016.",
+        "Synopsis":  "Sets SQL Server maximum degree of parallelism (Max DOP), then displays information relating to SQL Server Max DOP configuration settings. Works on SQL Server 2005 and higher.",
         "Name":  "Set-DbaMaxDop",
         "Links":  "https://dbatools.io/Set-DbaMaxDop",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxDop -SqlInstance sql2008, sql2012\r\n\r\nSet recommended Max DOP setting for servers sql2008 and sql2012.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxDop -SqlInstance sql2014 -MaxDop 4\r\n\r\nSet Max DOP setting to 4 for server sql2014.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaMaxDop -SqlInstance sql2008 | Set-DbaMaxDop\r\n\r\nGet Max DOP recommended setting from Test-DbaMaxDop and applies to sql2008 instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxDop -SqlInstance sql2016 -Database db1\r\n\r\nSet recommended Max DOP setting database db1 on server sql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxDop -SqlInstance sql2016 -AllDatabases\r\n\r\nSet recommended Max DOP setting for all databases on server sql2016.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxDop -SqlInstance sql2008, sql2012\r\n\r\nSets Max DOP to the recommended value for servers sql2008 and sql2012.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxDop -SqlInstance sql2014 -MaxDop 4\r\n\r\nSets Max DOP to 4 for server sql2014.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaMaxDop -SqlInstance sql2008 | Set-DbaMaxDop\r\n\r\nGets the recommended Max DOP from Test-DbaMaxDop and applies it to to sql2008.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxDop -SqlInstance sql2016 -Database db1\r\n\r\nSet recommended Max DOP for database db1 on server sql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxDop -SqlInstance sql2016 -AllDatabases\r\n\r\nSet recommended Max DOP for all databases on server sql2016.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-DbaMaxMemory",
@@ -3028,7 +3035,10 @@
     {
         "CommandName":  "Test-DbaConnectionAuthScheme",
         "Description":  "By default, this command will return the ConnectName, ServerName, Transport and AuthScheme of the current connection.\n\nConnectName is the name you used to connect. ServerName is the name that the SQL Server reports as its @@SERVERNAME which is used to register its SPN. If you were expecting a Kerberos connection and got NTLM instead, ensure ConnectName and ServerName match. \n\nIf -Kerberos or -Ntlm is specified, the $true/$false results of the test will be returned. Returns $true or $false by default for one server. Returns Server name and Results for more than one server.",
-        "Tags":  "SPN",
+        "Tags":  [
+                     "SPN",
+                     "Kerberos"
+                 ],
         "Synopsis":  "Returns the transport protocol and authentication scheme of the connection. This is useful to determine if your connection is using Kerberos.",
         "Name":  "Test-DbaConnectionAuthScheme",
         "Links":  "https://dbatools.io/Test-DbaConnectionAuthScheme",
@@ -3100,7 +3110,7 @@
     },
     {
         "CommandName":  "Test-DbaFullRecoveryModel",
-        "Description":  "When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain.\nThis state is also known as \u0027pseudo-Simple\u0027.\n\nInspired by Paul Randal\u0027s post (http://www.sqlskills.com/blogs/paul/new-script-is-that-database-really-in-the-full-recovery-mode/)",
+        "Description":  "When you switch a database into FULL recovery model, it will behave like a SIMPLE recovery model until a full backup is taken in order to begin a log backup chain. This state is also known as \u0027pseudo-Simple\u0027.\n\nInspired by Paul Randal\u0027s post (http://www.sqlskills.com/blogs/paul/new-script-is-that-database-really-in-the-full-recovery-mode/)",
         "Tags":  [
                      "DisasterRecovery",
                      "Backup"
@@ -3109,7 +3119,7 @@
         "Synopsis":  "Find if database is really in the Full recovery model or not.",
         "Name":  "Test-DbaFullRecoveryModel",
         "Links":  "https://dbatools.io/Test-DbaFullRecoveryModel",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaFullRecoveryModel -SqlInstance sql2005\r\n\r\nShows all databases which actual configured recovery model is FULL and says if they are really in FULL recovery model \r\nor not\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaFullRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne \"FULL\"}\r\n\r\nOnly shows the databases that are in \u0027pseudo-simple\u0027 mode.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaFullRecoveryModel -SqlInstance sql2008 | Sort-Object Server, ActualRecoveryModel -Descending\r\n\r\nShows all databases which actual configured recovery model is FULL and says if they are really in FULL recovery model \r\nor not. Will show in first place the ones that are in \u0027pseudo-simple\u0027 mode.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaFullRecoveryModel -SqlInstance sql2005\r\n\r\nShows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL \r\nrecovery model.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaFullRecoveryModel -SqlInstance . | Where-Object {$_.ActualRecoveryModel -ne \"FULL\"}\r\n\r\nOnly shows the databases that are in \u0027pseudo-simple\u0027 mode.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaFullRecoveryModel -SqlInstance sql2008 | Sort-Object Server, ActualRecoveryModel -Descending\r\n\r\nShows all databases where the configured recovery model is FULL and indicates whether or not they are really in FULL \r\nrecovery model. The Sort-Object will cause the databases in \u0027pseudo-simple\u0027 mode to show first.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaIdentityUsage",
@@ -3137,7 +3147,7 @@
     },
     {
         "CommandName":  "Test-DbaLastBackup",
-        "Description":  "Restores all or some of the latest backups and performs a DBCC CHECKDB\n\n1. Gathers information about the last full backups\n2. Restores the backps to the Destination with a new name. If no Destination is specified, the originating SqlServer wil be used.\n3. The database is restored as \"dbatools-testrestore-$databaseName\" by default, but you can change dbatools-testrestore to whatever you would like using -Prefix\n4. The internal file names are also renamed to prevent conflicts with original database\n5. A DBCC CHECKDB is then performed\n6. And the test database is finally dropped",
+        "Description":  "Restores all or some of the latest backups and performs a DBCC CHECKDB\n\n1. Gathers information about the last full backups\n2. Restores the backups to the Destination with a new name. If no Destination is specified, the originating SqlServer wil be used.\n3. The database is restored as \"dbatools-testrestore-$databaseName\" by default, but you can change dbatools-testrestore to whatever you would like using -Prefix\n4. The internal file names are also renamed to prevent conflicts with original database\n5. A DBCC CHECKDB is then performed\n6. And the test database is finally dropped",
         "Tags":  [
                      "DisasterRecovery",
                      "Backup",
@@ -3225,11 +3235,14 @@
     {
         "CommandName":  "Test-DbaServerName",
         "Description":  "When a SQL Server\u0027s host OS is renamed, the SQL Server should be as well. This helps with Availability Groups and Kerberos.\n\nThis command helps determine if your OS and SQL Server names match, and whether a rename is required.\n\nIt then checks conditions that would prevent a rename, such as database mirroring and replication.\n\nhttps://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/",
-        "Tags":  "SPN",
+        "Tags":  [
+                     "SPN",
+                     "ServerName"
+                 ],
         "Synopsis":  "Tests to see if it\u0027s possible to easily rename the server at the SQL Server instance level, or if it even needs to be changed.",
         "Name":  "Test-DbaServerName",
         "Links":  "https://dbatools.io/Test-DbaServerName",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaServerName -SqlInstance sqlserver2014a\r\n\r\nReturns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaServerName -SqlInstance sqlserver2014a, sql2016\r\n\r\nReturns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaServerName -SqlInstance sqlserver2014a, sql2016 -Detailed\r\n\r\nReturns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.\r\n\r\nIf a Rename is required, it will also show Updatable, and Reasons if the servername is not updatable.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaServerName -SqlInstance sqlserver2014a\r\n\r\nReturns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaServerName -SqlInstance sqlserver2014a, sql2016\r\n\r\nReturns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaServerName -SqlInstance sqlserver2014a, sql2016 -ExcludeSsrs\r\n\r\nReturns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016, but skips \r\nvalidating if SSRS is installed on both instances.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaServerName -SqlInstance sqlserver2014a, sql2016 -Detailed\r\n\r\nReturns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.\r\n\r\nIf a Rename is required, it will also show Updatable, and Reasons if the servername is not updatable.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaSpn",

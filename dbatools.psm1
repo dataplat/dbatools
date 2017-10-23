@@ -238,7 +238,7 @@ foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1
 # All exported functions - 600ms
 foreach ($function in (Get-ChildItem "$script:PSModuleRoot\functions\*.ps1")) {
 	if ($script:doDotSource) { . $function.FullName }
-	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null) }
+	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function, [System.Text.Encoding]::UTF8))), $null, $null) }
 }
 
 # Run all optional code
@@ -501,12 +501,12 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMDEwMTMyNjA1WjAj
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMDE5MTMxMjE2WjAj
 # BgkqhkiG9w0BCQQxFgQUApjnsF8n8IxuJx9ct0SQmqXG8q0wDQYJKoZIhvcNAQEB
-# BQAEggEAnPL159WlzB2nR1xkubYCZrNroNnpgx4ILhlXtlh7QJiyCY18WMO72cUU
-# pUMycgPMDqgHWu+9pfgJR8bTRggGuXahpjmZaocG+x7jxVov5KZK6lCH7c5Zfnqi
-# L+7w2kRrRKOH1Km+RpxCVDUq/EmSViz320SgxlTW9yG4OhfzBrf1TdHtyZIJQjOQ
-# dUn9nb3ODszbvgUD6R0VrnZHJrlWW6BhkIwgiaky5fo5ot83JgyCkufFcEmhY1Yh
-# hDp6C9V8y/lyzK4jgF4MMnjscUqLuAjzYvwppP0hi37OtbJA6VbvWOrph7LRJeeL
-# GEdT7lNepdRzM88WIdILUwOz6iAeZA==
+# BQAEggEAScKeBOvz5lfkUwNYQd6of44Cc+QhxbUwj88VoKWvKd0s4h6noJOkxaan
+# qIwulQjYWyuHH0yK+HdsNOL9SyPWZor702rwJR6A8vnHcFcQf6bXx0qi1zO/AzHj
+# AXrb8fs8u7AkwS3eGIZxMZKkcqxtHDCng2pA/WfH/KLASORFe6T/C1ppzUyb58ms
+# eAd6fb5C6HkWNl32a/gp4jLiG0htZGkF5bX0Jcwc9SehCb5h8PyadXuzP4d0Uxwt
+# VJnGTRE9q4kHq7YlSdg1v6DmKHy97p2Fqm98m5J+D6oFZhx/QvENdFExBj1djZ0K
+# ZJPVXoH0spwBl2ytHZ0vkdMosMjapw==
 # SIG # End signature block

@@ -18,9 +18,11 @@ function Disable-DbaTraceFlag {
 	.PARAMETER TraceFlag
 		Trace flag number to enable globally
 	
-	.PARAMETER Silent 
-		Use this switch to disable any kind of verbose messages (this is required)
-
+	.PARAMETER EnableException 
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 	.NOTES 
 		Tags: TraceFlag
 		Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
@@ -44,7 +46,7 @@ function Disable-DbaTraceFlag {
 		[PSCredential]$SqlCredential,
 		[parameter(Mandatory)]
 		[int[]]$TraceFlag,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {
@@ -58,30 +60,38 @@ function Disable-DbaTraceFlag {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$current = Get-DbaTraceFlag -SqlInstance $server
+			$current = Get-DbaTraceFlag -SqlInstance $server -EnableException
 			
 			foreach ($tf in $TraceFlag) {
-				
+				$TraceFlagInfo = [pscustomobject]@{
+					SourceServer    = $server.NetName
+					InstanceName 	= $server.ServiceName
+					SqlInstance 	= $server.DomainInstanceName
+					TraceFlag	    = $tf
+					Status          = $null
+					Notes           = $null
+					DateTime        = [DbaDateTime](Get-Date)
+				}
 				if ($tf -notin $current.TraceFlag) {
-					Write-Message -Level Warning -Message "Trace Flag is $tf not currently enabled on $instance"
+					$TraceFlagInfo.Status = 'Skipped'
+					$TraceFlagInfo.Notes = "Trace Flag is not running."
+					$TraceFlagInfo
+					Write-Message -Level Warning -Message "Trace Flag $tf is not currently running on $instance"
 					continue
 				}
 				
 				try {
 					$query = "DBCC TRACEOFF ($tf, -1)"
 					$server.Query($query)
-					
-					[pscustomobject]@{
-						ComputerName	 = $server.NetName
-						InstanceName	 = $server.ServiceName
-						SqlInstance	     = $server.DomainInstanceName
-						TraceFlag	     = $tf
-						Status		     = "Disabled"
-					}
 				}
 				catch {
+					$TraceFlagInfo.Status = "Failed"
+					$TraceFlagInfo.Notes = $_.Exception.Message
+					$TraceFlagInfo
 					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
 				}
+				$TraceFlagInfo.Status = "Successful"
+				$TraceFlagInfo
 			}
 		}
 	}

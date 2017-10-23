@@ -63,9 +63,11 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
 It will also remove the any present schedules with the same name for the specific job.
@@ -127,7 +129,7 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
 		[ValidateNotNullOrEmpty()]
 		[string]$RestoreJob,
 
-		[switch]$Silent,
+		[switch][Alias('Silent')]$EnableException,
 
 		[switch]$Force
 	)
@@ -138,7 +140,7 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
 		$ServerSecondary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
 	catch {
-		Stop-Function -Message "Could not connect to Sql Server instance"  -InnerErrorRecord $_ -Target $SqlInstance -Continue
+		Stop-Function -Message "Could not connect to Sql Server instance"  -ErrorRecord $_ -Target $SqlInstance -Continue
 	}
 
 	# Try connecting to the instance
@@ -147,7 +149,7 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
 		$ServerPrimary = Connect-SqlInstance -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
 	}
 	catch {
-		Stop-Function -Message "Could not connect to Sql Server instance"  -InnerErrorRecord $_ -Target $PrimaryServer -Continue
+		Stop-Function -Message "Could not connect to Sql Server instance"  -ErrorRecord $_ -Target $PrimaryServer -Continue
 	}
 
 	# Check if the backup UNC path is correct and reachable
@@ -202,7 +204,7 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
         DECLARE @LS_Secondary__CopyJobId AS uniqueidentifier
         DECLARE @LS_Secondary__RestoreJobId	AS uniqueidentifier
         DECLARE @LS_Secondary__SecondaryId AS uniqueidentifier 
-        EXEC master.dbo.sp_add_log_shipping_secondary_primary 
+        EXEC master.sys.sp_add_log_shipping_secondary_primary 
                 @primary_server = N'$PrimaryServer' 
                 ,@primary_database = N'$PrimaryDatabase' 
                 ,@backup_source_directory = N'$BackupSourceDirectory' 
@@ -241,8 +243,8 @@ New-DbaLogShippingSecondaryPrimary -SqlInstance sql2 -BackupSourceDirectory "\\s
 			$ServerSecondary.Query($Query)
 		}
 		catch {
-			Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)"  -InnerErrorRecord $_ -Target $SqlInstance -Continue
-			return
+			Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
+			Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)"  -ErrorRecord $_ -Target $SqlInstance -Continue
 		}
 	}
 

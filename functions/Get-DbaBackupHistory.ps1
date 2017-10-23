@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Get-DbaBackupHistory {
 	<#
@@ -60,10 +60,11 @@ function Get-DbaBackupHistory {
 	.PARAMETER LastLsn
 		Internal parameter: filter out backup history with last_lsn greater than this value (this helps speed up the retrieval process without resorting to process the full history)
 	
-	.PARAMETER Silent
-		Replaces user friendly yellow warnings with bloody red exceptions of doom!
-		Use this if you want the function to throw terminating errors you want to catch.
-	
+	.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 	.EXAMPLE
 		Get-DbaBackupHistory -SqlInstance SqlInstance2014a
 		
@@ -78,7 +79,7 @@ function Get-DbaBackupHistory {
 	.EXAMPLE
 		Get-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since '7/1/2016 10:47:00'
 		
-		Returns backup information only for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.
+		Returns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.
 	
 	.EXAMPLE
 		Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table
@@ -124,12 +125,7 @@ function Get-DbaBackupHistory {
 		Tags: Storage, DisasterRecovery, Backup
 		dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 		Copyright (C) 2016 Chrissy LeMaire
-		
-		This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-		
-		This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-		
-		You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0	
 	
 	.LINK
 		https://dbatools.io/Get-DbaBackupHistory
@@ -193,7 +189,7 @@ function Get-DbaBackupHistory {
 		[string[]]$Type,
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	
 	begin {

@@ -24,17 +24,18 @@ Function Get-DbaSqlService {
 	.PARAMETER ServiceName
 	Can be used to specify service names explicitly, without looking for service types/instances.
 
-	.PARAMETER Silent
-	Use this switch to disable any kind of verbose messages
+	.PARAMETER EnableException
+	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+	This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 	
 	.NOTES
+	Tags:
 	Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
 	dbatools PowerShell module (https://dbatools.io)
 	Copyright (C) 2016 Chrissy LeMaire
-	This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.LINK
 	https://dbatools.io/Get-DbaSqlService
@@ -84,7 +85,7 @@ Function Get-DbaSqlService {
 		[string[]]$Type,
 		[Parameter(ParameterSetName = "ServiceName")]
 		[string[]]$ServiceName,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	BEGIN {
@@ -132,7 +133,7 @@ Function Get-DbaSqlService {
 			if ($Server.ComputerName) {
 				$Computer = $server.ComputerName
 				Write-Message -Level VeryVerbose -Message "Getting SQL Server namespace on $Computer" -Target $Computer
-				try { $namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -Silent -Credential $credential | Sort-Object Name -Descending }
+				try { $namespaces = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select Name FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -EnableException -Credential $credential | Sort-Object Name -Descending }
 				catch { }
 				if ($namespaces) {
 					$servicesTemp = @()
@@ -140,23 +141,23 @@ Function Get-DbaSqlService {
 					ForEach ($namespace in $namespaces) {
 						try {
 							Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer." -Target $Computer
-							foreach ($service in (Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\$($namespace.Name)" -Query "SELECT * FROM SqlService WHERE $searchClause" -Silent -Credential $credential)) {
+							foreach ($service in (Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\$($namespace.Name)" -Query "SELECT * FROM SqlService WHERE $searchClause" -EnableException -Credential $credential)) {
 								$servicesTemp += New-Object PSObject -Property @{
-									Name  = $service.ServiceName
+									Name      = $service.ServiceName
 									Namespace = $namespace.Name
-									Service = $service
+									Service   = $service
 								}
 							}
 						}
 						catch {
-							Write-Message -Level Verbose -Silent $Silent -Message "Failed to acquire services from namespace $($namespace.Name)." -Target $Computer
+							Write-Message -Level Verbose -EnableException $EnableException -Message "Failed to acquire services from namespace $($namespace.Name)." -Target $Computer
 						}
 					}
 					
 					$services = ($servicesTemp | Group-Object Name | ForEach-Object { $_.Group | Sort-Object Namespace -Descending | Select-Object -First 1 }).Service
 					
 					if ($services) {
-						Write-Message -Level Verbose -Silent $Silent -Message "Creating output objects"
+						Write-Message -Level Verbose -EnableException $EnableException -Message "Creating output objects"
 						ForEach ($service in $services) {
 							Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ComputerName -Value $service.HostName
 							Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceType -Value ($ServiceIdMap | Where-Object { $_.Id -contains $service.SQLServiceType }).Name
@@ -204,7 +205,7 @@ Function Get-DbaSqlService {
 									)
 									$supportedModes = @("Automatic", "Manual", "Disabled")
 									if ($Mode -notin $supportedModes) { 
-										Stop-Function -Message ("Incorrect mode '$Mode'. Use one of the following values: {0}" -f ($supportedModes -join ' | ')) -Silent $false -FunctionName 'Get-DbaSqlService'
+										Stop-Function -Message ("Incorrect mode '$Mode'. Use one of the following values: {0}" -f ($supportedModes -join ' | ')) -EnableException $false -FunctionName 'Get-DbaSqlService'
 										Return
 									}
 									Set-ServiceStartMode -ServiceCollection $this -Mode $Mode -ErrorAction Stop
@@ -215,15 +216,15 @@ Function Get-DbaSqlService {
 						}
 					}
 					else {
-						Stop-Function -Silent $Silent -Message "No Sql Services found on $Computer" -Continue
+						Stop-Function -EnableException $EnableException -Message "No Sql Services found on $Computer" -Continue
 					}
 				}
 				else {
-					Stop-Function -Silent $Silent -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up." -Continue
+					Stop-Function -EnableException $EnableException -Message "No ComputerManagement Namespace on $Computer. Please note that this function is available from SQL 2005 up." -Continue
 				}
 			}
 			else {
-				Stop-Function -Silent $Silent -Message "Failed to connect to $Computer" -Continue
+				Stop-Function -EnableException $EnableException -Message "Failed to connect to $Computer" -Continue
 			}
 		}
 	}

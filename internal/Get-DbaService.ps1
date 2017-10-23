@@ -1,4 +1,4 @@
-﻿function Get-DbaService {
+function Get-DbaService {
 <#
 	.SYNOPSIS
 		Uses WMI/CIM to scan for the existance of a specific windows services.
@@ -23,10 +23,11 @@
 	.PARAMETER DoNotUse
 		Connection Protocols that should not be used when retrieving the information.
 	
-	.PARAMETER Silent
-	    Replaces user friendly yellow warnings with bloody red exceptions of doom!
-	    Use this if you want the function to throw terminating errors you want to catch.
-	
+	.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 	.EXAMPLE
 		Get-DbaService -Name LanmanServer
 	
@@ -62,7 +63,7 @@
 		$DoNotUse,
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	
 	begin {
@@ -79,8 +80,8 @@
 			foreach ($serviceName in $Name) {
 				Write-Message -Level Verbose -Message "Searching for services with name: $serviceName" -Target $computer.ComputerName
 				try {
-					if (Test-Bound "Credential") { Get-DbaCmObject -Query "SELECT * FROM Win32_Service WHERE Name LIKE '$serviceName'" -ComputerName $computer.ComputerName -Credential $Credential -Silent -DoNotUse $DoNotUse }
-					else { Get-DbaCmObject -Query "SELECT * FROM Win32_Service WHERE Name LIKE '$serviceName'" -ComputerName $computer.ComputerName -Silent -DoNotUse $DoNotUse }
+					if (Test-Bound "Credential") { Get-DbaCmObject -Query "SELECT * FROM Win32_Service WHERE Name LIKE '$serviceName'" -ComputerName $computer.ComputerName -Credential $Credential -EnableException -DoNotUse $DoNotUse }
+					else { Get-DbaCmObject -Query "SELECT * FROM Win32_Service WHERE Name LIKE '$serviceName'" -ComputerName $computer.ComputerName -EnableException -DoNotUse $DoNotUse }
 				}
 				catch {
 					if ($_.CategoryInfo.Category -eq "OpenError") {
@@ -95,8 +96,8 @@
 			foreach ($serviceDisplayName in $DisplayName) {
 				Write-Message -Level Verbose -Message "Searching for services with display name: $serviceDisplayName" -Target $computer.ComputerName
 				try {
-					if (Test-Bound "Credential") { Get-DbaCmObject -Query "SELECT * FROM Win32_Service WHERE DisplayName LIKE '$serviceDisplayName'" -ComputerName $computer.ComputerName -Credential $Credential -Silent -DoNotUse $DoNotUse }
-					else { Get-DbaCmObject -Query "SELECT * FROM Win32_Service WHERE DisplayName LIKE '$serviceDisplayName'" -ComputerName $computer.ComputerName -Silent -DoNotUse $DoNotUse }
+					if (Test-Bound "Credential") { Get-DbaCmObject -Query "SELECT * FROM Win32_Service WHERE DisplayName LIKE '$serviceDisplayName'" -ComputerName $computer.ComputerName -Credential $Credential -EnableException -DoNotUse $DoNotUse }
+					else { Get-DbaCmObject -Query "SELECT * FROM Win32_Service WHERE DisplayName LIKE '$serviceDisplayName'" -ComputerName $computer.ComputerName -EnableException -DoNotUse $DoNotUse }
 				}
 				catch {
 					if ($_.CategoryInfo.Category -eq "OpenError") {

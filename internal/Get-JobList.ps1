@@ -14,8 +14,11 @@ function Get-JobList {
 		Object of job steps to filter on, also supports wildcard patterns
 	.PARAMETER Not
 		Reverse results where object returned excludes filtered content.
-	.PARAMETER Silent
-		Shhhhhhh
+	.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 	.EXAMPLE
 		Get-JobList -SqlInstance sql2016
 
@@ -59,7 +62,7 @@ function Get-JobList {
 		[string[]]$JobFilter,
 		[string[]]$StepFilter,
 		[switch]$Not,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		$server= Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential

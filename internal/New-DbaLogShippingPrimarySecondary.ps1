@@ -34,9 +34,11 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES 
 Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Log shipping, primary database, secondary database
@@ -79,7 +81,7 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 		[System.Management.Automation.PSCredential]
 		$SecondarySqlCredential,
 
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	# Try connecting to the instance
@@ -102,12 +104,12 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 
 	# Check if the database is present on the source sql server
 	if ($ServerPrimary.Databases.Name -notcontains $PrimaryDatabase) {
-		Stop-Function -Message "Database $PrimaryDatabase is not available on instance $SqlInstance" -InnerErrorRecord $_ -Target $SqlInstance -Continue
+		Stop-Function -Message "Database $PrimaryDatabase is not available on instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance -Continue
 	}
 
 	# Check if the database is present on the destination sql server
 	if ($ServerSecondary.Databases.Name -notcontains $SecondaryDatabase) {
-		Stop-Function -Message "Database $SecondaryDatabase is not available on instance $SecondaryServer" -InnerErrorRecord $_ -Target $SecondaryServer -Continue
+		Stop-Function -Message "Database $SecondaryDatabase is not available on instance $SecondaryServer" -ErrorRecord $_ -Target $SecondaryServer -Continue
 	}
     
 	$Query = "SELECT primary_database FROM msdb.dbo.log_shipping_primary_databases WHERE primary_database = '$PrimaryDatabase'"
@@ -116,15 +118,15 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 		Write-Message -Message "Executing query:`n$Query" -Level Verbose
 		$Result = $ServerPrimary.Query($Query)
 		if ($Result.Count -eq 0 -or $Result[0] -ne $PrimaryDatabase) {
-			Stop-Function -Message "Database $PrimaryDatabase does not exist as log shipping primary.`nPlease run New-DbaLogShippingPrimaryDatabase first."  -InnerErrorRecord $_ -Target $SqlInstance -Continue
+			Stop-Function -Message "Database $PrimaryDatabase does not exist as log shipping primary.`nPlease run New-DbaLogShippingPrimaryDatabase first."  -ErrorRecord $_ -Target $SqlInstance -Continue
 		}
 	}
 	catch {
-		Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query" -InnerErrorRecord $_ -Target $SqlInstance -Continue
+		Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query" -ErrorRecord $_ -Target $SqlInstance -Continue
 	}
 
 	# Set the query for the log shipping primary and secondary
-	$Query = "EXEC master.dbo.sp_add_log_shipping_primary_secondary 
+	$Query = "EXEC master.sys.sp_add_log_shipping_primary_secondary 
         @primary_database = N'$PrimaryDatabase' 
         ,@secondary_server = N'$SecondaryServer' 
 		,@secondary_database = N'$SecondaryDatabase' "
@@ -144,7 +146,8 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 			$ServerPrimary.Query($Query)
 		}
 		catch {
-			Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query" -InnerErrorRecord $_ -Target $SqlInstance -Continue
+			Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
+			Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query" -ErrorRecord $_ -Target $SqlInstance -Continue
 		}
 	}
 

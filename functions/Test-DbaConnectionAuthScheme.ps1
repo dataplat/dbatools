@@ -31,8 +31,13 @@ function Test-DbaConnectionAuthScheme {
 
 			To connect as a different Windows user, run PowerShell as that user.
 
+			.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
-			Tags: SPN
+			Tags: SPN, Kerberos
 			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 			Copyright (C) 2016 Chrissy LeMaire
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -57,7 +62,6 @@ function Test-DbaConnectionAuthScheme {
 		
 	#>
 	[CmdletBinding()]
-	[OutputType("System.Collections.ArrayList")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
@@ -66,77 +70,63 @@ function Test-DbaConnectionAuthScheme {
 		[PSCredential]$SqlCredential,
 		[switch]$Kerberos,
 		[switch]$Ntlm,
-		[switch]$Detailed
+		[switch]$Detailed,
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
-		$collection = New-Object System.Collections.ArrayList
+		$sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
+        					ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
+        					SERVERPROPERTY('ServerName') AS SqlInstance,
+							session_id as SessionId, most_recent_session_id as MostRecentSessionId, connect_time as ConnectTime,
+							net_transport as Transport, protocol_type as ProtocolType, protocol_version as ProtocolVersion,
+							endpoint_id as EndpointId, encrypt_option as EncryptOption, auth_scheme as AuthScheme, node_affinity as NodeAffinity,
+							num_reads as NumReads, num_writes as NumWrites, last_read as LastRead, last_write as LastWrite,
+							net_packet_size as PacketSize, client_net_address as ClientNetworkAddress, client_tcp_port as ClientTcpPort, 
+							local_net_address as ServerNetworkAddress, local_tcp_port as ServerTcpPort, connection_id as ConnectionId, 
+							parent_connection_id as ParentConnectionId, most_recent_sql_handle as MostRecentSqlHandle
+							from sys.dm_exec_connections WHERE session_id = @@SPID"
 	}
 	
 	process {
-		foreach ($servername in $SqlInstance) {
+		foreach ($instance in $SqlInstance) {
+			
 			try {
-				Write-Message -Level Verbose -Message  "Connecting to $servername."
-				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
-				
-				if ($server.versionMajor -lt 9) {
-					Write-Message -Level Warning -Message  "This command only supports SQL Server 2005 and above. Skipping $servername and moving on."
-					continue
-				}
-				
-				if ($detailed -eq $true) {
-					$sql = "SELECT @@SERVERNAME AS ServerName, * from sys.dm_exec_connections WHERE session_id = @@SPID"
-				}
-				else {
-					$sql = "SELECT @@SERVERNAME AS ServerName, net_transport, auth_scheme from sys.dm_exec_connections WHERE session_id = @@SPID"
-				}
-				
-				Write-Message -Level Verbose -Message  "Getting results for the following query: $sql."
-				$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
 			}
 			catch {
-				Write-Message -Level Warning -Message  "$_ `nMoving on."
-				continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			if ($detailed -eq $true) {
-				$null = $collection.Add($results.rows)
+			Write-Message -Level Verbose -Message "Getting results for the following query: $sql."
+			try {
+				$results = $server.Query($sql)
 			}
-			else {
-				$null = $collection.Add([PSCustomObject]@{
-						ConnectName = $servername
-						ServerName  = $results.ServerName
-						Transport   = $results.net_transport
-						AuthScheme  = $results.auth_scheme
-					})
+			catch {
+				Stop-Function -Message "Failure" -Target $server -Exception $_ -Continue
 			}
-		}
-	}
-	
-	end {
-		
-		if ($Detailed -eq $true -or ($Kerberos -eq $false -and $Ntlm -eq $false)) {
-			return $collection
-		}
-		
-		# Check if they specified auths
-		$auths = 'Kerberos', 'NTLM'
-		foreach ($auth in $auths) {
-			$value = (Get-Variable -Name $auth).Value
 			
-			if ($value -eq $true) {
-				if ($collection.Count -eq 1) {
-					return ($collection.AuthScheme -eq $auth)
+			# sorry, standards!
+			if ($Kerberos -or $Ntlm) {
+				if ($Ntlm) {
+					$auth = 'NTLM'
 				}
 				else {
-					$newcollection = @()
-					foreach ($server in $collection) {
-						$newcollection += [PSCustomObject]@{
-							Server = $server.ConnectName
-							Result = ($server.AuthScheme -eq $auth)
-						}
-					}
-					return $newcollection
+					$auth = 'Kerberos'
+				}
+				[PSCustomObject]@{
+					ComputerName    = $results.ComputerName
+					InstanceName    = $results.InstanceName
+					SqlInstance	    = $results.SqlInstance
+					Result		    = ($server.AuthScheme -eq $auth)
+				} | Select-DefaultView -Property SqlInstance, Result
+			}
+			else {
+				if ($detailed) {
+					$results
+				}
+				else {
+					Select-DefaultView -InputObject $results -Property ComputerName, InstanceName, SqlInstance, Transport, AuthScheme
 				}
 			}
 		}

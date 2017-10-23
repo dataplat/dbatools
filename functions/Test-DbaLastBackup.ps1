@@ -7,7 +7,7 @@ Quickly and easily tests the last set of full backups for a server
 Restores all or some of the latest backups and performs a DBCC CHECKDB
 
 1. Gathers information about the last full backups
-2. Restores the backps to the Destination with a new name. If no Destination is specified, the originating SqlServer wil be used.
+2. Restores the backups to the Destination with a new name. If no Destination is specified, the originating SqlServer wil be used.
 3. The database is restored as "dbatools-testrestore-$databaseName" by default, but you can change dbatools-testrestore to whatever you would like using -Prefix
 4. The internal file names are also renamed to prevent conflicts with original database
 5. A DBCC CHECKDB is then performed
@@ -88,9 +88,11 @@ Are you sure you want to perform this action?
 Performing the operation "Restoring model as dbatools-testrestore-model" on target "SQL2016\VNEXT".
 [Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
 	
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException 
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
 
@@ -161,7 +163,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 		[switch]$IncludeCopyOnly,
 		[switch]$IgnoreLogBackup,
 		[string]$AzureCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {
