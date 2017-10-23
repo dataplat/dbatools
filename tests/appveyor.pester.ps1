@@ -55,9 +55,10 @@ function Get-CoverageIndications($Path, $ModuleBase) {
 	$everything = (Get-Module dbatools).ExportedCommands.Values
 	$everyfunction = $everything.Name
 	$funcs = @()
-	# assuming Get-DbaFoo.Tests.ps1 wants coverage for "Get-DbaFoo"
 	$leaf = Split-Path $path -Leaf
-	$func_name += $leaf.Replace('.Tests.ps1', '')
+	# assuming Get-DbaFoo.Tests.ps1 wants coverage for "Get-DbaFoo"
+	# but allowing also Get-DbaFoo.one.Tests.ps1 and Get-DbaFoo.two.Tests.ps1
+	$func_name += ($leaf -replace '^([^.]+)(.+)?.Tests.ps1', '$1')
 	if ($func_name -in $everyfunction) {
 		$funcs += $func_name
 		$f = $everything | Where-Object Name -eq $func_name
@@ -162,11 +163,11 @@ if (-not $Finalize) {
 	# Invoke pester.groups.ps1 to know which tests to run
 	. "$ModuleBase\tests\pester.groups.ps1"
 	# retrieve all .Tests.
-	$AllDbatoolsTests = Get-ChildItem -File -Path $ModuleBase\tests\*.Tests.ps1
+	$AllDbatoolsTests = Get-ChildItem -File -Path "$ModuleBase\tests\*.Tests.ps1"
 	# exclude "disabled"
-	$AllTests = $AllDbatoolsTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -notin $TestsRunGroups['disabled'] }
+	$AllTests = $AllDbatoolsTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['disabled'] }
 	# only in appveyor, disable uncooperative tests
-	$AllTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -notin $TestsRunGroups['appveyor_disabled'] }
+	$AllTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TestsRunGroups['appveyor_disabled'] }
 
 	# Inspect special words
 	$TestsToRunMessage = "$($env:APPVEYOR_REPO_COMMIT_MESSAGE) $($env:APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED)"
@@ -175,8 +176,8 @@ if (-not $Finalize) {
 	if ($TestsToRunMatch.Length -gt 0) {
 		$TestsToRun = "*$TestsToRunMatch*"
 		$AllTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -like $TestsToRun }
-		Write-Host -ForegroundColor DarkGreen "Commit message: Reduced to $($AllTests.Length) out of $($AllDbatoolsTests.Length) tests"
-		if ($AllTests.Length -eq 0) {
+		Write-Host -ForegroundColor DarkGreen "Commit message: Reduced to $($AllTests.Count) out of $($AllDbatoolsTests.Count) tests"
+		if ($AllTests.Count -eq 0) {
 			throw "something went wrong, nothing to test"
 		}
 	} else {
@@ -185,23 +186,68 @@ if (-not $Finalize) {
 
 
 	# do we have a scenario ?
+	# do we have a scenario ?
 	if ($env:SCENARIO) {
 		# if so, do we have a group with tests to run ?
 		if ($env:SCENARIO -in $TestsRunGroups.Keys) {
-			$AllScenarioTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -in $TestsRunGroups[$env:SCENARIO] }
+			# does this scenario run an 'autodetect' ?
+			if ($TestsRunGroups[$env:SCENARIO].StartsWith('autodetect_')[0]) {
+				# exclude any test specifically tied to a non-autodetect scenario
+				$TiedFunctions = ($TestsRunGroups.GetEnumerator() | Where-Object { $_.Value -notlike 'autodetect_*' }).Value
+				$RemainingTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TiedFunctions }
+				# and now scan for the instance string
+				$ScanFor = $TestsRunGroups[$env:SCENARIO].Replace('autodetect_', '')
+				# and exclude other instances in autodetect
+				$ExcludeScanFor = @() + ($TestsRunGroups.GetEnumerator() | Where-Object { ($_.Name -ne $env:SCENARIO) -and ($_.Value -like 'autodetect_*') }).Value.Replace('autodetect_', '')
+				$ScanTests = @()
+				foreach($test in $RemainingTests) {
+					$testcontent = Get-Content $test -Raw
+					if ($testcontent -like "*$ScanFor*") {
+						$ExcludeFlag = $false
+						foreach($exclude in $ExcludeScanFor) {
+							if ($testcontent -like "*$exclude*") {
+								$ExcludeFlag = $true
+								break
+							}
+						}
+						if (-not($ExcludeFlag)) {
+							$ScanTests += $test
+						}
+					}
+				}
+				$AllScenarioTests = $ScanTests
+			} else {
+				$AllScenarioTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -in $TestsRunGroups[$env:SCENARIO] }
+			}
 		} else {
 			$AllScenarioTests = $AllTests
 			# we have a scenario, but no specific group. Let's run any other test
-			foreach($group in $TestsRunGroups.Keys) {
-				$AllScenarioTests = $AllScenarioTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -notin $TestsRunGroups[$group] }
+			# exclude any test specifically tied to a non-autodetect scenario
+			$TiedFunctions = ($TestsRunGroups.GetEnumerator() | Where-Object { $_.Value -notlike 'autodetect_*' }).Value
+			$RemainingTests = $AllTests | Where-Object { ($_.Name -replace '^([^.]+)(.+)?.Tests.ps1', '$1') -notin $TiedFunctions }
+			# scan for all tests containing ALL autodetect strings
+			$ScanFor = @() + ($TestsRunGroups.GetEnumerator() | Where-Object { $_.Value -like 'autodetect_*' }).Value.Replace('autodetect_', '')
+			$ScanTests = @()
+			foreach($test in $RemainingTests) {
+				$FoundFlag = 0
+				$testcontent = Get-Content $test -Raw
+				foreach($Scan in $ScanFor) {
+					if ($testcontent -like "*$Scan*") {
+						$FoundFlag += 1
+					}
+				}
+				if ($FoundFlag -eq $ScanFor.Count) {
+					$ScanTests += $test
+				}
 			}
+			$AllScenarioTests = $ScanTests
 		}
 	} else {
 		$AllScenarioTests = $AllTests
 	}
 
-	Write-Host -ForegroundColor DarkGreen "Test Groups   : Reduced to $($AllScenarioTests.Length) out of $($AllDbatoolsTests.Length) tests"
-	if ($AllTests.Length -eq 0 -and $AllScenarioTests.Length -eq 0) {
+	Write-Host -ForegroundColor DarkGreen "Test Groups   : Reduced to $($AllScenarioTests.Count) out of $($AllDbatoolsTests.Count) tests"
+	if ($AllTests.Count -eq 0 -and $AllScenarioTests.Count -eq 0) {
 		throw "something went wrong, nothing to test"
 	}
 }
