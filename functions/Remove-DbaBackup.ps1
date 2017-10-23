@@ -151,12 +151,12 @@ function Remove-DbaBackup {
 	}
 	process {
 		# Process stuff
-		Write-Message -Message "Started" -Level 3 -EnableException $EnableException
-		Write-Message -Message "Removing backups from $Path" -Level 3 -EnableException $EnableException
+		Write-Message -Message "Started" -Level Significant -EnableException $EnableException
+		Write-Message -Message "Removing backups from $Path" -Level Significant -EnableException $EnableException
 		# Convert Retention Value to an actual DateTime
 		try {
 			$RetentionDate = Convert-UserFriendlyRetentionToDatetime -UserFriendlyRetention $RetentionPeriod
-			Write-Message -Message "Backup Retention Date set to $RetentionDate" -Level 5 -EnableException $EnableException
+			Write-Message -Message "Backup Retention Date set to $RetentionDate" -Level Verbose -EnableException $EnableException
 		}
 		catch {
 			Stop-Function -Message "Failed to interpret retention time!" -ErrorRecord $_
@@ -164,7 +164,7 @@ function Remove-DbaBackup {
 
 		# Filter out unarchived files if -CheckArchiveBit parameter is used
 		if ($CheckArchiveBit) {
-			Write-Message -Message "Removing only archived files." -Level 5 -EnableException $EnableException
+			Write-Message -Message "Removing only archived files." -Level Verbose -EnableException $EnableException
 			Filter DbaArchiveBitFilter {
 				If ($_.Attributes -notmatch "Archive") {
 					$_
@@ -196,10 +196,10 @@ function Remove-DbaBackup {
 		if ($EnumErrors) {
 			Write-Message "Errors encountered enumerating files." -Level Warning -ErrorRecord $EnumErrors
 		}
-		Write-Message -Message "File Cleaning ended." -Level 3 -EnableException $EnableException
+		Write-Message -Message "File Cleaning ended." -Level Significant -EnableException $EnableException
 		# Cleanup empty backup folders.
 		if ($RemoveEmptyBackupFolder) {
-			Write-Message -Message "Removing empty folders." -Level 3 -EnableException $EnableException
+			Write-Message -Message "Removing empty folders." -Level Significant -EnableException $EnableException
 			(Get-ChildItem -Directory -Path $Path -Recurse -ErrorAction SilentlyContinue -ErrorVariable EnumErrors).FullName |
 				Sort-Object -Descending |
 				Foreach-Object {
@@ -229,7 +229,7 @@ function Remove-DbaBackup {
 			if ($EnumErrors) {
 				Write-Message "Errors encountered enumerating folders." -Level Warning -ErrorRecord $EnumErrors
 			}
-			Write-Message -Message "Removed empty folders." -Level 3 -EnableException $EnableException
+			Write-Message -Message "Removed empty folders." -Level Significant -EnableException $EnableException
 		}
 	}
 }
