@@ -72,7 +72,7 @@ function Write-Message {
 			Use in cases where you already have a speaking message interpretation and do not need the original message.
 		
 		.PARAMETER Target
-			If an ErrorRecord was passed, it is possible to add the object on which the error eccoured, in order to simplify debugging / troubleshooting.
+			If an ErrorRecord was passed, it is possible to add the object on which the error occurred, in order to simplify debugging / troubleshooting.
 		
 		.EXAMPLE
 			PS C:\> Write-Message -Message 'Connecting to Database1' -Level 4 -EnableException $EnableException

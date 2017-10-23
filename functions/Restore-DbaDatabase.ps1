@@ -4,7 +4,7 @@ function Restore-DbaDatabase {
         Restores a SQL Server Database from a set of backupfiles
     
     .DESCRIPTION
-        Upon bein passed a list of potential backups files this command will scan the files, select those that contain SQL Server
+        Upon being passed a list of potential backups files this command will scan the files, select those that contain SQL Server
         backup sets. It will then filter those files down to a set that can perform the requested restore, checking that we have a
         full restore chain to the point in time requested by the caller.
         
@@ -170,7 +170,7 @@ function Restore-DbaDatabase {
         filters them and restores the database to the c:\restores folder on server1\instance1 up to 11:19 23/12/2016
     
     .EXAMPLE
-        Restore-DbaDatabase -SqlInstance server1\instance1 -Path \\server2\backups -DestinationDataDirectory c:\restores -OutputScriptOnly | Select-Object -ExpandPropert Tsql | Out-File -Filepath c:\scripts\restore.sql
+        Restore-DbaDatabase -SqlInstance server1\instance1 -Path \\server2\backups -DestinationDataDirectory c:\restores -OutputScriptOnly | Select-Object -ExpandProperty Tsql | Out-File -Filepath c:\scripts\restore.sql
         
         Scans all the backup files in \\server2\backups stored in an Ola Hallengren style folder structure,
         filters them and generate the T-SQL Scripts to restore the database to the latest point in time,
@@ -228,7 +228,7 @@ function Restore-DbaDatabase {
 		At each step, only the log files needed to roll the database forward are restored.
     
     .EXAMPLE
-        Restore-DbaDatabase -SqlInstance server\instance1 -Path c:\backups -DatabseName example1 -WithNoRecovery
+        Restore-DbaDatabase -SqlInstance server\instance1 -Path c:\backups -DatabaseName example1 -WithNoRecovery
         Restore-DbaDatabase -SqlInstance server\instance1 -Recover -DatabaseName example1
 
     .NOTES
@@ -237,12 +237,7 @@ function Restore-DbaDatabase {
         
         dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
         Copyright (C) 2016 Chrissy LeMaire
-        
-        This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-        
-        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-        
-        You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0 
 #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName="Restore")]
     param (

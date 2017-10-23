@@ -1,7 +1,6 @@
 #ValidationTags#FlowControl,Pipeline#
-Function Set-DbaSpn
-{
-<#
+Function Set-DbaSpn {
+	<#
 .SYNOPSIS
 Sets an SPN for a given service account in active directory (and also enables delegation to the same SPN by default)
 
@@ -41,9 +40,7 @@ Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
 
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Set-DbaSpn
@@ -92,46 +89,41 @@ Displays what would happen trying to set all missing SPNs for sql2016
 		[switch][Alias('Silent')]$EnableException
 	)
 	
-	process
-	{
+	process {
 		#did we find the server account?
 		Write-Message -Message "Looking for account $ServiceAccount..." -Level Verbose
 		$searchfor = 'User'
-		if($ServiceAccount.EndsWith('$')) {
+		if ($ServiceAccount.EndsWith('$')) {
 			$searchfor = 'Computer'
 		}
-		try
-		{
+		try {
 			$Result = Get-DbaADObject -ADObject $ServiceAccount -Type $searchfor -Credential $Credential -EnableException
 		}
-		catch
-		{
+		catch {
 			Stop-Function -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($ServiceAccount). $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_ -Target $ServiceAccount
 		}
-		if ($Result.Count -gt 0)
-		{
+		if ($Result.Count -gt 0) {
 			try {
 				$adentry = $Result.GetUnderlyingObject()
-			} catch {
+			}
+			catch {
 				Stop-Function -Message "The SQL Service account ($ServiceAccount) has been found, but you don't have enough permission to inspect its properties $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_ -Target $ServiceAccount
 			}
-		} else {
+		}
+		else {
 			Stop-Function -Message "The SQL Service account ($ServiceAccount) has not been found" -EnableException $EnableException -Target $ServiceAccount
 		}
 		# Cool! Add an SPN
 		$delegate = $true
-		if ($PSCmdlet.ShouldProcess("$spn", "Adding SPN to service account"))
-		{
-			try
-			{
+		if ($PSCmdlet.ShouldProcess("$spn", "Adding SPN to service account")) {
+			try {
 				$null = $adentry.Properties['serviceprincipalname'].Add($spn)
 				$status = "Successfully added SPN"
 				$adentry.CommitChanges()
 				Write-Message -Message "Added SPN $spn to $ServiceAccount" -Level Verbose
 				$set = $true
 			}
-			catch
-			{
+			catch {
 				Write-Message -Message "Could not add SPN. $($_.Exception.Message)" -Level Warning -EnableException $EnableException -ErrorRecord $_ -Target $ServiceAccount
 				$set = $false
 				$status = "Failed to add SPN"
@@ -139,44 +131,42 @@ Displays what would happen trying to set all missing SPNs for sql2016
 			}
 			
 			[pscustomobject]@{
-				Name = $spn
+				Name           = $spn
 				ServiceAccount = $ServiceAccount
-				Property = "servicePrincipalName"
-				IsSet = $set
-				Notes = $status
+				Property       = "servicePrincipalName"
+				IsSet          = $set
+				Notes          = $status
 			}
 		}
 		
 		#if we have the SPN set, we can add the delegation
 		if ($delegate) {
 			# but only if $NoDelegation is not passed
-			if(!$NoDelegation) {
-				if ($PSCmdlet.ShouldProcess("$spn", "Adding constrained delegation to service account for SPN"))
-				{
-					try
-					{
+			if (!$NoDelegation) {
+				if ($PSCmdlet.ShouldProcess("$spn", "Adding constrained delegation to service account for SPN")) {
+					try {
 						$null = $adentry.Properties['msDS-AllowedToDelegateTo'].Add($spn)
 						$adentry.CommitChanges()
 						Write-Message -Message "Added kerberos delegation to $spn for $ServiceAccount" -Level Verbose
 						$set = $true
 						$status = "Successfully added constrained delegation"
 					}
-					catch
-					{
+					catch {
 						Write-Message -Message "Could not add delegation. $($_.Exception.Message)" -Level Warning -EnableException $EnableException -ErrorRecord $_ -Target $ServiceAccount
 						$set = $false
 						$status = "Failed to add constrained delegation"
 					}
 					
 					[pscustomobject]@{
-						Name = $spn
+						Name           = $spn
 						ServiceAccount = $ServiceAccount
-						Property = "msDS-AllowedToDelegateTo"
-						IsSet = $set
-						Notes = $status
+						Property       = "msDS-AllowedToDelegateTo"
+						IsSet          = $set
+						Notes          = $status
 					}
 				}
-			} else {
+			}
+			else {
 				Write-Message -Message "Skipping delegation as instructed" -Level Verbose
 			}
 		}
