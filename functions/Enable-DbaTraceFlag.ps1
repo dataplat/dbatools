@@ -17,9 +17,11 @@ function Enable-DbaTraceFlag {
 	.PARAMETER TraceFlag
 		Trace flag number to enable globally
 	
-	.PARAMETER Silent 
-		Use this switch to disable any kind of verbose messages (this is required)
-
+	.PARAMETER EnableException 
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 	.NOTES 
 		Tags: TraceFlag
 		Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
@@ -47,7 +49,7 @@ function Enable-DbaTraceFlag {
 		[PSCredential]$SqlCredential,
 		[parameter(Mandatory)]
 		[int[]]$TraceFlag,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {
@@ -55,18 +57,30 @@ function Enable-DbaTraceFlag {
 			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$CurrentRunningTraceFlags = Get-DbaTraceFlag -SqlInstance $server
+			$CurrentRunningTraceFlags = Get-DbaTraceFlag -SqlInstance $server -EnableException
 			
 			# We could combine all trace flags but the granularity is worth it
 			foreach ($tf in $TraceFlag) {
+				$TraceFlagInfo = [pscustomobject]@{
+					SourceServer    = $server.NetName
+					InstanceName 	= $server.ServiceName
+					SqlInstance 	= $server.DomainInstanceName
+					TraceFlag	    = $tf
+					Status          = $null
+					Notes           = $null
+					DateTime        = [DbaDateTime](Get-Date)
+				}
 				If ($CurrentRunningTraceFlags.TraceFlag -contains $tf) {
-					Write-Message -Level Warning -Message "The Trace flag $tf is already running globally."
+					$TraceFlagInfo.Status = 'Skipped'
+					$TraceFlagInfo.Notes = "The Trace flag is already running."
+					$TraceFlagInfo
+					Write-Message -Level Warning -Message "The Trace flag [$tf] is already running globally."
 					continue
 				}
 				
@@ -74,11 +88,15 @@ function Enable-DbaTraceFlag {
 					$query = "DBCC TRACEON ($tf, -1)"
 					$server.Query($query)
 					$server.Refresh()
-					Get-DbaTraceFlag -SqlInstance $server -TraceFlag $TraceFlag
 				}
 				catch {
+					$TraceFlagInfo.Status = "Failed"
+					$TraceFlagInfo.Notes = $_.Exception.Message
+					$TraceFlagInfo
 					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
 				}
+				$TraceFlagInfo.Status = "Successful"
+				$TraceFlagInfo
 			}
 		}
 	}

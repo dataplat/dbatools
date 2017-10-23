@@ -18,9 +18,11 @@ Function Update-ServiceStatus {
 	.PARAMETER Action
 	Start or stop.
 
-	.PARAMETER Silent
-	Use this switch to disable any kind of verbose messages
-
+	.PARAMETER EnableException
+	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+	This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+	
 	.PARAMETER WhatIf
 	Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
@@ -29,12 +31,10 @@ Function Update-ServiceStatus {
 
 	.NOTES
 	Author: Kirill Kravtsov ( @nvarscar )
-
+	Tags: 
 	dbatools PowerShell module (https://dbatools.io)
 	Copyright (C) 2016 Chrissy LeMaire
-	This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.EXAMPLE
 	$serviceCollection = Get-DbaSqlService -ComputerName sql1
@@ -58,7 +58,7 @@ Function Update-ServiceStatus {
 		[string[]]$Action,
 		[int]$Timeout = 30,
 		[PSCredential] $Credential,
-		[bool]$Silent
+		[bool][Alias('Silent')]$EnableException
 	)
 	begin {
 		$callStack = Get-PSCallStack
@@ -162,7 +162,7 @@ Function Update-ServiceStatus {
 					}
 					else {
 						if ($Pscmdlet.ShouldProcess("Sending $action request to service $($service.ServiceName) on $($service.ComputerName)")) {
-							#Create parameters hastable
+							#Create parameters hashtable
 							$argsRunPool = @{ 
 								server     = $service.computerName
 								service    = $service.ServiceName
@@ -190,7 +190,7 @@ Function Update-ServiceStatus {
 					}
 				}
 				else {
-					Stop-Function -FunctionName $callerName -Message "Unknown object in pipeline - make sure to use Get-DbaSqlService cmdlet" -Silent $Silent
+					Stop-Function -FunctionName $callerName -Message "Unknown object in pipeline - make sure to use Get-DbaSqlService cmdlet" -EnableException $EnableException
 					Return
 				}
 			}
@@ -211,10 +211,10 @@ Function Update-ServiceStatus {
 							$thread.isRetrieved = $true
 							if ($thread.thread.HadErrors) { 
 								if (!$jobError) { $jobError = $thread.thread.Streams.Error }
-								Stop-Function -Silent $Silent -FunctionName $callerName -Message ("The attempt to $action the service $($thread.ServiceName) on $($thread.ComputerName) returned the following error: " + ($jobError.Exception.Message -join ' ')) -Category ConnectionError -ErrorRecord $thread.thread.Streams.Error -Target $thread -Continue
+								Stop-Function -EnableException $EnableException -FunctionName $callerName -Message ("The attempt to $action the service $($thread.ServiceName) on $($thread.ComputerName) returned the following error: " + ($jobError.Exception.Message -join ' ')) -Category ConnectionError -ErrorRecord $thread.thread.Streams.Error -Target $thread -Continue
 							}
 							elseif (!$jobResult) {
-								Stop-Function -Silent $Silent -FunctionName $callerName -Message ("The attempt to $action the service $($thread.ServiceName) on $($thread.ComputerName) did not return any results") -Category ConnectionError -ErrorRecord $_ -Target $thread -Continue
+								Stop-Function -EnableException $EnableException -FunctionName $callerName -Message ("The attempt to $action the service $($thread.ServiceName) on $($thread.ComputerName) did not return any results") -Category ConnectionError -ErrorRecord $_ -Target $thread -Continue
 							}
 							#Find a corresponding service object
 							$outObject = $ServiceCollection | Where-Object { $_.ServiceName -eq $thread.serviceName -and $_.ComputerName -eq $thread.computerName }

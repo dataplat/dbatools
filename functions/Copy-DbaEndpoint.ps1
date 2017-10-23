@@ -44,9 +44,11 @@ function Copy-DbaEndpoint {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
-			If this switch is enabled, the internal messaging functions will be silenced.
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.PARAMETER Force
 			If this switch is enabled, existing endpoints on Destination with matching names from Source will be dropped.
 			
@@ -90,7 +92,7 @@ function Copy-DbaEndpoint {
 		[object[]]$Endpoint,
 		[object[]]$ExcludeEndpoint,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -167,6 +169,6 @@ function Copy-DbaEndpoint {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlEndpoint
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlEndpoint
 	}
 }

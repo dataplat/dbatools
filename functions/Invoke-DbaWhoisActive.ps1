@@ -161,26 +161,16 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages or progress bars
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Tags: Memory
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Invoke-DbaWhoisActive
@@ -206,7 +196,7 @@ Invoke-DbaWhoisActive -SqlInstance sqlserver2014a -GetOuterCommand -FindBlockLea
 Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 1
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact="High")]
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias('ServerInstance', 'SqlServer')]
@@ -251,7 +241,7 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 		[switch]$ReturnSchema,
 		[string]$Schema,
 		[switch]$Help,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -348,6 +338,6 @@ Similar to running sp_WhoIsActive @get_outer_command = 1, @find_block_leaders = 
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Show-SqlWhoIsActive -CustomMessage "Show-SqlWhoIsActive is no longer supported. Use Invoke-DbaWhoIsActive | Out-GridView for similar results."
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-SqlWhoIsActive -CustomMessage "Show-SqlWhoIsActive is no longer supported. Use Invoke-DbaWhoIsActive | Out-GridView for similar results."
 	}
 }

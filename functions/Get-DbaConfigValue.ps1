@@ -1,4 +1,4 @@
-﻿function Get-DbaConfigValue
+function Get-DbaConfigValue
 {
 	<#
 		.SYNOPSIS
@@ -8,7 +8,7 @@
 			Returns the configuration value stored under the specified name.
 			It requires the full name (<Module>.<Name>) and is usually only called by functions.
 		
-		.PARAMETER Name
+		.PARAMETER FullName
 			The full name (<Module>.<Name>) of the configured value to return.
 	
 		.PARAMETER Fallback
@@ -37,9 +37,10 @@
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSPossibleIncorrectComparisonWithNull", "")]
     [CmdletBinding()]
     Param (
-        [Parameter(Mandatory = $true)]
-        [string]
-        $Name,
+		[Alias('Name')]
+		[Parameter(Mandatory = $true)]
+		[string]
+		$FullName,
         
         [object]
         $Fallback,
@@ -47,16 +48,16 @@
         [switch]
         $NotNull
     )
-    
-    $Name = $Name.ToLower()
+	
+	$FullName = $FullName.ToLower()
     
     $temp = $null
-    $temp = [Sqlcollaborative.Dbatools.Configuration.Config]::Cfg[$Name].Value
+    $temp = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$FullName].Value
     if ($temp -eq $null) { $temp = $Fallback }
     
     if ($NotNull -and ($temp -eq $null))
     {
-        Stop-Function -Message "No Configuration Value available for $Name" -Silent $false -Category InvalidData -Target $Name
+		Stop-Function -Message "No Configuration Value available for $Name" -EnableException $true -Category InvalidData -Target $FullName
     }
     else
     {

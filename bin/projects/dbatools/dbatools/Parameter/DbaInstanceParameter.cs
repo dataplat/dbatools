@@ -312,7 +312,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
                     throw;
                 }
             }
-            catch (FormatException ex)
+            catch (FormatException)
             {
                 throw;
             }

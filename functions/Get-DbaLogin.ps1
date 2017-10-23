@@ -27,9 +27,11 @@ function Get-DbaLogin {
 		.PARAMETER HasAccess
 			Filters on the SMO property to return Logins that has access to the instance of SQL Server.
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Author: Mitchell Hamann (@SirCaptainMitch)
 			Author: Klaas Vandenberghe (@powerdbaklaas)
@@ -88,7 +90,7 @@ function Get-DbaLogin {
 		[switch]$HasAccess,
 		[switch]$Locked,
 		[switch]$Disabled,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {
