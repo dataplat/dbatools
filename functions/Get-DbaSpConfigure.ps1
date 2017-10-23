@@ -1,4 +1,4 @@
-﻿FUNCTION Get-DbaSpConfigure
+FUNCTION Get-DbaSpConfigure
 {
 <#
 .SYNOPSIS

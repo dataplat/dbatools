@@ -1,4 +1,4 @@
-﻿Function Repair-DbaServerName
+Function Repair-DbaServerName
 {
 <#
 .SYNOPSIS
@@ -34,7 +34,8 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER AutoFix
 Automatically performs the fix
 
-.NOTES 
+.NOTES
+Tags: SPN
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 

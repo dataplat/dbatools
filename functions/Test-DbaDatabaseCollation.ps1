@@ -1,4 +1,4 @@
-﻿Function Test-DbaDatabaseCollation
+Function Test-DbaDatabaseCollation
 {
 <#
 .SYNOPSIS

@@ -67,7 +67,8 @@ Takes the parameters required from a login object that has been piped ot the com
 Takes a hash table that will pass to Rename-DbaLogin and update the login and mappings once the copy is completed.
 
 
-.NOTES 
+.NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 
@@ -110,7 +111,8 @@ Copy-SqlLogin -LoginRenameHashtable @{ "OldUser" ="newlogin" } -Source $Sql01 -D
 
 Copys down OldUser and then renames it to newlogin.
 
-.NOTES 
+.NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 Limitations: Does not support Application Roles yet
@@ -121,7 +123,7 @@ Limitations: Does not support Application Roles yet
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[object]$Source,
-		[parameter(ParameterSetName = "Live", Mandatory = $true)]
+		[parameter(Mandatory = $true)]
 		[object]$Destination,
 		[object]$SourceSqlCredential,
 		[object]$DestinationSqlCredential,

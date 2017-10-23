@@ -35,9 +35,10 @@ An alternate SqlCredential object when connecting to and verifying the location 
 Skip checking for the presence of SQL Server and simply check all disks for alignment. This can be useful if SQL Server is not yet installed or is dormant.
 
 .NOTES
+Tags: Storage
 The preferred way to determine if your disks are aligned (or not) is to calculate:
-  1. Partition offset ÷ stripe unit size
-  2. Stripe unit size ÷ File allocation unit size
+  1. Partition offset - stripe unit size
+  2. Stripe unit size - File allocation unit size
 
 References:
     Disk Partition Alignment Best Practices for SQL Server - https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx
@@ -46,7 +47,7 @@ References:
   Getting Partition Offset information with Powershell - http://sqlblog.com/blogs/jonathan_kehayias/archive/2010/03/01/getting-partition-Offset-information-with-powershell.aspx 
     Thanks to Jonathan Kehayias!
 
-    Decree: Set your partition Offset and block Size – make SQL Server faster - http://www.midnightdba.com/Jen/2014/04/decree-set-your-partition-Offset-and-block-Size-make-sql-server-faster/
+    Decree: Set your partition Offset and block Size and make SQL Server faster - http://www.midnightdba.com/Jen/2014/04/decree-set-your-partition-Offset-and-block-Size-make-sql-server-faster/
     Thanks to Jen McCown!
 
   Disk Performance Hands On - http://www.kendalvandyke.com/2009/02/disk-performance-hands-on-series-recap.html

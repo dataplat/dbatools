@@ -1,4 +1,4 @@
-﻿Function Install-SqlWhoIsActive
+Function Install-SqlWhoIsActive
 {
 <#
 .SYNOPSIS

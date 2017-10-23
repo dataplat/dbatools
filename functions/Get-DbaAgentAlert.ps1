@@ -1,4 +1,4 @@
-﻿FUNCTION Get-DbaAgentAlert
+FUNCTION Get-DbaAgentAlert
 {
 <#
 .SYNOPSIS

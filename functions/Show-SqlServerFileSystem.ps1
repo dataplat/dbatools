@@ -1,4 +1,4 @@
-﻿Function Show-SqlServerFileSystem
+Function Show-SqlServerFileSystem
 {
 <#
 .SYNOPSIS
@@ -25,7 +25,8 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 
-.NOTES 
+.NOTES
+Tags: Storage
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -216,7 +217,8 @@ Shows a GUI and uses SQL credentials to log into the SQL Server. Returns a strin
 		
 		if ($textbox.Text.length -gt 0)
 		{
-			return $textbox.Text
+			$drive = $textbox.Text + '\'
+			return $drive
 		}
 	}
 }

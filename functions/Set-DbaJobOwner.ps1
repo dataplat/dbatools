@@ -1,4 +1,4 @@
-﻿function Set-DbaJobOwner
+function Set-DbaJobOwner
 {
 <#
 .SYNOPSIS

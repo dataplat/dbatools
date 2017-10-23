@@ -1,4 +1,4 @@
-﻿#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
+#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
 
 if(-not $PSScriptRoot)
 {
@@ -56,9 +56,7 @@ Get-Module $ModuleName | Remove-Module
 
 # Because ModuleBase includes version number, this imports the required version
 # of the module
-$null = Import-Module $ModuleBase\$ModuleName.psd1 -PassThru -ErrorAction Stop 
-. "$Modulebase\internal\DynamicParams.ps1"
-Get-ChildItem "$Modulebase\internal\" |% {. $_.fullname}
+$null = Import-Module $ModuleBase\$ModuleName.psd1 -PassThru -ErrorAction Stop
 
     Describe "$Name Tests"{
         InModuleScope 'dbatools' {

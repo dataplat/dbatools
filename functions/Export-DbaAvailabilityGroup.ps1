@@ -1,4 +1,4 @@
-﻿function Export-DbaAvailabilityGroup
+function Export-DbaAvailabilityGroup
 {
 <#
 .SYNOPSIS

@@ -1,4 +1,4 @@
-﻿Function Stop-DbaProcess
+Function Stop-DbaProcess
 {
 <#
 .SYNOPSIS

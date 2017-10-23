@@ -1,4 +1,4 @@
-﻿Function Test-DbaValidLogin
+Function Test-DbaValidLogin
 {
 <#
 .SYNOPSIS 

@@ -1,4 +1,4 @@
-﻿Function Test-DbaDatabaseCompatibility
+Function Test-DbaDatabaseCompatibility
 {
 <#
 .SYNOPSIS

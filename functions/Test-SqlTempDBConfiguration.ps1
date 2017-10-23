@@ -1,4 +1,4 @@
-﻿Function Test-SqlTempDbConfiguration
+Function Test-SqlTempDbConfiguration
 {
 <#
 .SYNOPSIS

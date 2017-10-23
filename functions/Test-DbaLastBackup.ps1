@@ -1,4 +1,4 @@
-﻿Function Test-DbaLastBackup
+Function Test-DbaLastBackup
 {
 <#
 .SYNOPSIS
@@ -73,7 +73,8 @@ Are you sure you want to perform this action?
 Performing the operation "Restoring model as dbatools-testrestore-model" on target "SQL2016\VNEXT".
 [Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
 	
-.NOTES 
+.NOTES
+Tags: DisasterRecovery, Backup, Restore
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -222,6 +223,7 @@ Restores data and log files to alternative locations and only restores databases
 			
 			foreach ($dbname in $dblist)
 			{
+				if ($dbname -eq 'tempdb') { continue }
 				
 				$db = $sourceserver.databases[$dbname]
 				

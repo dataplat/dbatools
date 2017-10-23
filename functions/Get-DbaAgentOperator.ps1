@@ -1,4 +1,4 @@
-﻿FUNCTION Get-DbaAgentOperator
+FUNCTION Get-DbaAgentOperator
 {
 <#
 .SYNOPSIS
@@ -99,7 +99,7 @@ PROCESS
 						LastEmailDate = $lastemail
 						RelatedJobs = $jobs
 						Operator = $operator
-					} | Select-DefaultField -ExcludeProperty Operator
+					} | Select-DefaultView -ExcludeProperty Operator
 				}
 			}
 		}

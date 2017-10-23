@@ -1,4 +1,4 @@
-﻿Function Test-DbaMaxDop
+Function Test-DbaMaxDop
 {
 <# 
 .SYNOPSIS 
@@ -34,7 +34,7 @@ Windows Authentication will be used if DestinationSqlCredential is not specified
 Provides Detailed information
 
 .NOTES 
-Author  : Cláudio Silva (@claudioessilva)
+Author  : Claudio Silva (@claudioessilva)
 Requires: sysadmin access on SQL Servers
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

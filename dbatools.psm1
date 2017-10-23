@@ -1,3 +1,10 @@
+# Not supporting the provider path at this time
+if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\"))
+{
+	Write-Warning "SQLSERVER:\ provider not supported. Please change to another directory and reload the module."
+	Write-Warning "Going to continue loading anyway, but expect issues."
+}
+
 <#
 
 	Attempt to load all versions of SMO from vNext to 2005 - this is why RequiredAssemblies can't be used.
@@ -51,14 +58,59 @@ foreach ($assembly in $assemblies)
 
 #>
 
-# All internal functions privately avaialble within the toolset
-foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\*.ps1")) { . $function }
+# This technique helps a little bit
+# https://becomelotr.wordpress.com/2017/02/13/expensive-dot-sourcing/
+
+# Load our own custom library
+# Should always come before function imports
+. ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\bin\library.ps1")))
+
+# All internal functions privately available within the toolset
+foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\*.ps1"))
+{
+	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
+}
 
 # All exported functions
-foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1")) { . $function }
+foreach ($function in (Get-ChildItem "$PSScriptRoot\functions\*.ps1"))
+{
+	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
+}
 
-# Not supporting the provider path at this time
-# if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\")) { throw "Please change to another drive and reload the module." }
+# Run all optional code
+# Note: Each optional file must include a conditional governing whether it's run at all.
+# Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
+foreach ($function in (Get-ChildItem "$PSScriptRoot\optional\*.ps1"))
+{
+	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
+}
+
+#region Finally register autocompletion
+# Test whether we have Tab Expansion Plus available (used in dynamicparams scripts ran below)
+if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore)
+{
+	$TEPP = $true
+}
+else
+{
+	$TEPP = $false
+}
+
+foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1"))
+{
+	. ([scriptblock]::Create([io.file]::ReadAllText($function)))
+}
+#endregion Finally register autocompletion
+
+# Load configuration system
+# Should always go next to last
+. ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\configurations\configuration.ps1")))
+
+# Load scripts that must be individually run at the end #
+#-------------------------------------------------------#
+
+# Start the logging system (requires the configuration system up and running)
+. ([scriptblock]::Create([io.file]::ReadAllText("$PSScriptRoot\internal\scripts\logfilescript.ps1")))
 
 # I renamed this function to be more accurate
 Set-Alias -Name Reset-SqlSaPassword -Value Reset-SqlAdmin

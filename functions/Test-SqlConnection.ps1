@@ -51,7 +51,8 @@ DefaultSQLPortOpen : True
 RemotingPortOpen   : True
 
 
-.NOTES 
+.NOTES
+Tags: CIM
 Original Author: Chrissy LeMaire
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire

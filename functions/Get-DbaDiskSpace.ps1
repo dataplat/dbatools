@@ -1,4 +1,4 @@
-﻿Function Get-DbaDiskSpace
+Function Get-DbaDiskSpace
 {
 <#
 .SYNOPSIS
@@ -52,6 +52,7 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .NOTES
+Tags: Storage
 Author: Chrissy LeMaire (clemaire@gmail.com) & Jakob Bindslet (jakob@bindslet.dk)
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)

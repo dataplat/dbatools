@@ -45,7 +45,8 @@ Prompts you for confirmation before executing any changing operations within the
 .PARAMETER NoServerReconfig
 Upcoming parameter to enable server reconfiguration
 
-.NOTES 
+.NOTES
+Tags: Migration
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: sysadmin access on SQL Servers
 

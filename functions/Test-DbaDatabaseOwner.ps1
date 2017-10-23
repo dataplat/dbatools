@@ -1,4 +1,4 @@
-﻿function Test-DbaDatabaseOwner
+function Test-DbaDatabaseOwner
 {
 <#
 .SYNOPSIS

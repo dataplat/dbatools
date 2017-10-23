@@ -1,4 +1,4 @@
-﻿function Test-DbaVirtualLogFile
+function Test-DbaVirtualLogFile
 {
 <#
 .SYNOPSIS
@@ -34,6 +34,7 @@ Specify one or more databases to exclude.
 Returns all information provided by DBCC LOGINFO plus the server name and database name
 
 .NOTES
+Tags: DisasterRecovery, Backup
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 
@@ -82,14 +83,12 @@ Returns VLF counts for the db1 and db2 databases on sqlcluster.
 	{
 		$databases = $psboundparameters.Databases
 		$exclude = $psboundparameters.Exclude
-		$collection = New-Object System.Collections.ArrayList
 	}
 
 	PROCESS
 	{
 		foreach ($servername in $SqlServer)
 		{
-			#For each SQL Server in collection, connect and get SMO object
 			Write-Verbose "Connecting to $servername"
 			try {
 				$server = Connect-SqlServer $servername -SqlCredential $SqlCredential
@@ -148,16 +147,16 @@ Returns VLF counts for the db1 and db2 databases on sqlcluster.
 						{
 							$table.ImportRow($row)
 						}
-
-						$null = $collection.Add($table)
+						
+						$table
 					}
 					else
 					{
-						$null = $collection.Add([PSCustomObject]@{
+						[PSCustomObject]@{
 								Server = $server.name
 								Database = $db.name
 								Count = $db.ExecuteWithResults("DBCC LOGINFO").Tables.Rows.Count
-							})
+							}
 					}
 				}
 				catch
@@ -168,9 +167,5 @@ Returns VLF counts for the db1 and db2 databases on sqlcluster.
 				}
 			}
 		}
-	}
-	END
-	{
-		return $collection
 	}
 }
