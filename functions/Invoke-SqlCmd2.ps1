@@ -459,7 +459,7 @@ function Invoke-Sqlcmd2 {
 			}
 			catch [System.Data.SqlClient.SqlException] {
 				# For SQL exception
-            
+
 				$Err = $_
 
 				Write-Verbose "Capture SQL Error"
@@ -512,16 +512,19 @@ function Invoke-Sqlcmd2 {
 				#Close the connection
 				if (-not $PSBoundParameters.ContainsKey('SQLConnection')) {
 					$conn.Close()
-				}               
+				}
 			}
 
 			if ($AppendServerInstance) {
 				#Basics from Chad Miller
 				$Column = New-Object Data.DataColumn
 				$Column.ColumnName = "ServerInstance"
-				$ds.Tables[0].Columns.Add($Column)
-				Foreach ($row in $ds.Tables[0]) {
-					$row.ServerInstance = $SQLInstance
+
+				if($ds.Tables.Count -ne 0) {
+					$ds.Tables[0].Columns.Add($Column)
+					Foreach ($row in $ds.Tables[0]) {
+						$row.ServerInstance = $SQLInstance
+					}
 				}
 			}
 
@@ -533,17 +536,24 @@ function Invoke-Sqlcmd2 {
 					$ds.Tables
 				}
 				'DataRow' {
-					$ds.Tables[0]
+					if($ds.Tables.Count -ne 0) {
+						$ds.Tables[0]
+					}
 				}
 				'PSObject' {
-					#Scrub DBNulls - Provides convenient results you can use comparisons with
-					#Introduces overhead (e.g. ~2000 rows w/ ~80 columns went from .15 Seconds to .65 Seconds - depending on your data could be much more!)
-					foreach ($row in $ds.Tables[0].Rows) {
-						[DBNullScrubber]::DataRowToPSObject($row)
+					if($ds.Tables.Count -ne 0) {
+						#Scrub DBNulls - Provides convenient results you can use comparisons with
+						#Introduces overhead (e.g. ~2000 rows w/ ~80 columns went from .15 Seconds to .65 Seconds - depending on your data could be much more!)
+						foreach ($row in $ds.Tables[0].Rows) {
+
+							[DBNullScrubber]::DataRowToPSObject($row)
+						}
 					}
 				}
 				'SingleValue' {
-					$ds.Tables[0] | Select-Object -ExpandProperty $ds.Tables[0].Columns[0].ColumnName
+					if($ds.Tables.Count -ne 0) {
+						$ds.Tables[0] | Select-Object -ExpandProperty $ds.Tables[0].Columns[0].ColumnName
+					}
 				}
 			}
 		}
