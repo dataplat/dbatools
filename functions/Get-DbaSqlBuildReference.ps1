@@ -1,5 +1,5 @@
 Function Get-DbaSqlBuildReference {
-<#
+	<#
 	.SYNOPSIS
 		Returns SQL Server Build infos on a SQL instance
 	
@@ -51,9 +51,7 @@ Function Get-DbaSqlBuildReference {
 		
 		dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 		Copyright (C) 2016 Chrissy LeMaire
-		This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-		This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-		You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 	
 	.LINK
 		https://dbatools.io/Get-DbaSqlBuildReference
@@ -173,7 +171,8 @@ Function Get-DbaSqlBuildReference {
 					Write-Message -Level Verbose -EnableException $EnableException -Message "Probably using a proxy for internet access, trying default proxy settings"
 					(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
 					$WebContent = Invoke-WebRequest $url -ErrorAction Stop
-				} catch {
+				}
+				catch {
 					Write-Message -Level Warning -EnableException $EnableException -Message "Couldn't download updated index from $url"
 					return
 				}
@@ -273,14 +272,14 @@ Function Get-DbaSqlBuildReference {
 			
 			[PSCustomObject]@{
 				SqlInstance    = $server.DomainInstanceName
-				Build		   = $server.Version
-				NameLevel	   = $Detected.Name
-				SPLevel	       = $Detected.SP
-				CULevel	       = $Detected.CU
-				KBLevel	       = $Detected.KB
+				Build          = $server.Version
+				NameLevel      = $Detected.Name
+				SPLevel        = $Detected.SP
+				CULevel        = $Detected.CU
+				KBLevel        = $Detected.KB
 				SupportedUntil = $Detected.SupportedUntil
-				MatchType	   = $Detected.MatchType
-				Warning	       = $Detected.Warning
+				MatchType      = $Detected.MatchType
+				Warning        = $Detected.Warning
 			}
 		}
 		
@@ -289,14 +288,14 @@ Function Get-DbaSqlBuildReference {
 			
 			[PSCustomObject]@{
 				SqlInstance    = $null
-				Build		   = $buildstr
-				NameLevel	   = $Detected.Name
-				SPLevel	       = $Detected.SP
-				CULevel	       = $Detected.CU
-				KBLevel	       = $Detected.KB
+				Build          = $buildstr
+				NameLevel      = $Detected.Name
+				SPLevel        = $Detected.SP
+				CULevel        = $Detected.CU
+				KBLevel        = $Detected.KB
 				SupportedUntil = $Detected.SupportedUntil
-				MatchType	   = $Detected.MatchType
-				Warning	       = $Detected.Warning
+				MatchType      = $Detected.MatchType
+				Warning        = $Detected.Warning
 			} | Select-DefaultView -ExcludeProperty SqlInstance
 		}
 	}

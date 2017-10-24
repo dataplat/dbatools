@@ -188,7 +188,7 @@ function Test-DbaTempDbConfiguration {
 			}
 
 			Add-Member -Force -InputObject $value -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
-			Add-Member -Force -InputObject $value -MemberType NoteProperty -Name Notes -Value 'Set grow with explicit values, not by percent.'
+			Add-Member -Force -InputObject $value -MemberType NoteProperty -Name Notes -Value 'Set file growth to explicit values, not by percent.'
 			$result += $value
 
 			Write-Message -Level Verbose -Message "File growth settings evaluated."

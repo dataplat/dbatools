@@ -1,5 +1,5 @@
 Function Get-DbaServerProtocol {
-<#
+	<#
     .SYNOPSIS
     Gets the SQL Server related server protocols on a computer. 
 
@@ -24,10 +24,8 @@ Function Get-DbaServerProtocol {
     Author: Klaas Vandenberghe ( @PowerDBAKlaas )
     Tags: Protocol
     dbatools PowerShell module (https://dbatools.io)
-    Copyright (C) 2016 Chrissy LeMaire
-    This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-    You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+	Copyright (C) 2016 Chrissy LeMaire
+	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
     .LINK
     https://dbatools.io/Get-DbaServerProtocol
@@ -51,7 +49,7 @@ Function Get-DbaServerProtocol {
     (Get-DbaServerProtocol -ComputerName sql1 | Where { $_.DisplayName = 'via' }).Disable()
 
     Disables the VIA ServerNetworkProtocol on computer sql1.
-    If succesfull, returncode 0 is shown.
+    If successful, returncode 0 is shown.
 
 #>
 	[CmdletBinding()]
@@ -70,8 +68,8 @@ Function Get-DbaServerProtocol {
 				$Computer = $server.FullComputerName
 				Write-Message -Level Verbose -Message "Getting SQL Server namespace on $computer"
 				$namespace = Get-DbaCmObject -ComputerName $Computer -NameSpace root\Microsoft\SQLServer -Query "Select * FROM __NAMESPACE WHERE Name Like 'ComputerManagement%'" -ErrorAction SilentlyContinue |
-				Where-Object { (Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ServerNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0 } |
-				Sort-Object Name -Descending | Select-Object -First 1
+					Where-Object { (Get-DbaCmObject -ComputerName $Computer -Namespace $("root\Microsoft\SQLServer\" + $_.Name) -ClassName ServerNetworkProtocol -ErrorAction SilentlyContinue).count -gt 0 } |
+					Sort-Object Name -Descending | Select-Object -First 1
 				if ($namespace.Name) {
 					Write-Message -Level Verbose -Message "Getting Cim class ServerNetworkProtocol in Namespace $($namespace.Name) on $Computer"
 					try {

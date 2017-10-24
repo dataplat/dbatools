@@ -30,13 +30,12 @@ Function Get-DbaSqlService {
 	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 	
 	.NOTES
+	Tags:
 	Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
 	dbatools PowerShell module (https://dbatools.io)
 	Copyright (C) 2016 Chrissy LeMaire
-	This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.LINK
 	https://dbatools.io/Get-DbaSqlService
@@ -144,9 +143,9 @@ Function Get-DbaSqlService {
 							Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer." -Target $Computer
 							foreach ($service in (Get-DbaCmObject -ComputerName $Computer -Namespace "root\Microsoft\SQLServer\$($namespace.Name)" -Query "SELECT * FROM SqlService WHERE $searchClause" -EnableException -Credential $credential)) {
 								$servicesTemp += New-Object PSObject -Property @{
-									Name  = $service.ServiceName
+									Name      = $service.ServiceName
 									Namespace = $namespace.Name
-									Service = $service
+									Service   = $service
 								}
 							}
 						}
