@@ -655,7 +655,7 @@ function Restore-DbaDatabase {
                 
                 
                 Write-Message -Level Verbose -Message "Starting FileSet"
-                if (($FilteredFiles.DatabaseName | Group-Object | Measure-Object).count -gt 1) {
+                if (($FilteredFiles.DatabaseName | Group-Object -CaseSensitive | Measure-Object).count -gt 1) {
                     $dbs = ($FilteredFiles | Select-Object -Property DatabaseName) -join (',')
                     Stop-Function -Target $FilteredFiles -Message "We can only handle 1 Database at a time - $dbs"
                     return
