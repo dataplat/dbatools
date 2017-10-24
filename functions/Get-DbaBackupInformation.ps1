@@ -182,7 +182,7 @@ function Get-DbaBackupInformation {
             $groupResults = @()
             if ($NoXpDirTree -ne $true){
                 ForEach ($f in $path) {
-                    $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $SqlInstance -SqlCredential $SqlCredential -X
+                    $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $SqlInstance -SqlCredential $SqlCredential
                 }
             } 
             else {
