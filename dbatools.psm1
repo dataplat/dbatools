@@ -315,7 +315,6 @@ if ($script:dbatoolsConfigRunspace)
 
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true;
 Write-ImportTime -Text "Waiting for runspaces to finish"
-$global:debug_removeme = $script:dbatools_ImportPerformance
 #endregion Post-Import Cleanup
 
 # SIG # Begin signature block
