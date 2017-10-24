@@ -30,29 +30,35 @@ function Get-DbaHelpIndex {
 			SQLServer name or SMO object representing the SQL Server to connect to.
 
 		.PARAMETER SqlCredential
-			PSCredential object to connect as. if not specified, current Windows login will be used.
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+			$cred = Get-Credential, then pass $cred variable to this parameter. 
+
+			Windows Authentication will be used when SqlCredential is not specified. To connect as a different Windows use
 
 		.PARAMETER Database
-			The database(s) to process - this list is auto-populated from the server. if unspecified, all databases will be processed.
+			The database(s) to process. This list is auto-populated from the server. If unspecified, all databases will be processed.
 
 		.PARAMETER ExcludeDatabase
-			The database(s) to exclude - this list is auto-populated from the server
+			The database(s) to exclude. This list is auto-populated from the server.
 
 		.PARAMETER ObjectName
 			The name of a table for which you want to obtain the index information. If the two part naming convention for an object is not used it will use the default schema for the executing user. If not passed it will return data on all indexes in a given database.
 
 		.PARAMETER IncludeStats
-			This includes statistics as well as indexes in the output (statistics information such as the StatsRowMods will always be returned for indexes).
+			If this switch is enabled, statistics as well as indexes will be returned in the output (statistics information such as the StatsRowMods will always be returned for indexes).
 
 		.PARAMETER IncludeDataTypes
-			This will include the data type of each column that makes up a part of the index definition (key and include columns)
+			If this switch is enabled, the output will include the data type of each column that makes up a part of the index definition (key and include columns).
 
-		.PARAMETER FormatResults
-			Returns the numerical data in a more user readable format (numerical separator will depend on localization settings).
+		.PARAMETER Raw
+			If this switch is enabled, results may be less user-readable but more suitable for processing by other code.
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: Indexes
 			Author: Nic Cain, https://sirsql.net/
@@ -72,32 +78,32 @@ function Get-DbaHelpIndex {
 		.EXAMPLE
 			Get-DbaHelpIndex -SqlInstance localhost -Database MyDB,MyDB2
 
-			Returns information on all indexes on the MyDB, MyDB2 databases
+			Returns information on all indexes on the MyDB & MyDB2 databases.
 
 		.EXAMPLE
 			Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1
 
-			Returns index information on the object dbo.Table1 in the database MyDB
+			Returns index information on the object dbo.Table1 in the database MyDB.
 
 		.EXAMPLE
 			Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -IncludeStats
 
-			Returns information on the indexes and statistics for the table dbo.Table1 in the MyDB database
+			Returns information on the indexes and statistics for the table dbo.Table1 in the MyDB database.
 
 		.EXAMPLE
 			Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -IncludeDataTypes
 
-			Returns the index information for the table dbo.Table1 in the MyDB database, and includes the data types for the key and include columns
+			Returns the index information for the table dbo.Table1 in the MyDB database, and includes the data types for the key and include columns.
 
 		.EXAMPLE
-			Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -FormatResults
+			Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -ObjectName dbo.Table1 -Raw
 
-			Returns the index information for the table dbo.Table1 in the MyDB database, and returns the numerical data with separators to make it more readable (ie 1234 becomes 1,234)
+			Returns the index information for the table dbo.Table1 in the MyDB database, and returns the numerical data without localized separators.
 
 		.EXAMPLE
-			Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -IncludeStats -FormatResults
+			Get-DbaHelpIndex -SqlInstance localhost -Database MyDB -IncludeStats -Raw
 
-			Returns the index information for all index in the MyDB database, as well as statistics, and formats the numerical data to be more redable
+			Returns the index information for all indexes in the MyDB database as well as their statistics, and formats the numerical data without localized separators.
 	#>
 	[CmdletBinding(SupportsShouldProcess = $false)]
 	param (
@@ -113,8 +119,8 @@ function Get-DbaHelpIndex {
 		[string]$ObjectName,
 		[switch]$IncludeStats,
 		[switch]$IncludeDataTypes,
-		[switch]$FormatResults,
-		[switch]$Silent
+		[switch]$Raw,
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -957,7 +963,7 @@ function Get-DbaHelpIndex {
 		}
 
 		else {
-			Write-Warning "This function does not support versions lower than SQL Server 2005 (v9)"
+			Write-Warning "This function does not support versions lower than SQL Server 2005 (v9)."
 			continue
 		}
 
@@ -977,13 +983,13 @@ function Get-DbaHelpIndex {
 
 		foreach ($db in $databases) {
 			if (!$db.IsAccessible) {
-				Write-Message -Level Warning -Message "$db is not acessible. Skipping"
+				Write-Message -Level Warning -Message "$db is not accessible. Skipping."
 				continue
 			}
 			try {
 				$IndexDetails = ($server.Databases[$db.Name].ExecuteWithResults($indexesQuery)).Tables[0];
 
-				if ($FormatResults) {
+				if (!$Raw) {
 					foreach ($detail in $IndexDetails) {
 						$recentlyused = [datetime]$detail.MostRecentlyUsed
 
@@ -1044,7 +1050,7 @@ function Get-DbaHelpIndex {
 				}
 			}
 			catch {
-				Write-Warning "Cannot process $db on $server"
+				Write-Warning "Cannot process $db on $server."
 			}
 		}
 	}

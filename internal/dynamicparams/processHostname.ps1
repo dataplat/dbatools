@@ -11,12 +11,9 @@
 		$fakeBoundParameter
 	)
 	
-	$start = Get-Date
-	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["processhostname"].LastExecution = $start
 	
 	$server = $fakeBoundParameter['SqlInstance']
 	if (-not $server) {
-		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["processhostname"].LastDuration = (Get-Date) - $start
 		return
 	}
 	$sqlCredential = $fakeBoundParameter['SqlCredential']
@@ -30,11 +27,9 @@
 		}
 	}
 	catch {
-		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["processhostname"].LastDuration = (Get-Date) - $start
 		return
 	}
 	finally {
-		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["processhostname"].LastDuration = (Get-Date) - $start
 	}
 }
 

@@ -10,7 +10,7 @@ After installing the SQL Server Engine and SSIS you still have to enable the SSI
 SQL Server you wish to run the function on.
 
 .PARAMETER SqlCredential
-Credenitals used to connect to the SQL Server
+Credentials used to connect to the SQL Server
 
 .PARAMETER Password
 Required password that will be used for the security key in SSISDB.
@@ -24,20 +24,17 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 	
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException 
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES 
 Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-
+Tags: 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/New-DbaSsisCatalog
@@ -64,7 +61,7 @@ Creates the SSIS Catalog on server DEV01 with the specified password.
 		[parameter(Mandatory = $true)]
 		[Security.SecureString]$Password,
 		[string]$SsisCatalog = "SSISDB",
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {

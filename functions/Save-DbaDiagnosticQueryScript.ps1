@@ -1,4 +1,4 @@
-﻿function Save-DbaDiagnosticQueryScript {
+function Save-DbaDiagnosticQueryScript {
   <#
 .SYNOPSIS 
 Save-DbaDiagnosticQueryScript downloads the most recent version of all Glenn Berry DMV scripts
@@ -15,9 +15,11 @@ The function Invoke-DbaDiagnosticQuery will try to download these scripts automa
 .PARAMETER Path
 Specifies the path to the output
 	
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Author: André Kamman (@AndreKamman), http://clouddba.io
 Tags: Diagnostic, DMV, Troubleshooting
@@ -36,7 +38,7 @@ If Path is not specified, the "My Documents" location will be used.
   [CmdletBinding()]
   param (
     [System.IO.FileInfo]$Path = [Environment]::GetFolderPath("mydocuments"),
-    [Switch]$Silent
+    [Switch][Alias('Silent')]$EnableException
   )
 	
   if (-not (Test-Path $Path)) {

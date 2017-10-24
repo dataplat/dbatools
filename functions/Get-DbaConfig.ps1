@@ -61,11 +61,11 @@
 			$Name = $Name.ToLower()
 			$Module = $Module.ToLower()
 			
-			[Sqlcollaborative.Dbatools.Configuration.Config]::Cfg.Values | Where-Object { ($_.Name -like $Name) -and ($_.Module -like $Module) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
+			[Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object { ($_.Name -like $Name) -and ($_.Module -like $Module) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
 		}
 		
 		"FullName" {
-			[Sqlcollaborative.Dbatools.Configuration.Config]::Cfg.Values | Where-Object { ("$($_.Module).$($_.Name)" -like $FullName) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
+			[Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations.Values | Where-Object { ("$($_.Module).$($_.Name)" -like $FullName) -and ((-not $_.Hidden) -or ($Force)) } | Sort-Object Module, Name
 		}
 	}
 }

@@ -96,6 +96,6 @@ function Export-DbaSpConfigure {
 		If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
 			Write-Output "Server configuration export finished"
 		}
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Export-SqlSpConfigure
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlSpConfigure
 	}
 }

@@ -1,5 +1,5 @@
 ﻿$scriptBlock = {
-	$script:___ScriptName = 'teppasynccache'
+	$script:___ScriptName = 'dbatools-teppasynccache'
 	
 	#region Utility Functions
 	function Get-PriorityServer {
@@ -78,7 +78,7 @@
 	}
 }
 
-Register-DbaRunspace -ScriptBlock $scriptBlock -Name "teppasynccache"
+Register-DbaRunspace -ScriptBlock $scriptBlock -Name "dbatools-teppasynccache"
 if (-not ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled)) {
-	Start-DbaRunspace -Name "teppasynccache"
+	Start-DbaRunspace -Name "dbatools-teppasynccache"
 }

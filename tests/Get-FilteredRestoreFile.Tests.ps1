@@ -7,7 +7,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 		Context "Empty TLog Backup Issues" {
 			$Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\EmptyTlogData.json -raw)
 			Mock Read-DbaBackupHeader { $Header }
-			$Output = Get-FilteredRestoreFile -SqlServer TestSQL -Files "c:\dummy.txt" -silent:$true
+			$Output = Get-FilteredRestoreFile -SqlServer TestSQL -Files "c:\dummy.txt" -EnableException:$true
 			
 			It "Should return an array of 3 items" {
 				$Output[0].values.count | Should be 3
@@ -26,6 +26,24 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 			$Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
 			Mock Read-DbaBackupHeader { $Header }
 			$Output = Get-FilteredRestoreFile -SqlServer 'TestSQL' -Files "c:\dummy.txt"
+			
+			It "Should return an array of 7 items" {
+				$Output[0].values.count | Should be 7
+			}
+			It "Should return 1 Full backups" {
+				($Output[0].values | Where-Object { $_.BackupTypeDescription -eq 'Database' } | Measure-Object).count | Should Be 1
+			}
+			It "Should return 1 Diff backups" {
+				($Output[0].values | Where-Object { $_.BackupTypeDescription -eq 'Database Differential' } | Measure-Object).count | Should Be 1
+			}
+			It "Should return 5 log backups" {
+				($Output[0].values | Where-Object { $_.BackupTypeDescription -eq 'Transaction Log' } | Measure-Object).count | Should Be 5
+			}
+		}
+		Context "Server/database names and file paths have commas and spaces" {
+			$Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\RestoreCommaIssues.json -raw)
+			Mock Read-DbaBackupHeader { $Header }
+			$Output = Get-FilteredRestoreFile -SqlServer 'TestSQL\Testinstance,12345' -Files "c:\dumm,y.txt"
 			
 			It "Should return an array of 7 items" {
 				$Output[0].values.count | Should be 7

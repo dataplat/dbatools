@@ -14,8 +14,6 @@ $ScriptBlock = {
 		$fakeBoundParameter
 	)
 	
-	$start = Get-Date
-	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["login"].LastExecution = $start
 	
 	$server = $fakeBoundParameter['SqlInstance']
 	
@@ -33,7 +31,6 @@ $ScriptBlock = {
 		[DbaInstanceParameter]$parServer = $server | Select-Object -First 1
 	}
 	catch {
-		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["login"].LastDuration = (Get-Date) - $start
 		return
 	}
 	
@@ -41,7 +38,6 @@ $ScriptBlock = {
 		foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*")) {
 			New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
 		}
-		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["login"].LastDuration = (Get-Date) - $start
 		return
 	}
 	
@@ -50,11 +46,9 @@ $ScriptBlock = {
 		foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["login"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*")) {
 			New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
 		}
-		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["login"].LastDuration = (Get-Date) - $start
 		return
 	}
 	catch {
-		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["login"].LastDuration = (Get-Date) - $start
 		return
 	}
 }

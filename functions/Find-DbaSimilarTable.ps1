@@ -42,9 +42,11 @@ By default system databases are ignored but you can include them within the sear
 The minimum percentage of column names that should match between the matching and matched objects.
     Entries with no matches are eliminated
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Author: Jana Sattainathan (@SQLJana - http://sqljana.wordpress.com)
 
@@ -96,7 +98,7 @@ Searches AdventureWorks database and lists all tables/views with its correspondi
 		[switch]$ExcludeViews,
 		[switch]$IncludeSystemDatabases,
 		[int]$MatchPercentThreshold,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {

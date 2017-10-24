@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Get-DbaForceNetworkEncryption {
 <#
@@ -16,9 +16,11 @@ function Get-DbaForceNetworkEncryption {
 	.PARAMETER Credential
 		Allows you to login to the computer (not sql instance) using alternative Windows credentials
 	
-	.PARAMETER Silent
-		Use this switch to Enable any kind of verbose messages
-	
+	.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 	.PARAMETER WhatIf
 		Shows what would happen if the command were to run. No actions are actually performed
 	
@@ -54,7 +56,7 @@ function Get-DbaForceNetworkEncryption {
 		$Credential,
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	process {
 		

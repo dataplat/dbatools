@@ -10,7 +10,7 @@ https://www.petri.com/test-network-connectivity-powershell-test-connection-cmdle
 	[Parameter(Position=0,Mandatory,ValueFromPipeline)]
 	[DbaInstance]$ComputerName,
 	$Credential = [System.Management.Automation.PSCredential]::Empty,
-	[switch]$Silent
+	[switch][Alias('Silent')]$EnableException
 	)
 
 	process {

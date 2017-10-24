@@ -85,9 +85,11 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException 
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES 
 Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Step
@@ -159,7 +161,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 		[ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
 		[object]$DeleteLevel,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
@@ -236,7 +238,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 				
 				if ($PSCmdlet.ShouldProcess($instance, "Removing the job the job $instance")) {
 					try {
-						Remove-DbaAgentJob -SqlInstance $instance -Job $Job -Silent
+						Remove-DbaAgentJob -SqlInstance $instance -Job $Job -EnableException
 					}
 					catch {
 						Stop-Function -Message "Couldn't remove job $Job from $instance" -Target $instance -Continue -InnerErrorRecord $_

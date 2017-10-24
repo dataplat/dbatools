@@ -1,5 +1,5 @@
 Function Stop-DbaSqlService {
-<#
+	<#
 	.SYNOPSIS
 	Stops SQL Server services on a computer. 
 
@@ -30,9 +30,11 @@ Function Stop-DbaSqlService {
 	.PARAMETER Force
 	Use this switch to stop dependent services before proceeding with the specified service
 
-	.PARAMETER Silent
-	Use this switch to disable any kind of verbose messages
-
+	.PARAMETER EnableException
+	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+	This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+	
 	.PARAMETER WhatIf
 	Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
@@ -44,12 +46,10 @@ Function Stop-DbaSqlService {
 
 	.NOTES
 	Author: Kirill Kravtsov( @nvarscar )
-
+	Tags: 
 	dbatools PowerShell module (https://dbatools.io)
 	Copyright (C) 2017 Chrissy LeMaire
-	This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.LINK
 	https://dbatools.io/Stop-DbaSqlService
@@ -94,7 +94,7 @@ Function Stop-DbaSqlService {
 		[int]$Timeout = 30,
 		[PSCredential]$Credential,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		$processArray = @()
@@ -103,7 +103,7 @@ Function Stop-DbaSqlService {
 			if ($InstanceName) { $serviceParams.InstanceName = $InstanceName }
 			if ($Type) { $serviceParams.Type = $Type }
 			if ($Credential) { $serviceParams.Credential = $Credential }
-			if ($Silent) { $serviceParams.Silent = $Silent }
+			if ($EnableException) { $serviceParams.Silent = $EnableException }
 			$serviceCollection = Get-DbaSqlService @serviceParams
 		}
 	}
@@ -122,13 +122,13 @@ Function Stop-DbaSqlService {
 					Type         = 'Agent'
 				}
 				if ($Credential) { $serviceParams.Credential = $Credential }
-				if ($Silent) { $serviceParams.Silent = $Silent }
+				if ($EnableException) { $serviceParams.Silent = $EnableException }
 				$processArray += @(Get-DbaSqlService @serviceParams)
 			}
 		}
 		if ($processArray) {
-			Update-ServiceStatus -ServiceCollection $processArray -Action 'stop' -Timeout $Timeout -Silent $Silent
+			Update-ServiceStatus -ServiceCollection $processArray -Action 'stop' -Timeout $Timeout -EnableException $EnableException
 		}
-		else { Stop-Function -Silent $Silent -Message "No SQL Server services found with current parameters." -Category ObjectNotFound }
+		else { Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters." -Category ObjectNotFound }
 	}
 }
