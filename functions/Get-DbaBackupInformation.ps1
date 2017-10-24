@@ -58,6 +58,8 @@ function Get-DbaBackupInformation {
     .PARAMETER PassThru
         When data is exported the cmdlet will return no other output, this switch means it will also return the normal output which can be then piped into another command
     
+    .PARAMETER Import
+        When specified along with a path the command will import a previously exported 
     .PARAMETER EnableException
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
         Use this if you want the function to throw terminating errors you want to catch.
@@ -78,8 +80,7 @@ function Get-DbaBackupInformation {
         
         #Copy the file  c:\store\BackupHistory.xml to another machine via preferred technique, and the on 2nd machine:
         
-        $backups = Import-CliXml -Path  c:\store\BackupHistory.xml
-        $backups | Restore-DbaDatabase -SqlInstance Server2 -TrustDbBackupHistory
+        Get-DbaBackupInformation -Import -Path  c:\store\BackupHistory.xml | Restore-DbaDatabase -SqlInstance Server2 -TrustDbBackupHistory
 
         This allows you to move backup history across servers, or to preserve backuphistory even after the original server has been purged
     
