@@ -34,16 +34,11 @@ function Get-DbaBackupInformation {
     .PARAMETER SourceInstance
         If provided only backup originating from this destination will be returned. This SQL instance will not be connected to or involved in this work
     
-        .PARAMETER XpDirTree
-        Switch that indicated file scanning should be performed by the SQL Server instance using xp_dirtree
-        This will scan recursively from the passed in path
-        You must have sysadmin role membership on the instance for this to work.
+    .PARAMETER NoXpDirTree
+        If this switch is set, then Files will be parsed as locally files. This can cause failures if the running user can see files that the parsing SQL Instance cannot
     
-    .PARAMETER XpNoRecurse
-        If specified, prevents the XpDirTree process from recursing (it's default behaviour)
-
 	.PARAMETER DirectoryRecurse
-        If specified the specified directory will be recursed into
+        If specified the specified directory will be recursed into (only applies if not using XpDirTree)
     
     .PARAMETER Anonymise
         If specified we will output the results with ComputerName, InstanceName, Database, UserName, and Paths hashed out
@@ -118,8 +113,6 @@ function Get-DbaBackupInformation {
         [string[]]$DatabaseName,
         [string[]]$SourceInstance,
         [parameter(ParameterSetName="Create")]
-        [switch]$XpNoRecurse,
-        [parameter(ParameterSetName="Create")]
         [Switch]$XpDirTree,
         [parameter(ParameterSetName="Create")]
         [switch]$DirectoryRecurse,
@@ -187,9 +180,9 @@ function Get-DbaBackupInformation {
         else {
             $Files = @()
             $groupResults = @()
-            if ($XpDirTree -eq $true){
+            if ($NoXpDirTree -ne $true){
                 ForEach ($f in $path) {
-                    $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                    $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $SqlInstance -SqlCredential $SqlCredential -X
                 }
             } 
             else {
