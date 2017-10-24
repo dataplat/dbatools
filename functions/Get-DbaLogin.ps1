@@ -18,6 +18,12 @@ function Get-DbaLogin {
 		.PARAMETER ExcludeLogin
 			The login(s) to exclude - this list is auto-populated from the server
 
+		.PARAMETER IncludeFilter
+			A list of logins to include - accepts wildcard patterns
+
+		.PARAMETER ExcludeFilter
+			A list of logins to exclude - accepts wildcard patterns
+		
 		.PARAMETER Locked
 			Filters on the SMO property to return locked Logins.
 
@@ -35,6 +41,7 @@ function Get-DbaLogin {
 		.NOTES
 			Author: Mitchell Hamann (@SirCaptainMitch)
 			Author: Klaas Vandenberghe (@powerdbaklaas)
+			Author: Robert Corrigan (@rjcorrig)
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -59,9 +66,19 @@ function Get-DbaLogin {
 			Get specific logins from server sql2016 returned as SMO login objects.
 
 		.EXAMPLE
+			Get-DbaLogin -SqlInstance sql2016 -IncludeFilter '##*','NT *'
+
+			Get all user objects from server sql2016 beginning with '##' or 'NT ', returned as SMO login objects.
+
+		.EXAMPLE
 			Get-DbaLogin -SqlInstance sql2016 -ExcludeLogin dbatoolsuser
 
 			Get all user objects from server sql2016 except the login dbatoolsuser, returned as SMO login objects.
+
+		.EXAMPLE
+			Get-DbaLogin -SqlInstance sql2016 -ExcludeFilter '##*','NT *'
+
+			Get all user objects from server sql2016 except any beginning with '##' or 'NT ', returned as SMO login objects.
 
 		.EXAMPLE
 			'sql2016', 'sql2014' | Get-DbaLogin -SqlCredential $sqlcred
@@ -86,7 +103,9 @@ function Get-DbaLogin {
 		[PSCredential]
 		$SqlCredential,
 		[object[]]$Login,
+		[object[]]$IncludeFilter,
 		[object[]]$ExcludeLogin,
+		[object[]]$ExcludeFilter,
 		[switch]$HasAccess,
 		[switch]$Locked,
 		[switch]$Disabled,
@@ -109,8 +128,24 @@ function Get-DbaLogin {
 				$serverLogins = $serverLogins | Where-Object Name -in $Login
 			}
 
+			if ($IncludeFilter) {
+				$serverLogins = $serverLogins | Where-Object {
+					ForEach ($filter in $IncludeFilter) {
+						if ($_.Name -like $filter) {
+							return $true;
+						}
+					}
+				}				
+			}
+
 			if ($ExcludeLogin) {
 				$serverLogins = $serverLogins | Where-Object Name -NotIn $ExcludeLogin
+			}
+
+			if ($ExcludeFilter) {
+				ForEach ($filter in $ExcludeFilter) {
+					$serverLogins = $serverLogins | Where-Object Name -NotLike $filter    
+				}								
 			}
 
 			if ($HasAccess) {
