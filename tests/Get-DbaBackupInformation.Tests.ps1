@@ -19,8 +19,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
         
 		$dbname2 = "dbatoolsci_Backuphistory2_$random"
-		$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname2 | Remove-DbaDatabase -Confirm:$false
-		$null = Restore-DbaDatabase -SqlInstance $script:instance2 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname2 -DestinationFilePrefix $dbname2
+		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2 | Remove-DbaDatabase -Confirm:$false
+		$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname2 -DestinationFilePrefix $dbname2
 		$db2 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2
 		$db2 | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
 		$db2 | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
@@ -30,7 +30,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     
     AfterAll {
 		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
-    	$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname2 | Remove-DbaDatabase -Confirm:$false
+    	$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2 | Remove-DbaDatabase -Confirm:$false
     }
     
     Context "Get history for all database" {
@@ -63,7 +63,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Check the export/import of backup history" {
-        Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -SourceInstance $script:instance1 -ExportPath "$DestBackupDir\history.xml"
+        Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -DatabaseName $dbname2 -ExportPath "$DestBackupDir\history.xml"
       
         Get-DbaBackupInformation -Import -Path "$DestBackupDir\history.xml" | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationFilePrefix hist -RestoredDatababaseNamePrefix hist -TrustDbBackupHistory
         It "Should restore cleanly" {
