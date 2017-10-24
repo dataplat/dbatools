@@ -58,7 +58,8 @@ namespace Sqlcollaborative.Dbatools.Runspace
             if (Runspace == null)
             {
                 Runspace = PowerShell.Create();
-                Runspace.Runspace.Name = Name;
+                try { Runspace.Runspace.Name = Name; }
+                catch { }
                 Runspace.AddScript(Script.ToString());
                 _State = DbaRunspaceState.Running;
                 try { Runspace.BeginInvoke(); }
