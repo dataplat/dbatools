@@ -1,5 +1,5 @@
 Function New-DbaSqlConnectionStringBuilder {
-<#
+	<#
 .SYNOPSIS
 Returns a System.Data.SqlClient.SqlConnectionStringBuilder with the string specified
 
@@ -42,9 +42,7 @@ Tags: SqlBuild
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2017 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/New-DbaSqlConnectionStringBuilder
@@ -63,7 +61,7 @@ Returns a connection string builder that can be used to connect to the local sql
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $false, ValueFromPipeline = $true)]
-        [string[]]$ConnectionString = "",
+		[string[]]$ConnectionString = "",
 		[Parameter(Mandatory = $false)]
 		[string]$ApplicationName = "dbatools Powershell Module",
 		[Parameter(Mandatory = $false)]
@@ -76,18 +74,18 @@ Returns a connection string builder that can be used to connect to the local sql
 		[string]$UserName = $null,
 		# No point in securestring here, the memory is never stored securely in memory.
 		[Parameter(Mandatory = $false)]
-		[string]$Password =  $null,
+		[string]$Password = $null,
 		[Alias('MARS')]
 		[Parameter(Mandatory = $false)]
 		[switch]$MultipleActiveResultSets,
 		[Alias('AlwaysEncrypted')]
 		[Parameter(Mandatory = $false)]
 		[Data.SqlClient.SqlConnectionColumnEncryptionSetting]$ColumnEncryptionSetting = 
-			[Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled,
+		[Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled,
 		[Parameter(Mandatory = $false)]
 		[string]$WorkstationId = $env:COMPUTERNAME
 	)
-    process {
+	process {
 		foreach ($cs in $ConnectionString) {
 			$builder = New-Object Data.SqlClient.SqlConnectionStringBuilder $cs
 			if ($builder.ApplicationName -eq ".Net SqlClient Data Provider") {
@@ -119,5 +117,5 @@ Returns a connection string builder that can be used to connect to the local sql
 			}
 			$builder
 		}
-    }
+	}
 }
