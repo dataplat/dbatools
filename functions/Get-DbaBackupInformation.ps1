@@ -105,21 +105,27 @@ function Get-DbaBackupInformation {
         Server2 using xp_dirtree, adding the results to the first set.
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding( DefaultParameterSetName="Create")]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$Path,
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory = $true,ParameterSetName="Create")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
+        [parameter(ParameterSetName="Create")]
         [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
         [string[]]$DatabaseName,
         [string[]]$SourceInstance,
+        [parameter(ParameterSetName="Create")]
         [switch]$XpNoRecurse,
+        [parameter(ParameterSetName="Create")]
         [Switch]$XpDirTree,
+        [parameter(ParameterSetName="Create")]
         [switch]$DirectoryRecurse,
         [switch]$EnableException,
         [string]$ExportPath,
+        [parameter(ParameterSetName="Import")]
+        [switch]$Import,
         [switch][Alias('Anonymize')]$Anonymise,
         [Switch]$NoClobber,
         [Switch]$PassThru
@@ -129,18 +135,14 @@ function Get-DbaBackupInformation {
 
         Function Hash-String{
             param(
-                [String]$InString,
-                [boolean]$hash
+                [String]$InString
                 )
-            if ($true -eq $hash){
-                $StringBuilder = New-Object System.Text.StringBuilder
-                [System.Security.Cryptography.HashAlgorithm]::Create("md5").ComputeHash([System.Text.Encoding]::UTF8.GetBytes($InString))|%{
-                    [Void]$StringBuilder.Append($_.ToString("x2"))
-                }
-                    return $StringBuilder.ToString()
-            } else {
-               return $InString
+
+            $StringBuilder = New-Object System.Text.StringBuilder
+            [System.Security.Cryptography.HashAlgorithm]::Create("md5").ComputeHash([System.Text.Encoding]::UTF8.GetBytes($InString))| ForEach{
+                [Void]$StringBuilder.Append($_.ToString("x2"))
             }
+            return $StringBuilder.ToString()
         } 
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Debug -Message "Parameters bound: $($PSBoundParameters.Keys -join ", ")"
@@ -153,63 +155,95 @@ function Get-DbaBackupInformation {
                 }
             }
         }
-        try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            return
+        if ($PSCmdlet.ParameterSetName -eq "Create"){
+            try {
+                $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                return
+            }
         }
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        $Files = @()
-        if ($XpDirTree -eq $true){
-            ForEach ($f in $path) {
-                $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-            }
-        } 
-        else {
-            ForEach ($f in $path) {
-                $Files += Get-ChildItem -Path $f -file -Recurse:$recurse
+        if ((Test-Bound -Parameter Import) -and ($true -eq $Import)) {
+            ForEach ($f in $Path){
+                if (Test-Path -Path $f){
+                    $GroupResults += Import-CliXml -Path $f
+                    ForEach ($group in  $GroupResults){
+                        $Group.FirstLsn = [BigInt]$group.FirstLSN.ToString()
+                        $Group.CheckpointLSN = [BigInt]$group.CheckpointLSN.ToString()
+                        $Group.DatabaseBackupLsn = [BigInt]$group.DatabaseBackupLsn.ToString()
+                        $Group.LastLsn = [BigInt]$group.LastLsn.ToString()
+                    }
+                }
+                else {
+                    Write-Message -Message "$f does not exist or is unreadable" -Leve Warning
+                }
             }
         }
-        
-        $FileDetails = $Files | Read-DbaBackupHeader -SqlInstance $SqlInstance -SqlCredential $sqlcredential
+        else {
+            $Files = @()
+            $groupResults = @()
+            if ($XpDirTree -eq $true){
+                ForEach ($f in $path) {
+                    $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                }
+            } 
+            else {
+                ForEach ($f in $path) {
+                    $Files += Get-ChildItem -Path $f -file -Recurse:$recurse
+                }
+            }
+            
+            $FileDetails = $Files | Read-DbaBackupHeader -SqlInstance $SqlInstance -SqlCredential $sqlcredential
+
+            $groupdetails = $FileDetails | group-object -Property BackupSetGUID
+            
+            Foreach ($Group in $GroupDetails){
+                $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
+                $historyObject.ComputerName = $group.group[0].MachineName 
+                $historyObject.InstanceName = $group.group[0].ServiceName 
+                $historyObject.SqlInstance = $group.group[0].ServerName
+                $historyObject.Database = $group.Group[0].DatabaseName
+                $historyObject.UserName = $group.Group[0].UserName 
+                $historyObject.Start = [DateTime]$group.Group[0].BackupStartDate 
+                $historyObject.End = [DateTime]$group.Group[0].BackupFinishDate
+                $historyObject.Duration = ([DateTime]$group.Group[0].BackupFinishDate - [DateTime]$group.Group[0].BackupStartDate).Seconds
+                $historyObject.Path = [string[]]$Group.Group.BackupPath
+                $historyObject.FileList = ($group.Group.FileList | select-object type, logicalname, physicalname)
+                $historyObject.TotalSize = (Measure-Object $Group.Group.BackupSizeMB -sum).sum
+                $historyObject.Type = $group.Group[0].BackupTypeDescription
+                $historyObject.BackupSetId = $group.group[0].BackupSetGUID
+                $historyObject.DeviceType = 'Disk'
+                $historyObject.FullName = $Group.Group.BackupPath
+                $historyObject.Position = $group.Group[0].Position
+                $historyObject.FirstLsn = $group.Group[0].FirstLSN
+                $historyObject.DatabaseBackupLsn = $group.Group[0].DatabaseBackupLSN
+                $historyObject.CheckpointLSN = $group.Group[0].CheckpointLSN
+                $historyObject.LastLsn = $group.Group[0].LastLsn
+                $historyObject.SoftwareVersionMajor = $group.Group[0].SoftwareVersionMajor
+                $groupResults += $historyObject
+            }
+        }
         if (Test-Bound 'SourceInstance') {
-            $FileDetails = $FileDetails | Where-Object {$_.ServerName -in $SourceInstance}
+            $groupResults = $groupResults | Where-Object {$_.InstanceName -in $SourceInstance}
         }
 
         if (Test-Bound 'DatabaseName') {
-            $FileDetails = $FileDetails | Where-Object {$_.DatabaseName -in $DatabaseName}
+            $groupResults = $groupResults | Where-Object {$_.Database -in $DatabaseName}
         }
-
-        $groupdetails = $FileDetails | group-object -Property BackupSetGUID
-        $groupResults = @()
-        Foreach ($Group in $GroupDetails){
-            $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
-            $historyObject.ComputerName = Hash-String -InString $group.group[0].MachineName -Hash $Anonymise
-            $historyObject.InstanceName = Hash-String -InString $group.group[0].ServiceName -Hash $Anonymise
-            $historyObject.SqlInstance = Hash-String -InString $group.group[0].ServerName -Hash $Anonymise
-            $historyObject.Database = Hash-String -InString $group.Group[0].DatabaseName -Hash $Anonymise
-            $historyObject.UserName = Hash-String -InString $group.Group[0].UserName -Hash $Anonymise
-            $historyObject.Start = [DateTime]$group.Group[0].BackupStartDate 
-            $historyObject.End = [DateTime]$group.Group[0].BackupFinishDate
-            $historyObject.Duration = ([DateTime]$group.Group[0].BackupFinishDate - [DateTime]$group.Group[0].BackupStartDate).Seconds
-            $historyObject.Path = Hash-String -InString  $Group.Group.BackupPath -Hash $Anonymise
-            $historyObject.TotalSize = (Measure-Object $Group.Group.BackupSizeMB -sum).sum
-            $historyObject.Type = $group.Group[0].BackupTypeDescription
-            $historyObject.BackupSetId = $group.group[0].BackupSetGUID
-            $historyObject.DeviceType = 'Disk'
-            $historyObject.FullName = Hash-String -InString $Group.Group.BackupPath -Hash $Anonymise
-            $historyObject.FileList = $Group.Group[0].FileList
-            $historyObject.Position = $group.Group[0].Position
-            $historyObject.FirstLsn = $group.Group[0].FirstLSN
-            $historyObject.DatabaseBackupLsn = $group.Group[0].DatabaseBackupLSN
-            $historyObject.CheckpointLsn = $group.Group[0].CheckpointLSN
-            $historyObject.LastLsn = $group.Group[0].LastLsn
-            $historyObject.SoftwareVersionMajor = $group.Group[0].SoftwareVersionMajor
-            $groupResults += $historyObject
+        if ($true -eq $Anonymise){
+            ForEach ($group in $GroupResults){
+                $group.ComputerName = Hash-String -InString $group.ComputerName 
+                $group.InstanceName = Hash-String -InString $group.InstanceName
+                $group.SqlInstance = Hash-String -InString $group.SqlInstance
+                $group.Database = Hash-String -InString $group.Database 
+                $group.UserName = Hash-String -InString $group.UserName 
+                $group.Path = Hash-String -InString  $Group.Path
+                $group.FullName = Hash-String -InString $Group.Fullname 
+            }
         }
         if ((Test-Bound -parameterName exportpath) -and $null -ne $ExportPath) {
             $groupResults | Export-CliXml -Path $ExportPath -Depth 5 -NoClobber:$NoClobber
