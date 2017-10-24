@@ -214,6 +214,6 @@ Gets SQL Server versions, editions and product keys for all instances listed wit
   }
 	
   END {
-    Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-SqlServerKey
+    Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlServerKey
   }
 }

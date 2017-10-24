@@ -41,9 +41,11 @@ function Test-DbaDiskAlignment {
         .PARAMETER NoSqlCheck
             If this switch is enabled, the disk(s) will not be checked for SQL Server data or log files.
         
-        .PARAMETER Silent
-            If this switch is enabled, the internal messaging functions will be silenced.	
-        
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            
         .EXAMPLE
             Test-DbaDiskAlignment -ComputerName sqlserver2014a
             
@@ -93,7 +95,7 @@ function Test-DbaDiskAlignment {
 		[System.Management.Automation.PSCredential]$Credential,
 		[System.Management.Automation.PSCredential]$SqlCredential,
 		[switch]$NoSqlCheck,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0.0" -Parameter 'Detailed' 
@@ -108,7 +110,7 @@ function Test-DbaDiskAlignment {
 				[bool]$NoSqlCheck,
 				[string]$ComputerName,
 				[System.Management.Automation.PSCredential]$SqlCredential,
-				[bool]$Silent = $Silent
+				[bool]$EnableException = $EnableException
 			)
             
 			$SqlInstances = @()

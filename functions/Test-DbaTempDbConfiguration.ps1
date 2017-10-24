@@ -26,9 +26,11 @@ function Test-DbaTempDbConfiguration {
 
 			To connect as a different Windows user, run PowerShell as that user.
 
-		.PARAMETER Silent
-			If this switch is enabled, the internal messaging functions will be silenced.
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: tempdb, configuration
 			Author: Michael Fal (@Mike_Fal), http://mikefal.net
@@ -57,7 +59,7 @@ function Test-DbaTempDbConfiguration {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstance[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		$result = @()
@@ -186,7 +188,7 @@ function Test-DbaTempDbConfiguration {
 			}
 
 			Add-Member -Force -InputObject $value -MemberType NoteProperty -Name IsBestPractice -Value $isBestPractice
-			Add-Member -Force -InputObject $value -MemberType NoteProperty -Name Notes -Value 'Set grow with explicit values, not by percent.'
+			Add-Member -Force -InputObject $value -MemberType NoteProperty -Name Notes -Value 'Set file growth to explicit values, not by percent.'
 			$result += $value
 
 			Write-Message -Level Verbose -Message "File growth settings evaluated."
@@ -257,6 +259,6 @@ function Test-DbaTempDbConfiguration {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlTempDbConfiguration
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlTempDbConfiguration
 	}
 }

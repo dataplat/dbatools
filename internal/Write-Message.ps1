@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Write-Message {
 	<#
@@ -38,17 +38,17 @@ function Write-Message {
 			The specific level of verbosity preference can be configured using the settings of the message.maximum and message.minimum namespace.
 			
 			In addition, it is possible to select the level "Warning" which moves the message out of the configurable range:
-			The user will always be shown this message, unless he silences the entire thing with -Silent
+			The user will always be shown this message, unless he silences the entire thing with -EnableException
 			
 			Possible levels:
 			Critical (1), Important / Output (2), Significant (3), VeryVerbose (4), Verbose (5), SomewhatVerbose (6), System (7), Debug (8), InternalComment (9), Warning (666)
 			Either one of the strings or its respective number will do as input.
 		
-		.PARAMETER Silent
-			Whether the silent switch was set in the calling function.
-			If true, it will write errors, if any, but not write to the screen without explicit override using -Debug or -Verbose.
-			If false, it will print a warning if in wrning mode. It will also be willing to write a message to the screen, if the level is within the range configured for that.
-		
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.PARAMETER FunctionName
 			The name of the calling function.
 			Will be automatically set, but can be overridden when necessary.
@@ -72,10 +72,10 @@ function Write-Message {
 			Use in cases where you already have a speaking message interpretation and do not need the original message.
 		
 		.PARAMETER Target
-			If an ErrorRecord was passed, it is possible to add the object on which the error eccoured, in order to simplify debugging / troubleshooting.
+			If an ErrorRecord was passed, it is possible to add the object on which the error occurred, in order to simplify debugging / troubleshooting.
 		
 		.EXAMPLE
-			PS C:\> Write-Message -Message 'Connecting to Database1' -Level 4 -Silent $Silent
+			PS C:\> Write-Message -Message 'Connecting to Database1' -Level 4 -EnableException $EnableException
 			
 			Writes the message 'Connecting to Database1'. By default, this will be
 			- Written to the in-memory message log
@@ -84,7 +84,7 @@ function Write-Message {
 			- Written to the Debug stream (Write-Debug)
 		
 		.EXAMPLE
-			PS C:\> Write-Message -Message "Connecting to Database 2 failed" -Silent $silent -Warning -ErrorRecord $_ -Target $Database
+			PS C:\> Write-Message -Message "Connecting to Database 2 failed" -EnableException $EnableException -Warning -ErrorRecord $_ -Target $Database
 			
 			Writes the message "Connecting to Database 2 failed". By default, this will be
 			- Written to the in-memory message log
@@ -117,7 +117,8 @@ function Write-Message {
 		$Level = "Warning",
 		
 		[bool]
-		$Silent = $Silent,
+		[Alias('Silent')]
+		$EnableException = $EnableException,
 		
 		[string]
 		$FunctionName = ((Get-PSCallStack)[0].Command),
@@ -140,7 +141,7 @@ function Write-Message {
 	)
 	
 	# Since it's internal, I set it to always silent. Will show up in tests, but not bother the end users with a reminder over something they didn't do.
-	Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Warning" -CustomMessage "The parameter -Warning has been deprecated and will be removed on release 1.0.0. Please use '-Level Warning' instead." -Silent $true
+	Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Warning" -CustomMessage "The parameter -Warning has been deprecated and will be removed on release 1.0.0. Please use '-Level Warning' instead." -EnableException $true
 	
 	$timestamp = Get-Date
 	$developerMode = [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::DeveloperMode
@@ -162,8 +163,8 @@ function Write-Message {
 	
 	if ($developerMode) {
 		$channels_future = @()
-		if ((-not $Silent) -and ($Level -eq [Sqlcollaborative.Dbatools.dbaSystem.MessageLevel]::Warning)) { $channels_future += "Warning" }
-		if ((-not $Silent) -and ($max_info -ge $Level) -and ($min_info -le $Level)) { $channels_future += "Information" }
+		if ((-not $EnableException) -and ($Level -eq [Sqlcollaborative.Dbatools.dbaSystem.MessageLevel]::Warning)) { $channels_future += "Warning" }
+		if ((-not $EnableException) -and ($max_info -ge $Level) -and ($min_info -le $Level)) { $channels_future += "Information" }
 		if (($max_verbose -ge $Level) -and ($min_verbose -le $Level)) { $channels_future += "Verbose" }
 		if (($max_debug -ge $Level) -and ($min_debug -le $Level)) { $channels_future += "Debug" }
 		
@@ -174,7 +175,7 @@ function Write-Message {
 		else { $targetString = "" }
 		
 		$newMessage = @"
-[$FunctionName][$($timestamp.ToString("HH:mm:ss"))][L: $Level]$targetString[C: $channels_future][S: $Silent][O: $($true -eq $Once)]
+[$FunctionName][$($timestamp.ToString("HH:mm:ss"))][L: $Level]$targetString[C: $channels_future][S: $EnableException][O: $($true -eq $Once)]
     $baseMessage
 "@
 	}
@@ -207,7 +208,7 @@ function Write-Message {
 			$Exception = New-Object System.Exception($Message, $record.Exception)
 			$newRecord = New-Object System.Management.Automation.ErrorRecord($Exception, "dbatools_$FunctionName", $record.CategoryInfo.Category, $targetToAdd)
 			
-			if ($Silent) { Write-Error -Message $newRecord -Category $record.CategoryInfo.Category -TargetObject $targetToAdd -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
+			if ($EnableException) { Write-Error -Message $newRecord -Category $record.CategoryInfo.Category -TargetObject $targetToAdd -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue }
 			else { $null = Write-Error -Message $newRecord -Category $record.CategoryInfo.Category -TargetObject $targetToAdd -Exception $Exception -ErrorId "dbatools_$FunctionName" -ErrorAction Continue 2>&1 }
 		}
 	}
@@ -220,13 +221,13 @@ function Write-Message {
 	
 	#region Warning Mode
 	if ($Warning -or ($Level -like "Warning")) {
-		if (-not $Silent) {
+		if (-not $EnableException) {
 			if ($PSBoundParameters.ContainsKey("Once")) {
 				$OnceName = "MessageOnce.$FunctionName.$Once"
 				
 				if (-not (Get-DbaConfigValue -Name $OnceName)) {
 					Write-Warning $newMessage
-					Set-DbaConfig -Name $OnceName -Value $True -Hidden -Silent -ErrorAction Ignore
+					Set-DbaConfig -Name $OnceName -Value $True -Hidden -EnableException -ErrorAction Ignore
 				}
 			}
 			else {
@@ -245,13 +246,13 @@ function Write-Message {
 	
 	#region Message Mode
 	else {
-		if ((-not $Silent) -and ($max_info -ge $Level) -and ($min_info -le $Level)) {
+		if ((-not $EnableException) -and ($max_info -ge $Level) -and ($min_info -le $Level)) {
 			if ($PSBoundParameters.ContainsKey("Once")) {
 				$OnceName = "MessageOnce.$FunctionName.$Once"
 				
 				if (-not (Get-DbaConfigValue -Name $OnceName)) {
 					Write-HostColor -String $newColoredMessage -DefaultColor $info_color -ErrorAction Ignore
-					Set-DbaConfig -Name $OnceName -Value $True -Hidden -Silent -ErrorAction Ignore
+					Set-DbaConfig -Name $OnceName -Value $True -Hidden -EnableException -ErrorAction Ignore
 				}
 			}
 			else {

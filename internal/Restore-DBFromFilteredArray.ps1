@@ -31,7 +31,7 @@ Function Restore-DBFromFilteredArray {
         [int]$MaxTransferSize,
         [int]$BlockSize,
         [int]$BufferCount,
-        [switch]$Silent,
+        [switch][Alias('Silent')]$EnableException,
         [string]$StandbyDirectory,
         [switch]$Continue,
         [string]$AzureCredential,
@@ -103,7 +103,7 @@ Function Restore-DBFromFilteredArray {
                 }
             }
             else {
-                Stop-Function -Message "$Dbname exists and WithReplace not specified, stopping" -Silent $silent 
+                Stop-Function -Message "$Dbname exists and WithReplace not specified, stopping" -EnableException $EnableException 
                 return
             }
         }
@@ -164,8 +164,7 @@ Function Restore-DBFromFilteredArray {
                 }
                 elseif ($ReplaceDatabase -ne $True) {
                     Write-Message -Level Veryverbose -Message "Bombing out created on $sqlinstance"
-                    #Stop-Function -message "Destination File $File  exists on $SqlInstance" -Target $file -Category 'DeviceError' -silent $true
-					Stop-Function -message "Destination File $File  exists on $SqlInstance" -Target $file -Category 'DeviceError' -silent $true
+                    Stop-Function -message "Destination File $File  exists on $SqlInstance" -Target $file -Category 'DeviceError' -EnableException $true
 					return
                 }    
                 Write-Message -Level Veryverbose -Message "past resuse tests"

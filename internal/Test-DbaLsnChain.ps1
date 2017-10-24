@@ -10,21 +10,16 @@ Then filters to ensure that all the backups are from that anchor point (LastLSN)
 Then checks that we have either enough Diffs and T-log backups to get to where we want to go. And checks that there is no break between
 LastLSN and FirstLSN in sequential files
 	
-.PARAMETER FilterdRestoreFiles
+.PARAMETER FilteredRestoreFiles
 This is just an object consisting of the output from Read-DbaBackupHeader. Normally this will have been filtered down to a restorable chain 
 before arriving here. (ie; only 1 anchoring Full backup)
 	
 .NOTES 
 Author: Stuart Moore (@napalmgram), stuart-moore.com
-
+Tags:
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
 Test-DbaLsnChain -FilteredRestoreFiles $FilteredFiles

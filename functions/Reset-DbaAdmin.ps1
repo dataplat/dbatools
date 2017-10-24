@@ -43,9 +43,11 @@ function Reset-DbaAdmin {
 		.PARAMETER Force
 			If this switch is enabled, the Login(s) will be dropped and recreated on Destination. Logins that own Agent jobs cannot be dropped at this time.
 
-		.PARAMETER Silent
-			If this switch is enabled, the internal messaging functions will be silenced.
-        
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
         .EXAMPLE
             Reset-DbaAdmin -SqlInstance sqlcluster
             
@@ -85,11 +87,11 @@ function Reset-DbaAdmin {
 		$SqlInstance,
 		[string]$Login = "sa",
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
     
 	begin {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Reset-SqlAdmin
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Reset-SqlAdmin
         
 		#region Utility functions
 		function ConvertTo-PlainText {

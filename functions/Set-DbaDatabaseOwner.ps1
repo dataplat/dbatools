@@ -35,9 +35,11 @@ function Set-DbaDatabaseOwner {
 		.PARAMETER Confirm
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
-			If this switch is enabled, the internal messaging functions will be silenced.
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: 
 			Author: Michael Fal (@Mike_Fal), http://mikefal.net
@@ -76,7 +78,7 @@ function Set-DbaDatabaseOwner {
 		[object[]]$ExcludeDatabase,
 		[Alias("Login")]
 		[string]$TargetLogin,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {
@@ -96,13 +98,13 @@ function Set-DbaDatabaseOwner {
 
 			#Validate login
 			if (($server.Logins.Name) -notcontains $TargetLogin) {
-				Stop-Function -Message "$TargetLogin is not a valid login on $instance. Moving on." -Continue -Silent $Silent
+				Stop-Function -Message "$TargetLogin is not a valid login on $instance. Moving on." -Continue -EnableException $EnableException
 			}
 			
 			#Owner cannot be a group
 			$TargetLoginObject = $server.Logins | where-object {$PSItem.Name -eq $TargetLogin }| Select-Object -property  Name, LoginType
 			if ($TargetLoginObject.LoginType -eq 'WindowsGroup') {
-				Stop-Function -Message "$TargetLogin is a group, therefore can't be set as owner. Moving on." -Continue -Silent $Silent
+				Stop-Function -Message "$TargetLogin is a group, therefore can't be set as owner. Moving on." -Continue -EnableException $EnableException
 			}
 			
 			#Get database list. If value for -Database is passed, massage to make it a string array.

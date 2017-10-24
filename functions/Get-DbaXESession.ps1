@@ -15,9 +15,11 @@ function Get-DbaXESession {
 	.PARAMETER Session
 	Only return specific sessions. This parameter is auto-populated.
 		
-	.PARAMETER Silent
-	If this switch is enabled, the internal messaging functions will be silenced.
-
+	.PARAMETER EnableException
+	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+	This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+	
 	.NOTES
 	Tags: Memory
 	Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -52,19 +54,14 @@ function Get-DbaXESession {
 		[PSCredential]$SqlCredential,
 		[Alias("Sessions")]
 		[object[]]$Session,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
-		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null) {
-			Stop-Function -Message "SMO version is too old. To collect Extended Events, you must have SQL Server Management Studio 2012 or higher installed."
-		}
-		
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Get-DbaXEsSession
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaXEsSession
 	}
 	
 	process {
-		if (Test-FunctionInterrupt) { return }
 		
 		foreach ($instance in $SqlInstance) {
 			try {

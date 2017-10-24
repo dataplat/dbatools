@@ -1,4 +1,4 @@
-﻿function Remove-DbaDatabaseMasterKey {
+function Remove-DbaDatabaseMasterKey {
 	<#
 	.SYNOPSIS
 		Deletes specified database master key
@@ -31,9 +31,11 @@
 		Report: Create a report object as part of the output
 		The default action can be adjusted by using Set-DbaConfig to change the 'message.mode.default' configuration
 	
-	.PARAMETER Silent
-		Use this switch to disable any kind of verbose messages
-	
+	.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 	.PARAMETER WhatIf
 		Shows what would happen if the command were to run. No actions are actually performed.
 	
@@ -89,7 +91,7 @@
 		$Mode = (Get-DbaConfigValue -Name 'message.mode.default' -Fallback "Strict"),
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	
 	begin {
@@ -100,7 +102,7 @@
 				
 				$mode = $Mode,
 				
-				$Silent = $Silent
+				$EnableException = $EnableException
 			)
 			$server = $masterkey.Parent.Parent
 			$instance = $server.DomainInstanceName

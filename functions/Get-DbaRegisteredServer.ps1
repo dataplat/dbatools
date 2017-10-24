@@ -25,9 +25,11 @@ function Get-DbaRegisteredServer {
 		.PARAMETER ResolveNetworkName
 			Also return the NetBIOS name and IP addresses(s) of each server.
 	
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Author: Bryan Hamby (@galador)
 			Tags: RegisteredServer, CMS
@@ -70,7 +72,7 @@ function Get-DbaRegisteredServer {
 		[object[]]$ExcludeGroup,
 		[switch]$ExcludeCmsServer,
 		[switch]$ResolveNetworkName,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		function Find-CmsGroup {
@@ -117,11 +119,10 @@ function Get-DbaRegisteredServer {
 		$servers = @()
 		foreach ($instance in $SqlInstance) {
 			try {
-				$cmsStore = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential -Silent:$Silent
+				$cmsStore = Get-DbaRegisteredServersStore -SqlInstance $instance -SqlCredential $SqlCredential -EnableException
 			}
 			catch {
 				Stop-Function -Message "Cannot access Central Management Server '$instance'." -ErrorRecord $_ -Continue
-				return
 			}
 
 			if (Test-Bound -ParameterName ExcludeGroup) {
