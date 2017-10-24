@@ -7,7 +7,7 @@ Describe "$CommandName Unit Tests" -Tag "UnitTests" {
 		$paramCount = 4
 		$defaultParamCount = 13
 		[object[]]$params = (Get-ChildItem function:\Invoke-DbaCycleErrorLog).Parameters.Keys
-		$knownParameters = 'SqlInstance', 'SqlCredential', 'Type', 'Silent'
+		$knownParameters = 'SqlInstance', 'SqlCredential', 'Type', 'EnableException'
 		it "Should contain our specific parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}

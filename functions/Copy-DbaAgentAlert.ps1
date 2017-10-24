@@ -1,4 +1,4 @@
-﻿function Copy-DbaAgentAlert {
+function Copy-DbaAgentAlert {
 	<#
 		.SYNOPSIS
 			Copy-DbaAgentAlert migrates alerts from one SQL Server to another.
@@ -50,9 +50,11 @@
 		.PARAMETER Force
 			If this switch is enabled, the Alert will be dropped and recreated on Destination.
 
-		.PARAMETER Silent
-			If this switch is enabled, the internal messaging functions will be silenced.
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: Migration, Agent
 			Author: Chrissy LeMaire (@cl), netnerds.net
@@ -94,7 +96,7 @@
 		[object[]]$ExcludeAlert,
 		[switch]$IncludeDefaults,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -150,7 +152,7 @@
 				DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
 
-			if ($Alert -and $Alert -notcontains $alertName -and $ExcludeAlert -contains $alertName) {
+			if (($Alert -and $Alert -notcontains $alertName) -or ($ExcludeAlert -and $ExcludeAlert -contains $alertName)) {
 				continue
 			}
 
@@ -195,8 +197,8 @@
 				continue
 			}
 
-			if ($serverAlert.JobName -and $dest.JobServer.Jobs.Name -NotContains $serverAlert.JobName) {
-				Write-Message -Level Warning -Message "Alert [$alertName] has job [$($serverAlert.JobName)] configured as response. The job does not exist on destination $dest. Skipping."
+			if ($serverAlert.JobName -and $destServer.JobServer.Jobs.Name -NotContains $serverAlert.JobName) {
+				Write-Message -Level Warning -Message "Alert [$alertName] has job [$($serverAlert.JobName)] configured as response. The job does not exist on destination $destServer. Skipping."
 
 				$copyAgentAlertStatus.Status = "Skipped"
 				$copyAgentAlertStatus
@@ -305,6 +307,6 @@
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAlert
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAlert
 	}
 }

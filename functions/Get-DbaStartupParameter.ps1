@@ -19,10 +19,11 @@ Function Get-DbaStartupParameter {
     .PARAMETER Simple
         Shows a simplified output including only Server, Master Data Path, Master Log path, ErrorLog, TraceFlags and ParameterString
     
-    .PARAMETER Silent
-        Replaces user friendly yellow warnings with bloody red exceptions of doom!
-        Use this if you want the function to throw terminating errors you want to catch.
-    
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
     .EXAMPLE
         Get-DbaStartupParameter -SqlInstance sql2014
         
@@ -38,9 +39,7 @@ Function Get-DbaStartupParameter {
         Tags: WSMan, SQLWMI, Memory
         dbatools PowerShell module (https://dbatools.io)
         Copyright (C) 2016 Chrissy LeMaire
-        This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-        This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-        You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
     
     .LINK
         https://dbatools.io/Get-DbaStartupParameter
@@ -59,7 +58,7 @@ Function Get-DbaStartupParameter {
         $Simple,
         
         [switch]
-        $Silent
+        [Alias('Silent')]$EnableException
     )
     
     process {

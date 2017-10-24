@@ -1,4 +1,4 @@
-﻿function Get-DbaAgentLog {
+function Get-DbaAgentLog {
 <#
 	.SYNOPSIS
 		Gets the "SQL Agent Error Log" of an instance
@@ -15,9 +15,11 @@
 	.PARAMETER LogNumber 
 		An Int32 value that specifies the index number of the error log required. Error logs are listed 0 through 9 where 0 is the current error log and 9 is the oldest.
 	
-	.PARAMETER Silent 
-		Use this switch to disable any kind of verbose messages
-	
+	.PARAMETER EnableException 
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 	.NOTES
 		Tags: Logging
 		Website: https://dbatools.io
@@ -54,7 +56,7 @@
 		$SqlCredential,
 		[ValidateRange(0, 9)]
 		[int[]]$LogNumber,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($instance in $SqlInstance) {

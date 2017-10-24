@@ -39,9 +39,11 @@ Run only instance level queries
 .PARAMETER DatabaseSpecific
 Run only database level queries
 	
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages or progress bars
-	
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .PARAMETER Confirm
 Prompts to confirm certain actions
 	
@@ -84,7 +86,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 		[switch]$UseSelectionHelper,
 		[switch]$InstanceOnly,
 		[switch]$DatabaseSpecific,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
@@ -204,7 +206,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 				if (!$scriptpart.DBSpecific -and !$DatabaseSpecific) {
 					if ($PSCmdlet.ShouldProcess($instance, $scriptpart.QueryName)) {
 						$counter++
-						if (!$silent) {
+						if (-not $EnableException) {
 							Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query data from $instance" -Status "Processing $counter of $scriptcount" -CurrentOperation $scriptpart.QueryName -PercentComplete (($counter / $scriptcount) * 100)
 						}
 						
@@ -253,7 +255,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 						$dbname = $currentdb.name
 						if ($PSCmdlet.ShouldProcess(('{0} ({1})' -f $instance, $currentdb.name), $scriptpart.QueryName)) {
 							
-							if (!$silent) { Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query data from $dbname on $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100) }
+							if (-not $EnableException) { Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query data from $dbname on $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100) }
 							Write-Message -Level Output -Message "Collecting diagnostic query data from $dbname for $($scriptpart.QueryName) on $instance"
 							try {
 								$result = $server.Query($scriptpart.Text,$currentdb.Name)

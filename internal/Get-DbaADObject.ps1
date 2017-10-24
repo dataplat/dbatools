@@ -1,7 +1,6 @@
 #ValidationTags#FlowControl,Pipeline#
-Function Get-DbaADObject
-{
-<#
+Function Get-DbaADObject {
+	<#
 .SYNOPSIS
 Get-DbaADObject tries to facilitate searching AD with dbatools, which ATM can't require AD cmdlets.
 
@@ -31,18 +30,17 @@ Search for the object in all domains connected to the current one. If you are un
 using this switch will search through all domains in your forest and also in the ones that are trusted. This is HEAVY, but it can save
 some headaches.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Author: Niphlod, https://github.com/niphlod
-
+Tags:
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-
 Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
 Get-DbaADObject -ADObject "contoso\ctrlb" -Type User
@@ -76,7 +74,7 @@ Get-DbaADObject -ADObject "contoso\SqlInstance2014$" -Type Group
 Searches in the contoso domain for a SqlInstance2014 computer (remember the ending $ for computer objects)
 
 .EXAMPLE
-Get-DbaADObject -ADObject "contoso\ctrlb" -Type User -Silent
+Get-DbaADObject -ADObject "contoso\ctrlb" -Type User -EnableException
 
 Searches in the contoso domain for a ctrlb user, suppressing all error messages and throw exceptions that can be caught instead
 
@@ -84,21 +82,22 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 	[CmdletBinding()]
 	Param (
 		[string[]]$ADObject,
-		[ValidateSet("User","Group","Computer")]
+		[ValidateSet("User", "Group", "Computer")]
 		[string]$Type,
 
-		[ValidateSet("DistinguishedName","Guid","Name","SamAccountName","Sid","UserPrincipalName")]
+		[ValidateSet("DistinguishedName", "Guid", "Name", "SamAccountName", "Sid", "UserPrincipalName")]
 		[string]$IdentityType = "SamAccountName",
 
 		$Credential,
 		[switch]$SearchAllDomains,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	BEGIN {
 		try {
 			Add-Type -AssemblyName System.DirectoryServices.AccountManagement
-		} catch {
-			Stop-Function -Message "Failed to load the required module $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_
+		}
+		catch {
+			Stop-Function -Message "Failed to load the required module $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_
 			return
 		}
 		switch ($Type) {
@@ -116,56 +115,62 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 			}
 		}
 		
-		function Get-DbaADObjectInternal($Domain, $IdentityType, $obj, $Silent) {
+		function Get-DbaADObjectInternal($Domain, $IdentityType, $obj, $EnableException) {
 			try {
 				# can we simply resolve the passed domain ? This has the benefit of raising almost instantly if the domain is not valid
 				$Context = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext('Domain', $Domain)
 				$DContext = [System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($Context)
 				if ($Credential) {
 					$ctx = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('Domain', $Domain, $Credential.UserName, $Credential.GetNetworkCredential().Password)
-				} else {
+				}
+				else {
 					$ctx = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('Domain', $Domain)
 				}
 				$found = $searchClass::FindByIdentity($ctx, $IdentityType, $obj)
 				$found
-			} catch {
-				Stop-Function -Message "Errors trying to connect to the domain $Domain $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ADObj
+			}
+			catch {
+				Stop-Function -Message "Errors trying to connect to the domain $Domain $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_ -Target $ADObj
 			}
 		}
 	}
 	PROCESS {
 		if (Test-FunctionInterrupt) { return }
-		foreach($ADObj in $ADObject) {
+		foreach ($ADObj in $ADObject) {
 			# passing the domain as the first part before the \ wins always in defining the domain to search into
 			$Splitted = $ADObj.Split("\")
 			if ($Splitted.Length -ne 2) {
 				# we can also take the object@domain format
 				$Splitted = $ADObj.Split("@")
 				if ($Splitted.Length -ne 2) {
-					Stop-Function -Message "You need to pass ADObject either DOMAIN\object or object@domain format" -Continue -Silent $Silent
-				} else {
-					if($IdentityType -ne 'UserPrincipalName') {
+					Stop-Function -Message "You need to pass ADObject either DOMAIN\object or object@domain format" -Continue -EnableException $EnableException
+				}
+				else {
+					if ($IdentityType -ne 'UserPrincipalName') {
 						$obj, $Domain = $Splitted
-					} else {
+					}
+					else {
 						# if searching for a UserPrincipalName format without a specific domain passed in before the slash, 
 						# we can assume there are no custom UPN suffixes in place
 						$obj, $Domain = $AdObj, $Splitted[1]
 					}
 				}
-			} else {
+			}
+			else {
 				$Domain, $obj = $Splitted
 			}
 			if ($SearchAllDomains) {
-				Write-Message -Message "Searching for $obj under all domains in $IdentityType format" -Level 4 -Silent $Silent
+				Write-Message -Message "Searching for $obj under all domains in $IdentityType format" -Level 4 -EnableException $EnableException
 				# if we're lucky, we can resolve the domain right away
 				try {
-					Get-DbaADObjectInternal -Domain $Domain -IdentityType $IdentityType -obj $obj -Silent $true
-				} catch {
+					Get-DbaADObjectInternal -Domain $Domain -IdentityType $IdentityType -obj $obj -EnableException $true
+				}
+				catch {
 					# if not, let's build up all domains
 					$ForestObject = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
 					$AllDomains = $ForestObject.Domains.Name
-					foreach($ForestDomain in $AllDomains) {
-						Write-Message -Message "Searching for $obj under domain $ForestDomain in $IdentityType format" -Level 4 -Silent $Silent
+					foreach ($ForestDomain in $AllDomains) {
+						Write-Message -Message "Searching for $obj under domain $ForestDomain in $IdentityType format" -Level 4 -EnableException $EnableException
 						$found = Get-DbaADObjectInternal -Domain $ForestDomain -IdentityType $IdentityType -obj $obj
 						if ($found) {
 							$found
@@ -174,8 +179,8 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 					}
 					# we are very unlucky, let's search also in all trusted domains
 					$AllTrusted = ($ForestObject.GetAllTrustRelationships().TopLevelNames | where Status -eq 'Enabled').Name
-					foreach($ForestDomain in $AllTrusted) {
-						Write-Message -Message "Searching for $obj under domain $ForestDomain in $IdentityType format" -Level 4 -Silent $Silent
+					foreach ($ForestDomain in $AllTrusted) {
+						Write-Message -Message "Searching for $obj under domain $ForestDomain in $IdentityType format" -Level 4 -EnableException $EnableException
 						$found = Get-DbaADObjectInternal -Domain $ForestDomain -IdentityType $IdentityType -obj $obj
 						if ($found) {
 							$found
@@ -183,8 +188,9 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 						}
 					}
 				}
-			} else {
-				Write-Message -Message "Searching for $obj under domain $domain in $IdentityType format" -Level 4 -Silent $Silent
+			}
+			else {
+				Write-Message -Message "Searching for $obj under domain $domain in $IdentityType format" -Level 4 -EnableException $EnableException
 				Get-DbaADObjectInternal -Domain $Domain -IdentityType $IdentityType -obj $obj
 			}
 			

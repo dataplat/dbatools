@@ -1,4 +1,4 @@
-﻿Function Get-DbaSqlModule {
+Function Get-DbaSqlModule {
   <# 
 	.SYNOPSIS 
 	Displays all objects in sys.sys_modules after specified modification date.  Works on SQL Server 2008 and above.
@@ -33,8 +33,10 @@
 	.PARAMETER NoSystemObjects
 	Allows you to suppress output on system objects
 	
-	.PARAMETER Silent
-	Use this switch to disable any kind of verbose messages
+	.PARAMETER EnableException
+	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+	This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 	
 	.NOTES 
 	Author: Brandon Abshire, netnerds.net
@@ -78,7 +80,7 @@
     [string[]]$Type,
     [switch]$NoSystemDb,
     [switch]$NoSystemObjects,
-    [switch]$Silent
+    [switch][Alias('Silent')]$EnableException
   )
 	
   begin {

@@ -1,6 +1,6 @@
 #ValidationTags#FlowControl,Pipeline#
 Function Remove-DbaSpn {
-<#
+	<#
 .SYNOPSIS
 Removes an SPN for a given service account in active directory and also removes delegation to the same SPN, if found
 
@@ -20,9 +20,11 @@ The account you want the SPN remove from
 .PARAMETER Credential
 The credential you want to use to connect to Active Directory to make the changes
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .PARAMETER Confirm
 Turns confirmations before changes on or off
 
@@ -35,9 +37,7 @@ Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
 
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Remove-DbaSpn
@@ -48,7 +48,7 @@ Remove-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\a
 Connects to Active Directory and removes a provided SPN from the given account (and also the relative delegation)
 
 .EXAMPLE
-Remove-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account -Silent
+Remove-DbaSpn -SPN MSSQLSvc\SQLSERVERA.domain.something -ServiceAccount domain\account -EnableException
 
 Connects to Active Directory and removes a provided SPN from the given account, suppressing all error messages and throw exceptions that can be caught instead
 
@@ -79,31 +79,31 @@ Removes all set SPNs for sql2005 and the relative delegations
 		[string]$ServiceAccount,
 		[Parameter(Mandatory = $false, ValueFromPipelineByPropertyName)]
 		[PSCredential]$Credential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {
 		Write-Message -Message "Looking for account $ServiceAccount..." -Level Verbose
 		$searchfor = 'User'
-		if($ServiceAccount.EndsWith('$')) {
+		if ($ServiceAccount.EndsWith('$')) {
 			$searchfor = 'Computer'
 		}
 		try {
-			$Result = Get-DbaADObject -ADObject $ServiceAccount -Type $searchfor -Credential $Credential -Silent
+			$Result = Get-DbaADObject -ADObject $ServiceAccount -Type $searchfor -Credential $Credential -EnableException
 		}
 		catch {
-			Stop-Function -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($ServiceAccount). $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ServiceAccount
+			Stop-Function -Message "AD lookup failure. This may be because the domain cannot be resolved for the SQL Server service account ($ServiceAccount). $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_ -Target $ServiceAccount
 		}
 		if ($Result.Count -gt 0) {
 			try {
 				$adentry = $Result.GetUnderlyingObject()
 			}
 			catch {
-				Stop-Function -Message "The SQL Service account ($ServiceAccount) has been found, but you don't have enough permission to inspect its properties $($_.Exception.Message)" -Silent $Silent -InnerErrorRecord $_ -Target $ServiceAccount
+				Stop-Function -Message "The SQL Service account ($ServiceAccount) has been found, but you don't have enough permission to inspect its properties $($_.Exception.Message)" -EnableException $EnableException -InnerErrorRecord $_ -Target $ServiceAccount
 			}
 		}
 		else {
-			Stop-Function -Message "The SQL Service account ($ServiceAccount) has not been found" -Silent $Silent -Target $ServiceAccount
+			Stop-Function -Message "The SQL Service account ($ServiceAccount) has not been found" -EnableException $EnableException -Target $ServiceAccount
 		}
 		
 		# Cool! Remove an SPN
@@ -126,19 +126,19 @@ Removes all set SPNs for sql2005 and the relative delegations
 					$status = "Successfully removed SPN"
 				}
 			}
-		catch {
-			Write-Message -Message "Could not remove SPN. $($_.Exception.Message)" -Level Warning -Silent $Silent -ErrorRecord $_ -Target $ServiceAccountWrite
-			$set = $true
-			$status = "Failed to remove SPN"
-			$delegate = $false
-		}
+			catch {
+				Write-Message -Message "Could not remove SPN. $($_.Exception.Message)" -Level Warning -EnableException $EnableException -ErrorRecord $_ -Target $ServiceAccountWrite
+				$set = $true
+				$status = "Failed to remove SPN"
+				$delegate = $false
+			}
 		
 			[pscustomobject]@{
-				Name = $spn
+				Name           = $spn
 				ServiceAccount = $ServiceAccount
-				Property = "servicePrincipalName"
-				IsSet = $set
-				Notes = $status
+				Property       = "servicePrincipalName"
+				IsSet          = $set
+				Notes          = $status
 			}
 		}
 		# if we removed the SPN, we should clean up also the delegation
@@ -148,11 +148,11 @@ Removes all set SPNs for sql2005 and the relative delegations
 				# even if we removed the SPN, delegation could have been not set at all. We should not raise an error
 				if ($adentry.Properties['msDS-AllowedToDelegateTo'] -notcontains $spn) {
 					[pscustomobject]@{
-						Name = $spn
+						Name           = $spn
 						ServiceAccount = $ServiceAccount
-						Property = "msDS-AllowedToDelegateTo"
-						IsSet = $false
-						Notes = "Delegation not found"
+						Property       = "msDS-AllowedToDelegateTo"
+						IsSet          = $false
+						Notes          = "Delegation not found"
 					}
 				}
 				else {
@@ -165,17 +165,17 @@ Removes all set SPNs for sql2005 and the relative delegations
 						$status = "Successfully removed delegation"
 					}
 					catch {
-						Write-Message -Message "Could not remove delegation. $($_.Exception.Message)" -Level Warning -Silent $Silent -ErrorRecord $_ -Target $ServiceAccount
+						Write-Message -Message "Could not remove delegation. $($_.Exception.Message)" -Level Warning -EnableException $EnableException -ErrorRecord $_ -Target $ServiceAccount
 						$set = $true
 						$status = "Failed to remove delegation"
 					}
 					
 					[pscustomobject]@{
-						Name = $spn
+						Name           = $spn
 						ServiceAccount = $ServiceAccount
-						Property = "msDS-AllowedToDelegateTo"
-						IsSet = $set
-						Notes = $status
+						Property       = "msDS-AllowedToDelegateTo"
+						IsSet          = $set
+						Notes          = $status
 					}
 				}
 			}
