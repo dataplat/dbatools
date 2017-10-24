@@ -7,6 +7,7 @@ $scriptBlock = {
 	$script:___ScriptName = 'dbatools-maintenance'
 	
 	# Import module in a way where internals are available
+	$dbatools_disableTimeMeasurements = $true
 	Import-Module "$([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase)\dbatools.psm1"
 	
 	try {

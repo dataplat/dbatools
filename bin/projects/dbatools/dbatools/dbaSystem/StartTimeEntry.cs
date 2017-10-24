@@ -22,14 +22,21 @@ namespace Sqlcollaborative.Dbatools.dbaSystem
         public DateTime Timestamp { get; set; }
 
         /// <summary>
+        /// The runspace the entry was written on
+        /// </summary>
+        public Guid Runspace;
+
+        /// <summary>
         /// Creates a new StartTimeEntry
         /// </summary>
         /// <param name="Action">The action that has been taken</param>
         /// <param name="Timestamp">When was the action taken?</param>
-        public StartTimeEntry(string Action, DateTime Timestamp)
+        /// <param name="Runspace">The runspace the entry was written on</param>
+        public StartTimeEntry(string Action, DateTime Timestamp, Guid Runspace)
         {
             this.Action = Action;
             this.Timestamp = Timestamp;
+            this.Runspace = Runspace;
         }
     }
 }
