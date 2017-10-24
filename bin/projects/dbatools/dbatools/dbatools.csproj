@@ -62,6 +62,8 @@
     <Compile Include="Configuration\Config.cs" />
     <Compile Include="Connection\ConnectionHost.cs" />
     <Compile Include="Database\Dependency.cs" />
+    <Compile Include="dbaSystem\StartTimeEntry.cs" />
+    <Compile Include="dbaSystem\StartTimeResult.cs" />
     <Compile Include="dbaSystem\SystemHost.cs" />
     <Compile Include="Exceptions\BloodyHellGiveMeSomethingToWorkWithException.cs" />
     <Compile Include="Maintenance\MaintenanceHost.cs" />
@@ -71,6 +73,7 @@
     <Compile Include="Runspace\DbaRunspaceState.cs" />
     <Compile Include="Runspace\RunspaceContainer.cs" />
     <Compile Include="Runspace\RunspaceHost.cs" />
+    <Compile Include="TabExpansion\TabCompletionSet.cs" />
     <Compile Include="TypeConversion\DbaCredentialParameterConverter.cs" />
     <Compile Include="Utility\CredentialPrompt.cs" />
     <Compile Include="Validation\LinkedServerResult.cs" />

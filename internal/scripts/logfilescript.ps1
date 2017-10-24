@@ -1,5 +1,5 @@
 ﻿$scriptBlock = {
-	$script:___ScriptName = 'Logging'
+	$script:___ScriptName = 'dbatools-logging'
 	
     #region Helper Functions
     function Clean-ErrorXml
@@ -140,5 +140,5 @@
 	}
 }
 
-Register-DbaRunspace -ScriptBlock $scriptBlock -Name "logging"
-Start-DbaRunspace -Name "logging"
+Register-DbaRunspace -ScriptBlock $scriptBlock -Name "dbatools-logging"
+Start-DbaRunspace -Name "dbatools-logging"

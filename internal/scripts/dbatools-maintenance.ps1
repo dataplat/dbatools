@@ -4,7 +4,7 @@ foreach ($item in (Get-ChildItem "$script:PSModuleRoot\internal\maintenance" -Fi
 }
 
 $scriptBlock = {
-	$script:___ScriptName = 'maintenance'
+	$script:___ScriptName = 'dbatools-maintenance'
 	
 	# Import module in a way where internals are available
 	Import-Module "$([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase)\dbatools.psm1"
@@ -36,5 +36,5 @@ $scriptBlock = {
 	}
 }
 
-Register-DbaRunspace -ScriptBlock $scriptBlock -Name "maintenance"
-Start-DbaRunspace -Name "maintenance"
+Register-DbaRunspace -ScriptBlock $scriptBlock -Name "dbatools-maintenance"
+Start-DbaRunspace -Name "dbatools-maintenance"
