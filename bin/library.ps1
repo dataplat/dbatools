@@ -1,5 +1,5 @@
 ﻿# Current library Version the module expects
-$currentLibraryVersion = New-Object System.Version(0, 9, 0, 31)
+$currentLibraryVersion = New-Object System.Version(0, 9, 0, 32)
 
 <#
 Library Versioning 101:
@@ -51,7 +51,7 @@ if ($ImportLibrary) {
 	try {
 		$libraryBase = $ExecutionContext.SessionState.Module.ModuleBase + "\bin"
 		# In strict security mode, only load from the already pre-compiled binary within the module
-		if ($dbatools_strictsecuritymode) {
+		if ($script:strictSecurityMode) {
 			if (Test-Path -Path "$libraryBase\dbatools.dll") {
 				Add-Type -Path "$libraryBase\dbatools.dll" -ErrorAction Stop
 			}
@@ -64,7 +64,7 @@ if ($ImportLibrary) {
 			$hasProject = Test-Path -Path "$libraryBase\projects\dbatools\dbatools.sln"
 			$hasCompiledDll = Test-Path -Path "$libraryBase\dbatools.dll"
 			
-			if ((-not $dbatools_alwaysbuildlibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo("$libraryBase\dbatools.dll").FileVersion -eq $currentLibraryVersion)) {
+			if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo("$libraryBase\dbatools.dll").FileVersion -eq $currentLibraryVersion)) {
 				$start = Get-Date
 				try {
 					Write-Verbose -Message "Found library, trying to copy & import"
@@ -120,7 +120,7 @@ if ($ImportLibrary) {
 							$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999).dll"
 						}
 					}
-					if ($dbatools_alwaysbuildlibrary) { Move-Item -Path "$libraryBase\dbatools.dll" -Destination $libraryTempPath -Force -ErrorAction Stop }
+					if ($script:alwaysBuildLibrary) { Move-Item -Path "$libraryBase\dbatools.dll" -Destination $libraryTempPath -Force -ErrorAction Stop }
 					else { Copy-Item -Path "$libraryBase\dbatools.dll" -Destination $libraryTempPath -Force -ErrorAction Stop }
 					Add-Type -Path $libraryTempPath -ErrorAction Stop
 				}

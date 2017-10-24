@@ -179,8 +179,13 @@ Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.MaintenancePlan
 #>
 }
 
-$script:smoRunspace = [System.Management.Automation.PowerShell]::Create()
-try { $script:smoRunspace.Runspace.Name = "dbatools-import-smo" }
-catch { }
-$script:smoRunspace.AddScript($scriptBlock).AddArgument($script:PSModuleRoot)
-$script:smoRunspace.BeginInvoke()
+if ($script:serialImport) {
+	$scriptBlock.Invoke($script:PSModuleRoot)
+}
+else {
+	$script:smoRunspace = [System.Management.Automation.PowerShell]::Create()
+	try { $script:smoRunspace.Runspace.Name = "dbatools-import-smo" }
+	catch { }
+	$script:smoRunspace.AddScript($scriptBlock).AddArgument($script:PSModuleRoot)
+	$script:smoRunspace.BeginInvoke()
+}
