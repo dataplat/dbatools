@@ -95,10 +95,10 @@ function Get-DbaBackupInformation {
     
     .EXAMPLE
         $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backupps
-        $Backups += Get-DbaBackupInformation -SqlInstance Server2 -XpDirTree -Path c:\backups
+        $Backups += Get-DbaBackupInformation -SqlInstance Server2 -NoXpDirTree -Path c:\backups
 
         Scan the unc folder \\network\backups with Server1, and then scan the C:\backups folder on 
-        Server2 using xp_dirtree, adding the results to the first set.
+        Server2 not using xp_dirtree, adding the results to the first set.
 
     #>
     [CmdletBinding( DefaultParameterSetName="Create")]
