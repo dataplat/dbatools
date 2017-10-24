@@ -216,8 +216,13 @@ $scriptBlock = {
 	}
 	#endregion Implement user profile
 }
-$script:dbatoolsConfigRunspace = [System.Management.Automation.PowerShell]::Create()
-try { $script:dbatoolsConfigRunspace.Runspace.Name = "dbatools-import-config" }
-catch { }
-$script:dbatoolsConfigRunspace.AddScript($scriptBlock).AddArgument($global:dbatools_config)
-$script:dbatoolsConfigRunspace.BeginInvoke()
+if ($script:serialImport) {
+	$scriptBlock.Invoke($global:dbatools_config)
+}
+else {
+	$script:dbatoolsConfigRunspace = [System.Management.Automation.PowerShell]::Create()
+	try { $script:dbatoolsConfigRunspace.Runspace.Name = "dbatools-import-config" }
+	catch { }
+	$script:dbatoolsConfigRunspace.AddScript($scriptBlock).AddArgument($global:dbatools_config)
+	$script:dbatoolsConfigRunspace.BeginInvoke()
+}
