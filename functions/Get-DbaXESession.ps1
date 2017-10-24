@@ -58,15 +58,10 @@ function Get-DbaXESession {
 	)
 	
 	begin {
-		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null) {
-			Stop-Function -Message "SMO version is too old. To collect Extended Events, you must have SQL Server Management Studio 2012 or higher installed."
-		}
-		
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaXEsSession
 	}
 	
 	process {
-		if (Test-FunctionInterrupt) { return }
 		
 		foreach ($instance in $SqlInstance) {
 			try {
