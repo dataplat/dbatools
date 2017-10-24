@@ -569,9 +569,9 @@ function Restore-DbaDatabase {
 				Stop-Function -Target $FilteredFiles -Message "We can only handle 1 Database at a time - $dbs"
                 return
             }
-			$OldDatabaseName = ($FilteredFiles | Select-Object -Property DatabaseName -unique).DatabaseName
+			$OldDatabaseName = ($FilteredFiles | Select-Object -Property DatabaseName -unique -First 1).DatabaseName
             IF ($DatabaseName -eq '') {
-                $DatabaseName = $RestoredDatababaseNamePrefix + ($FilteredFiles | Select-Object -Property DatabaseName -unique).DatabaseName
+                $DatabaseName = $RestoredDatababaseNamePrefix + ($FilteredFiles | Select-Object -Property DatabaseName -unique -First 1).DatabaseName
                 Write-Message -Level Verbose -Message "Dbname set from backup = $DatabaseName"
             }
 			
