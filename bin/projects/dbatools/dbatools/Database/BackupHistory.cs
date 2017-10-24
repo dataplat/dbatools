@@ -97,22 +97,22 @@ namespace Sqlcollaborative.Dbatools.Database
         /// <summary>
         /// The first Log Sequence Number
         /// </summary>
-        public BigInteger FirstLsn;
+        public long FirstLsn;
 
         /// <summary>
         /// The Log Squence Number that marks the beginning of the backup
         /// </summary>
-        public BigInteger DatabaseBackupLsn;
+        public long DatabaseBackupLsn;
 
         /// <summary>
         /// The checkpoint's Log Sequence Number
         /// </summary>
-        public BigInteger CheckpointLsn;
+        public long CheckpointLsn;
 
         /// <summary>
         /// The last Log Sequence Number
         /// </summary>
-        public BigInteger LastLsn;
+        public long LastLsn;
 
         /// <summary>
         /// The primary version number of the Sql Server
