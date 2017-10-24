@@ -113,7 +113,7 @@ function Get-DbaBackupInformation {
         [string[]]$DatabaseName,
         [string[]]$SourceInstance,
         [parameter(ParameterSetName="Create")]
-        [Switch]$XpDirTree,
+        [Switch]$NoXpDirTree,
         [parameter(ParameterSetName="Create")]
         [switch]$DirectoryRecurse,
         [switch]$EnableException,
