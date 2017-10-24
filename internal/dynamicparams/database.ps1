@@ -18,8 +18,6 @@ $ScriptBlock = {
         $fakeBoundParameter
     )
     
-    $start = Get-Date
-    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastExecution = $start
 	
 	$server = $fakeBoundParameter['SqlInstance']
 	
@@ -39,7 +37,6 @@ $ScriptBlock = {
     }
     catch
     {
-        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastDuration = (Get-Date) - $start
         return
     }
     
@@ -49,7 +46,6 @@ $ScriptBlock = {
         {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
-        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastDuration = (Get-Date) - $start
         return
     }
     
@@ -60,12 +56,10 @@ $ScriptBlock = {
         {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
-        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastDuration = (Get-Date) - $start
         return
     }
     catch
     {
-        [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["database"].LastDuration = (Get-Date) - $start
         return
     }
 }
