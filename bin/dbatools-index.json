@@ -2397,6 +2397,14 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaXEFile -SqlInstance ServerA\\sql987 -Path C:\\temp\\deadocks.xel\r\n\r\nReturns events\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEFile\r\n\r\nReads remote xevents by acccessing the file over the admin UNC share\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Register-DbaConfig",
+        "Description":  "Registers an existing configuration object in registry.\nThis allows simple persisting of settings across powershell consoles.\nIt also can be used to generate a registry template, which can then be used to create policies.",
+        "Synopsis":  "Registers an existing configuration object in registry.",
+        "Name":  "Register-DbaConfig",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaConfig message.* | Register-DbaConfig\r\n\r\nRetrieves all configuration items that that start with message. and registers them in registry for the current user.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRegister-DbaConfig -FullName \"developer.mode.enable\" -Scope SystemDefault\r\n\r\nRetrieves the configuration item \"developer.mode.enable\" and registers it in registry as the default setting for all \r\nusers on this machine.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRegister-DbaConfig -Module message -Scope SystemMandatory\r\n\r\nRetrieves all configuration items of the module MyModule, then registers them in registry to enforce them for all users \r\non the current system.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Remove-DbaAgentJob",
         "Description":  "Remove-DbaAgentJob removes a a job in the SQL Server Agent.",
         "Tags":  [
