@@ -29,7 +29,7 @@ Path to the log file for the Master database
 path to the SQL Server error log file 
 
 .PARAMETER TraceFlags
-A comma seperated list of TraceFlags to be applied at SQL Server startup
+A comma separated list of TraceFlags to be applied at SQL Server startup
 By default these will be appended to any existing trace flags set
 
 .PARAMETER CommandPromptStart
@@ -65,7 +65,7 @@ Collecting information for the DBCC SQLPERF command
 Collecting information for some dynamic management views
 Many extended-events event points
 
-** Warning *\* When you use the �x startup option, the information that is available for you to diagnose performance and functional problems with SQL Server is greatly reduced.
+** Warning *\* When you use the -x startup option, the information that is available for you to diagnose performance and functional problems with SQL Server is greatly reduced.
 	
 .PARAMETER SingleUserDetails
 The username for single user
@@ -86,18 +86,17 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
+.PARAMETER EnableException
+By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 .NOTES
 Author: Stuart Moore (@napalmgram), stuart-moore.com
-
+Tags: 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE 
 Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser
@@ -116,7 +115,7 @@ Shows what would happen if you attempted to configure the SQL Instance sql2016 t
 
 .EXAMPLE
 Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -TraceFlags 8032,8048
-This will appened Trace Flags 8032 and 8048 to the startup parameters
+This will append Trace Flags 8032 and 8048 to the startup parameters
 
 .EXAMPLE
 Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride
@@ -164,8 +163,7 @@ After the work has been completed, we can push the original startup parameters b
 		[switch]$IncreasedExtents,
 		[switch]$TraceFlagsOverride,
 		[object]$StartUpConfig,
-		[switch]$Silent
-        
+		[switch][Alias('Silent')]$EnableException        
     )
     process {
         try {
@@ -362,13 +360,13 @@ After the work has been completed, we can push the original startup parameters b
         if ($pscmdlet.ShouldProcess("Setting Sql Server start parameters on $SqlInstance to $ParameterString")) {
             try {
                 if ($Credential) {
-                    $response = Invoke-ManagedComputerCommand -Server $instance -Credential $Credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -Silent
-                    $output = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential -Silent
+                    $response = Invoke-ManagedComputerCommand -ComputerName $instance -Credential $Credential -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
+                    $output = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential -EnableException
                     Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
                 }
                 else {
-                    $response = Invoke-ManagedComputerCommand -Server $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -Silent
-                    $output = Get-DbaStartupParameter -SqlInstance $server -Silent
+                    $response = Invoke-ManagedComputerCommand -ComputerName $instance -ScriptBlock $Scriptblock -ArgumentList $instance, $displayname, $ParameterString -EnableException
+                    $output = Get-DbaStartupParameter -SqlInstance $server -EnableException
                     Add-Member -Force -InputObject $output -MemberType NoteProperty -Name OriginalStartupParameters -Value $originalparamstring
                 }
                 

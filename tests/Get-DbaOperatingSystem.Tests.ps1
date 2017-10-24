@@ -12,7 +12,7 @@ Describe "Get-DbaOperatingSystem Unit Tests" -Tag "UnitTests" {
 				$params.ContainsKey("Credential") | Should Be $true
 			}
 			it "should have a parameter named Silent" {
-				$params.ContainsKey("Silent") | Should Be $true
+				$params.ContainsKey("EnableException") | Should Be $true
 			}
 		}
 		Context "Validate input" {

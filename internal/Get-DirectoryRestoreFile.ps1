@@ -11,7 +11,7 @@ Takes path, checks for validity. Scans for usual backup file
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]$Path,
         [switch]$Recurse,
-        [switch]$Silent
+        [switch][Alias('Silent')]$EnableException
     )
        
     Write-Message -Level Verbose -Message "Starting"

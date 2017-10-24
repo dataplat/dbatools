@@ -42,18 +42,17 @@ function Update-DbaSqlServiceAccount {
 	.PARAMETER Confirm 
 	Prompts you for confirmation before executing any changing operations within the command. 
 
-	.PARAMETER Silent 
-	Use this switch to disable any kind of verbose messages
-
+	.PARAMETER EnableException 
+	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+	This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+	
 	.NOTES
 	Author: Kirill Kravtsov (@nvarscar)
-
+	Tags: 
 	dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 	Copyright (C) 2017 Chrissy LeMaire
-
-	This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-	This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.EXAMPLE 
 	$NewPassword = ConvertTo-SecureString 'Qwerty1234' -AsPlainText -Force
@@ -95,7 +94,7 @@ function Update-DbaSqlServiceAccount {
 		[securestring]$OldPassword = (New-Object System.Security.SecureString),
 		[Alias("Password")]
 		[securestring]$NewPassword = (New-Object System.Security.SecureString),
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		$svcCollection = @()
@@ -113,7 +112,7 @@ function Update-DbaSqlServiceAccount {
 		if ($Username) {
 			$actionType = 'Account'
 			if ($ServiceCredential) {
-				Stop-Function -Silent $Silent -Message "You cannot specify both -UserName and -ServiceCredential parameters" -Category InvalidArgument
+				Stop-Function -EnableException $EnableException -Message "You cannot specify both -UserName and -ServiceCredential parameters" -Category InvalidArgument
 				return 
 			}
 			#System logins should not have a domain name, whitespaces or passwords
@@ -124,7 +123,7 @@ function Update-DbaSqlServiceAccount {
 				$NewPassword2 = Read-Host -Prompt "Repeat password" -AsSecureString
 				if ((New-Object System.Management.Automation.PSCredential ("user", $NewPassword)).GetNetworkCredential().Password -ne `
 					(New-Object System.Management.Automation.PSCredential ("user", $NewPassword2)).GetNetworkCredential().Password) {
-					Stop-Function -Message "Passwords do not match" -Category InvalidArgument -Silent $Silent 
+					Stop-Function -Message "Passwords do not match" -Category InvalidArgument -EnableException $EnableException 
 					return
 				}
 			}
@@ -159,7 +158,7 @@ function Update-DbaSqlServiceAccount {
 					}			
 				}
 				else {
-					Stop-Function -Silent $Silent -Message "Failed to connect to $Computer" -Continue
+					Stop-Function -EnableException $EnableException -Message "Failed to connect to $Computer" -Continue
 				}
 			}
 		}
@@ -173,7 +172,7 @@ function Update-DbaSqlServiceAccount {
 					}		
 				}
 				else {
-					Stop-Function -Silent $Silent -Message "Failed to connect to $($service.ComputerName)" -Continue
+					Stop-Function -EnableException $EnableException -Message "Failed to connect to $($service.ComputerName)" -Continue
 				}
 			}	
 		}
@@ -181,14 +180,14 @@ function Update-DbaSqlServiceAccount {
 	}
 	end {
 		foreach ($svc in $svcCollection) {
-			if ($serviceObject = Get-DbaSqlService -ComputerName $svc.ComputerName -ServiceName $svc.ServiceName -Credential $Credential -Silent:$Silent) {
+			if ($serviceObject = Get-DbaSqlService -ComputerName $svc.ComputerName -ServiceName $svc.ServiceName -Credential $Credential -EnableException:$EnableException) {
 				$outMessage = $outStatus = $agent = $null
 				if ($actionType -eq 'Password' -and $NewPassword.Length -eq 0) {
 					$currentPassword = Read-Host -Prompt "New password for $($serviceObject.StartName) ($($svc.ServiceName) on $($svc.ComputerName))" -AsSecureString
 					$currentPassword2 = Read-Host -Prompt "Repeat password" -AsSecureString
 					if ((New-Object System.Management.Automation.PSCredential ("user", $currentPassword)).GetNetworkCredential().Password -ne `
 						(New-Object System.Management.Automation.PSCredential ("user", $currentPassword2)).GetNetworkCredential().Password) {
-						Stop-Function -Message "Passwords do not match. This service will not be updated" -Category InvalidArgument -Silent $Silent -Continue
+						Stop-Function -Message "Passwords do not match. This service will not be updated" -Category InvalidArgument -EnableException $EnableException -Continue
 					}
 				}
 				else {
@@ -202,12 +201,12 @@ function Update-DbaSqlServiceAccount {
 					try {
 						if ($actionType -eq 'Account') {
 							Write-Message -Level Verbose -Message "Attempting an account change for service $($svc.ServiceName) on $($svc.ComputerName)"
-							$null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptAccountChange -ArgumentList @($svc.ServiceName, $currentCredential.UserName, $currentCredential.GetNetworkCredential().Password) -Silent:$Silent
+							$null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptAccountChange -ArgumentList @($svc.ServiceName, $currentCredential.UserName, $currentCredential.GetNetworkCredential().Password) -EnableException:$EnableException
 							$outMessage = "The login account for the service has been successfully set."
 						}
 						elseif ($actionType -eq 'Password') {
 							Write-Message -Level Verbose -Message "Attempting a password change for service $($svc.ServiceName) on $($svc.ComputerName)"
-							$null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptPasswordChange -ArgumentList @($svc.ServiceName, (New-Object System.Management.Automation.PSCredential ("user", $OldPassword)).GetNetworkCredential().Password, (New-Object System.Management.Automation.PSCredential ("user", $currentPassword)).GetNetworkCredential().Password) -Silent:$Silent
+							$null = Invoke-ManagedComputerCommand -ComputerName $svc.ComputerName -Credential $Credential -ScriptBlock $scriptPasswordChange -ArgumentList @($svc.ServiceName, (New-Object System.Management.Automation.PSCredential ("user", $OldPassword)).GetNetworkCredential().Password, (New-Object System.Management.Automation.PSCredential ("user", $currentPassword)).GetNetworkCredential().Password) -EnableException:$EnableException
 							$outMessage = "The password has been successfully changed."
 						}
 						$outStatus = 'Successful'
@@ -215,7 +214,7 @@ function Update-DbaSqlServiceAccount {
 					catch {
 						$outStatus = 'Failed'
 						$outMessage = $_.Exception.Message
-						Write-Message -Level Warning -Message $_.Exception.Message -Silent $Silent
+						Write-Message -Level Warning -Message $_.Exception.Message -EnableException $EnableException
 					}
 				}
 				else {
@@ -231,13 +230,13 @@ function Update-DbaSqlServiceAccount {
 						}
 					}
 				}
-				$serviceObject = Get-DbaSqlService -ComputerName $svc.ComputerName -ServiceName $svc.ServiceName -Credential $Credential -Silent:$Silent
+				$serviceObject = Get-DbaSqlService -ComputerName $svc.ComputerName -ServiceName $svc.ServiceName -Credential $Credential -EnableException:$EnableException
 				Add-Member -Force -InputObject $serviceObject -NotePropertyName Message -NotePropertyValue $outMessage
 				Add-Member -Force -InputObject $serviceObject -NotePropertyName Status -NotePropertyValue $outStatus
 				Select-DefaultView -InputObject $serviceObject -Property ComputerName, ServiceName, State, StartName, Status, Message
 			}
 			Else {
-				Stop-Function -Message "The service $($svc.ServiceName) has not been found on $($svc.ComputerName)" -Silent $Silent -Continue
+				Stop-Function -Message "The service $($svc.ServiceName) has not been found on $($svc.ComputerName)" -EnableException $EnableException -Continue
 			}
 		}
 	}

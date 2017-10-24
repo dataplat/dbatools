@@ -12,9 +12,11 @@ function Get-DbaOperatingSystem {
 		.PARAMETER Credential
 			Alternate credential object to use for accessing the target computer(s).
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: ServerInfo, OperatingSystem
 			Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
@@ -42,7 +44,7 @@ function Get-DbaOperatingSystem {
 		[Alias("cn", "host", "Server")]
 		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
 		[PSCredential]$Credential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($computer in $ComputerName) {
@@ -66,10 +68,10 @@ function Get-DbaOperatingSystem {
 
 			try {
 				if (Test-Bound "Credential") {
-					$os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved -Credential $Credential -Silent
+					$os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved -Credential $Credential -EnableException
 				}
 				else {
-					$os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved -Silent
+					$os = Get-DbaCmObject -ClassName Win32_OperatingSystem -ComputerName $computerResolved -EnableException
 				}
 			}
 			catch {
@@ -79,10 +81,10 @@ function Get-DbaOperatingSystem {
 
 			try {
 				if (Test-Bound "Credential") {
-					$tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved -Credential $Credential -Silent
+					$tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved -Credential $Credential -EnableException
 				}
 				else {
-					$tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved -Silent
+					$tz = Get-DbaCmObject -ClassName Win32_TimeZone -ComputerName $computerResolved -EnableException
 				}
 			}
 			catch {
@@ -92,10 +94,10 @@ function Get-DbaOperatingSystem {
 
 			try {
 				if (Test-Bound "Credential") {
-					$powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved -Credential $Credential -Silent | Select-Object ElementName, InstanceId, IsActive
+					$powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved -Credential $Credential -EnableException | Select-Object ElementName, InstanceId, IsActive
 				}
 				else {
-					$powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved -Silent | Select-Object ElementName, InstanceId, IsActive
+					$powerPlan = Get-DbaCmObject -ClassName Win32_PowerPlan -Namespace "root\cimv2\power" -ComputerName $computerResolved -EnableException | Select-Object ElementName, InstanceId, IsActive
 				}
 			}
 			catch {

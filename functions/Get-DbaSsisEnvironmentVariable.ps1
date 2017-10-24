@@ -1,5 +1,5 @@
 function Get-DbaSsisEnvironmentVariable {
-<#
+	<#
 .SYNOPSIS
 This command gets specified SSIS Environment and all its variables
 
@@ -30,9 +30,11 @@ The Folders names that contain the environments
 The Folders names to exclude. Acts as a filter for folders containing environments, best user without 'Folder' parameter
 to get variables for all folders but excluded ones
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .EXAMPLE
 Get-DbaSsisEnvironmentVariable -SqlInstance localhost -Environment DEV -Folder DWH_ETL
 
@@ -86,13 +88,11 @@ Gets all variables from Environments other than 'DEV' and 'PROD' on 'localhost' 
 selects Name and Value properties for variables that names start with letter 'a' and outputs it as the GridView
 
 .NOTES
+Tags:
 Author: Bartosz Ratajczyk ( @b_ratajczyk )
-
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 #>
 	[CmdletBinding()]
 	Param (
@@ -109,7 +109,7 @@ You should have received a copy of the GNU General Public License along with thi
 		[object[]]$Folder,
 		[parameter(Mandatory = $false)]
 		[object[]]$FolderExclude,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {
@@ -178,9 +178,9 @@ You should have received a copy of the GNU General Public License along with thi
 							$encKey = 'MS_Enckey_Env_' + $e.EnvironmentId
 							$encCert = 'MS_Cert_Env_' + $e.EnvironmentId
 							
-                            <#
+							<#
                             SMO does not return sensitive values (gets data from catalog.environment_variables)
-                            We have to manualy query internal.environment_variables instead and use symmetric keys
+                            We have to manually query internal.environment_variables instead and use symmetric keys
                             within T-SQL code
                             #>
 							
@@ -231,18 +231,18 @@ You should have received a copy of the GNU General Public License along with thi
 								}
 								
 								[PSCustomObject]@{
-									ComputerName  = $server.NetName
-									InstanceName  = $server.ServiceName
-									SqlInstance   = $server.DomainInstanceName
-									Folder	      = $f
-									Environment   = $e.Name
-									Id		      = $variable.variable_id
-									Name		  = $variable.Name
-									Description   = $variable.description
-									Type		  = $variable.type
-									IsSensitive   = $variable.sensitive
-									BaseDataType  = $variable.base_data_type
-									Value		  = $value
+									ComputerName = $server.NetName
+									InstanceName = $server.ServiceName
+									SqlInstance  = $server.DomainInstanceName
+									Folder       = $f
+									Environment  = $e.Name
+									Id           = $variable.variable_id
+									Name         = $variable.Name
+									Description  = $variable.description
+									Type         = $variable.type
+									IsSensitive  = $variable.sensitive
+									BaseDataType = $variable.base_data_type
+									Value        = $value
 								}
 							}
 						}
