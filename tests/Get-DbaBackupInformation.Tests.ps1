@@ -62,30 +62,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    Context "Get history for one instance" {
-		$results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -SourceInstance $script:instance2
-		It "Should be 3 backups returned" {
-			$results.count | Should Be 3
-		}
-		It "Should Be 1 full backup" {
-			($results | Where-Object {$_.Type -eq 'Database'}).count | Should be 1
-		}
-		It "Should be 1 log backups" {
-			($results | Where-Object {$_.Type -eq 'Transaction Log'}).count | Should be 2
-        }
-        It "Should only be backups of $dbname2"{
-            ($results | Where-Object {$_.SqlInsance -ne $dbname2 }).count | Should Be 0
-        }
-    }
-
     Context "Check the export/import of backup history" {
-        $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -SourceInstance $script:instance1
-        $results | ConvertTo-Json | Out-File "$DestBackupDir\history.json"
-        $import = Get-Content "$DestBackupDir\history.json" -Raw | ConvertFrom-Json
-        $results = $import | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationFilePrefix hist -RestoredDatababaseNamePrefix hist -TrustDbBackupHistory
+        Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -SourceInstance $script:instance1 -ExportPath "$DestBackupDir\history.xml"
+      
+        Get-DbaBackupInformation -Import -Path "$DestBackupDir\history.xml" | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationFilePrefix hist -RestoredDatababaseNamePrefix hist -TrustDbBackupHistory
         It "Should restore cleanly" {
             ($results | Where-Object {$_.RestoreComplete -eq $false}).count | Should be 0
         }
-		
-    }
+	}
+
 }
