@@ -1,4 +1,4 @@
-f#ValidationTags#FlowControl#
+#ValidationTags#FlowControl#
 function Restore-DbaFromDatabaseSnapshot {
 	<#
 .SYNOPSIS
