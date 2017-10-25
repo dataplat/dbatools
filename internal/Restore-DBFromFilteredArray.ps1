@@ -167,7 +167,7 @@ Function Restore-DBFromFilteredArray {
                     Stop-Function -message "Destination File $File  exists on $SqlInstance" -Target $file -Category 'DeviceError' -EnableException $true
 					return
                 }    
-                Write-Message -Level Veryverbose -Message "past resuse tests"
+                Write-Message -Level Veryverbose -Message "passed resuse tests"
             }
         }
         $RestoreCount = 0
@@ -224,7 +224,7 @@ Function Restore-DBFromFilteredArray {
                     if (($null -ne $extension) -and ($extension -ne '')) {
                         $filename = $filename + $extension
                     }
-                    Write-Message -Level VeryVerbose -Message "past the checks"
+                    Write-Message -Level VeryVerbose -Message "passed the checks"
                     if (($File.Type -eq 'L' -or $File.filetype -eq 'L') -and $DestinationLogDirectory -ne '') {
                         $MoveFile.PhysicalFileName = $DestinationLogDirectory + '\' + $FileName
                     }
