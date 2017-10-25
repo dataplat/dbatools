@@ -187,11 +187,11 @@ function Get-DbaDatabaseFile {
 						$VolumeFreeSpace = [dbasize]($free * 1024 * 1024)
 					}
 					if($result.GrowthType -eq "Percent") {
-						$nextgrowtheventadd = $size * ($result.Growth * 0.01)
-					}
-					else {
-						$nextgrowtheventadd = $result.Growth * 8
-					}
+ 						$nextgrowtheventadd = [dbasize]($result.size * ($result.Growth * 0.01) * 1024)
+ 					}
+ 					else {
+ 						$nextgrowtheventadd = [dbasize]($result.Growth * 8 * 1024)
+ 					}
 					
 					[PSCustomObject]@{
 						ComputerName             = $server.NetName
