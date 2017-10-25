@@ -186,7 +186,12 @@ function Get-DbaDatabaseFile {
 						$free = $disks | Where-Object { $_.drive -eq $result.PhysicalName.Substring(0, 1) } | Select-Object 'MB Free' -ExpandProperty 'MB Free'
 						$VolumeFreeSpace = [dbasize]($free * 1024 * 1024)
 					}
-					
+					if($result.GrowthType -eq "Percent") {
+						$nextgrowtheventadd = [dbasize]$size * ($result.Growth * 0.01)
+					}
+					else {
+						$nextgrowtheventadd = $result.Growth * 8
+					}
 					
 					[PSCustomObject]@{
 						ComputerName             = $server.NetName
@@ -203,6 +208,7 @@ function Get-DbaDatabaseFile {
 						MaxSize                  = $maxsize
 						Growth                   = $result.Growth
 						GrowthType               = $result.GrowthType
+						NextGrowthEventSize	 = $nextgrowtheventadd
 						Size                     = $size
 						UsedSpace                = $usedspace
 						AvailableSpace           = $AvailableSpace
