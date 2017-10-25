@@ -187,7 +187,7 @@ function Get-DbaDatabaseFile {
 						$VolumeFreeSpace = [dbasize]($free * 1024 * 1024)
 					}
 					if($result.GrowthType -eq "Percent") {
-						$nextgrowtheventadd = [dbasize]$size * ($result.Growth * 0.01)
+						$nextgrowtheventadd = $size * ($result.Growth * 0.01)
 					}
 					else {
 						$nextgrowtheventadd = $result.Growth * 8
