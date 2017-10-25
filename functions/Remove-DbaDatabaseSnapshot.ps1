@@ -108,7 +108,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		if ($null -ne $PipelineSnapshot -and $PipelineSnapshot.getType().Name -eq 'pscustomobject') {
 			if ($Pscmdlet.ShouldProcess($PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName, "Remove db snapshot $($PipelineSnapshot.SnapshotDb.Name)")) {
 				try {
-					$server = Connect-SqlInstance -SqlInstance $PipelineSnapshot.SnapshotDb.Parent.DomainInstanceName -SqlCredential $Credential
+					$server = $PipelineSnapshot.SnapshotDb.Parent
 				} catch {
 					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				}
@@ -139,7 +139,7 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			} catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
