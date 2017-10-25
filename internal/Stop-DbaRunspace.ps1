@@ -1,7 +1,7 @@
 function Stop-DbaRunspace {
 <#
 	.SYNOPSIS
-		Stops a managed runspace
+		Stops a managed runspace 
 	
 	.DESCRIPTION
 		Stops a runspace that was registered to dbatools.
