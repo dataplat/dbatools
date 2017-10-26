@@ -1,5 +1,5 @@
 ﻿# Current library Version the module expects
-$currentLibraryVersion = New-Object System.Version(0, 9, 0, 32)
+$currentLibraryVersion = New-Object System.Version(0, 9, 0, 33)
 
 <#
 Library Versioning 101:
@@ -90,7 +90,11 @@ if ($ImportLibrary) {
 				$start = Get-Date
 				$system = [Appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -like "System, *"
 				$msbuild = (Resolve-Path "$(Split-Path $system.Location)\..\..\..\..\Framework$(if ([intptr]::Size -eq 8) { "64" })\$($system.ImageRuntimeVersion)\msbuild.exe").Path
-				$msbuildConfiguration = "/p:Configuration=Release"
+				switch ($PSVersionTable.PSVersion.Major) {
+					3 { $msbuildConfiguration = "/p:Configuration=ps3" }
+					4 { $msbuildConfiguration = "/p:Configuration=ps4" }
+					default { $msbuildConfiguration = "/p:Configuration=Release" }
+				}
 				$msbuildOptions = ""
 				if ($env:APPVEYOR -eq 'True') {
 					# This doesn't seem to work. Keep it here for now

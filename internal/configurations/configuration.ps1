@@ -211,7 +211,7 @@ $scriptBlock = {
 	{
 		if ($DbatoolsConfig.GetType().FullName -eq "System.Management.Automation.ScriptBlock")
 		{
-			$DbatoolsConfig.Invoke()
+			[System.Management.Automation.ScriptBlock]::Create($DbatoolsConfig.ToString()).Invoke()
 		}
 	}
 	#endregion Implement user profile
