@@ -36,7 +36,7 @@ function Copy-DbaServerAuditSpecification {
 			The Server Audit Specification(s) to process. Options for this list are auto-populated from the server. If unspecified, all Server Audit Specifications will be processed.
 
 		.PARAMETER ExcludeAuditSpecification
-			The Server Audit Specification(s) to exclude. Options for this list are is auto-populated from the server
+			The Server Audit Specification(s) to exclude. Options for this list are auto-populated from the server
 
 		.PARAMETER WhatIf
 			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.

@@ -12,7 +12,7 @@ function Test-ElevationRequirement {
 		
 		.PARAMETER ComputerName
 			The computer that is being targeted by the calling command.
-			This most be a localhost variety, for it to be able to fail.
+			This must be a localhost variety, for it to be able to fail.
 		
 		.PARAMETER Continue
 			When using the native capability to terminate on fail, this will call continue in non-EnableException mode.
