@@ -290,7 +290,15 @@ while (($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') -or ($scri
 	$timeSpent = $timeSpent + 50
 	
 	if ($timeSpent -ge $timeout) {
-		Write-Warning "Timeout waiting for runspaces reached!"
+		Write-Warning @"
+The module import has hit a timeout while waiting for some background tasks to finish.
+This may result in some commands not working as intended.
+This should not happen under reasonable circumstances, please file an issue at:
+https://github.com/sqlcollaborative/dbatools/issues
+Or contact us directly in the #dbatools channel of the SQL Server Community Slack Channel:
+https://dbatools.io/slack/
+Timeout waiting for temporary runspaces reached! The Module import will complete, but some things may not work as intended
+"@
 		$global:smoRunspace = $script:smoRunspace
 		$global:dbatoolsConfigRunspace = $script:dbatoolsConfigRunspace
 		break
