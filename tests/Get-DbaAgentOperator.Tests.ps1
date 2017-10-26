@@ -16,7 +16,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		$sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
 		$server.Query($sql)
 	}
-	Context "Get back some Operators" {
+	Context "Get back some operators" {
 		$results = Get-DbaAgentOperator -SqlInstance $script:instance2
 		It "return at least two results" {
 			$results.Count -ge 2 | Should Be $true
