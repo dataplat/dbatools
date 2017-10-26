@@ -270,7 +270,7 @@ function Set-DbaConfig
 			[Sqlcollaborative.Dbatools.Configuration.Config]$cfg = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName]
 			if ((-not $DisableValidation) -and ($cfg.Validation) -and (Test-Bound -ParameterName "Value"))
 			{
-				$testResult = $cfg.Validation.Invoke($Value)
+				$testResult = [scriptblock]::Create($cfg.Validation.ToString()).Invoke($Value)
 				if (-not $TestResult.Success)
 				{
 					Stop-Function -Message "Could not update configuration $internalFullName | Failed validation: $($testResult.Message)" -EnableException $EnableException -Category InvalidResult -Target $internalFullName
@@ -280,7 +280,7 @@ function Set-DbaConfig
 			}
 			if ((-not $DisableHandler) -and ($cfg.Handler) -and (Test-Bound -ParameterName "Value"))
 			{
-				try { $cfg.Handler.Invoke($Value) }
+				try { [scriptblock]::Create($cfg.Handler.ToString()).Invoke($Value) }
 				catch
 				{
 					Stop-Function -Message "Could not update configuration $internalFullName | Failed handling $_" -EnableException $EnableException -Category InvalidResult -Target $internalFullName

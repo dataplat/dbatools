@@ -290,7 +290,15 @@ while (($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') -or ($scri
 	$timeSpent = $timeSpent + 50
 	
 	if ($timeSpent -ge $timeout) {
-		Write-Warning "Timeout waiting for runspaces reached!"
+		Write-Warning @"
+The module import has hit a timeout while waiting for some background tasks to finish.
+This may result in some commands not working as intended.
+This should not happen under reasonable circumstances, please file an issue at:
+https://github.com/sqlcollaborative/dbatools/issues
+Or contact us directly in the #dbatools channel of the SQL Server Community Slack Channel:
+https://dbatools.io/slack/
+Timeout waiting for temporary runspaces reached! The Module import will complete, but some things may not work as intended
+"@
 		$global:smoRunspace = $script:smoRunspace
 		$global:dbatoolsConfigRunspace = $script:dbatoolsConfigRunspace
 		break
@@ -320,8 +328,8 @@ Write-ImportTime -Text "Waiting for runspaces to finish"
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUKtRgWDdWusLlxlV6GIKYFgK/
-# 0X+ggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUJHpDvNdv1QUk1Q+k94sttW6w
+# 3PSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -452,22 +460,22 @@ Write-ImportTime -Text "Waiting for runspaces to finish"
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQU02ShFxbAEKQasJQdpDPN8NgYRbYwDQYJKoZIhvcNAQEBBQAE
-# ggEALPEQ5933uUG5oQ3HA4g+yr5f30X0JKPsziHGWYXN6GYfGuMvv5vwJ8H6JG68
-# fF8e2aaMks+nioHIDP8Akp8dXutAcZR5aT8Bmjom+K+duTVBkXIe1IQcVjJ6xJIR
-# nOdSUL5bRC2S7RtVxeFR1fcPHfAdYDIt3rpHhQaE1HjgONQTG407eXknhIU9ullV
-# Mdu/YwzSI2nUYjQ1Fglp0aZNlAiuDfsCsazLFjiQQQdHFloFjqyL154HEv3WCSco
-# LKkvNZirkkcD1b1c5HT/s0WdW3n02P9v4cwgShHQPMXZ5MsmtR5D4JLfDaJvhnfZ
-# ErRpmpa5mHdFs5uyolYLDBEpkaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUDfsRPt0p1hSYcuHhgSZ6Rjeu4gswDQYJKoZIhvcNAQEBBQAE
+# ggEAGutV6Gfmdaevowr/rir9hS6mDxxhkHr5ovatHsaqu5sWSybTOjU3CyVr8HAB
+# t+TErngh7worDJOefBd9egqlbuqJpMGbua/bkWMaRR7J7W+u5IqbBj1yatjhOksz
+# Q3htSWsXsXH8C3CqHSzrT3xv8/DaptDJcgcgLMGT0M6QGtIDVUueeJLJwSzBAc69
+# 0aDk7VPnayslzXDGOZVaJGyFjoL0bEct144Uscgs3MK93mcrGnFf/W0LvK1HVsJs
+# SS7FWKMu+3H9vo4o2YVpNbEPK9TXPRNCST2fLzlGifuC550H4dAUa635mLA2qZsT
+# OVH6HfGYAb+9kbZsfocwqZEF4qGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMDI0MTgwODEyWjAj
-# BgkqhkiG9w0BCQQxFgQUbPABk4EbEullQdubimMoz+xRTdQwDQYJKoZIhvcNAQEB
-# BQAEggEAXdaSeIiNTdHwP08BYK8+MLgZq4gLqVifRHQybpg6vyUAXje6G4v4Oj9x
-# xNeos8rsSYCTziH34AffUrodormx66L2rZE0i61EPuF9Y75EGwDxmwOGDwIinzfF
-# miPohTEESGme029HbX8b4BruCkF1hHKhDN5mOaukenm7mSkyHljms0ABw7pL3Uej
-# aWakNysVIO0odJRrAnK3lPM352Q+t2docDE6b3uI9BgDKJK7JPvm/aWt2f8Qg97L
-# YY+2iEVRTa2LdLPKZl4gkD1C+7wnHhA1xMXA6sdkSBjs/a8BbL21BpuVgyGcSWYA
-# w1lKxbvLie4YvBt3DzhGyCsqvblq/w==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMDI2MDg0OTA4WjAj
+# BgkqhkiG9w0BCQQxFgQUO4ILLnvVyAYabUAbQIWfe3ESuPEwDQYJKoZIhvcNAQEB
+# BQAEggEADYN8APqc0lhvCDSDsZm9grYbAnDNsgr/d7xGXstfMpwyPb5lbtQIiRLR
+# 6yGb2PdIPd1S3ZrCQ9hQpxJ34V3Oonsfwd3vsRyqT1PTNGysfOG3lQNd4Aib/gkb
+# 9i8ubAAP9V/fy9ZY2aqB55yUmUKsonTl7cOiggprPhE81nTI5KqmrvsL6u8J+siz
+# ONlftOgyMSyEvpChrCreo3s3jfm0oUQmj/SbdI5cyiy2XXcfU8dlD7A8ckwO9j+2
+# r8Xuvt6mEyLwlqSSM/CMrcdKZr1UfQmvV/SdwxJS15NI/m40g/u2ysH91MxjAmsd
+# 4phnAJkgOpLoYHEwNG3XOwddQroxeA==
 # SIG # End signature block

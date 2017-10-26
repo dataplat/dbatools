@@ -204,10 +204,10 @@ function Get-DbaBackupInformation {
                 $historyObject.UserName = $group.Group[0].UserName 
                 $historyObject.Start = [DateTime]$group.Group[0].BackupStartDate 
                 $historyObject.End = [DateTime]$group.Group[0].BackupFinishDate
-                $historyObject.Duration = ([DateTime]$group.Group[0].BackupFinishDate - [DateTime]$group.Group[0].BackupStartDate).Seconds
+                $historyObject.Duration = ([DateTime]$group.Group[0].BackupFinishDate - [DateTime]$group.Group[0].BackupStartDate)
                 $historyObject.Path = [string[]]$Group.Group.BackupPath
                 $historyObject.FileList = ($group.Group.FileList | select-object type, logicalname, physicalname)
-                $historyObject.TotalSize = (Measure-Object $Group.Group.BackupSizeMB -sum).sum
+                $historyObject.TotalSize = ($Group.Group.BackupSize | Measure-Object -sum).sum
                 $historyObject.Type = $group.Group[0].BackupTypeDescription
                 $historyObject.BackupSetId = $group.group[0].BackupSetGUID
                 $historyObject.DeviceType = 'Disk'
