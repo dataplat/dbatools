@@ -6,7 +6,7 @@
         "Synopsis":  "Adds a computer certificate - useful for older systems.",
         "Name":  "Add-DbaComputerCertificate",
         "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaComputerCertificate -ComputerName Server1 -Path C:\\temp\\cert.cer\r\n\r\nAdds the local C:\\temp\\cer.cer to the remote server Server1 in LocalMachine\\My (Personal).\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaComputerCertificate -Path C:\\temp\\cert.cer\r\n\r\nAdds the local C:\\temp\\cer.cer to the local computer\u0027s LocalMachine\\My (Personal) certificate store.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaComputerCertificate -ComputerName Server1 -Path C:\\temp\\cert.cer\r\n\r\nAdds the local C:\\temp\\cert.cer to the remote server Server1 in LocalMachine\\My (Personal).\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaComputerCertificate -Path C:\\temp\\cert.cer\r\n\r\nAdds the local C:\\temp\\cert.cer to the local computer\u0027s LocalMachine\\My (Personal) certificate store.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Backup-DbaDatabase",
