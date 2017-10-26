@@ -7,16 +7,23 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		$server = Connect-DbaInstance -SqlInstance $script:instance2
 		$sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator', @enabled=1, @pager_days=0"
 		$server.Query($sql)
+		$sql = "EXEC msdb.dbo.sp_add_operator @name=N'dbatoolsci_operator2', @enabled=1, @pager_days=0"
+		$server.Query($sql)
 	}
 	AfterAll {
 		$sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator'"
 		$server.Query($sql)
+		$sql = "EXEC msdb.dbo.sp_delete_operator @name=N'dbatoolsci_operator2'"
+		$server.Query($sql)
 	}
-	Context "Count Number of Database Maintenance Agent Jobs on localhost" {
+	Context "Get back some Operators" {
+		$results = Get-DbaAgentOperator -SqlInstance $script:instance2
+		It "return at least two results" {
+			$results.Count -ge 2 | Should Be $true
+		}
 		$results = Get-DbaAgentOperator -SqlInstance $script:instance2 -Operator dbatoolsci_operator
 		It "return one result" {
 			$results.Count | Should Be 1
 		}
 	}
-	
 }
