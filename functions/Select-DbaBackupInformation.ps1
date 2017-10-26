@@ -62,29 +62,63 @@ function Select-DbaBackupInformation{
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
-        [BackupHistory[]]$BackupHistory,
-        [DateTime]$RestoreTime,
+        [object]$BackupHistory,
+        [DateTime]$RestoreTime = (get-date).addmonths(1),
         [switch]$IgnoreLogs,
         [switch]$IgnoreDiffs,
         [string[]]$DatabaseName,
         [string[]]$ServerName,
         [switch]$EnableException
     )
-    begin{}
-    process{
-        $OutputHistory = @()
-        foreach ($History in $BackupHistory){
-            if (Test-Bound -ParameterName $DatabaseName){
-                $History = $History | Where-Object {$_.Database -in $DatabaseName}
-            }
-            if (Test-Bound -ParameterName $ServerName){
-                $History = $History | Where-Object {$_.InstanceName -in $servername}
-            }
-            if (Test-Bound -ParameterName $RestoreTime){
-                $History = $History | Where-Object {$_.InstanceName -in $servername}
-            }
-        }
+    begin{
+        $InternalHistory = @()
     }
-    end{}
+    process{
+        foreach ($h in $backupHistory){
+            $internalHistory += $h
+        }
+
+    }
+    
+    end{
+        $InternalHistory = $BackupHistory
+        <#       foreach ($History in $BackupHistory){
+                   $InternalHistory += $History
+               }
+          #>     
+               if (Test-Bound -ParameterName DatabaseName){
+                   $InternalHistory = $InternalHistory | Where-Object {$_.Database -in $DatabaseName}
+               }
+               if (Test-Bound -ParameterName ServerName){
+                   $InternalHistory = $InternalHistory | Where-Object {$_.InstanceName -in $servername}
+               }
+       
+               #$InternalHistory
+             #  ForEach ($Database in ($InternalHistory.Database | select-Object -Unique)) {
+                   $DatabaseHistory = $InternalHistory
+                   # | Where-Object {$_.Database -eq $Database}
+
+                  
+                   $dbHistory = @()
+                   #Find the Last Full Backup before RestoreTime
+                   $dbHistory += $Full =  $DatabaseHistory | Where-Object {$_.Type -in ('Full','Database') -and $_.Start -le $RestoreTime} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
+                   #"Full"
+                   #$Full
+                   #Find the Last diff between Full and RestoreTime
+       
+                   $dbHistory += $DatabaseHistory | Where-Object {$_.Type -in ('Differential','Database Differential')  -and $_.Start -le $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
+                   #$dbHistory
+                   #Get All t-logs up to restore time
+                   $LogBaseLsn = ($dbHistory | Sort-Object -Property LastLsn -Descending | select-object -First 1).lastLsn
+                   $FilteredLogs = $DatabaseHistory | Where-Object {$_.Type -in ('Log','Transaction Log') -and $_.Start -le $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN -and $_.LastLSN -ge $LogBaseLsn} | Sort-Object -Property LastLsn
+                   $GroupedLogs = $FilteredLogs | Group-Object -Property LastLSN, FirstLSN
+                   ForEach ($Group in $GroupedLogs){
+                       $dbhistory += $DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID}
+                   }
+                  # $dbHistory
+                   # Get Last T-log
+                   $dbHistory += $DatabaseHistory | Where-Object {$_.Type -in ('Log','Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
+                $dbHistory
+             #  }
+    }
 }
