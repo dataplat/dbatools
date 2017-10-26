@@ -112,7 +112,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 		}
 		
 		$scriptversions = @()
-		$scriptfiles = Get-ChildItem "$Path\SQLServerDiagnosticQueries_*_*.sql"
+		$scriptfiles = Get-ChildItem "$Path\*.sql"
 		
 		if (!$scriptfiles) {
 			Write-Message -Level Warning -Message "Diagnostic scripts not found in $Path. Using the ones within the module."
@@ -139,7 +139,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 				$parsedscript = Invoke-DbaDiagnosticQueryScriptParser -filename $file.fullname
 				
 				$newscript = [pscustomobject]@{
-					Version = $file.Basename.Split("_")[1]
+					Version = $file.Basename.Split(" ")[2]
 					Script = $parsedscript
 				}
 				$scriptversions += $newscript
