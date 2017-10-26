@@ -649,7 +649,7 @@
     },
     {
         "CommandName":  "Find-DbaDuplicateIndex",
-        "Description":  "This command will help you to find duplicate and overlapping indexes on a database or a list of databases.\n\nOn SQL Server 2008 and higher, the IsFiltered property will also be checked\n\nAlso tells how much space you can save by dropping the index.\n\nWe show the type of compression so you can make a more considered decision.\n\nFor now only supports CLUSTERED and NONCLUSTERED indexes.\n\nYou can select the indexes you want to drop on the gridview and when clicking OK, the DROP statement will be generated.\n\nOutput:\n\tTableName\n\tIndexName\n\tKeyCols\n\tIncludedCols\n\tIndexSizeMB\n\tIndexType\n\tCompressionDesc (When 2008+)\n\tNumberRows\n\tIsDisabled\n\tIsFiltered (When 2008+)",
+        "Description":  "This command will help you to find duplicate and overlapping indexes on a database or a list of databases.\n\nOn SQL Server 2008 and higher, the IsFiltered property will also be checked\n\nAlso tells how much space you can save by dropping the index.\n\nWe show the type of compression so you can make a more considered decision.\n\nFor now only supports CLUSTERED and NONCLUSTERED indexes.\n\nYou can select the indexes you want to drop on the gridview and when clicking OK, the DROP statement will be generated.\n\nOutput:\n\tTableName\n\tIndexName\n\tKeyColumns\n\tIncludedColumns\n\tIndexSizeMB\n\tIndexType\n\tCompressionDescription (When 2008+)\n\t[RowCount]\n\tIsDisabled\n\tIsFiltered (When 2008+)",
         "Author":  "Claudio Silva (@ClaudioESSilva)",
         "Synopsis":  "Find duplicate and overlapping indexes.",
         "Name":  "Find-DbaDuplicateIndex",
