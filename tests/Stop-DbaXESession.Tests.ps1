@@ -7,20 +7,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		$server = Connect-DbaInstance -SqlInstance $script:instance2
 		$systemhealth = Get-DbaXESession -SqlInstance $server -Session system_health
 		$started = $systemhealth.IsRunning
-		if ($started) {
-			$systemhealth.Stop()
+		if (-not $started) {
+			$systemhealth.Start()
 		}
 	}
 	AfterAll {
-		if (-not $started) {
-			$systemhealth.Stop()
+		if ($started) {
+			$systemhealth.Start()
 		}
 	}
 	
 	Context "Verifying command works" {
-		It "starts the system_health session" {
-			$systemhealth | Start-DbaXESession
-			$systemhealth.IsRunning | Should Be $true
+		It "stops the system_health session" {
+			$systemhealth | Stop-DbaXESession
+			$systemhealth.IsRunning | Should Be $false
 		}
 	}
 }
