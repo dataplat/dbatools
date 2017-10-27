@@ -139,7 +139,7 @@ function Copy-DbaServerTrigger {
 				if ($force -eq $false) {
 					Write-Message -Level Verbose -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
 
-					$copyTriggerStatus.Status = "Skipped"
+					$copyTriggerStatus.Status = "Skipped. Use -Force to drop and migrate."
 					$copyTriggerStatus
 					continue
 				}

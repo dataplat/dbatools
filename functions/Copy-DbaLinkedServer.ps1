@@ -303,7 +303,7 @@ function Copy-DbaLinkedServer {
 				# This does a check to warn of missing OleDbProviderSettings but should only be checked on SQL on Windows
 				if ($destServer.Settings.OleDbProviderSettings.Name.Length -ne 0) {
 					if (!$destServer.Settings.OleDbProviderSettings.Name -contains $provider -and !$provider.StartsWith("SQLN")) {
-						$copyLinkedServer.Status = "Skipped"
+						$copyLinkedServer.Status = "Skipped. Use -Force to drop and migrate."
 						$copyLinkedServer
 
 						Write-Message -Level Verbose -Message "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."
@@ -313,7 +313,7 @@ function Copy-DbaLinkedServer {
 
 				if ($destServer.LinkedServers[$linkedServerName] -ne $null) {
 					if (!$force) {
-						$copyLinkedServer.Status = "Skipped"
+						$copyLinkedServer.Status = "Skipped. Use -Force to drop and migrate."
 						$copyLinkedServer
 
 						Write-Message -Level Verbose -Message "$linkedServerName exists $($destServer.Name). Skipping."

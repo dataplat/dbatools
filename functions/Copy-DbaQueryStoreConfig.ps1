@@ -154,7 +154,7 @@ function Copy-DbaQueryStoreConfig {
 				}
 
 				if ($db.IsAccessible -eq $false) {
-					$copyQueryStoreStatus.Status = "Skipped"
+					$copyQueryStoreStatus.Status = "Skipped. Use -Force to drop and migrate."
 					Stop-Function -Message "The database $db on server $destinationServer is not accessible. Skipping database." -Continue
 				}
 

@@ -184,7 +184,7 @@ function Copy-DbaLogin {
 						Write-Message -Level Verbose -Message "Cannot drop login performing the migration. Skipping."
 					}
 
-					$copyLoginStatus.Status = "Skipped"
+					$copyLoginStatus.Status = "Skipped. Use -Force to drop and migrate."
 					$copyLoginStatus.Notes = "Login doing migration"
 					$copyLoginStatus
 					continue
@@ -202,7 +202,7 @@ function Copy-DbaLogin {
 							Write-Message -Level Verbose -Message "$userName was skipped because it is a local machine name."
 						}
 
-						$copyLoginStatus.Status = "Skipped"
+						$copyLoginStatus.Status = "Skipped. Use -Force to drop and migrate."
 						$copyLoginStatus.Notes = "local machine name"
 						$copyLoginStatus
 						continue
@@ -219,7 +219,7 @@ function Copy-DbaLogin {
 						Write-Message -Level Verbose -Message "$userName already exists in destination. Use -Force to drop and recreate."
 					}
 
-					$copyLoginStatus.Status = "Skipped"
+					$copyLoginStatus.Status = "Skipped. Use -Force to drop and migrate."
 					$copyLoginStatus.Notes = "Already exists on destination."
 					$copyLoginStatus
 					continue
@@ -229,7 +229,7 @@ function Copy-DbaLogin {
 					if ($userName -eq $destServer.ServiceAccount) {
 						Write-Message -Level Verbose -Message "$userName is the destination service account. Skipping drop."
 
-						$copyLoginStatus.Status = "Skipped"
+						$copyLoginStatus.Status = "Skipped. Use -Force to drop and migrate."
 						$copyLoginStatus.Notes = "Destination service account"
 						$copyLoginStatus
 						continue
@@ -420,7 +420,7 @@ function Copy-DbaLogin {
 					else {
 						Write-Message -Level Verbose -Message "$($sourceLogin.LoginType) logins not supported. $($sourceLogin.name) skipped."
 
-						$copyLoginStatus.Status = "Skipped"
+						$copyLoginStatus.Status = "Skipped. Use -Force to drop and migrate."
 						$copyLoginStatus.Notes = "$($sourceLogin.LoginType) not supported"
 						$copyLoginStatus
 

@@ -158,7 +158,7 @@ function Copy-DbaAgentAlert {
 
 			if ($destAlerts.name -contains $serverAlert.name) {
 				if ($force -eq $false) {
-					$copyAgentAlertStatus.Status = "Skipped"
+					$copyAgentAlertStatus.Status = "Skipped. Use -Force to drop and migrate."
 					$copyAgentAlertStatus
 					Write-Message -Message "Alert [$alertName] exists at destination. Use -Force to drop and migrate." -Level Verbose
 					continue
@@ -185,14 +185,14 @@ function Copy-DbaAgentAlert {
 			if ($destSevConflict) {
 				Write-Message -Level Verbose -Message "Alert [$($destSevConflict.Name)] has already been defined to use the severity $($serverAlert.Severity). Skipping."
 
-				$copyAgentAlertStatus.Status = "Skipped"
+				$copyAgentAlertStatus.Status = "Skipped. Use -Force to drop and migrate."
 				$copyAgentAlertStatus
 				continue
 			}
 			if ($destSevDbConflict) {
 				Write-Message -Level Verbose -Message "Alert [$($destSevConflict.Name)] has already been defined to use the severity $($serverAlert.Severity) on database $($severAlert.DatabaseName). Skipping."
 
-				$copyAgentAlertStatus.Status = "Skipped"
+				$copyAgentAlertStatus.Status = "Skipped. Use -Force to drop and migrate."
 				$copyAgentAlertStatus
 				continue
 			}
@@ -200,7 +200,7 @@ function Copy-DbaAgentAlert {
 			if ($serverAlert.JobName -and $destServer.JobServer.Jobs.Name -NotContains $serverAlert.JobName) {
 				Write-Message -Level Verbose -Message "Alert [$alertName] has job [$($serverAlert.JobName)] configured as response. The job does not exist on destination $destServer. Skipping."
 
-				$copyAgentAlertStatus.Status = "Skipped"
+				$copyAgentAlertStatus.Status = "Skipped. Use -Force to drop and migrate."
 				$copyAgentAlertStatus
 				continue
 			}
