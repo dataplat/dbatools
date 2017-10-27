@@ -128,22 +128,25 @@ function Copy-DbaExtendedEvent {
 		Write-Message -Level Verbose -Message "Migrating sessions."
 		foreach ($session in $storeSessions) {
 			$sessionName = $session.Name
-
+			
 			$copyXeSessionStatus = [pscustomobject]@{
-				SourceServer = $sourceServer.Name
+				SourceServer  = $sourceServer.Name
 				DestinationServer = $destServer.Name
-				Name = $sessionName
-				Status = $null
-				DateTime = [DbaDateTime](Get-Date)
+				Name		  = $sessionName
+				Type	      = "Extended Event"
+				Status	      = $null
+				Notes	      = $null
+				DateTime	  = [DbaDateTime](Get-Date)
 			}
-
+			
 			if ($destStore.Sessions[$sessionName] -ne $null) {
 				if ($force -eq $false) {
 					$copyXeSessionStatus.Status = "Skipped"
-					$copyXeSessionStatus
+					$copyXeSessionStatus.Notes = "Already exists"
+					$copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-					Write-Message -Level Warning -Message "Extended Event Session '$sessionName' was skipped because it already exists on $destination."
-					Write-Message -Level Warning -Message "Use -Force to drop and recreate."
+					Write-Message -Level Verbose -Message "Extended Event Session '$sessionName' was skipped because it already exists on $destination."
+					Write-Message -Level Verbose -Message "Use -Force to drop and recreate."
 					continue
 				}
 				else {
@@ -156,7 +159,7 @@ function Copy-DbaExtendedEvent {
 						}
 						catch {
 							$copyXeSessionStatus.Status = "Failed"
-							$copyXeSessionStatus
+							$copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 							Stop-Function -Message "Unable to drop session. Moving on." -Target $sessionName -InnerErrorRecord $_ -Continue
 						}
@@ -176,13 +179,13 @@ function Copy-DbaExtendedEvent {
 						$destStore.Sessions.Refresh()
 						$destStore.Sessions[$sessionName].Start()
 					}
-# Will correcting the spelling of this status cause downstream problems?
+					
 					$copyXeSessionStatus.Status = "Successful"
-					$copyXeSessionStatus
+					$copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyXeSessionStatus.Status = "Failed"
-					$copyXeSessionStatus
+					$copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Stop-Function -Message "Unable to create session." -Target $sessionName -InnerErrorRecord $_
 				}

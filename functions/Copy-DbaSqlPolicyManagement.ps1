@@ -158,7 +158,7 @@ function Copy-DbaSqlPolicyManagement {
 				SourceServer      = $sourceServer.Name
 				DestinationServer = $destServer.Name
 				Name              = $conditionName
-				Type              = "Condition"
+				Type              = "Policy Condition"
 				Status            = $null
 				Notes             = $null
 				DateTime          = [DbaDateTime](Get-Date)
@@ -166,11 +166,11 @@ function Copy-DbaSqlPolicyManagement {
 
 			if ($destStore.Conditions[$conditionName] -ne $null) {
 				if ($force -eq $false) {
-					Write-Message -Level Warning -Message "condition '$conditionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
+					Write-Message -Level Verbose -Message "condition '$conditionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 
 					$copyConditionStatus.Status = "Skipped"
-					$copyConditionStatus.Notes = "Already exists on destination."
-					$copyConditionStatus
+					$copyConditionStatus.Notes = "Already exists"
+					$copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				else {
@@ -188,7 +188,7 @@ function Copy-DbaSqlPolicyManagement {
 						catch {
 							$copyConditionStatus.Status = "Failed"
 							$copyConditionStatus.Notes = $_.Exception.Message
-							$copyConditionStatus
+							$copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							Stop-Function -Message "Issue dropping condition on $destination" -Target $conditionName -ErrorRecord $_ -Continue
 						}
 					}
@@ -204,12 +204,12 @@ function Copy-DbaSqlPolicyManagement {
 					$destStore.Conditions.Refresh()
 
 					$copyConditionStatus.Status = "Successful"
-					$copyConditionStatus
+					$copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyConditionStatus.Status = "Failed"
 					$copyConditionStatus.Notes = $_.Exception.Message
-					$copyConditionStatus
+					$copyConditionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Stop-Function -Message "Issue creating condition on $destination" -Target $conditionName -ErrorRecord $_
 				}
@@ -236,11 +236,11 @@ function Copy-DbaSqlPolicyManagement {
 
 			if ($destStore.Policies[$policyName] -ne $null) {
 				if ($force -eq $false) {
-					Write-Message -Level Warning -Message "Policy '$policyName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
+					Write-Message -Level Verbose -Message "Policy '$policyName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 
 					$copyPolicyStatus.Status = "Skipped"
-					$copyPolicyStatus.Notes = "Already exists on destination."
-					$copyPolicyStatus
+					$copyPolicyStatus.Notes = "Already exists"
+					$copyPolicyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				else {
@@ -254,7 +254,7 @@ function Copy-DbaSqlPolicyManagement {
 						catch {
 							$copyPolicyStatus.Status = "Failed"
 							$copyPolicyStatus.Notes = $_.Exception.Message
-							$copyPolicyStatus
+							$copyPolicyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping policy on $destination" -Target $policyName -ErrorRecord $_ -Continue
 						}
@@ -272,12 +272,12 @@ function Copy-DbaSqlPolicyManagement {
 					$null = $destServer.Query($sql)
 
 					$copyPolicyStatus.Status = "Successful"
-					$copyPolicyStatus
+					$copyPolicyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyPolicyStatus.Status = "Failed"
 					$copyPolicyStatus.Notes = $_.Exception.Message
-					$copyPolicyStatus
+					$copyPolicyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					# This is usually because of a duplicate dependent from above. Just skip for now.
 					Stop-Function -Message "Issue creating policy on $destination" -Target $policyName -ErrorRecord $_ -Continue
