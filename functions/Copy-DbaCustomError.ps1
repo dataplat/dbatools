@@ -138,7 +138,7 @@ function Copy-DbaCustomError {
 			if ($destCustomErrors.ID -contains $customErrorId) {
 				if ($force -eq $false) {
 					$copyCustomErrorStatus.Status = "Objects exists, use -Force to drop and migrate"
-					$copyCustomErrorStatus
+					$copyCustomErrorStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					Write-Message -Level Verbose -Message "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
 					continue
@@ -151,7 +151,7 @@ function Copy-DbaCustomError {
 						}
 						catch {
 							$copyCustomErrorStatus.Status = "Failed"
-							$copyCustomErrorStatus
+							$copyCustomErrorStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping custom error" -Target $customErrorId -InnerErrorRecord $_ -Continue
 						}
@@ -167,11 +167,11 @@ function Copy-DbaCustomError {
 					$destServer.Query($sql)
 
 					$copyCustomErrorStatus.Status = "Successful"
-					$copyCustomErrorStatus
+					$copyCustomErrorStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 				}
 				catch {
 					$copyCustomErrorStatus.Status = "Failed"
-					$copyCustomErrorStatus
+					$copyCustomErrorStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					Stop-Function -Message "Issue creating custom error" -Target $customErrorId -InnerErrorRecord $_
 				}

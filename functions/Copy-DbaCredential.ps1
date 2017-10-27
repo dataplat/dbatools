@@ -322,7 +322,7 @@ function Copy-DbaCredential {
 				if ($destServer.Credentials[$credentialName] -ne $null) {
 					if (!$force) {
 						$copyCredentialStatus.Status = "Skipping"
-						$copyCredentialStatus
+						$copyCredentialStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						
 						Write-Message -Level Verbose -Message "$credentialName exists $($destServer.Name). Skipping."
 						continue
@@ -349,11 +349,11 @@ function Copy-DbaCredential {
 					}
 					
 					$copyCredentialStatus.Status = "Successful"
-					$copyCredentialStatus
+					$copyCredentialStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 				}
 				catch {
 					$copyCredentialStatus.Status = "Failed"
-					$copyCredentialStatus
+					$copyCredentialStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					
 					Stop-Function -Message "Error creating credential" -Target $credentialName -ErrorRecord $_
 				}
