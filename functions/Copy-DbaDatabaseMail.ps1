@@ -99,15 +99,16 @@ function Copy-DbaDatabaseMail {
 		function Copy-DbaDatabaseMailConfig {
 			[cmdletbinding(SupportsShouldProcess = $true)]
 			param ()
-
+			
 			Write-Message -Message "Migrating mail server configuration values." -Level Verbose
 			$copyMailConfigStatus = [pscustomobject]@{
-				SourceServer      = $sourceServer.Name
-				DestinationServer = $destServer.Name
-				Name              = "Mail Configuration"
-				Type              = "Configuration"
-				Status            = $null
-				DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+				SourceServer	   = $sourceServer.Name
+				DestinationServer  = $destServer.Name
+				Name			   = "Mail Configuration"
+				Type			   = "Configuration"
+				Status			   = $null
+				Notes			   = $null
+				DateTime		   = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
 			if ($pscmdlet.ShouldProcess($destination, "Migrating all mail server configuration values.")) {
 				try {
@@ -135,14 +136,15 @@ function Copy-DbaDatabaseMail {
 			foreach ($account in $sourceAccounts) {
 				$accountName = $account.name
 				$copyMailAccountStatus = [pscustomobject]@{
-					SourceServer      = $sourceServer.Name
-					DestinationServer = $destServer.Name
-					Name              = $accountName
-					Type              = "Mail Account"
-					Status            = $null
-					DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+					SourceServer	   = $sourceServer.Name
+					DestinationServer  = $destServer.Name
+					Name			   = $accountName
+					Type			   = "Mail Account"
+					Status			   = $null
+					Notes			   = $null
+					DateTime		   = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
-
+				
 				if ($accounts.count -gt 0 -and $accounts -notcontains $accountName) {
 					continue
 				}
@@ -198,14 +200,15 @@ function Copy-DbaDatabaseMail {
 
 				$profileName = $profile.name
 				$copyMailProfileStatus = [pscustomobject]@{
-					SourceServer      = $sourceServer.Name
-					DestinationServer = $destServer.Name
-					Name              = $profileName
-					Type              = "Mail Profile"
-					Status            = $null
-					DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+					SourceServer	   = $sourceServer.Name
+					DestinationServer  = $destServer.Name
+					Name			   = $profileName
+					Type			   = "Mail Profile"
+					Status			   = $null
+					Notes			   = $null
+					DateTime		   = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
-
+				
 				if ($profiles.count -gt 0 -and $profiles -notcontains $profileName) {
 					continue
 				}
@@ -213,6 +216,7 @@ function Copy-DbaDatabaseMail {
 				if ($destProfiles.name -contains $profileName) {
 					if ($force -eq $false) {
 						$copyMailProfileStatus.Status = "Skipped"
+						$copyMailProfileStatus.Notes = "Already exists"
 						$copyMailProfileStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						Write-Message -Message "Profile $profileName exists at destination. Use -Force to drop and migrate." -Level Verbose
 						continue
@@ -260,20 +264,22 @@ function Copy-DbaDatabaseMail {
 			foreach ($mailServer in $sourceMailServers) {
 				$mailServerName = $mailServer.name
 				$copyMailServerStatus = [pscustomobject]@{
-					SourceServer      = $sourceServer.Name
-					DestinationServer = $destServer.Name
-					Name              = $mailServerName
-					Type              = "Mail Server"
-					Status            = $null
-					DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+					SourceServer	   = $sourceServer.Name
+					DestinationServer  = $destServer.Name
+					Name			   = $mailServerName
+					Type			   = "Mail Server"
+					Status			   = $null
+					Notes			   = $null
+					DateTime		   = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
 				if ($mailServers.count -gt 0 -and $mailServers -notcontains $mailServerName) {
 					continue
 				}
-
+				
 				if ($destMailServers.name -contains $mailServerName) {
 					if ($force -eq $false) {
 						$copyMailServerStatus.Status = "Skipped"
+						$copyMailServerStatus.Notes = "Already exists"
 						$copyMailServerStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						Write-Message -Message "Mail server $mailServerName exists at destination. Use -Force to drop and migrate." -Level Verbose
 						continue
@@ -394,8 +400,8 @@ function Copy-DbaDatabaseMail {
 		$enableDBMailStatus = [pscustomobject]@{
 			SourceServer      = $sourceServer.name
 			DestinationServer = $destServer.name
-			Name              = "Enabled DBMail on Destination"
-			Type              = "Configuration"
+			Name              = "Enabled on Destination"
+			Type              = "Mail Configuration"
 			Status            = if ($destDbMailEnabled -eq 1) { "Enabled" } else { $null }
 			DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 		}

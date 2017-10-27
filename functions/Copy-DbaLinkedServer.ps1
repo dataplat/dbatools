@@ -290,20 +290,22 @@ function Copy-DbaLinkedServer {
 				catch { }
 
 				$linkedServerName = $currentLinkedServer.Name
-
+				
 				$copyLinkedServer = [pscustomobject]@{
-					SourceServer        = $sourceServer.Name
-					DestinationServer   = $destServer.Name
-					Name                = $linkedServerName
-					Type                = $provider
-					Status              = $null
-					DateTime            = [DbaDateTime](Get-Date)
+					SourceServer		 = $sourceServer.Name
+					DestinationServer    = $destServer.Name
+					Name				 = $linkedServerName
+					Type				 = "Linked Server"
+					Status			     = $null
+					Notes			     = $provider
+					DateTime			 = [DbaDateTime](Get-Date)
 				}
-
+				
 				# This does a check to warn of missing OleDbProviderSettings but should only be checked on SQL on Windows
 				if ($destServer.Settings.OleDbProviderSettings.Name.Length -ne 0) {
 					if (!$destServer.Settings.OleDbProviderSettings.Name -contains $provider -and !$provider.StartsWith("SQLN")) {
 						$copyLinkedServer.Status = "Skipped"
+						$copyLinkedServer.Notes = "Already exists"
 						$copyLinkedServer | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 						Write-Message -Level Verbose -Message "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."

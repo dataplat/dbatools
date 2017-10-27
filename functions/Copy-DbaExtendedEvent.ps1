@@ -128,18 +128,21 @@ function Copy-DbaExtendedEvent {
 		Write-Message -Level Verbose -Message "Migrating sessions."
 		foreach ($session in $storeSessions) {
 			$sessionName = $session.Name
-
+			
 			$copyXeSessionStatus = [pscustomobject]@{
-				SourceServer = $sourceServer.Name
+				SourceServer  = $sourceServer.Name
 				DestinationServer = $destServer.Name
-				Name = $sessionName
-				Status = $null
-				DateTime = [DbaDateTime](Get-Date)
+				Name		  = $sessionName
+				Type	      = "Extended Event"
+				Status	      = $null
+				Notes	      = $null
+				DateTime	  = [DbaDateTime](Get-Date)
 			}
-
+			
 			if ($destStore.Sessions[$sessionName] -ne $null) {
 				if ($force -eq $false) {
 					$copyXeSessionStatus.Status = "Skipped"
+					$copyXeSessionStatus.Notes = "Already exists"
 					$copyXeSessionStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					Write-Message -Level Verbose -Message "Extended Event Session '$sessionName' was skipped because it already exists on $destination."
@@ -176,7 +179,7 @@ function Copy-DbaExtendedEvent {
 						$destStore.Sessions.Refresh()
 						$destStore.Sessions[$sessionName].Start()
 					}
-# Will correcting the spelling of this status cause downstream problems?
+					
 					$copyXeSessionStatus.Status = "Successful"
 					$copyXeSessionStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 				}
