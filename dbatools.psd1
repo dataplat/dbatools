@@ -11,7 +11,7 @@
 	RootModule			    = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion		    = '0.9.81'
+	ModuleVersion		    = '0.9.82'
 	
 	# ID used to uniquely identify this module
 	GUID				    = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -381,7 +381,8 @@
 		'Get-DbaDbVirtualLogFile',
 		'Register-DbaConfig',
 		'Get-DbaBackupInformation',
-		'Start-DbaXESession'
+		'Start-DbaXESession',
+		'Stop-DbaXESession'
 	)
 	
 	# Cmdlets to export from this module
