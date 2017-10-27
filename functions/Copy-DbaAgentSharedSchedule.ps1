@@ -114,14 +114,14 @@ function Copy-DbaAgentSharedSchedule {
             if ($destSchedules.Name -contains $scheduleName) {
                 if ($force -eq $false) {
                     $copySharedScheduleStatus.Status = "Objects exists, use -Force to drop and migrate"
-                    $copySharedScheduleStatus
+                    $copySharedScheduleStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
                     Write-Message -Level Verbose -Message "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
                     continue
                 }
                 else {
                     if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
                         $copySharedScheduleStatus.Status = "Objects exists, use -Force to drop and migrate"
-						$copySharedScheduleStatus
+						$copySharedScheduleStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						Write-Message -Level Verbose -Message "Schedule [$scheduleName] has associated jobs. Skipping."
                         continue
                     }
@@ -133,7 +133,7 @@ function Copy-DbaAgentSharedSchedule {
                             }
                             catch {
                                 $copySharedScheduleStatus.Status = "Failed"
-                                $copySharedScheduleStatus
+                                $copySharedScheduleStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
                                 Stop-Function -Message "Issue dropping schedule" -Target $scheduleName -InnerErrorRecord $_ -Continue
                             }
                         }
@@ -150,11 +150,11 @@ function Copy-DbaAgentSharedSchedule {
                     $destServer.Query($sql)
 
                     $copySharedScheduleStatus.Status = "Successful"
-                    $copySharedScheduleStatus
+                    $copySharedScheduleStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
                 }
                 catch {
 					$copySharedScheduleStatus.Status = "Failed"
-					$copySharedScheduleStatus
+					$copySharedScheduleStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
                     Stop-Function -Message "Issue creating schedule" -Target $scheduleName -InnerErrorRecord $_ -Continue
                 }
             }
