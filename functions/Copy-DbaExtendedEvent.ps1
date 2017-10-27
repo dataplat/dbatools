@@ -140,7 +140,7 @@ function Copy-DbaExtendedEvent {
 			if ($destStore.Sessions[$sessionName] -ne $null) {
 				if ($force -eq $false) {
 					$copyXeSessionStatus.Status = "Objects exists, use -Force to drop and migrate"
-					$copyXeSessionStatus
+					$copyXeSessionStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					Write-Message -Level Verbose -Message "Extended Event Session '$sessionName' was skipped because it already exists on $destination."
 					Write-Message -Level Verbose -Message "Use -Force to drop and recreate."
@@ -156,7 +156,7 @@ function Copy-DbaExtendedEvent {
 						}
 						catch {
 							$copyXeSessionStatus.Status = "Failed"
-							$copyXeSessionStatus
+							$copyXeSessionStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 							Stop-Function -Message "Unable to drop session. Moving on." -Target $sessionName -InnerErrorRecord $_ -Continue
 						}
@@ -178,11 +178,11 @@ function Copy-DbaExtendedEvent {
 					}
 # Will correcting the spelling of this status cause downstream problems?
 					$copyXeSessionStatus.Status = "Successful"
-					$copyXeSessionStatus
+					$copyXeSessionStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 				}
 				catch {
 					$copyXeSessionStatus.Status = "Failed"
-					$copyXeSessionStatus
+					$copyXeSessionStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					Stop-Function -Message "Unable to create session." -Target $sessionName -InnerErrorRecord $_
 				}

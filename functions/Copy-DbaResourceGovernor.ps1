@@ -133,12 +133,12 @@ function Copy-DbaResourceGovernor {
 					$destServer.Query($sql)
 
 					$copyResourceGovSetting.Status = "Successful"
-					$copyResourceGovSetting
+					$copyResourceGovSetting | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 				}
 				catch {
 					$copyResourceGovSetting.Status = "Failed"
 					$copyResourceGovSetting.Notes = $_.Exception
-					$copyResourceGovSetting
+					$copyResourceGovSetting | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					Stop-Function -Message "Not able to update settings." -Target $destServer -ErrorRecord $_
 				}
@@ -176,7 +176,7 @@ function Copy-DbaResourceGovernor {
 
 					$copyResourceGovPool.Status = "Objects exists, use -Force to drop and migrate"
 					$copyResourceGovPool.Notes = "Already exists on destination"
-					$copyResourceGovPool
+					$copyResourceGovPool | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
 				}
 				else {
@@ -196,7 +196,7 @@ function Copy-DbaResourceGovernor {
 						catch {
 							$copyResourceGovPool.Status = "Failed to drop from Destination"
 							$copyResourceGovPool.Notes = $_.Exception
-							$copyResourceGovPool
+							$copyResourceGovPool | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 							Stop-Function -Message "Unable to drop: $_  Moving on." -Target $destPool -ErrorRecord $_ -Continue
 						}
@@ -212,7 +212,7 @@ function Copy-DbaResourceGovernor {
 					$destServer.Query($sql)
 
 					$copyResourceGovPool.Status = "Successful"
-					$copyResourceGovPool
+					$copyResourceGovPool | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					$workloadGroups = $pool.WorkloadGroups
 					foreach ($workloadGroup in $workloadGroups) {
@@ -234,13 +234,13 @@ function Copy-DbaResourceGovernor {
 						$destServer.Query($sql)
 
 						$copyResourceGovWorkGroup.Status = "Successful"
-						$copyResourceGovWorkGroup
+						$copyResourceGovWorkGroup | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					}
 				}
 				catch {
 					$copyResourceGovWorkGroup.Status = "Failed"
 					$copyResourceGovWorkGroup.Notes = $_.Exception
-					$copyResourceGovWorkGroup
+					$copyResourceGovWorkGroup | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					Stop-Function -Message "Unable to migrate pool." -Target $pool -ErrorRecord $_
 				}
@@ -265,7 +265,7 @@ function Copy-DbaResourceGovernor {
 					Notes             = $null
 					DateTime          = [DbaDateTime](Get-Date)
 				}
-				$copyResourceGovReconfig
+				$copyResourceGovReconfig | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 			}
 		}
 	}

@@ -150,7 +150,7 @@ function Copy-DbaDatabaseMail {
 				if ($destAccounts.name -contains $accountName) {
 					if ($force -eq $false) {
 						$copyMailAccountStatus.Status = "Objects exists, use -Force to drop and migrate"
-						$copyMailAccountStatus
+						$copyMailAccountStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						Write-Message -Message "Account $accountName exists at destination. Use -Force to drop and migrate." -Level Verbose
 						continue
 					}
@@ -163,7 +163,7 @@ function Copy-DbaDatabaseMail {
 						}
 						catch {
 							$copyMailAccountStatus.Status = "Failed"
-							$copyMailAccountStatus
+							$copyMailAccountStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 							Stop-Function -Message "Issue dropping account." -Target $accountName -Category InvalidOperation -InnerErrorRecord $_ -Continue
 						}
 					}
@@ -180,11 +180,11 @@ function Copy-DbaDatabaseMail {
 					}
 					catch {
 						$copyMailAccountStatus.Status = "Failed"
-						$copyMailAccountStatus
+						$copyMailAccountStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						Stop-Function -Message "Issue copying mail account." -Target $accountName -Category InvalidOperation -InnerErrorRecord $_
 					}
 				}
-				$copyMailAccountStatus
+				$copyMailAccountStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 			}
 		}
 
@@ -213,7 +213,7 @@ function Copy-DbaDatabaseMail {
 				if ($destProfiles.name -contains $profileName) {
 					if ($force -eq $false) {
 						$copyMailProfileStatus.Status = "Objects exists, use -Force to drop and migrate"
-						$copyMailProfileStatus
+						$copyMailProfileStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						Write-Message -Message "Profile $profileName exists at destination. Use -Force to drop and migrate." -Level Verbose
 						continue
 					}
@@ -226,7 +226,7 @@ function Copy-DbaDatabaseMail {
 						}
 						catch {
 							$copyMailProfileStatus.Status = "Failed"
-							$copyMailProfileStatus
+							$copyMailProfileStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 							Stop-Function -Message "Issue dropping profile." -Target $profileName -Category InvalidOperation -InnerErrorRecord $_ -Continue
 						}
 					}
@@ -244,7 +244,7 @@ function Copy-DbaDatabaseMail {
 					}
 					catch {
 						$copyMailProfileStatus.Status = "Failed"
-						$copyMailProfileStatus
+						$copyMailProfileStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						Stop-Function -Message "Issue copying mail profile." -Target $profileName -Category InvalidOperation -InnerErrorRecord $_
 					}
 				}
@@ -274,7 +274,7 @@ function Copy-DbaDatabaseMail {
 				if ($destMailServers.name -contains $mailServerName) {
 					if ($force -eq $false) {
 						$copyMailServerStatus.Status = "Objects exists, use -Force to drop and migrate"
-						$copyMailServerStatus
+						$copyMailServerStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						Write-Message -Message "Mail server $mailServerName exists at destination. Use -Force to drop and migrate." -Level Verbose
 						continue
 					}
@@ -286,7 +286,7 @@ function Copy-DbaDatabaseMail {
 						}
 						catch {
 							$copyMailServerStatus.Status = "Failed"
-							$copyMailServerStatus
+							$copyMailServerStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 							Stop-Function -Message "Issue dropping mail server." -Target $mailServerName -Category InvalidOperation -InnerErrorRecord $_ -Continue
 						}
 					}
@@ -303,7 +303,7 @@ function Copy-DbaDatabaseMail {
 					}
 					catch {
 						$copyMailServerStatus.Status = "Failed"
-						$copyMailServerStatus
+						$copyMailServerStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						Stop-Function -Message "Issue copying mail server" -Target $mailServerName -Category InvalidOperation -InnerErrorRecord $_
 					}
 				}
@@ -410,11 +410,11 @@ function Copy-DbaDatabaseMail {
 				}
 				catch {
 					$enableDBMailStatus.Status = "Failed"
-					$enableDBMailStatus
+					$enableDBMailStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					Stop-Function -Message "Cannot enable Database Mail." -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 				}
 			}
-			$enableDBMailStatus
+			$enableDBMailStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 		}
 	}
 	end {
