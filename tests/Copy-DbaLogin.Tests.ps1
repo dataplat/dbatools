@@ -54,7 +54,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "No overwrite" {
 		$results = Copy-DbaLogin -Source $script:instance1 -Destination $script:instance2 -Login tester -WarningVariable warning  3>&1
 		It "Should not attempt overwrite" {
-			$warning | Should Match "already exists in destination"
+			$warning | Should Match "exists"
 		}
 	}
 }

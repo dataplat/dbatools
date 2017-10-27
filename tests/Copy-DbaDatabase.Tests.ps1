@@ -44,7 +44,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Doesn't write over existing databases" {
 		It "Should just warn" {
 			$result = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $DBNameBackupRestore -BackupRestore -NetworkShare $NetworkPath -WarningVariable warning  3>&1
-			$warning | Should Match "exists at destination"
+			$warning | Should Match "exists"
 		}
 	}
 	
