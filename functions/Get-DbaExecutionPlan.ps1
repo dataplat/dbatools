@@ -198,7 +198,8 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 					$simple = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
 					$sqlhandle = "0x"; $row.sqlhandle | ForEach-Object { $sqlhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
 					$planhandle = "0x"; $row.planhandle | ForEach-Object { $planhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
-					
+					$implicitConversion = $simple.QueryPlan.Warnings.PlanAffectingConvert;
+
 					[pscustomobject]@{
 						ComputerName = $server.NetName
 						InstanceName = $server.ServiceName
@@ -231,7 +232,8 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 						BatchSimpleXml = ([xml]$row.BatchQueryPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
 						BatchQueryPlanRaw = [xml]$row.BatchQueryPlan
 						SingleStatementPlanRaw = [xml]$row.SingleStatementPlan
-					} | Select-DefaultView -ExcludeProperty BatchQueryPlan, SingleStatementPlan, BatchConditionXmlRaw, BatchQueryPlanRaw, SingleStatementPlanRaw
+						PlanWarnings = $implicitConversion
+					} | Select-DefaultView -ExcludeProperty BatchQueryPlan, SingleStatementPlan, BatchConditionXmlRaw, BatchQueryPlanRaw, SingleStatementPlanRaw, PlanWarnings
 				}
 			}
 			catch
