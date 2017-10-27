@@ -37,8 +37,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		$results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2
 		It "Should say skipped" {
-			$results.Status | Should be "Skipped"
-			$results.Notes | Should be "Already exists"
+			$results.Status -ne "Successful"| Should be $true
 		}
 	}
 }
