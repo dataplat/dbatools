@@ -36,6 +36,12 @@ Exclude results with empty query plan
 .PARAMETER Force
 Returns a ton of raw information about the execution plans
 	
+.PARAMETER EnableException
+	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+	This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
+	
 .NOTES
 Tags: Performance
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -78,11 +84,12 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 		[datetime]$SinceCreation,
 		[datetime]$SinceLastExecution,
 		[switch]$ExcludeEmptyQueryPlan,
-		[switch]$Force
+		[switch]$Force,
+		[switch]$EnableException
 	)
-
+	
 	begin {
-				
+		
 		if ($SinceCreation -ne $null) {
 			$SinceCreation = $SinceCreation.ToString("yyyy-MM-dd HH:mm:ss")
 		}
@@ -92,14 +99,15 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 		}
 	}
 	process {
-
+		
 		foreach ($instance in $sqlinstance) {
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
-				
-				if ($server.VersionMajor -lt 9) {
-					Write-Warning "SQL Server 2000 not supported"
-					continue
+				try {
+					Write-Message -Level Verbose -Message "Connecting to $instance."
+					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+				}
+				catch {
+					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				}
 				
 				if ($force -eq $true) {
@@ -135,12 +143,12 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 				}
 				
 				if ($SinceCreation -ne $null) {
-					Write-Verbose "Adding creation time"
+					Write-Message -Level Verbose -Message "Adding creation time"
 					$wherearray += " creation_time >= '$SinceCreation' "
 				}
 				
 				if ($SinceLastExecution -ne $null) {
-					Write-Verbose "Adding last exectuion time"
+					Write-Message -Level Verbose -Message "Adding last exectuion time"
 					$wherearray += " last_execution_time >= '$SinceLastExecution' "
 				}
 				
@@ -159,60 +167,58 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 				}
 				
 				$sql = "$select $from $where"
-				Write-Debug $sql
+				Write-Message -Level Debug -Message $sql
 				
 				if ($Force -eq $true) {
-					$server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
+					$server.Query($sql)
 				}
-				
-				$datatable = $server.ConnectionContext.ExecuteWithResults($sql).Tables
-				
-				foreach ($row in ($datatable.Rows)) {
-					$simple = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
-					$sqlhandle = "0x"; $row.sqlhandle | ForEach-Object { $sqlhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
-					$planhandle = "0x"; $row.planhandle | ForEach-Object { $planhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
-					$planWarnings = $simple.QueryPlan.Warnings.PlanAffectingConvert;
-
-					[pscustomobject]@{
-						ComputerName                      = $server.NetName
-						InstanceName                      = $server.ServiceName
-						SqlInstance                       = $server.DomainInstanceName
-						DatabaseName                      = $row.DatabaseName
-						ObjectName                        = $row.ObjectName
-						QueryPosition                     = $row.QueryPosition
-						SqlHandle                         = $SqlHandle
-						PlanHandle                        = $PlanHandle
-						CreationTime                      = $row.CreationTime
-						LastExecutionTime                 = $row.LastExecutionTime
-						StatementCondition                = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtCond
-						StatementSimple                   = $simple
-						StatementId                       = $simple.StatementId
-						StatementCompId                   = $simple.StatementCompId
-						StatementType                     = $simple.StatementType
-						RetrievedFromCache                = $simple.RetrievedFromCache
-						StatementSubTreeCost              = $simple.StatementSubTreeCost
-						StatementEstRows                  = $simple.StatementEstRows
-						SecurityPolicyApplied             = $simple.SecurityPolicyApplied
-						StatementOptmLevel                = $simple.StatementOptmLevel
-						QueryHash                         = $simple.QueryHash
-						QueryPlanHash                     = $simple.QueryPlanHash
-						StatementOptmEarlyAbortReason     = $simple.StatementOptmEarlyAbortReason
-						CardinalityEstimationModelVersion = $simple.CardinalityEstimationModelVersion
-            
-						ParameterizedText = $simple.ParameterizedText
-						StatementSetOptions = $simple.StatementSetOptions
-						QueryPlan = $simple.QueryPlan
-						BatchConditionXml = ([xml]$row.BatchQueryPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtCond
-						BatchSimpleXml = ([xml]$row.BatchQueryPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
-						BatchQueryPlanRaw = [xml]$row.BatchQueryPlan
-						SingleStatementPlanRaw = [xml]$row.SingleStatementPlan
-						PlanWarnings = $planWarnings
-					} | Select-DefaultView -ExcludeProperty BatchQueryPlan, SingleStatementPlan, BatchConditionXmlRaw, BatchQueryPlanRaw, SingleStatementPlanRaw, PlanWarnings
+				else {
+					foreach ($row in $server.Query($sql)) {
+						$simple = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
+						$sqlhandle = "0x"; $row.sqlhandle | ForEach-Object { $sqlhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
+						$planhandle = "0x"; $row.planhandle | ForEach-Object { $planhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
+						$planWarnings = $simple.QueryPlan.Warnings.PlanAffectingConvert;
+						
+						[pscustomobject]@{
+							ComputerName		 = $server.NetName
+							InstanceName		 = $server.ServiceName
+							SqlInstance		     = $server.DomainInstanceName
+							DatabaseName		 = $row.DatabaseName
+							ObjectName		     = $row.ObjectName
+							QueryPosition	     = $row.QueryPosition
+							SqlHandle		     = $SqlHandle
+							PlanHandle		     = $PlanHandle
+							CreationTime		 = $row.CreationTime
+							LastExecutionTime    = $row.LastExecutionTime
+							StatementCondition   = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtCond
+							StatementSimple	     = $simple
+							StatementId		     = $simple.StatementId
+							StatementCompId	     = $simple.StatementCompId
+							StatementType	     = $simple.StatementType
+							RetrievedFromCache   = $simple.RetrievedFromCache
+							StatementSubTreeCost = $simple.StatementSubTreeCost
+							StatementEstRows	 = $simple.StatementEstRows
+							SecurityPolicyApplied = $simple.SecurityPolicyApplied
+							StatementOptmLevel   = $simple.StatementOptmLevel
+							QueryHash		     = $simple.QueryHash
+							QueryPlanHash	     = $simple.QueryPlanHash
+							StatementOptmEarlyAbortReason = $simple.StatementOptmEarlyAbortReason
+							CardinalityEstimationModelVersion = $simple.CardinalityEstimationModelVersion
+							
+							ParameterizedText    = $simple.ParameterizedText
+							StatementSetOptions  = $simple.StatementSetOptions
+							QueryPlan		     = $simple.QueryPlan
+							BatchConditionXml    = ([xml]$row.BatchQueryPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtCond
+							BatchSimpleXml	     = ([xml]$row.BatchQueryPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
+							BatchQueryPlanRaw    = [xml]$row.BatchQueryPlan
+							SingleStatementPlanRaw = [xml]$row.SingleStatementPlan
+							PlanWarnings		 = $planWarnings
+						} | Select-DefaultView -ExcludeProperty BatchQueryPlan, SingleStatementPlan, BatchConditionXmlRaw, BatchQueryPlanRaw, SingleStatementPlanRaw, PlanWarnings
+					}
 				}
 			}
 			catch {
-				# Will fix this tomorrow, Fred ;)
-				Write-Warning $_.Exception
+				Stop-Function -Message "Query Failure Failure" -ErrorRecord $_ -Target $instance -Continue
 			}
 		}
 	}
