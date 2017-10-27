@@ -380,7 +380,8 @@
 		'New-DbaXESmartTarget',
 		'Get-DbaDbVirtualLogFile',
 		'Register-DbaConfig',
-		'Get-DbaBackupInformation'
+		'Get-DbaBackupInformation',
+		'Start-DbaXESession'
 	)
 	
 	# Cmdlets to export from this module
