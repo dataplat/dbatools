@@ -117,7 +117,7 @@ function Copy-DbaSpConfigure {
 				SourceServer      = $sourceServer.Name
 				DestinationServer = $destServer.Name
 				Name              = $sConfigName
-				Type              = $null
+				Type              = "SQL Server Configuration Value"
 				Status            = $null
 				Notes             = $null
 				DateTime          = [DbaDateTime](Get-Date)
@@ -133,7 +133,8 @@ function Copy-DbaSpConfigure {
 
 				$copySpConfigStatus.Status = "Objects exists, use -Force to drop and migrate"
 				$copySpConfigStatus.Notes = "Configuration does not exist on destination"
-				$copySpConfigStatus
+				$copySpConfigStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+				
 				continue
 			}
 
@@ -151,12 +152,12 @@ function Copy-DbaSpConfigure {
 						$copySpConfigStatus.Notes = "Requires restart"
 					}
 					$copySpConfigStatus.Status = "Successful"
-					$copySpConfigStatus
+					$copySpConfigStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 				}
 				catch {
 					$copySpConfigStatus.Status = "Failed"
 					$copySpConfigStatus.Notes = $_.Exception
-					$copySpConfigStatus
+					$copySpConfigStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					Stop-Function -Message "Could not set $($destProp.ConfigName) to $sConfiguredValue." -Target $sConfigName -ErrorRecord $_
 				}

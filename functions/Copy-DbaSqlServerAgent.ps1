@@ -143,12 +143,12 @@ function Copy-DbaSqlServerAgent {
 				$null = $destServer.Query($sql)
 
 				$copyAgentPropStatus.Status = "Successful"
-				$copyAgentPropStatus
+				$copyAgentPropStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 			}
 			catch {
 				$copyAgentPropStatus.Status = "Failed"
 				$copyAgentPropStatus.Notes = $_.Exception.Message
-				$copyAgentPropStatus
+				$copyAgentPropStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 				Stop-Function -Message "Issue copying agent properties. This happens sometimes, moving on." -Target $destination
 			}

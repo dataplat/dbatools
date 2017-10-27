@@ -130,7 +130,7 @@ function Copy-DbaEndpoint {
 			if ($destEndpoints.Name -contains $endpointName) {
 				if ($force -eq $false) {
 					$copyEndpointStatus.Status = "Objects exists, use -Force to drop and migrate"
-					$copyEndpointStatus
+					$copyEndpointStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					Write-Message -Level Verbose -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
 					continue
@@ -143,7 +143,7 @@ function Copy-DbaEndpoint {
 						}
 						catch {
 							$copyEndpointStatus.Status = "Failed"
-							$copyEndpointStatus
+							$copyEndpointStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping server endpoint." -Target $endpointName -InnerErrorRecord $_ -Continue
 						}
@@ -157,11 +157,11 @@ function Copy-DbaEndpoint {
 					$destServer.Query($currentEndpoint.Script()) | Out-Null
 
 					$copyEndpointStatus.Status = "Successful"
-					$copyEndpointStatus
+					$copyEndpointStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 				}
 				catch {
 					$copyEndpointStatus.Status = "Failed"
-					$copyEndpointStatus
+					$copyEndpointStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					Stop-Function -Message "Issue creating server endpoint." -Target $endpointName -InnerErrorRecord $_
 				}

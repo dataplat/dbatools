@@ -145,7 +145,7 @@ function Copy-DbaServerAuditSpecification {
 			$destServer.Audits.Refresh()
 
 			if ($destServer.Audits.Name -notcontains $auditSpec.AuditName) {
-				Write-Message -Level Verbose -Message "Audit $($auditSpec.AuditName) does not exist on $Destination. Skipping $auditSpecName."
+				Write-Message -Level Warning -Message "Audit $($auditSpec.AuditName) does not exist on $Destination. Skipping $auditSpecName."
 				continue
 			}
 
@@ -154,7 +154,7 @@ function Copy-DbaServerAuditSpecification {
 					Write-Message -Level Verbose -Message "Server audit $auditSpecName exists at destination. Use -Force to drop and migrate."
 
 					$copyAuditSpecStatus.Status = "Objects exists, use -Force to drop and migrate"
-					$copyAuditSpecStatus
+					$copyAuditSpecStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
 				}
 				else {
@@ -166,7 +166,7 @@ function Copy-DbaServerAuditSpecification {
 						catch {
 							$copyAuditSpecStatus.Status = "Failed"
 							$copyAuditSpecStatus.Notes = $_.Exception
-							$copyAuditSpecStatus
+							$copyAuditSpecStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping audit spec" -Target $auditSpecName -ErrorRecord $_ -Continue
 						}
@@ -181,12 +181,12 @@ function Copy-DbaServerAuditSpecification {
 					$destServer.Query($sql)
 
 					$copyAuditSpecStatus.Status = "Successful"
-					$copyAuditSpecStatus
+					$copyAuditSpecStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 				}
 				catch {
 					$copyAuditSpecStatus.Status = "Failed"
 					$copyAuditSpecStatus.Notes = $_.Exception
-					$copyAuditSpecStatus
+					$copyAuditSpecStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					Stop-Function -Message "Issue creating audit spec on destination" -Target $auditSpecName -ErrorRecord $_
 				}

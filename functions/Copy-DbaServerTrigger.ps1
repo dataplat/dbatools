@@ -140,7 +140,7 @@ function Copy-DbaServerTrigger {
 					Write-Message -Level Verbose -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
 
 					$copyTriggerStatus.Status = "Objects exists, use -Force to drop and migrate"
-					$copyTriggerStatus
+					$copyTriggerStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
 				}
 				else {
@@ -152,7 +152,7 @@ function Copy-DbaServerTrigger {
 						catch {
 							$copyTriggerStatus.Status = "Failed"
 							$copyTriggerStatus.Notes = $_.Exception
-							$copyTriggerStatus
+							$copyTriggerStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping trigger on destination" -Target $triggerName -ErrorRecord $_ -Continue
 						}
@@ -173,12 +173,12 @@ function Copy-DbaServerTrigger {
 					}
 					
 					$copyTriggerStatus.Status = "Successful"
-					$copyTriggerStatus
+					$copyTriggerStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 				}
 				catch {
 					$copyTriggerStatus.Status = "Failed"
 					$copyTriggerStatus.Notes = $_.Exception
-					$copyTriggerStatus
+					$copyTriggerStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					Stop-Function -Message "Issue creating trigger on destination" -Target $triggerName -ErrorRecord $_
 				}

@@ -125,8 +125,9 @@ function Copy-DbaAgentJob {
 			$copyJobStatus = [pscustomobject]@{
 				SourceServer      = $sourceServer.Name
 				DestinationServer = $destServer.Name
-				Name              = $jobName
-				Status            = $null
+				Name			   = $jobName
+				Type			   = "Agent Job"
+				Status			   = $null
 				Notes             = $null
 				DateTime          = [DbaDateTime](Get-Date)
 			}
