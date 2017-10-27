@@ -166,7 +166,7 @@ function Copy-DbaServerAudit {
 				if ($Force -eq $false) {
 					Write-Message -Level Verbose -Message "$($currentAudit.Filepath) does not exist on $destination. Skipping $auditName. Specify -Force to create the directory."
 
-					$copyAuditStatus.Status = "Skipped"
+					$copyAuditStatus.Status = "Skipped. Use -Force to drop and migrate."
 					$copyAuditStatus.Notes = "Already exists on destination"
 					$copyAuditStatus
 					continue

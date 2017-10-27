@@ -131,7 +131,7 @@ function Copy-DbaSpConfigure {
 			if (!$destProp) {
 				Write-Message -Level Verbose -Message "Configuration $sConfigName ('$displayName') does not exist on the destination instance."
 
-				$copySpConfigStatus.Status = "Skipped"
+				$copySpConfigStatus.Status = "Skipped. Use -Force to drop and migrate."
 				$copySpConfigStatus.Notes = "Configuration does not exist on destination"
 				$copySpConfigStatus
 				continue
