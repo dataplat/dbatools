@@ -18,10 +18,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	Context "Verifying command works" {
-		It "starts the system_health session" {
+		It "stops the system_health session" {
 			# pipe didnt't work here, unsure why. Works regularly
 			Stop-DbaXESession -SqlInstance $server -Session system_health
-			(Get-DbaXESession -SqlInstance $server -Session system_health).IsRunning | Should Be $true
+			(Get-DbaXESession -SqlInstance $server -Session system_health).IsRunning | Should Be $false
 		}
 	}
 }
