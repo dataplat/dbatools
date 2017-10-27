@@ -2705,7 +2705,7 @@
     },
     {
         "CommandName":  "Save-DbaDiagnosticQueryScript",
-        "Description":  "The dbatools module will have the diagnostic queries pre-installed. Use this only to update to a more recent version or specific versions.\n\nThis function is mainly used by Invoke-DbaDiagnosticQuery, but can also be used independently to download the Glenn Berry DMV scripts.\n\nUse this function to pre-download the scripts from a device with an Internet connection.\n\t\nThe function Invoke-DbaDiagnosticQuery will try to download these scripts automatically, but it obviously needs an internet connection to do that.",
+        "Description":  "The dbatools module will have the diagnostic queries pre-installed. Use this only to update to a more recent version or specific versions.\n\nThis function is mainly used by Invoke-DbaDiagnosticQuery, but can also be used independently to download the Glenn Berry DMV scripts.\n\nUse this function to pre-download the scripts from a device with an Internet connection.\n\nThe function Invoke-DbaDiagnosticQuery will try to download these scripts automatically, but it obviously needs an internet connection to do that.",
         "Tags":  [
                      "Diagnostic",
                      "DMV",
