@@ -137,7 +137,7 @@ function Copy-DbaCustomError {
 
 			if ($destCustomErrors.ID -contains $customErrorId) {
 				if ($force -eq $false) {
-					$copyCustomErrorStatus.Status = "Skipped. Use -Force to drop and migrate."
+					$copyCustomErrorStatus.Status = "Objects exists, use -Force to drop and migrate"
 					$copyCustomErrorStatus
 
 					Write-Message -Level Verbose -Message "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."

@@ -930,7 +930,7 @@ function Copy-DbaDatabase {
 				if ($currentdb.IsAccessible -eq $false) {
 					Write-Message -Level Verbose -Message "Skipping $dbName. Database is inaccessible."
 					
-					$copyDatabaseStatus.Status = "Skipped. Use -Force to drop and migrate."
+					$copyDatabaseStatus.Status = "Objects exists, use -Force to drop and migrate"
 					$copyDatabaseStatus.Notes = "Database is not accessible."
 					$copyDatabaseStatus
 					continue
@@ -941,7 +941,7 @@ function Copy-DbaDatabase {
 					
 					if ($fsRows.Count -gt 0) {
 						Write-Message -Level Verbose -Message "Skipping $dbName (contains FILESTREAM)."
-						$copyDatabaseStatus.Status = "Skipped. Use -Force to drop and migrate."
+						$copyDatabaseStatus.Status = "Objects exists, use -Force to drop and migrate"
 						$copyDatabaseStatus.Notes = "Contains FILESTREAM"
 						$copyDatabaseStatus
 						continue
@@ -975,7 +975,7 @@ function Copy-DbaDatabase {
 				if ($dbStatus.StartsWith("Normal") -eq $false) {
 					Write-Message -Level Verbose -Message "$dbName is not in a Normal state. Skipping."
 					
-					$copyDatabaseStatus.Status = "Skipped. Use -Force to drop and migrate."
+					$copyDatabaseStatus.Status = "Objects exists, use -Force to drop and migrate"
 					$copyDatabaseStatus.Notes = "Not in normal state"
 					$copyDatabaseStatus
 					continue
@@ -984,7 +984,7 @@ function Copy-DbaDatabase {
 				if ($currentdb.ReplicationOptions -ne "None" -and $DetachAttach -eq $true) {
 					Write-Message -Level Verbose -Message "$dbName is part of replication. Skipping."
 					
-					$copyDatabaseStatus.Status = "Skipped. Use -Force to drop and migrate."
+					$copyDatabaseStatus.Status = "Objects exists, use -Force to drop and migrate"
 					$copyDatabaseStatus.Notes = "Part of replication"
 					$copyDatabaseStatus
 					continue
@@ -993,7 +993,7 @@ function Copy-DbaDatabase {
 				if ($currentdb.IsMirroringEnabled -and !$force -and $DetachAttach) {
 					Write-Message -Level Verbose -Message "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method."
 					
-					$copyDatabaseStatus.Status = "Skipped. Use -Force to drop and migrate."
+					$copyDatabaseStatus.Status = "Objects exists, use -Force to drop and migrate"
 					$copyDatabaseStatus.Notes = "Database is mirrored. Use -Force to break mirror."
 					$copyDatabaseStatus
 					continue
@@ -1002,8 +1002,8 @@ function Copy-DbaDatabase {
 				if (($destServer.Databases[$dbName] -ne $null) -and !$force -and !$WithReplace) {
 					Write-Message -Level Verbose -Message "Database exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
 					
-					$copyDatabaseStatus.Status = "Skipped. Use -Force to drop and migrate."
-					$copyDatabaseStatus.Notes = "Already exist on destination"
+					$copyDatabaseStatus.Status = "Objects exists, use -Force to drop and migrate"
+					$copyDatabaseStatus.Notes = "already exists on destination"
 					$copyDatabaseStatus
 					continue
 				}

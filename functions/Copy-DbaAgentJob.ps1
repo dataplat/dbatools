@@ -147,7 +147,7 @@ function Copy-DbaAgentJob {
 			$MaintenancePlanName = $sourceServer.Query($sql).MaintenancePlanName
 
 			if ($MaintenancePlanName) {
-				$copyJobStatus.Status = "Skipped. Use -Force to drop and migrate."
+				$copyJobStatus.Status = "Objects exists, use -Force to drop and migrate"
 				$copyJobStatus.Notes = "Job is associated with maintenance plan"
 				$copyJobStatus
 				Write-Message -Level Verbose -Message "Job [$jobName] is associated with Maintenance Plan: $MaintenancePlanName"
@@ -159,7 +159,7 @@ function Copy-DbaAgentJob {
 
 			if ($missingDb.Count -gt 0 -and $dbNames.Count -gt 0) {
 				$missingDb = ($missingDb | Sort-Object | Get-Unique) -join ", "
-				$copyJobStatus.Status = "Skipped. Use -Force to drop and migrate."
+				$copyJobStatus.Status = "Objects exists, use -Force to drop and migrate"
 				$copyJobStatus.Notes = "Job is dependent on database: $missingDb"
 				$copyJobStatus
 				Write-Message -Level Verbose -Message "Database(s) $missingDb doesn't exist on destination. Skipping job [$jobName]."
@@ -171,7 +171,7 @@ function Copy-DbaAgentJob {
 			if ($missingLogin.Count -gt 0) {
 				if ($force -eq $false) {
 					$missingLogin = ($missingLogin | Sort-Object | Get-Unique) -join ", "
-					$copyJobStatus.Status = "Skipped. Use -Force to drop and migrate."
+					$copyJobStatus.Status = "Objects exists, use -Force to drop and migrate"
 					$copyJobStatus.Notes = "Job is dependent on login $missingLogin"
 					$copyJobStatus
 					Write-Message -Level Verbose -Message "Login(s) $missingLogin doesn't exist on destination. Use -Force to set owner to [sa]. Skipping job [$jobName]."
@@ -184,7 +184,7 @@ function Copy-DbaAgentJob {
 
 			if ($missingProxy.Count -gt 0 -and $proxyNames.Count -gt 0) {
 				$missingProxy = ($missingProxy | Sort-Object | Get-Unique) -join ", "
-				$copyJobStatus.Status = "Skipped. Use -Force to drop and migrate."
+				$copyJobStatus.Status = "Objects exists, use -Force to drop and migrate"
 				$copyJobStatus.Notes = "Job is dependent on proxy $($proxyNames[0])"
 				$copyJobStatus
 				Write-Message -Level Verbose -Message "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobName]."
@@ -196,7 +196,7 @@ function Copy-DbaAgentJob {
 
 			if ($missingOperators.Count -gt 0 -and $operators.Count -gt 0) {
 				$missingOperator = ($operators | Sort-Object | Get-Unique) -join ", "
-				$copyJobStatus.Status = "Skipped. Use -Force to drop and migrate."
+				$copyJobStatus.Status = "Objects exists, use -Force to drop and migrate"
 				$copyJobStatus.Notes = "Job is dependent on operator $missingOperator"
 				$copyJobStatus
 				Write-Message -Level Verbose -Message "Operator(s) $($missingOperator) doesn't exist on destination. Skipping job [$jobName]"
@@ -205,8 +205,8 @@ function Copy-DbaAgentJob {
 
 			if ($destJobs.name -contains $serverJob.name) {
 				if ($force -eq $false) {
-					$copyJobStatus.Status = "Skipped. Use -Force to drop and migrate."
-					$copyJobStatus.Notes = "Job already exist on destination"
+					$copyJobStatus.Status = "Objects exists, use -Force to drop and migrate"
+					$copyJobStatus.Notes = "Job already exists on destination"
 					$copyJobStatus
 					Write-Message -Level Verbose -Message "Job $jobName exists at destination. Use -Force to drop and migrate."
 					continue
