@@ -108,12 +108,13 @@ function Copy-DbaBackupDevice {
 			$deviceName = $currentBackupDevice.Name
 			
 			$copyBackupDeviceStatus = [pscustomobject]@{
-				SourceServer  = $sourceServer.Name
+				SourceServer    = $sourceServer.Name
 				DestinationServer = $destServer.Name
-				Name		  = $deviceName
-				Type		  = "BackupDevice"
-				Status	      = $null
-				DateTime	  = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+				Name		    = $deviceName
+				Type		    = "Backup Device"
+				Status		    = $null
+				Notes		    = $null
+				DateTime	    = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
 			
 			if ($BackupDevice -and $BackupDevice -notcontains $deviceName) {
@@ -123,6 +124,7 @@ function Copy-DbaBackupDevice {
 			if ($destBackupDevices.Name -contains $deviceName) {
 				if ($force -eq $false) {
 					$copyBackupDeviceStatus.Status = "Skipped"
+					$copyBackupDeviceStatus.Notes = "Already exists"
 					$copyBackupDeviceStatus
 					
 					Write-Message -Level Verbose -Message "backup device $deviceName exists at destination. Use -Force to drop and migrate."
@@ -136,7 +138,7 @@ function Copy-DbaBackupDevice {
 						}
 						catch {
 							$copyBackupDeviceStatus.Status = "Failed"
-							$copyBackupDeviceStatus
+							$copyBackupDeviceStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 							
 							Stop-Function -Message "Issue dropping backup device" -Target $deviceName -ErrorRecord $_ -Continue
 						}
@@ -152,7 +154,7 @@ function Copy-DbaBackupDevice {
 				}
 				catch {
 					$copyBackupDeviceStatus.Status = "Failed"
-					$copyBackupDeviceStatus
+					$copyBackupDeviceStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					
 					Stop-Function -Message "Issue scripting out backup device" -Target $deviceName -ErrorRecord $_ -Continue
 				}
@@ -182,7 +184,7 @@ function Copy-DbaBackupDevice {
 					}
 					catch {
 						$copyBackupDeviceStatus.Status = "Failed"
-						$copyBackupDeviceStatus
+						$copyBackupDeviceStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						
 						Stop-Function -Message "Issue updating script of backup device with new path" -Target $deviceName -ErrorRecord $_ -Continue
 					}
@@ -196,7 +198,7 @@ function Copy-DbaBackupDevice {
 				}
 				catch {
 					$copyBackupDeviceStatus.Status = "Failed"
-					$copyBackupDeviceStatus
+					$copyBackupDeviceStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					
 					Stop-Function -Message "Issue copying backup device to destination" -Target $deviceName -ErrorRecord $_ -Continue
 				}
@@ -209,11 +211,11 @@ function Copy-DbaBackupDevice {
 					$destServer.BackupDevices.Refresh()
 					
 					$copyBackupDeviceStatus.Status = "Successful"
-					$copyBackupDeviceStatus
+					$copyBackupDeviceStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 				}
 				catch {
 					$copyBackupDeviceStatus.Status = "Failed"
-					$copyBackupDeviceStatus
+					$copyBackupDeviceStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					
 					Stop-Function -Message "Issue adding backup device" -Target $deviceName -ErrorRecord $_ -Continue
 				}

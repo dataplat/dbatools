@@ -121,17 +121,17 @@ function Copy-DbaAgentJob {
 		foreach ($serverJob in $serverJobs) {
 			$jobName = $serverJob.name
 			$jobId = $serverJob.JobId
-
+			
 			$copyJobStatus = [pscustomobject]@{
-				SourceServer      = $sourceServer.Name
-				DestinationServer = $destServer.Name
+				SourceServer	   = $sourceServer.Name
+				DestinationServer  = $destServer.Name
 				Name			   = $jobName
 				Type			   = "Agent Job"
 				Status			   = $null
-				Notes             = $null
-				DateTime          = [DbaDateTime](Get-Date)
+				Notes			   = $null
+				DateTime		   = [DbaDateTime](Get-Date)
 			}
-
+			
 			if ($Job -and $jobName -notin $Job -or $jobName -in $ExcludeJob) { 
 				Write-Message -Level Verbose -Message "Job [$jobName] filtered. Skipping."
 				continue
