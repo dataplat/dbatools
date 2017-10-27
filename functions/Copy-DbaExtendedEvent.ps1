@@ -139,7 +139,7 @@ function Copy-DbaExtendedEvent {
 
 			if ($destStore.Sessions[$sessionName] -ne $null) {
 				if ($force -eq $false) {
-					$copyXeSessionStatus.Status = "Objects exists, use -Force to drop and migrate"
+					$copyXeSessionStatus.Status = "Skipped"
 					$copyXeSessionStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					Write-Message -Level Verbose -Message "Extended Event Session '$sessionName' was skipped because it already exists on $destination."

@@ -146,7 +146,7 @@ function Copy-DbaAgentCategory {
 
 					if ($destJobCategories.Name -contains $jobCategory.name) {
 						if ($force -eq $false) {
-							$copyJobCategoryStatus.Status = "Objects exists, use -Force to drop and migrate"
+							$copyJobCategoryStatus.Status = "Skipped"
 							$copyJobCategoryStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 							Write-Message -Level Verbose -Message "Job category $categoryName exists at destination. Use -Force to drop and migrate."
 							continue
@@ -221,7 +221,7 @@ function Copy-DbaAgentCategory {
 
 					if ($destOperatorCategories.Name -contains $operatorCategory.Name) {
 						if ($force -eq $false) {
-							$copyOperatorCategoryStatus.Status = "Objects exists, use -Force to drop and migrate"
+							$copyOperatorCategoryStatus.Status = "Skipped"
 							$copyOperatorCategoryStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 							Write-Message -Level Verbose -Message "Operator category $categoryName exists at destination. Use -Force to drop and migrate."
 							continue
@@ -306,7 +306,7 @@ function Copy-DbaAgentCategory {
 
 					if ($destAlertCategories.Name -contains $alertCategory.name) {
                         if ($force -eq $false) {
-                            $copyAlertCategoryStatus.Status = "Objects exists, use -Force to drop and migrate"
+                            $copyAlertCategoryStatus.Status = "Skipped"
 							$copyAlertCategoryStatus
 							Write-Message -Level Verbose -Message "Alert category $categoryName exists at destination. Use -Force to drop and migrate."
 							continue

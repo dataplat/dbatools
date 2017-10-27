@@ -131,7 +131,7 @@ function Copy-DbaAgentProxyAccount {
 			}
 			
 			if ($null -eq $credentialtest) {
-				$copyAgentProxyAccountStatus.Status = "Objects exists, use -Force to drop and migrate"
+				$copyAgentProxyAccountStatus.Status = "Skipped"
 				$copyAgentProxyAccountStatus
 				Write-Message -Level Verbose -Message "Associated credential account, $CredentialName, does not exist on $destination. Skipping migration of $proxyName."
 				continue
@@ -142,7 +142,7 @@ function Copy-DbaAgentProxyAccount {
 				$copyAgentProxyAccountStatus.Type = "ProxyAccount"
 
 				if ($force -eq $false) {
-					$copyAgentProxyAccountStatus.Status = "Objects exists, use -Force to drop and migrate"
+					$copyAgentProxyAccountStatus.Status = "Skipped"
 					$copyAgentProxyAccountStatus
 					Write-Message -Level Verbose -Message "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate."
 					continue

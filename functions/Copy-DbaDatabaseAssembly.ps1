@@ -151,7 +151,7 @@ function Copy-DbaDatabaseAssembly {
 
 
 			if (!$destDb) {
-				$copyDbAssemblyStatus.Status = "Objects exists, use -Force to drop and migrate"
+				$copyDbAssemblyStatus.Status = "Skipped"
 				$copyDbAssemblyStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 				Write-Message -Level Verbose -Message "Destination database $dbName does not exist. Skipping $assemblyName.";
@@ -181,7 +181,7 @@ function Copy-DbaDatabaseAssembly {
 
 			if ($destServer.Databases[$dbName].Assemblies.Name -contains $currentAssembly.name) {
 				if ($force -eq $false) {
-                    $copyDbAssemblyStatus.Status = "Objects exists, use -Force to drop and migrate"
+                    $copyDbAssemblyStatus.Status = "Skipped"
                     $copyDbAssemblyStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
                     Write-Message -Level Verbose -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."

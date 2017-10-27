@@ -149,7 +149,7 @@ function Copy-DbaDatabaseMail {
 
 				if ($destAccounts.name -contains $accountName) {
 					if ($force -eq $false) {
-						$copyMailAccountStatus.Status = "Objects exists, use -Force to drop and migrate"
+						$copyMailAccountStatus.Status = "Skipped"
 						$copyMailAccountStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						Write-Message -Message "Account $accountName exists at destination. Use -Force to drop and migrate." -Level Verbose
 						continue
@@ -212,7 +212,7 @@ function Copy-DbaDatabaseMail {
 
 				if ($destProfiles.name -contains $profileName) {
 					if ($force -eq $false) {
-						$copyMailProfileStatus.Status = "Objects exists, use -Force to drop and migrate"
+						$copyMailProfileStatus.Status = "Skipped"
 						$copyMailProfileStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						Write-Message -Message "Profile $profileName exists at destination. Use -Force to drop and migrate." -Level Verbose
 						continue
@@ -273,7 +273,7 @@ function Copy-DbaDatabaseMail {
 
 				if ($destMailServers.name -contains $mailServerName) {
 					if ($force -eq $false) {
-						$copyMailServerStatus.Status = "Objects exists, use -Force to drop and migrate"
+						$copyMailServerStatus.Status = "Skipped"
 						$copyMailServerStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						Write-Message -Message "Mail server $mailServerName exists at destination. Use -Force to drop and migrate." -Level Verbose
 						continue

@@ -117,7 +117,7 @@ function Copy-DbaSpConfigure {
 				SourceServer      = $sourceServer.Name
 				DestinationServer = $destServer.Name
 				Name              = $sConfigName
-				Type              = "SQL Server Configuration Value"
+				Type              = "Configuration Value"
 				Status            = $null
 				Notes             = $null
 				DateTime          = [DbaDateTime](Get-Date)
@@ -131,7 +131,7 @@ function Copy-DbaSpConfigure {
 			if (!$destProp) {
 				Write-Message -Level Verbose -Message "Configuration $sConfigName ('$displayName') does not exist on the destination instance."
 
-				$copySpConfigStatus.Status = "Objects exists, use -Force to drop and migrate"
+				$copySpConfigStatus.Status = "Skipped"
 				$copySpConfigStatus.Notes = "Configuration does not exist on destination"
 				$copySpConfigStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 				

@@ -122,7 +122,7 @@ function Copy-DbaCentralManagementServer {
 
 				if ($null -ne $destinationGroup) {
 					if ($force -eq $false) {
-						$copyDestinationGroupStatus.Status = "Objects exists, use -Force to drop and migrate"
+						$copyDestinationGroupStatus.Status = "Skipped"
 						$copyDestinationGroupStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						Write-Message -Level Verbose -Message "Destination group $groupName exists at destination. Use -Force to drop and migrate."
 						continue
@@ -172,7 +172,7 @@ function Copy-DbaCentralManagementServer {
 						Write-Message -Level Verbose -Message "SwitchServerName was used and new CMS equals current server name. $($toCmStore.DomainInstanceName.ToLower()) changed to $serverName."
 					}
 					else {
-						$copyInstanceStatus.Status = "Objects exists, use -Force to drop and migrate"
+						$copyInstanceStatus.Status = "Skipped"
 						$copyInstanceStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 						Write-Message -Level Verbose -Message "$serverName is Central Management Server. Add prohibited. Skipping."
@@ -182,7 +182,7 @@ function Copy-DbaCentralManagementServer {
 
 				if ($destinationGroup.RegisteredServers.Name -contains $instanceName) {
 					if ($force -eq $false) {
-						$copyInstanceStatus.Status = "Objects exists, use -Force to drop and migrate"
+						$copyInstanceStatus.Status = "Skipped"
 						$copyInstanceStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 						Write-Message -Level Verbose -Message "Instance $instanceName exists in group $groupName at destination. Use -Force to drop and migrate."
@@ -249,7 +249,7 @@ function Copy-DbaCentralManagementServer {
 
 				if ($null -ne $toSubGroup) {
 					if ($force -eq $false) {
-						$copyGroupStatus.Status = "Objects exists, use -Force to drop and migrate"
+						$copyGroupStatus.Status = "Skipped"
 						$copyGroupStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 						Write-Message -Level Verbose -Message "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."

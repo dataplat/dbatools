@@ -168,7 +168,7 @@ function Copy-DbaSqlPolicyManagement {
 				if ($force -eq $false) {
 					Write-Message -Level Verbose -Message "condition '$conditionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 
-					$copyConditionStatus.Status = "Objects exists, use -Force to drop and migrate"
+					$copyConditionStatus.Status = "Skipped"
 					$copyConditionStatus.Notes = "Already exists on destination."
 					$copyConditionStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
@@ -238,7 +238,7 @@ function Copy-DbaSqlPolicyManagement {
 				if ($force -eq $false) {
 					Write-Message -Level Verbose -Message "Policy '$policyName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 
-					$copyPolicyStatus.Status = "Objects exists, use -Force to drop and migrate"
+					$copyPolicyStatus.Status = "Skipped"
 					$copyPolicyStatus.Notes = "Already exists on destination."
 					$copyPolicyStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
