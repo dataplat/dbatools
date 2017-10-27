@@ -1,43 +1,13 @@
-#Thank you Warren http://ramblingcookiemonster.github.io/Testing-DSC-with-Pester-and-AppVeyor/
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+. "$PSScriptRoot\constants.ps1"
+. $PSScriptRoot\..\internal\Stop-Function.ps1
 
-if (-not $PSScriptRoot)
-{
-    $PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
-}
-$Verbose = @{ }
-if ($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notlike "master")
-{
-    $Verbose.add("Verbose", $True)
-}
-
-
-
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace('.Tests.', '.')
-. $PSScriptRoot\..\internal\$sut
-. $PSScriptRoot\..\internal\Write-Message.ps1
-Import-Module PSScriptAnalyzer
-## Added PSAvoidUsingPlainTextForPassword as credential is an object and therefore fails. We can ignore any rules here under special circumstances agreed by admins :-)
-$Rules = (Get-ScriptAnalyzerRule).Where{ $_.RuleName -notin ('PSAvoidUsingPlainTextForPassword') }
-$Name = $sut.Split('.')[0]
-
-Describe 'Script Analyzer Tests' {
-    Context "Testing $Name for Standard Processing" {
-        foreach ($rule in $rules)
-        {
-            $i = $rules.IndexOf($rule)
-            It "passes the PSScriptAnalyzer Rule number $i - $rule  " {
-                (Invoke-ScriptAnalyzer -Path "$PSScriptRoot\..\internal\$sut" -IncludeRule $rule.RuleName).Count | Should Be 0
-            }
-        }
-    }
-}
-
-## needs some proper tests for the function here
-Describe "$Name Tests"{
-    Context "Testing non-silent: Explicit call" {
+Describe "$commandname Unit Tests" -Tag 'UnitTests' {
+	Context "Testing non-EnableException: Explicit call" {
         try
         {
-            $warning = Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
+            $warning = Stop-Function -Message "Nonsilent Foo" -EnableException $false -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
             $record = $Error[0]
             $failed = $false
         }
@@ -71,8 +41,8 @@ Describe "$Name Tests"{
             $record.FullyQualifiedErrorId | Should Be "dbatools_Invoke-Pester,Stop-Function"
         }
     }
-    
-    Context "Testing non-silent: In try/catch" {
+	
+	Context "Testing non-EnableException: In try/catch" {
         try
         {
             try
@@ -81,7 +51,7 @@ Describe "$Name Tests"{
             }
             catch
             {
-                $warning = Stop-Function -Message "Nonsilent Foo" -Silent $false -InnerErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
+                $warning = Stop-Function -Message "Nonsilent Foo" -EnableException $false -InnerErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
                 $record = $Error[0]
                 $failed = $false
             }
@@ -96,15 +66,15 @@ Describe "$Name Tests"{
             $failed | Should Be $false
         }
         
-        It "Should have written the test warning 'Nonsilent Foo'" {
-            $warning[0] | Should BeLike "*Nonsilent Foo"
+        It "Should have written the test warning 'Nonsilent Foo | '" {
+            $warning[0] | Should BeLike "*Nonsilent Foo | *"
         }
         
         It "Should have created an error record with the correct exception" {
-            $record.Exception.Message | Should Be "Nonsilent Foo"
+            $record.Exception.InnerException.GetType().FullName | Should Be "System.Management.Automation.RuntimeException"
         }
         
-        It "Should have created an error record with the caegory 'InvalidOperation'" {
+        It "Should have created an error record with the category 'InvalidOperation'" {
             $record.CategoryInfo.Category | Should BeLike "InvalidOperation"
         }
         
@@ -129,8 +99,8 @@ Describe "$Name Tests"{
             $ExceptionName | Should Be "System.Management.Automation.RuntimeException"
         }
     }
-    
-    Context "Testing non-silent: Continue & ContinueLabel" {
+	
+	Context "Testing non-EnableException: Continue & ContinueLabel" {
         Mock -CommandName "Write-Warning" -MockWith { Param ($Message) }
         
         #region Run Tests
@@ -142,7 +112,7 @@ Describe "$Name Tests"{
             foreach ($number in (1 .. 3))
             {
                 $a++
-                Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidOperation -Continue -ErrorAction Stop
+				Stop-Function -Message "Nonsilent Foo" -EnableException $false -Category InvalidOperation -Continue -ErrorAction Stop 3>&1
                 $b++
             }
         }
@@ -165,7 +135,7 @@ Describe "$Name Tests"{
                 foreach ($Counter in (1 .. 3))
                 {
                     $d++
-                    Stop-Function -Message "Nonsilent Foo" -Silent $false -Category InvalidOperation -Continue -ContinueLabel "main" -ErrorAction Stop
+					Stop-Function -Message "Nonsilent Foo" -EnableException $false -Category InvalidOperation -Continue -ContinueLabel "main" -ErrorAction Stop 3>&1
                     $e++
                 }
                 $f++
@@ -205,7 +175,7 @@ Describe "$Name Tests"{
     Context "Testing silent: Explicit call" {
         try
         {
-            Stop-Function -Message "Nonsilent Foo" -Silent $true -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
+            Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
             $record = $null
             $failed = $false
         }
@@ -231,7 +201,7 @@ Describe "$Name Tests"{
             $record.TargetObject | Should Be "Bar"
         }
         
-        It "Should have created an error record with the ErrorID 'dbatools_Invoke-Pester'" {
+        It "Should have created an error record with the ErrorID 'dbatools_Invoke-Pester,Stop-Function'" {
             $record.FullyQualifiedErrorId | Should Be "dbatools_Invoke-Pester"
         }
     }
@@ -245,7 +215,7 @@ Describe "$Name Tests"{
             }
             catch
             {
-                Stop-Function -Message "Nonsilent Foo" -Silent $true -InnerErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
+                Stop-Function -Message "Nonsilent Foo" -EnableException $true -InnerErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
                 $record = $null
                 $failed = $false
             }
@@ -261,7 +231,7 @@ Describe "$Name Tests"{
         }
         
         It "Should have created an error record with the correct exception" {
-            $record.Exception.Message | Should Be "Nonsilent Foo"
+            $record.Exception.InnerException.GetType().FullName | Should Be "System.Management.Automation.RuntimeException"
         }
         
         It "Should have created an error record with the caegory 'InvalidOperation'" {
@@ -274,19 +244,6 @@ Describe "$Name Tests"{
         
         It "Should have created an error record with the ErrorID 'dbatools_Invoke-Pester'" {
             $record.FullyQualifiedErrorId | Should Be "dbatools_Invoke-Pester"
-        }
-        
-        It "Should have created an error record with the an inner NULL-invocation exception" {
-            try
-            {
-                $ExceptionName = $record.Exception.InnerException.GetType().FullName
-            }
-            catch
-            {
-                $ExceptionName = "Meeep!"
-            }
-            
-            $ExceptionName | Should Be "System.Management.Automation.RuntimeException"
         }
     }
     
@@ -302,7 +259,7 @@ Describe "$Name Tests"{
             foreach ($number in (1 .. 3))
             {
                 $a++
-                Stop-Function -Message "Nonsilent Foo" -Silent $true -Category InvalidOperation -SilentlyContinue -ErrorAction Stop
+                Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidOperation -SilentlyContinue -ErrorAction Stop
                 $b++
             }
         }
@@ -325,7 +282,7 @@ Describe "$Name Tests"{
                 foreach ($Counter in (1 .. 3))
                 {
                     $d++
-                    Stop-Function -Message "Nonsilent Foo" -Silent $true -Category InvalidOperation -SilentlyContinue -ContinueLabel "main" -ErrorAction Stop
+                    Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidOperation -SilentlyContinue -ContinueLabel "main" -ErrorAction Stop
                     $e++
                 }
                 $f++

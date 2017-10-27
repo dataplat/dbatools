@@ -1,6 +1,5 @@
-Function Get-DbaExecutionPlan
-{
-<#
+function Get-DbaExecutionPlan {
+	<#
 .SYNOPSIS
 Gets execution plans and metadata
 	
@@ -19,10 +18,10 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Databases
+.PARAMETER Database
 Return restore information for only specific databases. These are only the databases that currently exist on the server.
 	
-.PARAMETER Exclude
+.PARAMETER ExcludeDatabase
 Return restore information for all but these specific databases
 
 .PARAMETER SinceCreation
@@ -41,12 +40,7 @@ Returns a ton of raw information about the execution plans
 Tags: Performance
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Get-DbaExecutionPlan
@@ -57,9 +51,9 @@ Get-DbaExecutionPlan -SqlInstance sqlserver2014a
 Gets all execution plans on  sqlserver2014a
 
 .EXAMPLE   
-Get-DbaExecutionPlan -SqlInstance sqlserver2014a -Databases db1, db2 -SinceLastExecution '7/1/2016 10:47:00'
+Get-DbaExecutionPlan -SqlInstance sqlserver2014a -Database db1, db2 -SinceLastExecution '7/1/2016 10:47:00'
 
-Gets all execution plans for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.
+Gets all execution plans for databases db1 and db2 on sqlserver2014a since July 1, 2016 at 10:47 AM.
 	
 .EXAMPLE   
 Get-DbaExecutionPlan -SqlInstance sqlserver2014a, sql2016 -Exclude db1 | Format-Table
@@ -67,7 +61,7 @@ Get-DbaExecutionPlan -SqlInstance sqlserver2014a, sql2016 -Exclude db1 | Format-
 Gets execution plan info for all databases except db1 on sqlserver2014a and sql2016 and makes the output pretty
 
 .EXAMPLE   
-Get-DbaExecutionPlan -SqlInstance sql2014 -Databases AdventureWorks2014, pubs -Force
+Get-DbaExecutionPlan -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force
 
 Gets super detailed information for execution plans on only for AdventureWorks2014 and pubs
 	
@@ -76,54 +70,42 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PsCredential]$SqlCredential,
+		[PSCredential]$SqlCredential,
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
 		[datetime]$SinceCreation,
 		[datetime]$SinceLastExecution,
 		[switch]$ExcludeEmptyQueryPlan,
 		[switch]$Force
 	)
-	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
-	
-	BEGIN
-	{
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-		
-		if ($SinceCreation -ne $null)
-		{
+
+	begin {
+				
+		if ($SinceCreation -ne $null) {
 			$SinceCreation = $SinceCreation.ToString("yyyy-MM-dd HH:mm:ss")
 		}
 		
-		if ($SinceLastExecution -ne $null)
-		{
+		if ($SinceLastExecution -ne $null) {
 			$SinceLastExecution = $SinceLastExecution.ToString("yyyy-MM-dd HH:mm:ss")
 		}
 	}
-	
-	PROCESS
-	{
-		foreach ($instance in $sqlinstance)
-		{
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
+	process {
+
+		foreach ($instance in $sqlinstance) {
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
 				
-				if ($server.VersionMajor -lt 9)
-				{
+				if ($server.VersionMajor -lt 9) {
 					Write-Warning "SQL Server 2000 not supported"
 					continue
 				}
 				
-				if ($force -eq $true)
-				{
+				if ($force -eq $true) {
 					$select = "SELECT * "
 				}
-				else
-				{
+				else {
 					$select = "SELECT DB_NAME(deqp.dbid) as DatabaseName, OBJECT_NAME(deqp.objectid) as ObjectName, 
 					detqp.query_plan AS SingleStatementPlan, 
 					deqp.query_plan AS BatchQueryPlan,
@@ -135,50 +117,43 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 				}
 				
 				$from = " FROM sys.dm_exec_query_stats deqs
-				        CROSS APPLY sys.dm_exec_text_query_plan(deqs.plan_handle,
+						CROSS APPLY sys.dm_exec_text_query_plan(deqs.plan_handle,
 							deqs.statement_start_offset,
 							deqs.statement_end_offset) AS detqp
-				        CROSS APPLY sys.dm_exec_query_plan(deqs.plan_handle) AS deqp
-				        CROSS APPLY sys.dm_exec_sql_text(deqs.plan_handle) AS execText"
+						CROSS APPLY sys.dm_exec_query_plan(deqs.plan_handle) AS deqp
+						CROSS APPLY sys.dm_exec_sql_text(deqs.plan_handle) AS execText"
 				
-				if ($exclude.length -gt 0 -or $databases.length -gt 0 -or $SinceCreation.length -gt 0 -or $SinceLastExecution.length -gt 0 -or $ExcludeEmptyQueryPlan -eq $true)
-				{
+				if ($ExcludeDatabase -or $Database -or $SinceCreation.length -gt 0 -or $SinceLastExecution.length -gt 0 -or $ExcludeEmptyQueryPlan -eq $true) {
 					$where = " WHERE "
 				}
 				
 				$wherearray = @()
 				
-				if ($databases.length -gt 0)
-				{
-					$dblist = $databases -join "','"
+				if ($Database) {
+					$dblist = $Database -join "','"
 					$wherearray += " DB_NAME(deqp.dbid) in ('$dblist') "
 				}
 				
-				if ($SinceCreation -ne $null)
-				{
+				if ($SinceCreation -ne $null) {
 					Write-Verbose "Adding creation time"
 					$wherearray += " creation_time >= '$SinceCreation' "
 				}
 				
-				if ($SinceLastExecution -ne $null)
-				{
+				if ($SinceLastExecution -ne $null) {
 					Write-Verbose "Adding last exectuion time"
 					$wherearray += " last_execution_time >= '$SinceLastExecution' "
 				}
 				
-				if ($exclude.length -gt 0)
-				{
-					$dblist = $exclude -join "','"
+				if ($ExcludeDatabase) {
+					$dblist = $ExcludeDatabase -join "','"
 					$wherearray += " DB_NAME(deqp.dbid) not in ('$dblist') "
 				}
 				
-				if ($ExcludeEmptyQueryPlan)
-				{
+				if ($ExcludeEmptyQueryPlan) {
 					$wherearray += " detqp.query_plan is not null"
 				}
 				
-				if ($where.length -gt 0)
-				{
+				if ($where.length -gt 0) {
 					$wherearray = $wherearray -join " and "
 					$where = "$where $wherearray"
 				}
@@ -186,45 +161,44 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 				$sql = "$select $from $where"
 				Write-Debug $sql
 				
-				if ($Force -eq $true)
-				{
+				if ($Force -eq $true) {
 					$server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
 				}
 				
 				$datatable = $server.ConnectionContext.ExecuteWithResults($sql).Tables
 				
-				foreach ($row in ($datatable.Rows))
-				{
+				foreach ($row in ($datatable.Rows)) {
 					$simple = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtSimple
 					$sqlhandle = "0x"; $row.sqlhandle | ForEach-Object { $sqlhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
 					$planhandle = "0x"; $row.planhandle | ForEach-Object { $planhandle += ("{0:X}" -f $_).PadLeft(2, "0") }
 					$planWarnings = $simple.QueryPlan.Warnings.PlanAffectingConvert;
 
 					[pscustomobject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						DatabaseName = $row.DatabaseName
-						ObjectName = $row.ObjectName
-						QueryPosition = $row.QueryPosition
-						SqlHandle = $SqlHandle
-						PlanHandle = $PlanHandle
-						CreationTime = $row.CreationTime
-						LastExecutionTime = $row.LastExecutionTime
-						StatementCondition = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtCond
-						StatementSimple = $simple
-						StatementId = $simple.StatementId
-						StatementCompId = $simple.StatementCompId
-						StatementType = $simple.StatementType
-						RetrievedFromCache = $simple.RetrievedFromCache
-						StatementSubTreeCost = $simple.StatementSubTreeCost
-						StatementEstRows = $simple.StatementEstRows
-						SecurityPolicyApplied = $simple.SecurityPolicyApplied
-						StatementOptmLevel = $simple.StatementOptmLevel
-						QueryHash = $simple.QueryHash
-						QueryPlanHash = $simple.QueryPlanHash
-						StatementOptmEarlyAbortReason = $simple.StatementOptmEarlyAbortReason
+						ComputerName                      = $server.NetName
+						InstanceName                      = $server.ServiceName
+						SqlInstance                       = $server.DomainInstanceName
+						DatabaseName                      = $row.DatabaseName
+						ObjectName                        = $row.ObjectName
+						QueryPosition                     = $row.QueryPosition
+						SqlHandle                         = $SqlHandle
+						PlanHandle                        = $PlanHandle
+						CreationTime                      = $row.CreationTime
+						LastExecutionTime                 = $row.LastExecutionTime
+						StatementCondition                = ([xml]$row.SingleStatementPlan).ShowPlanXML.BatchSequence.Batch.Statements.StmtCond
+						StatementSimple                   = $simple
+						StatementId                       = $simple.StatementId
+						StatementCompId                   = $simple.StatementCompId
+						StatementType                     = $simple.StatementType
+						RetrievedFromCache                = $simple.RetrievedFromCache
+						StatementSubTreeCost              = $simple.StatementSubTreeCost
+						StatementEstRows                  = $simple.StatementEstRows
+						SecurityPolicyApplied             = $simple.SecurityPolicyApplied
+						StatementOptmLevel                = $simple.StatementOptmLevel
+						QueryHash                         = $simple.QueryHash
+						QueryPlanHash                     = $simple.QueryPlanHash
+						StatementOptmEarlyAbortReason     = $simple.StatementOptmEarlyAbortReason
 						CardinalityEstimationModelVersion = $simple.CardinalityEstimationModelVersion
+            
 						ParameterizedText = $simple.ParameterizedText
 						StatementSetOptions = $simple.StatementSetOptions
 						QueryPlan = $simple.QueryPlan
@@ -236,8 +210,7 @@ Gets super detailed information for execution plans on only for AdventureWorks20
 					} | Select-DefaultView -ExcludeProperty BatchQueryPlan, SingleStatementPlan, BatchConditionXmlRaw, BatchQueryPlanRaw, SingleStatementPlanRaw, PlanWarnings
 				}
 			}
-			catch
-			{
+			catch {
 				# Will fix this tomorrow, Fred ;)
 				Write-Warning $_.Exception
 			}

@@ -1,72 +1,113 @@
-FUNCTION Get-DbaAgentJob
-{
-<#
-.SYNOPSIS
-Gets SQL Agent Job information for each instance(s) of SQL Server.
+FUNCTION Get-DbaAgentJob {
+	<#
+		.SYNOPSIS
+			Gets SQL Agent Job information for each instance(s) of SQL Server.
 
-.DESCRIPTION
- The Get-DbaAgentJob returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.
+		.DESCRIPTION
+			The Get-DbaAgentJob returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.
+
+		.PARAMETER SqlInstance
+			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+
+		.PARAMETER SqlCredential
+			SqlCredential object to connect as. If not specified, current Windows login will be used.
+
+		.PARAMETER Job
+			The job(s) to process - this list is auto-populated from the server. If unspecified, all jobs will be processed.
+
+		.PARAMETER ExcludeJob
+			The job(s) to exclude - this list is auto-populated from the server.
+
+		.PARAMETER NoDisabledJobs
+			Switch will exclude disabled jobs from the output.
+
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
+		.NOTES
+			Tags: Job, Agent
+			Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
+
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+
+		.LINK
+			https://dbatools.io/Get-DbaAgentJob
+
+		.EXAMPLE
+			Get-DbaAgentJob -SqlInstance localhost
+
+			Returns all SQL Agent Jobs on the local default SQL Server instance
+
+		.EXAMPLE
+			Get-DbaAgentJob -SqlInstance localhost, sql2016
+
+			Returns all SQl Agent Jobs for the local and sql2016 SQL Server instances
+
+		.EXAMPLE
+			Get-DbaAgentJob -SqlInstance localhost -Job BackupData, BackupDiff
+
+			Returns all SQL Agent Jobs named BackupData and BackupDiff from the local SQL Server instance.
+
+		.EXAMPLE
+			Get-DbaAgentJob -SqlInstance localhost -ExcludeJob BackupDiff
+
+			Returns all SQl Agent Jobs for the local SQL Server instances, except the BackupDiff Job.
+			
+		.EXAMPLE
+			Get-DbaAgentJob -SqlInstance localhost -NoDisabledJobs
+
+			Returns all SQl Agent Jobs for the local SQL Server instances, excluding the disabled jobs.
 	
-.PARAMETER SqlInstance
-SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input to allow the function
-to be executed against multiple SQL Server instances.
-
-.PARAMETER SqlCredential
-SqlCredential object to connect as. If not specified, current Windows login will be used.
-
-.NOTES
-Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
-
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.	
-
-.LINK
-https://dbatools.io/Get-DbaAgentJob
-
-.EXAMPLE
-Get-DbaAgentJob -SqlInstance localhost
-Returns all SQL Agent Job on the local default SQL Server instance
-
-.EXAMPLE
-Get-DbaAgentJob -SqlInstance localhost, sql2016
-Returns all SQl Agent Job for the local and sql2016 SQL Server instances
-
-#>
+		.EXAMPLE
+			$servers | Get-DbaAgentJob | Out-GridView -Passthru | Start-DbaAgentJob -WhatIf
+	
+			Find all of your Jobs from servers in the $server collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob
+	#>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]
+		$SqlCredential,
+		[object[]]$Job,
+		[object[]]$ExcludeJob,
+		[switch]$NoDisabledJobs,
+		[switch][Alias('Silent')]$EnableException
 	)
-	
-	PROCESS
-	{
-		foreach ($instance in $SqlInstance)
-		{
+
+	process {
+		foreach ($instance in $SqlInstance) {
 			Write-Verbose "Attempting to connect to $instance"
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $SqlCredential
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
-			catch
-			{
-				Write-Warning "Can't connect to $instance or access denied. Skipping."
-				continue
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
+
+			$jobs = $server.JobServer.Jobs
+			
+			if ($Job) {
+				$jobs = $jobs | Where-Object Name -In $Job
+			}
+			if ($ExcludeJob) {
+				$jobs = $jobs | Where-Object Name -NotIn $ExcludeJob
+			}
+			if ($NoDisabledJobs) {
+				$jobs = $Jobs | Where-Object IsEnabled -eq $true
 			}
 			
-			foreach ($agentJob in $server.JobServer.Jobs)
-			{
-				Add-Member -InputObject $agentJob -MemberType NoteProperty ComputerName -value $agentJob.Parent.Parent.NetName
-				Add-Member -InputObject $agentJob -MemberType NoteProperty InstanceName -value $agentJob.Parent.Parent.ServiceName
-				Add-Member -InputObject $agentJob -MemberType NoteProperty SqlInstance -value $agentJob.Parent.Parent.DomainInstanceName
+			foreach ($agentJob in $jobs) {
+				Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name ComputerName -value $agentJob.Parent.Parent.NetName
+				Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name InstanceName -value $agentJob.Parent.Parent.ServiceName
+				Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name SqlInstance -value $agentJob.Parent.Parent.DomainInstanceName
 				
-				Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, 'IsEnabled as Enabled', LastRunDate, DateCreated, HasSchedule, OperatorToEmail
+				Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, CurrentRunStatus, CurrentRunRetryAttempt, 'IsEnabled as Enabled', LastRunDate, LastRunOutcome, DateCreated, HasSchedule, OperatorToEmail, 'DateCreated as CreateDate'
 			}
 		}
 	}

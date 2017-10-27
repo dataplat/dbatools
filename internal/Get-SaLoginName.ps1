@@ -3,13 +3,13 @@ Function Get-SaLoginName
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
+		[PSCredential]$SqlCredential
 	)
 	
 	
-	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+	$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	$saname = ($server.logins | Where-Object { $_.id -eq 1 }).Name
 	
 	return $saname

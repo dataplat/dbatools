@@ -1,0 +1,35 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26228.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dbatools", "dbatools\dbatools.csproj", "{7A0D426F-2E98-4851-8AF8-C1B2B17C052D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dbatools.Tests", "dbatools.Tests\dbatools.Tests.csproj", "{AFD56AD2-F9F0-4C9D-901B-69CA1455C32A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		ps3|Any CPU = ps3|Any CPU
+		ps4|Any CPU = ps4|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7A0D426F-2E98-4851-8AF8-C1B2B17C052D}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{7A0D426F-2E98-4851-8AF8-C1B2B17C052D}.Debug|Any CPU.Build.0 = Release|Any CPU
+		{7A0D426F-2E98-4851-8AF8-C1B2B17C052D}.ps3|Any CPU.ActiveCfg = ps3|Any CPU
+		{7A0D426F-2E98-4851-8AF8-C1B2B17C052D}.ps3|Any CPU.Build.0 = ps3|Any CPU
+		{7A0D426F-2E98-4851-8AF8-C1B2B17C052D}.ps4|Any CPU.ActiveCfg = ps4|Any CPU
+		{7A0D426F-2E98-4851-8AF8-C1B2B17C052D}.ps4|Any CPU.Build.0 = ps4|Any CPU
+		{7A0D426F-2E98-4851-8AF8-C1B2B17C052D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A0D426F-2E98-4851-8AF8-C1B2B17C052D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFD56AD2-F9F0-4C9D-901B-69CA1455C32A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFD56AD2-F9F0-4C9D-901B-69CA1455C32A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFD56AD2-F9F0-4C9D-901B-69CA1455C32A}.ps3|Any CPU.ActiveCfg = ps3|Any CPU
+		{AFD56AD2-F9F0-4C9D-901B-69CA1455C32A}.ps4|Any CPU.ActiveCfg = ps4|Any CPU
+		{AFD56AD2-F9F0-4C9D-901B-69CA1455C32A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
