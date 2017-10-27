@@ -125,7 +125,7 @@ function Copy-DbaServerTrigger {
 				SourceServer      = $sourceServer.Name
 				DestinationServer = $destServer.Name
 				Name              = $triggerName
-				Type              = "Server"
+				Type              = "Server Trigger"
 				Status            = $null
 				Notes             = $null
 				DateTime          = [DbaDateTime](Get-Date)
@@ -138,8 +138,9 @@ function Copy-DbaServerTrigger {
 			if ($destTriggers.Name -contains $triggerName) {
 				if ($force -eq $false) {
 					Write-Message -Level Verbose -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
-
+					
 					$copyTriggerStatus.Status = "Skipped"
+					$copyTriggerStatus.Status = "Already exists"
 					$copyTriggerStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
 				}

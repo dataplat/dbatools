@@ -158,7 +158,7 @@ function Copy-DbaSqlPolicyManagement {
 				SourceServer      = $sourceServer.Name
 				DestinationServer = $destServer.Name
 				Name              = $conditionName
-				Type              = "Condition"
+				Type              = "Policy Condition"
 				Status            = $null
 				Notes             = $null
 				DateTime          = [DbaDateTime](Get-Date)
@@ -169,7 +169,7 @@ function Copy-DbaSqlPolicyManagement {
 					Write-Message -Level Verbose -Message "condition '$conditionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 
 					$copyConditionStatus.Status = "Skipped"
-					$copyConditionStatus.Notes = "Already exists on destination."
+					$copyConditionStatus.Notes = "Already exists"
 					$copyConditionStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
 				}
@@ -239,7 +239,7 @@ function Copy-DbaSqlPolicyManagement {
 					Write-Message -Level Verbose -Message "Policy '$policyName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 
 					$copyPolicyStatus.Status = "Skipped"
-					$copyPolicyStatus.Notes = "Already exists on destination."
+					$copyPolicyStatus.Notes = "Already exists"
 					$copyPolicyStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
 				}
