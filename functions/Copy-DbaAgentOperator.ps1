@@ -111,11 +111,13 @@ function Copy-DbaAgentOperator {
 			$operatorName = $sOperator.Name
 			
 			$copyOperatorStatus = [pscustomobject]@{
-				SourceServer        = $sourceServer.Name
-				DestinationServer   = $destServer.Name
-				Name                = $operatorName
-				Status              = $null
-				DateTime            = [DbaDateTime](Get-Date)
+				SourceServer    = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name		    = $operatorName
+				Type		    = "Agent Operator"
+				Status		    = $null
+				Notes		    = $null
+				DateTime	    = [DbaDateTime](Get-Date)
 			}
 			
 			if ($Operator -and $Operator -notcontains $operatorName -or $ExcludeOperator -in $operatorName) {
@@ -125,7 +127,8 @@ function Copy-DbaAgentOperator {
 			if ($destOperator.Name -contains $sOperator.Name) {
 				if ($force -eq $false) {
 					$copyOperatorStatus.Status = "Skipped"
-					$copyOperatorStatus
+					$copyOperatorStatus.Notes = "Already exists"
+					$copyOperatorStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					Write-Message -Level Verbose -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
 					continue
 				}

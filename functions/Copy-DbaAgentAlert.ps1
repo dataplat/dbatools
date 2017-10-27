@@ -147,7 +147,8 @@ function Copy-DbaAgentAlert {
 				SourceServer      = $sourceServer.Name
 				DestinationServer = $destServer.Name
 				Name              = $alertName
-				Type              = "Agent Alert"
+				Type			  = "Agent Alert"
+				Notes			  = $null
 				Status            = $null
 				DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
@@ -158,7 +159,8 @@ function Copy-DbaAgentAlert {
 
 			if ($destAlerts.name -contains $serverAlert.name) {
 				if ($force -eq $false) {
-					$copyAgentAlertStatus.Status = "Objects exists, use -Force to drop and migrate"
+					$copyAgentAlertStatus.Status = "Skipped"
+					$copyAgentAlertStatus.Notes = "Already exists"
 					$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					Write-Message -Message "Alert [$alertName] exists at destination. Use -Force to drop and migrate." -Level Verbose
 					continue
@@ -184,15 +186,16 @@ function Copy-DbaAgentAlert {
 			$destSevDbConflict = $destAlerts | Where-Object { $_.Severity -eq $serverAlert.Severity -and $_.DatabaseName -eq $serverAlert.DatabaseName }
 			if ($destSevConflict) {
 				Write-Message -Level Verbose -Message "Alert [$($destSevConflict.Name)] has already been defined to use the severity $($serverAlert.Severity). Skipping."
-
-				$copyAgentAlertStatus.Status = "Objects exists, use -Force to drop and migrate"
+				
+				$copyAgentAlertStatus.Status = "Skipped"
+				$copyAgentAlertStatus.Notes = "Already defined"
 				$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 				continue
 			}
 			if ($destSevDbConflict) {
 				Write-Message -Level Verbose -Message "Alert [$($destSevConflict.Name)] has already been defined to use the severity $($serverAlert.Severity) on database $($severAlert.DatabaseName). Skipping."
 
-				$copyAgentAlertStatus.Status = "Objects exists, use -Force to drop and migrate"
+				$copyAgentAlertStatus.Status = "Skipped"
 				$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 				continue
 			}
@@ -200,7 +203,7 @@ function Copy-DbaAgentAlert {
 			if ($serverAlert.JobName -and $destServer.JobServer.Jobs.Name -NotContains $serverAlert.JobName) {
 				Write-Message -Level Verbose -Message "Alert [$alertName] has job [$($serverAlert.JobName)] configured as response. The job does not exist on destination $destServer. Skipping."
 
-				$copyAgentAlertStatus.Status = "Objects exists, use -Force to drop and migrate"
+				$copyAgentAlertStatus.Status = "Skipped"
 				$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 				continue
 			}
@@ -237,7 +240,8 @@ function Copy-DbaAgentAlert {
 					SourceServer      = $sourceServer.Name
 					DestinationServer = $destServer.Name
 					Name              = $alertName
-					Type              = "Attach to Job"
+					Type			   = "Agent Alert Job Association"
+					Notes			   = "Associated with $jobName"
 					Status            = $null
 					DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
@@ -270,7 +274,8 @@ function Copy-DbaAgentAlert {
 						SourceServer      = $sourceServer.Name
 						DestinationServer = $destServer.Name
 						Name              = $alertName
-						Type              = "Notifications"
+						Type			   = "Agent Alert Notification"
+						Notes			   = $null
 						Status            = $null
 						DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 					}
