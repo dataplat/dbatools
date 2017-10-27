@@ -121,7 +121,7 @@ function Copy-DbaServerAudit {
 				SourceServer      = $sourceServer.Name
 				DestinationServer = $destServer.Name
 				Name              = $auditName
-				Type              = $null
+				Type              = "Server Audit"
 				Status            = $null
 				Notes             = $null
 				DateTime          = [DbaDateTime](Get-Date)
@@ -135,6 +135,8 @@ function Copy-DbaServerAudit {
 
 			if ($destAudits.Name -contains $auditName) {
 				if ($force -eq $false) {
+					$copyAuditStatus.Status = "Skipped"
+					$copyAuditStatus.Notes = "Already exists"
 					Write-Message -Level Verbose -Message "Server audit $auditName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
@@ -167,7 +169,7 @@ function Copy-DbaServerAudit {
 					Write-Message -Level Verbose -Message "$($currentAudit.Filepath) does not exist on $destination. Skipping $auditName. Specify -Force to create the directory."
 
 					$copyAuditStatus.Status = "Skipped"
-					$copyAuditStatus.Notes = "Already exists on destination"
+					$copyAuditStatus.Notes = "Already exists"
 					$copyAuditStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
 				}

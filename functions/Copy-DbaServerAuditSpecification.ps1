@@ -128,23 +128,26 @@ function Copy-DbaServerAuditSpecification {
 
 		foreach ($auditSpec in $AuditSpecifications) {
 			$auditSpecName = $auditSpec.Name
-
+			
 			$copyAuditSpecStatus = [pscustomobject]@{
-				SourceServer      = $sourceServer.Name
-				DestinationServer = $destServer.Name
-				Type              = $null
-				Status            = $auditSpecName
-				Notes             = $null
-				DateTime          = [DbaDateTime](Get-Date)
+				SourceServer	   = $sourceServer.Name
+				DestinationServer  = $destServer.Name
+				Type			   = "Server Audit Specification"
+				Name			   = $auditSpecName
+				Status			   = $null
+				Notes			   = $null
+				DateTime		   = [DbaDateTime](Get-Date)
 			}
-
+			
 			if ($AuditSpecification -and $auditSpecName -notin $AuditSpecification -or $auditSpecName -in $ExcludeAuditSpecification) {
 				continue
 			}
 
 			$destServer.Audits.Refresh()
-
+			
 			if ($destServer.Audits.Name -notcontains $auditSpec.AuditName) {
+				$copyAuditSpecStatus.Status = "Skipped"
+				$copyAuditSpecStatus.Notes = "Already exists"
 				Write-Message -Level Warning -Message "Audit $($auditSpec.AuditName) does not exist on $Destination. Skipping $auditSpecName."
 				continue
 			}
