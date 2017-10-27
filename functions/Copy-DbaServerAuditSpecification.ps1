@@ -128,33 +128,36 @@ function Copy-DbaServerAuditSpecification {
 
 		foreach ($auditSpec in $AuditSpecifications) {
 			$auditSpecName = $auditSpec.Name
-
+			
 			$copyAuditSpecStatus = [pscustomobject]@{
-				SourceServer      = $sourceServer.Name
-				DestinationServer = $destServer.Name
-				Type              = $null
-				Status            = $auditSpecName
-				Notes             = $null
-				DateTime          = [DbaDateTime](Get-Date)
+				SourceServer	   = $sourceServer.Name
+				DestinationServer  = $destServer.Name
+				Type			   = "Server Audit Specification"
+				Name			   = $auditSpecName
+				Status			   = $null
+				Notes			   = $null
+				DateTime		   = [DbaDateTime](Get-Date)
 			}
-
+			
 			if ($AuditSpecification -and $auditSpecName -notin $AuditSpecification -or $auditSpecName -in $ExcludeAuditSpecification) {
 				continue
 			}
 
 			$destServer.Audits.Refresh()
-
+			
 			if ($destServer.Audits.Name -notcontains $auditSpec.AuditName) {
+				$copyAuditSpecStatus.Status = "Skipped"
+				$copyAuditSpecStatus.Notes = "Already exists"
 				Write-Message -Level Warning -Message "Audit $($auditSpec.AuditName) does not exist on $Destination. Skipping $auditSpecName."
 				continue
 			}
 
 			if ($destAudits.name -contains $auditSpecName) {
 				if ($force -eq $false) {
-					Write-Message -Level Warning -Message "Server audit $auditSpecName exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Verbose -Message "Server audit $auditSpecName exists at destination. Use -Force to drop and migrate."
 
 					$copyAuditSpecStatus.Status = "Skipped"
-					$copyAuditSpecStatus
+					$copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				else {
@@ -166,7 +169,7 @@ function Copy-DbaServerAuditSpecification {
 						catch {
 							$copyAuditSpecStatus.Status = "Failed"
 							$copyAuditSpecStatus.Notes = $_.Exception
-							$copyAuditSpecStatus
+							$copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping audit spec" -Target $auditSpecName -ErrorRecord $_ -Continue
 						}
@@ -181,12 +184,12 @@ function Copy-DbaServerAuditSpecification {
 					$destServer.Query($sql)
 
 					$copyAuditSpecStatus.Status = "Successful"
-					$copyAuditSpecStatus
+					$copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyAuditSpecStatus.Status = "Failed"
 					$copyAuditSpecStatus.Notes = $_.Exception
-					$copyAuditSpecStatus
+					$copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Stop-Function -Message "Issue creating audit spec on destination" -Target $auditSpecName -ErrorRecord $_
 				}

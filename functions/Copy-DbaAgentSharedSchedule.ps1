@@ -99,30 +99,33 @@ function Copy-DbaAgentSharedSchedule {
 	process {
         foreach ($schedule in $serverSchedules) {
             $scheduleName = $schedule.Name
-            $copySharedScheduleStatus = [pscustomobject]@{
-                SourceServer        = $sourceServer.Name
-                DestinationServer   = $destServer.Name
-                Name                = $scheduleName
-                Status              = $null
-                DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
-            }
-
-            if ($schedules.Length -gt 0 -and $schedules -notcontains $scheduleName) {
+			$copySharedScheduleStatus = [pscustomobject]@{
+				SourceServer		 = $sourceServer.Name
+				DestinationServer    = $destServer.Name
+				Type				 = "Agent Schedule"
+				Name				 = $scheduleName
+				Status			     = $null
+				Notes			     = $null
+				DateTime			 = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+			}
+			
+			if ($schedules.Length -gt 0 -and $schedules -notcontains $scheduleName) {
                 continue
             }
 
             if ($destSchedules.Name -contains $scheduleName) {
                 if ($force -eq $false) {
-                    $copySharedScheduleStatus.Status = "Skipped"
-                    $copySharedScheduleStatus
-                    Write-Message -Level Warning -Message "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
+					$copySharedScheduleStatus.Status = "Skipped"
+					$copySharedScheduleStatus.Notes = "Already exists"
+                    $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    Write-Message -Level Verbose -Message "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
                     continue
                 }
                 else {
                     if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
                         $copySharedScheduleStatus.Status = "Skipped"
-						$copySharedScheduleStatus
-						Write-Message -Level Warning -Message "Schedule [$scheduleName] has associated jobs. Skipping."
+						$copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+						Write-Message -Level Verbose -Message "Schedule [$scheduleName] has associated jobs. Skipping."
                         continue
                     }
                     else {
@@ -133,7 +136,7 @@ function Copy-DbaAgentSharedSchedule {
                             }
                             catch {
                                 $copySharedScheduleStatus.Status = "Failed"
-                                $copySharedScheduleStatus
+                                $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 Stop-Function -Message "Issue dropping schedule" -Target $scheduleName -InnerErrorRecord $_ -Continue
                             }
                         }
@@ -150,11 +153,11 @@ function Copy-DbaAgentSharedSchedule {
                     $destServer.Query($sql)
 
                     $copySharedScheduleStatus.Status = "Successful"
-                    $copySharedScheduleStatus
+                    $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
                 catch {
 					$copySharedScheduleStatus.Status = "Failed"
-					$copySharedScheduleStatus
+					$copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     Stop-Function -Message "Issue creating schedule" -Target $scheduleName -InnerErrorRecord $_ -Continue
                 }
             }

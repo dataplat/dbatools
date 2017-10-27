@@ -115,12 +115,13 @@ function Copy-DbaAgentAlert {
 		if ($IncludeDefaults -eq $true) {
 			if ($PSCmdlet.ShouldProcess($Destination, "Creating Alert Defaults")) {
 				$copyAgentAlertStatus = [pscustomobject]@{
-					SourceServer      = $sourceServer.Name
-					DestinationServer = $destServer.Name
-					Name              = "Alert Defaults"
-					Type              = "Alert Defaults"
-					Status            = $null
-					DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+					SourceServer	   = $sourceServer.Name
+					DestinationServer  = $destServer.Name
+					Name			   = "Alert Defaults"
+					Type			   = "Alert Defaults"
+					Status			   = $null
+					Notes			   = $null
+					DateTime		   = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
 				try {
 					Write-Message -Message "Creating Alert Defaults" -Level Verbose
@@ -134,10 +135,10 @@ function Copy-DbaAgentAlert {
 				}
 				catch {
 					$copyAgentAlertStatus.Status = "Failed"
-					$copyAgentAlertStatus
+					$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					Stop-Function -Message "Issue creating alert defaults." -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 				}
-				$copyAgentAlertStatus
+				$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 			}
 		}
 
@@ -147,7 +148,8 @@ function Copy-DbaAgentAlert {
 				SourceServer      = $sourceServer.Name
 				DestinationServer = $destServer.Name
 				Name              = $alertName
-				Type              = "Agent Alert"
+				Type			  = "Agent Alert"
+				Notes			  = $null
 				Status            = $null
 				DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
@@ -159,8 +161,9 @@ function Copy-DbaAgentAlert {
 			if ($destAlerts.name -contains $serverAlert.name) {
 				if ($force -eq $false) {
 					$copyAgentAlertStatus.Status = "Skipped"
-					$copyAgentAlertStatus
-					Write-Message -Message "Alert [$alertName] exists at destination. Use -Force to drop and migrate." -Level Warning
+					$copyAgentAlertStatus.Notes = "Already exists"
+					$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+					Write-Message -Message "Alert [$alertName] exists at destination. Use -Force to drop and migrate." -Level Verbose
 					continue
 				}
 
@@ -174,7 +177,7 @@ function Copy-DbaAgentAlert {
 					}
 					catch {
 						$copyAgentAlertStatus.Status = "Failed"
-						$copyAgentAlertStatus
+						$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						Stop-Function -Message "Issue dropping/recreating alert" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 					}
 				}
@@ -183,25 +186,26 @@ function Copy-DbaAgentAlert {
 			$destSevConflict = $destAlerts | Where-Object Severity -eq $serverAlert.Severity
 			$destSevDbConflict = $destAlerts | Where-Object { $_.Severity -eq $serverAlert.Severity -and $_.DatabaseName -eq $serverAlert.DatabaseName }
 			if ($destSevConflict) {
-				Write-Message -Level Warning -Message "Alert [$($destSevConflict.Name)] has already been defined to use the severity $($serverAlert.Severity). Skipping."
-
+				Write-Message -Level Verbose -Message "Alert [$($destSevConflict.Name)] has already been defined to use the severity $($serverAlert.Severity). Skipping."
+				
 				$copyAgentAlertStatus.Status = "Skipped"
-				$copyAgentAlertStatus
+				$copyAgentAlertStatus.Notes = "Already defined"
+				$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				continue
 			}
 			if ($destSevDbConflict) {
-				Write-Message -Level Warning -Message "Alert [$($destSevConflict.Name)] has already been defined to use the severity $($serverAlert.Severity) on database $($severAlert.DatabaseName). Skipping."
+				Write-Message -Level Verbose -Message "Alert [$($destSevConflict.Name)] has already been defined to use the severity $($serverAlert.Severity) on database $($severAlert.DatabaseName). Skipping."
 
 				$copyAgentAlertStatus.Status = "Skipped"
-				$copyAgentAlertStatus
+				$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				continue
 			}
 
 			if ($serverAlert.JobName -and $destServer.JobServer.Jobs.Name -NotContains $serverAlert.JobName) {
-				Write-Message -Level Warning -Message "Alert [$alertName] has job [$($serverAlert.JobName)] configured as response. The job does not exist on destination $destServer. Skipping."
+				Write-Message -Level Verbose -Message "Alert [$alertName] has job [$($serverAlert.JobName)] configured as response. The job does not exist on destination $destServer. Skipping."
 
 				$copyAgentAlertStatus.Status = "Skipped"
-				$copyAgentAlertStatus
+				$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				continue
 			}
 
@@ -215,11 +219,11 @@ function Copy-DbaAgentAlert {
 					$null = $destServer.Query($sql)
 
 					$copyAgentAlertStatus.Status = "Successful"
-					$copyAgentAlertStatus
+					$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyAgentAlertStatus.Status = "Failed"
-					$copyAgentAlertStatus
+					$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					Stop-Function -Message "Issue creating alert" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 				}
 			}
@@ -237,7 +241,8 @@ function Copy-DbaAgentAlert {
 					SourceServer      = $sourceServer.Name
 					DestinationServer = $destServer.Name
 					Name              = $alertName
-					Type              = "Attach to Job"
+					Type			   = "Agent Alert Job Association"
+					Notes			   = "Associated with $jobName"
 					Status            = $null
 					DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
@@ -254,11 +259,11 @@ function Copy-DbaAgentAlert {
 						$null = $destServer.Query($sql)
 
 						$copyAgentAlertStatus.Status = "Successful"
-						$copyAgentAlertStatus
+						$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					}
 					catch {
 						$copyAgentAlertStatus.Status = "Failed"
-						$copyAgentAlertStatus
+						$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						Stop-Function -Message "Issue adding alert to job" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 					}
 				}
@@ -267,12 +272,13 @@ function Copy-DbaAgentAlert {
 			if ($PSCmdlet.ShouldProcess($Destination, "Moving Notifications $alertName")) {
 				try {
 					$copyAgentAlertStatus = [pscustomobject]@{
-						SourceServer      = $sourceServer.Name
-						DestinationServer = $destServer.Name
-						Name              = $alertName
-						Type              = "Notifications"
-						Status            = $null
-						DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+						SourceServer	   = $sourceServer.Name
+						DestinationServer  = $destServer.Name
+						Name			   = $alertName
+						Type			   = "Agent Alert Notification"
+						Notes			   = $null
+						Status			   = $null
+						DateTime		   = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 					}
 					# cant add them this way, we need to modify the existing one or give all options that are supported.
 					foreach ($notify in $notifications) {
@@ -296,11 +302,11 @@ function Copy-DbaAgentAlert {
 						$newAlert.AddNotification($notify.OperatorName, [Microsoft.SqlServer.Management.Smo.Agent.NotifyMethods]$notifyMethods)
 					}
 					$copyAgentAlertStatus.Status = "Successful"
-					$copyAgentAlertStatus
+					$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyAgentAlertStatus.Status = "Failed"
-					$copyAgentAlertStatus
+					$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					Stop-Function -Message "Issue moving notifications for the alert" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 				}
 			}
