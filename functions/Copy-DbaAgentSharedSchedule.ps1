@@ -117,14 +117,14 @@ function Copy-DbaAgentSharedSchedule {
                 if ($force -eq $false) {
 					$copySharedScheduleStatus.Status = "Skipped"
 					$copySharedScheduleStatus.Notes = "Already exists"
-                    $copySharedScheduleStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+                    $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     Write-Message -Level Verbose -Message "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
                     continue
                 }
                 else {
                     if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
                         $copySharedScheduleStatus.Status = "Skipped"
-						$copySharedScheduleStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+						$copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						Write-Message -Level Verbose -Message "Schedule [$scheduleName] has associated jobs. Skipping."
                         continue
                     }
@@ -136,7 +136,7 @@ function Copy-DbaAgentSharedSchedule {
                             }
                             catch {
                                 $copySharedScheduleStatus.Status = "Failed"
-                                $copySharedScheduleStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+                                $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 Stop-Function -Message "Issue dropping schedule" -Target $scheduleName -InnerErrorRecord $_ -Continue
                             }
                         }
@@ -153,11 +153,11 @@ function Copy-DbaAgentSharedSchedule {
                     $destServer.Query($sql)
 
                     $copySharedScheduleStatus.Status = "Successful"
-                    $copySharedScheduleStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+                    $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
                 catch {
 					$copySharedScheduleStatus.Status = "Failed"
-					$copySharedScheduleStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     Stop-Function -Message "Issue creating schedule" -Target $scheduleName -InnerErrorRecord $_ -Continue
                 }
             }

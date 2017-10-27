@@ -135,10 +135,10 @@ function Copy-DbaAgentAlert {
 				}
 				catch {
 					$copyAgentAlertStatus.Status = "Failed"
-					$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					Stop-Function -Message "Issue creating alert defaults." -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 				}
-				$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+				$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 			}
 		}
 
@@ -162,7 +162,7 @@ function Copy-DbaAgentAlert {
 				if ($force -eq $false) {
 					$copyAgentAlertStatus.Status = "Skipped"
 					$copyAgentAlertStatus.Notes = "Already exists"
-					$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					Write-Message -Message "Alert [$alertName] exists at destination. Use -Force to drop and migrate." -Level Verbose
 					continue
 				}
@@ -177,7 +177,7 @@ function Copy-DbaAgentAlert {
 					}
 					catch {
 						$copyAgentAlertStatus.Status = "Failed"
-						$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+						$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						Stop-Function -Message "Issue dropping/recreating alert" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 					}
 				}
@@ -190,14 +190,14 @@ function Copy-DbaAgentAlert {
 				
 				$copyAgentAlertStatus.Status = "Skipped"
 				$copyAgentAlertStatus.Notes = "Already defined"
-				$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+				$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				continue
 			}
 			if ($destSevDbConflict) {
 				Write-Message -Level Verbose -Message "Alert [$($destSevConflict.Name)] has already been defined to use the severity $($serverAlert.Severity) on database $($severAlert.DatabaseName). Skipping."
 
 				$copyAgentAlertStatus.Status = "Skipped"
-				$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+				$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				continue
 			}
 
@@ -205,7 +205,7 @@ function Copy-DbaAgentAlert {
 				Write-Message -Level Verbose -Message "Alert [$alertName] has job [$($serverAlert.JobName)] configured as response. The job does not exist on destination $destServer. Skipping."
 
 				$copyAgentAlertStatus.Status = "Skipped"
-				$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+				$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				continue
 			}
 
@@ -219,11 +219,11 @@ function Copy-DbaAgentAlert {
 					$null = $destServer.Query($sql)
 
 					$copyAgentAlertStatus.Status = "Successful"
-					$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyAgentAlertStatus.Status = "Failed"
-					$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					Stop-Function -Message "Issue creating alert" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 				}
 			}
@@ -259,11 +259,11 @@ function Copy-DbaAgentAlert {
 						$null = $destServer.Query($sql)
 
 						$copyAgentAlertStatus.Status = "Successful"
-						$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+						$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					}
 					catch {
 						$copyAgentAlertStatus.Status = "Failed"
-						$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+						$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						Stop-Function -Message "Issue adding alert to job" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 					}
 				}
@@ -302,11 +302,11 @@ function Copy-DbaAgentAlert {
 						$newAlert.AddNotification($notify.OperatorName, [Microsoft.SqlServer.Management.Smo.Agent.NotifyMethods]$notifyMethods)
 					}
 					$copyAgentAlertStatus.Status = "Successful"
-					$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyAgentAlertStatus.Status = "Failed"
-					$copyAgentAlertStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					Stop-Function -Message "Issue moving notifications for the alert" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 				}
 			}

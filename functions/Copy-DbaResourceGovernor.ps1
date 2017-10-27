@@ -133,12 +133,12 @@ function Copy-DbaResourceGovernor {
 					$destServer.Query($sql)
 
 					$copyResourceGovSetting.Status = "Successful"
-					$copyResourceGovSetting | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyResourceGovSetting | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyResourceGovSetting.Status = "Failed"
 					$copyResourceGovSetting.Notes = $_.Exception
-					$copyResourceGovSetting | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyResourceGovSetting | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Stop-Function -Message "Not able to update settings." -Target $destServer -ErrorRecord $_
 				}
@@ -176,7 +176,7 @@ function Copy-DbaResourceGovernor {
 
 					$copyResourceGovPool.Status = "Skipped"
 					$copyResourceGovPool.Notes = "Already exists"
-					$copyResourceGovPool | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyResourceGovPool | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				else {
@@ -196,7 +196,7 @@ function Copy-DbaResourceGovernor {
 						catch {
 							$copyResourceGovPool.Status = "Failed to drop from Destination"
 							$copyResourceGovPool.Notes = $_.Exception
-							$copyResourceGovPool | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyResourceGovPool | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 							Stop-Function -Message "Unable to drop: $_  Moving on." -Target $destPool -ErrorRecord $_ -Continue
 						}
@@ -212,7 +212,7 @@ function Copy-DbaResourceGovernor {
 					$destServer.Query($sql)
 
 					$copyResourceGovPool.Status = "Successful"
-					$copyResourceGovPool | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyResourceGovPool | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					$workloadGroups = $pool.WorkloadGroups
 					foreach ($workloadGroup in $workloadGroups) {
@@ -234,13 +234,13 @@ function Copy-DbaResourceGovernor {
 						$destServer.Query($sql)
 
 						$copyResourceGovWorkGroup.Status = "Successful"
-						$copyResourceGovWorkGroup | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+						$copyResourceGovWorkGroup | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					}
 				}
 				catch {
 					$copyResourceGovWorkGroup.Status = "Failed"
 					$copyResourceGovWorkGroup.Notes = $_.Exception
-					$copyResourceGovWorkGroup | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyResourceGovWorkGroup | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Stop-Function -Message "Unable to migrate pool." -Target $pool -ErrorRecord $_
 				}
@@ -260,12 +260,12 @@ function Copy-DbaResourceGovernor {
 					SourceServer      = $sourceServer.Name
 					DestinationServer = $destServer.Name
 					Type              = "Reconfigure Resource Governor"
-					Name              = $null
+					Name              = "Reconfigure Resource Governor"
 					Status            = "Successful"
 					Notes             = $null
 					DateTime          = [DbaDateTime](Get-Date)
 				}
-				$copyResourceGovReconfig | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+				$copyResourceGovReconfig | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 			}
 		}
 	}

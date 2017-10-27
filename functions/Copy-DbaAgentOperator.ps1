@@ -128,7 +128,7 @@ function Copy-DbaAgentOperator {
 				if ($force -eq $false) {
 					$copyOperatorStatus.Status = "Skipped"
 					$copyOperatorStatus.Notes = "Already exists"
-					$copyOperatorStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					Write-Message -Level Verbose -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
@@ -145,7 +145,7 @@ function Copy-DbaAgentOperator {
 						}
 						catch {
 							$copyOperatorStatus.Status = "Failed"
-							$copyOperatorStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							
 							Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 						}
@@ -161,11 +161,11 @@ function Copy-DbaAgentOperator {
 					$destServer.Query($sql)
 					
 					$copyOperatorStatus.Status = "Successful"
-					$copyOperatorStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyOperatorStatus.Status = "Failed"
-					$copyOperatorStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					Stop-Function -Message "Issue creating operator." -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 				}
 			}

@@ -133,7 +133,7 @@ function Copy-DbaAgentProxyAccount {
 			
 			if ($null -eq $credentialtest) {
 				$copyAgentProxyAccountStatus.Status = "Skipped"
-				$copyAgentProxyAccountStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+				$copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				Write-Message -Level Verbose -Message "Associated credential account, $CredentialName, does not exist on $destination. Skipping migration of $proxyName."
 				continue
 			}
@@ -157,7 +157,7 @@ function Copy-DbaAgentProxyAccount {
 						catch {
 							$copyAgentProxyAccountStatus.Status = "Failed"
 							$copyAgentProxyAccountStatus.Notes = "Could not drop"
-							$copyAgentProxyAccountStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							Stop-Function -Message "Issue dropping proxy account" -Target $proxyName -InnerErrorRecord $_ -Continue
 						}
 					}
@@ -176,20 +176,20 @@ function Copy-DbaAgentProxyAccount {
 
 					# Will fixing this misspelled status cause problems downstream?
 					$copyAgentProxyAccountStatus.Status = "Successful"
-					$copyAgentProxyAccountStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$exceptionstring = $_.Exception.InnerException.ToString()
 					if ($exceptionstring -match 'subsystem') {
 						$copyAgentProxyAccountStatus.Status = "Skipping"
 						$copyAgentProxyAccountStatus.Notes = "Failure"
-						$copyAgentProxyAccountStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+						$copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 						Write-Message -Level Verbose -Message "One or more subsystems do not exist on the destination server. Skipping that part."
 					}
 					else {
 						$copyAgentProxyAccountStatus.Status = "Failed"
-						$copyAgentProxyAccountStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+						$copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 						Stop-Function -Message "Issue creating proxy account" -Target $proxyName -InnerErrorRecord $_
 					}

@@ -157,7 +157,7 @@ function Copy-DbaServerAuditSpecification {
 					Write-Message -Level Verbose -Message "Server audit $auditSpecName exists at destination. Use -Force to drop and migrate."
 
 					$copyAuditSpecStatus.Status = "Skipped"
-					$copyAuditSpecStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				else {
@@ -169,7 +169,7 @@ function Copy-DbaServerAuditSpecification {
 						catch {
 							$copyAuditSpecStatus.Status = "Failed"
 							$copyAuditSpecStatus.Notes = $_.Exception
-							$copyAuditSpecStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping audit spec" -Target $auditSpecName -ErrorRecord $_ -Continue
 						}
@@ -184,12 +184,12 @@ function Copy-DbaServerAuditSpecification {
 					$destServer.Query($sql)
 
 					$copyAuditSpecStatus.Status = "Successful"
-					$copyAuditSpecStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyAuditSpecStatus.Status = "Failed"
 					$copyAuditSpecStatus.Notes = $_.Exception
-					$copyAuditSpecStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Stop-Function -Message "Issue creating audit spec on destination" -Target $auditSpecName -ErrorRecord $_
 				}
