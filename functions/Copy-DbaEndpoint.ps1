@@ -114,15 +114,17 @@ function Copy-DbaEndpoint {
 
 		foreach ($currentEndpoint in $serverEndpoints) {
 			$endpointName = $currentEndpoint.Name
-
+			
 			$copyEndpointStatus = [pscustomobject]@{
-				SourceServer        = $sourceServer.Name
-				DestinationServer   = $destServer.Name
-				Name                = $endpointName
-				Status              = $null
-				DateTime            = [DbaDateTime](Get-Date)
+				SourceServer		 = $sourceServer.Name
+				DestinationServer    = $destServer.Name
+				Name				 = $endpointName
+				Type				 = "Endpoint"
+				Status			     = $null
+				Notes			     = $null
+				DateTime			 = [DbaDateTime](Get-Date)
 			}
-
+			
 			if ($Endpoint -and $Endpoint -notcontains $endpointName -or $ExcludeEndpoint -contains $endpointName) {
 				continue
 			}
@@ -130,6 +132,7 @@ function Copy-DbaEndpoint {
 			if ($destEndpoints.Name -contains $endpointName) {
 				if ($force -eq $false) {
 					$copyEndpointStatus.Status = "Skipped"
+					$copyEndpointStatus.Notes = "Already exists"
 					$copyEndpointStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					Write-Message -Level Verbose -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."

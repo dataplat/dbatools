@@ -138,20 +138,23 @@ function Copy-DbaDatabaseAssembly {
 			$assemblyName = $currentAssembly.Name
 			$dbName = $currentAssembly.Parent.Name
 			$destDb = $destServer.Databases[$dbName]
-
+			
 			$copyDbAssemblyStatus = [pscustomobject]@{
-				SourceServer        = $sourceServer.Name
-				SourceDatabase      = $dbName
-				DestinationServer   = $destServer.Name
-				DestinationDatabase = $destDb
-				Name                = $assemblyName
-				Status              = $null
-				DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+				SourceServer		 = $sourceServer.Name
+				SourceDatabase	     = $dbName
+				DestinationServer    = $destServer.Name
+				DestinationDatabase  = $destDb
+				type				 = "Database Assembly"
+				Name				 = $assemblyName
+				Status			     = $null
+				Notes			     = $null
+				DateTime			 = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
-
-
+			
+			
 			if (!$destDb) {
 				$copyDbAssemblyStatus.Status = "Skipped"
+				$copyDbAssemblyStatus.Notes = "Destination database does not exist"
 				$copyDbAssemblyStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 				Write-Message -Level Verbose -Message "Destination database $dbName does not exist. Skipping $assemblyName.";
@@ -181,7 +184,8 @@ function Copy-DbaDatabaseAssembly {
 
 			if ($destServer.Databases[$dbName].Assemblies.Name -contains $currentAssembly.name) {
 				if ($force -eq $false) {
-                    $copyDbAssemblyStatus.Status = "Skipped"
+					$copyDbAssemblyStatus.Status = "Skipped"
+					$copyDbAssemblyStatus.Notes = "Already exists"
                     $copyDbAssemblyStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
                     Write-Message -Level Verbose -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
