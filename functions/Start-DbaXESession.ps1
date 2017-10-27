@@ -18,11 +18,13 @@ function Start-DbaXESession {
 	.PARAMETER AllSessions
 	Start all Extended Events sessions on an instance, ignoring the packaged sessions: AlwaysOn_health, system_health, telemetry_xevents.
 
-	.PARAMETER Silent
-	If this switch is enabled, the internal messaging functions will be silenced.
+	.PARAMETER EnableException
+	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+	This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 	.NOTES
-	Tags: Memory
+	Tags: Xevent
 	Author: Doug Meyers
 	Website: https://dbatools.io
 	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -66,40 +68,32 @@ function Start-DbaXESession {
 		[switch]$AllSessions,
 
 		[parameter(Mandatory, ValueFromPipeline, ParameterSetName='Object')]
-		[object]$SessionCollection,
-
-		[switch]$Silent
+		[Microsoft.SqlServer.Management.XEvent.Session[]]$SessionCollection,
+		[switch]$EnableException
 	)
 	
 	begin {
-		if ([System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.XEvent") -eq $null) {
-			Stop-Function -Message "SMO version is too old. To collect Extended Events, you must have SQL Server Management Studio 2012 or higher installed."
-		}
-
 		# Start each XESession
 		function Start-XESessions {
 			[CmdletBinding()]
-			param ([object]$xesessions)
+			param ([Microsoft.SqlServer.Management.XEvent.Session[]]$xesessions)
 
 			foreach ($x in $xesessions) {
-				$instance = $x.Parent.ServerName
+				$instance = $x.Parent.Name
 				$session = $x.Name
-				$running = $x.isRunning
-				if (-Not $running) {
+				if (-Not $x.isRunning) {
 					Write-Message -Level Verbose -Message "Starting XEvent Session $session on $instance."
 					$x.Start()
-					$x
+					Get-DbaXESession -SqlInstance $server -Session $session # this keeps the output uniform across the module
 				} else {
-					Write-Message -Level Verbose -Message "$session on $instance is already running"
+					Write-Message -Level Warning -Message "$session on $instance is already running"
 				}
 			}
 		}
 	}
 	
 	process {
-		if (Test-FunctionInterrupt) { return }
-
-		if ($SessionCollection.Count -gt 0) {
+		if ($SessionCollection) {
 			Start-XESessions $SessionCollection
 		} else {
 			foreach ($instance in $SqlInstance) {
