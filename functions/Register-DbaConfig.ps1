@@ -96,7 +96,7 @@
 			
 			if (-not $Config -or ($Config.RegistryData -eq "<type not supported>"))
 			{
-				Stop-Function -Message "Invalid Input, cannot export $($Config.FullName), type not supported" -EnableException $EnableException -Category InvalidArgument -Target $Config -FunctionName $FunctionName# -ModuleName "PSFramework" -Tag "config", "fail"
+				Stop-Function -Message "Invalid Input, cannot export $($Config.FullName), type not supported" -EnableException $EnableException -Category InvalidArgument -Target $Config -FunctionName $FunctionName #-ModuleName "PSFramework" -Tag "config", "fail"
 				return
 			}
 			
