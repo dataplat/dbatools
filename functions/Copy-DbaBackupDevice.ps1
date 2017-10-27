@@ -122,7 +122,7 @@ function Copy-DbaBackupDevice {
 			
 			if ($destBackupDevices.Name -contains $deviceName) {
 				if ($force -eq $false) {
-					$copyBackupDeviceStatus.Status = "Objects exists, use -Force to drop and migrate"
+					$copyBackupDeviceStatus.Status = "Skipped"
 					$copyBackupDeviceStatus
 					
 					Write-Message -Level Verbose -Message "backup device $deviceName exists at destination. Use -Force to drop and migrate."

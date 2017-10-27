@@ -129,7 +129,7 @@ function Copy-DbaEndpoint {
 
 			if ($destEndpoints.Name -contains $endpointName) {
 				if ($force -eq $false) {
-					$copyEndpointStatus.Status = "Objects exists, use -Force to drop and migrate"
+					$copyEndpointStatus.Status = "Skipped"
 					$copyEndpointStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					Write-Message -Level Verbose -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."

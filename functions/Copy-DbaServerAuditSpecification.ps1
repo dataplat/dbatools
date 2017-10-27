@@ -153,7 +153,7 @@ function Copy-DbaServerAuditSpecification {
 				if ($force -eq $false) {
 					Write-Message -Level Verbose -Message "Server audit $auditSpecName exists at destination. Use -Force to drop and migrate."
 
-					$copyAuditSpecStatus.Status = "Objects exists, use -Force to drop and migrate"
+					$copyAuditSpecStatus.Status = "Skipped"
 					$copyAuditSpecStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
 				}

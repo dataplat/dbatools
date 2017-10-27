@@ -174,7 +174,7 @@ function Copy-DbaResourceGovernor {
 				if ($force -eq $false) {
 					Write-Message -Level Verbose -Message "Pool '$poolName' was skipped because it already exists on $destination. Use -Force to drop and recreate."
 
-					$copyResourceGovPool.Status = "Objects exists, use -Force to drop and migrate"
+					$copyResourceGovPool.Status = "Skipped"
 					$copyResourceGovPool.Notes = "Already exists on destination"
 					$copyResourceGovPool | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
