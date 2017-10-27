@@ -12,16 +12,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		}
 	}
 	AfterAll {
-		if (-not $started) {
-			$systemhealth.Stop()
+		if ($started) {
+			$systemhealth.Start()
 		}
 	}
 	
 	Context "Verifying command works" {
 		It "stops the system_health session" {
-			# pipe didnt't work here, unsure why. Works regularly
-			Stop-DbaXESession -SqlInstance $server -Session system_health
-			(Get-DbaXESession -SqlInstance $server -Session system_health).IsRunning | Should Be $false
+			$systemhealth | Stop-DbaXESession
+			$systemhealth.IsRunning | Should Be $false
 		}
 	}
 }

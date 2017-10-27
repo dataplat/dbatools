@@ -19,9 +19,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	
 	Context "Verifying command works" {
 		It "starts the system_health session" {
-			# pipe didnt't work here, unsure why. Works regularly
-			Start-DbaXESession -SqlInstance $server -Session system_health
-			(Get-DbaXESession -SqlInstance $server -Session system_health).IsRunning | Should Be $true
+			$systemhealth | Start-DbaXESession
+			$systemhealth.IsRunning | Should Be $true
 		}
 	}
 }
