@@ -115,14 +115,14 @@ function Copy-DbaAgentSharedSchedule {
                 if ($force -eq $false) {
                     $copySharedScheduleStatus.Status = "Skipped"
                     $copySharedScheduleStatus
-                    Write-Message -Level Warning -Message "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
+                    Write-Message -Level Verbose -Message "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
                     continue
                 }
                 else {
                     if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
                         $copySharedScheduleStatus.Status = "Skipped"
 						$copySharedScheduleStatus
-						Write-Message -Level Warning -Message "Schedule [$scheduleName] has associated jobs. Skipping."
+						Write-Message -Level Verbose -Message "Schedule [$scheduleName] has associated jobs. Skipping."
                         continue
                     }
                     else {

@@ -140,7 +140,7 @@ function Copy-DbaCustomError {
 					$copyCustomErrorStatus.Status = "Skipped"
 					$copyCustomErrorStatus
 
-					Write-Message -Level Warning -Message "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Verbose -Message "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {

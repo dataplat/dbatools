@@ -115,7 +115,7 @@ function Copy-DbaSqlDataCollector {
 		if (Test-FunctionInterrupt) { return }
 
 		if ($NoServerReconfig -eq $false) {
-			Write-Message -Level Warning -Message "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
+			Write-Message -Level Verbose -Message "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
 			$NoServerReconfig = $true
 
 			<# for future use when this support is added #>
@@ -160,7 +160,7 @@ function Copy-DbaSqlDataCollector {
 		}
 
 		if ($destStore.Enabled -eq $false) {
-			Write-Message -Level Warning -Message "The Data Collector must be setup initially for Collection Sets to be migrated. Setup the Data Collector and try again."
+			Write-Message -Level Verbose -Message "The Data Collector must be setup initially for Collection Sets to be migrated. Setup the Data Collector and try again."
 			return
 		}
 
@@ -188,7 +188,7 @@ function Copy-DbaSqlDataCollector {
 
 			if ($destStore.CollectionSets[$collectionName] -ne $null) {
 				if ($force -eq $false) {
-					Write-Message -Level Warning -Message "Collection Set '$collectionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
+					Write-Message -Level Verbose -Message "Collection Set '$collectionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 
 					$copyCollectionSetStatus.Status = "Skipped"
 					$copyCollectionSetStatus.Notes = "Collection set Already exists on destination"

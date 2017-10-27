@@ -133,7 +133,7 @@ function Copy-DbaAgentProxyAccount {
 			if ($null -eq $credentialtest) {
 				$copyAgentProxyAccountStatus.Status = "Skipped"
 				$copyAgentProxyAccountStatus
-				Write-Message -Level Warning -Message "Associated credential account, $CredentialName, does not exist on $destination. Skipping migration of $proxyName."
+				Write-Message -Level Verbose -Message "Associated credential account, $CredentialName, does not exist on $destination. Skipping migration of $proxyName."
 				continue
 			}
 
@@ -144,7 +144,7 @@ function Copy-DbaAgentProxyAccount {
 				if ($force -eq $false) {
 					$copyAgentProxyAccountStatus.Status = "Skipped"
 					$copyAgentProxyAccountStatus
-					Write-Message -Level Warning -Message "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Verbose -Message "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
@@ -182,7 +182,7 @@ function Copy-DbaAgentProxyAccount {
 						$copyAgentProxyAccountStatus.Status = "Skipping"
 						$copyAgentProxyAccountStatus
 
-						Write-Message -Level Warning -Message "One or more subsystems do not exist on the destination server. Skipping that part."
+						Write-Message -Level Verbose -Message "One or more subsystems do not exist on the destination server. Skipping that part."
 					}
 					else {
 						$copyAgentProxyAccountStatus.Status = "Failed"

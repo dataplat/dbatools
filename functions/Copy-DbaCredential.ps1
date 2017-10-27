@@ -324,7 +324,7 @@ function Copy-DbaCredential {
 						$copyCredentialStatus.Status = "Skipping"
 						$copyCredentialStatus
 						
-						Write-Message -Level Warning -Message "$credentialName exists $($destServer.Name). Skipping."
+						Write-Message -Level Verbose -Message "$credentialName exists $($destServer.Name). Skipping."
 						continue
 					}
 					else {
@@ -367,7 +367,7 @@ function Copy-DbaCredential {
 		$destination = $destServer.DomainInstanceName
 		
 		if ($SourceSqlCredential.Username -ne $null) {
-			Write-Message -Level Warning -Message "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
+			Write-Message -Level Verbose -Message "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
 		}
 		
 		if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {

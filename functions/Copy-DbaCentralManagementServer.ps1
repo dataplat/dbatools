@@ -124,7 +124,7 @@ function Copy-DbaCentralManagementServer {
 					if ($force -eq $false) {
 						$copyDestinationGroupStatus.Status = "Skipped"
 						$copyDestinationGroupStatus
-						Write-Message -Level Warning -Message "Destination group $groupName exists at destination. Use -Force to drop and migrate."
+						Write-Message -Level Verbose -Message "Destination group $groupName exists at destination. Use -Force to drop and migrate."
 						continue
 					}
 					if ($Pscmdlet.ShouldProcess($destination, "Dropping group $groupName")) {
@@ -175,7 +175,7 @@ function Copy-DbaCentralManagementServer {
 						$copyInstanceStatus.Status = "Skipped"
 						$copyInstanceStatus
 
-						Write-Message -Level Warning -Message "$serverName is Central Management Server. Add prohibited. Skipping."
+						Write-Message -Level Verbose -Message "$serverName is Central Management Server. Add prohibited. Skipping."
 						continue
 					}
 				}
@@ -185,7 +185,7 @@ function Copy-DbaCentralManagementServer {
 						$copyInstanceStatus.Status = "Skipped"
 						$copyInstanceStatus
 
-						Write-Message -Level Warning -Message "Instance $instanceName exists in group $groupName at destination. Use -Force to drop and migrate."
+						Write-Message -Level Verbose -Message "Instance $instanceName exists in group $groupName at destination. Use -Force to drop and migrate."
 						continue
 					}
 
@@ -252,7 +252,7 @@ function Copy-DbaCentralManagementServer {
 						$copyGroupStatus.Status = "Skipped"
 						$copyGroupStatus
 
-						Write-Message -Level Warning -Message "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."
+						Write-Message -Level Verbose -Message "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."
 						continue
 					}
 

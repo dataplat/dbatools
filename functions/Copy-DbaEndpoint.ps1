@@ -132,7 +132,7 @@ function Copy-DbaEndpoint {
 					$copyEndpointStatus.Status = "Skipped"
 					$copyEndpointStatus
 
-					Write-Message -Level Warning -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Verbose -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {

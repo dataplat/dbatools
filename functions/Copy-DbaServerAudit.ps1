@@ -135,7 +135,7 @@ function Copy-DbaServerAudit {
 
 			if ($destAudits.Name -contains $auditName) {
 				if ($force -eq $false) {
-					Write-Message -Level Warning -Message "Server audit $auditName exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Verbose -Message "Server audit $auditName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
@@ -164,7 +164,7 @@ function Copy-DbaServerAudit {
 
 			if ((Test-DbaSqlPath -SqlInstance $destServer -Path $currentAudit.Filepath) -eq $false) {
 				if ($Force -eq $false) {
-					Write-Message -Level Warning -Message "$($currentAudit.Filepath) does not exist on $destination. Skipping $auditName. Specify -Force to create the directory."
+					Write-Message -Level Verbose -Message "$($currentAudit.Filepath) does not exist on $destination. Skipping $auditName. Specify -Force to create the directory."
 
 					$copyAuditStatus.Status = "Skipped"
 					$copyAuditStatus.Notes = "Already exists on destination"

@@ -181,7 +181,7 @@ function Copy-DbaLogin {
 
 				if ($currentLogin -eq $userName -and $force) {
 					if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it is performing the migration.")) {
-						Write-Message -Level Warning -Message "Cannot drop login performing the migration. Skipping."
+						Write-Message -Level Verbose -Message "Cannot drop login performing the migration. Skipping."
 					}
 
 					$copyLoginStatus.Status = "Skipped"
@@ -191,7 +191,7 @@ function Copy-DbaLogin {
 				}
 
 				if (($destServer.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($sourceLogin.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin)) {
-					Write-Message -Level Warning -Message "$Destination does not have Mixed Mode enabled. [$userName] is an SQL Login. Enable mixed mode authentication after the migration completes to use this type of login."
+					Write-Message -Level Verbose -Message "$Destination does not have Mixed Mode enabled. [$userName] is an SQL Login. Enable mixed mode authentication after the migration completes to use this type of login."
 				}
 
 				$userBase = ($userName.Split("\")[0]).ToLower()
@@ -199,7 +199,7 @@ function Copy-DbaLogin {
 				if ($serverName -eq $userBase -or $userName.StartsWith("NT ")) {
 					if ($sourceServer.NetName -ne $destServer.NetName) {
 						if ($Pscmdlet.ShouldProcess("console", "Stating $userName was skipped because it is a local machine name.")) {
-							Write-Message -Level Warning -Message "$userName was skipped because it is a local machine name."
+							Write-Message -Level Verbose -Message "$userName was skipped because it is a local machine name."
 						}
 
 						$copyLoginStatus.Status = "Skipped"
@@ -216,7 +216,7 @@ function Copy-DbaLogin {
 
 				if ($destServer.Logins.Item($userName) -ne $null -and !$force) {
 					if ($Pscmdlet.ShouldProcess("console", "Stating $userName is skipped because it exists at destination.")) {
-						Write-Message -Level Warning -Message "$userName already exists in destination. Use -Force to drop and recreate."
+						Write-Message -Level Verbose -Message "$userName already exists in destination. Use -Force to drop and recreate."
 					}
 
 					$copyLoginStatus.Status = "Skipped"
@@ -227,7 +227,7 @@ function Copy-DbaLogin {
 
 				if ($destServer.Logins.Item($userName) -ne $null -and $force) {
 					if ($userName -eq $destServer.ServiceAccount) {
-						Write-Message -Level Warning -Message "$userName is the destination service account. Skipping drop."
+						Write-Message -Level Verbose -Message "$userName is the destination service account. Skipping drop."
 
 						$copyLoginStatus.Status = "Skipped"
 						$copyLoginStatus.Notes = "Destination service account"
@@ -272,7 +272,7 @@ function Copy-DbaLogin {
 								if ($disabled) { $destServer.Logins.Item($userName).Enable() }
 							}
 							elseif ($activeConnections) {
-								Write-Message -Level Warning -Message "There are $($activeConnections.Count) active connections found for the login $userName. Utilize -KillActiveConnection with -Force to kill the connections."
+								Write-Message -Level Verbose -Message "There are $($activeConnections.Count) active connections found for the login $userName. Utilize -KillActiveConnection with -Force to kill the connections."
 							}
 							$destServer.Logins.Item($userName).Drop()
 
@@ -313,7 +313,7 @@ function Copy-DbaLogin {
 						} else {
 							$defaultDb = "tempdb"
 						}
-						Write-Message -Level Warning -Message "$OrigdefaultDb does not exist on destination. Setting defaultdb to $defaultDb."
+						Write-Message -Level Verbose -Message "$OrigdefaultDb does not exist on destination. Setting defaultdb to $defaultDb."
 					}
 
 					Write-Message -Level Verbose -Message "Set $userName defaultdb to $defaultDb."
@@ -418,7 +418,7 @@ function Copy-DbaLogin {
 					}
 					# This script does not currently support certificate mapped or asymmetric key users.
 					else {
-						Write-Message -Level Warning -Message "$($sourceLogin.LoginType) logins not supported. $($sourceLogin.name) skipped."
+						Write-Message -Level Verbose -Message "$($sourceLogin.LoginType) logins not supported. $($sourceLogin.name) skipped."
 
 						$copyLoginStatus.Status = "Skipped"
 						$copyLoginStatus.Notes = "$($sourceLogin.LoginType) not supported"

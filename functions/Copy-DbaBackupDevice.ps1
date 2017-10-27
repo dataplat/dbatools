@@ -125,7 +125,7 @@ function Copy-DbaBackupDevice {
 					$copyBackupDeviceStatus.Status = "Skipped"
 					$copyBackupDeviceStatus
 					
-					Write-Message -Level Warning -Message "backup device $deviceName exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Verbose -Message "backup device $deviceName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
@@ -173,8 +173,8 @@ function Copy-DbaBackupDevice {
 				$destPath = Join-AdminUnc $destNetBios $backupDirectory
 				
 				if ($Pscmdlet.ShouldProcess($destination, "Updating create code to use new path")) {
-					Write-Message -Level Warning -Message "$path doesn't exist on $destination"
-					Write-Message -Level Warning -Message "Using default backup directory $backupDirectory"
+					Write-Message -Level Verbose -Message "$path doesn't exist on $destination"
+					Write-Message -Level Verbose -Message "Using default backup directory $backupDirectory"
 					
 					try {
 						Write-Message -Level Verbose -Message "Updating $deviceName to use $backupDirectory"

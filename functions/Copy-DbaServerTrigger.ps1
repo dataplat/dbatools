@@ -137,7 +137,7 @@ function Copy-DbaServerTrigger {
 
 			if ($destTriggers.Name -contains $triggerName) {
 				if ($force -eq $false) {
-					Write-Message -Level Warning -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Verbose -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
 
 					$copyTriggerStatus.Status = "Skipped"
 					$copyTriggerStatus
