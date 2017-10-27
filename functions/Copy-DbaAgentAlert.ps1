@@ -115,12 +115,13 @@ function Copy-DbaAgentAlert {
 		if ($IncludeDefaults -eq $true) {
 			if ($PSCmdlet.ShouldProcess($Destination, "Creating Alert Defaults")) {
 				$copyAgentAlertStatus = [pscustomobject]@{
-					SourceServer      = $sourceServer.Name
-					DestinationServer = $destServer.Name
-					Name              = "Alert Defaults"
-					Type              = "Alert Defaults"
-					Status            = $null
-					DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+					SourceServer	   = $sourceServer.Name
+					DestinationServer  = $destServer.Name
+					Name			   = "Alert Defaults"
+					Type			   = "Alert Defaults"
+					Status			   = $null
+					Notes			   = $null
+					DateTime		   = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
 				try {
 					Write-Message -Message "Creating Alert Defaults" -Level Verbose
@@ -271,13 +272,13 @@ function Copy-DbaAgentAlert {
 			if ($PSCmdlet.ShouldProcess($Destination, "Moving Notifications $alertName")) {
 				try {
 					$copyAgentAlertStatus = [pscustomobject]@{
-						SourceServer      = $sourceServer.Name
-						DestinationServer = $destServer.Name
-						Name              = $alertName
+						SourceServer	   = $sourceServer.Name
+						DestinationServer  = $destServer.Name
+						Name			   = $alertName
 						Type			   = "Agent Alert Notification"
 						Notes			   = $null
-						Status            = $null
-						DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+						Status			   = $null
+						DateTime		   = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 					}
 					# cant add them this way, we need to modify the existing one or give all options that are supported.
 					foreach ($notify in $notifications) {

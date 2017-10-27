@@ -106,12 +106,13 @@ function Copy-DbaAgentProxyAccount {
 			$proxyName = $proxyAccount.Name
 			
 			$copyAgentProxyAccountStatus = [pscustomobject]@{
-				SourceServer		 = $sourceServer.Name
-				DestinationServer    = $destServer.Name
-				Name				 = $null
-				Type				 = "Agent Proxy"
-				Status			     = $null
-				DateTime			 = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+				SourceServer    = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name		    = $null
+				Type		    = "Agent Proxy"
+				Status		    = $null
+				Notes		    = $null
+				DateTime	    = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
 			
 			if ($proxyAccounts.Length -gt 0 -and $proxyAccounts -notcontains $proxyName) {

@@ -99,21 +99,24 @@ function Copy-DbaAgentSharedSchedule {
 	process {
         foreach ($schedule in $serverSchedules) {
             $scheduleName = $schedule.Name
-            $copySharedScheduleStatus = [pscustomobject]@{
-                SourceServer        = $sourceServer.Name
-                DestinationServer   = $destServer.Name
-                Name                = $scheduleName
-                Status              = $null
-                DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
-            }
-
-            if ($schedules.Length -gt 0 -and $schedules -notcontains $scheduleName) {
+			$copySharedScheduleStatus = [pscustomobject]@{
+				SourceServer		 = $sourceServer.Name
+				DestinationServer    = $destServer.Name
+				Type				 = "Agent Schedule"
+				Name				 = $scheduleName
+				Status			     = $null
+				Notes			     = $null
+				DateTime			 = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+			}
+			
+			if ($schedules.Length -gt 0 -and $schedules -notcontains $scheduleName) {
                 continue
             }
 
             if ($destSchedules.Name -contains $scheduleName) {
                 if ($force -eq $false) {
-                    $copySharedScheduleStatus.Status = "Skipped"
+					$copySharedScheduleStatus.Status = "Skipped"
+					$copySharedScheduleStatus.Notes = "Already exists"
                     $copySharedScheduleStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
                     Write-Message -Level Verbose -Message "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
                     continue
