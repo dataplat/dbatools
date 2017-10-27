@@ -2,8 +2,27 @@ Function Connect-AsServer
 {
 <# 
 .SYNOPSIS 
-Internal function that creates SMO server object. Input can be text or SMO.Server.
-#>	
+Internal function that creates SMO server object.
+
+.DESCRIPTION
+Internal function that creates SMO server object.
+
+.PARAMETER AsServer
+Analysis Server
+
+.PARAMETER ParameterConnection
+Shorten the timeout
+
+.NOTES
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+
+.EXAMPLE
+Connect-AsServer -AsServer localhost
+Connects to SSAS on the local server
+
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]

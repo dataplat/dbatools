@@ -1,57 +1,67 @@
-function Get-XpDirTreeRestoreFile
-{
+function Get-XpDirTreeRestoreFile {
 <#
-.SYNOPSIS
-Internal Function to get SQL Server backfiles from a specified folder using xp_dirtree
-.DESCRIPTION
-Takes path, checks for validity. Scans for usual backup file 
-.PARAMETER Path
-.PARAMETER 
-#>
-    [CmdletBinding()]
-    Param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [string]$Path,
-        [parameter(Mandatory = $true)]
-        [Alias("ServerInstance", "SqlInstance")]
-        [object]$SqlServer,
-        [System.Management.Automation.PSCredential]$SqlCredential
-    )
-       
-        $FunctionName =(Get-PSCallstack)[0].Command
-        
-        Write-Verbose "$FunctionName - Starting"
-        Write-Verbose "$FunctionName - Checking Path"
-        Try 
-        {
-            $srv = Connect-SQLServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-        }
-        Catch
-        {
-            Write-Warning "$FunctionName - Cannot connect to $sqlServer" -WarningAction stop
-        }
-
-        if ($Path[-1] -ne "\")
-        {
-            $Path = $Path + "\"
-        }
-        If (!(Test-SqlPath -SQLServer $sqlserver -SqlCredential $SqlCredential -path $path))
-        {
-            Write-warning "$FunctionName - SQLServer $sqlserver cannot access $path"
-        }
-        $query = "EXEC master.sys.xp_dirtree '$Path',1,1;"
-        $queryResult = Invoke-Sqlcmd2 -ServerInstance $sqlServer -Credential $SqlCredential -Database tempdb -Query $query
-        #$queryresult
-        $dirs = $queryResult | where-object { $_.file -eq 0 }
-        $Results = @()
-              $Results += $queryResult | where-object { $_.file -eq 1 } | Select-Object @{Name="FullName";Expression={$PATH+$_."Subdirectory"}}
-  
-        ForEach ($d in $dirs) 
-        {
-            $fullpath = "$path$($d.Subdirectory)"
-            Write-Verbose "Enumerating subdirectory '$fullpath'"
-            $Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlServer $SqlServer -SqlCredential $SqlCredential
-        }
-        return $Results
+    .SYNOPSIS
+        Internal Function to get SQL Server backfiles from a specified folder using xp_dirtree
     
+    .DESCRIPTION
+        Takes path, checks for validity. Scans for usual backup file
+    
+    .PARAMETER Path
+        The path to retrieve the restore for.
+    
+    .PARAMETER SqlInstance
+        The SQL Server that you're connecting to.
+    
+    .PARAMETER SqlCredential
+        Credential object used to connect to the SQL Server as a different user
+    
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    .EXAMPLE
+        PS C:\> Get-XpDirTreeRestoreFile -Path '\\foo\bar\' -SqlInstance $SqlInstance
+    
+        Tests whether the instance $SqlInstance has access to the path \\foo\bar\
+#>
+	[CmdletBinding()]
+	Param (
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[string]$Path,
+		[parameter(Mandatory = $true)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter]$SqlInstance,
+		[System.Management.Automation.PSCredential]$SqlCredential,
+		[bool][Alias('Silent')]$EnableException = $false
+	)
+	
+	Write-Message -Level InternalComment -Message "Starting"
+	
+	Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
+	$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+	
+	if ($Path[-1] -ne "\") {
+		$Path = $Path + "\"
+	}
+	
+	If (!(Test-DbaSqlPath -SqlInstance $server -path $path)) {
+		Stop-Function -Message "SqlInstance $SqlInstance cannot access $path" -EnableException $true
+	}
+	
+	$query = "EXEC master.sys.xp_dirtree '$Path',1,1;"
+	$queryResult = Invoke-Sqlcmd2 -ServerInstance $SqlInstance -Credential $SqlCredential -Database tempdb -Query $query
+	#$queryResult = $Server.Query($query)
+	
+	$dirs = $queryResult | where-object file -eq 0
+	$Results = @()
+	$Results += $queryResult | where-object file -eq 1 | Select-Object @{ Name = "FullName"; Expression = { $PATH + $_."Subdirectory" } }
+	
+	ForEach ($d in $dirs) {
+		$fullpath = "$path$($d.Subdirectory)"
+		Write-Message -Level Verbose -Message "Enumerating subdirectory '$fullpath'"
+		$Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlInstance $server
+	}
+	return $Results
+	
 }

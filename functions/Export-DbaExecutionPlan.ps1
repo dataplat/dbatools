@@ -1,11 +1,10 @@
-Function Export-DbaExecutionPlan
-{
+function Export-DbaExecutionPlan {
 <#
 .SYNOPSIS
 Exports execution plans to disk. 
 	
 .DESCRIPTION
-Exports execution plans to disk. Can pipe from Export-DbaExecutionPlan :D
+Exports execution plans to disk. Can pipe from Export-DbaExecutionPlan 
 	
 Thanks to 
 	https://www.simple-talk.com/sql/t-sql-programming/dmvs-for-query-plan-metadata/
@@ -19,11 +18,11 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Databases
-Return restore information for only specific databases. These are only the databases that currently exist on the server.
-	
-.PARAMETER Exclude
-Return restore information for all but these specific databases
+.PARAMETER Database
+The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+
+.PARAMETER ExcludeDatabase
+The database(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER SinceCreation
 Datetime object used to narrow the results to a date
@@ -47,12 +46,7 @@ Internal parameter
 Tags: Performance
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Export-DbaExecutionPlan
@@ -63,19 +57,22 @@ Export-DbaExecutionPlan -SqlInstance sqlserver2014a
 Exports all execution plans for sqlserver2014a.
 
 .EXAMPLE   
-Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Databases db1, db2 -SinceLastExecution '7/1/2016 10:47:00'
+Export-DbaExecutionPlan -SqlInstance sqlserver2014a -Database db1, db2 -SinceLastExecution '7/1/2016 10:47:00'
 
-Exports all execution plans for databases db1 and db2 on sqlserve2014a since July 1, 2016 at 10:47 AM.
+Exports all execution plans for databases db1 and db2 on sqlserver2014a since July 1, 2016 at 10:47 AM.
 	
 #>
 	[cmdletbinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
 	Param (
 		[parameter(ParameterSetName = 'NotPiped', Mandatory)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[parameter(ParameterSetName = 'NotPiped')]
 		[Alias("Credential")]
-		[PsCredential]$SqlCredential,
+		[PSCredential]$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
 		[parameter(ParameterSetName = 'Piped', Mandatory)]
 		[parameter(ParameterSetName = 'NotPiped', Mandatory)]
 		[string]$Path,
@@ -87,14 +84,8 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 		[object[]]$PipedObject
 	)
 	
-	DynamicParam { if ($SqlInstance) { return Get-ParamSqlDatabases -SqlServer $SqlInstance[0] -SqlCredential $SqlCredential } }
-	
-	BEGIN
-	{
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-		
+	begin
+	{	
 		if ($SinceCreation -ne $null)
 		{
 			$SinceCreation = $SinceCreation.ToString("yyyy-MM-dd HH:mm:ss")
@@ -150,7 +141,7 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 			
 			If ($Pscmdlet.ShouldProcess("console", "Showing output object"))
 			{
-				Add-Member -InputObject $object -MemberType NoteProperty -Name OutputFile -Value $filename
+				Add-Member -Force -InputObject $object -MemberType NoteProperty -Name OutputFile -Value $filename
 				Select-DefaultView -InputObject $object -Property ComputerName, InstanceName, SqlInstance, DatabaseName, SqlHandle, CreationTime, LastExecutionTime, OutputFile
 			}
 		}
@@ -177,7 +168,7 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 		{
 			try
 			{
-				$server = Connect-SqlServer -SqlServer $instance -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
 				
 				if ($server.VersionMajor -lt 9)
 				{
@@ -201,16 +192,16 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 				        CROSS APPLY sys.dm_exec_query_plan(deqs.plan_handle) AS deqp
 				        CROSS APPLY sys.dm_exec_sql_text(deqs.plan_handle) AS execText"
 				
-				if ($exclude.length -gt 0 -or $databases.length -gt 0 -or $SinceCreation.length -gt 0 -or $SinceLastExecution.length -gt 0 -or $ExcludeEmptyQueryPlan -eq $true)
+				if ($ExcludeDatabase -or $Database -or $SinceCreation.length -gt 0 -or $SinceLastExecution.length -gt 0 -or $ExcludeEmptyQueryPlan -eq $true)
 				{
 					$where = " WHERE "
 				}
 				
 				$wherearray = @()
 				
-				if ($databases.length -gt 0)
+				if ($Database -gt 0)
 				{
-					$dblist = $databases -join "','"
+					$dblist = $Database -join "','"
 					$wherearray += " DB_NAME(deqp.dbid) in ('$dblist') "
 				}
 				
@@ -222,13 +213,13 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 				
 				if ($SinceLastExecution -ne $null)
 				{
-					Write-Verbose "Adding last exectuion time"
+					Write-Verbose "Adding last execution time"
 					$wherearray += " last_execution_time >= '$SinceLastExecution' "
 				}
 				
-				if ($exclude.length -gt 0)
+				if ($ExcludeDatabase)
 				{
-					$dblist = $exclude -join "','"
+					$dblist = $ExcludeDatabase -join "','"
 					$wherearray += " DB_NAME(deqp.dbid) not in ('$dblist') "
 				}
 				
@@ -275,10 +266,9 @@ Exports all execution plans for databases db1 and db2 on sqlserve2014a since Jul
 			}
 			catch
 			{
-				Write-Warning $_
-				continue
-				# Stop-Function -Message $_.Exception -Silent $Silent -InnerErrorRecord $_ -Target $filename
+				Stop-Function -Message $_.Exception.Message -ErrorRecord $_ -Target $filename -Continue
 			}
 		}
 	}
 }
+

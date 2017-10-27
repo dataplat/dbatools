@@ -12,13 +12,15 @@ Looks at the below list of objects to see if they are either owned by a user or 
     USed in Proxy
     SQL Agent Steps using a Proxy
     Endpoints
+    Server Roles
     Database Schemas
     Database Roles
-    Dabtabase Assembles
+    Database Assembles
     Database Synonyms
 
+
 .PARAMETER SqlInstance
-SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input
+SqlInstance name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
 
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, current Windows login will be used.
@@ -27,14 +29,10 @@ PSCredential object to connect as. If not specified, current Windows login will 
 The regex pattern that the command will search for
 
 .NOTES 
-Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.	
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Find-DbaUserObject
@@ -53,8 +51,8 @@ Shows all user owned (non-sa, non-dbo) objects and verbose output
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlInstances")]
-		[object[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential,
 		[string]$Pattern
 	)
 	begin
@@ -72,7 +70,7 @@ Shows all user owned (non-sa, non-dbo) objects and verbose output
 			try
 			{
 				Write-Verbose "Connecting to $Instance"
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
@@ -185,7 +183,7 @@ Shows all user owned (non-sa, non-dbo) objects and verbose output
 				}
 			}
 			
-			## proxys
+			## proxies
 			foreach ($proxy in $proxies)
 			{
 				[PSCustomObject]@{
@@ -227,9 +225,43 @@ Shows all user owned (non-sa, non-dbo) objects and verbose output
 					Parent = $endPoint.Parent.Name
 				}
 			}
+
+			## Server Roles
+			if (-not $pattern)
+			{
+				foreach ($role in $server.Roles | Where-Object{ $_.Owner -ne $saname })
+				{
+					Write-Verbose "checking if $db is owned "
+					
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						SqlInstance = $server.ServiceName
+						Type = "Server Role"
+						Owner = $role.Owner
+						Name = $role.Name
+						Parent = $role.Parent.Name
+					}
+				}
+			}
+			else
+			{
+				foreach ($role in $server.Roles | Where-Object { $_.Owner -match $pattern })
+				{
+					
+					[PSCustomObject]@{
+						ComputerName = $server.NetName
+						SqlInstance = $server.ServiceName
+						Type = "Server Role"
+						Owner = $role.Owner
+						Name = $role.Name
+						Parent = $role.Parent.Name
+					}
+				}
+			}
+
 			
 			## Loop internal database
-			foreach ($db in $server.Databases | Where-Object { $_.Status -eq "Normal" })
+			foreach ($db in $server.Databases | Where-Object IsAccessible)
 			{
 				Write-Verbose "Gather user owned object in database: $db"
 				##schemas

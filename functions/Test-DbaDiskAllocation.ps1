@@ -1,201 +1,184 @@
-Function Test-DbaDiskAllocation
-{
-<#
-.SYNOPSIS
-Checks all disks on a computer to see if they are formatted to 64k. 
-	
-.DESCRIPTION
-Returns $true or $false by default for one server. Returns Server name and IsBestPractice for more than one server.
-	
-Specify -Detailed for details.
-	
-References:
-https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx - "The performance question here is usually not one of correlation per the formula, but whether the cluster size ..has been explicitly defined at 64 KB, which is a best practice for SQL Server."
-http://tk.azurewebsites.net/2012/08/
-	
-.PARAMETER ComputerName
-The SQL Server (or server in general) that you're connecting to. The -SqlServer parameter also works.
+function Test-DbaDiskAllocation {
+	<#
+		.SYNOPSIS
+			Checks all disks on a computer to see if they are formatted with allocation units of 64KB. 
+			
+		.DESCRIPTION
+			Checks all disks on a computer for disk allocation units that match best practice recommendations. If one server is checked, only $true or $false is returned. If multiple servers are checked, each server's name and an IsBestPractice field are returned.
+			
+			Specify -Detailed for details.
+			
+			References:
+			https://technet.microsoft.com/en-us/library/dd758814(v=sql.100).aspx - "The performance question here is usually not one of correlation per the formula, but whether the cluster size has been explicitly defined at 64 KB, which is a best practice for SQL Server."
+			
+			http://tk.azurewebsites.net/2012/08/
+			
+		.PARAMETER ComputerName
+			The server(s) to check disk configuration on.
 
-.PARAMETER NoSqlCheck
-Check to skip the check for SQL Data or Log files existing on the disk. 
-	
-.PARAMETER SqlCredential
-If you want to use SQL Server Authentication to connect.
+		.PARAMETER NoSqlCheck
+			If this switch is enabled, the disk(s) will not be checked for SQL Server data or log files.
+			
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER Detailed
-Show a detailed list.
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+			To connect as a different Windows user, run PowerShell as that user.		
+		
+		.PARAMETER Detailed
+			If this switch is enabled, detailed output is produced.
 
-.NOTES
-Tags: CIM, Storage
-Requires: Windows sysadmin access on SQL Servers
-	
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
+		.NOTES
+			Tags: CIM, Storage
+			Requires: Windows sysadmin access on SQL Servers
+				
+			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+			Copyright (C) 2016 Chrissy LeMaire
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.LINK
+			https://dbatools.io/Test-DbaDiskAllocation
 
-.LINK
-https://dbatools.io/Test-DbaDiskAllocation
+		.EXAMPLE
+			Test-DbaDiskAllocation -ComputerName sqlserver2014a
 
-.EXAMPLE
-Test-DbaDiskAllocation -ComputerName sqlserver2014a
+			Scans all disks on server sqlserver2014a for best practice allocation unit size.
 
-To return true or false for any disk not being formatted to 64k
+		.EXAMPLE   
+			Test-DbaDiskAllocation -ComputerName sqlserver2014 -Detailed
+			
+			Scans all disks on server sqlserver2014a for allocation unit size and returns detailed results for each.
+			
+		.EXAMPLE   
+			Test-DbaDiskAllocation -ComputerName sqlserver2014a -NoSqlCheck
 
-.EXAMPLE   
-Test-DbaDiskAllocation -ComputerName sqlserver2014 -Detailed
-	
-To return detailed information about disks containing SQL data from any instance being formatted to 64k
-	
-.EXAMPLE   
-Test-DbaDiskAllocation -ComputerName sqlserver2014a -NoSqlCheck
-
-To return true or false for ALL disks being formatted to 64k
-	
-#>
+			Scans all disks not hosting SQL Server data or log files on server sqlserver2014a for best practice allocation unit size.
+	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	[OutputType("System.Collections.ArrayList","System.Boolean")]
+	[OutputType("System.Collections.ArrayList", "System.Boolean")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServer")]
-		[string[]]$ComputerName,
+		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
+		[object[]]$ComputerName,
 		[switch]$NoSqlCheck,
 		[object]$SqlCredential,
-		[switch]$Detailed
+		[switch]$Detailed,
+		[switch][Alias('Silent')]$EnableException
 	)
 	
-	BEGIN
-	{
-		Function Get-AllDiskAllocation
-		{
+	begin {
+		if ($Detailed) {
+			Write-Message -Level Warning -Message "Detailed is deprecated and will be removed in dbatools 1.0."
+		}
+		
+		$sessionoptions = New-CimSessionOption -Protocol DCOM
+		
+		function Get-AllDiskAllocation {
 			$alldisks = @()
-			$sqlservers = @()
-			try
-			{
-				Write-Verbose "Testing connection to $server and resolving IP address"
-				$ipaddr = (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1
-				
-			}
-			catch
-			{
-				Write-Warning "Can't connect to $server"
-				return
-			}
+			$SqlInstances = @()
 			
-			try
-			{
-				Write-Verbose "Getting disk information from $server"
-				$sessionoptions = New-CimSessionOption -Protocol DCOM
-				$CIMsession = New-CimSession -ComputerName $ipaddr -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $SqlCredential
-
+			try {
+				Write-Message -Level Verbose -Message "Getting disk information from $computer."
+				
 				# $query = "Select Label, BlockSize, Name from Win32_Volume WHERE FileSystem='NTFS'"
 				# $disks = Get-WmiObject -ComputerName $ipaddr -Query $query | Sort-Object -Property Name
 				$disks = Get-CimInstance -CimSession $CIMsession -ClassName win32_volume -Filter "FileSystem='NTFS'" -ErrorAction Stop | Sort-Object -Property Name
 			}
-			catch
-			{
-				Write-Warning "Can't connect to WMI on $server"
+			catch {
+				Stop-Function -Message "Can't connect to WMI on $computer."
 				return
 			}
 			
-			if ($NoSqlCheck -eq $false)
-			{
-				Write-Verbose "Checking for SQL Services"
+			if ($NoSqlCheck -eq $false) {
+				Write-Message -Level Verbose -Message "Checking for SQL Services"
 				$sqlservices = Get-Service -ComputerName $ipaddr | Where-Object { $_.DisplayName -like 'SQL Server (*' }
-				foreach ($service in $sqlservices)
-				{
+				foreach ($service in $sqlservices) {
 					$instance = $service.DisplayName.Replace('SQL Server (', '')
 					$instance = $instance.TrimEnd(')')
 					
 					$instancename = $instance.Replace("MSSQLSERVER", "Default")
-					Write-Verbose "Found instance $instancename"
+					Write-Message -Level Verbose -Message "Found instance $instancename."
 					
-					if ($instance -eq 'MSSQLSERVER')
-					{
-						$sqlservers += $ipaddr
+					if ($instance -eq 'MSSQLSERVER') {
+						$SqlInstances += $ipaddr
 					}
-					else
-					{
-						$sqlservers += "$ipaddr\$instance"
+					else {
+						$SqlInstances += "$ipaddr\$instance"
 					}
 				}
-				$sqlcount = $sqlservers.Count
-				Write-Verbose "$sqlcount instance(s) found"
+				$sqlcount = $SqlInstances.Count
+				
+				Write-Message -Level Verbose -Message "$sqlcount instance(s) found."
 			}
 			
-			foreach ($disk in $disks)
-			{
-				if (!$disk.name.StartsWith("\\"))
-				{
+			foreach ($disk in $disks) {
+				if (!$disk.name.StartsWith("\\")) {
 					$diskname = $disk.Name
 					
-					if ($NoSqlCheck -eq $false)
-					{
+					if ($NoSqlCheck -eq $false) {
 						$sqldisk = $false
 						
-						foreach ($sqlserver in $sqlservers)
-						{
-							Write-Verbose "Connecting to SQL instance ($sqlserver)"
-							try
-							{
-								$smoserver = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+						foreach ($SqlInstance in $SqlInstances) {
+							Write-Message -Level Verbose -Message "Connecting to SQL instance ($SqlInstance)."
+							try {
+								$smoserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 								$sql = "Select count(*) as Count from sys.master_files where physical_name like '$diskname%'"
 								$sqlcount = $smoserver.Databases['master'].ExecuteWithResults($sql).Tables[0].Count
-								if ($sqlcount -gt 0)
-								{
+								if ($sqlcount -gt 0) {
 									$sqldisk = $true
 									break
 								}
 							}
-							catch
-							{
-								Write-Warning "Can't connect to $server ($sqlserver)"
+							catch {
+								Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 								continue
 							}
 						}
 					}
 					
-					if ($disk.BlockSize -eq 65536)
-					{
+					if ($disk.BlockSize -eq 65536) {
 						$IsBestPractice = $true
 					}
-					else
-					{
+					else {
 						$IsBestPractice = $false
 					}
 					
 					$windowsdrive = "$env:SystemDrive\"
 					
-					if ($diskname -eq $windowsdrive) { $IsBestPractice = $false }
+					if ($diskname -eq $windowsdrive) {
+						$IsBestPractice = $false
+					}
 					
-					if ($NoSqlCheck -eq $false)
-					{
+					if ($NoSqlCheck -eq $false) {
 						$alldisks += [PSCustomObject]@{
-							Server = $server
-							Name = $diskname
-							Label = $disk.Label
-							BlockSize = $disk.BlockSize
-							IsSqlDisk = $sqldisk
+							Server         = $computer
+							Name           = $diskname
+							Label          = $disk.Label
+							BlockSize      = $disk.BlockSize
+							IsSqlDisk      = $sqldisk
 							IsBestPractice = $IsBestPractice
 						}
 					}
-					else
-					{
+					else {
 						$alldisks += [PSCustomObject]@{
-							Server = $server
-							Name = $diskname
-							Label = $disk.Label
-							BlockSize = $disk.BlockSize
+							Server         = $computer
+							Name           = $diskname
+							Label          = $disk.Label
+							BlockSize      = $disk.BlockSize
 							IsBestPractice = $IsBestPractice
 						}
 					}
@@ -203,87 +186,53 @@ To return true or false for ALL disks being formatted to 64k
 			}
 			return $alldisks
 		}
-		
-		$collection = New-Object System.Collections.ArrayList
-		$processed = New-Object System.Collections.ArrayList
 	}
 	
-	PROCESS
-	{
-		foreach ($server in $ComputerName)
-		{
-			if ($server -match '\\')
-			{
-				$server = $server.Split('\')[0]
+	process {
+		foreach ($computer in $ComputerName) {
+			
+			$computer = Resolve-DbaNetworkName -ComputerName $computer -Credential $credential
+			$ipaddr = $computer.IpAddress
+			$Computer = $computer.ComputerName
+			
+			if (!$Computer) {
+				Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
 			}
 			
-			if ($server -notin $processed)
-			{
-				$null = $processed.Add($server)
-				Write-Verbose "Connecting to $server"
+			Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan."
+			
+			if (!$Credential) {
+				$cimsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue
 			}
-			else
-			{
-				continue
+			else {
+				$cimsession = New-CimSession -ComputerName $Computer -ErrorAction SilentlyContinue -Credential $Credential
 			}
 			
-			$data = Get-AllDiskAllocation $server
+			if ($null -eq $cimsession.id) {
+				Write-Message -Level Verbose -Message "Creating CimSession on $computer over WSMan failed. Creating CimSession on $computer over DCOM."
+				
+				if (!$Credential) {
+					$cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue -Credential $Credential
+				}
+				else {
+					$cimsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -ErrorAction SilentlyContinue
+				}
+			}
 			
-			if ([string]::IsNullOrEmpty( ($data.Server) ) )
-			{
-				Write-Verbose "Server query failed. Removing from processed collection"
-				$null = $processed.Remove($server)
-				continue
+			if ($null -eq $cimsession.id) {
+				Stop-Function -Message "Can't create CimSession on $computer" -Target $Computer
 			}
 			
-			if ($data.Count -gt 1)
-			{
-				$data.GetEnumerator() | ForEach-Object { $null = $collection.Add($_) }
+			Write-Message -Level Verbose -Message "Getting Power Plan information from $Computer"
+			
+			$data = Get-AllDiskAllocation $computer
+						
+			if ($data.Count -gt 1) {
+				$data.GetEnumerator()
 			}
-			else
-			{
-				$null = $collection.Add($data)
+			else {
+				$data
 			}
-		}
-	}
-	
-	END
-	{
-		if ($Detailed -eq $true)
-		{
-			return $collection
-		}
-		else
-		{
-			$newcollection = @()
-			foreach ($server in $processed)
-			{
-				$disks = $collection | Where-Object { $_.Server -eq $Server }
-				
-				if ($NoSqlCheck -eq $true)
-				{
-					$falsecount = $disks | Where-Object { $_.IsBestPractice -eq $false }
-				}
-				else
-				{
-					$falsecount = $disks | Where-Object { $_.IsSqlDisk -eq $true -and $_.IsBestPractice -eq $false  }
-				}
-				
-				$IsBestPractice = $true # Being optimistic ;)
-
-				if ($falsecount.name.count -gt 0)
-				{
-					$IsBestPractice = $false # D'oh!
-				}
-				
-				if ($processed.Count -eq 1) { return $IsBestPractice }
-				
-				$newcollection += [PSCustomObject]@{
-					Server = $server
-					IsBestPractice = $IsBestPractice
-				}
-			}
-			return $newcollection
 		}
 	}
 }
