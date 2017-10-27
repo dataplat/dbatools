@@ -82,9 +82,9 @@ function Stop-DbaXESession {
 				$instance = $x.Parent.Name
 				$session = $x.Name
 				if ($x.isRunning) {
-					Write-Message -Level Verbose -Message "Stoping XEvent Session $session on $instance."
+					Write-Message -Level Verbose -Message "Stopping XEvent Session $session on $instance."
 					$x.Stop()
-					Get-DbaXESession -SqlInstance $x.Parent -Session $session # this keeps the output uniform across the module
+					Get-DbaXESession -SqlInstance $x.Parent -Session $session
 				} else {
 					Write-Message -Level Warning -Message "$session on $instance is already stopped"
 				}
@@ -97,20 +97,7 @@ function Stop-DbaXESession {
 			Stop-XESessions $SessionCollection
 		} else {
 			foreach ($instance in $SqlInstance) {
-				try {
-					Write-Message -Level Verbose -Message "Connecting to $instance"
-					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 11
-				}
-				catch {
-					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-				}
-
-				# Start with all xesessions on the instance.
-				$SqlConn = $server.ConnectionContext.SqlConnectionObject
-				$SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
-				$XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
-				Write-Message -Level Verbose -Message "Getting XEvents Sessions on $instance."
-				$xesessions = $XEStore.sessions
+				$xesessions = Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential
 				
 				# Filter xesessions based on parameters
 				if ($Session) {
