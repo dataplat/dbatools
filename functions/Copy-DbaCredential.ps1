@@ -312,16 +312,19 @@ function Copy-DbaCredential {
 				$credentialName = $credential.Name
 				
 				$copyCredentialStatus = [pscustomobject]@{
-					SourceServer = $sourceServer.Name
+					SourceServer  = $sourceServer.Name
 					DestinationServer = $destServer.Name
-					Name = $credentialName
-					Status = $null
-					DateTime = [DbaDateTime](Get-Date)
+					Type		  = "Credential"
+					Name		  = $credentialName
+					Status	      = $null
+					Notes		  = $null
+					DateTime	  = [DbaDateTime](Get-Date)
 				}
 				
 				if ($destServer.Credentials[$credentialName] -ne $null) {
 					if (!$force) {
 						$copyCredentialStatus.Status = "Skipping"
+						$copyCredentialStatus.Notes = "Already exists"
 						$copyCredentialStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						
 						Write-Message -Level Verbose -Message "$credentialName exists $($destServer.Name). Skipping."

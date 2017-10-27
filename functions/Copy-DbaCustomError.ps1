@@ -122,15 +122,17 @@ function Copy-DbaCustomError {
 		foreach ($currentCustomError in $orderedCustomErrors) {
 			$customErrorId = $currentCustomError.ID
 			$language = $currentCustomError.Language.ToString()
-
+			
 			$copyCustomErrorStatus = [pscustomobject]@{
-				SourceServer        = $sourceServer.Name
-				DestinationServer   = $destServer.Name
-				Name                = $currentCustomError
-				Status              = $null
-				DateTime            = [DbaDateTime](Get-Date)
+				SourceServer		 = $sourceServer.Name
+				DestinationServer    = $destServer.Name
+				Type				 = "Custom error"
+				Name				 = $currentCustomError
+				Status			     = $null
+				Notes			     = $null
+				DateTime			 = [DbaDateTime](Get-Date)
 			}
-
+			
 			if ( $CustomError -and ($customErrorId -notin $CustomError -or $customErrorId -in $ExcludeCustomError) ) {
 				continue
 			}
@@ -138,6 +140,7 @@ function Copy-DbaCustomError {
 			if ($destCustomErrors.ID -contains $customErrorId) {
 				if ($force -eq $false) {
 					$copyCustomErrorStatus.Status = "Skipped"
+					$copyCustomErrorStatus.Notes = "Already exists"
 					$copyCustomErrorStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 					Write-Message -Level Verbose -Message "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."

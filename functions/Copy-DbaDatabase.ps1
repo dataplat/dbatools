@@ -931,7 +931,7 @@ function Copy-DbaDatabase {
 					Write-Message -Level Verbose -Message "Skipping $dbName. Database is inaccessible."
 					
 					$copyDatabaseStatus.Status = "Skipped"
-					$copyDatabaseStatus.Notes = "Database is not accessible."
+					$copyDatabaseStatus.Notes = "Database is not accessible"
 					$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
 				}
@@ -994,7 +994,7 @@ function Copy-DbaDatabase {
 					Write-Message -Level Verbose -Message "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method."
 					
 					$copyDatabaseStatus.Status = "Skipped"
-					$copyDatabaseStatus.Notes = "Database is mirrored. Use -Force to break mirror."
+					$copyDatabaseStatus.Notes = "Database is mirrored"
 					$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
 				}
@@ -1003,7 +1003,7 @@ function Copy-DbaDatabase {
 					Write-Message -Level Verbose -Message "Database exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
 					
 					$copyDatabaseStatus.Status = "Skipped"
-					$copyDatabaseStatus.Notes = "already exists on destination"
+					$copyDatabaseStatus.Notes = "Already exists"
 					$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
 				}
@@ -1016,7 +1016,7 @@ function Copy-DbaDatabase {
 							Write-Message -Level Verbose -Message "Database could not be dropped. Aborting routine for this database"
 							
 							$copyDatabaseStatus.Status = "Failed"
-							$copyDatabaseStatus.Notes = "Issue dropping database"
+							$copyDatabaseStatus.Notes = "Could not drop database"
 							$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 							continue
 						}
@@ -1092,7 +1092,7 @@ function Copy-DbaDatabase {
 								Write-Message -Level Verbose -Message "Failed to restore $dbName to $destination. Aborting routine for this database."
 								
 								$copyDatabaseStatus.Status = "Failed"
-								$copyDatabaseStatus.Notes = "Failed to restore database."
+								$copyDatabaseStatus.Notes = "Failed to restore database"
 								$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 								continue
 							}
