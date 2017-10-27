@@ -41,7 +41,7 @@ function Copy-DbaCentralManagementServer {
 			Central Management Server does not allow you to add a shared registered server with the same name as the Configuration Server.
 
 		.PARAMETER Force
-			If this switch is enabled, group(s) will be dropped and recreated if they already exist on Destination.
+			If this switch is enabled, group(s) will be dropped and recreated if they already exists on destination.
 
 		.PARAMETER WhatIf
 			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -110,21 +110,23 @@ function Copy-DbaCentralManagementServer {
 				$currentServerGroup = $destinationGroup
 				$groupName = $sourceGroup.Name
 				$destinationGroup = $destinationGroup.ServerGroups[$groupName]
-
+				
 				$copyDestinationGroupStatus = [pscustomobject]@{
-					SourceServer        = $sourceServer.Name
-					DestinationServer   = $destServer.Name
-					Name                = $groupName
-					Type                = "Create Destination Group"
-					Status              = $null
-					DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+					SourceServer		 = $sourceServer.Name
+					DestinationServer    = $destServer.Name
+					Name				 = $groupName
+					Type				 = "CMS Destination Group"
+					Status			     = $null
+					Notes			     = $null
+					DateTime			 = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
-
+				
 				if ($null -ne $destinationGroup) {
 					if ($force -eq $false) {
 						$copyDestinationGroupStatus.Status = "Skipped"
-						$copyDestinationGroupStatus
-						Write-Message -Level Warning -Message "Destination group $groupName exists at destination. Use -Force to drop and migrate."
+						$copyDestinationGroupStatus.Notes = "Already exists"
+						$copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+						Write-Message -Level Verbose -Message "Destination group $groupName exists at destination. Use -Force to drop and migrate."
 						continue
 					}
 					if ($Pscmdlet.ShouldProcess($destination, "Dropping group $groupName")) {
@@ -134,7 +136,7 @@ function Copy-DbaCentralManagementServer {
 						}
 						catch {
 							$copyDestinationGroupStatus.Status = "Failed"
-							$copyDestinationGroupStatus
+							$copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping group" -Target $groupName -InnerErrorRecord $_ -Continue
 						}
@@ -147,7 +149,7 @@ function Copy-DbaCentralManagementServer {
 					$destinationGroup.Create()
 
 					$copyDestinationGroupStatus.Status = "Successful"
-					$copyDestinationGroupStatus
+					$copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 			}
 
@@ -155,16 +157,17 @@ function Copy-DbaCentralManagementServer {
 			foreach ($instance in $sourceGroup.RegisteredServers) {
 				$instanceName = $instance.Name
 				$serverName = $instance.ServerName
-
+				
 				$copyInstanceStatus = [pscustomobject]@{
-					SourceServer        = $sourceServer.Name
-					DestinationServer   = $destServer.Name
-					Name                = $instanceName
-					Type                = "Add Instance"
-					Status              = $null
-					DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+					SourceServer		 = $sourceServer.Name
+					DestinationServer    = $destServer.Name
+					Name				 = $instanceName
+					Type				 = "CMS Instance"
+					Status			     = $null
+					Notes			     = $null
+					DateTime			 = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
-
+				
 				if ($serverName.ToLower() -eq $toCmStore.DomainInstanceName.ToLower()) {
 					if ($SwitchServerName) {
 						$serverName = $fromCmStore.DomainInstanceName
@@ -173,9 +176,9 @@ function Copy-DbaCentralManagementServer {
 					}
 					else {
 						$copyInstanceStatus.Status = "Skipped"
-						$copyInstanceStatus
+						$copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-						Write-Message -Level Warning -Message "$serverName is Central Management Server. Add prohibited. Skipping."
+						Write-Message -Level Verbose -Message "$serverName is Central Management Server. Add prohibited. Skipping."
 						continue
 					}
 				}
@@ -183,9 +186,10 @@ function Copy-DbaCentralManagementServer {
 				if ($destinationGroup.RegisteredServers.Name -contains $instanceName) {
 					if ($force -eq $false) {
 						$copyInstanceStatus.Status = "Skipped"
-						$copyInstanceStatus
+						$copyInstanceStatus.Notes = "Already exists"
+						$copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-						Write-Message -Level Warning -Message "Instance $instanceName exists in group $groupName at destination. Use -Force to drop and migrate."
+						Write-Message -Level Verbose -Message "Instance $instanceName exists in group $groupName at destination. Use -Force to drop and migrate."
 						continue
 					}
 
@@ -196,7 +200,7 @@ function Copy-DbaCentralManagementServer {
 						}
 						catch {
 							$copyInstanceStatus.Status = "Failed"
-							$copyInstanceStatus
+							$copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping instance from group" -Target $instanceName -InnerErrorRecord $_ -Continue
 						}
@@ -217,11 +221,11 @@ function Copy-DbaCentralManagementServer {
 						$newServer.Create()
 
 						$copyInstanceStatus.Status = "Successful"
-						$copyInstanceStatus
+						$copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					}
 					catch {
 						$copyInstanceStatus.Status = "Failed"
-						$copyInstanceStatus
+						$copyInstanceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						if ($_.Exception -match "same name") {
 							Stop-Function -Message "Could not add Switched Server instance name." -Target $instanceName -InnerErrorRecord $_ -Continue
 						}
@@ -237,22 +241,24 @@ function Copy-DbaCentralManagementServer {
 			foreach ($fromSubGroup in $sourceGroup.ServerGroups) {
 				$fromSubGroupName = $fromSubGroup.Name
 				$toSubGroup = $destinationGroup.ServerGroups[$fromSubGroupName]
-
+				
 				$copyGroupStatus = [pscustomobject]@{
-					SourceServer      = $sourceServer.Name
-					DestinationServer = $destServer.Name
-					Name              = $fromSubGroupName
-					Type              = "Add Group"
-					Status            = $null
-					DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+					SourceServer	   = $sourceServer.Name
+					DestinationServer  = $destServer.Name
+					Name			   = $fromSubGroupName
+					Type			   = "CMS Group"
+					Status			   = $null
+					Notes			   = $null
+					DateTime		   = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
-
+				
 				if ($null -ne $toSubGroup) {
 					if ($force -eq $false) {
 						$copyGroupStatus.Status = "Skipped"
-						$copyGroupStatus
+						$copyGroupStatus.Notes = "Already exists"
+						$copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-						Write-Message -Level Warning -Message "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."
+						Write-Message -Level Verbose -Message "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."
 						continue
 					}
 
@@ -263,7 +269,7 @@ function Copy-DbaCentralManagementServer {
 						}
 						catch {
 							$copyGroupStatus.Status = "Failed"
-							$copyGroupStatus
+							$copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping subgroup" -Target $toSubGroup -InnerErrorRecord $_ -Continue
 						}
@@ -276,7 +282,7 @@ function Copy-DbaCentralManagementServer {
 					$toSubGroup.create()
 
 					$copyGroupStatus.Status = "Successful"
-					$copyGroupStatus
+					$copyGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 
 				Invoke-ParseServerGroup -sourceGroup $fromSubGroup -destinationgroup $toSubGroup -SwitchServerName $SwitchServerName

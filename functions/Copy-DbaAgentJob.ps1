@@ -121,16 +121,17 @@ function Copy-DbaAgentJob {
 		foreach ($serverJob in $serverJobs) {
 			$jobName = $serverJob.name
 			$jobId = $serverJob.JobId
-
+			
 			$copyJobStatus = [pscustomobject]@{
-				SourceServer      = $sourceServer.Name
-				DestinationServer = $destServer.Name
-				Name              = $jobName
-				Status            = $null
-				Notes             = $null
-				DateTime          = [DbaDateTime](Get-Date)
+				SourceServer	   = $sourceServer.Name
+				DestinationServer  = $destServer.Name
+				Name			   = $jobName
+				Type			   = "Agent Job"
+				Status			   = $null
+				Notes			   = $null
+				DateTime		   = [DbaDateTime](Get-Date)
 			}
-
+			
 			if ($Job -and $jobName -notin $Job -or $jobName -in $ExcludeJob) { 
 				Write-Message -Level Verbose -Message "Job [$jobName] filtered. Skipping."
 				continue
@@ -149,8 +150,8 @@ function Copy-DbaAgentJob {
 			if ($MaintenancePlanName) {
 				$copyJobStatus.Status = "Skipped"
 				$copyJobStatus.Notes = "Job is associated with maintenance plan"
-				$copyJobStatus
-				Write-Message -Level Warning -Message "Job [$jobName] is associated with Maintenance Plan: $MaintenancePlanName"
+				$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+				Write-Message -Level Verbose -Message "Job [$jobName] is associated with Maintenance Plan: $MaintenancePlanName"
 				continue
 			}
 
@@ -161,8 +162,8 @@ function Copy-DbaAgentJob {
 				$missingDb = ($missingDb | Sort-Object | Get-Unique) -join ", "
 				$copyJobStatus.Status = "Skipped"
 				$copyJobStatus.Notes = "Job is dependent on database: $missingDb"
-				$copyJobStatus
-				Write-Message -Level Warning -Message "Database(s) $missingDb doesn't exist on destination. Skipping job [$jobName]."
+				$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+				Write-Message -Level Verbose -Message "Database(s) $missingDb doesn't exist on destination. Skipping job [$jobName]."
 				continue
 			}
 
@@ -173,8 +174,8 @@ function Copy-DbaAgentJob {
 					$missingLogin = ($missingLogin | Sort-Object | Get-Unique) -join ", "
 					$copyJobStatus.Status = "Skipped"
 					$copyJobStatus.Notes = "Job is dependent on login $missingLogin"
-					$copyJobStatus
-					Write-Message -Level Warning -Message "Login(s) $missingLogin doesn't exist on destination. Use -Force to set owner to [sa]. Skipping job [$jobName]."
+					$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+					Write-Message -Level Verbose -Message "Login(s) $missingLogin doesn't exist on destination. Use -Force to set owner to [sa]. Skipping job [$jobName]."
 					continue
 				}
 			}
@@ -186,8 +187,8 @@ function Copy-DbaAgentJob {
 				$missingProxy = ($missingProxy | Sort-Object | Get-Unique) -join ", "
 				$copyJobStatus.Status = "Skipped"
 				$copyJobStatus.Notes = "Job is dependent on proxy $($proxyNames[0])"
-				$copyJobStatus
-				Write-Message -Level Warning -Message "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobName]."
+				$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+				Write-Message -Level Verbose -Message "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobName]."
 				continue
 			}
 
@@ -198,17 +199,17 @@ function Copy-DbaAgentJob {
 				$missingOperator = ($operators | Sort-Object | Get-Unique) -join ", "
 				$copyJobStatus.Status = "Skipped"
 				$copyJobStatus.Notes = "Job is dependent on operator $missingOperator"
-				$copyJobStatus
-				Write-Message -Level Warning -Message "Operator(s) $($missingOperator) doesn't exist on destination. Skipping job [$jobName]"
+				$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+				Write-Message -Level Verbose -Message "Operator(s) $($missingOperator) doesn't exist on destination. Skipping job [$jobName]"
 				continue
 			}
 
 			if ($destJobs.name -contains $serverJob.name) {
 				if ($force -eq $false) {
 					$copyJobStatus.Status = "Skipped"
-					$copyJobStatus.Notes = "Job already exist on destination"
-					$copyJobStatus
-					Write-Message -Level Warning -Message "Job $jobName exists at destination. Use -Force to drop and migrate."
+					$copyJobStatus.Notes = "Job already exists on destination"
+					$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+					Write-Message -Level Verbose -Message "Job $jobName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
@@ -220,7 +221,7 @@ function Copy-DbaAgentJob {
 						catch {
 							$copyJobStatus.Status = "Failed"
 							$copyJobStatus.Notes = $_.Exception.Message
-							$copyJobStatus
+							$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							Stop-Function -Message "Issue dropping job" -Target $jobName -ErrorRecord $_ -Continue
 						}
 					}
@@ -244,9 +245,9 @@ function Copy-DbaAgentJob {
 				}
 				catch {
 					$copyJobStatus.Status = "Failed"
-					$copyJobStatus.Notes = $_.Exception.Message
-					$copyJobStatus
-					Stop-Function -Message "Issue copying job." -Target $jobName -ErrorRecord $_ -Continue
+					$copyJobStatus.Notes = (($_.Exception.InnerException.InnerException.Innerexception.InnerException).ToString().Split("`n"))[0]
+					$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+					Stop-Function -Message "Issue copying job" -Target $jobName -ErrorRecord $_ -Continue
 				}
 			}
 
@@ -266,7 +267,7 @@ function Copy-DbaAgentJob {
 				}
 			}
 			$copyJobStatus.Status = "Successful"
-			$copyJobStatus
+			$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 		}
 	}
 	end {
