@@ -7,7 +7,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 		Context "Empty TLog Backup Issues" {
            	$Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\EmptyTlogData.json -raw)
 			
-			$Output = Select-DbaBackupInformation -BackupHistory $header -EnableException:$true
+			$Output = Select-DbaBackupInformation -BackupHistory $header #-EnableException:$true
 			
 			It "Should return an array of 3 items" {
 				$Output.count | Should be 3
@@ -202,5 +202,32 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 				($Output | Where-Object { $_.LastLsn -eq '14975000000265600001' } | Measure-Object).count | Should Be 0
 			}
 		}
+		Context "Continue Points" {
+            $BackupInfo = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
+			[bigint]$redo_start_lsn='34000000016700004'
+			$ContinuePoints= [PsCustomObject]@{
+					redo_start_lsn=$redo_start_lsn
+					FirstRecoveryForkID='00000000-0000-0000-0000-000000000000'
+					Database = 'ContinuePointTest'}
+			$Output = Select-DbaBackupInformation -BackupHistory $BackupInfo -EnableException:$true -ContinuePoints $ContinuePoints
+			
+			It "Should return an array of 4 items" {
+				$Output.count | Should be 4
+			}
+			It "Should return 0 Full backups" {
+				($Output | Where-Object { $_.Type -eq 'Database' } | Measure-Object).count | Should Be 0
+			}
+			It "Should return 0 Diff backups" {
+				($Output | Where-Object { $_.Type -eq 'Database Differential' } | Measure-Object).count | Should Be 0
+			}
+			It "Should return 4 log backups" {
+				($Output | Where-Object { $_.Type -eq 'Transaction Log' } | Measure-Object).count | Should Be 4
+			}
+			It "Should start with a log backup including redo_start_lsn"{
+				$tmp = ($output | sort-object -property FirstLSn)[0]
+				($redo_start_lsn -ge $tmp.FirstLsn -and $redo_start_lsn -le $tmp.LastLsn) | Should Be $True
+			}
+		}
+
 	}
 }
