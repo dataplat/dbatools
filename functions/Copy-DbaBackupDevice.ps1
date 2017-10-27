@@ -36,7 +36,7 @@ function Copy-DbaBackupDevice {
 			BackupDevice to be copied. Auto-populated list of devices. If not provided all BackupDevice(s) will be copied.
 
 		.PARAMETER Force
-			If this switch is enabled, backup device(s) will be dropped and recreated if they already exist on Destination.
+			If this switch is enabled, backup device(s) will be dropped and recreated if they already exists on destination.
 
 		.PARAMETER WhatIf
 			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -122,7 +122,7 @@ function Copy-DbaBackupDevice {
 			
 			if ($destBackupDevices.Name -contains $deviceName) {
 				if ($force -eq $false) {
-					$copyBackupDeviceStatus.Status = "Skipped. Use -Force to drop and migrate."
+					$copyBackupDeviceStatus.Status = "Objects exists, use -Force to drop and migrate"
 					$copyBackupDeviceStatus
 					
 					Write-Message -Level Verbose -Message "backup device $deviceName exists at destination. Use -Force to drop and migrate."

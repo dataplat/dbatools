@@ -41,7 +41,7 @@ function Copy-DbaCentralManagementServer {
 			Central Management Server does not allow you to add a shared registered server with the same name as the Configuration Server.
 
 		.PARAMETER Force
-			If this switch is enabled, group(s) will be dropped and recreated if they already exist on Destination.
+			If this switch is enabled, group(s) will be dropped and recreated if they already exists on destination.
 
 		.PARAMETER WhatIf
 			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -122,7 +122,7 @@ function Copy-DbaCentralManagementServer {
 
 				if ($null -ne $destinationGroup) {
 					if ($force -eq $false) {
-						$copyDestinationGroupStatus.Status = "Skipped. Use -Force to drop and migrate."
+						$copyDestinationGroupStatus.Status = "Objects exists, use -Force to drop and migrate"
 						$copyDestinationGroupStatus
 						Write-Message -Level Verbose -Message "Destination group $groupName exists at destination. Use -Force to drop and migrate."
 						continue
@@ -172,7 +172,7 @@ function Copy-DbaCentralManagementServer {
 						Write-Message -Level Verbose -Message "SwitchServerName was used and new CMS equals current server name. $($toCmStore.DomainInstanceName.ToLower()) changed to $serverName."
 					}
 					else {
-						$copyInstanceStatus.Status = "Skipped. Use -Force to drop and migrate."
+						$copyInstanceStatus.Status = "Objects exists, use -Force to drop and migrate"
 						$copyInstanceStatus
 
 						Write-Message -Level Verbose -Message "$serverName is Central Management Server. Add prohibited. Skipping."
@@ -182,7 +182,7 @@ function Copy-DbaCentralManagementServer {
 
 				if ($destinationGroup.RegisteredServers.Name -contains $instanceName) {
 					if ($force -eq $false) {
-						$copyInstanceStatus.Status = "Skipped. Use -Force to drop and migrate."
+						$copyInstanceStatus.Status = "Objects exists, use -Force to drop and migrate"
 						$copyInstanceStatus
 
 						Write-Message -Level Verbose -Message "Instance $instanceName exists in group $groupName at destination. Use -Force to drop and migrate."
@@ -249,7 +249,7 @@ function Copy-DbaCentralManagementServer {
 
 				if ($null -ne $toSubGroup) {
 					if ($force -eq $false) {
-						$copyGroupStatus.Status = "Skipped. Use -Force to drop and migrate."
+						$copyGroupStatus.Status = "Objects exists, use -Force to drop and migrate"
 						$copyGroupStatus
 
 						Write-Message -Level Verbose -Message "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."

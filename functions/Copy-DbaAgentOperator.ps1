@@ -124,7 +124,7 @@ function Copy-DbaAgentOperator {
 			
 			if ($destOperator.Name -contains $sOperator.Name) {
 				if ($force -eq $false) {
-					$copyOperatorStatus.Status = "Skipped. Use -Force to drop and migrate."
+					$copyOperatorStatus.Status = "Objects exists, use -Force to drop and migrate"
 					$copyOperatorStatus
 					Write-Message -Level Verbose -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
 					continue
