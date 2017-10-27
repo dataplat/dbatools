@@ -325,7 +325,7 @@ function Copy-DbaCredential {
 					if (!$force) {
 						$copyCredentialStatus.Status = "Skipping"
 						$copyCredentialStatus.Notes = "Already exists"
-						$copyCredentialStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+						$copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						
 						Write-Message -Level Verbose -Message "$credentialName exists $($destServer.Name). Skipping."
 						continue
@@ -352,11 +352,11 @@ function Copy-DbaCredential {
 					}
 					
 					$copyCredentialStatus.Status = "Successful"
-					$copyCredentialStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyCredentialStatus.Status = "Failed"
-					$copyCredentialStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					
 					Stop-Function -Message "Error creating credential" -Target $credentialName -ErrorRecord $_
 				}

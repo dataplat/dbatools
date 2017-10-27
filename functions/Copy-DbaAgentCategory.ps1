@@ -150,7 +150,7 @@ function Copy-DbaAgentCategory {
 						if ($force -eq $false) {
 							$copyJobCategoryStatus.Status = "Skipped"
 							$copyJobCategoryStatus.Notes = "Already exists"
-							$copyJobCategoryStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							Write-Message -Level Verbose -Message "Job category $categoryName exists at destination. Use -Force to drop and migrate."
 							continue
 						}
@@ -177,11 +177,11 @@ function Copy-DbaAgentCategory {
 							$destServer.Query($sql)
 
 							$copyJobCategoryStatus.Status = "Successful"
-							$copyJobCategoryStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						}
 						catch {
 							$copyJobCategoryStatus.Status = "Failed"
-							$copyJobCategoryStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							Stop-Function -Message "Issue copying job category" -Target $categoryName -InnerErrorRecord $_
 						}
 					}
@@ -228,7 +228,7 @@ function Copy-DbaAgentCategory {
 						if ($force -eq $false) {
 							$copyOperatorCategoryStatus.Status = "Skipped"
 							$copyOperatorCategoryStatus.Notes = "Already exists"
-							$copyOperatorCategoryStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							Write-Message -Level Verbose -Message "Operator category $categoryName exists at destination. Use -Force to drop and migrate."
 							continue
 						}
@@ -244,7 +244,7 @@ function Copy-DbaAgentCategory {
 								}
 								catch {
 									$copyOperatorCategoryStatus.Status = "Failed"
-									$copyOperatorCategoryStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+									$copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 									Stop-Function -Message "Issue dropping operator category" -Target $categoryName -InnerErrorRecord $_
 								}
 							}
@@ -259,11 +259,11 @@ function Copy-DbaAgentCategory {
 								$destServer.Query($sql)
 
 								$copyOperatorCategoryStatus.Status = "Successful"
-								$copyOperatorCategoryStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+								$copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							}
 							catch {
 								$copyOperatorCategoryStatus.Status = "Failed"
-								$copyOperatorCategoryStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+								$copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 								Stop-Function -Message "Issue copying operator category" -Target $categoryName -InnerErrorRecord $_
 							}
 						}

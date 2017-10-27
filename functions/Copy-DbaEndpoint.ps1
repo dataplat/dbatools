@@ -133,7 +133,7 @@ function Copy-DbaEndpoint {
 				if ($force -eq $false) {
 					$copyEndpointStatus.Status = "Skipped"
 					$copyEndpointStatus.Notes = "Already exists"
-					$copyEndpointStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Write-Message -Level Verbose -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
 					continue
@@ -146,7 +146,7 @@ function Copy-DbaEndpoint {
 						}
 						catch {
 							$copyEndpointStatus.Status = "Failed"
-							$copyEndpointStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping server endpoint." -Target $endpointName -InnerErrorRecord $_ -Continue
 						}
@@ -160,11 +160,11 @@ function Copy-DbaEndpoint {
 					$destServer.Query($currentEndpoint.Script()) | Out-Null
 
 					$copyEndpointStatus.Status = "Successful"
-					$copyEndpointStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyEndpointStatus.Status = "Failed"
-					$copyEndpointStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Stop-Function -Message "Issue creating server endpoint." -Target $endpointName -InnerErrorRecord $_
 				}

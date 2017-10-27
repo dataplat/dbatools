@@ -141,7 +141,7 @@ function Copy-DbaCustomError {
 				if ($force -eq $false) {
 					$copyCustomErrorStatus.Status = "Skipped"
 					$copyCustomErrorStatus.Notes = "Already exists"
-					$copyCustomErrorStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Write-Message -Level Verbose -Message "Custom error $customErrorId $language exists at destination. Use -Force to drop and migrate."
 					continue
@@ -154,7 +154,7 @@ function Copy-DbaCustomError {
 						}
 						catch {
 							$copyCustomErrorStatus.Status = "Failed"
-							$copyCustomErrorStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping custom error" -Target $customErrorId -InnerErrorRecord $_ -Continue
 						}
@@ -170,11 +170,11 @@ function Copy-DbaCustomError {
 					$destServer.Query($sql)
 
 					$copyCustomErrorStatus.Status = "Successful"
-					$copyCustomErrorStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyCustomErrorStatus.Status = "Failed"
-					$copyCustomErrorStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Stop-Function -Message "Issue creating custom error" -Target $customErrorId -InnerErrorRecord $_
 				}

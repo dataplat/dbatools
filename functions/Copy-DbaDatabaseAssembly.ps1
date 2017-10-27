@@ -155,7 +155,7 @@ function Copy-DbaDatabaseAssembly {
 			if (!$destDb) {
 				$copyDbAssemblyStatus.Status = "Skipped"
 				$copyDbAssemblyStatus.Notes = "Destination database does not exist"
-				$copyDbAssemblyStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+				$copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 				Write-Message -Level Verbose -Message "Destination database $dbName does not exist. Skipping $assemblyName.";
 				continue
@@ -175,7 +175,7 @@ function Copy-DbaDatabaseAssembly {
 					}
 					catch {
                         $copyDbAssemblyStatus.Status = "Failed"
-                        $copyDbAssemblyStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+                        $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                         Stop-Function -Message "Issue setting security level." -Target $destDb -InnerErrorRecord $_
 					}
@@ -186,7 +186,7 @@ function Copy-DbaDatabaseAssembly {
 				if ($force -eq $false) {
 					$copyDbAssemblyStatus.Status = "Skipped"
 					$copyDbAssemblyStatus.Notes = "Already exists"
-                    $copyDbAssemblyStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+                    $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                     Write-Message -Level Verbose -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
 					continue
@@ -204,7 +204,7 @@ function Copy-DbaDatabaseAssembly {
                         }
 						catch {
                             $copyDbAssemblyStatus.Status = "Failed"
-                            $copyDbAssemblyStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+                            $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                             Stop-Function -Message "Issue dropping assembly." -Target $assemblyName -InnerErrorRecord $_ -Continue
 						}
@@ -220,12 +220,12 @@ function Copy-DbaDatabaseAssembly {
 					$destServer.Query($sql,$dbName)
 
                     $copyDbAssemblyStatus.Status = "Successful"
-                    $copyDbAssemblyStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+                    $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                 }
 				catch {
                     $copyDbAssemblyStatus.Status = "Failed"
-                    $copyDbAssemblyStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+                    $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
                     Stop-Function -Message "Issue creating assembly." -Target $assemblyName -InnerErrorRecord $_
 				}

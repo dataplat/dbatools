@@ -143,7 +143,7 @@ function Copy-DbaExtendedEvent {
 				if ($force -eq $false) {
 					$copyXeSessionStatus.Status = "Skipped"
 					$copyXeSessionStatus.Notes = "Already exists"
-					$copyXeSessionStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Write-Message -Level Verbose -Message "Extended Event Session '$sessionName' was skipped because it already exists on $destination."
 					Write-Message -Level Verbose -Message "Use -Force to drop and recreate."
@@ -159,7 +159,7 @@ function Copy-DbaExtendedEvent {
 						}
 						catch {
 							$copyXeSessionStatus.Status = "Failed"
-							$copyXeSessionStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 							Stop-Function -Message "Unable to drop session. Moving on." -Target $sessionName -InnerErrorRecord $_ -Continue
 						}
@@ -181,11 +181,11 @@ function Copy-DbaExtendedEvent {
 					}
 					
 					$copyXeSessionStatus.Status = "Successful"
-					$copyXeSessionStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyXeSessionStatus.Status = "Failed"
-					$copyXeSessionStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Stop-Function -Message "Unable to create session." -Target $sessionName -InnerErrorRecord $_
 				}

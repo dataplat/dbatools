@@ -141,7 +141,7 @@ function Copy-DbaServerTrigger {
 					
 					$copyTriggerStatus.Status = "Skipped"
 					$copyTriggerStatus.Status = "Already exists"
-					$copyTriggerStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				else {
@@ -153,7 +153,7 @@ function Copy-DbaServerTrigger {
 						catch {
 							$copyTriggerStatus.Status = "Failed"
 							$copyTriggerStatus.Notes = $_.Exception
-							$copyTriggerStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping trigger on destination" -Target $triggerName -ErrorRecord $_ -Continue
 						}
@@ -174,12 +174,12 @@ function Copy-DbaServerTrigger {
 					}
 					
 					$copyTriggerStatus.Status = "Successful"
-					$copyTriggerStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyTriggerStatus.Status = "Failed"
 					$copyTriggerStatus.Notes = $_.Exception
-					$copyTriggerStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Stop-Function -Message "Issue creating trigger on destination" -Target $triggerName -ErrorRecord $_
 				}

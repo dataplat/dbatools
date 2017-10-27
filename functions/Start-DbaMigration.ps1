@@ -448,7 +448,7 @@ function Start-DbaMigration {
 		if (!$NoLogins -and !$NoDatabases -and !$NoRecovery) {
 			Write-Message -Level Verbose -Message "Updating database owners to match newly migrated logins."
 			try {
-				Update-SqlDbOwner -Source $sourceserver -Destination $destserver
+				$null = Update-SqlDbOwner -Source $sourceserver -Destination $destserver
 			}
 			catch {
 				Write-Message -Level Warning -Message "Login migration reported the following error $($_.Exception.Message)."

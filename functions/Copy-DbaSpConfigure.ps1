@@ -133,7 +133,7 @@ function Copy-DbaSpConfigure {
 
 				$copySpConfigStatus.Status = "Skipped"
 				$copySpConfigStatus.Notes = "Configuration does not exist on destination"
-				$copySpConfigStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+				$copySpConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				
 				continue
 			}
@@ -152,12 +152,12 @@ function Copy-DbaSpConfigure {
 						$copySpConfigStatus.Notes = "Requires restart"
 					}
 					$copySpConfigStatus.Status = "Successful"
-					$copySpConfigStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copySpConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copySpConfigStatus.Status = "Failed"
 					$copySpConfigStatus.Notes = $_.Exception
-					$copySpConfigStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copySpConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Stop-Function -Message "Could not set $($destProp.ConfigName) to $sConfiguredValue." -Target $sConfigName -ErrorRecord $_
 				}

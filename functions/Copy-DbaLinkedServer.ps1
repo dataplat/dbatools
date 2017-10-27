@@ -306,7 +306,7 @@ function Copy-DbaLinkedServer {
 					if (!$destServer.Settings.OleDbProviderSettings.Name -contains $provider -and !$provider.StartsWith("SQLN")) {
 						$copyLinkedServer.Status = "Skipped"
 						$copyLinkedServer.Notes = "Already exists"
-						$copyLinkedServer | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+						$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 						Write-Message -Level Verbose -Message "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."
 						continue
@@ -316,7 +316,7 @@ function Copy-DbaLinkedServer {
 				if ($destServer.LinkedServers[$linkedServerName] -ne $null) {
 					if (!$force) {
 						$copyLinkedServer.Status = "Skipped"
-						$copyLinkedServer | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+						$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 						Write-Message -Level Verbose -Message "$linkedServerName exists $($destServer.Name). Skipping."
 						continue
@@ -351,11 +351,11 @@ function Copy-DbaLinkedServer {
 						Write-Message -Level Verbose -Message "$linkedServerName successfully copied."
 
 						$copyLinkedServer.Status = "Successful"
-						$copyLinkedServer | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+						$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					}
 					catch {
 						$copyLinkedServer.Status = "Failed"
-						$copyLinkedServer | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+						$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 						Stop-Function -Message "Issue adding linked server $destServer." -Target $linkedServerName -InnerErrorRecord $_
 						$skiplogins = $true
@@ -378,11 +378,11 @@ function Copy-DbaLinkedServer {
 									$currentlogin.Alter()
 
 									$copyLinkedServer.Status = "Successful"
-									$copyLinkedServer | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+									$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 								}
 								catch {
 									$copyLinkedServer.Status = "Failed"
-									$copyLinkedServer | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+									$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 									Stop-Function -Message "Failed to copy login." -Target $login -InnerErrorRecord $_
 								}

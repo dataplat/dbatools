@@ -908,14 +908,14 @@ function Copy-DbaDatabase {
 				$dbOwner = $currentdb.Owner
 				
 				$copyDatabaseStatus = [pscustomobject]@{
-					SourceServer	    = $sourceServer.Name
-					SourceDatabase	    = $dbName
-					DestinationServer   = $destServer.Name
+					SourceServer	  = $sourceServer.Name
+					DestinationServer = $destServer.Name
+					Name			  = $dbName
 					DestinationDatabase = $dbname
-					Type			    = "Database"
-					Status			    = $null
-					Notes			    = $null
-					DateTime		    = [DbaDateTime](Get-Date)
+					Type			  = "Database"
+					Status		      = $null
+					Notes			  = $null
+					DateTime		  = [DbaDateTime](Get-Date)
 				}
 				
 				Write-Message -Level Verbose -Message "`n######### Database: $dbName #########"
@@ -932,7 +932,7 @@ function Copy-DbaDatabase {
 					
 					$copyDatabaseStatus.Status = "Skipped"
 					$copyDatabaseStatus.Notes = "Database is not accessible"
-					$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				
@@ -943,7 +943,7 @@ function Copy-DbaDatabase {
 						Write-Message -Level Verbose -Message "Skipping $dbName (contains FILESTREAM)."
 						$copyDatabaseStatus.Status = "Skipped"
 						$copyDatabaseStatus.Notes = "Contains FILESTREAM"
-						$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+						$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						continue
 					}
 				}
@@ -958,7 +958,7 @@ function Copy-DbaDatabase {
 						
 						$copyDatabaseStatus.Status = "Failed"
 						$copyDatabaseStatus.Notes = "Can't resolve $remotePath"
-						$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+						$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						return
 					}
 				}
@@ -977,7 +977,7 @@ function Copy-DbaDatabase {
 					
 					$copyDatabaseStatus.Status = "Skipped"
 					$copyDatabaseStatus.Notes = "Not in normal state"
-					$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				
@@ -986,7 +986,7 @@ function Copy-DbaDatabase {
 					
 					$copyDatabaseStatus.Status = "Skipped"
 					$copyDatabaseStatus.Notes = "Part of replication"
-					$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				
@@ -995,7 +995,7 @@ function Copy-DbaDatabase {
 					
 					$copyDatabaseStatus.Status = "Skipped"
 					$copyDatabaseStatus.Notes = "Database is mirrored"
-					$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				
@@ -1004,7 +1004,7 @@ function Copy-DbaDatabase {
 					
 					$copyDatabaseStatus.Status = "Skipped"
 					$copyDatabaseStatus.Notes = "Already exists"
-					$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				elseif ($destServer.Databases[$dbName] -ne $null -and $force) {
@@ -1017,7 +1017,7 @@ function Copy-DbaDatabase {
 							
 							$copyDatabaseStatus.Status = "Failed"
 							$copyDatabaseStatus.Notes = "Could not drop database"
-							$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							continue
 						}
 					}
@@ -1065,7 +1065,7 @@ function Copy-DbaDatabase {
 							
 							$copyDatabaseStatus.Status = "Failed"
 							$copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $NetworkShare"
-							$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							continue
 						}
 						
@@ -1076,7 +1076,7 @@ function Copy-DbaDatabase {
 						if ($restoreResult -eq $true) {
 							Write-Message -Level Verbose -Message "Successfully restored $dbName to $destination."
 							$copyDatabaseStatus.Status = "Successful"
-							$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						}
 						else {
 							if ($ReuseSourceFolderStructure) {
@@ -1085,7 +1085,7 @@ function Copy-DbaDatabase {
 								
 								$copyDatabaseStatus.Status = "Failed"
 								$copyDatabaseStatus.Notes = "Failed to restore. ReuseSourceFolderStructure was specified, verify same directory structure exist on destination."
-								$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+								$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 								continue
 							}
 							else {
@@ -1093,7 +1093,7 @@ function Copy-DbaDatabase {
 								
 								$copyDatabaseStatus.Status = "Failed"
 								$copyDatabaseStatus.Notes = "Failed to restore database"
-								$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+								$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 								continue
 							}
 						}
@@ -1182,21 +1182,21 @@ function Copy-DbaDatabase {
 								Write-Message -Level Verbose -Message "Could not reattach $dbName to $source."
 								$copyDatabaseStatus.Status = "Failed"
 								$copyDatabaseStatus.Notes = "Could not reattach database to $source"
-								$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+								$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							}
 						}
 						
 						if ($migrationResult -eq $true) {
 							Write-Message -Level Verbose -Message "Successfully attached $dbName to $destination."
 							$copyDatabaseStatus.Status = "Successful"
-							$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						}
 						else {
 							Write-Message -Level Verbose -Message "Failed to attach $dbName to $destination. Aborting routine for this database."
 							
 							$copyDatabaseStatus.Status = "Failed"
 							$copyDatabaseStatus.Notes = "Failed to attach database to destination"
-							$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							
 							continue
 						}
@@ -1215,7 +1215,7 @@ function Copy-DbaDatabase {
 							}
 							catch {
 								$copyDatabaseStatus.Status = "Successful - failed to apply DatabaseOwnershipChaining."
-								$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+								$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 								Stop-Function -Message "Failed to update DatabaseOwnershipChaining for $sourceDbOwnerChaining on $dbName on $destination." -Target $destination -ErrorRecord $_ -Continue
 							}
 						}
@@ -1230,7 +1230,7 @@ function Copy-DbaDatabase {
 							}
 							catch {
 								$copyDatabaseStatus.Status = "Successful - failed to apply Trustworthy"
-								$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+								$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 								Stop-Function -Message "Failed to update Trustworthy to $sourceDbTrustworthy for $dbName on $destination" -Target $destination -ErrorRecord $_ -Continue
 							}
 						}
@@ -1245,7 +1245,7 @@ function Copy-DbaDatabase {
 							}
 							catch {
 								$copyDatabaseStatus.Status = "Successful - failed to apply BrokerEnabled"
-								$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+								$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 								Stop-Function -Message "Failed to update BrokerEnabled to $sourceDbBrokerEnabled for $dbName on $destination" -Target $destination -ErrorRecord $_ -Continue
 							}
 						}
@@ -1260,7 +1260,7 @@ function Copy-DbaDatabase {
 						}
 						else {
 							$copyDatabaseStatus.Status = "Successful - failed to apply ReadOnly."
-							$copyDatabaseStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							Stop-Function -Message "Failed to update ReadOnly status on $dbName." -Target $destination -ErrorRecord $_ -Continue
 						}
 					}

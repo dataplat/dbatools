@@ -156,7 +156,7 @@ function Copy-DbaServerAudit {
 						}
 						catch {
 							$copyAuditStatus.Status = "Failed"
-							$copyAuditStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+							$copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping audit from destination." -Target $auditName -ErrorRecord $_
 						}
@@ -170,7 +170,7 @@ function Copy-DbaServerAudit {
 
 					$copyAuditStatus.Status = "Skipped"
 					$copyAuditStatus.Notes = "Already exists"
-					$copyAuditStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				else {
@@ -206,12 +206,12 @@ function Copy-DbaServerAudit {
 					$destServer.Query($sql)
 
 					$copyAuditStatus.Status = "Successful"
-					$copyAuditStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyAuditStatus.Status = "Failed"
 					$copyAuditStatus.Notes = $_.Exception
-					$copyAuditStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Stop-Function -Message "Issue creating audit." -Target $auditName -ErrorRecord $_
 				}

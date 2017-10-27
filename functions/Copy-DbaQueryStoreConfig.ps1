@@ -176,7 +176,7 @@ function Copy-DbaQueryStoreConfig {
 					$copyQueryStoreStatus.Status = "Failed"
 					Stop-Function -Message "Issue setting Query Store on $db." -Target $db -InnerErrorRecord $_ -Continue
 				}
-					$copyQueryStoreStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
+					$copyQueryStoreStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 			}
 		}
 	}
