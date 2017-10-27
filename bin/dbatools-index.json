@@ -3030,6 +3030,16 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaSqlService -ComputerName sqlserver2014a\r\n\r\nStops the SQL Server related services on computer sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027| Get-DbaSqlService | Stop-DbaSqlService\r\n\r\nGets the SQL Server related services on computers sql1, sql2 and sql3 and stops them.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaSqlService -ComputerName sql1,sql2 -Instance MSSQLSERVER\r\n\r\nStops the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaSqlService -ComputerName $MyServers -Type SSRS\r\n\r\nStops the SQL Server related services of type \"SSRS\" (Reporting Services) on computers in the variable MyServers.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaSqlService -ComputerName sql1 -Type Engine -Force\r\n\r\nStops SQL Server database engine services on sql1 forcing dependent SQL Server Agent services to stop as well.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Stop-DbaXESession",
+        "Description":  "This script stops Extended Events sessions on a SQL Server instance.",
+        "Tags":  "Xevent",
+        "Author":  "Doug Meyers",
+        "Synopsis":  "Stops Extended Events sessions.",
+        "Name":  "Stop-DbaXESession",
+        "Links":  "https://dbatools.io/Stop-DbaXESession",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaXESession -SqlInstance sqlserver2012 -AllSessions\r\n\r\nStops all Extended Event Session on the sqlserver2014 instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2\r\n\r\nStops the xesession1 and xesession2 Extended Event sessions.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Stop-DbaXESession\r\n\r\nStops the sessions returned from the Get-DbaXESession function.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Sync-DbaSqlLoginPermission",
         "Description":  "Syncs only SQL Server login permissions, roles, etc. Does not add or drop logins. If a matching login does not exist on the destination, the login will be skipped. Credential removal is not currently supported for this operation.",
         "Tags":  [
