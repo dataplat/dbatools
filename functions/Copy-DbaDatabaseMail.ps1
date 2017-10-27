@@ -120,11 +120,11 @@ function Copy-DbaDatabaseMail {
 				}
 				catch {
 					$copyMailConfigStatus.Status = "Failed"
-					$copyMailConfigStatus
+					$copyMailConfigStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					Stop-Function -Message "Unable to migrate mail configuration." -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 				}
 			}
-			$copyMailConfigStatus
+			$copyMailConfigStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 		}
 
 		function Copy-DbaDatabaseAccount {
@@ -248,7 +248,7 @@ function Copy-DbaDatabaseMail {
 						Stop-Function -Message "Issue copying mail profile." -Target $profileName -Category InvalidOperation -InnerErrorRecord $_
 					}
 				}
-				$copyMailProfileStatus
+				$copyMailProfileStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 			}
 		}
 
@@ -307,7 +307,7 @@ function Copy-DbaDatabaseMail {
 						Stop-Function -Message "Issue copying mail server" -Target $mailServerName -Category InvalidOperation -InnerErrorRecord $_
 					}
 				}
-				$copyMailServerStatus
+				$copyMailServerStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 			}
 		}
 
