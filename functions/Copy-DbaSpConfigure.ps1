@@ -129,7 +129,7 @@ function Copy-DbaSpConfigure {
 
 			$destProp = $destProps | Where-Object ConfigName -eq $sConfigName
 			if (!$destProp) {
-				Write-Message -Level Warning -Message "Configuration $sConfigName ('$displayName') does not exist on the destination instance."
+				Write-Message -Level Verbose -Message "Configuration $sConfigName ('$displayName') does not exist on the destination instance."
 
 				$copySpConfigStatus.Status = "Skipped"
 				$copySpConfigStatus.Notes = "Configuration does not exist on destination"
@@ -147,7 +147,7 @@ function Copy-DbaSpConfigure {
 					}
 
 					if ($requiresRestart -eq $false) {
-						Write-Message -Level Warning -Message "Configuration option $sConfigName ($displayName) requires restart."
+						Write-Message -Level Verbose -Message "Configuration option $sConfigName ($displayName) requires restart."
 						$copySpConfigStatus.Notes = "Requires restart"
 					}
 					$copySpConfigStatus.Status = "Successful"

@@ -150,7 +150,7 @@ function Copy-DbaAgentJob {
 				$copyJobStatus.Status = "Skipped"
 				$copyJobStatus.Notes = "Job is associated with maintenance plan"
 				$copyJobStatus
-				Write-Message -Level Warning -Message "Job [$jobName] is associated with Maintenance Plan: $MaintenancePlanName"
+				Write-Message -Level Verbose -Message "Job [$jobName] is associated with Maintenance Plan: $MaintenancePlanName"
 				continue
 			}
 
@@ -162,7 +162,7 @@ function Copy-DbaAgentJob {
 				$copyJobStatus.Status = "Skipped"
 				$copyJobStatus.Notes = "Job is dependent on database: $missingDb"
 				$copyJobStatus
-				Write-Message -Level Warning -Message "Database(s) $missingDb doesn't exist on destination. Skipping job [$jobName]."
+				Write-Message -Level Verbose -Message "Database(s) $missingDb doesn't exist on destination. Skipping job [$jobName]."
 				continue
 			}
 
@@ -174,7 +174,7 @@ function Copy-DbaAgentJob {
 					$copyJobStatus.Status = "Skipped"
 					$copyJobStatus.Notes = "Job is dependent on login $missingLogin"
 					$copyJobStatus
-					Write-Message -Level Warning -Message "Login(s) $missingLogin doesn't exist on destination. Use -Force to set owner to [sa]. Skipping job [$jobName]."
+					Write-Message -Level Verbose -Message "Login(s) $missingLogin doesn't exist on destination. Use -Force to set owner to [sa]. Skipping job [$jobName]."
 					continue
 				}
 			}
@@ -187,7 +187,7 @@ function Copy-DbaAgentJob {
 				$copyJobStatus.Status = "Skipped"
 				$copyJobStatus.Notes = "Job is dependent on proxy $($proxyNames[0])"
 				$copyJobStatus
-				Write-Message -Level Warning -Message "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobName]."
+				Write-Message -Level Verbose -Message "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobName]."
 				continue
 			}
 
@@ -199,7 +199,7 @@ function Copy-DbaAgentJob {
 				$copyJobStatus.Status = "Skipped"
 				$copyJobStatus.Notes = "Job is dependent on operator $missingOperator"
 				$copyJobStatus
-				Write-Message -Level Warning -Message "Operator(s) $($missingOperator) doesn't exist on destination. Skipping job [$jobName]"
+				Write-Message -Level Verbose -Message "Operator(s) $($missingOperator) doesn't exist on destination. Skipping job [$jobName]"
 				continue
 			}
 
@@ -208,7 +208,7 @@ function Copy-DbaAgentJob {
 					$copyJobStatus.Status = "Skipped"
 					$copyJobStatus.Notes = "Job already exist on destination"
 					$copyJobStatus
-					Write-Message -Level Warning -Message "Job $jobName exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Verbose -Message "Job $jobName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {

@@ -126,12 +126,12 @@ function Copy-DbaAgentOperator {
 				if ($force -eq $false) {
 					$copyOperatorStatus.Status = "Skipped"
 					$copyOperatorStatus
-					Write-Message -Level Warning -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Verbose -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
 					if ($failsafe.FailSafeOperator -eq $operatorName) {
-						Write-Message -Level Warning -Message "$operatorName is the failsafe operator. Skipping drop."
+						Write-Message -Level Verbose -Message "$operatorName is the failsafe operator. Skipping drop."
 						continue
 					}
 					

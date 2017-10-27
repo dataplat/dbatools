@@ -160,7 +160,7 @@ function Copy-DbaAgentAlert {
 				if ($force -eq $false) {
 					$copyAgentAlertStatus.Status = "Skipped"
 					$copyAgentAlertStatus
-					Write-Message -Message "Alert [$alertName] exists at destination. Use -Force to drop and migrate." -Level Warning
+					Write-Message -Message "Alert [$alertName] exists at destination. Use -Force to drop and migrate." -Level Verbose
 					continue
 				}
 
@@ -183,14 +183,14 @@ function Copy-DbaAgentAlert {
 			$destSevConflict = $destAlerts | Where-Object Severity -eq $serverAlert.Severity
 			$destSevDbConflict = $destAlerts | Where-Object { $_.Severity -eq $serverAlert.Severity -and $_.DatabaseName -eq $serverAlert.DatabaseName }
 			if ($destSevConflict) {
-				Write-Message -Level Warning -Message "Alert [$($destSevConflict.Name)] has already been defined to use the severity $($serverAlert.Severity). Skipping."
+				Write-Message -Level Verbose -Message "Alert [$($destSevConflict.Name)] has already been defined to use the severity $($serverAlert.Severity). Skipping."
 
 				$copyAgentAlertStatus.Status = "Skipped"
 				$copyAgentAlertStatus
 				continue
 			}
 			if ($destSevDbConflict) {
-				Write-Message -Level Warning -Message "Alert [$($destSevConflict.Name)] has already been defined to use the severity $($serverAlert.Severity) on database $($severAlert.DatabaseName). Skipping."
+				Write-Message -Level Verbose -Message "Alert [$($destSevConflict.Name)] has already been defined to use the severity $($serverAlert.Severity) on database $($severAlert.DatabaseName). Skipping."
 
 				$copyAgentAlertStatus.Status = "Skipped"
 				$copyAgentAlertStatus
@@ -198,7 +198,7 @@ function Copy-DbaAgentAlert {
 			}
 
 			if ($serverAlert.JobName -and $destServer.JobServer.Jobs.Name -NotContains $serverAlert.JobName) {
-				Write-Message -Level Warning -Message "Alert [$alertName] has job [$($serverAlert.JobName)] configured as response. The job does not exist on destination $destServer. Skipping."
+				Write-Message -Level Verbose -Message "Alert [$alertName] has job [$($serverAlert.JobName)] configured as response. The job does not exist on destination $destServer. Skipping."
 
 				$copyAgentAlertStatus.Status = "Skipped"
 				$copyAgentAlertStatus

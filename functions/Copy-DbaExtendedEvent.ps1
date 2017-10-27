@@ -142,8 +142,8 @@ function Copy-DbaExtendedEvent {
 					$copyXeSessionStatus.Status = "Skipped"
 					$copyXeSessionStatus
 
-					Write-Message -Level Warning -Message "Extended Event Session '$sessionName' was skipped because it already exists on $destination."
-					Write-Message -Level Warning -Message "Use -Force to drop and recreate."
+					Write-Message -Level Verbose -Message "Extended Event Session '$sessionName' was skipped because it already exists on $destination."
+					Write-Message -Level Verbose -Message "Use -Force to drop and recreate."
 					continue
 				}
 				else {

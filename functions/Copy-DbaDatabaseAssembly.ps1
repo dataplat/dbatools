@@ -154,7 +154,7 @@ function Copy-DbaDatabaseAssembly {
 				$copyDbAssemblyStatus.Status = "Skipped"
 				$copyDbAssemblyStatus
 
-				Write-Message -Level Warning -Message "Destination database $dbName does not exist. Skipping $assemblyName.";
+				Write-Message -Level Verbose -Message "Destination database $dbName does not exist. Skipping $assemblyName.";
 				continue
 			}
 
@@ -164,7 +164,7 @@ function Copy-DbaDatabaseAssembly {
 
 			if ($currentAssembly.AssemblySecurityLevel -eq "External" -and $destDb.Trustworthy -eq $false) {
 				if ($Pscmdlet.ShouldProcess($destination, "Setting $dbName to External")) {
-					Write-Message -Level Warning -Message "Setting $dbName Security Level to External on $destination."
+					Write-Message -Level Verbose -Message "Setting $dbName Security Level to External on $destination."
 					$sql = "ALTER DATABASE $dbName SET TRUSTWORTHY ON"
 					try {
 						Write-Message -Level Debug -Message $sql
@@ -184,7 +184,7 @@ function Copy-DbaDatabaseAssembly {
                     $copyDbAssemblyStatus.Status = "Skipped"
                     $copyDbAssemblyStatus
 
-                    Write-Message -Level Warning -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
+                    Write-Message -Level Verbose -Message "Assembly $assemblyName exists at destination in the $dbName database. Use -Force to drop and migrate."
 					continue
 				}
 				else {

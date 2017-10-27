@@ -148,7 +148,7 @@ function Copy-DbaAgentCategory {
 						if ($force -eq $false) {
 							$copyJobCategoryStatus.Status = "Skipped"
 							$copyJobCategoryStatus
-							Write-Message -Level Warning -Message "Job category $categoryName exists at destination. Use -Force to drop and migrate."
+							Write-Message -Level Verbose -Message "Job category $categoryName exists at destination. Use -Force to drop and migrate."
 							continue
 						}
 						else {
@@ -223,7 +223,7 @@ function Copy-DbaAgentCategory {
 						if ($force -eq $false) {
 							$copyOperatorCategoryStatus.Status = "Skipped"
 							$copyOperatorCategoryStatus
-							Write-Message -Level Warning -Message "Operator category $categoryName exists at destination. Use -Force to drop and migrate."
+							Write-Message -Level Verbose -Message "Operator category $categoryName exists at destination. Use -Force to drop and migrate."
 							continue
 						}
 						else {
@@ -308,7 +308,7 @@ function Copy-DbaAgentCategory {
                         if ($force -eq $false) {
                             $copyAlertCategoryStatus.Status = "Skipped"
 							$copyAlertCategoryStatus
-							Write-Message -Level Warning -Message "Alert category $categoryName exists at destination. Use -Force to drop and migrate."
+							Write-Message -Level Verbose -Message "Alert category $categoryName exists at destination. Use -Force to drop and migrate."
 							continue
 						}
 						else {

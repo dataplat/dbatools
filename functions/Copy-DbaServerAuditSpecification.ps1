@@ -145,13 +145,13 @@ function Copy-DbaServerAuditSpecification {
 			$destServer.Audits.Refresh()
 
 			if ($destServer.Audits.Name -notcontains $auditSpec.AuditName) {
-				Write-Message -Level Warning -Message "Audit $($auditSpec.AuditName) does not exist on $Destination. Skipping $auditSpecName."
+				Write-Message -Level Verbose -Message "Audit $($auditSpec.AuditName) does not exist on $Destination. Skipping $auditSpecName."
 				continue
 			}
 
 			if ($destAudits.name -contains $auditSpecName) {
 				if ($force -eq $false) {
-					Write-Message -Level Warning -Message "Server audit $auditSpecName exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Verbose -Message "Server audit $auditSpecName exists at destination. Use -Force to drop and migrate."
 
 					$copyAuditSpecStatus.Status = "Skipped"
 					$copyAuditSpecStatus

@@ -151,7 +151,7 @@ function Copy-DbaDatabaseMail {
 					if ($force -eq $false) {
 						$copyMailAccountStatus.Status = "Skipped"
 						$copyMailAccountStatus
-						Write-Message -Message "Account $accountName exists at destination. Use -Force to drop and migrate." -Level Warning
+						Write-Message -Message "Account $accountName exists at destination. Use -Force to drop and migrate." -Level Verbose
 						continue
 					}
 
@@ -214,7 +214,7 @@ function Copy-DbaDatabaseMail {
 					if ($force -eq $false) {
 						$copyMailProfileStatus.Status = "Skipped"
 						$copyMailProfileStatus
-						Write-Message -Message "Profile $profileName exists at destination. Use -Force to drop and migrate." -Level Warning
+						Write-Message -Message "Profile $profileName exists at destination. Use -Force to drop and migrate." -Level Verbose
 						continue
 					}
 
@@ -275,7 +275,7 @@ function Copy-DbaDatabaseMail {
 					if ($force -eq $false) {
 						$copyMailServerStatus.Status = "Skipped"
 						$copyMailServerStatus
-						Write-Message -Message "Mail server $mailServerName exists at destination. Use -Force to drop and migrate." -Level Warning
+						Write-Message -Message "Mail server $mailServerName exists at destination. Use -Force to drop and migrate." -Level Verbose
 						continue
 					}
 
@@ -319,7 +319,7 @@ function Copy-DbaDatabaseMail {
 
 
 		if ($sourceServer.versionMajor -lt 9 -or $destServer.versionMajor -lt 9) {
-			Write-Message -Message "Database Mail is only supported in SQL Server 2005 and above. Quitting." -Level Warning
+			Write-Message -Message "Database Mail is only supported in SQL Server 2005 and above. Quitting." -Level Verbose
 		}
 
 		$mail = $sourceServer.mail

@@ -166,7 +166,7 @@ function Copy-DbaSqlPolicyManagement {
 
 			if ($destStore.Conditions[$conditionName] -ne $null) {
 				if ($force -eq $false) {
-					Write-Message -Level Warning -Message "condition '$conditionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
+					Write-Message -Level Verbose -Message "condition '$conditionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 
 					$copyConditionStatus.Status = "Skipped"
 					$copyConditionStatus.Notes = "Already exists on destination."
@@ -236,7 +236,7 @@ function Copy-DbaSqlPolicyManagement {
 
 			if ($destStore.Policies[$policyName] -ne $null) {
 				if ($force -eq $false) {
-					Write-Message -Level Warning -Message "Policy '$policyName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
+					Write-Message -Level Verbose -Message "Policy '$policyName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 
 					$copyPolicyStatus.Status = "Skipped"
 					$copyPolicyStatus.Notes = "Already exists on destination."
