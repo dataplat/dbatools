@@ -2989,6 +2989,16 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaSqlService -ComputerName sqlserver2014a\r\n\r\nStarts the SQL Server related services on computer sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027| Get-DbaSqlService | Start-DbaSqlService\r\n\r\nGets the SQL Server related services on computers sql1, sql2 and sql3 and starts them.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaSqlService -ComputerName sql1,sql2 -Instance MSSQLSERVER\r\n\r\nStarts the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaSqlService -ComputerName $MyServers -Type SSRS\r\n\r\nStarts the SQL Server related services of type \"SSRS\" (Reporting Services) on computers in the variable MyServers.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Start-DbaXESession",
+        "Description":  "This script starts Extended Events sessions on a SQL Server instance.",
+        "Tags":  "Xevent",
+        "Author":  "Doug Meyers",
+        "Synopsis":  "Starts Extended Events sessions.",
+        "Name":  "Start-DbaXESession",
+        "Links":  "https://dbatools.io/Start-DbaXESession",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -AllSessions\r\n\r\nStarts all Extended Event Session on the sqlserver2014 instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2\r\n\r\nStarts the xesession1 and xesession2 Extended Event sessions.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Start-DbaXESession\r\n\r\nStarts the sessions returned from the Get-DbaXESession function.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Stop-DbaAgentJob",
         "Description":  "This command stops a job then returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.",
         "Tags":  [
