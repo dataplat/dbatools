@@ -77,9 +77,9 @@ If Path is not specified, the "My Documents" location will be used.
       $glenberrysql += ($page.Links | Where-Object { $_.href -like $DropboxLinkFilter -and $_.innerText -like $LinkTitleFilter } | % {
          [pscustomobject]@{
           URL         = $_.href
-          SQLVersion  = $_.innerText -replace " Diagnostic Information Queries",""
+          SQLVersion  = $_.innerText -replace " Diagnostic Information Queries","" -replace "SQL Server ","" -replace ' ',''
           FileYear    = ($post.title -split " ")[-1]
-          FileMonth   = ($post.title -split " ")[-2]
+          FileMonth   = "{0:00}" -f [int]([CultureInfo]::InvariantCulture.DateTimeFormat.MonthNames.IndexOf(($post.title -split " ")[-2]))
         }
       })
       break
@@ -89,9 +89,8 @@ If Path is not specified, the "My Documents" location will be used.
   foreach ($doc in $glenberrysql){
     try {
       $page = Invoke-WebRequest -Uri $doc.URL -ErrorAction Stop
-      $filename = ($page.Headers.'content-disposition' -split ";" |
-        Where-Object { $_ -like "*filename=`"*"}) -replace ".*filename=",'' -replace '"',''
-      $page.content | Out-File -LiteralPath "$Path\$filename"
+      $filename = "{0}\SQLServerDiagnosticQueries_{1}_{2}.sql" -f $Path, $doc.SQLVersion, "$($doc.FileYear)$($doc.FileMonth)"
+      $page.content | Out-File -LiteralPath $filename
     }
     catch {
       Stop-Function -Message "Requesting and writing file failed: $_" -Target $filename -InnerErrorRecord $_
