@@ -110,19 +110,21 @@ function Copy-DbaCentralManagementServer {
 				$currentServerGroup = $destinationGroup
 				$groupName = $sourceGroup.Name
 				$destinationGroup = $destinationGroup.ServerGroups[$groupName]
-
+				
 				$copyDestinationGroupStatus = [pscustomobject]@{
-					SourceServer        = $sourceServer.Name
-					DestinationServer   = $destServer.Name
-					Name                = $groupName
-					Type                = "Create Destination Group"
-					Status              = $null
-					DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+					SourceServer		 = $sourceServer.Name
+					DestinationServer    = $destServer.Name
+					Name				 = $groupName
+					Type				 = "CMS Destination Group"
+					Status			     = $null
+					Notes			     = $null
+					DateTime			 = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
-
+				
 				if ($null -ne $destinationGroup) {
 					if ($force -eq $false) {
 						$copyDestinationGroupStatus.Status = "Skipped"
+						$copyDestinationGroupStatus.Notes = "Already exists"
 						$copyDestinationGroupStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						Write-Message -Level Verbose -Message "Destination group $groupName exists at destination. Use -Force to drop and migrate."
 						continue
@@ -155,16 +157,17 @@ function Copy-DbaCentralManagementServer {
 			foreach ($instance in $sourceGroup.RegisteredServers) {
 				$instanceName = $instance.Name
 				$serverName = $instance.ServerName
-
+				
 				$copyInstanceStatus = [pscustomobject]@{
-					SourceServer        = $sourceServer.Name
-					DestinationServer   = $destServer.Name
-					Name                = $instanceName
-					Type                = "Add Instance"
-					Status              = $null
-					DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+					SourceServer		 = $sourceServer.Name
+					DestinationServer    = $destServer.Name
+					Name				 = $instanceName
+					Type				 = "CMS Instance"
+					Status			     = $null
+					Notes			     = $null
+					DateTime			 = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
-
+				
 				if ($serverName.ToLower() -eq $toCmStore.DomainInstanceName.ToLower()) {
 					if ($SwitchServerName) {
 						$serverName = $fromCmStore.DomainInstanceName
@@ -183,6 +186,7 @@ function Copy-DbaCentralManagementServer {
 				if ($destinationGroup.RegisteredServers.Name -contains $instanceName) {
 					if ($force -eq $false) {
 						$copyInstanceStatus.Status = "Skipped"
+						$copyInstanceStatus.Notes = "Already exists"
 						$copyInstanceStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 						Write-Message -Level Verbose -Message "Instance $instanceName exists in group $groupName at destination. Use -Force to drop and migrate."
@@ -237,19 +241,21 @@ function Copy-DbaCentralManagementServer {
 			foreach ($fromSubGroup in $sourceGroup.ServerGroups) {
 				$fromSubGroupName = $fromSubGroup.Name
 				$toSubGroup = $destinationGroup.ServerGroups[$fromSubGroupName]
-
+				
 				$copyGroupStatus = [pscustomobject]@{
-					SourceServer      = $sourceServer.Name
-					DestinationServer = $destServer.Name
-					Name              = $fromSubGroupName
-					Type              = "Add Group"
-					Status            = $null
-					DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+					SourceServer	   = $sourceServer.Name
+					DestinationServer  = $destServer.Name
+					Name			   = $fromSubGroupName
+					Type			   = "CMS Group"
+					Status			   = $null
+					Notes			   = $null
+					DateTime		   = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
-
+				
 				if ($null -ne $toSubGroup) {
 					if ($force -eq $false) {
 						$copyGroupStatus.Status = "Skipped"
+						$copyGroupStatus.Notes = "Already exists"
 						$copyGroupStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 
 						Write-Message -Level Verbose -Message "Subgroup $fromSubGroupName exists at destination. Use -Force to drop and migrate."
