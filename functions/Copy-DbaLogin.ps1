@@ -154,18 +154,19 @@ function Copy-DbaLogin {
 			foreach ($sourceLogin in $sourceServer.Logins) {
 
 				$userName = $sourceLogin.name
-
+				
 				$copyLoginStatus = [pscustomobject]@{
-					SourceServer      = $sourceServer.Name
+					SourceServer	 = $sourceServer.Name
 					DestinationServer = $destServer.Name
-					SourceLogin       = $userName
-					DestinationLogin  = $userName
-					Type              = $sourceLogin.LoginType
-					Status            = $null
-					Notes             = $null
-					DateTime          = [DbaDateTime](Get-Date)
+					Type			 = "Login - $($sourceLogin.LoginType)"
+					Name		   = $userName
+					DestinationLogin = $userName
+					SourceLogin = $userName
+					Status		     = $null
+					Notes		     = $null
+					DateTime		 = [DbaDateTime](Get-Date)
 				}
-
+				
 				if ($Login -and $Login -notcontains $userName -or $ExcludeLogin -contains $userName) { continue }
 
 				if ($sourceLogin.id -eq 1) { continue }
@@ -185,7 +186,7 @@ function Copy-DbaLogin {
 					}
 
 					$copyLoginStatus.Status = "Skipped"
-					$copyLoginStatus.Notes = "Login doing migration"
+					$copyLoginStatus.Notes = "Current login"
 					$copyLoginStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
 				}
@@ -203,7 +204,7 @@ function Copy-DbaLogin {
 						}
 
 						$copyLoginStatus.Status = "Skipped"
-						$copyLoginStatus.Notes = "local machine name"
+						$copyLoginStatus.Notes = "Local machine name"
 						$copyLoginStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 						continue
 					}
@@ -220,7 +221,7 @@ function Copy-DbaLogin {
 					}
 
 					$copyLoginStatus.Status = "Skipped"
-					$copyLoginStatus.Notes = "Already exists on destination."
+					$copyLoginStatus.Notes = "Already exists"
 					$copyLoginStatus | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
 				}
