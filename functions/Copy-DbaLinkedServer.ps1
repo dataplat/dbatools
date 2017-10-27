@@ -290,23 +290,25 @@ function Copy-DbaLinkedServer {
 				catch { }
 
 				$linkedServerName = $currentLinkedServer.Name
-
+				
 				$copyLinkedServer = [pscustomobject]@{
-					SourceServer        = $sourceServer.Name
-					DestinationServer   = $destServer.Name
-					Name                = $linkedServerName
-					Type                = $provider
-					Status              = $null
-					DateTime            = [DbaDateTime](Get-Date)
+					SourceServer		 = $sourceServer.Name
+					DestinationServer    = $destServer.Name
+					Name				 = $linkedServerName
+					Type				 = "Linked Server"
+					Status			     = $null
+					Notes			     = $provider
+					DateTime			 = [DbaDateTime](Get-Date)
 				}
-
+				
 				# This does a check to warn of missing OleDbProviderSettings but should only be checked on SQL on Windows
 				if ($destServer.Settings.OleDbProviderSettings.Name.Length -ne 0) {
 					if (!$destServer.Settings.OleDbProviderSettings.Name -contains $provider -and !$provider.StartsWith("SQLN")) {
 						$copyLinkedServer.Status = "Skipped"
-						$copyLinkedServer
+						$copyLinkedServer.Notes = "Already exists"
+						$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-						Write-Message -Level Warning -Message "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."
+						Write-Message -Level Verbose -Message "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."
 						continue
 					}
 				}
@@ -314,15 +316,15 @@ function Copy-DbaLinkedServer {
 				if ($destServer.LinkedServers[$linkedServerName] -ne $null) {
 					if (!$force) {
 						$copyLinkedServer.Status = "Skipped"
-						$copyLinkedServer
+						$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-						Write-Message -Level Warning -Message "$linkedServerName exists $($destServer.Name). Skipping."
+						Write-Message -Level Verbose -Message "$linkedServerName exists $($destServer.Name). Skipping."
 						continue
 					}
 					else {
 						if ($Pscmdlet.ShouldProcess($destination, "Dropping $linkedServerName")) {
 							if ($currentLinkedServer.Name -eq 'repl_distributor') {
-								Write-Message -Level Warning -Message "repl_distributor cannot be dropped. Not going to try."
+								Write-Message -Level Verbose -Message "repl_distributor cannot be dropped. Not going to try."
 								continue
 							}
 
@@ -349,11 +351,11 @@ function Copy-DbaLinkedServer {
 						Write-Message -Level Verbose -Message "$linkedServerName successfully copied."
 
 						$copyLinkedServer.Status = "Successful"
-						$copyLinkedServer
+						$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					}
 					catch {
 						$copyLinkedServer.Status = "Failed"
-						$copyLinkedServer
+						$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 						Stop-Function -Message "Issue adding linked server $destServer." -Target $linkedServerName -InnerErrorRecord $_
 						$skiplogins = $true
@@ -376,11 +378,11 @@ function Copy-DbaLinkedServer {
 									$currentlogin.Alter()
 
 									$copyLinkedServer.Status = "Successful"
-									$copyLinkedServer
+									$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 								}
 								catch {
 									$copyLinkedServer.Status = "Failed"
-									$copyLinkedServer
+									$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 									Stop-Function -Message "Failed to copy login." -Target $login -InnerErrorRecord $_
 								}
@@ -394,7 +396,7 @@ function Copy-DbaLinkedServer {
 	process {
 		if (Test-FunctionInterrupt) { return }
 		if ($SourceSqlCredential.username -ne $null) {
-			Write-Message -Level Warning -Message "You are using a SQL Credential. Note that this script requires Windows Administrator access on the source server. Attempting with $($SourceSqlCredential.Username)."
+			Write-Message -Level Verbose -Message "You are using a SQL Credential. Note that this script requires Windows Administrator access on the source server. Attempting with $($SourceSqlCredential.Username)."
 		}
 
 		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential

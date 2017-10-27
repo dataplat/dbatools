@@ -218,6 +218,7 @@ function Invoke-Sqlcmd2 {
 				   Mandatory = $false,
 				   ValueFromPipelineByPropertyName = $true,
 				   ValueFromRemainingArguments = $false)]
+		[Alias('SqlCredential')]
 		[System.Management.Automation.PSCredential]$Credential,
 		[Parameter(ParameterSetName = 'Ins-Que',
 				   Position = 4,

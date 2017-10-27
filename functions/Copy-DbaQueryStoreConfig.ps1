@@ -144,15 +144,15 @@ function Copy-DbaQueryStoreConfig {
 				}
 				Write-Message -Message "Processing destination database: $db on $destinationServer." -Level Verbose
 				$copyQueryStoreStatus = [pscustomobject]@{
-					SourceServer = $sourceServer.name
+					SourceServer  = $sourceServer.name
 					SourceDatabase = $SourceDatabase
 					DestinationServer = $destinationServer
-					DestinationDatabase = $db.name
-					Name = "QueryStore Configuration"
-					Status = $null
-					DateTime = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+					Name		  = $db.name
+					Type		  = "QueryStore Configuration"
+					Status	      = $null
+					DateTime	  = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 				}
-
+				
 				if ($db.IsAccessible -eq $false) {
 					$copyQueryStoreStatus.Status = "Skipped"
 					Stop-Function -Message "The database $db on server $destinationServer is not accessible. Skipping database." -Continue
@@ -176,7 +176,7 @@ function Copy-DbaQueryStoreConfig {
 					$copyQueryStoreStatus.Status = "Failed"
 					Stop-Function -Message "Issue setting Query Store on $db." -Target $db -InnerErrorRecord $_ -Continue
 				}
-					$copyQueryStoreStatus
+					$copyQueryStoreStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 			}
 		}
 	}

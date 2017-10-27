@@ -125,7 +125,7 @@ function Copy-DbaServerTrigger {
 				SourceServer      = $sourceServer.Name
 				DestinationServer = $destServer.Name
 				Name              = $triggerName
-				Type              = "Server"
+				Type              = "Server Trigger"
 				Status            = $null
 				Notes             = $null
 				DateTime          = [DbaDateTime](Get-Date)
@@ -137,10 +137,11 @@ function Copy-DbaServerTrigger {
 
 			if ($destTriggers.Name -contains $triggerName) {
 				if ($force -eq $false) {
-					Write-Message -Level Warning -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
-
+					Write-Message -Level Verbose -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
+					
 					$copyTriggerStatus.Status = "Skipped"
-					$copyTriggerStatus
+					$copyTriggerStatus.Status = "Already exists"
+					$copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				else {
@@ -152,7 +153,7 @@ function Copy-DbaServerTrigger {
 						catch {
 							$copyTriggerStatus.Status = "Failed"
 							$copyTriggerStatus.Notes = $_.Exception
-							$copyTriggerStatus
+							$copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping trigger on destination" -Target $triggerName -ErrorRecord $_ -Continue
 						}
@@ -173,12 +174,12 @@ function Copy-DbaServerTrigger {
 					}
 					
 					$copyTriggerStatus.Status = "Successful"
-					$copyTriggerStatus
+					$copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyTriggerStatus.Status = "Failed"
 					$copyTriggerStatus.Notes = $_.Exception
-					$copyTriggerStatus
+					$copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Stop-Function -Message "Issue creating trigger on destination" -Target $triggerName -ErrorRecord $_
 				}
