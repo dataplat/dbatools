@@ -115,7 +115,7 @@ function Copy-DbaResourceGovernor {
 			SourceServer      = $sourceServer.Name
 			DestinationServer = $destServer.Name
 			Type              = "Resource Governor Settings"
-			Name              = $null
+			Name              = "All Settings"
 			Status            = $null
 			Notes             = $null
 			DateTime          = [DbaDateTime](Get-Date)
@@ -163,7 +163,7 @@ function Copy-DbaResourceGovernor {
 			$copyResourceGovPool = [pscustomobject]@{
 				SourceServer      = $sourceServer.Name
 				DestinationServer = $destServer.Name
-				Type              = "Pool"
+				Type              = "Resource Governor Pool"
 				Name              = $poolName
 				Status            = $null
 				Notes             = $null
@@ -175,7 +175,7 @@ function Copy-DbaResourceGovernor {
 					Write-Message -Level Verbose -Message "Pool '$poolName' was skipped because it already exists on $destination. Use -Force to drop and recreate."
 
 					$copyResourceGovPool.Status = "Skipped"
-					$copyResourceGovPool.Notes = "Already exists on destination"
+					$copyResourceGovPool.Notes = "Already exists"
 					$copyResourceGovPool | Select-DefaultView -Property SourceServer, DestinationServer, Name, Type, Status, Notes, DateTime -TypeName MigrationObject
 					continue
 				}
@@ -221,7 +221,7 @@ function Copy-DbaResourceGovernor {
 						$copyResourceGovWorkGroup = [pscustomobject]@{
 							SourceServer      = $sourceServer.Name
 							DestinationServer = $destServer.Name
-							Type              = "Pool Workgroup"
+							Type              = "Resource Governor Pool Workgroup"
 							Name              = $workgroupName
 							Status            = $null
 							Notes             = $null
