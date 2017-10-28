@@ -81,13 +81,14 @@ Function Format-DbaBackupInformation{
              }
             if ($ReplaceDatabaseNameType -eq 'single'){
                 $History.Database = $ReplaceDatabaseName
+                Write-Message -Message "New DbName (String) = $($History.Database)" -Level Verbose
             }elseif ($ReplaceDatabaseNameType -eq 'multi'){
                 if ($null -ne $ReplaceDatabaseName[$History.Database]){
-                    $History.Database = $ReplaceDatabaseName[$History.Database]
+                    $History.Database = $DatabaseNamePrefix+$ReplaceDatabaseName[$History.Database]
+                    Write-Message -Message "New DbName (Hash) = $($History.Database)" -Level Verbose
                 }
             }
-            $History.Database = $DatabaseNamePrefix+$History.Database
-            $History.Database = 
+            #$History.Database = $DatabaseNamePrefix+$History.Database
             $History.FileList | ForEach-Object {
                 $_.PhysicalName = $_.PhysicalName -Replace $History.Database, $ReplaceDatabaseNameInner
                 $Pname = [System.Io.FileInfo]$_.PhysicalName
