@@ -141,17 +141,23 @@ function Install-DbaWhoIsActive {
 			    Unblock-File $zipfile -ErrorAction SilentlyContinue
 					
 			    if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
-		    		Expand-Archive -Path $zipfile -DestinationPath $temp -Force
+					try {
+						Expand-Archive -Path $zipfile -DestinationPath $temp -Force
+					}
+					catch {
+						Stop-Function -Message "Unable to extract $zipfile. Archive may not be valid." -ErrorRecord $_
+						return
+					}
 				}
 				else {
-			    # Keep it backwards compatible
-				    $shell = New-Object -ComObject Shell.Application
-				    $zipPackage = $shell.NameSpace($zipfile)
-				    $destinationFolder = $shell.NameSpace($temp)
-				    Get-ChildItem "$temp\who*active*.sql" | Remove-Item		
-				    $destinationFolder.CopyHere($zipPackage.Items())
-		    	}					
-			    Remove-Item -Path $zipfile
+					# Keep it backwards compatible
+					$shell = New-Object -ComObject Shell.Application
+					$zipPackage = $shell.NameSpace($zipfile)
+					$destinationFolder = $shell.NameSpace($temp)
+					Get-ChildItem "$temp\who*active*.sql" | Remove-Item
+					$destinationFolder.CopyHere($zipPackage.Items())
+				}
+				Remove-Item -Path $zipfile
             }
 			$sqlfile = (Get-ChildItem "$temp\who*active*.sql" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
 		}
