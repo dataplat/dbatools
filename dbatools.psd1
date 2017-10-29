@@ -67,6 +67,7 @@
 	
 	# Functions to export from this module
 	FunctionsToExport	    = @(
+		'Invoke-DbaRestore,'
 		'Format-DbaBackupInformation',
 		'Select-DbaBackupInformation',
 		'Start-DbaMigration',
