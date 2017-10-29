@@ -27,7 +27,7 @@ Function Format-DbaBackupInformation{
     .PARAMETER FileNamePrefix
         This string will  be prefixed to all restored files (Data and Log)
 
-    .PARAMETER BackupFolder
+    .PARAMETER RebaseBackupFolder
         Use this to rebase where your backups are stored. 
 
     .EXAMPLE
@@ -49,7 +49,7 @@ Function Format-DbaBackupInformation{
         [string]$DatabaseNamePrefix,
         [string]$DatabaseFilePrefix,
         [string]$DatabaseFileSuffix,
-        [string]$BackupFolder,
+        [string]$RebaseBackupFolder,
         [switch]$EnableException
     )
     Begin{
@@ -63,7 +63,15 @@ Function Format-DbaBackupInformation{
             Write-Message -Message "Hashtable passed in for DB rename" -Level Verbose
             $ReplaceDatabaseNameType='multi'
         }
-        
+        if ($DataFileDirectory[-1] -eq '\' ){
+            $DataFileDirectory = $DataFileDirectory.substring(0,$DataFileDirectory.length-1)
+        }
+        if ($LogFileDirectory[-1] -eq '\' ){
+            $LogFileDirectory = $LogFileDirectory.substring(0,$LogFileDirectory.length-1)
+        }
+        if ($RebaseBackupFolder[-1] -eq '\' ){
+            $RebaseBackupFolder = $RebaseBackupFolder.substring(0,$RebaseBackupFolder.length-1)
+        }
     }
 
 
@@ -74,44 +82,49 @@ Function Format-DbaBackupInformation{
                 $History | Add-Member -Name 'OriginalDatabase' -Type NoteProperty -Value $History.Database
              }
              if ("OriginalFileList" -notin $History.PSobject.Properties.name){
-                $History | Add-Member -Name 'OriginalFileList' -Type NoteProperty -Value $History.OriginalFileList
+                $History | Add-Member -Name 'OriginalFileList' -Type NoteProperty -Value ''
+                $History | ForEach-Object {$_.OriginalFileList = $_.FileList}
              }
              if ("OriginalFullName" -notin $History.PSobject.Properties.name){
                 $History | Add-Member -Name 'OriginalFullName' -Type NoteProperty -Value $History.FullName
              }
             if ($ReplaceDatabaseNameType -eq 'single'){
                 $History.Database = $ReplaceDatabaseName
+                $ReplaceMentName = $ReplaceDatabaseName
                 Write-Message -Message "New DbName (String) = $($History.Database)" -Level Verbose
             }elseif ($ReplaceDatabaseNameType -eq 'multi'){
                 if ($null -ne $ReplaceDatabaseName[$History.Database]){
-                    $History.Database = $DatabaseNamePrefix+$ReplaceDatabaseName[$History.Database]
+                    $History.Database = $ReplaceDatabaseName[$History.Database]
+                    $ReplacementName = $ReplaceDatabaseName[$History.Database]
                     Write-Message -Message "New DbName (Hash) = $($History.Database)" -Level Verbose
                 }
             }
-            #$History.Database = $DatabaseNamePrefix+$History.Database
+            $History.Database = $DatabaseNamePrefix+$History.Database
             $History.FileList | ForEach-Object {
-                $_.PhysicalName = $_.PhysicalName -Replace $History.Database, $ReplaceDatabaseNameInner
+                $_.PhysicalName = $_.PhysicalName -Replace $History.OriginalDatabase, $ReplacementName
+                Write-message -Message " 1 PhysicalName = $($_.PhysicalName) " -Level Verbose
                 $Pname = [System.Io.FileInfo]$_.PhysicalName
                 $RestoreDir = $Pname.DirectoryName
                 if ($_.Type -eq 'D'){
-                    if ($false -ne $DataFileDirectory){
+                    if ('' -ne $DataFileDirectory){
                         $RestoreDir = $DataFileDirectory
                     }
                 }elseif ($_.Type -eq 'L'){
-                    if ($false -ne $LogFileDirectory){
+                    if ('' -ne $LogFileDirectory){
                         $RestoreDir = $LogFileDirectory
                     }
-                    elseif ($null -ne $DataFileDirectory){
+                    elseif ('' -ne $DataFileDirectory){
                         $RestoreDir = $DataFileDirectory
                     }
                 }
                 
                 $_.PhysicalName = $RestoreDir+"\"+$DatabaseFilePrefix+$Pname.BaseName+$DatabaseFileSuffix+$pname.extension
+                Write-message -Message "PhysicalName = $($_.PhysicalName) " -Level Verbose
             }
-            if ($null -ne $BackupFolder){
+            if ($null -ne $RebaseBackupFolder){
                 $History.FullName | ForEach-Object{
                     $file = [System.IO.FileInfo]$_
-                    $_ = $BackupFolder+"\"+$file.BaseName+$file.Extension
+                    $_ = $RebaseBackupFolder+"\"+$file.BaseName+$file.Extension
                 }
             }
             $History   
