@@ -115,9 +115,7 @@ function Test-DbaMaxDop {
 				$numberOfCores = $server.ConnectionContext.ExecuteScalar($sql)
 			}
 			catch {
-				$errormessage = $_.Exception.Message.ToString()
-				Write-Warning "Failed to execute $sql.`n$errormessage."
-				continue
+				Stop-Function -Message "Failed to get number of cores." -ErrorRecord $_ -Target $server -Continue
 			}
 
 			#Calculate Recommended Max Dop to instance
