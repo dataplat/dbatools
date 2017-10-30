@@ -56,13 +56,12 @@ function Test-DbaOptimizeForAdHoc {
 	process {
 
 		foreach ($instance in $SqlInstance) {
-			Write-Verbose "Attempting to connect to $instance"
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+				Write-Message -Level Verbose -Message "Connecting to $instance."
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Write-Warning "Can't connect to $instance or access denied. Skipping."
-				continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			if ($server.versionMajor -lt 10) {
