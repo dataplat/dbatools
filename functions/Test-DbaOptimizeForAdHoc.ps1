@@ -45,32 +45,29 @@ function Test-DbaOptimizeForAdHoc {
 		[PSCredential]$SqlCredential
 	)
 
-	BEGIN {
+	begin {
 		$notesAdHocZero = "Recommended configuration is 1 (enabled)."
 		$notesAsRecommended = "Configuration is already set as recommended."
 	}
+	process {
 
-	PROCESS {
-
-		foreach ($servername in $SqlInstance) {
-			Write-Verbose "Attempting to connect to $servername"
+		foreach ($instance in $SqlInstance) {
+			Write-Verbose "Attempting to connect to $instance"
 			try {
-				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Write-Warning "Can't connect to $servername or access denied. Skipping."
+				Write-Warning "Can't connect to $instance or access denied. Skipping."
 				continue
 			}
 
 			if ($server.versionMajor -lt 10) {
-				Write-Warning "This function does not support versions lower than SQL Server 2008 (v10). Skipping server $servername."
-
-				Continue
+				Write-Warning "This function does not support versions lower than SQL Server 2008 (v10). Skipping server $instance."
+				continue
 			}
 
 			#Get current configured value
 			$optimizeAdHoc = $server.Configuration.OptimizeAdhocWorkloads.ConfigValue
-
 
 			#Setting notes for optimize adhoc value
 			if ($optimizeAdHoc -eq 1) {
