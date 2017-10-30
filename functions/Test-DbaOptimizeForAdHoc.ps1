@@ -1,46 +1,47 @@
 function Test-DbaOptimizeForAdHoc {
 	<#
-	.SYNOPSIS
-		Displays information relating to SQL Server Optimize for AdHoc Workloads setting.  Works on SQL Server 2008-2016.
+		.SYNOPSIS
+			Displays information relating to SQL Server Optimize for AdHoc Workloads setting.  Works on SQL Server 2008-2016.
 
-	.DESCRIPTION
-		When this option is set, plan cache size is further reduced for single-use ad hoc OLTP workload.
+		.DESCRIPTION
+			When this option is set, plan cache size is further reduced for single-use ad hoc OLTP workload.
 
-		More info: https://msdn.microsoft.com/en-us/library/cc645587.aspx
-		http://www.sqlservercentral.com/blogs/glennberry/2011/02/25/some-suggested-sql-server-2008-r2-instance-configuration-settings/
+			More info: https://msdn.microsoft.com/en-us/library/cc645587.aspx
+			http://www.sqlservercentral.com/blogs/glennberry/2011/02/25/some-suggested-sql-server-2008-r2-instance-configuration-settings/
 
-		These are just general recommendations for SQL Server and are a good starting point for setting the "optimize for adhoc workloads" option.
+			These are just general recommendations for SQL Server and are a good starting point for setting the "optimize for adhoc workloads" option.
 
-	.PARAMETER SqlInstance
-		A collection of one or more SQL Server instance names to query.
+		.PARAMETER SqlInstance
+			A collection of one or more SQL Server instance names to query.
 
-	.PARAMETER SqlCredential
-		Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-		$cred = Get-Credential, this pass this $cred to the param.
+			$cred = Get-Credential, this pass this $cred to the param.
 
-		Windows Authentication will be used if SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+			Windows Authentication will be used if SqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
 
-	.NOTES
-		Author: Brandon Abshire, netnerds.net
-		Website: https://dbatools.io
-		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+		.NOTES
+			Tags: Configure, SPConfigure
+			Author: Brandon Abshire, netnerds.net
 
-	.LINK
-		https://dbatools.io/Test-DbaOptimizeForAdHoc
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-	.EXAMPLE
-		Test-DbaOptimizeForAdHoc -SqlInstance sql2008, sqlserver2012
+		.LINK
+			https://dbatools.io/Test-DbaOptimizeForAdHoc
 
-		Get Optimize for AdHoc Workloads setting for servers sql2008 and sqlserver2012 and also the recommended one.
+		.EXAMPLE
+			Test-DbaOptimizeForAdHoc -SqlInstance sql2008, sqlserver2012
 
-#>
+			Validates whether Optimize for AdHoc Workloads setting is enabled for servers sql2008 and sqlserver2012.
+	#>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[DbaInstance[]]$SqlInstance,
 		[PSCredential]$SqlCredential
 	)
 
