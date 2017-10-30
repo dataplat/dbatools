@@ -71,7 +71,7 @@ function Test-DbaNetworkLatency {
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[DbaInstance[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
 		[string]$Query = "select top 100 * from INFORMATION_SCHEMA.TABLES",
 		[int]$Count = 3,
@@ -81,7 +81,7 @@ function Test-DbaNetworkLatency {
 		foreach ($instance in $SqlInstance) {
 			try {
 				$start = [System.Diagnostics.Stopwatch]::StartNew()
-				$currentcount = 0
+				$currentCount = 0
 				try {
 					Write-Message -Level Verbose -Message "Connecting to $instance."
 					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
@@ -91,39 +91,38 @@ function Test-DbaNetworkLatency {
 				}
 
 				do {
-					if (++$currentcount -eq 1) {
+					if (++$currentCount -eq 1) {
 						$first = [System.Diagnostics.Stopwatch]::StartNew()
 					}
 					$null = $server.Query($query)
-					if ($currentcount -eq $count) {
-						$last = $first.elapsed
+					if ($currentCount -eq $count) {
+						$last = $first.Elapsed
 					}
 				}
-				while ($currentcount -lt $count)
+				while ($currentCount -lt $count)
 
-				$end = $start.elapsed
-				$totaltime = $end.TotalMilliseconds
-				$average = $totaltime / $count
+				$end = $start.Elapsed
+				$totalTime = $end.TotalMilliseconds
+				$average = $totalTime / $count
 
-				$totalwarm = $last.TotalMilliseconds
+				$totalWarm = $last.TotalMilliseconds
 				if ($Count -eq 1) {
-					$averagewarm = $totalwarm
+					$averageWarm = $totalWarm
 				}
 				else {
-					$averagewarm = $totalwarm / $count
+					$averageWarm = $totalWarm / $count
 				}
-
 
 				[PSCustomObject]@{
 					ComputerName     = $server.NetName
 					InstanceName     = $server.ServiceName
 					SqlInstance      = $server.DomainInstanceName
 					Count            = $count
-					Total            = [prettytimespan]::FromMilliseconds($totaltime)
+					Total            = [prettytimespan]::FromMilliseconds($totalTime)
 					Avg              = [prettytimespan]::FromMilliseconds($average)
-					ExecuteOnlyTotal = [prettytimespan]::FromMilliseconds($totalwarm)
-					ExecuteOnlyAvg   = [prettytimespan]::FromMilliseconds($averagewarm)
-					NetworkOnlyTotal = [prettytimespan]::FromMilliseconds($totaltime - $totalwarm)
+					ExecuteOnlyTotal = [prettytimespan]::FromMilliseconds($totalWarm)
+					ExecuteOnlyAvg   = [prettytimespan]::FromMilliseconds($averageWarm)
+					NetworkOnlyTotal = [prettytimespan]::FromMilliseconds($totalTime - $totalWarm)
 				} | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Count as ExecutionCount', Total, 'Avg as Average', ExecuteOnlyTotal, 'ExecuteOnlyAvg as ExecuteOnlyAverage', NetworkOnlyTotal #backwards compat
 			}
 			catch {
