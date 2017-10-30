@@ -164,7 +164,7 @@ function Copy-DbaServerAudit {
 				}
 			}
 
-			if ((Test-DbaSqlPath -SqlInstance $destServer -Path $currentAudit.Filepath) -eq $false) {
+			if (($currentAudit.Filepath) -ne $null -AND (Test-DbaSqlPath -SqlInstance $destServer -Path $currentAudit.Filepath) -eq $false) {
 				if ($Force -eq $false) {
 					Write-Message -Level Verbose -Message "$($currentAudit.Filepath) does not exist on $destination. Skipping $auditName. Specify -Force to create the directory."
 
