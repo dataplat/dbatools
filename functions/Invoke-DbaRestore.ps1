@@ -75,6 +75,7 @@ Function Invoke-DbaRestore{
             $backups = $backupHistory | Where-Object {$_.Database -eq $Database} | Sort-Object -Property LastLsn
             ForEach ($backup in $backups){
                 $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
+                $Restore.Database = $database
                 $Restore.ReplaceDatabase = $WithReplace
                 if ($MaxTransferSize) {
                     $Restore.MaxTransferSize = $MaxTransferSize
@@ -88,7 +89,7 @@ Function Invoke-DbaRestore{
                 ForEach ($file in $backup.FileList){
                     $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
                     $MoveFile.LogicalFileName = $File.LogicalName
-                    $MoveFile.PhysicalName = $File.PhysicalName
+                    $MoveFile.PhysicalFileName = $File.PhysicalName
                     $null = $Restore.RelocateFiles.Add($MoveFile)
                 }
                 $Action = switch ($backup.Type) {
@@ -96,21 +97,24 @@ Function Invoke-DbaRestore{
                     '2' {'Log'}
                     '5' {'Database'}
                     'Transaction Log' {'Log'}
-                    Default {'Datbase'}
+                    Default {'Database'}
                 }
                 Write-Message -Level Verbose -Message "restore action = $Action"
                 $Restore.Action = $Action
-                $Device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-                $Device.Name = $RestoreFile.BackupPath
-                if ($backup.BackupPath -like "http*") {
-                    $Device.devicetype = "URL"
-                    $Restore.CredentialName = $AzureCredential
+                ForEach ($File in $backup.fullname){
+                    Write-Message -Message "Adding device $file" -Level verbose
+                    $Device = New-Object -TypeName Microsoft.SqlServer.Management.Smo.BackupDeviceItem
+                    $Device.Name = $file
+                    if ($file -like "http*") {
+                        $Device.devicetype = "URL"
+                        $Restore.CredentialName = $AzureCredential
+                    }
+                    else {
+                        $Device.devicetype = "File"
+                    }
+                    $Restore.FileNumber = $backup.Position
+                    $Restore.Devices.Add($device)
                 }
-                else {
-                    $Device.devicetype = "File"
-                }
-                $Restore.FileNumber = $backup.Position
-                $Restore.Devices.Add($device)
                 Write-Message -Level Verbose -Message "Performing restore action"
                 $ConfirmMessage = "`n Restore Database $DbName on $SqlInstance `n from files: $RestoreFileNames `n with these file moves: `n $LogicalFileMovesString `n $ConfirmPointInTime `n"
                 If ($Pscmdlet.ShouldProcess("$DBName on $SqlInstance `n `n", $ConfirmMessage)) {
@@ -146,16 +150,7 @@ Function Invoke-DbaRestore{
                         return
                     }
                     finally {
-                        if ($ReuseSourceFolderStructure) {
-                            $RestoreDirectory = ((Split-Path $RestoreFiles[0].FileList.PhysicalName) | Sort-Object -Unique) -Join ','
-                            $RestoredFile = ((Split-Path $RestoreFiles[0].FileList.PhysicalName -Leaf) | Sort-Object -Unique) -Join ','
-                            $RestoredFileFull = $RestoreFiles[0].Filelist.PhysicalName -Join ','
-                        }
-                        else {
-                            $RestoreDirectory = ((Split-Path $Restore.RelocateFiles.PhysicalFileName) | Sort-Object -Unique) -Join ','
-                            $RestoredFile = (Split-Path $Restore.RelocateFiles.PhysicalFileName -Leaf) -Join ','
-                            $RestoredFileFull = $Restore.RelocateFiles.PhysicalFileName -Join ','
-                        }
+
                         if ($ScriptOnly -eq $false) {
                             [PSCustomObject]@{
                                 SqlInstance            = $SqlInstance
@@ -198,4 +193,3 @@ Function Invoke-DbaRestore{
             }
         }
     }
-}

@@ -8,6 +8,7 @@ Function Format-DbaBackupInformation{
        Options include changing restore paths, backup paths, database name and many others
     
     .PARAMETER BackupHistory
+        A dbatools backupHistory object, normally this will have been created using Select-DbaBackupInformation
 
     .PARAMETER ReplaceDatabasName
         If a single value is provided, this will be replaced do all occurences a database name
@@ -29,16 +30,46 @@ Function Format-DbaBackupInformation{
 
     .PARAMETER RebaseBackupFolder
         Use this to rebase where your backups are stored. 
+    
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
+    
+    .NOTES 
+    Author:Stuart Moore (@napalmgram stuart-moore.com )
+    DisasterRecovery, Backup, Restore
+        
+    Website: https://dbatools.io
+    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+
+    .LINK
+    https://dbatools.io/Format-DbaBackupInformation
 
     .EXAMPLE
         $History | Format-DbaBackupInformation -ReplaceDatabaseName NewDb
 
+        Changes as databasename references to NewDb, both in the database name and any restore paths. Note, this will fail if the BackupHistory object contains backups for more than 1 database
+
     .EXAMPLE
         $History | Format-DbaBackupInformation -ReplaceDatabaseName @{'OldB'='NewDb';'ProdHr'='DevPr'}   
     
+        Will change all occurences of original database name in the backup history (names and restore paths) using the mapping in the hashtable.
+        In this example any occurance of OldDb will be replaced with NewDb and ProdHr with DevPR
+
     .EXAMPLE
         $History | Format-DbaBackupInformation -DataFileDirectory 'D:\DataFiles\' -LogFileDirectory 'E:\LogFiles\
-    #>
+
+        This example with change the restore path for all datafiles (everything that is not a log file) to d:\datafiles
+        And all Transaction Log files will be restored to E:\Logfiles
+
+    .EXAMPLE
+        $History | Formate-DbaBackupInformation -RebaseBackupFolder f:\backups
+
+        This example changes the location that SQL Server will look for the backups. This is useful if you've moved the backups to a different location
+    #>  
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -63,13 +94,13 @@ Function Format-DbaBackupInformation{
             Write-Message -Message "Hashtable passed in for DB rename" -Level Verbose
             $ReplaceDatabaseNameType='multi'
         }
-        if ($DataFileDirectory[-1] -eq '\' ){
+        if ((Test-Bound -Parameter DataFileDirectory) -and $DataFileDirectory[-1] -eq '\' ){
             $DataFileDirectory = $DataFileDirectory.substring(0,$DataFileDirectory.length-1)
         }
-        if ($LogFileDirectory[-1] -eq '\' ){
+        if ((Test-Bound -Parameter LogFileDirectory) -and $LogFileDirectory[-1] -eq '\' ){
             $LogFileDirectory = $LogFileDirectory.substring(0,$LogFileDirectory.length-1)
         }
-        if ($RebaseBackupFolder[-1] -eq '\' ){
+        if ((Test-Bound -Parameter RebaseBackupFolder) -and$RebaseBackupFolder[-1] -eq '\' ){
             $RebaseBackupFolder = $RebaseBackupFolder.substring(0,$RebaseBackupFolder.length-1)
         }
     }
@@ -88,6 +119,10 @@ Function Format-DbaBackupInformation{
              if ("OriginalFullName" -notin $History.PSobject.Properties.name){
                 $History | Add-Member -Name 'OriginalFullName' -Type NoteProperty -Value $History.FullName
              }
+             if ("IsVerified" -notin $History.PSobject.Properties.name){
+                $History | Add-Member -Name 'IsVerified' -Type NoteProperty -Value $False
+             }
+             
             if ($ReplaceDatabaseNameType -eq 'single'){
                 $History.Database = $ReplaceDatabaseName
                 $ReplaceMentName = $ReplaceDatabaseName
@@ -101,7 +136,7 @@ Function Format-DbaBackupInformation{
             }
             $History.Database = $DatabaseNamePrefix+$History.Database
             $History.FileList | ForEach-Object {
-                $_.PhysicalName = $_.PhysicalName -Replace $History.OriginalDatabase, $ReplacementName
+                $_.PhysicalName = $_.PhysicalName -Replace $History.OriginalDatabase, $History.Database
                 Write-message -Message " 1 PhysicalName = $($_.PhysicalName) " -Level Verbose
                 $Pname = [System.Io.FileInfo]$_.PhysicalName
                 $RestoreDir = $Pname.DirectoryName
