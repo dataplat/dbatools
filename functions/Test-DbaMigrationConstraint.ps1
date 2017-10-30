@@ -120,10 +120,21 @@ function Test-DbaMigrationConstraint {
 		$notesCannotMigrate = "Database cannot be migrated."
 	}
 	process {
+		try {
+			Write-Message -Level Verbose -Message "Connecting to $Source."
+			$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		}
+		catch {
+			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source -Continue
+		}
 
-		Write-Output "Attempting to connect to Sql Servers."
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+		try {
+			Write-Message -Level Verbose -Message "Connecting to $Destination."
+			$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+		}
+		catch {
+			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+		}
 
 		if ($Database -eq 0) {
 			$Database = $sourceserver.Databases | Where-Object isSystemObject -eq 0 | Select-Object Name, Status
