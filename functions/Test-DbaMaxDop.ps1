@@ -167,7 +167,9 @@ function Test-DbaMaxDop {
 			}
 
 			$collection += [pscustomobject]@{
-				Instance              = $server.Name
+				ComputerName = $server.NetName
+				InstanceName = $server.ServiceName
+				SqlInstance = $server.DomainInstanceName
 				InstanceVersion       = $server.Version
 				Database              = "N/A"
 				DatabaseMaxDop        = "N/A"
