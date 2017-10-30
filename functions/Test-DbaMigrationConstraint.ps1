@@ -50,6 +50,11 @@ function Test-DbaMigrationConstraint {
 		.PARAMETER ExcludeDatabase
 			The database(s) to exclude. Options for this list are auto-populated from the server.
 
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
 		.NOTES
 			Tags: Migration
 
@@ -86,7 +91,8 @@ function Test-DbaMigrationConstraint {
 		[PSCredential]$DestinationSqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$ExcludeDatabase
+		[object[]]$ExcludeDatabase,
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
