@@ -76,7 +76,9 @@ function Test-DbaOptimizeForAdHoc {
 			}
 
 			[pscustomobject]@{
-				Instance                 = $server.Name
+				ComputerName             = $server.NetName
+				InstanceName             = $server.ServiceName
+				SqlInstance              = $server.DomainInstanceName
 				CurrentOptimizeAdHoc     = $optimizeAdHoc
 				RecommendedOptimizeAdHoc = 1
 				Notes                    = $notes
