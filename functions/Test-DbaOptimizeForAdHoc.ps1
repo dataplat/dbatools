@@ -58,15 +58,10 @@ function Test-DbaOptimizeForAdHoc {
 		foreach ($instance in $SqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance."
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
-
-			if ($server.versionMajor -lt 10) {
-				Write-Warning "This function does not support versions lower than SQL Server 2008 (v10). Skipping server $instance."
-				continue
 			}
 
 			#Get current configured value
