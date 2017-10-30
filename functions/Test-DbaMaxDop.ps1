@@ -86,21 +86,15 @@ function Test-DbaMaxDop {
 	}
 
 	process {
-		$hasscopedconfiguration = $false
+		$hasScopedConfig = $false
 
-		foreach ($servername in $SqlInstance) {
-			Write-Verbose "Attempting to connect to $servername."
+		foreach ($instance in $SqlInstance) {
 			try {
-				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
 			}
 			catch {
-				Write-Warning "Can't connect to $servername or access denied. Skipping."
-				continue
-			}
-
-			if ($server.versionMajor -lt 9) {
-				Write-Warning "This function does not support versions lower than SQL Server 2005 (v9). Skipping server '$servername'."
-				Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			#Get current configured value
@@ -190,7 +184,7 @@ function Test-DbaMaxDop {
 
 			# On SQL Server 2016 and higher, MaxDop can be set on a per-database level
 			if ($server.versionMajor -ge 13) {
-				$hasscopedconfiguration = $true
+				$hasScopedConfig = $true
 				Write-Verbose "Server '$server' has an 2016 version, checking each database."
 
 				foreach ($database in $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true }) {
@@ -216,14 +210,11 @@ function Test-DbaMaxDop {
 					}
 				}
 			}
-
-			$server.ConnectionContext.Disconnect()
-
 		}
 	}
 	end {
 		if ($Detailed) {
-			if ($hasscopedconfiguration) {
+			if ($hasScopedConfig) {
 				return ($collection | Select-Object Instance, InstanceVersion, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, NUMANodes, NumberOfCores, Notes)
 			}
 			else {
@@ -231,7 +222,7 @@ function Test-DbaMaxDop {
 			}
 		}
 		else {
-			if ($hasscopedconfiguration) {
+			if ($hasScopedConfig) {
 				return ($collection | Select-Object Instance, InstanceVersion, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes)
 			}
 			else {
