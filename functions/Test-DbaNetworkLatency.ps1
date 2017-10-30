@@ -7,14 +7,14 @@ function Test-DbaNetworkLatency {
 			This function is intended to help measure SQL Server network latency by establishing a connection and executing a simple query. This is a better than a simple ping because it actually creates the connection to the SQL Server and measures the time required for only the entire routine, but the duration of the query as well how long it takes for the results to be returned.
 
 			By default, this command will execute "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" three times.
-		
+
 			It will then output how long the entire connection and command took, as well as how long *only* the execution of the command took.
-		
+
 			This allows you to see if the issue is with the connection or the SQL Server itself.
 
         .PARAMETER SqlInstance
             The SQL Server you want to run the test on.
-        
+
         .PARAMETER SqlCredential
  			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
@@ -23,7 +23,7 @@ function Test-DbaNetworkLatency {
 			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
 			To connect as a different Windows user, run PowerShell as that user.
-		
+
 		.PARAMETER Query
 			Specifies the query to be executed. By default, "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" will be executed on master. To execute in other databases, use fully qualified object names.
 
@@ -40,7 +40,7 @@ function Test-DbaNetworkLatency {
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
+
 		.NOTES
 			Tags: Performance, Network
 			Website: https://dbatools.io
@@ -53,7 +53,7 @@ function Test-DbaNetworkLatency {
 		.EXAMPLE
 			Test-DbaNetworkLatency -SqlInstance sqlserver2014a, sqlcluster
 
-			Tests the roundtrip return of "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" on sqlserver2014a and sqlcluster using Windows credentials. 
+			Tests the roundtrip return of "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" on sqlserver2014a and sqlcluster using Windows credentials.
 
 		.EXAMPLE
 			Test-DbaNetworkLatency -SqlInstance sqlserver2014a -SqlCredential $cred
@@ -63,7 +63,7 @@ function Test-DbaNetworkLatency {
 		.EXAMPLE
 			Test-DbaNetworkLatency -SqlInstance sqlserver2014a, sqlcluster, sqlserver -Query "select top 10 * from otherdb.dbo.table" -Count 10
 
-			Tests the execution results return of "select top 10 * from otherdb.dbo.table" 10 times on sqlserver2014a, sqlcluster, and sqlserver using Windows credentials. 
+			Tests the execution results return of "select top 10 * from otherdb.dbo.table" 10 times on sqlserver2014a, sqlcluster, and sqlserver using Windows credentials.
 
 	#>
 	[CmdletBinding()]
@@ -89,7 +89,7 @@ function Test-DbaNetworkLatency {
 				catch {
 					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				}
-				
+
 				do {
 					if (++$currentcount -eq 1) {
 						$first = [System.Diagnostics.Stopwatch]::StartNew()
@@ -100,11 +100,11 @@ function Test-DbaNetworkLatency {
 					}
 				}
 				while ($currentcount -lt $count)
-				
+
 				$end = $start.elapsed
 				$totaltime = $end.TotalMilliseconds
 				$average = $totaltime / $count
-				
+
 				$totalwarm = $last.TotalMilliseconds
 				if ($Count -eq 1) {
 					$averagewarm = $totalwarm
@@ -112,8 +112,8 @@ function Test-DbaNetworkLatency {
 				else {
 					$averagewarm = $totalwarm / $count
 				}
-				
-				
+
+
 				[PSCustomObject]@{
 					ComputerName     = $server.NetName
 					InstanceName     = $server.ServiceName
