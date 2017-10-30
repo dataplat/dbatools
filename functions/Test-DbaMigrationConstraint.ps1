@@ -282,13 +282,10 @@ function Test-DbaMigrationConstraint {
 			}
 		}
 		else {
-			Write-Output "There are no databases to validate."
+			Write-Message -Level Output -Message "There are no databases to validate."
 		}
 	}
-	END {
-		$sourceServer.ConnectionContext.Disconnect()
-		$destServer.ConnectionContext.Disconnect()
+	end {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlMigrationConstraint
 	}
 }
-
