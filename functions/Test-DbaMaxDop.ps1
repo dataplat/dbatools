@@ -167,9 +167,9 @@ function Test-DbaMaxDop {
 			}
 
 			$collection += [pscustomobject]@{
-				ComputerName = $server.NetName
-				InstanceName = $server.ServiceName
-				SqlInstance = $server.DomainInstanceName
+				ComputerName          = $server.NetName
+				InstanceName          = $server.ServiceName
+				SqlInstance           = $server.DomainInstanceName
 				InstanceVersion       = $server.Version
 				Database              = "N/A"
 				DatabaseMaxDop        = "N/A"
@@ -181,12 +181,18 @@ function Test-DbaMaxDop {
 			}
 
 			# On SQL Server 2016 and higher, MaxDop can be set on a per-database level
-			if ($server.versionMajor -ge 13) {
+			if ($server.VersionMajor -ge 13) {
 				$hasScopedConfig = $true
-				Write-Verbose "Server '$server' has an 2016 version, checking each database."
+				Write-Message -Level Verbose -Message "SQL Server 2016 or higher detected, checking each database's MaxDop."
 
-				foreach ($database in $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true }) {
-					Write-Verbose "Checking database '$($database.Name)'."
+				$databases = $server.Databases | where-object {$_.IsSystemObject -eq $false}
+
+				foreach ($database in $databases) {
+					if ($database.IsAccessible -eq $false) {
+						Write-Message -Level Warning -Message "Database $database is not accessible."
+						continue
+					}
+					Write-Message -Level Verbose -Message "Checking database '$($database.Name)'."
 
 					$dbmaxdop = $database.MaxDop
 
