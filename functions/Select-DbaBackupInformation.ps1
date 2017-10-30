@@ -37,7 +37,7 @@ function Select-DbaBackupInformation{
     License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
     .LINK
-    https://dbatools.io/Set-DbaAgentJob
+    https://dbatools.io/Select-DbaBackupInformation
 
     .EXAMPLE   
     $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\server1\backups$
