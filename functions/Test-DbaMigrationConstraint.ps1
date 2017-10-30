@@ -20,29 +20,29 @@ function Test-DbaMigrationConstraint {
 
 			The -Database parameter is auto-populated for command-line completion.
 
-			.PARAMETER Source
-				Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+		.PARAMETER Source
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-			.PARAMETER SourceSqlCredential
-				Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+		.PARAMETER SourceSqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-				$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-				Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-				To connect as a different Windows user, run PowerShell as that user.
+			To connect as a different Windows user, run PowerShell as that user.
 
-			.PARAMETER Destination
-				Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+		.PARAMETER Destination
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
-			.PARAMETER DestinationSqlCredential
-				Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+		.PARAMETER DestinationSqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-				$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-				Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-				To connect as a different Windows user, run PowerShell as that user.
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Database
 			The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
@@ -73,16 +73,16 @@ function Test-DbaMigrationConstraint {
 
 		.EXAMPLE
 			Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Database db1
-			
+
 			Only db1 database will be verified for features in use that can't be supported on the destination server.
 	#>
 	[CmdletBinding(DefaultParameterSetName = "DbMigration")]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $True)]
-		[DbaInstanceParameter]$Source,
+		[DbaInstance]$Source,
 		[PSCredential]$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
-		[DbaInstanceParameter]$Destination,
+		[DbaInstance]$Destination,
 		[PSCredential]$DestinationSqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
@@ -105,10 +105,10 @@ function Test-DbaMigrationConstraint {
 
 		$editions = @{
 			"Enterprise" = 10;
-			"Developer" = 10;
+			"Developer"  = 10;
 			"Evaluation" = 10;
 			"Standard"   = 5;
-			"Express" = 1
+			"Express"    = 1
 		}
 		$notesCanMigrate = "Database can be migrated."
 		$notesCannotMigrate = "Database cannot be migrated."
