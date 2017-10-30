@@ -189,7 +189,7 @@ function Test-DbaMaxDop {
 
 				foreach ($database in $databases) {
 					if ($database.IsAccessible -eq $false) {
-						Write-Message -Level Warning -Message "Database $database is not accessible."
+						Write-Message -Level Verbose -Message "Database $database is not accessible."
 						continue
 					}
 					Write-Message -Level Verbose -Message "Checking database '$($database.Name)'."
