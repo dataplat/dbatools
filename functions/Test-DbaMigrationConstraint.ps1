@@ -130,47 +130,50 @@ function Test-DbaMigrationConstraint {
 
 		try {
 			Write-Message -Level Verbose -Message "Connecting to $Destination."
-			$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+			$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		}
 		catch {
-			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination -Continue
 		}
 
 		if ($Database -eq 0) {
-			$Database = $sourceserver.Databases | Where-Object isSystemObject -eq 0 | Select-Object Name, Status
+			$Database = $sourceServer.Databases | Where-Object isSystemObject -eq 0 | Select-Object Name, Status
 		}
 
 		if ($ExcludeDatabase) {
-			$Database = $sourceserver.Databases | Where-Object Name -NotIn $ExcludeDatabase
+			$Database = $sourceServer.Databases | Where-Object Name -NotIn $ExcludeDatabase
 		}
 
 		if ($Database -gt 0) {
 			if ($Database -contains "master" -or $Database -contains "msdb" -or $Database -contains "tempdb") {
-				throw "Migrating system databases is not currently supported."
+				Stop-Function -Message "Migrating system databases is not currently supported."
+				return
 			}
 
-			if ($sourceserver.versionMajor -lt 9 -and $destserver.versionMajor -gt 10) {
-				throw "Sql Server 2000 databases cannot be migrated to Sql Server versions 2012 and above. Quitting."
+			if ($sourceServer.VersionMajor -lt 9 -and $destServer.VersionMajor -gt 10) {
+				Stop-Function -Message "Sql Server 2000 databases cannot be migrated to SQL Server version 2012 and above. Quitting."
+				return
 			}
 
-			if ($sourceserver.collation -ne $destserver.collation) {
-				Write-Warning "Collation on $Source, $($sourceserver.collation) differs from the $Destination, $($destserver.collation)."
+			if ($sourceServer.Collation -ne $destServer.Collation) {
+				Write-Message -Level Warning -Message "Collation on $Source, $($sourceServer.collation) differs from the $Destination, $($destServer.collation)."
 			}
 
-			if ($sourceserver.versionMajor -gt $destserver.versionMajor) {
-				#indicate that must use 'Generate Scripts' and 'Export Data' options?
-				throw "You can't migrate databases from a higher version to a lower one. Quitting."
+			if ($sourceServer.VersionMajor -gt $destServer.VersionMajor) {
+				#indicate they must use 'Generate Scripts' and 'Export Data' options?
+				Stop-Function -Message "You can't migrate databases from a higher version to a lower one. Quitting."
+				return
 			}
 
-			if ($sourceserver.versionMajor -lt 10) {
+			if ($sourceServer.VersionMajor -lt 10) {
 				throw "This function does not support versions lower than SQL Server 2008 (v10)"
 			}
 
 			#if editions differs, from higher to lower one, verify the sys.dm_db_persisted_sku_features - only available from SQL 2008 +
-			if (($sourceserver.versionMajor -ge 10 -and $destserver.versionMajor -ge 10)) {
+			if (($sourceServer.versionMajor -ge 10 -and $destServer.versionMajor -ge 10)) {
 				foreach ($db in $Database) {
 					if ([string]::IsNullOrEmpty($db.Status)) {
-						$dbstatus = ($sourceserver.Databases | Where-Object {$_.Name -eq $db}).Status.ToString()
+						$dbstatus = ($sourceServer.Databases | Where-Object {$_.Name -eq $db}).Status.ToString()
 						$dbName = $db
 					}
 					else {
@@ -181,9 +184,9 @@ function Test-DbaMigrationConstraint {
 					Write-Verbose "Checking database '$dbName'."
 
 					if ($dbstatus.Contains("Offline") -eq $false) {
-						[long]$destVersionNumber = $($destserver.VersionString).Replace(".", "")
-						[string]$SourceVersion = "$($sourceServer.Edition) $($sourceServer.ProductLevel) ($($sourceserver.Version))"
-						[string]$DestinationVersion = "$($destserver.Edition) $($destserver.ProductLevel) ($($destserver.Version))"
+						[long]$destVersionNumber = $($destServer.VersionString).Replace(".", "")
+						[string]$SourceVersion = "$($sourceServer.Edition) $($sourceServer.ProductLevel) ($($sourceServer.Version))"
+						[string]$DestinationVersion = "$($destServer.Edition) $($destServer.ProductLevel) ($($destServer.Version))"
 						[string]$dbFeatures = ""
 
 						try {
@@ -202,7 +205,7 @@ function Test-DbaMigrationConstraint {
 							}
 						}
 						catch {
-							Write-Warning "Can't execute SQL on $sourceserver. `r`n $($_)"
+							Write-Warning "Can't execute SQL on $sourceServer. `r`n $($_)"
 							Continue
 						}
 
@@ -212,10 +215,10 @@ function Test-DbaMigrationConstraint {
 								Need to verify if Edition = EXPRESS and database uses 'Change Data Capture' (CDC)
 								This means that database cannot be migrated because Express edition don't have SQL Server Agent
 							#>
-							if ($editions.Item($destserver.Edition.ToString().Split(" ")[0]) -eq 1 -and $dbFeatures.Contains("ChangeCapture")) {
+							if ($editions.Item($destServer.Edition.ToString().Split(" ")[0]) -eq 1 -and $dbFeatures.Contains("ChangeCapture")) {
 								[pscustomobject]@{
-									SourceInstance      = $sourceserver.Name
-									DestinationInstance = $destserver.Name
+									SourceInstance      = $sourceServer.Name
+									DestinationInstance = $destServer.Name
 									SourceVersion       = $SourceVersion
 									DestinationVersion  = $DestinationVersion
 									Database            = $dbName
@@ -225,8 +228,8 @@ function Test-DbaMigrationConstraint {
 							}
 							else {
 								[pscustomobject]@{
-									SourceInstance      = $sourceserver.Name
-									DestinationInstance = $destserver.Name
+									SourceInstance      = $sourceServer.Name
+									DestinationInstance = $destServer.Name
 									SourceVersion       = $SourceVersion
 									DestinationVersion  = $DestinationVersion
 									Database            = $dbName
@@ -237,14 +240,14 @@ function Test-DbaMigrationConstraint {
 						}
 						#Version is lower than SQL Server 2016 SP1
 						else {
-							Write-Verbose "Source Server Edition: $($sourceserver.Edition) (Weight: $($editions.Item($sourceserver.Edition.ToString().Split(" ")[0])))"
-							Write-Verbose "Destination Server Edition: $($destserver.Edition) (Weight: $($editions.Item($destserver.Edition.ToString().Split(" ")[0])))"
+							Write-Verbose "Source Server Edition: $($sourceServer.Edition) (Weight: $($editions.Item($sourceServer.Edition.ToString().Split(" ")[0])))"
+							Write-Verbose "Destination Server Edition: $($destServer.Edition) (Weight: $($editions.Item($destServer.Edition.ToString().Split(" ")[0])))"
 
 							#Check for editions. If destination edition is lower than source edition and exists features in use
-							if (($editions.Item($destserver.Edition.ToString().Split(" ")[0]) -lt $editions.Item($sourceserver.Edition.ToString().Split(" ")[0])) -and (!([string]::IsNullOrEmpty($dbFeatures)))) {
+							if (($editions.Item($destServer.Edition.ToString().Split(" ")[0]) -lt $editions.Item($sourceServer.Edition.ToString().Split(" ")[0])) -and (!([string]::IsNullOrEmpty($dbFeatures)))) {
 								[pscustomobject]@{
-									SourceInstance      = $sourceserver.Name
-									DestinationInstance = $destserver.Name
+									SourceInstance      = $sourceServer.Name
+									DestinationInstance = $destServer.Name
 									SourceVersion       = $SourceVersion
 									DestinationVersion  = $DestinationVersion
 									Database            = $dbName
@@ -255,8 +258,8 @@ function Test-DbaMigrationConstraint {
 							#
 							else {
 								[pscustomobject]@{
-									SourceInstance      = $sourceserver.Name
-									DestinationInstance = $destserver.Name
+									SourceInstance      = $sourceServer.Name
+									DestinationInstance = $destServer.Name
 									SourceVersion       = $SourceVersion
 									DestinationVersion  = $DestinationVersion
 									Database            = $dbName
@@ -275,8 +278,8 @@ function Test-DbaMigrationConstraint {
 			else {
 				#SQL Server 2005 or under
 				Write-Warning "This validation will not be made on versions lower than SQL Server 2008 (v10)."
-				Write-Verbose "Source server version: $($sourceserver.versionMajor)."
-				Write-Verbose "Destination server version: $($destserver.versionMajor)."
+				Write-Verbose "Source server version: $($sourceServer.versionMajor)."
+				Write-Verbose "Destination server version: $($destServer.versionMajor)."
 			}
 		}
 		else {
@@ -284,8 +287,8 @@ function Test-DbaMigrationConstraint {
 		}
 	}
 	END {
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
+		$sourceServer.ConnectionContext.Disconnect()
+		$destServer.ConnectionContext.Disconnect()
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlMigrationConstraint
 	}
 }
