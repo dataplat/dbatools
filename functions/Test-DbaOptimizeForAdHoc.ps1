@@ -52,6 +52,7 @@ function Test-DbaOptimizeForAdHoc {
 	begin {
 		$notesAdHocZero = "Recommended configuration is 1 (enabled)."
 		$notesAsRecommended = "Configuration is already set as recommended."
+		$recommendedValue = 1
 	}
 	process {
 
@@ -68,7 +69,7 @@ function Test-DbaOptimizeForAdHoc {
 			$optimizeAdHoc = $server.Configuration.OptimizeAdhocWorkloads.ConfigValue
 
 			#Setting notes for optimize adhoc value
-			if ($optimizeAdHoc -eq 1) {
+			if ($optimizeAdHoc -eq $recommendedValue) {
 				$notes = $notesAsRecommended
 			}
 			else {
@@ -80,7 +81,7 @@ function Test-DbaOptimizeForAdHoc {
 				InstanceName             = $server.ServiceName
 				SqlInstance              = $server.DomainInstanceName
 				CurrentOptimizeAdHoc     = $optimizeAdHoc
-				RecommendedOptimizeAdHoc = 1
+				RecommendedOptimizeAdHoc = $recommendedValue
 				Notes                    = $notes
 			}
 		}
