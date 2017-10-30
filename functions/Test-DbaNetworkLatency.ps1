@@ -84,7 +84,7 @@ function Test-DbaNetworkLatency {
 				$currentCount = 0
 				try {
 					Write-Message -Level Verbose -Message "Connecting to $instance."
-					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				}
 				catch {
 					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
