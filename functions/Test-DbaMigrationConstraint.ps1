@@ -184,7 +184,7 @@ function Test-DbaMigrationConstraint {
 
 					Write-Message -Level Verbose -Message "Checking database '$dbName'."
 
-					if ($dbstatus.Contains("Offline") -eq $false) {
+					if ($dbstatus.Contains("Offline") -eq $false -or $db.IsAccessible -eq $true) {
 						[long]$destVersionNumber = $($destServer.VersionString).Replace(".", "")
 						[string]$sourceVersion = "$($sourceServer.Edition) $($sourceServer.ProductLevel) ($($sourceServer.Version))"
 						[string]$destVersion = "$($destServer.Edition) $($destServer.ProductLevel) ($($destServer.Version))"
@@ -240,8 +240,8 @@ function Test-DbaMigrationConstraint {
 						}
 						#Version is lower than SQL Server 2016 SP1
 						else {
-							Write-Verbose "Source Server Edition: $($sourceServer.Edition) (Weight: $($editions.Item($sourceServer.Edition.ToString().Split(" ")[0])))"
-							Write-Verbose "Destination Server Edition: $($destServer.Edition) (Weight: $($editions.Item($destServer.Edition.ToString().Split(" ")[0])))"
+							Write-Message -Level Verbose -Message "Source Server Edition: $($sourceServer.Edition) (Weight: $($editions.Item($sourceServer.Edition.ToString().Split(" ")[0])))"
+							Write-Message -Level Verbose -Message "Destination Server Edition: $($destServer.Edition) (Weight: $($editions.Item($destServer.Edition.ToString().Split(" ")[0])))"
 
 							#Check for editions. If destination edition is lower than source edition and exists features in use
 							if (($editions.Item($destServer.Edition.ToString().Split(" ")[0]) -lt $editions.Item($sourceServer.Edition.ToString().Split(" ")[0])) -and (!([string]::IsNullOrEmpty($dbFeatures)))) {
@@ -270,16 +270,15 @@ function Test-DbaMigrationConstraint {
 						}
 					}
 					else {
-						Write-Warning "Database '$dbName' is offline. Bring database online and re-run the command"
+						Write-Message -Level Warning -Message "Database '$dbName' is offline or not accessible. Bring database online and re-run the command."
 					}
-
 				}
 			}
 			else {
 				#SQL Server 2005 or under
-				Write-Warning "This validation will not be made on versions lower than SQL Server 2008 (v10)."
-				Write-Verbose "Source server version: $($sourceServer.versionMajor)."
-				Write-Verbose "Destination server version: $($destServer.versionMajor)."
+				Write-Message -Level Warning -Message "This validation will not be made on versions lower than SQL Server 2008 (v10)."
+				Write-Message -Level Verbose -Message "Source server version: $($sourceServer.VersionMajor)."
+				Write-Message -Level Verbose -Message "Destination server version: $($destServer.VersionMajor)."
 			}
 		}
 		else {
