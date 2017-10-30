@@ -32,6 +32,11 @@ function Test-DbaMaxDop {
 		.PARAMETER Detailed
 			If this switch is enabled, detailed information related to MaxDop settings is returned.
 
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
 		.NOTES
 			Tags: MaxDop, SPConfigure
 			Author  : Claudio Silva (@claudioessilva)
@@ -63,12 +68,15 @@ function Test-DbaMaxDop {
 	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[DbaInstance[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
-		[Switch]$Detailed
+		[Switch]$Detailed,
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
+		Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
+
 		$notesDopLT = "Before changing MaxDop, consider that the lower value may have been intentionally set."
 		$notesDopGT = "Before changing MaxDop, consider that the higher value may have been intentionally set."
 		$notesDopZero = "This is the default setting. Consider using the recommended value instead."
