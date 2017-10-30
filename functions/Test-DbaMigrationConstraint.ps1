@@ -166,14 +166,15 @@ function Test-DbaMigrationConstraint {
 			}
 
 			if ($sourceServer.VersionMajor -lt 10) {
-				throw "This function does not support versions lower than SQL Server 2008 (v10)"
+				Stop-Function -Message "This function does not support versions lower than SQL Server 2008 (v10)"
+				return
 			}
 
 			#if editions differs, from higher to lower one, verify the sys.dm_db_persisted_sku_features - only available from SQL 2008 +
-			if (($sourceServer.versionMajor -ge 10 -and $destServer.versionMajor -ge 10)) {
+			if (($sourceServer.VersionMajor -ge 10 -and $destServer.VersionMajor -ge 10)) {
 				foreach ($db in $Database) {
 					if ([string]::IsNullOrEmpty($db.Status)) {
-						$dbstatus = ($sourceServer.Databases | Where-Object {$_.Name -eq $db}).Status.ToString()
+						$dbstatus = ($sourceServer.Databases | Where-Object Name -eq $db).Status.ToString()
 						$dbName = $db
 					}
 					else {
@@ -181,12 +182,12 @@ function Test-DbaMigrationConstraint {
 						$dbName = $db.Name
 					}
 
-					Write-Verbose "Checking database '$dbName'."
+					Write-Message -Level Verbose -Message "Checking database '$dbName'."
 
 					if ($dbstatus.Contains("Offline") -eq $false) {
 						[long]$destVersionNumber = $($destServer.VersionString).Replace(".", "")
-						[string]$SourceVersion = "$($sourceServer.Edition) $($sourceServer.ProductLevel) ($($sourceServer.Version))"
-						[string]$DestinationVersion = "$($destServer.Edition) $($destServer.ProductLevel) ($($destServer.Version))"
+						[string]$sourceVersion = "$($sourceServer.Edition) $($sourceServer.ProductLevel) ($($sourceServer.Version))"
+						[string]$destVersion = "$($destServer.Edition) $($destServer.ProductLevel) ($($destServer.Version))"
 						[string]$dbFeatures = ""
 
 						try {
@@ -219,8 +220,8 @@ function Test-DbaMigrationConstraint {
 								[pscustomobject]@{
 									SourceInstance      = $sourceServer.Name
 									DestinationInstance = $destServer.Name
-									SourceVersion       = $SourceVersion
-									DestinationVersion  = $DestinationVersion
+									SourceVersion       = $sourceVersion
+									DestinationVersion  = $destVersion
 									Database            = $dbName
 									FeaturesInUse       = $dbFeatures
 									Notes               = "$notesCannotMigrate. Destination server edition is EXPRESS which does not support 'ChangeCapture' feature that is in use."
@@ -230,8 +231,8 @@ function Test-DbaMigrationConstraint {
 								[pscustomobject]@{
 									SourceInstance      = $sourceServer.Name
 									DestinationInstance = $destServer.Name
-									SourceVersion       = $SourceVersion
-									DestinationVersion  = $DestinationVersion
+									SourceVersion       = $sourceVersion
+									DestinationVersion  = $destVersion
 									Database            = $dbName
 									FeaturesInUse       = $dbFeatures
 									Notes               = $notesCanMigrate
@@ -248,8 +249,8 @@ function Test-DbaMigrationConstraint {
 								[pscustomobject]@{
 									SourceInstance      = $sourceServer.Name
 									DestinationInstance = $destServer.Name
-									SourceVersion       = $SourceVersion
-									DestinationVersion  = $DestinationVersion
+									SourceVersion       = $sourceVersion
+									DestinationVersion  = $destVersion
 									Database            = $dbName
 									FeaturesInUse       = $dbFeatures
 									Notes               = "$notesCannotMigrate There are features in use not available on destination instance."
@@ -260,8 +261,8 @@ function Test-DbaMigrationConstraint {
 								[pscustomobject]@{
 									SourceInstance      = $sourceServer.Name
 									DestinationInstance = $destServer.Name
-									SourceVersion       = $SourceVersion
-									DestinationVersion  = $DestinationVersion
+									SourceVersion       = $sourceVersion
+									DestinationVersion  = $destVersion
 									Database            = $dbName
 									FeaturesInUse       = $dbFeatures
 									Notes               = $notesCanMigrate
