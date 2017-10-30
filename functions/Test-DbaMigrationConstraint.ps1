@@ -193,12 +193,12 @@ function Test-DbaMigrationConstraint {
 						try {
 							$sql = "SELECT feature_name FROM sys.dm_db_persisted_sku_features"
 
-							$skufeatures = $sourceServer.Databases[$dbName].ExecuteWithResults($sql)
+							$skuFeatures = $sourceServer.Query($sql,$dbName)
 
-							Write-Verbose "Checking features in use..."
+							Write-Message -Level Verbose -Message "Checking features in use..."
 
-							if ($skufeatures.Tables[0].Rows.Count -gt 0) {
-								foreach ($row in $skufeatures.Tables[0].Rows) {
+							if ($skuFeatures.Count -gt 0) {
+								foreach ($row in $skuFeatures) {
 									$dbFeatures += ",$($row["feature_name"])"
 								}
 
@@ -206,15 +206,14 @@ function Test-DbaMigrationConstraint {
 							}
 						}
 						catch {
-							Write-Warning "Can't execute SQL on $sourceServer. `r`n $($_)"
-							Continue
+							Stop-Function -Message "Issue collecting sku features." -ErrorRecord $_ -Target $sourceServer -Continue
 						}
 
 						#If SQL Server 2016 SP1 (13.0.4001.0) or higher
 						if ($destVersionNumber -ge 13040010) {
 							<#
 								Need to verify if Edition = EXPRESS and database uses 'Change Data Capture' (CDC)
-								This means that database cannot be migrated because Express edition don't have SQL Server Agent
+								This means that database cannot be migrated because Express edition doesn't have SQL Server Agent
 							#>
 							if ($editions.Item($destServer.Edition.ToString().Split(" ")[0]) -eq 1 -and $dbFeatures.Contains("ChangeCapture")) {
 								[pscustomobject]@{
