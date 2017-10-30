@@ -197,7 +197,9 @@ function Test-DbaMaxDop {
 					$dbmaxdop = $database.MaxDop
 
 					$collection += [pscustomobject]@{
-						Instance              = $server.Name
+						ComputerName          = $server.NetName
+						InstanceName          = $server.ServiceName
+						SqlInstance           = $server.DomainInstanceName
 						InstanceVersion       = $server.Version
 						Database              = $database.Name
 						DatabaseMaxDop        = $dbmaxdop
@@ -205,33 +207,11 @@ function Test-DbaMaxDop {
 						RecommendedMaxDop     = $recommendedMaxDop
 						NUMANodes             = $numaNodes
 						NumberOfCores         = $numberOfCores
-						Notes                 = if ($dbmaxdop -eq 0) {
-							"Will use CurrentInstanceMaxDop value"
-						}
-						else {
-							"$notes"
-						}
+						Notes                 = if ($dbmaxdop -eq 0) { "Will use CurrentInstanceMaxDop value" } else { "$notes" }
 					}
 				}
 			}
-		}
-	}
-	end {
-		if ($Detailed) {
-			if ($hasScopedConfig) {
-				return ($collection | Select-Object Instance, InstanceVersion, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, NUMANodes, NumberOfCores, Notes)
-			}
-			else {
-				return ($collection | Select-Object Instance, CurrentInstanceMaxDop, RecommendedMaxDop, NUMANodes, NumberOfCores, Notes)
-			}
-		}
-		else {
-			if ($hasScopedConfig) {
-				return ($collection | Select-Object Instance, InstanceVersion, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes)
-			}
-			else {
-				return ($collection | Select-Object Instance, CurrentInstanceMaxDop, RecommendedMaxDop, Notes)
-			}
+			Select-DefaultView -InputObject $collection -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
 		}
 	}
 }
