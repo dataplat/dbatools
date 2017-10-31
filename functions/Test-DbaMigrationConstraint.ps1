@@ -137,7 +137,7 @@ function Test-DbaMigrationConstraint {
 		}
 
 		if ($Database -eq 0) {
-			$Database = $sourceServer.Databases | Where-Object isSystemObject -eq 0 | Select-Object Name, Status
+			$Database = $sourceServer.Databases | Where-Object IsSystemObject -eq 0 | Select-Object Name, Status
 		}
 
 		if ($ExcludeDatabase) {
