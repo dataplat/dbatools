@@ -1,42 +1,45 @@
-# Implement query accelerator for the server object
-Update-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server -MemberName Query -MemberType ScriptMethod -Value {
-	Param (
-		$Query,
+# Only update on first import
+if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
+	# Implement query accelerator for the server object
+	Update-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server -MemberName Query -MemberType ScriptMethod -Value {
+		Param (
+			$Query,
+			
+			$Database = "master",
+			
+			$AllTables = $false
+		)
 		
-		$Database = "master",
+		if ($AllTables) { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables }
+		else { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables[0] }
+	} -ErrorAction Ignore
+	
+	Update-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server -MemberName Invoke -MemberType ScriptMethod -Value {
+		Param (
+			$Command,
+			
+			$Database = "master"
+		)
 		
-		$AllTables = $false
-	)
+		$this.Databases[$Database].ExecuteNonQuery($Command)
+	} -ErrorAction Ignore
 	
-	if ($AllTables) { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables }
-	else { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables[0] }
-} -ErrorAction Ignore
-
-Update-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Server -MemberName Invoke -MemberType ScriptMethod -Value {
-	Param (
-		$Command,
+	Update-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Database -MemberName Query -MemberType ScriptMethod -Value {
+		Param (
+			$Query,
+			
+			$AllTables = $false
+		)
 		
-		$Database = "master"
-	)
+		if ($AllTables) { ($this.ExecuteWithResults($Query)).Tables }
+		else { ($this.ExecuteWithResults($Query)).Tables[0] }
+	} -ErrorAction Ignore
 	
-	$this.Databases[$Database].ExecuteNonQuery($Command)
-} -ErrorAction Ignore
-
-Update-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Database -MemberName Query -MemberType ScriptMethod -Value {
-	Param (
-		$Query,
+	Update-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Database -MemberName Invoke -MemberType ScriptMethod -Value {
+		Param (
+			$Command
+		)
 		
-		$AllTables = $false
-	)
-	
-	if ($AllTables) { ($this.ExecuteWithResults($Query)).Tables }
-	else { ($this.ExecuteWithResults($Query)).Tables[0] }
-} -ErrorAction Ignore
-
-Update-TypeData -TypeName Microsoft.SqlServer.Management.Smo.Database -MemberName Invoke -MemberType ScriptMethod -Value {
-	Param (
-		$Command
-	)
-	
-	$this.ExecuteNonQuery($Command)
-} -ErrorAction Ignore
+		$this.ExecuteNonQuery($Command)
+	} -ErrorAction Ignore
+}
