@@ -177,7 +177,7 @@ function Connect-DbaInstance {
 		[string]$ApplicationIntent,
 		[string]$BatchSeparator,
 		[string]$ClientName = "dbatools PowerShell module - dbatools.io - custom connection",
-		[int]$ConnectTimeout,
+		[int]$ConnectTimeout = ([Sqlcollaborative.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout),
 		[switch]$EncryptConnection,
 		[string]$FailoverPartner,
 		[switch]$IsActiveDirectoryUniversalAuth,
