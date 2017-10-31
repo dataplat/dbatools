@@ -1061,7 +1061,7 @@ function Copy-DbaDatabase {
 						$backupResult = $BackupTmpResult.BackupComplete
 						if ($backupResult -eq $false) {
 							$serviceAccount = $sourceServer.ServiceAccount
-							Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to $NetworkShare? Aborting routine for this database."
+							Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to $NetworkShare ? Aborting routine for this database."
 							
 							$copyDatabaseStatus.Status = "Failed"
 							$copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $NetworkShare"
