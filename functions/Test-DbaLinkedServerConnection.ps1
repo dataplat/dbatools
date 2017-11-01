@@ -59,19 +59,10 @@ function Test-DbaLinkedServerConnection {
 	param (
 		[Parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]
-		$SqlInstance,
-
-		[System.Management.Automation.PSCredential]
-		$SqlCredential,
-
-		[switch]
-		[Alias('Silent')]$EnableException
+		[object[]]$SqlInstance,
+		[PSCredential]$SqlCredential,
+		[switch][Alias('Silent')]$EnableException
 	)
-
-	begin {
-
-	}
 
 	process {
 		foreach ($instance in $SqlInstance) {
