@@ -163,17 +163,16 @@ function Test-DbaLastBackup {
 	)
 
 	process {
-		foreach ($instance in $sqlinstance) {
+		foreach ($instance in $SqlIntance) {
 
-			if (-not $destination -or $nodestination) {
-				$nodestination = $true
-				$destination = $instance
+			if (-not $Destination) {
+				$Destination = $instance
 				$DestinationCredential = $SqlCredential
 			}
 
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$sourceserver = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlCredential
+				$sourceServer = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -187,11 +186,11 @@ function Test-DbaLastBackup {
 				Stop-Function -Message "Failed to connect to: $destination" -Target $destination -Continue
 			}
 
-			if ($destserver.VersionMajor -lt $sourceserver.VersionMajor) {
+			if ($destserver.VersionMajor -lt $sourceServer.VersionMajor) {
 				Stop-Function -Message "$Destination is a lower version than $instance. Backups would be incompatible." -Continue
 			}
 
-			if ($destserver.VersionMajor -eq $sourceserver.VersionMajor -and $destserver.VersionMinor -lt $sourceserver.VersionMinor) {
+			if ($destserver.VersionMajor -eq $sourceServer.VersionMajor -and $destserver.VersionMinor -lt $sourceServer.VersionMinor) {
 				Stop-Function -Message "$Destination is a lower version than $instance. Backups would be incompatible." -Continue
 			}
 
@@ -207,7 +206,7 @@ function Test-DbaLastBackup {
 			}
 
 			if ($instance -ne $destination -and !$CopyFile) {
-				$sourcerealname = $sourceserver.ComputerNetBiosName
+				$sourcerealname = $sourceServer.ComputerNetBiosName
 				$destrealname = $destserver.ComputerNetBiosName
 
 				if ($BackupFolder) {
@@ -217,7 +216,7 @@ function Test-DbaLastBackup {
 				}
 			}
 
-			$source = $sourceserver.DomainInstanceName
+			$source = $sourceServer.DomainInstanceName
 			$destination = $destserver.DomainInstanceName
 
 			if ($datadirectory) {
@@ -246,7 +245,7 @@ function Test-DbaLastBackup {
 			}
 
 			if (!$Database) {
-				$database = $sourceserver.databases.Name | Where-Object Name -ne 'tempdb'
+				$database = $sourceServer.databases.Name | Where-Object Name -ne 'tempdb'
 			}
 
 			if ($ExcludeDatabase) {
@@ -267,14 +266,14 @@ function Test-DbaLastBackup {
 					Write-Message -Level Verbose -Message "Processing $dbname"
 
 					$copysuccess = $true
-					$db = $sourceserver.databases[$dbname]
+					$db = $sourceServer.databases[$dbname]
 
 					# The db check is needed when the number of databases exceeds 255, then it's no longer auto-populated
 					if (!$db) {
 						Stop-Function -Message "$dbname does not exist on $source." -Continue
 					}
 
-					$lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly #-raw
+					$lastbackup = Get-DbaBackupHistory -SqlInstance $sourceServer -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly #-raw
 					if ($CopyFile) {
 						try {
 							Write-Message -Level Verbose -Message "Gathering information for file copy"
@@ -283,14 +282,14 @@ function Test-DbaLastBackup {
 							if (Test-Bound "IgnoreLogBackup") {
 								Write-Message -Level Verbose -Message "Skipping Log backups as requested"
 								$lastbackup = @()
-								$lastbackup += $full = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastFull #-raw
-								$diff = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastDiff # -raw
+								$lastbackup += $full = Get-DbaBackupHistory -SqlInstance $sourceServer -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastFull #-raw
+								$diff = Get-DbaBackupHistory -SqlInstance $sourceServer -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastDiff # -raw
 								if ($full.start -le $diff.start) {
 									$lastbackup += $diff
 								}
 							}
 							else {
-								$lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly #-raw
+								$lastbackup = Get-DbaBackupHistory -SqlInstance $sourceServer -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly #-raw
 							}
 
 							foreach ($backup in $lastbackup) {
@@ -298,7 +297,7 @@ function Test-DbaLastBackup {
 									$filename = Split-Path -Path $file.FullName -Leaf
 									Write-Message -Level Verbose -Message "Processing $filename"
 
-									$sourcefile = Join-AdminUnc -servername $sourceserver.ComputerNamePhysicalNetBIOS -filepath $file.Path
+									$sourcefile = Join-AdminUnc -servername $sourceServer.ComputerNamePhysicalNetBIOS -filepath $file.Path
 
 									if ($destserver.ComputerNamePhysicalNetBIOS -ne $env:COMPUTERNAME) {
 										$remotedestdirectory = Join-AdminUnc -servername $destserver.ComputerNamePhysicalNetBIOS -filepath $copyPath
