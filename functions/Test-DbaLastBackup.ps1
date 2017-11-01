@@ -195,8 +195,8 @@ function Test-DbaLastBackup {
 			}
 
 			if ($CopyPath) {
-				$testpath = Test-DbaSqlPath -SqlInstance $destServer -Path $CopyPath
-				if (!$testpath) {
+				$testPath = Test-DbaSqlPath -SqlInstance $destServer -Path $CopyPath
+				if (!$testPath) {
 					Stop-Function -Message "$destServer cannot access $CopyPath" -Continue
 				}
 			}
@@ -205,12 +205,12 @@ function Test-DbaLastBackup {
 				$copyPath = $destServer.BackupDirectory
 			}
 
-			if ($instance -ne $destination -and !$CopyFile) {
-				$sourcerealname = $sourceServer.ComputerNetBiosName
-				$destrealname = $destServer.ComputerNetBiosName
+			if ($instance -ne $Destination -and !$CopyFile) {
+				$sourceRealName = $sourceServer.ComputerNetBiosName
+				$destRealName = $destServer.ComputerNetBiosName
 
 				if ($BackupFolder) {
-					if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcerealname -ne $destrealname) {
+					if ($BackupFolder.StartsWith("\\") -eq $false -and $sourceRealName -ne $destRealName) {
 						Stop-Function -Message "Backup folder must be a network share if the source and destination servers are not the same." -Continue
 					}
 				}
@@ -219,24 +219,24 @@ function Test-DbaLastBackup {
 			$source = $sourceServer.DomainInstanceName
 			$destination = $destServer.DomainInstanceName
 
-			if ($datadirectory) {
-				if (!(Test-DbaSqlPath -SqlInstance $destServer -Path $datadirectory)) {
-					$serviceaccount = $destServer.ServiceAccount
-					Stop-Function -Message "Can't access $datadirectory Please check if $serviceaccount has permissions" -Continue
+			if ($DataDirectory) {
+				if (!(Test-DbaSqlPath -SqlInstance $destServer -Path $DataDirectory)) {
+					$serviceAccount = $destServer.ServiceAccount
+					Stop-Function -Message "Can't access $DataDirectory Please check if $serviceAccount has permissions" -Continue
 				}
 			}
 			else {
-				$datadirectory = Get-SqlDefaultPaths -SqlInstance $destServer -FileType mdf
+				$DataDirectory = Get-SqlDefaultPaths -SqlInstance $destServer -FileType mdf
 			}
 
-			if ($logdirectory) {
-				if (!(Test-DbaSqlPath -SqlInstance $destServer -Path $logdirectory)) {
-					$serviceaccount = $destServer.ServiceAccount
-					Stop-Function -Message "$Destination can't access its local directory $logdirectory. Please check if $serviceaccount has permissions" -Continue
+			if ($LogDirectory) {
+				if (!(Test-DbaSqlPath -SqlInstance $destServer -Path $LogDirectory)) {
+					$serviceAccount = $destServer.ServiceAccount
+					Stop-Function -Message "$Destination can't access its local directory $LogDirectory. Please check if $serviceAccount has permissions" -Continue
 				}
 			}
 			else {
-				$logdirectory = Get-SqlDefaultPaths -SqlInstance $destServer -FileType ldf
+				$LogDirectory = Get-SqlDefaultPaths -SqlInstance $destServer -FileType ldf
 			}
 
 			if ((Test-Bound "AzureCredential") -and (Test-Bound "CopyFile")) {
@@ -244,25 +244,22 @@ function Test-DbaLastBackup {
 				$CopyFile = $false
 			}
 
-			if (!$Database) {
-				$database = $sourceServer.databases.Name | Where-Object Name -ne 'tempdb'
+			$databases = $sourceServer.Databases | Where-Object Name -NE 'tempdb'
+
+			if ($Database) {
+				$databases = $databases | Where-Object Name -In $Database
 			}
 
 			if ($ExcludeDatabase) {
-				$database = $database | Where-Object { $_ -notin $ExcludeDatabase }
+				$databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
 			}
 
 			if ($Database -or $ExcludeDatabase) {
-				$dblist = $database
+				$dblist = $databases.Name
 
 				Write-Message -Level Verbose -Message "Getting recent backup history for $instance"
 
 				foreach ($dbname in $dblist) {
-					if ($dbname -eq 'tempdb') {
-						Write-Message -Level Verbose -Message "Skipping tempdb"
-						continue
-					}
-
 					Write-Message -Level Verbose -Message "Processing $dbname"
 
 					$copysuccess = $true
@@ -385,10 +382,10 @@ function Test-DbaLastBackup {
 								Write-Message -Level Verbose -Message "Performing restore"
 								$startRestore = Get-Date
 								if ($verifyonly) {
-									$restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destServer -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
+									$restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destServer -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $LogDirectory -VerifyOnly:$VerifyOnly -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
 								}
 								else {
-									$restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destServer -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
+									$restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destServer -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $LogDirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
 								}
 
 								$endRestore = Get-Date
