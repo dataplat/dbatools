@@ -66,7 +66,9 @@ function Test-DbaLinkedServerConnection {
 
 	process {
 		foreach ($instance in $SqlInstance) {
-			if ($Instance.LinkedLive) { $LinkedServerCollection = $Instance.LinkedServer }
+			if ($Instance.LinkedLive) {
+				$LinkedServerCollection = $Instance.LinkedServer
+			}
 			else {
 				try {
 					Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -93,9 +95,5 @@ function Test-DbaLinkedServerConnection {
 				New-Object Sqlcollaborative.Dbatools.Validation.LinkedServerResult($ls.parent.NetName, $ls.parent.ServiceName, $ls.parent.DomainInstanceName, $ls.Name, $ls.DataSource, $connectivity, $result)
 			}
 		}
-	}
-
-	end {
-
 	}
 }
