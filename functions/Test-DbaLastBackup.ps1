@@ -438,12 +438,12 @@ function Test-DbaLastBackup {
 
 									## Drop the database
 									try {
-										$removeresult = Remove-SqlDatabase -SqlInstance $destServer -DbName $dbName
+										$removeResult = Remove-SqlDatabase -SqlInstance $destServer -DbName $dbName
 										Write-Message -Level Verbose -Message "Dropped $dbName Database on $destination"
 									}
 									catch {
 										$destServer.Databases.Refresh()
-										if ($destServer.databases[$dbName]) {
+										if ($destServer.Databases[$dbName]) {
 											Write-Message -Level Warning -Message "Failed to Drop database $dbName on $destination"
 										}
 									}
@@ -471,19 +471,19 @@ function Test-DbaLastBackup {
 					if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
 						[pscustomobject]@{
 							SourceServer   = $source
-							TestServer	    = $destination
+							TestServer     = $destination
 							Database       = $db.name
-							FileExists	    = $fileExists
+							FileExists     = $fileExists
 							Size           = [dbasize](($lastBackup.TotalSize | Measure-Object -Sum).Sum)
 							RestoreResult  = $success
-							DbccResult	    = $dbccResults
+							DbccResult     = $dbccResults
 							RestoreStart   = [dbadatetime]$startRestore
-							RestoreEnd	    = [dbadatetime]$endRestore
+							RestoreEnd     = [dbadatetime]$endRestore
 							RestoreElapsed = $restoreElapsed
 							DbccStart      = [dbadatetime]$startDbcc
 							DbccEnd        = [dbadatetime]$endDbcc
 							DbccElapsed    = $dbccElapsed
-							BackupDate	    = $lastBackup.Start
+							BackupDate     = $lastBackup.Start
 							BackupFiles    = $lastBackup.FullName
 						}
 					}
