@@ -66,21 +66,22 @@ function Test-DbaLinkedServerConnection {
 
 	process {
 		foreach ($instance in $SqlInstance) {
-			if ($Instance.LinkedLive) {
-				$LinkedServerCollection = $Instance.LinkedServer
+			if ($instance.LinkedLive) {
+				$linkedServerCollection = $instance.LinkedServer
 			}
 			else {
 				try {
 					Write-Message -Level Verbose -Message "Connecting to $instance"
-					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-					$LinkedServerCollection = $server.LinkedServers
+					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				}
 				catch {
 					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				}
 			}
 
-			foreach ($ls in $LinkedServerCollection) {
+			$linkedServerCollection = $server.LinkedServers
+
+			foreach ($ls in $linkedServerCollection) {
 				Write-Message -Level Verbose -Message "Testing linked server $($ls.name) on server $($ls.parent.name)"
 				try {
 					$null = $ls.TestConnection()
