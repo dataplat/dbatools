@@ -94,11 +94,11 @@ Function Test-DbaBackupInformation {
             
             ForEach ($path in ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object PhysicalName -Unique).physicalname){
                 if(Test-DbaSqlPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $path){
-                    if ($path -in (Get-DbaDatabaseFile -SqlInstance localhost\sqlexpress2016 -Database $Database).PhysicalName -and $WithReplace -ne $True){
+                    if ($path -in (Get-DbaDatabaseFile -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database).PhysicalName -and $WithReplace -ne $True){
                         Write-Message -Message "File $Path already exists on $SqlInstance and WithReplace not specified, cannot restore" -Level Warning
                         $VerificationErrors++
                     }
-                    elseif ($path -in (Get-DbaDatabaseFile -SqlInstance localhost\sqlexpress2016 -Database $Database).PhysicalName){
+                    elseif ($path -in (Get-DbaDatabaseFile -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database).PhysicalName){
                         Write-Message -Message "File $Path already exists on $SqlInstance and owned by another database, cannot restore" -Level Warning
                         $VerificationErrors++
                     }
