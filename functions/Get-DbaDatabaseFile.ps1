@@ -225,4 +225,7 @@ function Get-DbaDatabaseFile {
 			}
 		}
 	}
+	end {
+		$server.ConnectionContext.Disconnect()
+	}
 }

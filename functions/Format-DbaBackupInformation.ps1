@@ -86,13 +86,15 @@ Function Format-DbaBackupInformation{
     Begin{
         
         Write-Message -Message "Starting" -Level Verbose
-        if ($ReplaceDatabaseName -is [string]){
+        if ($ReplaceDatabaseName -is [string] -or $ReplaceDatabaseName.ToString() -ne 'System.Collections.Hashtable'){
             Write-Message -Message "String passed in for DB rename" -Level Verbose
             $ReplaceDatabaseNameType = 'single'
         }
-        elseif ($ReplaceDatabaseName -is [HashTable]) {
+        elseif ($ReplaceDatabaseName -is [HashTable] -or $ReplaceDatabaseName.ToString() -eq 'System.Collections.Hashtable' ) {
             Write-Message -Message "Hashtable passed in for DB rename" -Level Verbose
             $ReplaceDatabaseNameType='multi'
+        }else{
+            Write-Message -Message "ReplacemenDatabaseName is $($ReplaceDatabaseName.Gettype().ToString()) - $ReplaceDatabaseName" -level Verbose
         }
         if ((Test-Bound -Parameter DataFileDirectory) -and $DataFileDirectory[-1] -eq '\' ){
             $DataFileDirectory = $DataFileDirectory.substring(0,$DataFileDirectory.length-1)
@@ -123,7 +125,7 @@ Function Format-DbaBackupInformation{
                 $History | Add-Member -Name 'IsVerified' -Type NoteProperty -Value $False
              }
              
-            if ($ReplaceDatabaseNameType -eq 'single'){
+            if ($ReplaceDatabaseNameType -eq 'single' -and $ReplaceDatabaseName -ne '' ){
                 $History.Database = $ReplaceDatabaseName
                 $ReplaceMentName = $ReplaceDatabaseName
                 Write-Message -Message "New DbName (String) = $($History.Database)" -Level Verbose
