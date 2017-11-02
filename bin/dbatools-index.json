@@ -2852,12 +2852,12 @@
     },
     {
         "CommandName":  "Set-DbaMaxMemory",
-        "Description":  "Sets SQL Server max memory then displays information relating to SQL Server Max Memory configuration settings. \n\nInspired by Jonathan Kehayias\u0027s post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this uses a formula to \ndetermine the default optimum RAM to use, then sets the SQL max value to that number.\n\nJonathan notes that the formula used provides a *general recommendation* that doesn\u0027t account for everything that may \nbe going on in your specific environment.",
-        "Tags":  "",
+        "Description":  "Sets SQL Server max memory then displays information relating to SQL Server Max Memory configuration settings.\n\nInspired by Jonathan Kehayias\u0027s post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this uses a formula to\ndetermine the default optimum RAM to use, then sets the SQL max value to that number.\n\nJonathan notes that the formula used provides a *general recommendation* that doesn\u0027t account for everything that may\nbe going on in your specific environment.",
+        "Tags":  "MaxMemory",
         "Synopsis":  "Sets SQL Server \u0027Max Server Memory\u0027 configuration setting to a new value then displays information this setting.",
         "Name":  "Set-DbaMaxMemory",
         "Links":  "https://dbatools.io/Set-DbaMaxMemory",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxMemory sqlserver1\r\n\r\nSet max memory to the recommended MB on just one server named \"sqlserver1\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxMemory -SqlInstance sqlserver1 -MaxMB 2048\r\n\r\nExplicitly max memory to 2048 MB on just one server, \"sqlserver1\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver | Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } \r\n| Set-DbaMaxMemory\r\n\r\nFind all servers in SQL Server Central Management server that have Max SQL memory set to higher than the total memory \r\nof the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use the default recommendation.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxMemory sqlserver1\r\n\r\nSet max memory to the recommended MB on just one server named \"sqlserver1\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxMemory -SqlInstance sqlserver1 -MaxMB 2048\r\n\r\nExplicitly max memory to 2048 MB on just one server, \"sqlserver1\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver | Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } \r\n| Set-DbaMaxMemory\r\n\r\nFind all servers in SQL Server Central Management server that have Max SQL memory set to higher than the total memory\r\nof the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use the default recommendation.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-DbaNetworkCertificate",
@@ -3205,7 +3205,7 @@
     {
         "CommandName":  "Test-DbaLinkedServerConnection",
         "Description":  "Test each linked server on the instance",
-        "Tags":  "",
+        "Tags":  "LinkedServer",
         "Author":  "Thomas LaRock ( https://thomaslarock.com )",
         "Synopsis":  "Test all linked servers from the sql servers passed",
         "Name":  "Test-DbaLinkedServerConnection",
@@ -3223,8 +3223,11 @@
     },
     {
         "CommandName":  "Test-DbaMaxDop",
-        "Description":  "Inspired by Sakthivel Chidambaram\u0027s post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator-SqlInstance/), \nthis script displays a SQL Server\u0027s: max dop configured, and the calculated recommendation.\n\nFor SQL Server 2016 shows:\n\t- Instance max dop configured and the calculated recommendation\n\t- max dop configured per database (new feature)\n\nMore info: \n\thttps://support.microsoft.com/en-us/kb/2806535\n\thttps://blogs.msdn.microsoft.com/sqlsakthi/2012/05/23/wow-we-have-maxdop-calculator-for-sql-server-it-makes-my-job-easier/\n\nThese are just general recommendations for SQL Server and are a good starting point for setting the \"max degree of parallelism\" option.",
-        "Tags":  "",
+        "Description":  "Inspired by Sakthivel Chidambaram\u0027s post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator-SqlInstance/),\nthis script displays a SQL Server\u0027s: max dop configured, and the calculated recommendation.\n\nFor SQL Server 2016 shows:\n\t- Instance max dop configured and the calculated recommendation\n\t- max dop configured per database (new feature)\n\nMore info:\n\thttps://support.microsoft.com/en-us/kb/2806535\n\thttps://blogs.msdn.microsoft.com/sqlsakthi/2012/05/23/wow-we-have-maxdop-calculator-for-sql-server-it-makes-my-job-easier/\n\nThese are just general recommendations for SQL Server and are a good starting point for setting the \"max degree of parallelism\" option.",
+        "Tags":  [
+                     "MaxDop",
+                     "SPConfigure"
+                 ],
         "Synopsis":  "Displays information relating to SQL Server Max Degree of Parallelism setting. Works on SQL Server 2005-2016.",
         "Name":  "Test-DbaMaxDop",
         "Links":  "https://dbatools.io/Test-DbaMaxDop",
@@ -3264,15 +3267,20 @@
     {
         "CommandName":  "Test-DbaOptimizeForAdHoc",
         "Description":  "When this option is set, plan cache size is further reduced for single-use ad hoc OLTP workload.\n\nMore info: https://msdn.microsoft.com/en-us/library/cc645587.aspx\nhttp://www.sqlservercentral.com/blogs/glennberry/2011/02/25/some-suggested-sql-server-2008-r2-instance-configuration-settings/\n\nThese are just general recommendations for SQL Server and are a good starting point for setting the \"optimize for adhoc workloads\" option.",
+        "Tags":  [
+                     "Configure",
+                     "SPConfigure"
+                 ],
         "Author":  "Brandon Abshire, netnerds.net",
         "Synopsis":  "Displays information relating to SQL Server Optimize for AdHoc Workloads setting.  Works on SQL Server 2008-2016.",
         "Name":  "Test-DbaOptimizeForAdHoc",
         "Links":  "https://dbatools.io/Test-DbaOptimizeForAdHoc",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaOptimizeForAdHoc -SqlInstance sql2008, sqlserver2012\r\n\r\nGet Optimize for AdHoc Workloads setting for servers sql2008 and sqlserver2012 and also the recommended one.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaOptimizeForAdHoc -SqlInstance sql2008, sqlserver2012\r\n\r\nValidates whether Optimize for AdHoc Workloads setting is enabled for servers sql2008 and sqlserver2012.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaPowerPlan",
-        "Description":  "Checks the Power Plan settings on a computer against best practices recommendations. If one server is checked, only $true or $false is returned. If multiple servers are checked, each server\u0027s name and an IsBestPractice field are returned.\n\nSpecify -Detailed for details.\n\nReferences:\nhttps://support.microsoft.com/en-us/kb/2207548\nhttp://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/",
+        "Description":  "Checks the Power Plan settings on a computer against best practices recommendations. If one server is checked, only $true or $false is returned. If multiple servers are checked, each server\u0027s name and an isBestPractice field are returned.\n\nSpecify -Detailed for details.\n\nReferences:\nhttps://support.microsoft.com/en-us/kb/2207548\nhttp://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/",
+        "Tags":  "PowerPlan",
         "Synopsis":  "Checks the Power Plan settings for compliance with best practices, which recommend High Performance for SQL Server.",
         "Name":  "Test-DbaPowerPlan",
         "Links":  "https://dbatools.io/Test-DbaPowerPlan",
