@@ -13,24 +13,23 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 	To test any module from any path, use https://github.com/juneb/PesterTDD/Module.Help.Tests.ps1
 #>
 if ($SkipHelpTest) { return }
-. "$ModuleBase\tests\InModule.Help.Exceptions.ps1"
+. "$PSScriptRoot\InModule.Help.Exceptions.ps1"
 
-$excludedNames = (Get-ChildItem "$ModuleBase\internal" | Where-Object Name -like "*.ps1" ).BaseName
-$commands = Get-Command -Module (Get-Module dbatools) -CommandType Cmdlet, Function, Workflow | Where-Object Name -notin $excludedNames
-
+$includedNames = (Get-ChildItem "$PSScriptRoot\..\functions" | Where-Object Name -like "*.ps1" ).BaseName
+$commands = Get-Command -Module (Get-Module dbatools) -CommandType Cmdlet, Function, Workflow | Where-Object Name -in $includedNames
 
 ## When testing help, remember that help is cached at the beginning of each session.
 ## To test, restart session.
 
 
 foreach ($command in $commands) {
-    $commandName = $command.Name
-    
-    # Skip all functions that are on the exclusions list
-    if ($global:FunctionHelpTestExceptions -contains $commandName) { continue }
-    
-    # The module-qualified command fails on Microsoft.PowerShell.Archive cmdlets
-    $Help = Get-Help $commandName -ErrorAction SilentlyContinue
+	$commandName = $command.Name
+	
+	# Skip all functions that are on the exclusions list
+	if ($global:FunctionHelpTestExceptions -contains $commandName) { continue }
+	
+	# The module-qualified command fails on Microsoft.PowerShell.Archive cmdlets
+	$Help = Get-Help $commandName -ErrorAction SilentlyContinue
 	$testhelperrors = 0
 	$testhelpall = 0
 	Describe "Test help for $commandName" {

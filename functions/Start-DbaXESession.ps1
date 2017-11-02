@@ -17,6 +17,9 @@ function Start-DbaXESession {
 
 	.PARAMETER AllSessions
 	Start all Extended Events sessions on an instance, ignoring the packaged sessions: AlwaysOn_health, system_health, telemetry_xevents.
+	
+	.PARAMETER SessionCollection
+	Internal parameter to support piping from Get-DbaXESession
 
 	.PARAMETER EnableException
 	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
