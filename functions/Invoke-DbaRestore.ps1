@@ -104,7 +104,7 @@ Function Invoke-DbaRestore{
             $backups = $InternalHistory | Where-Object {$_.Database -eq $Database} | Sort-Object -Property LastLsn
             ForEach ($backup in $backups){
                 $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
-                if (($backup -ne $backups[-1] -and $StandbyDirectory -eq '')) -or $true -eq $NoRecovery{
+                if (($backup -ne $backups[-1] -and $StandbyDirectory -eq '') -or $true -eq $NoRecovery){
                     $Restore.NoRecovery = $True
                 }elseif ($backup -ne $backups[-1] -and '' -ne $StandbyDirectory) {
                     Write-Message -Level Verbose -Message "Setting standby on last file"
