@@ -100,7 +100,7 @@ function Select-DbaBackupInformation{
     }
     
     end{ 
-        if (Test-Bound -ParameterName DatabaseName){
+        if ((Test-Bound -ParameterName DatabaseName) -and '' -ne $DatabaseName){
             Write-Message -Message "Filtering by DatabaseName" -Level Verbose 
             $InternalHistory = $InternalHistory | Where-Object {$_.Database -in $DatabaseName}
         }
@@ -142,7 +142,7 @@ function Select-DbaBackupInformation{
                     $dbhistory += $DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID}
                 }
                 # Get Last T-log
-                $dbHistory += $DatabaseHistory | Where-Object {$_.Type -in ('Log','Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
+                $dbHistory += $DatabaseHistory | Where-Object {$_.Type -in ('Log','Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn  | Select-Object -First 1
             }
 
             $dbHistory

@@ -62,15 +62,20 @@ Function Test-DbaBackupInformation {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
+        $InternalHistory = @()
     }
-    Process{}
+    Process{
+        ForEach ($bh in $BackupHistory){
+            $InternalHistory += $bh
+        }
+    }
     End{
-        $Databases = $BackupHistory.Database | Select-Object -Unique
+        $Databases = $InternalHistory.Database | Select-Object -Unique
         ForEach ($Database in $Databases){
             $VerificationErrors = 0
-
+            Write-Message -Message "Testing restore for $Database" -Level Verbose
             #Test we're only restoring backups from one dataase, or hilarity will ensure
-            $DbHistory = $BackupHistory | Where-Object {$_.Database -eq $Database}
+            $DbHistory = $InternalHistory | Where-Object {$_.Database -eq $Database}
             if (( $DbHistory | Select-Object -Property OriginalDatabase -unique ).count -gt 1){
                 Write-Message -Message "Trying to restore $Database from multiple sources databases" -Level Warning
                 $VerificationErrors++
@@ -80,7 +85,7 @@ Function Test-DbaBackupInformation {
             $DbCheck = Get-DbaDatabase -SqlInstance $Sqlinstance -SqlCredential $SqlCredential -Database $Database
 
             if ($null -ne $DbCheck -and $WithReplace -ne $true){
-                Write-Message -Message "$Database exists on $SqlInstance, cannot continue without WithReplace" -Level Warning
+                Write-Message -Message "$Database exists and WithReplace not specified, stopping" -Level Warning
                 $VerificationErrors++
             }
 
@@ -99,14 +104,16 @@ Function Test-DbaBackupInformation {
                     }
                 }
                 else {
-                    $ConfirmMessage = "`n Creating Folder $(Split-Path $path) on $SqlInstance `n"                  
-                    If ($Pscmdlet.ShouldProcess("$Path on $SqlInstance `n `n", $ConfirmMessage)) {
-                        if (New-DbaSqlDirectory -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path (Split-path $path)){
-                            Write-Message -Message "Created Folder $(Split-path $path) on $SqlInstance" -Level Verbose
-                        }
-                        else {
-                            Write-Message -Message "Failed to create $(Split-path $path) on" $SqlInstance -Level Warning
-                            $VerificationErrors++
+                    if (!(Test-DbaSqlPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path (Split-path $path)) ){
+                        $ConfirmMessage = "`n Creating Folder $(Split-Path $path) on $SqlInstance `n"                  
+                        If ($Pscmdlet.ShouldProcess("$Path on $SqlInstance `n `n", $ConfirmMessage)) {
+                            if (New-DbaSqlDirectory -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path (Split-path $path)){
+                                Write-Message -Message "Created Folder $(Split-path $path) on $SqlInstance" -Level Verbose
+                            }
+                            else {
+                                Write-Message -Message "Failed to create $(Split-path $path) on $SqlInstance" -Level Warning
+                                $VerificationErrors++
+                            }
                         }
                     }
                 }
@@ -121,10 +128,19 @@ Function Test-DbaBackupInformation {
             }
 
             #Test for LSN chain
+            if (!($DbHistory | Test-DbaLsnChain)) {
+                Write-Message -Message "LSN Check failed" -Level Verbose
+                $VerificationErrors++
+            }
 
             if ($VerificationErrors -eq 0){
-                $BackupHistory | Where-Object {$_.Database -eq $Database} | ForEach-Object ($IsVerified = $True)
+                Write-Message -Message "Marking $Database as verified" -Level Verbose
+                $InternalHistory | Where-Object {$_.Database -eq $Database} | ForEach-Object {$_.IsVerified = $True}
+            }
+            else{
+                Write-Message -Message "Verification errors  = $VerificationErrors" -Level Verbose
             }
         }
+        $InternalHistory
     }
 }

@@ -173,7 +173,7 @@ function Get-DbaBackupInformation {
                     }
                 }
                 else {
-                    Write-Message -Message "$f does not exist or is unreadable" -Leve Warning
+                    Write-Message -Message "$f does not exist or is unreadable" -Level Warning
                 }
             }
         }
@@ -182,12 +182,33 @@ function Get-DbaBackupInformation {
             $groupResults = @()
             if ($NoXpDirTree -ne $true){
                 ForEach ($f in $path) {
-                    $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                    if ($f -match '\.\w{3}\Z') {
+                        Write-Message -Message "Testing a single file $f " -Level Verbose
+                        if ((Test-DbaSqlPath -Path $f -SqlInstance $SqlInstance -SqlCredential $SqlCredential) -and $p -notlike 'http*') {
+                            $f = $f | Select-Object *, @{ Name = "FullName"; Expression = { $f } }
+                            $files += $f
+                        }
+                    }
+                    else
+                    {
+                        Write-Message -Message "Testing a folder $f" -Level Verbose
+                        $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                    }
                 }
             } 
             else {
                 ForEach ($f in $path) {
-                    $Files += Get-ChildItem -Path $f -file -Recurse:$recurse
+                    Write-Verbose "Not using sql for $f"
+                    if ($f -is [System.IO.FileSystemInfo]){
+                        if ($f.PsIsContainer -eq $true){
+                            Write-Verbose "folder $($f.fullname)"
+                            $Files = Get-ChildItem -Path $f.fullname -File -Recurse:$DirectoryRecurse
+                        }
+                        else {
+                            Write-verbose "File"
+                            $Files += $f.fullname
+                        }
+                    }
                 }
             }
             

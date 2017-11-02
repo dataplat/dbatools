@@ -31,90 +31,107 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$FilteredRestoreFiles,
-        [switch]$Continue
+        [switch]$Continue,
+        [switch]$EnableException
 	)
 
-    #Need to anchor  with full backup:
-    $FunctionName =(Get-PSCallstack)[0].Command
-    if ($continue)
-    {
-        return $true
-    }
-    Write-Verbose "$FunctionName - Testing LSN Chain"
-    if ("BackupTypeDescription" -notin $FilteredRestoreFiles.PSobject.Properties.name){
-        $TypeName = 'Type'
-    }
-    else{
-        $TypeName = "BackupTypeDescription"
-    } 
-    $FullDBAnchor = $FilteredRestoreFiles | Where-Object {$_.$TypeName -eq 'Database'}
-    if (($FullDBAnchor | Group-Object -Property FirstLSN | Measure-Object).count -ne 1)
-    {
-        $cnt = ($FullDBAnchor | Group-Object -Property FirstLSN | Measure-Object).count
-        Foreach ($tFile in $FullDBAnchor){write-verbose "$($tfile.FirstLsn) - $($tfile.TypeName)"}
-        Write-Verbose "$FunctionName - db count = $cnt"
-        Write-Warning "$FunctionName - More than 1 full backup from a different LSN, or less than 1, neither supported"
 
-        return $false
-        break;
+    Begin{
+        #Need to anchor  with full backup:
+        $FunctionName =(Get-PSCallstack)[0].Command
+        $TestHistory = @()
     }
-
-    #Via LSN chain:
-    [BigInt]$CheckPointLSN = ($FullDBAnchor | Select-Object -First 1).CheckPointLSN.ToString()
-    [BigInt]$FullDBLastLSN = ($FullDBAnchor | Select-Object -First 1).LastLSN.ToString()
-    $BackupWrongLSN = $FilteredRestoreFiles | Where-Object {$_.DatabaseBackupLSN -ne $CheckPointLSN}
-    #Should be 0 in there, if not, lets check that they're from during the full backup
-    if ($BackupWrongLSN.count -gt 0 ) 
-    {
-        if (($BackupWrongLSN | Where-Object {[BigInt]$_.LastLSN.ToString() -lt $FullDBLastLSN}).count -gt 0)
+    Process {
+        ForEach ($bh in $FilteredRestoreFiles){
+            $TestHistory += $bh
+        }
+    }
+    end {
+        if ($continue)
         {
-            Write-Warning "$FunctionName - We have non matching LSNs - not supported"
+            return $true
+        }
+        Write-Verbose "$FunctionName - Testing LSN Chain"
+        if ($null -eq $TestHistory.BackupTypeDescription){
+            $TypeName = 'Type'
+        }
+        else{
+            $TypeName = "BackupTypeDescription"
+        } 
+        write-Verbose "TypeName = $typename "
+        
+        $FullDBAnchor = $TestHistory | Where-Object {$_.$TypeName -eq 'Database'}
+
+        if (($FullDBAnchor | Group-Object -Property FirstLSN | Measure-Object).count -ne 1)
+        {
+            $cnt = ($FullDBAnchor | Group-Object -Property FirstLSN | Measure-Object).count
+            Foreach ($tFile in $FullDBAnchor){write-verbose "$($tfile.FirstLsn) - $($tfile.TypeName)"}
+            Write-Verbose "$FunctionName - db count = $cnt"
+            Write-Warning "$FunctionName - More than 1 full backup from a different LSN, or less than 1, neither supported"
+
             return $false
             break;
         }
-    }
-    $DiffAnchor = $FilteredRestoreFiles | Where-Object {$_.TypeName -eq 'Database Differential'}
-    #Check for no more than a single Differential backup
-    if (($DiffAnchor.FirstLSN | Select-Object -unique | Measure-Object).count -gt 1)
-    {
-        Write-Warning "$FunctionName - More than 1 differential backup, not  supported"
-        return $false
-        break;        
-    } 
-    elseif (($DiffAnchor | Measure-Object).count -eq 1)
-    {
-        $TlogAnchor = $DiffAnchor
-    } 
-    else 
-    {
-        $TlogAnchor = $FullDBAnchor
-    }
 
-
-    #Check T-log LSNs form a chain.
-    $TranLogBackups = $FilteredRestoreFiles | Where-Object {$_.TypeName -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $FullDBAnchor.CheckPointLSN} | Sort-Object -Property LastLSN, FirstLsn
-    for ($i=0; $i -lt ($TranLogBackups.count)-1)
-    {
-        if ($i -eq 0)
+        #Via LSN chain:
+        [BigInt]$CheckPointLSN = ($FullDBAnchor | Select-Object -First 1).CheckPointLSN.ToString()
+        [BigInt]$FullDBLastLSN = ($FullDBAnchor | Select-Object -First 1).LastLSN.ToString()
+        $BackupWrongLSN = $FilteredRestoreFiles | Where-Object {$_.DatabaseBackupLSN -ne $CheckPointLSN}
+        #Should be 0 in there, if not, lets check that they're from during the full backup
+        if ($BackupWrongLSN.count -gt 0 ) 
         {
-            if ($TranLogBackups[$i].FirstLSN -ge $TlogAnchor.LastLSN)
+            if (($BackupWrongLSN | Where-Object {[BigInt]$_.LastLSN.ToString() -lt $FullDBLastLSN}).count -gt 0)
             {
-                Write-Warning "$FunctionName - Break in LSN Chain between $($TlogAnchor.BackupPath) and $($TranLogBackups[($i)].BackupPath) "
+                Write-Warning "$FunctionName - We have non matching LSNs - not supported"
                 return $false
-                break
-            }
-        }else {
-            if ($TranLogBackups[($i-1)].LastLsn -ne $TranLogBackups[($i)].FirstLSN -and ($TranLogBackups[($i)] -ne $TranLogBackups[($i-1)]))
-            {
-                Write-Warning "$FunctionName - Break in transaction log between $($TranLogBackups[($i-1)].BackupPath) and $($TranLogBackups[($i)].BackupPath) "
-                return $false
-                break
+                break;
             }
         }
-        $i++
+        $DiffAnchor = $TestHistory | Where-Object {$_.$TypeName -eq 'Database Differential'}
+        #Check for no more than a single Differential backup
+        if (($DiffAnchor.FirstLSN | Select-Object -unique | Measure-Object).count -gt 1)
+        {
+            Write-Warning "$FunctionName - More than 1 differential backup, not  supported"
+            return $false
+            break;        
+        } 
+        elseif (($DiffAnchor | Measure-Object).count -eq 1)
+        {
+            Write-Message -Message "Found a diff file, setting Log Anchor" -Level Verbose
+            $TlogAnchor = $DiffAnchor
+        } 
+        else 
+        {
+            $TlogAnchor = $FullDBAnchor
+        }
 
-    }  
-    Write-Verbose "$FunctionName - Passed LSN Chain checks" 
-    return $true
+
+        #Check T-log LSNs form a chain.
+        $TranLogBackups = $TestHistory | Where-Object {$_.$TypeName -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $FullDBAnchor.CheckPointLSN} | Sort-Object -Property LastLSN, FirstLsn
+        for ($i=0; $i -lt ($TranLogBackups.count))
+        {
+            Write-Verbose "looping t logs"
+            if ($i -eq 0)
+            {
+                if ($TranLogBackups[$i].FirstLSN -ge $TlogAnchor.LastLSN)
+                {
+                    Write-Warning "$FunctionName - Break in LSN Chain between $($TlogAnchor.BackupPath) and $($TranLogBackups[($i)].BackupPath) "
+                    return $false
+                    break
+                }
+            }else {
+                if ($TranLogBackups[($i-1)].LastLsn -ne $TranLogBackups[($i)].FirstLSN -and ($TranLogBackups[($i)] -ne $TranLogBackups[($i-1)]))
+                {
+                    Write-Warning "$FunctionName - Break in transaction log between $($TranLogBackups[($i-1)].BackupPath) and $($TranLogBackups[($i)].BackupPath) "
+                    return $false
+                    break
+                }
+            }
+            $i++
+
+        }  
+        Write-Verbose "$FunctionName - Passed LSN Chain checks" 
+        return $true
+
+    }
 }
-

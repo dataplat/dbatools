@@ -28,7 +28,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 			It "Should return False (faked lsn)" {
 				$FilteredFiles[4].FirstLsn = 2
 				$FilteredFiles[4].LastLsn = 1
-				$Output = $FilteredFiles | Test-DbaLsnChain -WarningAction SilentlyContinue
+				$Output =  Test-DbaLsnChain -WarningAction SilentlyContinue -FilteredRestoreFiles $FilteredFiles
 				$Output | Should be $False
 			}
 		}
