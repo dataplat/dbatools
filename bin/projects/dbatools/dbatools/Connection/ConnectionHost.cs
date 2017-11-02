@@ -13,7 +13,7 @@ namespace Sqlcollaborative.Dbatools.Connection
         /// </summary>
         public static Dictionary<string, ManagementConnection> Connections = new Dictionary<string, ManagementConnection>();
 
-        #region Configuration
+        #region Configuration Computer Management
         /// <summary>
         /// The time interval that must pass, before a connection using a known to not work connection protocol is reattempted
         /// </summary>
@@ -68,6 +68,13 @@ namespace Sqlcollaborative.Dbatools.Connection
         /// Whether the CM connection using PowerShell Remoting is disabled globally
         /// </summary>
         public static bool DisableConnectionPowerShellRemoting = true;
-        #endregion Configuration
+        #endregion Configuration Computer Management
+
+        #region Configuration Sql Connection
+        /// <summary>
+        /// The number of seconds before a sql connection attempt times out
+        /// </summary>
+        public static int SqlConnectionTimeout = 15;
+        #endregion Configuration Sql Connection
     }
 }
