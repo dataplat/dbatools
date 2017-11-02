@@ -1,17 +1,17 @@
 function Test-DbaMaxDop {
-	<# 
-		.SYNOPSIS 
+	<#
+		.SYNOPSIS
 			Displays information relating to SQL Server Max Degree of Parallelism setting. Works on SQL Server 2005-2016.
 
-		.DESCRIPTION 
-			Inspired by Sakthivel Chidambaram's post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator-SqlInstance/), 
+		.DESCRIPTION
+			Inspired by Sakthivel Chidambaram's post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator-SqlInstance/),
 			this script displays a SQL Server's: max dop configured, and the calculated recommendation.
 
 			For SQL Server 2016 shows:
 				- Instance max dop configured and the calculated recommendation
 				- max dop configured per database (new feature)
 
-			More info: 
+			More info:
 				https://support.microsoft.com/en-us/kb/2806535
 				https://blogs.msdn.microsoft.com/sqlsakthi/2012/05/23/wow-we-have-maxdop-calculator-for-sql-server-it-makes-my-job-easier/
 
@@ -32,8 +32,13 @@ function Test-DbaMaxDop {
 		.PARAMETER Detailed
 			If this switch is enabled, detailed information related to MaxDop settings is returned.
 
-		.NOTES 
-			Tags: 
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+		.NOTES
+			Tags: MaxDop, SPConfigure
 			Author  : Claudio Silva (@claudioessilva)
 			Requires: sysadmin access on SQL Servers
 
@@ -41,35 +46,37 @@ function Test-DbaMaxDop {
 			Copyright (C) 2016 Chrissy LeMaire
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-		.LINK 
+		.LINK
 			https://dbatools.io/Test-DbaMaxDop
 
-		.EXAMPLE   
+		.EXAMPLE
 			Test-DbaMaxDop -SqlInstance sql2008, sqlserver2012
 
 			Get Max DOP setting for servers sql2008 and sqlserver2012 and also the recommended one.
 
-		.EXAMPLE 
+		.EXAMPLE
 			Test-DbaMaxDop -SqlInstance sql2014 -Detailed
 
 			Shows Max DOP setting for server sql2014 with the recommended value. As the -Detailed switch was used will also show the 'NUMANodes' and 'NumberOfCores' of each instance
 
-		.EXAMPLE 
+		.EXAMPLE
 			Test-DbaMaxDop -SqlInstance sqlserver2016 -Detailed
 
 			Get Max DOP setting for servers sql2016 with the recommended value. As the -Detailed switch was used will also show the 'NUMANodes' and 'NumberOfCores' of each instance. Because it is an 2016 instance will be shown 'InstanceVersion', 'Database' and 'DatabaseMaxDop' columns.
-
 	#>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[DbaInstance[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
-		[Switch]$Detailed
+		[Switch]$Detailed,
+		[switch][Alias('Silent')]$EnableException
 	)
-	
+
 	begin {
+		Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
+
 		$notesDopLT = "Before changing MaxDop, consider that the lower value may have been intentionally set."
 		$notesDopGT = "Before changing MaxDop, consider that the higher value may have been intentionally set."
 		$notesDopZero = "This is the default setting. Consider using the recommended value instead."
@@ -77,56 +84,46 @@ function Test-DbaMaxDop {
 		$notesAsRecommended = "Configuration is as recommended."
 		$collection = @()
 	}
-	
+
 	process {
-		$hasscopedconfiguration = $false
-		
-		foreach ($servername in $SqlInstance) {
-			Write-Verbose "Attempting to connect to $servername."
+		$hasScopedConfig = $false
+
+		foreach ($instance in $SqlInstance) {
 			try {
-				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
 			}
 			catch {
-				Write-Warning "Can't connect to $servername or access denied. Skipping."
-				continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-			
-			if ($server.versionMajor -lt 9) {
-				Write-Warning "This function does not support versions lower than SQL Server 2005 (v9). Skipping server '$servername'."
-				Continue
-			}
-			
+
 			#Get current configured value
-			$maxdop = $server.Configuration.MaxDegreeOfParallelism.ConfigValue
-			
+			$maxDop = $server.Configuration.MaxDegreeOfParallelism.ConfigValue
+
 			try {
-				#represents the Number of NUMA nodes 
+				#represents the Number of NUMA nodes
 				$sql = "SELECT COUNT(DISTINCT memory_node_id) AS NUMA_Nodes FROM sys.dm_os_memory_clerks WHERE memory_node_id!=64"
-				$NUMAnodes = $server.ConnectionContext.ExecuteScalar($sql)
+				$numaNodes = $server.ConnectionContext.ExecuteScalar($sql)
 			}
 			catch {
-				$errormessage = $_.Exception.Message.ToString()
-				Write-Warning "Failed to execute $sql.`n$errormessage."
-				continue
+				Stop-Function -Message "Failed to get Numa node count." -ErrorRecord $_ -Target $server -Continue
 			}
-			
+
 			try {
 				#represents the Number of Processor Cores
 				$sql = "SELECT COUNT(scheduler_id) FROM sys.dm_os_schedulers WHERE status = 'VISIBLE ONLINE'"
-				$numberofcores = $server.ConnectionContext.ExecuteScalar($sql)
+				$numberOfCores = $server.ConnectionContext.ExecuteScalar($sql)
 			}
 			catch {
-				$errormessage = $_.Exception.Message.ToString()
-				Write-Warning "Failed to execute $sql.`n$errormessage."
-				continue
+				Stop-Function -Message "Failed to get number of cores." -ErrorRecord $_ -Target $server -Continue
 			}
-			
+
 			#Calculate Recommended Max Dop to instance
-			#Server with single NUMA node	
-			if ($NUMAnodes -eq 1) {
-				if ($numberofcores -lt 8) {
+			#Server with single NUMA node
+			if ($numaNodes -eq 1) {
+				if ($numberOfCores -lt 8) {
 					#Less than 8 logical processors	- Keep MAXDOP at or below # of logical processors
-					$recommendedMaxDop = $numberofcores
+					$recommendedMaxDop = $numberOfCores
 				}
 				else {
 					#Equal or greater than 8 logical processors - Keep MAXDOP at 8
@@ -135,31 +132,31 @@ function Test-DbaMaxDop {
 			}
 			else {
 				#Server with multiple NUMA nodes
-				if (($numberofcores / $NUMAnodes) -lt 8) {
-					# Less than 8 logical processors per NUMA node - Keep MAXDOP at or below # of logical processors per NUMA node    
-					$recommendedMaxDop = [int]($numberofcores / $NUMAnodes)
+				if (($numberOfCores / $numaNodes) -lt 8) {
+					# Less than 8 logical processors per NUMA node - Keep MAXDOP at or below # of logical processors per NUMA node
+					$recommendedMaxDop = [int]($numberOfCores / $numaNodes)
 				}
 				else {
 					# Greater than 8 logical processors per NUMA node - Keep MAXDOP at 8
 					$recommendedMaxDop = 8
 				}
 			}
-			
+
 			#Setting notes for instance max dop value
 			$notes = $null
-			if ($maxdop -eq 1) {
+			if ($maxDop -eq 1) {
 				$notes = $notesDopOne
 			}
 			else {
-				if ($maxdop -ne 0 -and $maxdop -lt $recommendedMaxDop) {
+				if ($maxDop -ne 0 -and $maxDop -lt $recommendedMaxDop) {
 					$notes = $notesDopLT
 				}
 				else {
-					if ($maxdop -ne 0 -and $maxdop -gt $recommendedMaxDop) {
+					if ($maxDop -ne 0 -and $maxDop -gt $recommendedMaxDop) {
 						$notes = $notesDopGT
 					}
 					else {
-						if ($maxdop -eq 0) {
+						if ($maxDop -eq 0) {
 							$notes = $notesDopZero
 						}
 						else {
@@ -168,68 +165,53 @@ function Test-DbaMaxDop {
 					}
 				}
 			}
-			
+
 			$collection += [pscustomobject]@{
-				Instance              = $server.Name
+				ComputerName          = $server.NetName
+				InstanceName          = $server.ServiceName
+				SqlInstance           = $server.DomainInstanceName
 				InstanceVersion       = $server.Version
 				Database              = "N/A"
 				DatabaseMaxDop        = "N/A"
-				CurrentInstanceMaxDop = $maxdop
+				CurrentInstanceMaxDop = $maxDop
 				RecommendedMaxDop     = $recommendedMaxDop
-				NUMANodes             = $NUMAnodes
-				NumberOfCores         = $numberofcores
+				NUMANodes             = $numaNodes
+				NumberOfCores         = $numberOfCores
 				Notes                 = $notes
 			}
-			
+
 			# On SQL Server 2016 and higher, MaxDop can be set on a per-database level
-			if ($server.versionMajor -ge 13) {
-				$hasscopedconfiguration = $true
-				Write-Verbose "Server '$server' has an 2016 version, checking each database."
-				
-				foreach ($database in $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true }) {
-					Write-Verbose "Checking database '$($database.Name)'."
-					
+			if ($server.VersionMajor -ge 13) {
+				$hasScopedConfig = $true
+				Write-Message -Level Verbose -Message "SQL Server 2016 or higher detected, checking each database's MaxDop."
+
+				$databases = $server.Databases | where-object {$_.IsSystemObject -eq $false}
+
+				foreach ($database in $databases) {
+					if ($database.IsAccessible -eq $false) {
+						Write-Message -Level Verbose -Message "Database $database is not accessible."
+						continue
+					}
+					Write-Message -Level Verbose -Message "Checking database '$($database.Name)'."
+
 					$dbmaxdop = $database.MaxDop
-					
+
 					$collection += [pscustomobject]@{
-						Instance              = $server.Name
+						ComputerName          = $server.NetName
+						InstanceName          = $server.ServiceName
+						SqlInstance           = $server.DomainInstanceName
 						InstanceVersion       = $server.Version
 						Database              = $database.Name
 						DatabaseMaxDop        = $dbmaxdop
-						CurrentInstanceMaxDop = $maxdop
+						CurrentInstanceMaxDop = $maxDop
 						RecommendedMaxDop     = $recommendedMaxDop
-						NUMANodes             = $NUMAnodes
-						NumberOfCores         = $numberofcores
-						Notes                 = if ($dbmaxdop -eq 0) {
-							"Will use CurrentInstanceMaxDop value"
-						}
-						else {
-							"$notes"
-						}
+						NUMANodes             = $numaNodes
+						NumberOfCores         = $numberOfCores
+						Notes                 = if ($dbmaxdop -eq 0) { "Will use CurrentInstanceMaxDop value" } else { "$notes" }
 					}
 				}
 			}
-				
-			$server.ConnectionContext.Disconnect()
-			
-		}
-	}
-	end {
-		if ($Detailed) {
-			if ($hasscopedconfiguration) {
-				return ($collection | Select-Object Instance, InstanceVersion, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, NUMANodes, NumberOfCores, Notes)
-			}
-			else {
-				return ($collection | Select-Object Instance, CurrentInstanceMaxDop, RecommendedMaxDop, NUMANodes, NumberOfCores, Notes)
-			}
-		}
-		else {
-			if ($hasscopedconfiguration) {
-				return ($collection | Select-Object Instance, InstanceVersion, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes)
-			}
-			else {
-				return ($collection | Select-Object Instance, CurrentInstanceMaxDop, RecommendedMaxDop, Notes)
-			}
+			Select-DefaultView -InputObject $collection -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
 		}
 	}
 }
