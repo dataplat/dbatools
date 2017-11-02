@@ -20,35 +20,40 @@ function Test-DbaMigrationConstraint {
 
 			The -Database parameter is auto-populated for command-line completion.
 
-			.PARAMETER Source
-				Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+		.PARAMETER Source
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-			.PARAMETER SourceSqlCredential
-				Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+		.PARAMETER SourceSqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-				$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-				Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-				To connect as a different Windows user, run PowerShell as that user.
+			To connect as a different Windows user, run PowerShell as that user.
 
-			.PARAMETER Destination
-				Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+		.PARAMETER Destination
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
-			.PARAMETER DestinationSqlCredential
-				Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+		.PARAMETER DestinationSqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-				$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-				Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-				To connect as a different Windows user, run PowerShell as that user.
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Database
 			The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
 		.PARAMETER ExcludeDatabase
 			The database(s) to exclude. Options for this list are auto-populated from the server.
+
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 		.NOTES
 			Tags: Migration
@@ -73,20 +78,21 @@ function Test-DbaMigrationConstraint {
 
 		.EXAMPLE
 			Test-DbaMigrationConstraint -Source sqlserver2014a -Destination sqlcluster -Database db1
-			
+
 			Only db1 database will be verified for features in use that can't be supported on the destination server.
 	#>
 	[CmdletBinding(DefaultParameterSetName = "DbMigration")]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $True)]
-		[DbaInstanceParameter]$Source,
+		[DbaInstance]$Source,
 		[PSCredential]$SourceSqlCredential,
 		[parameter(Mandatory = $true)]
-		[DbaInstanceParameter]$Destination,
+		[DbaInstance]$Destination,
 		[PSCredential]$DestinationSqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
-		[object[]]$ExcludeDatabase
+		[object[]]$ExcludeDatabase,
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -105,55 +111,70 @@ function Test-DbaMigrationConstraint {
 
 		$editions = @{
 			"Enterprise" = 10;
-			"Developer" = 10;
+			"Developer"  = 10;
 			"Evaluation" = 10;
 			"Standard"   = 5;
-			"Express" = 1
+			"Express"    = 1
 		}
 		$notesCanMigrate = "Database can be migrated."
 		$notesCannotMigrate = "Database cannot be migrated."
 	}
 	process {
+		try {
+			Write-Message -Level Verbose -Message "Connecting to $Source."
+			$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+		}
+		catch {
+			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source -Continue
+		}
 
-		Write-Output "Attempting to connect to Sql Servers."
-		$sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+		try {
+			Write-Message -Level Verbose -Message "Connecting to $Destination."
+			$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+		}
+		catch {
+			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination -Continue
+		}
 
 		if ($Database -eq 0) {
-			$Database = $sourceserver.Databases | Where-Object isSystemObject -eq 0 | Select-Object Name, Status
+			$Database = $sourceServer.Databases | Where-Object IsSystemObject -eq 0 | Select-Object Name, Status
 		}
 
 		if ($ExcludeDatabase) {
-			$Database = $sourceserver.Databases | Where-Object Name -NotIn $ExcludeDatabase
+			$Database = $sourceServer.Databases | Where-Object Name -NotIn $ExcludeDatabase
 		}
 
 		if ($Database -gt 0) {
 			if ($Database -contains "master" -or $Database -contains "msdb" -or $Database -contains "tempdb") {
-				throw "Migrating system databases is not currently supported."
+				Stop-Function -Message "Migrating system databases is not currently supported."
+				return
 			}
 
-			if ($sourceserver.versionMajor -lt 9 -and $destserver.versionMajor -gt 10) {
-				throw "Sql Server 2000 databases cannot be migrated to Sql Server versions 2012 and above. Quitting."
+			if ($sourceServer.VersionMajor -lt 9 -and $destServer.VersionMajor -gt 10) {
+				Stop-Function -Message "Sql Server 2000 databases cannot be migrated to SQL Server version 2012 and above. Quitting."
+				return
 			}
 
-			if ($sourceserver.collation -ne $destserver.collation) {
-				Write-Warning "Collation on $Source, $($sourceserver.collation) differs from the $Destination, $($destserver.collation)."
+			if ($sourceServer.Collation -ne $destServer.Collation) {
+				Write-Message -Level Warning -Message "Collation on $Source, $($sourceServer.collation) differs from the $Destination, $($destServer.collation)."
 			}
 
-			if ($sourceserver.versionMajor -gt $destserver.versionMajor) {
-				#indicate that must use 'Generate Scripts' and 'Export Data' options?
-				throw "You can't migrate databases from a higher version to a lower one. Quitting."
+			if ($sourceServer.VersionMajor -gt $destServer.VersionMajor) {
+				#indicate they must use 'Generate Scripts' and 'Export Data' options?
+				Stop-Function -Message "You can't migrate databases from a higher version to a lower one. Quitting."
+				return
 			}
 
-			if ($sourceserver.versionMajor -lt 10) {
-				throw "This function does not support versions lower than SQL Server 2008 (v10)"
+			if ($sourceServer.VersionMajor -lt 10) {
+				Stop-Function -Message "This function does not support versions lower than SQL Server 2008 (v10)"
+				return
 			}
 
 			#if editions differs, from higher to lower one, verify the sys.dm_db_persisted_sku_features - only available from SQL 2008 +
-			if (($sourceserver.versionMajor -ge 10 -and $destserver.versionMajor -ge 10)) {
+			if (($sourceServer.VersionMajor -ge 10 -and $destServer.VersionMajor -ge 10)) {
 				foreach ($db in $Database) {
 					if ([string]::IsNullOrEmpty($db.Status)) {
-						$dbstatus = ($sourceserver.Databases | Where-Object {$_.Name -eq $db}).Status.ToString()
+						$dbstatus = ($sourceServer.Databases | Where-Object Name -eq $db).Status.ToString()
 						$dbName = $db
 					}
 					else {
@@ -161,23 +182,23 @@ function Test-DbaMigrationConstraint {
 						$dbName = $db.Name
 					}
 
-					Write-Verbose "Checking database '$dbName'."
+					Write-Message -Level Verbose -Message "Checking database '$dbName'."
 
-					if ($dbstatus.Contains("Offline") -eq $false) {
-						[long]$destVersionNumber = $($destserver.VersionString).Replace(".", "")
-						[string]$SourceVersion = "$($sourceServer.Edition) $($sourceServer.ProductLevel) ($($sourceserver.Version))"
-						[string]$DestinationVersion = "$($destserver.Edition) $($destserver.ProductLevel) ($($destserver.Version))"
+					if ($dbstatus.Contains("Offline") -eq $false -or $db.IsAccessible -eq $true) {
+						[long]$destVersionNumber = $($destServer.VersionString).Replace(".", "")
+						[string]$sourceVersion = "$($sourceServer.Edition) $($sourceServer.ProductLevel) ($($sourceServer.Version))"
+						[string]$destVersion = "$($destServer.Edition) $($destServer.ProductLevel) ($($destServer.Version))"
 						[string]$dbFeatures = ""
 
 						try {
 							$sql = "SELECT feature_name FROM sys.dm_db_persisted_sku_features"
 
-							$skufeatures = $sourceServer.Databases[$dbName].ExecuteWithResults($sql)
+							$skuFeatures = $sourceServer.Query($sql,$dbName)
 
-							Write-Verbose "Checking features in use..."
+							Write-Message -Level Verbose -Message "Checking features in use..."
 
-							if ($skufeatures.Tables[0].Rows.Count -gt 0) {
-								foreach ($row in $skufeatures.Tables[0].Rows) {
+							if ($skuFeatures.Count -gt 0) {
+								foreach ($row in $skuFeatures) {
 									$dbFeatures += ",$($row["feature_name"])"
 								}
 
@@ -185,22 +206,21 @@ function Test-DbaMigrationConstraint {
 							}
 						}
 						catch {
-							Write-Warning "Can't execute SQL on $sourceserver. `r`n $($_)"
-							Continue
+							Stop-Function -Message "Issue collecting sku features." -ErrorRecord $_ -Target $sourceServer -Continue
 						}
 
 						#If SQL Server 2016 SP1 (13.0.4001.0) or higher
 						if ($destVersionNumber -ge 13040010) {
 							<#
 								Need to verify if Edition = EXPRESS and database uses 'Change Data Capture' (CDC)
-								This means that database cannot be migrated because Express edition don't have SQL Server Agent
+								This means that database cannot be migrated because Express edition doesn't have SQL Server Agent
 							#>
-							if ($editions.Item($destserver.Edition.ToString().Split(" ")[0]) -eq 1 -and $dbFeatures.Contains("ChangeCapture")) {
+							if ($editions.Item($destServer.Edition.ToString().Split(" ")[0]) -eq 1 -and $dbFeatures.Contains("ChangeCapture")) {
 								[pscustomobject]@{
-									SourceInstance      = $sourceserver.Name
-									DestinationInstance = $destserver.Name
-									SourceVersion       = $SourceVersion
-									DestinationVersion  = $DestinationVersion
+									SourceInstance      = $sourceServer.Name
+									DestinationInstance = $destServer.Name
+									SourceVersion       = $sourceVersion
+									DestinationVersion  = $destVersion
 									Database            = $dbName
 									FeaturesInUse       = $dbFeatures
 									Notes               = "$notesCannotMigrate. Destination server edition is EXPRESS which does not support 'ChangeCapture' feature that is in use."
@@ -208,10 +228,10 @@ function Test-DbaMigrationConstraint {
 							}
 							else {
 								[pscustomobject]@{
-									SourceInstance      = $sourceserver.Name
-									DestinationInstance = $destserver.Name
-									SourceVersion       = $SourceVersion
-									DestinationVersion  = $DestinationVersion
+									SourceInstance      = $sourceServer.Name
+									DestinationInstance = $destServer.Name
+									SourceVersion       = $sourceVersion
+									DestinationVersion  = $destVersion
 									Database            = $dbName
 									FeaturesInUse       = $dbFeatures
 									Notes               = $notesCanMigrate
@@ -220,16 +240,16 @@ function Test-DbaMigrationConstraint {
 						}
 						#Version is lower than SQL Server 2016 SP1
 						else {
-							Write-Verbose "Source Server Edition: $($sourceserver.Edition) (Weight: $($editions.Item($sourceserver.Edition.ToString().Split(" ")[0])))"
-							Write-Verbose "Destination Server Edition: $($destserver.Edition) (Weight: $($editions.Item($destserver.Edition.ToString().Split(" ")[0])))"
+							Write-Message -Level Verbose -Message "Source Server Edition: $($sourceServer.Edition) (Weight: $($editions.Item($sourceServer.Edition.ToString().Split(" ")[0])))"
+							Write-Message -Level Verbose -Message "Destination Server Edition: $($destServer.Edition) (Weight: $($editions.Item($destServer.Edition.ToString().Split(" ")[0])))"
 
 							#Check for editions. If destination edition is lower than source edition and exists features in use
-							if (($editions.Item($destserver.Edition.ToString().Split(" ")[0]) -lt $editions.Item($sourceserver.Edition.ToString().Split(" ")[0])) -and (!([string]::IsNullOrEmpty($dbFeatures)))) {
+							if (($editions.Item($destServer.Edition.ToString().Split(" ")[0]) -lt $editions.Item($sourceServer.Edition.ToString().Split(" ")[0])) -and (!([string]::IsNullOrEmpty($dbFeatures)))) {
 								[pscustomobject]@{
-									SourceInstance      = $sourceserver.Name
-									DestinationInstance = $destserver.Name
-									SourceVersion       = $SourceVersion
-									DestinationVersion  = $DestinationVersion
+									SourceInstance      = $sourceServer.Name
+									DestinationInstance = $destServer.Name
+									SourceVersion       = $sourceVersion
+									DestinationVersion  = $destVersion
 									Database            = $dbName
 									FeaturesInUse       = $dbFeatures
 									Notes               = "$notesCannotMigrate There are features in use not available on destination instance."
@@ -238,10 +258,10 @@ function Test-DbaMigrationConstraint {
 							#
 							else {
 								[pscustomobject]@{
-									SourceInstance      = $sourceserver.Name
-									DestinationInstance = $destserver.Name
-									SourceVersion       = $SourceVersion
-									DestinationVersion  = $DestinationVersion
+									SourceInstance      = $sourceServer.Name
+									DestinationInstance = $destServer.Name
+									SourceVersion       = $sourceVersion
+									DestinationVersion  = $destVersion
 									Database            = $dbName
 									FeaturesInUse       = $dbFeatures
 									Notes               = $notesCanMigrate
@@ -250,26 +270,22 @@ function Test-DbaMigrationConstraint {
 						}
 					}
 					else {
-						Write-Warning "Database '$dbName' is offline. Bring database online and re-run the command"
+						Write-Message -Level Warning -Message "Database '$dbName' is offline or not accessible. Bring database online and re-run the command."
 					}
-
 				}
 			}
 			else {
 				#SQL Server 2005 or under
-				Write-Warning "This validation will not be made on versions lower than SQL Server 2008 (v10)."
-				Write-Verbose "Source server version: $($sourceserver.versionMajor)."
-				Write-Verbose "Destination server version: $($destserver.versionMajor)."
+				Write-Message -Level Warning -Message "This validation will not be made on versions lower than SQL Server 2008 (v10)."
+				Write-Message -Level Verbose -Message "Source server version: $($sourceServer.VersionMajor)."
+				Write-Message -Level Verbose -Message "Destination server version: $($destServer.VersionMajor)."
 			}
 		}
 		else {
-			Write-Output "There are no databases to validate."
+			Write-Message -Level Output -Message "There are no databases to validate."
 		}
 	}
-	END {
-		$sourceserver.ConnectionContext.Disconnect()
-		$destserver.ConnectionContext.Disconnect()
+	end {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlMigrationConstraint
 	}
 }
-

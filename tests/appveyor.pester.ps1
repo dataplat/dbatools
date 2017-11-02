@@ -236,7 +236,7 @@ if (-not $Finalize) {
 						$FoundFlag += 1
 					}
 				}
-				if ($FoundFlag -eq $ScanFor.Count) {
+				if ($FoundFlag -eq $ScanFor.Count -or $FoundFlag -eq 0) {
 					$ScanTests += $test
 				}
 			}
