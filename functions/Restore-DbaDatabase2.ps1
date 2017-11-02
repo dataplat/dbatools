@@ -422,7 +422,7 @@ function Restore-DbaDatabase2 {
                         Stop-Function -Message "At least one Azure backup passed in, and no Credential supplied. Stopping"
                         return
                     }
-                    $backupFiles += $F | Select-Object *, @{ Name = "ServerName"; Expression = { $_.SqlInstance } }, @{ Name = "BackupStartDate"; Expression = { $_.Start -as [DateTime] } }
+                    $BackupHistory += $F | Select-Object *, @{ Name = "ServerName"; Expression = { $_.SqlInstance } }, @{ Name = "BackupStartDate"; Expression = { $_.Start -as [DateTime] } }
 
                 }
                 else {
@@ -508,7 +508,7 @@ function Restore-DbaDatabase2 {
             }
             #return $FilteredBackupHistory
             Write-Message -Message "Passing in to restore" -Level Verbose
-            $FilteredBackupHistory | Where-Object {$_.IsVerified -eq $true} | Invoke-DbaRestore -SqlInstance $SqlInstance -SqlCredential $SqlCredential -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory
+            $FilteredBackupHistory | Where-Object {$_.IsVerified -eq $true} | Invoke-DbaRestore -SqlInstance $SqlInstance -SqlCredential $SqlCredential -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery
         
         }
     }
