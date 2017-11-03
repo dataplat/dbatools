@@ -1,5 +1,74 @@
-$dbatools_ImportPerformance = @()
-$dbatools_ImportPerformance += New-Object PSObject -Property @{ Time = Get-Date; Action = "Start" }
+$start = Get-Date
+
+#region Import helper functions
+function Import-ModuleFile {
+<#
+	.SYNOPSIS
+		Helps import dbatools files according to configuration
+	
+	.DESCRIPTION
+		Helps import dbatools files according to configuration
+		Always dotsource this function!
+	
+	.PARAMETER Path
+		The full path to the file to import
+	
+	.EXAMPLE
+		PS C:\> Import-ModuleFile -Path $function.FullName
+	
+		Imports the file stored at '$function.FullName'
+#>
+	[CmdletBinding()]
+	Param (
+		$Path
+	)
+	
+	if ($script:doDotSource) { . $Path }
+	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($Path))), $null, $null)}
+}
+
+function Write-ImportTime {
+<#
+	.SYNOPSIS
+		Writes an entry to the import module time debug list
+	
+	.DESCRIPTION
+		Writes an entry to the import module time debug list
+	
+	.PARAMETER Text
+		The message to write
+	
+	.EXAMPLE
+		PS C:\> Write-ImportTime -Text "Starting SMO Import"
+	
+		Adds the message "Starting SMO Import" to the debug list
+#>
+	[CmdletBinding()]
+	Param (
+		[string]$Text,
+		
+		$Timestamp = (Get-Date)
+	)
+	
+	if ($dbatools_disableTimeMeasurements) { return }
+	
+	if (-not $script:dbatools_ImportPerformance) { $script:dbatools_ImportPerformance = @() }
+	
+	if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type -eq $null) {
+		$script:dbatools_ImportPerformance += New-Object PSObject -Property @{ Time = $timestamp; Action = $Text }
+	}
+	else {
+		if ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Count -eq 0) {
+			foreach ($entry in $script:dbatools_ImportPerformance) { [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($entry.Action, $entry.Time, ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId)))) }
+		}
+		
+		[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($Text, $timestamp, ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))))
+	}
+}
+
+Write-ImportTime -Text "Start" -Timestamp $start
+Write-ImportTime -Text "Loading import helper functions"
+#endregion Import helper functions
 
 # Not supporting the provider path at this time 2/28/2017 - 63ms
 if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\"))
@@ -8,23 +77,51 @@ if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\"))
 	Write-Warning "Going to continue loading anyway, but expect issues."
 }
 
-$dbatools_ImportPerformance += New-Object PSObject -Property @{ Time = Get-Date; Action = "Resolved path to not SQLSERVER PSDrive" }
+Write-ImportTime -Text "Resolved path to not SQLSERVER PSDrive"
 
 $script:PSModuleRoot = $PSScriptRoot
 
+#region Import Defines
+$dbatoolsSystemUserNode = Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ErrorAction Ignore
+$dbatoolsSystemSystemNode = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ErrorAction Ignore
+
+#region Dot Sourcing
 # Detect whether at some level dotsourcing was enforced
 $script:doDotSource = $false
 if ($dbatools_dotsourcemodule) { $script:doDotSource = $true }
-if ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
-if ((Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
-$dbatools_ImportPerformance += New-Object PSObject -Property @{ Time = Get-Date; Action = "Tested import mode / DotSourceIng" }
+if ($dbatoolsSystemSystemNode.DoDotSource) { $script:doDotSource = $true }
+if ($dbatoolsSystemUserNode.DoDotSource) { $script:doDotSource = $true }
+#endregion Dot Sourcing
+
+#region Strict Security Mode
+$script:strictSecurityMode = $false
+if ($dbatools_strictsecuritymode) { $script:strictSecurityMode = $true }
+if ($dbatoolsSystemSystemNode.StrictSecurityMode) { $script:strictSecurityMode = $true }
+if ($dbatoolsSystemUserNode.StrictSecurityMode) { $script:strictSecurityMode = $true }
+#endregion Strict Security Mode
+
+#region Always Compile
+$script:alwaysBuildLibrary = $false
+if ($dbatools_alwaysbuildlibrary) { $script:alwaysBuildLibrary = $true }
+if ($dbatoolsSystemSystemNode.AlwaysBuildLibrary) { $script:alwaysBuildLibrary = $true }
+if ($dbatoolsSystemUserNode.AlwaysBuildLibrary) { $script:alwaysBuildLibrary = $true }
+#endregion Always Compile
+
+#region Serial Import
+$script:serialImport = $false
+if ($dbatools_serialimport) { $script:serialImport = $true }
+if ($dbatoolsSystemSystemNode.SerialImport) { $script:serialImport = $true }
+if ($dbatoolsSystemUserNode.SerialImport) { $script:serialImport = $true }
+#endregion Serial Import
+Write-ImportTime -Text  "Validated defines"
+#endregion Import Defines
 
 Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
-$dbatools_ImportPerformance += New-Object PSObject -Property @{ Time = Get-Date; Action = "Unblocking Files" }
+Write-ImportTime -Text  "Unblocking Files"
 
 if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type -eq $null) {
-	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\smoLibraryImport.ps1"))), $null, $null)
-	$global:dbatools_ImportPerformance += New-Object PSObject -Property @{ Time = Get-Date; Action = "Starting import SMO libraries" }
+	. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\smoLibraryImport.ps1"
+	Write-ImportTime -Text "Starting import SMO libraries"
 }
 
 <# 
@@ -37,18 +134,10 @@ if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configu
 # https://becomelotr.wordpress.com/2017/02/13/expensive-dot-sourcing/
 
 # Load our own custom library
-# Should always come before function imports - 141ms
-if ($script:doDotSource) {
-	. "$script:PSModuleRoot\bin\library.ps1"
-	. "$script:PSModuleRoot\bin\typealiases.ps1"
-}
-else {
-	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\bin\library.ps1"))), $null, $null)
-	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\bin\typealiases.ps1"))), $null, $null)
-}
-[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Clear()
-foreach ($entry in $dbatools_ImportPerformance) { [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($entry.Action, $entry.Time))) }
-[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry("Loading dbatools library", (Get-Date))))
+# Should always come before function imports
+. Import-ModuleFile "$script:PSModuleRoot\bin\library.ps1"
+. Import-ModuleFile "$script:PSModuleRoot\bin\typealiases.ps1"
+Write-ImportTime -Text "Loading dbatools library"
 
 # Tell the library where the module is based, just in case
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase = $script:PSModuleRoot
@@ -57,9 +146,8 @@ foreach ($entry in $dbatools_ImportPerformance) { [Sqlcollaborative.Dbatools.dba
 # Should always go after library and path setting
 if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported))
 {
-	if ($script:doDotSource) { . "$script:PSModuleRoot\internal\configurations\configuration.ps1" }
-	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\configurations\configuration.ps1"))), $null, $null) }
-	[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry("Configuration System", (Get-Date))))
+	. Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
+	Write-ImportTime -Text "Configuration System"
 }
 if (-not ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath))
 {
@@ -69,17 +157,15 @@ if (-not ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath))
 # All internal functions privately available within the toolset - 221ms
 foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\*.ps1"))
 {
-	if ($script:doDotSource) { . $function.FullName }
-	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null) }
+	. Import-ModuleFile $function.FullName
 }
-[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry("Loading Internal Commands", (Get-Date))))
+Write-ImportTime -Text "Loading Internal Commands"
 
 # All exported functions - 600ms
 foreach ($function in (Get-ChildItem "$script:PSModuleRoot\functions\*.ps1")) {
-	if ($script:doDotSource) { . $function.FullName }
-	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function, [System.Text.Encoding]::UTF8))), $null, $null) }
+	. Import-ModuleFile $function.FullName
 }
-[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry("Loading Public Commands", (Get-Date))))
+Write-ImportTime -Text "Loading Public Commands"
 
 # Run all optional code
 # Note: Each optional file must include a conditional governing whether it's run at all.
@@ -87,34 +173,29 @@ foreach ($function in (Get-ChildItem "$script:PSModuleRoot\functions\*.ps1")) {
 # 96ms
 foreach ($function in (Get-ChildItem "$script:PSModuleRoot\optional\*.ps1"))
 {
-	if ($script:doDotSource) { . $function.FullName }
-	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null) }
+	. Import-ModuleFile $function.FullName
 }
-[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry("Loading Optional Commands", (Get-Date))))
+Write-ImportTime -Text "Loading Optional Commands"
 
 # Process TEPP parameters
-if ($script:doDotSource) { . "$script:PSModuleRoot\internal\scripts\insertTepp.ps1" }
-else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\insertTepp.ps1"))), $null, $null) }
-[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry("Loading TEPP", (Get-Date))))
+. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\insertTepp.ps1"
+Write-ImportTime -Text "Loading TEPP"
 
 
 # Load scripts that must be individually run at the end - 30ms #
 #--------------------------------------------------------------#
 
 # Start the logging system (requires the configuration system up and running)
-if ($script:doDotSource) { . "$script:PSModuleRoot\internal\scripts\logfilescript.ps1" }
-else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\logfilescript.ps1"))), $null, $null) }
-[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry("Script: Logging", (Get-Date))))
+. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\logfilescript.ps1"
+Write-ImportTime -Text "Script: Logging"
 
 # Start the tepp asynchronous update system (requires the configuration system up and running)
-if ($script:doDotSource) { . "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1" }
-else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1"))), $null, $null) }
-[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry("Script: Asynchronous TEPP Cache", (Get-Date))))
+. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1"
+Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
 
 # Start the maintenance system (requires pretty much everything else already up and running)
-if ($script:doDotSource) { . "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1" }
-else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1"))), $null, $null) }
-[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry("Script: Maintenance", (Get-Date))))
+. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1"
+Write-ImportTime -Text "Script: Maintenance"
 
 # I renamed this function to be more accurate - 1ms
 if (-not (Test-Path Alias:Copy-SqlAgentCategory)) { Set-Alias -Scope Global -Name Copy-SqlAgentCategory -Value Copy-DbaAgentCategory }
@@ -199,11 +280,29 @@ Set-Alias -Scope Global -Name Attach-DbaDatabase -Value Mount-DbaDatabase
 Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 
 #region Post-Import Cleanup
-[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry("Loading Aliases", (Get-Date))))
+Write-ImportTime -Text "Loading Aliases"
 
+$timeout = 3000
+$timeSpent = 0
 while (($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') -or ($script:dbatoolsConfigRunspace.Runspace.RunspaceAvailability -eq 'Busy'))
 {
 	Start-Sleep -Milliseconds 50
+	$timeSpent = $timeSpent + 50
+	
+	if ($timeSpent -ge $timeout) {
+		Write-Warning @"
+The module import has hit a timeout while waiting for some background tasks to finish.
+This may result in some commands not working as intended.
+This should not happen under reasonable circumstances, please file an issue at:
+https://github.com/sqlcollaborative/dbatools/issues
+Or contact us directly in the #dbatools channel of the SQL Server Community Slack Channel:
+https://dbatools.io/slack/
+Timeout waiting for temporary runspaces reached! The Module import will complete, but some things may not work as intended
+"@
+		$global:smoRunspace = $script:smoRunspace
+		$global:dbatoolsConfigRunspace = $script:dbatoolsConfigRunspace
+		break
+	}
 }
 
 if ($script:smoRunspace)
@@ -223,14 +322,14 @@ if ($script:dbatoolsConfigRunspace)
 }
 
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true;
-[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry("Waiting for runspaces to finish", (Get-Date))))
+Write-ImportTime -Text "Waiting for runspaces to finish"
 #endregion Post-Import Cleanup
 
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUM4CINfL+3gW7BZfk5tCaQava
-# V4OggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUJHpDvNdv1QUk1Q+k94sttW6w
+# 3PSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -361,22 +460,22 @@ if ($script:dbatoolsConfigRunspace)
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUh33sIHAh3hraNeQJjMezBZLWbRgwDQYJKoZIhvcNAQEBBQAE
-# ggEAQeRIRhFguJMVoDsO4kyF/BWt5bkMMC0iSQd+W7AuQh5riHj5nZ7h2u356Ert
-# iPXNyTcn4m0Kih1kf8L+I2QvMPgUTXrMtFMdBaUXYdJA87dSjlyeWNvYIEmNmvpY
-# VwTsgoAVfh4mC8NSOnhjlZY9URTJws9fxxhu/peKpRkjvI88sqY3BgtmSENLCwvh
-# QMdBILGWpMGoNcqcANgadJRVgt+RCZz7M1jHwPeO0Ghe5cr30KBZ5H79EAMV+KVj
-# Vihop5cH9i5+bgf0ERkEnuug8k4f+8hUNYSl6F3rH7ZKf4w1GPp80weYpNBrbFQ1
-# e7Q1tRBTkji0TRzJ7yRIqf+QraGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUDfsRPt0p1hSYcuHhgSZ6Rjeu4gswDQYJKoZIhvcNAQEBBQAE
+# ggEAGutV6Gfmdaevowr/rir9hS6mDxxhkHr5ovatHsaqu5sWSybTOjU3CyVr8HAB
+# t+TErngh7worDJOefBd9egqlbuqJpMGbua/bkWMaRR7J7W+u5IqbBj1yatjhOksz
+# Q3htSWsXsXH8C3CqHSzrT3xv8/DaptDJcgcgLMGT0M6QGtIDVUueeJLJwSzBAc69
+# 0aDk7VPnayslzXDGOZVaJGyFjoL0bEct144Uscgs3MK93mcrGnFf/W0LvK1HVsJs
+# SS7FWKMu+3H9vo4o2YVpNbEPK9TXPRNCST2fLzlGifuC550H4dAUa635mLA2qZsT
+# OVH6HfGYAb+9kbZsfocwqZEF4qGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMDI0MTMzNDAxWjAj
-# BgkqhkiG9w0BCQQxFgQUvP+qznMilGbTtSYV8lTyFyS1NEwwDQYJKoZIhvcNAQEB
-# BQAEggEAXQEv5ln2iCPDGfXKVYq0UnpDSPc3dQEuEDw8p44hm3j49jbKXM2a+Sr8
-# KdWWO3sUFFY3eZanOxX99m91BCTTs4Z2jsS2r6ga6b3TYadg2qS7pi7Ly+93fUWS
-# 8XU4195sIXoRtakXPXsLff/6zdtSKZ1cNAD+KZwL/XB5+ReeqgNFzaKOm4Ui+nfc
-# ZI5PyuwEMtX61WEY871ICioVWekvdM7gWEFMuV/25adq4srtvOWFkP8gilYzk7Mz
-# 45kA4ulLC1fVeqEUTBSAfY3AcyRtBz+LAHOuZsKAMWwoSezPs0gvAo1nOvaQ3McX
-# +SMGeaR8HqRCCfP/JI4jmeySHvSeSw==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMTAyMjMxMDMzWjAj
+# BgkqhkiG9w0BCQQxFgQUO4ILLnvVyAYabUAbQIWfe3ESuPEwDQYJKoZIhvcNAQEB
+# BQAEggEAnYPRDR/eLspRuGJbPY7i/qiaSiY8dLBT2BN+llfJv1S7VZxqii0c6/m5
+# ArfLUiWRZP5ZHeCmxMWgF/0qvznQa02mOaTcU2Aq2fD7GlfpkoriHEIOFqu8ewOG
+# BCYKFYEAMSyjn7haqA7YqNj1h+BDJLIeyiH6Bx7gRR9Fcj8CMWF1ZCJpiTUndDij
+# xiYe+VO8qxOeBNlBqdlchvmHi3Z362WXtMjACodA2GPpyG0vdUcjfHrV4yTZy1Pi
+# dETHDJHgOG2XAiFVlpRl3bv2jn/so7/wfdCBV5dXq46Uj9I/RDcalJq8qeMRAmlK
+# avWVJqfR8DxrFAGrzEsay0yWwGVg+Q==
 # SIG # End signature block

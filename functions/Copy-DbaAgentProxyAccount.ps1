@@ -104,16 +104,17 @@ function Copy-DbaAgentProxyAccount {
 	process {
 		foreach ($proxyAccount in $serverProxyAccounts) {
 			$proxyName = $proxyAccount.Name
-
+			
 			$copyAgentProxyAccountStatus = [pscustomobject]@{
-				SourceServer        = $sourceServer.Name
-				DestinationServer   = $destServer.Name
-				Name                = $null
-				Type                = $null
-				Status              = $null
-				DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+				SourceServer    = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name		    = $null
+				Type		    = "Agent Proxy"
+				Status		    = $null
+				Notes		    = $null
+				DateTime	    = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
-
+			
 			if ($proxyAccounts.Length -gt 0 -and $proxyAccounts -notcontains $proxyName) {
 				continue
 			}
@@ -132,8 +133,8 @@ function Copy-DbaAgentProxyAccount {
 			
 			if ($null -eq $credentialtest) {
 				$copyAgentProxyAccountStatus.Status = "Skipped"
-				$copyAgentProxyAccountStatus
-				Write-Message -Level Warning -Message "Associated credential account, $CredentialName, does not exist on $destination. Skipping migration of $proxyName."
+				$copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+				Write-Message -Level Verbose -Message "Associated credential account, $CredentialName, does not exist on $destination. Skipping migration of $proxyName."
 				continue
 			}
 
@@ -144,7 +145,7 @@ function Copy-DbaAgentProxyAccount {
 				if ($force -eq $false) {
 					$copyAgentProxyAccountStatus.Status = "Skipped"
 					$copyAgentProxyAccountStatus
-					Write-Message -Level Warning -Message "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Verbose -Message "Server proxy account $proxyName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
@@ -155,7 +156,8 @@ function Copy-DbaAgentProxyAccount {
 						}
 						catch {
 							$copyAgentProxyAccountStatus.Status = "Failed"
-							$copyAgentProxyAccountStatus
+							$copyAgentProxyAccountStatus.Notes = "Could not drop"
+							$copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							Stop-Function -Message "Issue dropping proxy account" -Target $proxyName -InnerErrorRecord $_ -Continue
 						}
 					}
@@ -172,21 +174,22 @@ function Copy-DbaAgentProxyAccount {
 					Write-Message -Level Debug -Message $sql
 					$destServer.Query($sql)
 
-# Will fixing this misspelled status cause problems downstream?
+					# Will fixing this misspelled status cause problems downstream?
 					$copyAgentProxyAccountStatus.Status = "Successful"
-					$copyAgentProxyAccountStatus
+					$copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$exceptionstring = $_.Exception.InnerException.ToString()
 					if ($exceptionstring -match 'subsystem') {
 						$copyAgentProxyAccountStatus.Status = "Skipping"
-						$copyAgentProxyAccountStatus
+						$copyAgentProxyAccountStatus.Notes = "Failure"
+						$copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-						Write-Message -Level Warning -Message "One or more subsystems do not exist on the destination server. Skipping that part."
+						Write-Message -Level Verbose -Message "One or more subsystems do not exist on the destination server. Skipping that part."
 					}
 					else {
 						$copyAgentProxyAccountStatus.Status = "Failed"
-						$copyAgentProxyAccountStatus
+						$copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 						Stop-Function -Message "Issue creating proxy account" -Target $proxyName -InnerErrorRecord $_
 					}

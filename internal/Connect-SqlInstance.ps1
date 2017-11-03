@@ -152,6 +152,8 @@ function Connect-SqlInstance {
 	if ($ConvertedSqlInstance.IsConnectionString) { $server.ConnectionContext.ConnectionString = $ConvertedSqlInstance.InputObject }
 	
 	try {
+		$server.ConnectionContext.ConnectTimeout = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout
+		
 		if ($SqlCredential.Username -ne $null) {
 			$username = ($SqlCredential.Username).TrimStart("\")
 			

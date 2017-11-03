@@ -44,25 +44,25 @@ function Start-DbaRunspace {
 			
 			if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces.ContainsKey($item.ToLower())) {
 				try {
-					Write-Message -Level Verbose -Message "Starting runspace: <c='em'>$($item.ToLower())</c>" -Target $item.ToLower()
+					Write-Message -Level Verbose -Message "Starting runspace: $($item.ToLower())" -Target $item.ToLower()
 					[Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$item.ToLower()].Start()
 				}
 				catch {
-					Stop-Function -Message "Failed to start runspace: <c='em'>$($item.ToLower())</c>" -EnableException $EnableException -Target $item.ToLower() -Continue
+					Stop-Function -Message "Failed to start runspace: $($item.ToLower())" -EnableException $EnableException -Target $item.ToLower() -Continue
 				}
 			}
 			else {
-				Stop-Function -Message "Failed to start runspace: <c='em'>$($item.ToLower())</c> | No runspace registered under this name!" -EnableException $EnableException -Category InvalidArgument -Tag "fail", "argument", "runspace", "start" -Target $item.ToLower() -Continue
+				Stop-Function -Message "Failed to start runspace: $($item.ToLower()) | No runspace registered under this name!" -EnableException $EnableException -Category InvalidArgument -Tag "fail", "argument", "runspace", "start" -Target $item.ToLower() -Continue
 			}
 		}
 		
 		foreach ($item in $Runspace) {
 			try {
-				Write-Message -Level Verbose -Message "Starting runspace: <c='em'>$($item.Name.ToLower())</c>" -Target $item
+				Write-Message -Level Verbose -Message "Starting runspace: $($item.Name.ToLower())" -Target $item
 				$item.Start()
 			}
 			catch {
-				Stop-Function -Message "Failed to start runspace: <c='em'>$($item.Name.ToLower())</c>" -EnableException $EnableException -Target $item -Continue
+				Stop-Function -Message "Failed to start runspace: $($item.Name.ToLower())" -EnableException $EnableException -Target $item -Continue
 			}
 		}
 	}

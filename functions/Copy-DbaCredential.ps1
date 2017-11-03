@@ -312,19 +312,22 @@ function Copy-DbaCredential {
 				$credentialName = $credential.Name
 				
 				$copyCredentialStatus = [pscustomobject]@{
-					SourceServer = $sourceServer.Name
+					SourceServer  = $sourceServer.Name
 					DestinationServer = $destServer.Name
-					Name = $credentialName
-					Status = $null
-					DateTime = [DbaDateTime](Get-Date)
+					Type		  = "Credential"
+					Name		  = $credentialName
+					Status	      = $null
+					Notes		  = $null
+					DateTime	  = [DbaDateTime](Get-Date)
 				}
 				
 				if ($destServer.Credentials[$credentialName] -ne $null) {
 					if (!$force) {
 						$copyCredentialStatus.Status = "Skipping"
-						$copyCredentialStatus
+						$copyCredentialStatus.Notes = "Already exists"
+						$copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						
-						Write-Message -Level Warning -Message "$credentialName exists $($destServer.Name). Skipping."
+						Write-Message -Level Verbose -Message "$credentialName exists $($destServer.Name). Skipping."
 						continue
 					}
 					else {
@@ -349,11 +352,11 @@ function Copy-DbaCredential {
 					}
 					
 					$copyCredentialStatus.Status = "Successful"
-					$copyCredentialStatus
+					$copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyCredentialStatus.Status = "Failed"
-					$copyCredentialStatus
+					$copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					
 					Stop-Function -Message "Error creating credential" -Target $credentialName -ErrorRecord $_
 				}
@@ -367,7 +370,7 @@ function Copy-DbaCredential {
 		$destination = $destServer.DomainInstanceName
 		
 		if ($SourceSqlCredential.Username -ne $null) {
-			Write-Message -Level Warning -Message "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
+			Write-Message -Level Verbose -Message "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
 		}
 		
 		if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {

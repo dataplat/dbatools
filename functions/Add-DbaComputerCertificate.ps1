@@ -41,12 +41,12 @@ function Add-DbaComputerCertificate {
 	.EXAMPLE
 		Add-DbaComputerCertificate -ComputerName Server1 -Path C:\temp\cert.cer
 		
-		Adds the local C:\temp\cer.cer to the remote server Server1 in LocalMachine\My (Personal).
+		Adds the local C:\temp\cert.cer to the remote server Server1 in LocalMachine\My (Personal).
 	
 	.EXAMPLE
 		Add-DbaComputerCertificate -Path C:\temp\cert.cer
 		
-		Adds the local C:\temp\cer.cer to the local computer's LocalMachine\My (Personal) certificate store.
+		Adds the local C:\temp\cert.cer to the local computer's LocalMachine\My (Personal) certificate store.
 	
 	.NOTES
 		Tags: Certificate

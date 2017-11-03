@@ -6,7 +6,7 @@
         "Synopsis":  "Adds a computer certificate - useful for older systems.",
         "Name":  "Add-DbaComputerCertificate",
         "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaComputerCertificate -ComputerName Server1 -Path C:\\temp\\cert.cer\r\n\r\nAdds the local C:\\temp\\cer.cer to the remote server Server1 in LocalMachine\\My (Personal).\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaComputerCertificate -Path C:\\temp\\cert.cer\r\n\r\nAdds the local C:\\temp\\cer.cer to the local computer\u0027s LocalMachine\\My (Personal) certificate store.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaComputerCertificate -ComputerName Server1 -Path C:\\temp\\cert.cer\r\n\r\nAdds the local C:\\temp\\cert.cer to the remote server Server1 in LocalMachine\\My (Personal).\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eAdd-DbaComputerCertificate -Path C:\\temp\\cert.cer\r\n\r\nAdds the local C:\\temp\\cert.cer to the local computer\u0027s LocalMachine\\My (Personal) certificate store.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Backup-DbaDatabase",
@@ -649,7 +649,7 @@
     },
     {
         "CommandName":  "Find-DbaDuplicateIndex",
-        "Description":  "This command will help you to find duplicate and overlapping indexes on a database or a list of databases.\n\nOn SQL Server 2008 and higher, the IsFiltered property will also be checked\n\nAlso tells how much space you can save by dropping the index.\n\nWe show the type of compression so you can make a more considered decision.\n\nFor now only supports CLUSTERED and NONCLUSTERED indexes.\n\nYou can select the indexes you want to drop on the gridview and when clicking OK, the DROP statement will be generated.\n\nOutput:\n\tTableName\n\tIndexName\n\tKeyCols\n\tIncludedCols\n\tIndexSizeMB\n\tIndexType\n\tCompressionDesc (When 2008+)\n\tNumberRows\n\tIsDisabled\n\tIsFiltered (When 2008+)",
+        "Description":  "This command will help you to find duplicate and overlapping indexes on a database or a list of databases.\n\nOn SQL Server 2008 and higher, the IsFiltered property will also be checked\n\nAlso tells how much space you can save by dropping the index.\n\nWe show the type of compression so you can make a more considered decision.\n\nFor now only supports CLUSTERED and NONCLUSTERED indexes.\n\nYou can select the indexes you want to drop on the gridview and when clicking OK, the DROP statement will be generated.\n\nOutput:\n\tTableName\n\tIndexName\n\tKeyColumns\n\tIncludedColumns\n\tIndexSizeMB\n\tIndexType\n\tCompressionDescription (When 2008+)\n\t[RowCount]\n\tIsDisabled\n\tIsFiltered (When 2008+)",
         "Author":  "Claudio Silva (@ClaudioESSilva)",
         "Synopsis":  "Find duplicate and overlapping indexes.",
         "Name":  "Find-DbaDuplicateIndex",
@@ -923,6 +923,14 @@
         "Name":  "Get-DbaBackupHistory",
         "Links":  "https://dbatools.io/Get-DbaBackupHistory",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a\r\n\r\nReturns server name, database, username, backup type, date for all backups databases on SqlInstance2014a. This may \r\nreturn a ton of rows; consider using filters that are included in other examples.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$cred = Get-Credential sqladmin\r\n\r\nGet-DbaBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred\r\n\r\nDoes the same as above but logs in as SQL user \"sqladmin\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since \u00277/1/2016 10:47:00\u0027\r\n\r\nReturns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table\r\n\r\nReturns information only for AdventureWorks2014 and pubs, and makes the output pretty\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last\r\n\r\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk\r\n\r\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, only \r\nfor backups to disk\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107\r\n\r\nReturns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, only \r\nfor backups with device_type 148 and 107\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 8 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull\r\n\r\nReturns information about the most recent full backup for AdventureWorks2014 on sql2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 9 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full\r\n\r\nReturns information about all Full backups for AdventureWorks2014 on sql2014\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 10 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2016 | Get-DbaBackupHistory\r\n\r\nReturns database backup information for every database on every server listed in the Central Management Server on \r\nsql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 11 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force\r\n\r\nLots of detailed information for all databases on SqlInstance2014a and sql2016.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaBackupInformation",
+        "Description":  "Upon bein passed a list of potential backups files this command will scan the files, select those that contain SQL Server\nbackup sets. It will then filter those files down to a set \n\nThe function defaults to working on a remote instance. This means that all paths passed in must be relative to the remote instance.\nXpDirTree will be used to perform the file scans\n        \nVarious means can be used to pass in a list of files to be considered. The default is to non recursively scan the folder\npassed in.",
+        "Synopsis":  "Restores a SQL Server Database from a set of backupfiles",
+        "Name":  "Get-DbaBackupInformation",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupInformation -SqlInstance Server1 -Path c:\\backups\\ -DirectoryRecurse\r\n\r\nWill use the Server1 instance to recursively read all backup files under c:\\backups, and return a dbatool BackupHistory \r\nobject\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupInformation -SqlInstance Server1 -Path c:\\backups\\ -DirectoryRecurse -ExportPath \r\nc:\\store\\BackupHistory.xml\r\n\r\n#Copy the file  c:\\store\\BackupHistory.xml to another machine via preferred technique, and the on 2nd machine:\r\n\r\nGet-DbaBackupInformation -Import -Path  c:\\store\\BackupHistory.xml | Restore-DbaDatabase -SqlInstance Server2 \r\n-TrustDbBackupHistory\r\n\r\nThis allows you to move backup history across servers, or to preserve backuphistory even after the original server has \r\nbeen purged\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaBackupInformation -SqlInstance Server1 -Path c:\\backups\\ -DirectoryRecurse -ExportPath \r\nc:\\store\\BackupHistory.xml -PassThru !\r\n\r\nRestore-DbaDatabse -SqlInstance Server2 -TrustDbBackupHistory\r\n\r\nIn this example we gather backup information, export it to an xml file, and then pass it on through to \r\nRestore-DbaDatabase\r\nThis allows us to repeat the restore without having to scan all the backup files again\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-ChildItem c:\\backups\\ -recurse -files |\r\n\r\nWhere {$_.extension -in (\u0027.bak\u0027,\u0027.trn\u0027) -and $_.LastWriteTime -gt (get-date).AddMonths(-1)} |\r\n    Get-DbaBackupInformation -SqlInstance Server1 -ExportPath c:\\backupHistory.xml\r\n\r\nThis lets you keep a record of all backup history from the last month on hand to speed up refreshes\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e$Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\\\network\\backupps\r\n\r\n$Backups += Get-DbaBackupInformation -SqlInstance Server2 -NoXpDirTree -Path c:\\backups\r\n\r\nScan the unc folder \\\\network\\backups with Server1, and then scan the C:\\backups folder on \r\nServer2 not using xp_dirtree, adding the results to the first set.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaClientAlias",
@@ -2397,6 +2405,14 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaXEFile -SqlInstance ServerA\\sql987 -Path C:\\temp\\deadocks.xel\r\n\r\nReturns events\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEFile\r\n\r\nReads remote xevents by acccessing the file over the admin UNC share\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Register-DbaConfig",
+        "Description":  "Registers an existing configuration object in registry.\nThis allows simple persisting of settings across powershell consoles.\nIt also can be used to generate a registry template, which can then be used to create policies.",
+        "Synopsis":  "Registers an existing configuration object in registry.",
+        "Name":  "Register-DbaConfig",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaConfig message.* | Register-DbaConfig\r\n\r\nRetrieves all configuration items that that start with message. and registers them in registry for the current user.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRegister-DbaConfig -FullName \"developer.mode.enable\" -Scope SystemDefault\r\n\r\nRetrieves the configuration item \"developer.mode.enable\" and registers it in registry as the default setting for all \r\nusers on this machine.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRegister-DbaConfig -Module message -Scope SystemMandatory\r\n\r\nRetrieves all configuration items of the module MyModule, then registers them in registry to enforce them for all users \r\non the current system.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Remove-DbaAgentJob",
         "Description":  "Remove-DbaAgentJob removes a a job in the SQL Server Agent.",
         "Tags":  [
@@ -2689,7 +2705,7 @@
     },
     {
         "CommandName":  "Save-DbaDiagnosticQueryScript",
-        "Description":  "The dbatools module will have the diagnostic queries pre-installed. Use this only to update to a more recent version or specific versions.\n\nThis function is mainly used by Invoke-DbaDiagnosticQuery, but can also be used independently to download the Glenn Berry DMV scripts.\n\nUse this function to pre-download the scripts from a device with an Internet connection.\n\t\nThe function Invoke-DbaDiagnosticQuery will try to download these scripts automatically, but it obviously needs an internet connection to do that.",
+        "Description":  "The dbatools module will have the diagnostic queries pre-installed. Use this only to update to a more recent version or specific versions.\n\nThis function is mainly used by Invoke-DbaDiagnosticQuery, but can also be used independently to download the Glenn Berry DMV scripts.\n\nUse this function to pre-download the scripts from a device with an Internet connection.\n\nThe function Invoke-DbaDiagnosticQuery will try to download these scripts automatically, but it obviously needs an internet connection to do that.",
         "Tags":  [
                      "Diagnostic",
                      "DMV",
@@ -2836,12 +2852,12 @@
     },
     {
         "CommandName":  "Set-DbaMaxMemory",
-        "Description":  "Sets SQL Server max memory then displays information relating to SQL Server Max Memory configuration settings. \n\nInspired by Jonathan Kehayias\u0027s post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this uses a formula to \ndetermine the default optimum RAM to use, then sets the SQL max value to that number.\n\nJonathan notes that the formula used provides a *general recommendation* that doesn\u0027t account for everything that may \nbe going on in your specific environment.",
-        "Tags":  "",
+        "Description":  "Sets SQL Server max memory then displays information relating to SQL Server Max Memory configuration settings.\n\nInspired by Jonathan Kehayias\u0027s post about SQL Server Max memory (http://bit.ly/sqlmemcalc), this uses a formula to\ndetermine the default optimum RAM to use, then sets the SQL max value to that number.\n\nJonathan notes that the formula used provides a *general recommendation* that doesn\u0027t account for everything that may\nbe going on in your specific environment.",
+        "Tags":  "MaxMemory",
         "Synopsis":  "Sets SQL Server \u0027Max Server Memory\u0027 configuration setting to a new value then displays information this setting.",
         "Name":  "Set-DbaMaxMemory",
         "Links":  "https://dbatools.io/Set-DbaMaxMemory",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxMemory sqlserver1\r\n\r\nSet max memory to the recommended MB on just one server named \"sqlserver1\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxMemory -SqlInstance sqlserver1 -MaxMB 2048\r\n\r\nExplicitly max memory to 2048 MB on just one server, \"sqlserver1\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver | Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } \r\n| Set-DbaMaxMemory\r\n\r\nFind all servers in SQL Server Central Management server that have Max SQL memory set to higher than the total memory \r\nof the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use the default recommendation.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxMemory sqlserver1\r\n\r\nSet max memory to the recommended MB on just one server named \"sqlserver1\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaMaxMemory -SqlInstance sqlserver1 -MaxMB 2048\r\n\r\nExplicitly max memory to 2048 MB on just one server, \"sqlserver1\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sqlserver | Test-DbaMaxMemory | Where-Object { $_.SqlMaxMB -gt $_.TotalMB } \r\n| Set-DbaMaxMemory\r\n\r\nFind all servers in SQL Server Central Management server that have Max SQL memory set to higher than the total memory\r\nof the server (think 2147483647), then pipe those to Set-DbaMaxMemory and use the default recommendation.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-DbaNetworkCertificate",
@@ -2973,6 +2989,16 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaSqlService -ComputerName sqlserver2014a\r\n\r\nStarts the SQL Server related services on computer sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027| Get-DbaSqlService | Start-DbaSqlService\r\n\r\nGets the SQL Server related services on computers sql1, sql2 and sql3 and starts them.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaSqlService -ComputerName sql1,sql2 -Instance MSSQLSERVER\r\n\r\nStarts the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaSqlService -ComputerName $MyServers -Type SSRS\r\n\r\nStarts the SQL Server related services of type \"SSRS\" (Reporting Services) on computers in the variable MyServers.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Start-DbaXESession",
+        "Description":  "This script starts Extended Events sessions on a SQL Server instance.",
+        "Tags":  "Xevent",
+        "Author":  "Doug Meyers",
+        "Synopsis":  "Starts Extended Events sessions.",
+        "Name":  "Start-DbaXESession",
+        "Links":  "https://dbatools.io/Start-DbaXESession",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -AllSessions\r\n\r\nStarts all Extended Event Session on the sqlserver2014 instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2\r\n\r\nStarts the xesession1 and xesession2 Extended Event sessions.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Start-DbaXESession\r\n\r\nStarts the sessions returned from the Get-DbaXESession function.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Stop-DbaAgentJob",
         "Description":  "This command stops a job then returns connected SMO object for SQL Agent Job information for each instance(s) of SQL Server.",
         "Tags":  [
@@ -3002,6 +3028,16 @@
         "Name":  "Stop-DbaSqlService",
         "Links":  "https://dbatools.io/Stop-DbaSqlService",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaSqlService -ComputerName sqlserver2014a\r\n\r\nStops the SQL Server related services on computer sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027| Get-DbaSqlService | Stop-DbaSqlService\r\n\r\nGets the SQL Server related services on computers sql1, sql2 and sql3 and stops them.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaSqlService -ComputerName sql1,sql2 -Instance MSSQLSERVER\r\n\r\nStops the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaSqlService -ComputerName $MyServers -Type SSRS\r\n\r\nStops the SQL Server related services of type \"SSRS\" (Reporting Services) on computers in the variable MyServers.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaSqlService -ComputerName sql1 -Type Engine -Force\r\n\r\nStops SQL Server database engine services on sql1 forcing dependent SQL Server Agent services to stop as well.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Stop-DbaXESession",
+        "Description":  "This script stops Extended Events sessions on a SQL Server instance.",
+        "Tags":  "Xevent",
+        "Author":  "Doug Meyers",
+        "Synopsis":  "Stops Extended Events sessions.",
+        "Name":  "Stop-DbaXESession",
+        "Links":  "https://dbatools.io/Stop-DbaXESession",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaXESession -SqlInstance sqlserver2012 -AllSessions\r\n\r\nStops all Extended Event Session on the sqlserver2014 instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2\r\n\r\nStops the xesession1 and xesession2 Extended Event sessions.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Stop-DbaXESession\r\n\r\nStops the sessions returned from the Get-DbaXESession function.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Sync-DbaSqlLoginPermission",
@@ -3169,7 +3205,7 @@
     {
         "CommandName":  "Test-DbaLinkedServerConnection",
         "Description":  "Test each linked server on the instance",
-        "Tags":  "",
+        "Tags":  "LinkedServer",
         "Author":  "Thomas LaRock ( https://thomaslarock.com )",
         "Synopsis":  "Test all linked servers from the sql servers passed",
         "Name":  "Test-DbaLinkedServerConnection",
@@ -3187,8 +3223,11 @@
     },
     {
         "CommandName":  "Test-DbaMaxDop",
-        "Description":  "Inspired by Sakthivel Chidambaram\u0027s post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator-SqlInstance/), \nthis script displays a SQL Server\u0027s: max dop configured, and the calculated recommendation.\n\nFor SQL Server 2016 shows:\n\t- Instance max dop configured and the calculated recommendation\n\t- max dop configured per database (new feature)\n\nMore info: \n\thttps://support.microsoft.com/en-us/kb/2806535\n\thttps://blogs.msdn.microsoft.com/sqlsakthi/2012/05/23/wow-we-have-maxdop-calculator-for-sql-server-it-makes-my-job-easier/\n\nThese are just general recommendations for SQL Server and are a good starting point for setting the \"max degree of parallelism\" option.",
-        "Tags":  "",
+        "Description":  "Inspired by Sakthivel Chidambaram\u0027s post about SQL Server MAXDOP Calculator (https://blogs.msdn.microsoft.com/sqlsakthi/p/maxdop-calculator-SqlInstance/),\nthis script displays a SQL Server\u0027s: max dop configured, and the calculated recommendation.\n\nFor SQL Server 2016 shows:\n\t- Instance max dop configured and the calculated recommendation\n\t- max dop configured per database (new feature)\n\nMore info:\n\thttps://support.microsoft.com/en-us/kb/2806535\n\thttps://blogs.msdn.microsoft.com/sqlsakthi/2012/05/23/wow-we-have-maxdop-calculator-for-sql-server-it-makes-my-job-easier/\n\nThese are just general recommendations for SQL Server and are a good starting point for setting the \"max degree of parallelism\" option.",
+        "Tags":  [
+                     "MaxDop",
+                     "SPConfigure"
+                 ],
         "Synopsis":  "Displays information relating to SQL Server Max Degree of Parallelism setting. Works on SQL Server 2005-2016.",
         "Name":  "Test-DbaMaxDop",
         "Links":  "https://dbatools.io/Test-DbaMaxDop",
@@ -3228,15 +3267,20 @@
     {
         "CommandName":  "Test-DbaOptimizeForAdHoc",
         "Description":  "When this option is set, plan cache size is further reduced for single-use ad hoc OLTP workload.\n\nMore info: https://msdn.microsoft.com/en-us/library/cc645587.aspx\nhttp://www.sqlservercentral.com/blogs/glennberry/2011/02/25/some-suggested-sql-server-2008-r2-instance-configuration-settings/\n\nThese are just general recommendations for SQL Server and are a good starting point for setting the \"optimize for adhoc workloads\" option.",
+        "Tags":  [
+                     "Configure",
+                     "SPConfigure"
+                 ],
         "Author":  "Brandon Abshire, netnerds.net",
         "Synopsis":  "Displays information relating to SQL Server Optimize for AdHoc Workloads setting.  Works on SQL Server 2008-2016.",
         "Name":  "Test-DbaOptimizeForAdHoc",
         "Links":  "https://dbatools.io/Test-DbaOptimizeForAdHoc",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaOptimizeForAdHoc -SqlInstance sql2008, sqlserver2012\r\n\r\nGet Optimize for AdHoc Workloads setting for servers sql2008 and sqlserver2012 and also the recommended one.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaOptimizeForAdHoc -SqlInstance sql2008, sqlserver2012\r\n\r\nValidates whether Optimize for AdHoc Workloads setting is enabled for servers sql2008 and sqlserver2012.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaPowerPlan",
-        "Description":  "Checks the Power Plan settings on a computer against best practices recommendations. If one server is checked, only $true or $false is returned. If multiple servers are checked, each server\u0027s name and an IsBestPractice field are returned.\n\nSpecify -Detailed for details.\n\nReferences:\nhttps://support.microsoft.com/en-us/kb/2207548\nhttp://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/",
+        "Description":  "Checks the Power Plan settings on a computer against best practices recommendations. If one server is checked, only $true or $false is returned. If multiple servers are checked, each server\u0027s name and an isBestPractice field are returned.\n\nSpecify -Detailed for details.\n\nReferences:\nhttps://support.microsoft.com/en-us/kb/2207548\nhttp://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/",
+        "Tags":  "PowerPlan",
         "Synopsis":  "Checks the Power Plan settings for compliance with best practices, which recommend High Performance for SQL Server.",
         "Name":  "Test-DbaPowerPlan",
         "Links":  "https://dbatools.io/Test-DbaPowerPlan",

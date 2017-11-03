@@ -114,15 +114,17 @@ function Copy-DbaEndpoint {
 
 		foreach ($currentEndpoint in $serverEndpoints) {
 			$endpointName = $currentEndpoint.Name
-
+			
 			$copyEndpointStatus = [pscustomobject]@{
-				SourceServer        = $sourceServer.Name
-				DestinationServer   = $destServer.Name
-				Name                = $endpointName
-				Status              = $null
-				DateTime            = [DbaDateTime](Get-Date)
+				SourceServer		 = $sourceServer.Name
+				DestinationServer    = $destServer.Name
+				Name				 = $endpointName
+				Type				 = "Endpoint"
+				Status			     = $null
+				Notes			     = $null
+				DateTime			 = [DbaDateTime](Get-Date)
 			}
-
+			
 			if ($Endpoint -and $Endpoint -notcontains $endpointName -or $ExcludeEndpoint -contains $endpointName) {
 				continue
 			}
@@ -130,9 +132,10 @@ function Copy-DbaEndpoint {
 			if ($destEndpoints.Name -contains $endpointName) {
 				if ($force -eq $false) {
 					$copyEndpointStatus.Status = "Skipped"
-					$copyEndpointStatus
+					$copyEndpointStatus.Notes = "Already exists"
+					$copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-					Write-Message -Level Warning -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
+					Write-Message -Level Verbose -Message "Server endpoint $endpointName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
@@ -143,7 +146,7 @@ function Copy-DbaEndpoint {
 						}
 						catch {
 							$copyEndpointStatus.Status = "Failed"
-							$copyEndpointStatus
+							$copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping server endpoint." -Target $endpointName -InnerErrorRecord $_ -Continue
 						}
@@ -157,11 +160,11 @@ function Copy-DbaEndpoint {
 					$destServer.Query($currentEndpoint.Script()) | Out-Null
 
 					$copyEndpointStatus.Status = "Successful"
-					$copyEndpointStatus
+					$copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyEndpointStatus.Status = "Failed"
-					$copyEndpointStatus
+					$copyEndpointStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Stop-Function -Message "Issue creating server endpoint." -Target $endpointName -InnerErrorRecord $_
 				}
