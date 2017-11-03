@@ -367,7 +367,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = Restore-DbaDatabase2 -SqlInstance $script:instance1 -Recover -DatabaseName $DatabaseName 
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
-            ($results.count -gt 0) | Should be $True
+            (($results | measure-Object).count -gt 0) | Should be $True
         }  
         $check = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
         It "Should return 1 database" {
@@ -383,7 +383,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = Restore-DbaDatabase2 -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
-            ($results.count -gt 0) | Should be $True
+            (($results | measure-Object).count -gt 0) | Should be $True
         }  
         $check = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
         It "Should return 1 database" {
@@ -399,7 +399,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName | Restore-DbaDatabase2 -SqlInstance $script:instance1 -Recover 
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
-            ($results.count -gt 0) | Should be $True
+            (($results | measure-Object).count -gt 0) | Should be $True
         }  
         $check = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
         It "Should return 1 database" {
@@ -415,7 +415,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = Restore-DbaDatabase2 -SqlInstance $script:instance1_detailed -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak  -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
-            ($results.count -gt 0) | Should be $True
+            (($results | measure-Object).count -gt 0) | Should be $True
         }        
     }
 
