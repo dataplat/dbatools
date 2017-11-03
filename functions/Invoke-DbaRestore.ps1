@@ -101,7 +101,7 @@ Function Invoke-DbaRestore{
                 }
             }
             Write-Message -Message "WithReplace  = $Withreplace" -Level Verbose
-            $backups = $InternalHistory | Where-Object {$_.Database -eq $Database} | Sort-Object -Property LastLsn
+            $backups = $InternalHistory | Where-Object {$_.Database -eq $Database} | Sort-Object -Property Type, FirstLsn
             ForEach ($backup in $backups){
                 $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
                 if (($backup -ne $backups[-1] -and $StandbyDirectory -eq '') -or $true -eq $NoRecovery){

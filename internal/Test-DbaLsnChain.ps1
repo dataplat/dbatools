@@ -52,7 +52,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
             return $true
         }
         Write-Verbose "$FunctionName - Testing LSN Chain"
-        if ($null -eq $TestHistory.BackupTypeDescription){
+        if ($null -eq $TestHistory[0].BackupTypeDescription){
             $TypeName = 'Type'
         }
         else{
@@ -60,7 +60,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
         } 
         write-Verbose "TypeName = $typename "
         
-        $FullDBAnchor = $TestHistory | Where-Object {$_.$TypeName -eq 'Database'}
+        $FullDBAnchor = $TestHistory | Where-Object {$_.$TypeName -in ('Database','Full') }
 
         if (($FullDBAnchor | Group-Object -Property FirstLSN | Measure-Object).count -ne 1)
         {
@@ -87,7 +87,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
                 break;
             }
         }
-        $DiffAnchor = $TestHistory | Where-Object {$_.$TypeName -eq 'Database Differential'}
+        $DiffAnchor = $TestHistory | Where-Object {$_.$TypeName -in ('Database Differential','Differential')}
         #Check for no more than a single Differential backup
         if (($DiffAnchor.FirstLSN | Select-Object -unique | Measure-Object).count -gt 1)
         {
@@ -107,7 +107,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
 
 
         #Check T-log LSNs form a chain.
-        $TranLogBackups = $TestHistory | Where-Object {$_.$TypeName -eq 'Transaction Log' -and $_.DatabaseBackupLSN -eq $FullDBAnchor.CheckPointLSN} | Sort-Object -Property LastLSN, FirstLsn
+        $TranLogBackups = $TestHistory | Where-Object {$_.$TypeName -in ('Transaction Log','Log') -and $_.DatabaseBackupLSN -eq $FullDBAnchor.CheckPointLSN} | Sort-Object -Property LastLSN, FirstLsn
         for ($i=0; $i -lt ($TranLogBackups.count))
         {
             Write-Verbose "looping t logs"

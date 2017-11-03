@@ -87,22 +87,22 @@ Function Test-DbaBackupInformation {
             }
             #Test Db Existance on destination
             $DbCheck = Get-DbaDatabase -SqlInstance $Sqlinstance -SqlCredential $SqlCredential -Database $Database
-
-            if ($null -ne $DbCheck -and $WithReplace -ne $true -and $continue -ne $true){
-                Write-Message -Message "$Database exists and WithReplace not specified, stopping" -Level Warning
+            
+            if ($null -ne $DbCheck -and ($WithReplace -ne $true -and $continue -ne $true)){
+                Write-Message -Message "Database $Database exists and WithReplace not specified, stopping" -Level Warning
                 $VerificationErrors++
             }
-
+            
             #Test no destinations exist
             $DbFileCheck = (Get-DbaDatabaseFile -SqlInstance $Sqlinstance -SqlCredential $SqlCredential -Database $Database).PhysicalName
-            
+            $OtherFileCheck = (Get-DbaDatabaseFile -SqlInstance $Sqlinstance -SqlCredential $SqlCredential -ExcludeDatabase $Database).PhysicalName
             ForEach ($path in ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object PhysicalName -Unique).physicalname){
                 if(Test-DbaSqlPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $path){
-                    if ($path -in (Get-DbaDatabaseFile -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database).PhysicalName -and (($WithReplace -ne $True -or $Continue -ne $True))){
+                    if (($path -in $DBFileCheck) -and ($WithReplace -ne $True -and $Continue -ne $True)) {
                         Write-Message -Message "File $Path already exists on $SqlInstance and WithReplace not specified, cannot restore" -Level Warning
                         $VerificationErrors++
                     }
-                    elseif ($path -in (Get-DbaDatabaseFile -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database).PhysicalName){
+                    elseif ($path -in $OtherFileName){
                         Write-Message -Message "File $Path already exists on $SqlInstance and owned by another database, cannot restore" -Level Warning
                         $VerificationErrors++
                     }

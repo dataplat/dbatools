@@ -22,7 +22,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Ensuring warning is thrown if database already exists" {
         $results = Restore-DbaDatabase2 -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -WarningVariable warning -WarningAction SilentlyContinue
         It "Should warn" {
-            $warning | Where-Object {$_ -like '*Test-DbaBackupInformation*'} | Should Match "exists on .* and WithReplace not specified, cannot restore"
+            $warning | Where-Object {$_ -like '*Test-DbaBackupInformation*Database*'} | Should Match "exists and WithReplace not specified, stopping"
         }
         It "Should not return object" {
             $results | Should Be $null
@@ -315,7 +315,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = $history | Restore-DbaDatabase2 -SqlInstance $script:instance1 -WithReplace -TrustDbBackupHistory
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
-            ($results.count -gt 0) | Should be $True
+            (($results | Measure-Object).count -gt 0) | Should be $True
         }
     }
 	
@@ -333,7 +333,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = Restore-DbaDatabase2 -SqlInstance $script:instance1 -path $script:appeyorlabrepo\sql2008-backups\Noextension.bak -ErrorVariable Errvar -WarningVariable WarnVar
         It "Should Restore successfully" {
             ($results.RestoreComplete -contains $false) | Should Be $false  
-            ($results.count -gt 0) | Should be $True  
+            (($results | Measure-Object).count -gt 0) | Should be $True  
         }
     }
     Clear-DbaSqlConnectionPool
@@ -351,7 +351,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = Restore-DbaDatabase2 -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
-            ($results.count -gt 0) | Should be $True
+            (($results | measure-Object).count -gt 0) | Should be $True
         }  
         $check = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
         It "Should return 1 database" {
