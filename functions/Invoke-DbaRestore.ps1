@@ -51,7 +51,7 @@ Function Invoke-DbaRestore{
         [PSCredential]$SqlCredential,
         [switch]$OutputScriptOnly,
         [switch]$VerifyOnly,
-        [DateTime]$RestoreTime=(Get-Date).Addays(2),
+        [DateTime]$RestoreTime=(Get-Date).AddDays(2),
         [string]$StandbyDirectory,
         [switch]$NoRecovery,
         [int]$MaxTransferSize,
@@ -87,7 +87,7 @@ Function Invoke-DbaRestore{
                         try {
                             Write-Message -Level Verbose -Message "Set $Database single_user to kill processes"
                             Stop-DbaProcess -SqlInstance $Server -Database $Database -WarningAction Silentlycontinue
-                                $server.Query("Alter database $Database set offline with rollback immediate; alter database $Database set restricted_user; Alter database $Database set online with rollback immediate",'master')
+                            $null = $server.Query("Alter database $Database set offline with rollback immediate; alter database $Database set restricted_user; Alter database $Database set online with rollback immediate",'master')
                             $server.ConnectionContext.Connect()
                         }
                         catch {
@@ -106,9 +106,10 @@ Function Invoke-DbaRestore{
                 $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
                 if (($backup -ne $backups[-1] -and $StandbyDirectory -eq '') -or $true -eq $NoRecovery){
                     $Restore.NoRecovery = $True
-                }elseif ($backup -ne $backups[-1] -and '' -ne $StandbyDirectory) {
-                    Write-Message -Level Verbose -Message "Setting standby on last file"
+                }elseif ($backup -eq $backups[-1] -and '' -ne $StandbyDirectory) {
+                    
                     $Restore.StandbyFile = $StandByDirectory + "\" + $Database + (get-date -Format yyyMMddHHmmss) + ".bak"
+                    Write-Message -Level Verbose -Message "Setting standby on last file $($Restore.StandbyFile)"
                 }
                 else {
                     $Restore.NoRecovery = $False
@@ -130,11 +131,13 @@ Function Invoke-DbaRestore{
                 if ($BlockSize) {
                     $Restore.Blocksize = $BlockSize
                 }
-                ForEach ($file in $backup.FileList){
-                    $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
-                    $MoveFile.LogicalFileName = $File.LogicalName
-                    $MoveFile.PhysicalFileName = $File.PhysicalName
-                    $null = $Restore.RelocateFiles.Add($MoveFile)
+                if ($true -ne $Continue){
+                    ForEach ($file in $backup.FileList){
+                        $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
+                        $MoveFile.LogicalFileName = $File.LogicalName
+                        $MoveFile.PhysicalFileName = $File.PhysicalName
+                        $null = $Restore.RelocateFiles.Add($MoveFile)
+                    }
                 }
                 $Action = switch ($backup.Type) {
                     '1' {'Database'}

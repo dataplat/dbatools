@@ -81,6 +81,7 @@ Function Format-DbaBackupInformation{
         [string]$DatabaseFilePrefix,
         [string]$DatabaseFileSuffix,
         [string]$RebaseBackupFolder,
+        [switch]$continue,
         [switch]$EnableException
     )
     Begin{
@@ -137,26 +138,28 @@ Function Format-DbaBackupInformation{
                 }
             }
             $History.Database = $DatabaseNamePrefix+$History.Database
-            $History.FileList | ForEach-Object {
-                $_.PhysicalName = $_.PhysicalName -Replace $History.OriginalDatabase, $History.Database
-                Write-message -Message " 1 PhysicalName = $($_.PhysicalName) " -Level Verbose
-                $Pname = [System.Io.FileInfo]$_.PhysicalName
-                $RestoreDir = $Pname.DirectoryName
-                if ($_.Type -eq 'D'){
-                    if ('' -ne $DataFileDirectory){
-                        $RestoreDir = $DataFileDirectory
+            if ($true -ne $Continue){
+                $History.FileList | ForEach-Object {
+                    $_.PhysicalName = $_.PhysicalName -Replace $History.OriginalDatabase, $History.Database
+                    Write-message -Message " 1 PhysicalName = $($_.PhysicalName) " -Level Verbose
+                    $Pname = [System.Io.FileInfo]$_.PhysicalName
+                    $RestoreDir = $Pname.DirectoryName
+                    if ($_.Type -eq 'D'){
+                        if ('' -ne $DataFileDirectory){
+                            $RestoreDir = $DataFileDirectory
+                        }
+                    }elseif ($_.Type -eq 'L'){
+                        if ('' -ne $LogFileDirectory){
+                            $RestoreDir = $LogFileDirectory
+                        }
+                        elseif ('' -ne $DataFileDirectory){
+                            $RestoreDir = $DataFileDirectory
+                        }
                     }
-                }elseif ($_.Type -eq 'L'){
-                    if ('' -ne $LogFileDirectory){
-                        $RestoreDir = $LogFileDirectory
-                    }
-                    elseif ('' -ne $DataFileDirectory){
-                        $RestoreDir = $DataFileDirectory
-                    }
+                    
+                    $_.PhysicalName = $RestoreDir+"\"+$DatabaseFilePrefix+$Pname.BaseName+$DatabaseFileSuffix+$pname.extension
+                    Write-message -Message "PhysicalName = $($_.PhysicalName) " -Level Verbose
                 }
-                
-                $_.PhysicalName = $RestoreDir+"\"+$DatabaseFilePrefix+$Pname.BaseName+$DatabaseFileSuffix+$pname.extension
-                Write-message -Message "PhysicalName = $($_.PhysicalName) " -Level Verbose
             }
             if ($null -ne $RebaseBackupFolder){
                 $History.FullName | ForEach-Object{

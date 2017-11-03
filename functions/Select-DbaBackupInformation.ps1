@@ -79,16 +79,18 @@ function Select-DbaBackupInformation{
     begin{
         $InternalHistory = @()
 
-        if(Test-Bound -ParameterName ContinuePoints){
+        if((Test-Bound -ParameterName ContinuePoints) -and $null -ne $ContinuePoints){
            Write-Message -Message "ContinuePoints provided so setting up for a continue" -Level Verbose 
             
             $IgnoreDiffs = $true
             $IgnoreFull = $true
             if (Test-Bound -ParameterName DatabaseName){
-                $DatabaseName = $DatabaseName | Where-Object {$_ -in ($ContinuePoints | Select-Object -Propery Database).Database}
+                $DatabaseName = $DatabaseName | Where-Object {$_ -in ($ContinuePoints | Select-Object -Property Database).Database}
                 
-                $DroppedDatabases = $DatabaseName | Where-Object {$_ -notin ($ContinuePoints | Select-Object -Propery Database).Database}
-                Write-Message -Message "$($DroppedDatabases.join(',')) filtered out as not in ContinuePoints"
+                $DroppedDatabases = $DatabaseName | Where-Object {$_ -notin ($ContinuePoints | Select-Object -Property Database).Database}
+                if ($null -ne $DroppedDatabases){
+                    Write-Message -Message "$($DroppedDatabases.join(',')) filtered out as not in ContinuePoints" -Level Verbose
+                }
             }
             else {
                 $DatabaseName = ($ContinuePoints | Select-Object -Property Database).Database

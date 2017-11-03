@@ -22,7 +22,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Ensuring warning is thrown if database already exists" {
         $results = Restore-DbaDatabase2 -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -WarningVariable warning -WarningAction SilentlyContinue
         It "Should warn" {
-            $warning | Where-Object {$_ -like '*Test-DbaBackupInformation*'} | Should Match "exists and WithReplace not specified, stopping"
+            $warning | Where-Object {$_ -like '*Test-DbaBackupInformation*'} | Should Match "exists on .* and WithReplace not specified, cannot restore"
         }
         It "Should not return object" {
             $results | Should Be $null

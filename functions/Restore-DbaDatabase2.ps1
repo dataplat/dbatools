@@ -259,7 +259,7 @@ function Restore-DbaDatabase2 {
         [parameter(ParameterSetName="Restore")]
         [String]$DestinationLogDirectory,
         [parameter(ParameterSetName="Restore")]
-        [DateTime]$RestoreTime = (Get-Date).addyears(1),
+        [DateTime]$RestoreTime = (Get-Date).AddYears(1),
         [parameter(ParameterSetName="Restore")]
         [switch]$NoRecovery,
         [parameter(ParameterSetName="Restore")]
@@ -305,7 +305,11 @@ function Restore-DbaDatabase2 {
         [string]$DestinationFileSuffix,
         [parameter(ParameterSetName="Recovery")]
         [switch]$Recover,
-        [switch]$AllowContinue
+        [switch]$AllowContinue,
+        [string]$GetBackupInformation,
+        [string]$SelectBackupInformation,
+        [string]$FormatBackupInformation,
+        [string]$TestBackupInformation
 
     )
     begin {
@@ -367,7 +371,7 @@ function Restore-DbaDatabase2 {
             }
             if ($Continue) {
                 $ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-                $WithReplace = $true 
+                #$WithReplace = $true 
                 #$ContinuePoints
             }
             if (!($PSBoundParameters.ContainsKey("DataBasename"))){
@@ -487,12 +491,30 @@ function Restore-DbaDatabase2 {
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
             Write-Message -message "DatabaseName - $DatabaseName" -Level Verbose
             $FilteredBackupHistory =@()
-            $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -DatabaseName ''
+            if (Test-Bound -ParameterName GetBackupInformation) {
+                Write-Message -Message "Setting $GetBackupInformation to BackupHistory" -Level Verbose
+                Set-Variable -Name $GetBackupInformation -Value $BackupHistory -Scope Global
+            }
+            $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints
             #-DatabaseName $DatabaseName 
             #return $FilteredBackupHistory
             
-            $null = $FilteredBackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatababaseNamePrefix -ReplaceDatabaseName $DatabaseName
-            $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $SqlInstance -SqlCredential $SqlCredential  -WithReplace:$WithReplace
+            if ( Test-Bound -ParameterName SelectBackupInformation){
+                Write-Message -Message "Setting $SelectBackupInformation to FilteredBackupHistory" -Level Verbose
+                Set-Variable -Name $SelectBackupInformation -Value $FilteredBackupHistory -Scope Global
+                
+            }
+            $null = $FilteredBackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatababaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue
+            
+            if ( Test-Bound -ParameterName FormatBackupInformation){
+                Set-Variable -Name $FormatBackupInformation -Value $FilteredBackupHistory -Scope Global
+            }
+            
+            $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $SqlInstance -SqlCredential $SqlCredential  -WithReplace:$WithReplace -Continue:$Continue
+            
+            if ( Test-Bound -ParameterName TestBackupInformation){
+                Set-Variable -Name $TestBackupInformation -Value $FilteredBackupHistory -Scope Global
+            }
             $DbVerfied = ($FilteredBackupHistory | Where-Object {$_.IsVerified -eq $True} | Select-Object -Property Database -Unique).Database -join ','
             Write-Message -Message "$DbVerfied passed testing" -Level Verbose 
             
@@ -507,8 +529,9 @@ function Restore-DbaDatabase2 {
                }
             }
             #return $FilteredBackupHistory
+            
             Write-Message -Message "Passing in to restore" -Level Verbose
-            $FilteredBackupHistory | Where-Object {$_.IsVerified -eq $true} | Invoke-DbaRestore -SqlInstance $SqlInstance -SqlCredential $SqlCredential -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery
+            $FilteredBackupHistory | Where-Object {$_.IsVerified -eq $true} | Invoke-DbaRestore -SqlInstance $SqlInstance -SqlCredential $SqlCredential -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue
         
         }
     }
