@@ -51,6 +51,7 @@ Function Test-DbaBackupInformation {
     [DbaInstanceParameter]$SqlInstance,
     [PSCredential]$SqlCredential,
     [switch]$Withreplace,
+    [switch]$continue,
     [switch]$EnableException
     )
 
@@ -63,6 +64,9 @@ Function Test-DbaBackupInformation {
             return
         }
         $InternalHistory = @()
+        if ($continue){
+            Write-Verbose "bloody work"
+        }
     }
     Process{
         ForEach ($bh in $BackupHistory){
@@ -84,7 +88,7 @@ Function Test-DbaBackupInformation {
             #Test Db Existance on destination
             $DbCheck = Get-DbaDatabase -SqlInstance $Sqlinstance -SqlCredential $SqlCredential -Database $Database
 
-            if ($null -ne $DbCheck -and $WithReplace -ne $true){
+            if ($null -ne $DbCheck -and $WithReplace -ne $true -and $continue -ne $true){
                 Write-Message -Message "$Database exists and WithReplace not specified, stopping" -Level Warning
                 $VerificationErrors++
             }
@@ -94,7 +98,7 @@ Function Test-DbaBackupInformation {
             
             ForEach ($path in ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object PhysicalName -Unique).physicalname){
                 if(Test-DbaSqlPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $path){
-                    if ($path -in (Get-DbaDatabaseFile -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database).PhysicalName -and $WithReplace -ne $True){
+                    if ($path -in (Get-DbaDatabaseFile -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database).PhysicalName -and (($WithReplace -ne $True -or $Continue -ne $True))){
                         Write-Message -Message "File $Path already exists on $SqlInstance and WithReplace not specified, cannot restore" -Level Warning
                         $VerificationErrors++
                     }
@@ -128,11 +132,12 @@ Function Test-DbaBackupInformation {
             }
 
             #Test for LSN chain
-            if (!($DbHistory | Test-DbaLsnChain)) {
-                Write-Message -Message "LSN Check failed" -Level Verbose
-                $VerificationErrors++
+            if ($true -ne $Continue){   
+                if (!($DbHistory | Test-DbaLsnChain)) {
+                    Write-Message -Message "LSN Check failed" -Level Verbose
+                    $VerificationErrors++
+                }
             }
-
             if ($VerificationErrors -eq 0){
                 Write-Message -Message "Marking $Database as verified" -Level Verbose
                 $InternalHistory | Where-Object {$_.Database -eq $Database} | ForEach-Object {$_.IsVerified = $True}
