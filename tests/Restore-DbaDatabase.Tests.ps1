@@ -22,7 +22,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Ensuring warning is thrown if database already exists" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -WarningVariable warning -WarningAction SilentlyContinue
         It "Should warn" {
-            $warning | Should Match "exists and WithReplace not specified, stopping"
+            $warning | Where-Object {$_ -like '*Test-DbaBackupInformation*Database*'} | Should Match "exists and WithReplace not specified, stopping"
         }
         It "Should not return object" {
             $results | Should Be $null
@@ -195,6 +195,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         It "Should return successful restore" {
             ($results.RestoreComplete -contains $false) | Should Be $false
+            ($results.count -gt 0) | Should be $True
         }
 	}
 	
@@ -216,6 +217,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query "select convert(datetime,convert(varchar(20),max(dt),120)) as maxdt, convert(datetime,convert(varchar(20),min(dt),120)) as mindt from RestoreTimeClean.dbo.steps"
         It "Should restore cleanly" {
             ($results.RestoreComplete -contains $false) | Should Be $false
+            ($results.count -gt 0) | Should be $True
         }      
         It "Should have restored 5 files" {
             $results.count | Should be 5
@@ -313,6 +315,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = $history | Restore-DbaDatabase -SqlInstance $script:instance1 -WithReplace -TrustDbBackupHistory
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
+            (($results | Measure-Object).count -gt 0) | Should be $True
         }
     }
 	
@@ -329,7 +332,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Restores a db with log and file files missing extensions" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -path $script:appeyorlabrepo\sql2008-backups\Noextension.bak -ErrorVariable Errvar -WarningVariable WarnVar
         It "Should Restore successfully" {
-            ($results.RestoreComplete -contains $false) | Should Be $false    
+            ($results.RestoreComplete -contains $false) | Should Be $false  
+            (($results | Measure-Object).count -gt 0) | Should be $True  
         }
     }
     Clear-DbaSqlConnectionPool
@@ -347,6 +351,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
+            (($results | measure-Object).count -gt 0) | Should be $True
         }  
         $check = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
         It "Should return 1 database" {
@@ -362,6 +367,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Recover -DatabaseName $DatabaseName 
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
+            (($results | measure-Object).count -gt 0) | Should be $True
         }  
         $check = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
         It "Should return 1 database" {
@@ -377,6 +383,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -NoRecovery -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
+            (($results | measure-Object).count -gt 0) | Should be $True
         }  
         $check = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
         It "Should return 1 database" {
@@ -392,6 +399,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName | Restore-DbaDatabase -SqlInstance $script:instance1 -Recover 
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
+            (($results | measure-Object).count -gt 0) | Should be $True
         }  
         $check = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
         It "Should return 1 database" {
@@ -407,6 +415,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = Restore-DbaDatabase -SqlInstance $script:instance1_detailed -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak  -DatabaseName $DatabaseName -DestinationFilePrefix $DatabaseName -WithReplace
         It "Should have restored everything successfully" {
             ($results.RestoreComplete -contains $false) | Should be $False
+            (($results | measure-Object).count -gt 0) | Should be $True
         }        
     }
 
