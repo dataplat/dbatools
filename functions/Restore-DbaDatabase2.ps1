@@ -377,6 +377,7 @@ function Restore-DbaDatabase2 {
             if (!($PSBoundParameters.ContainsKey("DataBasename"))){
                $PipeDatabaseName = $true
             }
+            
         }
         
         try {
@@ -396,7 +397,7 @@ function Restore-DbaDatabase2 {
             $DestinationLogDirectory = $DefaultPath.Log
         }
         $backupFiles = @()
-        $BackpHistory = @()
+        $BackupHistory = @()
         #$useDestinationDefaultDirectories = $true
     }
     process{
