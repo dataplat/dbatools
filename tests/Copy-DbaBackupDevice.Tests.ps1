@@ -35,13 +35,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			}
 		}
 		
-		if ($results.Status -eq "Successful") {
-			$results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue
-			if ($warn) {
-				It "does not overwrite existing" {
-					$warn -match "exists at destination" | Should Be $true
-				}
-			}
+		$results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2
+		It "Should say skipped" {
+			$results.Status -ne "Successful"| Should be $true
 		}
 	}
 }

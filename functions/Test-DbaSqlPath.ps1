@@ -76,7 +76,7 @@ function Test-DbaSqlPath {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
-			Write-Message -Level VeryVerbose -Message "Checking acces to $path for $instance."
+			Write-Message -Level VeryVerbose -Message "Checking access to $path for $instance."
 			$sql = "EXEC master.dbo.xp_fileexist '$path'"
 			try {
 				Write-Message -Level Debug -Message "Executing: $sql."

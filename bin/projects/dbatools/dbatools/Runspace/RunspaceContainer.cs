@@ -73,7 +73,11 @@ namespace Sqlcollaborative.Dbatools.Runspace
         /// <param name="Runspace">The runspace to be named</param>
         private void SetName(System.Management.Automation.Runspaces.Runspace Runspace)
         {
+            #if (NORUNSPACENAME)
+
+            #else
             Runspace.Name = Name;
+            #endif
         }
 
         /// <summary>

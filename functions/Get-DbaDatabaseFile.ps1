@@ -177,6 +177,9 @@ function Get-DbaDatabaseFile {
 					if ($maxsize -gt -1) {
 						$maxsize = [dbasize]($result.MaxSize * 8192)
 					}
+					else {
+						$maxsize = [dbasize]($result.MaxSize)
+					}
 					
 					if ($result.VolumeFreeSpace) {
 						$VolumeFreeSpace = [dbasize]$result.VolumeFreeSpace

@@ -183,8 +183,6 @@ function Set-DbaTempDbConfiguration {
 			$LogFileGrowthMB = 0
 		}
 		
-		$LogSizeMBActual = if (-not $LogFileSizeMB) { $([Math]::Floor($DataFileSizeMB / 4)) }
-
 		# Check current tempdb. Throw an error if current tempdb is larger than config.
 		$CurrentFileCount = $server.Databases['tempdb'].ExecuteWithResults('SELECT count(1) as FileCount FROM sys.database_files WHERE type=0').Tables[0].Rows[0].FileCount
 		$TooBigCount = $server.Databases['tempdb'].ExecuteWithResults("SELECT TOP 1 (size/128) as Size FROM sys.database_files WHERE size/128 > $DataFilesizeSingleMB AND type = 0").Tables[0].Rows[0].Size
@@ -258,7 +256,7 @@ function Set-DbaTempDbConfiguration {
 						DataFileCount        = $DataFileCount
 						DataFileSizeMB       = $DataFileSizeMB
 						SingleDataFileSizeMB = $DataFilesizeSingleMB
-						LogSizeMB            = $LogSizeMBActual
+						LogSizeMB            = $LogFileSizeMB
 						DataPath             = $DataPath
 						LogPath              = $LogPath
 						DataFileGrowthMB     = $DataFileGrowthMB

@@ -161,6 +161,6 @@ function Sync-DbaSqlLoginPermission {
 		Sync-Only -SourceServer $sourceServer -DestServer $destServer -Logins $logins -Exclude $ExcludeLogin
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Sync-DbaSqlLoginPermission
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Sync-SqlLoginPermissions
 	}
 }
