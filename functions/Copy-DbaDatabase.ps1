@@ -1013,7 +1013,7 @@ function Copy-DbaDatabase {
 						$dropResult = Remove-SqlDatabase $destServer $dbName
 						
 						if ($dropResult -eq $false) {
-							Write-Message -Level Verbose -Message "Database could not be dropped. Aborting routine for this database'"
+							Write-Message -Level Verbose -Message "Database could not be dropped. Aborting routine for this database."
 							
 							$copyDatabaseStatus.Status = "Failed"
 							$copyDatabaseStatus.Notes = "Could not drop database"
@@ -1061,10 +1061,10 @@ function Copy-DbaDatabase {
 						$backupResult = $BackupTmpResult.BackupComplete
 						if ($backupResult -eq $false) {
 							$serviceAccount = $sourceServer.ServiceAccount
-							Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to '${NetworkShare}'? Aborting routine for this database."
+							Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to $($NetworkShare)? Aborting routine for this database."
 							
 							$copyDatabaseStatus.Status = "Failed"
-							$copyDatabaseStatus.Notes = "Backup failed. Verify service account access to '${NetworkShare}'."
+							$copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $NetworkShare."
 							$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							continue
 						}
@@ -1214,7 +1214,7 @@ function Copy-DbaDatabase {
 								Write-Message -Level Verbose -Message "Successfully updated DatabaseOwnershipChaining for $sourceDbOwnerChaining on $dbName on $destination."
 							}
 							catch {
-								$copyDatabaseStatus.Status = "Successful - failed to apply DatabaseOwnershipChaining"
+								$copyDatabaseStatus.Status = "Successful - failed to apply DatabaseOwnershipChaining."
 								$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 								Stop-Function -Message "Failed to update DatabaseOwnershipChaining for $sourceDbOwnerChaining on $dbName on $destination." -Target $destination -ErrorRecord $_ -Continue
 							}
