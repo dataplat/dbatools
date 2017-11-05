@@ -482,7 +482,7 @@ function Restore-DbaDatabase {
                 }
                 $RestoreComplete  = $true
                 $RecoverSql  = "RESTORE DATABASE $Database WITH RECOVERY"
-                Write-Message -Message "rsql - $RecoverSql" -level verbose
+                Write-Message -Message "Recovery Sql Query - $RecoverSql" -level verbose
                 Try{
                     $server.query($RecoverSql)
                 }
@@ -505,15 +505,13 @@ function Restore-DbaDatabase {
     end {
         if (Test-FunctionInterrupt) { return }
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
-            Write-Message -message "DatabaseName - $DatabaseName" -Level Verbose
+            Write-Message -message "Processing DatabaseName - $DatabaseName" -Level Verbose
             $FilteredBackupHistory =@()
             if (Test-Bound -ParameterName GetBackupInformation) {
                 Write-Message -Message "Setting $GetBackupInformation to BackupHistory" -Level Verbose
                 Set-Variable -Name $GetBackupInformation -Value $BackupHistory -Scope Global
             }
             $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints
-            #-DatabaseName $DatabaseName 
-            #return $FilteredBackupHistory
             
             if ( Test-Bound -ParameterName SelectBackupInformation){
                 Write-Message -Message "Setting $SelectBackupInformation to FilteredBackupHistory" -Level Verbose
@@ -544,7 +542,6 @@ function Restore-DbaDatabase {
                    return
                }
             }
-            #return $FilteredBackupHistory
             
             Write-Message -Message "Passing in to restore" -Level Verbose
             $FilteredBackupHistory | Where-Object {$_.IsVerified -eq $true} | Invoke-DbaRestore -SqlInstance $SqlInstance -SqlCredential $SqlCredential -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue

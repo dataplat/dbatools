@@ -122,13 +122,13 @@ function Get-DbaBackupInformation {
     )
     begin {
 
-        Function Hash-String{
+        Function Get-HashString{
             param(
                 [String]$InString
                 )
 
             $StringBuilder = New-Object System.Text.StringBuilder
-            [System.Security.Cryptography.HashAlgorithm]::Create("md5").ComputeHash([System.Text.Encoding]::UTF8.GetBytes($InString))| ForEach{
+            [System.Security.Cryptography.HashAlgorithm]::Create("md5").ComputeHash([System.Text.Encoding]::UTF8.GetBytes($InString))| ForEach-Object{
                 [Void]$StringBuilder.Append($_.ToString("x2"))
             }
             return $StringBuilder.ToString()
@@ -246,13 +246,13 @@ function Get-DbaBackupInformation {
         }
         if ($true -eq $Anonymise){
             ForEach ($group in $GroupResults){
-                $group.ComputerName = Hash-String -InString $group.ComputerName 
-                $group.InstanceName = Hash-String -InString $group.InstanceName
-                $group.SqlInstance = Hash-String -InString $group.SqlInstance
-                $group.Database = Hash-String -InString $group.Database 
-                $group.UserName = Hash-String -InString $group.UserName 
-                $group.Path = Hash-String -InString  $Group.Path
-                $group.FullName = Hash-String -InString $Group.Fullname 
+                $group.ComputerName = Get-HashString -InString $group.ComputerName 
+                $group.InstanceName = Get-HashString -InString $group.InstanceName
+                $group.SqlInstance = Get-HashString -InString $group.SqlInstance
+                $group.Database = Get-HashString -InString $group.Database 
+                $group.UserName = Get-HashString -InString $group.UserName 
+                $group.Path = Get-HashString -InString  $Group.Path
+                $group.FullName = Get-HashString -InString $Group.Fullname 
             }
         }
         if ((Test-Bound -parameterName exportpath) -and $null -ne $ExportPath) {
