@@ -14,15 +14,20 @@ function Select-DbaBackupInformation{
 
     .PARAMETER IgnoreLogs
         This switch will cause Log Backups to be ignored. So will restore to the last Full or Diff backup only
+    
     .PARAMETER IgnoreDiffs
         This switch will cause Differential backups to be ignored. Unless IgnoreLogs is specified, restore to point in time will still occur, just using all available log backups
+    
     .PARAMETER DatabaseName
         A string array of Database Names that you want to filter to
+    
     .PARAMETER ServerName
         A string array of Server Names that you want to filter 
+    
     .PARAMETER ContinuePoints
         The Output of Get-RestoreContinuableDatabase while provides 'Database',redo_start_lsn,'FirstRecoveryForkID' values. Used to filter backups to continue a restore on a database
         Sets IgnoreDiffs, and also filters databases to only those within the ContinuePoints object, or the ContinuePoints object AND DatabaseName if both specified
+    
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -64,7 +69,7 @@ function Select-DbaBackupInformation{
     Returns all the backups in \\server1\backups$ to restore to 1 hour ago using only Full and Diff backups.    
 
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding()]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object]$BackupHistory,

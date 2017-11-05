@@ -30,7 +30,18 @@ Function Test-DbaBackupInformation {
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+     
+    .EXAMPLE
+    
+        $BackupHistory | Test-DbaBackupInformation -SqlInstance MyInstance
+
+        $PassedDbs = $BackupHistory | Where-Object {$_.IsVerified -eq $True}
+        $FailedDbs = $BackupHistory | Where-Object {$_.IsVerified -ne $True}
+
+        Pass in a BackupHistory object to be tested against MyInstance.
+
+        Those records that pass are marked as verified. We can then use the IsVerified property to divide the failures and succeses
+
     .NOTES 
     Author:Stuart Moore (@napalmgram stuart-moore.com )
     DisasterRecovery, Backup, Restore
@@ -64,9 +75,6 @@ Function Test-DbaBackupInformation {
             return
         }
         $InternalHistory = @()
-        if ($continue){
-            Write-Verbose "bloody work"
-        }
     }
     Process{
         ForEach ($bh in $BackupHistory){
@@ -102,7 +110,7 @@ Function Test-DbaBackupInformation {
                         Write-Message -Message "File $Path already exists on $SqlInstance and WithReplace not specified, cannot restore" -Level Warning
                         $VerificationErrors++
                     }
-                    elseif ($path -in $OtherFileName){
+                    elseif ($path -in $OtherFileCheck){
                         Write-Message -Message "File $Path already exists on $SqlInstance and owned by another database, cannot restore" -Level Warning
                         $VerificationErrors++
                     }
@@ -143,7 +151,7 @@ Function Test-DbaBackupInformation {
                 $InternalHistory | Where-Object {$_.Database -eq $Database} | ForEach-Object {$_.IsVerified = $True}
             }
             else{
-                Write-Message -Message "Verification errors  = $VerificationErrors" -Level Verbose
+                Write-Message -Message "Verification errors  = $VerificationErrors - Has not Passed" -Level Verbose
             }
         }
         $InternalHistory

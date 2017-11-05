@@ -1,66 +1,80 @@
 Function Invoke-DbaRestore{
     <#
     .SYNOPSIS
-        Transforms the data in a dbatools backuphistory object for a restore
-    
+        Restores the contents of a BackupHistory object
     .DESCRIPTION
-       Performs various mapping on Backup History, ready restoring
-       Options include changing restore paths, backup paths, database name and many others
-    
+        Assumes a BackupHistory object has passed through the *-DbaBackupInformation pipeline to have been suitably filtered, transformed and tested so as to be ready for restore
+
     .PARAMETER BackupHistory
+        The BackupHistory object to be restored.
+        Can be passed in on pipeline
 
-    .PARAMETER ReplaceDatabasName
-        If a single value is provided, this will be replaced do all occurences a database name
-        If a Hashtable is passed in, each database name mention will be replaced as specified. If a database's name does not apper it will not be replace
-        DatabaseName will also be replaced where it  occurs in the file paths of data and log files.
-        Please note, that this won't change the Logical Names of datafiles, that has to be done with a seperate Alter DB call
-    
-    .PARAMETER DatabaseNamePrefix
-        This string will be prefixed to all restored database's name 
-        
-    .PARAMETER DataFileDirectory
-        This will move ALL restored files to this location during the restore
+    .PARAMETER SqlInstance
+        The SqlInstance to which the backups should be restored
 
-    .PARAMETER LogFileDirectory
-        This will move all log files to this location. 
-    
-    .PARAMETER FileNamePrefix
-        This string will  be prefixed to all restored files (Data and Log)
+    .PARAMETER SqlCredential
+        SqlCredential to be used to connect to the target SqlInstance
 
-    .PARAMETER RebaseBackupFolder
-        Use this to rebase where your backups are stored. 
-    
+    .PARAMETER OutputScriptOnly
+        If set, the restore will not be performed, but the T-SQL scripts to perform it will be returned
+
+    .PARAMETER VerifyOnly
+        If set, performs a Verify of the backups rather than a full restore 
+
+    .PARAMETER RestoreTime
+        Point in Time to which the database should be restored.
+
+        This should be the same value or earlier, as used in the previous pipeline stages
+
     .PARAMETER StandbyDirectory
-        Specified where the temporary files needed when running a database in Standby mode
+        A folder path where a standby file should be created to put the recoverd databases in a standby mode
 
-    .EXAMPLE
-        $History | Format-DbaBackupInformation -ReplaceDatabaseName NewDb
+    .PARAMETER NoRecovery
+        Leave the database in a restoring state so that further restore may be made
 
-    .EXAMPLE
-        $History | Format-DbaBackupInformation -ReplaceDatabaseName @{'OldB'='NewDb';'ProdHr'='DevPr'}   
+    .PARAMETER MaxTransferSize
+
+    .PARAMETER BlockSize
+    .PARAMETER BufferCount
+    .PARAMETER Continue
+        Indicates that the restore is continuing a restore, so target database must be in Recovering or Standby states
     
+    .PARAMETER AzureCredential
+        AzureCredential required to connect to blob storage holding the backups
+
+    .PARAMETER WithReplace    
+        Indicated that if the database already exists it should be replaced
+
     .EXAMPLE
-        $History | Format-DbaBackupInformation -DataFileDirectory 'D:\DataFiles\' -LogFileDirectory 'E:\LogFiles\
+        $BackupHistory | Invoke-DbaRestore -SqlInstance MyInstance
+
+        Will restore all the backups in the BackupHistory object according to the transformations it contains
+
+    .EXAMPLE
+        $BackupHistory | Invoke-DbaRestore -SqlInstance MyInstance -OutputScriptOnly
+        $BackupHistory | Invoke-DbaRestore -SqlInstance MyInstance
+
+        First generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the full restore. By  reusing the BackupHistory object there is no need to rescan all the backup files again 
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [object[]]$BackupHistory,
+        .PARAMETER BackupHistory,
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter]$SqlInstance,
-        [PSCredential]$SqlCredential,
-        [switch]$OutputScriptOnly,
-        [switch]$VerifyOnly,
-        [DateTime]$RestoreTime=(Get-Date).AddDays(2),
-        [string]$StandbyDirectory,
-        [switch]$NoRecovery,
-        [int]$MaxTransferSize,
-        [int]$BlockSize,
-        [int]$BufferCount,
-        [switch]$Continue,
-        [string]$AzureCredential,
-        [switch]$WithReplace,
-        [switch]$EnableException
+        .PARAMETER SqlInstance,
+        .PARAMETER SqlCredential,
+        .PARAMETER OutputScriptOnly,
+        .PARAMETER VerifyOnly,
+        .PARAMETER RestoreTime=(Get-Date).AddDays(2),
+        .PARAMETER StandbyDirectory,
+        .PARAMETER NoRecovery,
+        .PARAMETER MaxTransferSize,
+        .PARAMETER BlockSize,
+        .PARAMETER BufferCount,
+        .PARAMETER Continue,
+        .PARAMETER AzureCredential,
+        .PARAMETER WithReplace,
+        .PARAMETER EnableException
     )
     begin{
         try {
