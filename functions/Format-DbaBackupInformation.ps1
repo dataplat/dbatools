@@ -75,6 +75,7 @@ Function Format-DbaBackupInformation{
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$BackupHistory,
         [object]$ReplaceDatabaseName,
+        [switch]$ReplaceDbNameInFile,
         [string]$DataFileDirectory,
         [string]$LogFileDirectory,
         [string]$DatabaseNamePrefix,
@@ -125,6 +126,13 @@ Function Format-DbaBackupInformation{
              if ("IsVerified" -notin $History.PSobject.Properties.name){
                 $History | Add-Member -Name 'IsVerified' -Type NoteProperty -Value $False
              }
+             Switch ($History.Type)
+             {
+                 'Full' {$History.Type = 'Database'}
+                 'Differential' {$History.Type = 'Database Differential'}
+                 'Log' {$History.Type = 'Transaction Log'}
+             }
+
              
             if ($ReplaceDatabaseNameType -eq 'single' -and $ReplaceDatabaseName -ne '' ){
                 $History.Database = $ReplaceDatabaseName
@@ -140,15 +148,17 @@ Function Format-DbaBackupInformation{
             $History.Database = $DatabaseNamePrefix+$History.Database
             if ($true -ne $Continue){
                 $History.FileList | ForEach-Object {
-                    $_.PhysicalName = $_.PhysicalName -Replace $History.OriginalDatabase, $History.Database
+                    if ($ReplaceDbNameInFile -eq $true) {
+                        $_.PhysicalName = $_.PhysicalName -Replace $History.OriginalDatabase, $History.Database
+                    }
                     Write-message -Message " 1 PhysicalName = $($_.PhysicalName) " -Level Verbose
                     $Pname = [System.Io.FileInfo]$_.PhysicalName
                     $RestoreDir = $Pname.DirectoryName
-                    if ($_.Type -eq 'D'){
+                    if ($_.Type -eq 'D' -or $_.FileType -eq 'D'){
                         if ('' -ne $DataFileDirectory){
                             $RestoreDir = $DataFileDirectory
                         }
-                    }elseif ($_.Type -eq 'L'){
+                    }elseif ($_.Type -eq 'L' -or $_.FileType -eq 'L'){
                         if ('' -ne $LogFileDirectory){
                             $RestoreDir = $LogFileDirectory
                         }

@@ -427,6 +427,7 @@ function Restore-DbaDatabase {
                         Stop-Function -Message "At least one Azure backup passed in, and no Credential supplied. Stopping"
                         return
                     }
+                    
                     $BackupHistory += $F | Select-Object *, @{ Name = "ServerName"; Expression = { $_.SqlInstance } }, @{ Name = "BackupStartDate"; Expression = { $_.Start -as [DateTime] } }
 
                 }
@@ -505,7 +506,7 @@ function Restore-DbaDatabase {
                 Set-Variable -Name $SelectBackupInformation -Value $FilteredBackupHistory -Scope Global
                 
             }
-            $null = $FilteredBackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatababaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue
+            $null = $FilteredBackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatababaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile
             
             if ( Test-Bound -ParameterName FormatBackupInformation){
                 Set-Variable -Name $FormatBackupInformation -Value $FilteredBackupHistory -Scope Global
