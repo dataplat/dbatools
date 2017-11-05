@@ -428,6 +428,9 @@ function Restore-DbaDatabase {
                     if ("DatabaseName" -notin $f.PSobject.Properties.name) {
                         $f = $f | Select-Object *, @{ Name = "DatabaseName"; Expression = { $_.Database } }
                     }
+                    if ("Database" -notin $f.PSobject.Properties.name) {
+                        $f = $f | Select-Object *, @{ Name = "Database"; Expression = { $_.DatabaseName } }
+                    }
                     if ("Type" -notin $f.PSobject.Properties.name) {
                         #$f = $f | Select-Object *,  @{Name="Type";Expression={"Full"}}
                     }

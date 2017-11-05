@@ -59,22 +59,22 @@ Function Invoke-DbaRestore{
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        $BackupHistory,
+        [Object[]]$BackupHistory,
         [Alias("ServerInstance", "SqlServer")]
-        $SqlInstance,
-        $SqlCredential,
-        $OutputScriptOnly,
-        $VerifyOnly,
-        $RestoreTime=(Get-Date).AddDays(2),
-        $StandbyDirectory,
-        $NoRecovery,
-        $MaxTransferSize,
-        $BlockSize,
-        $BufferCount,
-        $Continue,
-        $AzureCredential,
-        $WithReplace,
-        $EnableException
+        [DbaInstanceParameter]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [switch]$OutputScriptOnly,
+        [switch]$VerifyOnly,
+        [datetime]$RestoreTime=(Get-Date).AddDays(2),
+        [string]$StandbyDirectory,
+        [switch]$NoRecovery,
+        [int]$MaxTransferSize,
+        [int]$BlockSize,
+        [int]$BufferCount,
+        [switch]$Continue,
+        [PSCredential]$AzureCredential,
+        [switch]$WithReplace,
+        [switch]$EnableException
     )
     begin{
         try {

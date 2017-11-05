@@ -118,7 +118,7 @@ function Select-DbaBackupInformation{
         
         $Databases = ($InternalHistory | Select-Object -Property Database -unique).Database
         ForEach ($Database in $Databases) {
-            
+            Write-Message -Message "Processing Db $Database" -Level Verbose
             $DatabaseHistory = $InternalHistory | Where-Object {$_.Database -eq $Database}
             
             $dbHistory = @()
