@@ -44,4 +44,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			($results | Where-Object Database -match "master").Count | Should BeGreaterThan 0
 		}
 	}
+
+	Context "Should not Throw an error with Last" {
+		$results = Get-DbaBackupHistory -SqlInstance $script:instance1 -Last -Database $dbname -ErrorVariable errvar
+		It "SHould not throw" {
+			$errvar.count | Should be 0
+		}
+		It "Should only return one row per database" {
+		
+		}
+	} 
 }

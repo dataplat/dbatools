@@ -139,6 +139,18 @@ function Restore-DbaDatabase {
         By default, Restore-DbaDatabase will stop restoring any databases if it comes across an error.
         Use this switch to enable it to restore all databases without issues.
 
+    .PARAMETER GetBackupInformation
+        Passing a string value into this parameter will cause a global variable to be created holding the output of Get-DbaBackupInformation
+        
+    .PARAMETER SelectBackupInformation
+        Passing a string value into this parameter will cause a global variable to be created holding the output of Select-DbaBackupInformation
+    
+    .PARAMETER FormatBackupInformation
+        Passing a string value into this parameter will cause a global variable to be created holding the output of Format-DbaBackupInformation
+    
+    .PARAMETER TestBackupInformation
+        Passing a string value into this parameter will cause a global variable to be created holding the output of Test-DbaBackupInformation
+
 	.PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -234,6 +246,8 @@ function Restore-DbaDatabase {
     .EXAMPLE
         Restore-DbaDatabase -SqlInstance server\instance1 -Path c:\backups -DatabaseName example1 -WithNoRecovery
         Restore-DbaDatabase -SqlInstance server\instance1 -Recover -DatabaseName example1
+    
+    .EXAMPLE
 
     .NOTES
         Tags: DisasterRecovery, Backup, Restore

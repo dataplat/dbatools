@@ -55,15 +55,10 @@ function Get-DbaBackupInformation {
     
     .PARAMETER Import
         When specified along with a path the command will import a previously exported 
+    
     .PARAMETER EnableException
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
         Use this if you want the function to throw terminating errors you want to catch.
-    
-	.PARAMETER Confirm
-        Prompts to confirm certain actions
-    
-    .PARAMETER WhatIf
-        Shows what would happen if the command would execute, but does not actually perform the command
     
     .EXAMPLE
         Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse

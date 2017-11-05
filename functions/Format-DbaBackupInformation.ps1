@@ -54,7 +54,7 @@ Function Format-DbaBackupInformation{
         Changes as databasename references to NewDb, both in the database name and any restore paths. Note, this will fail if the BackupHistory object contains backups for more than 1 database
 
     .EXAMPLE
-        $History | Format-DbaBackupInformation -ReplaceDatabaseName @{'OldB'='NewDb';'ProdHr'='DevPr'}   
+        $History | Format-DbaBackupInformation -ReplaceDatabaseName @{'OldB'='NewDb';'ProdHr'='DevHr'}   
     
         Will change all occurences of original database name in the backup history (names and restore paths) using the mapping in the hashtable.
         In this example any occurance of OldDb will be replaced with NewDb and ProdHr with DevPR
@@ -70,7 +70,7 @@ Function Format-DbaBackupInformation{
 
         This example changes the location that SQL Server will look for the backups. This is useful if you've moved the backups to a different location
     #>  
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding()]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$BackupHistory,
@@ -82,7 +82,7 @@ Function Format-DbaBackupInformation{
         [string]$DatabaseFilePrefix,
         [string]$DatabaseFileSuffix,
         [string]$RebaseBackupFolder,
-        [switch]$continue,
+        [switch]$Continue,
         [switch]$EnableException
     )
     Begin{
