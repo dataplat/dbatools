@@ -471,8 +471,7 @@
 	'Get-DbaXEventSession',
 	'Get-DbaXEventSessionTarget',
 	'Read-DbaXEventFile',
-	'Watch-DbaXEventSession',
-	'Set-DbaRecoveryModel'
+	'Watch-DbaXEventSession'
 	
 	# List of all modules packaged with this module
 	ModuleList			    = @()
