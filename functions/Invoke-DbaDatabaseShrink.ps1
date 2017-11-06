@@ -222,7 +222,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 							try {
 								Write-Message -Level Verbose -Message "Beginning shrink of log files"
 								$db.LogFiles.Shrink($PercentFreeSpace, $ShrinkMethod)
-								$db.LogFiles.Refresh()
+								$db.Refresh()
 								Write-Message -Level Verbose -Message "Recalculating space usage"
 								$db.RecalculateSpaceUsage()
 								$success = $true
