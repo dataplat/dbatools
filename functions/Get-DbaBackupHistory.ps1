@@ -289,8 +289,8 @@ function Get-DbaBackupHistory {
 					}
 					else {
 						Write-Message -Level Verbose -Message "No Diff found"
-						try { 
-							[bigint]$TLogStartLSN = $Fulldb.FirstLsn 
+						try {
+							[bigint]$TLogStartLSN = $Fulldb.FirstLsn.ToString() 
 						}
 						catch {
 							continue
