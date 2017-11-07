@@ -111,11 +111,10 @@ function Get-DbaDbRecoveryModel {
             if ($RecoveryModel) {
                 $databases = $databases | Where-Object RecoveryModel -In $RecoveryModel
             }
-          
+                    
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
-			'LogReuseWaitStatus', 'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner',
-			'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
-			'LastLogBackupDate as LastLogBackup'
+            'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
+            'LastLogBackupDate as LastLogBackup'
 			
             foreach ($db in $databases) {
                 Select-DefaultView -InputObject $db -Property $defaults
