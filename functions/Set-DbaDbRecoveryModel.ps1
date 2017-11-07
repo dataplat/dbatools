@@ -1,10 +1,10 @@
-function Set-DbaRecoveryModel {
+function Set-DbaDbRecoveryModel {
     <#
         .SYNOPSIS 
-            Set-DbaRecoveryModel sets the Recovery Model.
+            Set-DbaDbRecoveryModel sets the Recovery Model.
 
         .DESCRIPTION
-            Set-DbaRecoveryModel sets the Recovery Model for user databases.
+            Set-DbaDbRecoveryModel sets the Recovery Model for user databases.
 
         .PARAMETER SqlInstance
             The SQL Server instance. Server version must be SQL Server version XXXX or higher.
@@ -27,11 +27,21 @@ function Set-DbaRecoveryModel {
         .PARAMETER AllDatabases
             This is a parameter that was included for safety, so you don't accidentally set options on all databases without specifying
 
+        .PARAMETER RecoveryModel
+            Recovery Model to be set. Valid options are 'Simple', 'Full', 'BulkLogged'
+            
+            Details about the recovery models can be found here: 
+            https://docs.microsoft.com/en-us/sql/relational-databases/backup-restore/recovery-models-sql-server
+
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
         .PARAMETER Confirm
-            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+			Prompts for confirmation. For example:
+
+			Are you sure you want to perform this action?
+			Performing the operation "ALTER DATABASE [model] SET RECOVERY Full" on target "[model] on WERES14224".
+			[Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):            
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -47,32 +57,37 @@ function Set-DbaRecoveryModel {
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
         .LINK
-            https://dbatools.io/Set-DbaRecoveryModel
+            https://dbatools.io/Set-DbaDbRecoveryModel
 
         .EXAMPLE
-            Set-DbaRecoveryModel -SqlInstance sql2014 -RecoveryModel Full -AllDatabases -Verbose
-            
-            Sets the Recovery Model to Full for all user databases on SQL Server instance sql2014
-            
+            Set-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Database model -Confirm:$true -Verbose
+
+            Sets the Recovery Model to BulkLogged for database [model] on SQL Server instance sql2014. User is requested to confirm the action.
+
         .EXAMPLE
-            Set-DbaRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Database TestDB
-            
-            Sets the Recovery Model to BulkLogged for database [TestDB] on SQL Server instance sql2014
-            
+            Set-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel Simple -Database TestDB -Confirm:$false
+
+            Sets the Recovery Model to Simple for database [TestDB] on SQL Server instance sql2014. Confirmation is not required.
+
         .EXAMPLE
-            Set-DbaRecoveryModel -SqlInstance sql2014 -RecoveryModel Simple -Database TestDB1, TestDB2 -Verbose
-            
-            Sets the Recovery Model to Simple for databases [TestDB1] and [TestDB2] on SQL Server instance sql2014
+            Set-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel Simple -AllDatabases -Confirm:$false
+
+            Sets the Recovery Model to Simple for ALL uses databases MODEL database on SQL Server instance sql2014. Runs without asking for confirmation.
+
+        .EXAMPLE
+            Set-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Database TestDB1, TestDB2 -Confirm:$false -Verbose
+
+            Sets the Recovery Model to BulkLogged for [TestDB1] and [TestDB2] databases on SQL Server instance sql2014. Runs without asking for confirmation.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential][System.Management.Automation.CredentialAttribute()]
+        [DbaInstance]$SqlInstance,
+        [PSCredential]
         $SqlCredential,
         [ValidateSet('Simple', 'Full', 'BulkLogged')]
-        [string]$RecoveryModel = '',
+        [string]$RecoveryModel,
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
@@ -80,45 +95,55 @@ function Set-DbaRecoveryModel {
         [parameter(ValueFromPipeline = $true)]
         [switch][Alias('Silent')]$EnableException
     )
+    begin {
+        if (!$RecoveryModel) {
+            Stop-Function -Message "You must specify -RecoveryModel."
+            return
+        }
+    }    
     process {
-        foreach ($serverName in $SqlInstance) {
+        foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-SqlInstance -SqlInstance $serverName -SqlCredential $SqlCredential -MinimumVersion 11
+                Write-Message -Level Verbose -Message "Connecting to $instance"
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
-            $dbs = @()
+                
             if (!$Database -and !$AllDatabases -and !$ExcludeDatabase) {
                 Stop-Function -Message "You must specify -AllDatabases or -Database to continue"
                 return
             }
     
-            $dbs = Get-DbaDatabase -ServerInstance $serverName | Where-Object {$_.IsSystemObject -ne $true}
+            # We need to be able to change the RecoveryModel for model database
+            $systemdbs = @("master", "msdb", "tempdb", "SSIS", "distribution")
+            $databases = $server.Databases | Where-Object {$systemdbs -notcontains $_.Name}
             
-            # filter collection based on -Databases/-Exclude parameters
+            # filter collection based on -Database/-Exclude parameters
             if ($Database) {
-                $dbs = $dbs | Where-Object { $Database -contains $_.Name }
+                $databases = $databases | Where-Object Name -In $Database
             }
 
             if ($ExcludeDatabase) {
-                $dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.Name }
+                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
             }
-            
-            if (!$dbs) {
-                Stop-Function -Message "The database you specified does not exist on the server $serverName"
+          
+            if (!$databases) {
+                Stop-Function -Message "The database(s) you specified do not exist on the instance $instance."
                 return
             }
 
-            foreach ($db in $dbs) {
+            foreach ($db in $databases) {
                 if ($db.RecoveryModel -eq $RecoveryModel) {
                     Stop-Function -Message "Recovery Model for database $db is already set to $RecoveryModel" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
                 else {
                     $db.RecoveryModel = $RecoveryModel;
-                    $db.Alter();
-                    Write-Message -Level Verbose -Message "Recovery Model set to $RecoveryModel for database $db"
+                    if ($Pscmdlet.ShouldProcess("$db on $instance", "ALTER DATABASE $db SET RECOVERY $RecoveryModel")) {
+                        $db.Alter();
+                        Write-Message -Level Verbose -Message "Recovery Model set to $RecoveryModel for database $db"
+                    }    
                 }   
             }
         }
