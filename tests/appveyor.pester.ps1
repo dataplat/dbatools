@@ -304,9 +304,6 @@ else {
 		Write-Output "You can download it from https://ci.appveyor.com/api/buildjobs/$($env:APPVEYOR_JOB_ID)/tests"
 	}
 	#>
-	if ($AllScenarioTests.Count -eq 0) {
-		return
-	}
 	#What failed? How many tests did we run ?
 	$results = @(Get-ChildItem -Path "$ModuleBase\PesterResults*.xml" | Import-Clixml)
 	
