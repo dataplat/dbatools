@@ -96,7 +96,6 @@ function Set-DbaDbRecoveryModel {
 		[parameter(Mandatory)]
 		[ValidateSet('Simple', 'Full', 'BulkLogged')]
 		[string]$RecoveryModel,
-		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[switch]$AllDatabases,
@@ -142,7 +141,7 @@ function Set-DbaDbRecoveryModel {
 		
 		foreach ($db in $DatabaseCollection) {
             if ($db.RecoveryModel -eq $RecoveryModel) {
-                Stop-Function -Message "Recovery Model for database $db is already set to $RecoveryModel" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                Stop-Function -Message "Recovery Model for database $db is already set to $RecoveryModel" -Category ConnectionError -Target $instance -Continue
             }
             else {
                 $db.RecoveryModel = $RecoveryModel;
