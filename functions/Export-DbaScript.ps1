@@ -148,7 +148,7 @@ function Export-DbaScript {
 			$serverName = $server.Name.Replace('\', '$')
 
 			if ($ScriptingOptionsObject) {
-				$scripter = New-Object Microsoft.SqlServer.Management.Smo.Scripter "$($server.Name)"
+				$scripter = New-Object Microsoft.SqlServer.Management.Smo.Scripter $server
 				$scripter.Options = $ScriptingOptionsObject
 			}
 
