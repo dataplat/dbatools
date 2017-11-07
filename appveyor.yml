@@ -48,7 +48,7 @@ before_test:
 
 test_script:
    # "Test with native PS version"
-   
+    
   - ps: .\Tests\appveyor.pester.ps1 -IncludeCoverage
   
   # "Test with PS version 3" - Removed because it's not a true test. Even PS4+ .Where() works
