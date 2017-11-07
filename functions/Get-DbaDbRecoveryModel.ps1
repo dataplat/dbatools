@@ -24,26 +24,11 @@ function Get-DbaDbRecoveryModel {
         .PARAMETER ExcludeDatabase
             The database(s) to exclude - this list is auto-populated from the server
 
-        .PARAMETER AllDatabases
-            This is a parameter that was included for safety, so you don't accidentally set options on all databases without specifying. Not required by default as we're not changing anything.
-
         .PARAMETER RecoveryModel
-            Filters the output based on Recovery Model. Valid options are 'Simple', 'Full', 'BulkLogged'
+            Filters the output based on Recovery Model. Valid options are Simple, Full and BulkLogged
             
             Details about the recovery models can be found here: 
             https://docs.microsoft.com/en-us/sql/relational-databases/backup-restore/recovery-models-sql-server
-
-        .PARAMETER WhatIf
-            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
-
-        .PARAMETER Confirm
-			Prompts for confirmation. For example:
-
-			Are you sure you want to perform this action?
-			Performing the operation "ALTER DATABASE [model] SET RECOVERY Full" on target "[model] on WERES14224".
-            [Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):            
-            
-            Not required by default as we're not changing anything.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -67,58 +52,43 @@ function Get-DbaDbRecoveryModel {
             Gets all databases on SQL Server instance sql2014 having RecoveryModel set to BulkLogged
 
         .EXAMPLE
-            Get-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel Simple -Database TestDB
+            Get-DbaDbRecoveryModel -SqlInstance sql2014 -Database TestDB
 
-            Gets all databases on SQL Server instance sql2014 having RecoveryModel set to BulkLogged and filters the output for TestDB. If TestDB does not exist on the instance we don't return anythig.
+            Gets recovery model information for TestDB. If TestDB does not exist on the instance we don't return anythig.
 
     #>
     [CmdletBinding()]
     param (
-        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [Alias("ServerInstance", "SqlServer")]
-        [DbaInstance]$SqlInstance,
-        [PSCredential]
-        $SqlCredential,
-        [ValidateSet('Simple', 'Full', 'BulkLogged')]
-        [string]$RecoveryModel,
-        [Alias("Databases")]
-        [object[]]$Database,
-        [object[]]$ExcludeDatabase,
-        [parameter(ValueFromPipeline = $true)]
-        [switch][Alias('Silent')]$EnableException
-    )
-    process {
-        foreach ($instance in $SqlInstance) {
-            try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
-                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            }
-            catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-                  
-            $databases = Get-DbaDatabase -SqlInstance $instance
-            
-            # filter collection based on -Database/-Exclude parameters
-            if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
-            }
-
-            if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
-            }
-            
-            if ($RecoveryModel) {
-                $databases = $databases | Where-Object RecoveryModel -In $RecoveryModel
-            }
-                    
-            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
-            'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
-            'LastLogBackupDate as LastLogBackup'
-			
-            foreach ($db in $databases) {
-                Select-DefaultView -InputObject $db -Property $defaults
-            }
-        }
-    }
+		[parameter(Mandatory, ValueFromPipeline)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstance[]]$SqlInstance,
+		[PSCredential]$SqlCredential,
+		[ValidateSet('Simple', 'Full', 'BulkLogged')]
+		[string[]]$RecoveryModel,
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
+		[switch]$EnableException
+	)
+	begin {
+		$defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
+		'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
+		'LastLogBackupDate as LastLogBackup'
+		
+		$params = @{
+			SqlInstance	      = $SqlInstance
+			SqlCredential	  = $SqlCredential
+			Database		  = $Database
+			ExcludeDatabase   = $ExcludeDatabase
+			EnableException   = $EnableException
+		}
+	}
+	process {
+		
+		if ($RecoveryModel) {
+			Get-DbaDatabase @params | Where-Object RecoveryModel -in $RecoveryModel | Select-DefaultView -Property $defaults
+		}
+		else {
+			Get-DbaDatabase @params | Select-DefaultView -Property $defaults
+		}
+	}
 }
