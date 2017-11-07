@@ -439,7 +439,7 @@ function Backup-DbaDatabase {
 						Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
 						$BackupComplete = $true
 						$Filelist = @()
-						$HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last | Sort-Object -Property End -Descending | Select-Object -First 1
+						$HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly | Sort-Object -Property End -Descending | Select-Object -First 1
 						$FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
 						$FileList += $server.Databases[$dbname].LogFiles | Select-Object @{ Name = "FileType"; Expression = { "L" } }, @{ Name = "Type"; Expression = { "L" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
 						$Verified = $false
