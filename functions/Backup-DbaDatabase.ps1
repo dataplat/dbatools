@@ -225,7 +225,7 @@ function Backup-DbaDatabase {
 			
 			if ($null -eq $server) { $server = $Database.Parent }
 			
-			Write-Message -Level Verbose -Message "Backup up database $database"
+			Write-Message -Level Verbose -Message "Backup database $database"
 			
 			if ($null -eq $Database.RecoveryModel) {
 				$Database.RecoveryModel = $server.databases[$Database.Name].RecoveryModel
