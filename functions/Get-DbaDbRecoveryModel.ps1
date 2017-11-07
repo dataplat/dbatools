@@ -73,16 +73,15 @@ function Get-DbaDbRecoveryModel {
 		$defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
 		'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
 		'LastLogBackupDate as LastLogBackup'
-		
-		$params = @{
-			SqlInstance	      = $SqlInstance
-			SqlCredential	  = $SqlCredential
-			Database		  = $Database
-			ExcludeDatabase   = $ExcludeDatabase
-			EnableException   = $EnableException
-		}
 	}
 	process {
+		$params = @{
+			SqlInstance	       = $SqlInstance
+			SqlCredential	   = $SqlCredential
+			Database		   = $Database
+			ExcludeDatabase    = $ExcludeDatabase
+			EnableException    = $EnableException
+		}
 		
 		if ($RecoveryModel) {
 			Get-DbaDatabase @params | Where-Object RecoveryModel -in $RecoveryModel | Select-DefaultView -Property $defaults
