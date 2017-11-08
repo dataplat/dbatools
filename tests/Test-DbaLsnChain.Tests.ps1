@@ -6,9 +6,8 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 	InModuleScope dbatools {
 		Context "General Diff restore" {
 			$Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
-			Mock Read-DbaBackupHeader { $Header }
-			$RawFilteredFiles = Get-FilteredRestoreFile -SqlServer 'TestSQL' -Files "c:\dummy.txt" -WarningAction SilentlyContinue
-			$FilteredFiles = $RawFilteredFiles[0].values
+
+			$filteredFiles = $header | Select-DbaBackupInformation
 			It "Should Return 7" {
 				$FilteredFiles.count | should be 7
 			}
@@ -17,9 +16,8 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 				$Output | Should be True
 			}
 			$Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
-			Mock Read-DbaBackupHeader { $Header | Where-Object { $_.BackupTypeDescription -ne 'Database Differential' } }
-			$RawFilteredFiles = Get-FilteredRestoreFile -SqlServer 'TestSQL' -Files "c:\dummy.txt"
-			$FilteredFiles = $RawFilteredFiles[0].values
+			$header = $Header | Where-Object { $_.BackupTypeDescription -ne 'Database Differential' } 
+			$FilteredFiles = $Header | Select-DbaBackupInformation
 			It "Should return true if we remove diff backup" {
 				$Output = Test-DbaLsnChain -WarningAction SilentlyContinue -FilteredRestoreFiles ($FilteredFiles | Where-Object { $_.BackupTypeDescription -ne 'Database Differential' })
 				$Output | Should be True

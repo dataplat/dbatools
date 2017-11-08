@@ -3,7 +3,7 @@ Function Test-DbaBackupInformation {
     .SYNOPSIS
         Tests a dbatools backuphistory object is correct for restoring
 
-    .DETAILS
+    .DESCRIPTION
         Normally takes in a backuphistory object from Format-DbaBackupInformation
 
         This is then parse to check that it's valid for restore. Tests performed include:
@@ -17,6 +17,7 @@ Function Test-DbaBackupInformation {
 
     .PARAMETER BackupHistory
         dbatools BackupHistory object. Normally this will have been process with Select- and then Format-DbaBackupInformation
+
     .PARAMETER SqlInstance
         The Sql Server instance that wil be performing the restore
 
@@ -26,11 +27,20 @@ Function Test-DbaBackupInformation {
     .PARAMETER WithReplace
         By default we won't overwrite an existing database, this switch tells us you want to
 
+    .PARAMETER Continue
+        Switch to indicate a continuing restore
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
      
+    .PARAMETER WhatIf
+    Shows what would happen if the cmdlet runs. The cmdlet is not run.
+
+    .PARAMETER Confirm
+    Prompts you for confirmation before running the cmdlet.
+
     .EXAMPLE
     
         $BackupHistory | Test-DbaBackupInformation -SqlInstance MyInstance

@@ -10,7 +10,7 @@ Function Format-DbaBackupInformation{
     .PARAMETER BackupHistory
         A dbatools backupHistory object, normally this will have been created using Select-DbaBackupInformation
 
-    .PARAMETER ReplaceDatabasName
+    .PARAMETER ReplaceDatabaseName
         If a single value is provided, this will be replaced do all occurences a database name
         If a Hashtable is passed in, each database name mention will be replaced as specified. If a database's name does not apper it will not be replace
         DatabaseName will also be replaced where it  occurs in the file paths of data and log files.
@@ -30,6 +30,18 @@ Function Format-DbaBackupInformation{
 
     .PARAMETER RebaseBackupFolder
         Use this to rebase where your backups are stored. 
+    
+    .PARAMETER Continue
+        Indicates that this is a continuing restore
+    
+    .PARAMETER DatabaseFilePrefix
+        A string that will be prefixed to every file restored
+
+    .PARAMETER DatabaseFileSuffix
+        A string that will be suffixed to every file restored
+        
+    .PARAMETER ReplaceDbNameInFile
+        If set, will replace the old databasename with the new name if it occurs in the file name
     
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -88,15 +100,17 @@ Function Format-DbaBackupInformation{
     Begin{
         
         Write-Message -Message "Starting" -Level Verbose
-        if ($ReplaceDatabaseName -is [string] -or $ReplaceDatabaseName.ToString() -ne 'System.Collections.Hashtable'){
-            Write-Message -Message "String passed in for DB rename" -Level Verbose
-            $ReplaceDatabaseNameType = 'single'
-        }
-        elseif ($ReplaceDatabaseName -is [HashTable] -or $ReplaceDatabaseName.ToString() -eq 'System.Collections.Hashtable' ) {
-            Write-Message -Message "Hashtable passed in for DB rename" -Level Verbose
-            $ReplaceDatabaseNameType='multi'
-        }else{
-            Write-Message -Message "ReplacemenDatabaseName is $($ReplaceDatabaseName.Gettype().ToString()) - $ReplaceDatabaseName" -level Verbose
+        if (Test-Bound -ParameterName ReplaceDatabaseName) {
+            if ($ReplaceDatabaseName -is [string] -or $ReplaceDatabaseName.ToString() -ne 'System.Collections.Hashtable'){
+                Write-Message -Message "String passed in for DB rename" -Level Verbose
+                $ReplaceDatabaseNameType = 'single'
+            }
+            elseif ($ReplaceDatabaseName -is [HashTable] -or $ReplaceDatabaseName.ToString() -eq 'System.Collections.Hashtable' ) {
+                Write-Message -Message "Hashtable passed in for DB rename" -Level Verbose
+                $ReplaceDatabaseNameType='multi'
+            }else{
+                Write-Message -Message "ReplacemenDatabaseName is $($ReplaceDatabaseName.Gettype().ToString()) - $ReplaceDatabaseName" -level Verbose
+            }
         }
         if ((Test-Bound -Parameter DataFileDirectory) -and $DataFileDirectory[-1] -eq '\' ){
             $DataFileDirectory = $DataFileDirectory.substring(0,$DataFileDirectory.length-1)
