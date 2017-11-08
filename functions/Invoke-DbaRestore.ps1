@@ -33,9 +33,17 @@ Function Invoke-DbaRestore{
         Leave the database in a restoring state so that further restore may be made
 
     .PARAMETER MaxTransferSize
-
-    .PARAMETER BlockSize
+        Parameter to set the unit of transfer. Values must be a multiple by 64kb
+    
+    .PARAMETER Blocksize
+        Specifies the block size to use. Must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb or 64kb
+        Can be specified in bytes
+        Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+    
     .PARAMETER BufferCount
+        Number of I/O buffers to use to perform the operation.
+        Refer to https://msdn.microsoft.com/en-us/library/ms178615.aspx for more detail
+
     .PARAMETER Continue
         Indicates that the restore is continuing a restore, so target database must be in Recovering or Standby states
     
@@ -44,6 +52,16 @@ Function Invoke-DbaRestore{
 
     .PARAMETER WithReplace    
         Indicated that if the database already exists it should be replaced
+    
+    .PARAMETER WhatIf
+        Shows what would happen if the cmdlet runs. The cmdlet is not run.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before running the cmdlet.
+
+    .PARAMETER EnableException
+        Replaces user friendly yellow warnings with bloody red exceptions of doom!
+        Use this if you want the function to throw terminating errors you want to catch.
 
     .EXAMPLE
         $BackupHistory | Invoke-DbaRestore -SqlInstance MyInstance
