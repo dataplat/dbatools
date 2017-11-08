@@ -127,7 +127,7 @@ Function Invoke-DbaAdvancedRestore{
                     if ($Pscmdlet.ShouldProcess("Killing processes in $Database on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
                         try {
                             Write-Message -Level Verbose -Message "Set $Database single_user to kill processes"
-                            Stop-DbaProcess -SqlInstance $Server -Database $Database -WarningAction Silentlycontinue
+                            $null = Stop-DbaProcess -SqlInstance $Server -Database $Database -WarningAction Silentlycontinue
                             $null = $server.Query("Alter database $Database set offline with rollback immediate; alter database $Database set restricted_user; Alter database $Database set online with rollback immediate",'master')
                             $server.ConnectionContext.Connect()
                         }
