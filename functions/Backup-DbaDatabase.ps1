@@ -439,6 +439,7 @@ function Backup-DbaDatabase {
 						Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
 						$BackupComplete = $true
 						$Filelist = @()
+						$HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly | Sort-Object -Property End -Descending | Select-Object -First 1
 						$FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
 						$FileList += $server.Databases[$dbname].LogFiles | Select-Object @{ Name = "FileType"; Expression = { "L" } }, @{ Name = "Type"; Expression = { "L" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
 						$Verified = $false
@@ -457,6 +458,12 @@ function Backup-DbaDatabase {
 								FileList = $FileList
 								SoftwareVersionMajor = $server.VersionMajor
 								Type = $outputType
+								FirstLsn = $HeaderInfo.FirstLsn
+								DatabaseBackupLsn = $HeaderInfo.DatabaseBackupLsn
+								CheckPointLsn = $HeaderInfo.CheckPointLsn
+								LastLsn = $HeaderInfo.LastLsn
+								BackupSetId = $HeaderInfo.BackupSetId
+								LastRecoveryForkGUID = $HeaderInfo.LastRecoveryForkGUID
 							} | Restore-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
 							if ($verifiedResult[0] -eq "Verify successful") {
 								$failures += $verifiedResult[0]
@@ -477,7 +484,7 @@ function Backup-DbaDatabase {
 			}
 			$OutputExclude = 'FullName', 'FileList', 'SoftwareVersionMajor'
 			if ($failures.count -eq 0) {
-				$OutputExclude += ('Notes')
+				$OutputExclude += ('Notes', 'FirstLsn','DatabaseBackupLsn','CheckpointLsn','LastLsn','BackupSetId','LastRecoveryForkGuid')
 			}
 			[PSCustomObject]@{
 				SqlInstance = $server.name
@@ -494,6 +501,12 @@ function Backup-DbaDatabase {
 				SoftwareVersionMajor = $server.VersionMajor
 				Verified = $Verified
 				Type = $outputType
+				FirstLsn = $HeaderInfo.FirstLsn
+				DatabaseBackupLsn = $HeaderInfo.DatabaseBackupLsn
+				CheckPointLsn = $HeaderInfo.CheckPointLsn
+				LastLsn = $HeaderInfo.LastLsn
+				BackupSetId = $HeaderInfo.BackupSetId
+				LastRecoveryForkGUID = $HeaderInfo.LastRecoveryForkGUID
 			} | Select-DefaultView -ExcludeProperty $OutputExclude
 			$BackupFileName = $null
 		}

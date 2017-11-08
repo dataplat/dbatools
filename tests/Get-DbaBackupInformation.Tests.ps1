@@ -8,7 +8,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		$DestBackupDir = 'C:\Temp\GetBackups'
 		if (-Not(Test-Path $DestBackupDir)) {
 			New-Item -Type Container -Path $DestBackupDir
-        }
+		}
+		else {
+			Remove-Item $DestBackupDir\*
+		}
         $random = Get-Random
 		$dbname = "dbatoolsci_Backuphistory_$random"
 		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
