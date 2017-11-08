@@ -4,12 +4,12 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Unit Tests" -Tags "UnitTests" {
 	Context "Validating Database Input" {
-		Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database "master" -WarningAction SilentlyContinue -WarningVariable systemwarn
+		Invoke-DbaDatabaseCorruption -SqlInstance $script:instance2 -Database "master" -WarningAction SilentlyContinue -WarningVariable systemwarn
 		It "Should not allow you to corrupt system databases."{
 			$systemwarn -match 'may not corrupt system databases' | Should Be $true
 		}
 		It "Should fail if more than one database is specified" {
-			{ Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database "Database1", "Database2" -EnableException } | Should Throw
+			{ Invoke-DbaDatabaseCorruption -SqlInstance $script:instance2 -Database "Database1", "Database2" -EnableException } | Should Throw
 		}
 	}
 	
@@ -23,7 +23,7 @@ Describe "$commandname Unit Tests" -Tags "UnitTests" {
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
 		$dbname = "dbatoolsci_InvokeDbaDatabaseCorruptionTest"
-		$Server = Connect-DbaInstance -SqlInstance $script:instance1
+		$Server = Connect-DbaInstance -SqlInstance $script:instance2
 		$TableName = "Example"
 		# Need a clean empty database
 		$null = $Server.Query("Create Database [$dbname]")
@@ -51,7 +51,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		FROM sys.objects")	
 	
 	It "Corrupt a single database" {
-		Invoke-DbaDatabaseCorruption -SqlInstance $script:instance1 -Database $dbname -Confirm:$false | Select-Object -ExpandProperty Status | Should be "Corrupted"
+		Invoke-DbaDatabaseCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false | Select-Object -ExpandProperty Status | Should be "Corrupted"
 	}
 	
 	It "Causes DBCC CHECKDB to fail" {
