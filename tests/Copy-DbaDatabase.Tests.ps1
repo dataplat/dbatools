@@ -1,4 +1,4 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -18,7 +18,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			Remove-DbaDatabase -Confirm:$false -SqlInstance $instance -Database $DBNameBackupRestore,$DBNameAttachDetach
 		}
 	}
-	
 	
 	# Restore and set owner for Single Restore
 	$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -WithReplace -DatabaseName $DBNameBackupRestore
