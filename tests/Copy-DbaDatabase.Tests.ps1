@@ -27,13 +27,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		It "Should copy a database and retain its name, recovery model, and status." {
 			
 			Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $DBNameBackupRestore -BackupRestore -NetworkShare $NetworkPath
+			Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $DBNameBackupRestore -BackupRestore -NetworkShare $NetworkPath -Force
 			
 			$db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DBNameBackupRestore
 			$db1 | Should Not BeNullOrEmpty
 			$db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $DBNameBackupRestore
 			$db2 | Should Not BeNullOrEmpty
 			
-			# Compare its valuable.
+			# Compare its results
 			$db1.Name | Should Be $db2.Name
 			$db1.RecoveryModel | Should Be $db2.RecoveryModel
 			$db1.Status | Should be $db2.Status
