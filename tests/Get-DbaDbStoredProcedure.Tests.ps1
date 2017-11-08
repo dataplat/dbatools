@@ -32,7 +32,7 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 # Get-DbaNoun
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
-		$server = Connect-DbaInstance -SqlInstance $script:instance1
+		$server = Connect-DbaInstance -SqlInstance $script:instance2
 		$random = Get-Random
 		$procName = "dbatools_getdbsp"
 		$dbname = "dbatoolsci_getdbsp$random"
@@ -41,11 +41,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	AfterAll {
-		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
+		$null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
 	}
 
 	Context "Command actually works" {
-		$results = Get-DbaDbStoredProcedure -SqlInstance $script:instance1 -Database $dbname -ExcludeSystemSp
+		$results = Get-DbaDbStoredProcedure -SqlInstance $script:instance2 -Database $dbname -ExcludeSystemSp
 		it "Should have standard properties" {
 			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance'.Split(',')
 			($results[0].PsObject.Properties.Name | Where-Object {$_ -in $ExpectedProps} | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
