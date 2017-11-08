@@ -1,13 +1,22 @@
-Function Invoke-DbaRestore{
+Function Invoke-DbaAdvancedRestore{
     <#
     .SYNOPSIS
-        Restores the contents of a BackupHistory object
+        Allows the restore of modified BackupHistory Objects
+        For 90% of users Restore-DbaDatabase should be your point of access to this function. The other 10% use it at their own risk
+
     .DESCRIPTION
-        Assumes a BackupHistory object has passed through the *-DbaBackupInformation pipeline to have been suitably filtered, transformed and tested so as to be ready for restore
+        This is the final piece in the Restore-DbaDatabase Stack. Uusally a BackupHistory object will arrive here from Restore-DbaDatabse via the following pipeline:
+        Get-DbaBackupInformation  | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore
+
+        We have exposed these functions publically to allow advanced users to perform operations that we don't support, or won't add as they would make things too complex for the majority of our users
+
+        For example if you wanted to do some very complex redirection during a migration, then doing the rewrite of destinations may be better done with your own custom scripts rather than via Format-DbaBackupInformation
+
+        We would recommend ALWAYS pushing your input through Test-DbaBackupInformation just to make sure that it makes sense to us.
 
     .PARAMETER BackupHistory
         The BackupHistory object to be restored.
-        Can be passed in on pipeline
+        Can be passed in on the pipeline
 
     .PARAMETER SqlInstance
         The SqlInstance to which the backups should be restored
@@ -64,13 +73,13 @@ Function Invoke-DbaRestore{
         Use this if you want the function to throw terminating errors you want to catch.
 
     .EXAMPLE
-        $BackupHistory | Invoke-DbaRestore -SqlInstance MyInstance
+        $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance
 
         Will restore all the backups in the BackupHistory object according to the transformations it contains
 
     .EXAMPLE
-        $BackupHistory | Invoke-DbaRestore -SqlInstance MyInstance -OutputScriptOnly
-        $BackupHistory | Invoke-DbaRestore -SqlInstance MyInstance
+        $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance -OutputScriptOnly
+        $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance
 
         First generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the full restore. By  reusing the BackupHistory object there is no need to rescan all the backup files again 
     #>
@@ -199,8 +208,7 @@ Function Invoke-DbaRestore{
                 If ($Pscmdlet.ShouldProcess("$Database on $SqlInstance `n `n", $ConfirmMessage)) {
                     try {
                         $RestoreComplete = $true
-                        Write-Verbose "file count = $(($backup.Filelist.PhysicalName).count)"
-                        if ($ScriptOnly) {
+                        if ($OutputScriptOnly) {
                             $script = $Restore.Script($server)
                         }
                         elseif ($VerifyOnly) {
@@ -231,7 +239,7 @@ Function Invoke-DbaRestore{
                     }
                     finally {
 
-                        if ($ScriptOnly -eq $false) {
+                        if ($OutputScriptOnly -eq $false) {
                             [PSCustomObject]@{
                                 SqlInstance            = $backup.SqlInstance
                                 DatabaseName           = $backup.Database
@@ -244,7 +252,7 @@ Function Invoke-DbaRestore{
                                 BackupSizeMB           = if ([bool]($backup.psobject.Properties.Name -contains 'BackupSizeMB')) { ($RestoreFiles | Measure-Object -Property BackupSizeMB -Sum).Sum } else { $null }
                                 CompressedBackupSizeMB = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSizeMb')) { ($RestoreFiles | Measure-Object -Property CompressedBackupSizeMB -Sum).Sum } else { $null }
                                 BackupFile             = $backup.FullName -Join ','
-                                RestoredFile           = ((Split-Path $backup.FileList.PhysicalName -Leaf) | Sort-Object -Unique) -Join ','
+                                RestoredFile           = $((Split-Path $backup.FileList.PhysicalName -Leaf) | Sort-Object -Unique) -Join ','
                                 RestoredFileFull       = ($backup.Filelist.PhysicalName -Join ',')
                                 RestoreDirectory       = ((Split-Path $backup.FileList.PhysicalName) | Sort-Object -Unique) -Join ','
                                 BackupSize             = if ([bool]($backup.psobject.Properties.Name -contains 'BackupSize')) { ($RestoreFiles | Measure-Object -Property BackupSize -Sum).Sum } else { $null }
