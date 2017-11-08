@@ -1,4 +1,4 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -25,7 +25,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Set-DbaDatabaseOwner -SqlInstance $script:instance1 -Database $DBNameBackupRestore -TargetLogin sa
 	
 	Context "Restores database with the same properties." {
-		It "Should copy a database and retain its name, recovery model, and status." {
+		It -Skip "Should copy a database and retain its name, recovery model, and status." {
 			
 			Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $DBNameBackupRestore -BackupRestore -NetworkShare $NetworkPath
 			
@@ -42,7 +42,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	Context "Doesn't write over existing databases" {
-		It "Should say skipped" {
+		It -Skip "Should say skipped" {
 			$result = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $DBNameBackupRestore -BackupRestore -NetworkShare $NetworkPath
 			$result.Status | Should be "Skipped"
 			$result.Notes | Should be "Already exists"
