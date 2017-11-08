@@ -37,7 +37,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		$procName = "dbatools_getdbsp"
 		$dbname = "dbatoolsci_getdbsp$random"
 		$server.Query("CREATE DATABASE $dbname")
-		$server.Databases[$dbname].ExecuteNonQuery("CREATE PROCEDURE $procName AS SELECT 1")
+		$server.Query("CREATE PROCEDURE $procName AS SELECT 1",$dbname)
 	}
 	
 	AfterAll {
