@@ -278,25 +278,24 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
 						Stop-Function -Message "$dbname does not exist on $source." -Continue
 					}
 					
-					$lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly #-raw
+					if (Test-Bound "IgnoreLogBackup") {
+						Write-Message -Level Verbose -Message "Skipping Log backups as requested"
+						$lastbackup = @()
+						$lastbackup += $full = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastFull #-raw
+						$diff = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastDiff # -raw 
+						if ($full.start -le $diff.start) {
+							$lastbackup += $diff
+						}
+					}
+					else {
+						$lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly #-raw
+					}
+
 					if ($CopyFile) {
 						try {
 							Write-Message -Level Verbose -Message "Gathering information for file copy"
 							$removearray = @()
-							
-							if (Test-Bound "IgnoreLogBackup") {
-								Write-Message -Level Verbose -Message "Skipping Log backups as requested"
-								$lastbackup = @()
-								$lastbackup += $full = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastFull #-raw
-								$diff = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastDiff # -raw 
-								if ($full.start -le $diff.start) {
-									$lastbackup += $diff
-								}
-							}
-							else {
-								$lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly #-raw
-							}
-							
+														
 							foreach ($backup in $lastbackup) {
 								foreach ($file in $backup) {
 									$filename = Split-Path -Path $file.FullName -Leaf
