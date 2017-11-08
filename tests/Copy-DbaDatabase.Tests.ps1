@@ -11,8 +11,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		Stop-DbaProcess -SqlInstance $script:instance1 -Database model
 		$server.Query("CREATE DATABASE $DBNameBackupRestore")
 		$db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DBNameBackupRestore
-		$db.AutoClose = $false
-		$db.Alter()
+		if ($db.AutoClose) {
+			$db.AutoClose = $false
+			$db.Alter()
+		}
 		Stop-DbaProcess -SqlInstance $script:instance1 -Database model
 		$server.Query("CREATE DATABASE $DBNameAttachDetach")
 	}
