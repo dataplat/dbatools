@@ -195,11 +195,7 @@ function Get-DbaBackupHistory {
 	begin {
 		Write-Message -Level System -Message "Active Parameterset: $($PSCmdlet.ParameterSetName)"
 		Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
-		
-		$IgnoreCopyOnly = $true
-		If ($IncludeCopyOnly -eq $True) {
-			$IgnoreCopyOnly = $false
-		}
+	
 
 		$DeviceTypeMapping = @{
 			'Disk' = 2
@@ -280,8 +276,8 @@ function Get-DbaBackupHistory {
 					
 					#Get the full and build upwards
 					$allbackups = @()
-					$allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType
-					$DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType
+					$allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly
+					$DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly
 					if ($DiffDb.LastLsn -gt $Fulldb.LastLsn -and  $DiffDb.DatabaseBackupLSN -eq $Fulldb.CheckPointLSN ) {
 						Write-Message -Level Verbose -Message "Valid Differential backup "
 						$Allbackups += $DiffDB
@@ -289,14 +285,14 @@ function Get-DbaBackupHistory {
 					}
 					else {
 						Write-Message -Level Verbose -Message "No Diff found"
-						try { 
-							[bigint]$TLogStartLSN = $Fulldb.FirstLsn 
+						try {
+							[bigint]$TLogStartLSN = $Fulldb.FirstLsn.ToString() 
 						}
 						catch {
 							continue
 						}
 					}
-					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $TLogstartLSN | Where-Object { 
+					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $TLogstartLSN -IncludeCopyOnly:$IncludeCopyOnly | Where-Object { 
 						$_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $Fulldb.LastRecoveryForkGuid
 					}
 					#This line does the output for -Last!!!
@@ -321,7 +317,7 @@ function Get-DbaBackupHistory {
 				foreach ($db in $databases) {
 					Write-Message -Level Verbose -Message "Processing $($db.name)" -Target $db
 					$wherecopyonly = $null
-					if ($IgnoreCopyOnly) { $wherecopyonly = "AND is_copy_only='0'" }
+					if ($true -ne $IncludeCopyOnly) { $wherecopyonly = " AND is_copy_only='0' " }
 					if ($DeviceTypeFilter) {
 						$DevTypeFilterWhere = "AND mediafamily.device_type $DeviceTypeFilterRight"
 					}
@@ -354,7 +350,7 @@ function Get-DbaBackupHistory {
 									a.is_copy_only,
 									a.last_recovery_fork_guid
 								FROM (SELECT
-								  RANK() OVER (ORDER BY backupset.last_lsn DESC) AS 'BackupSetRank',
+								  RANK() OVER (ORDER BY backupset.last_lsn desc, backupset.backup_finish_date DESC) AS 'BackupSetRank',
 								  backupset.database_name AS [Database],
 								  backupset.user_name AS Username,
 								  backupset.backup_start_date AS Start,
@@ -466,8 +462,9 @@ function Get-DbaBackupHistory {
 				$from = " FROM msdb..backupmediafamily mediafamily
 							 INNER JOIN msdb..backupmediaset mediaset ON mediafamily.media_set_id = mediaset.media_set_id
 							 INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
-				if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $IgnoreCopyOnly -or $DeviceTypeFilter -or $LastLsn -or $BackupTypeFilter) {
+				if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $DeviceTypeFilter -or $LastLsn -or $BackupTypeFilter) {
 					$where = " WHERE "
+					write-verbose "setting where"
 				}
 				
 				$wherearray = @()
@@ -475,6 +472,11 @@ function Get-DbaBackupHistory {
 				if ($Database.length -gt 0) {
 					$dblist = $Database -join "','"
 					$wherearray += "database_name IN ('$dblist')"
+				}
+
+				if ($true -ne $IncludeCopyOnly)  {
+					Write-Verbose "ecluding copyonly Ico = $IncludeCopyOnly"
+					$wherearray += "is_copy_only='0'"
 				}
 				
 				if ($Last -or $LastFull -or $LastLog -or $LastDiff) {
@@ -486,9 +488,8 @@ function Get-DbaBackupHistory {
 					$wherearray += "backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
 				}
 				
-				if ($IgnoreCopyOnly -eq $true) {
-					$wherearray += "is_copy_only='0'"
-				}
+
+
 				if ($DeviceTypeFilter) {
 					$wherearray += "mediafamily.device_type $DeviceTypeFilterRight"
 				}

@@ -64,9 +64,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Database with the same properties." {
 		It "should not be null" {
 			
-			$db1 = (Connect-DbaInstance -SqlInstance localhost).Databases[$DBNameAttachDetach]
-			$db2 = (Connect-DbaInstance -SqlInstance localhost\sql2016).Databases[$DBNameAttachDetach]
-			
+			$db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DBNameAttachDetach
+			$db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $DBNameAttachDetach
 			$db1 | Should Not Be $null
 			$db2 | Should Not Be $null
 			
