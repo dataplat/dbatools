@@ -70,14 +70,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         $results = Get-ChildItem $script:appeyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationFileSuffix suffix -WithReplace
         It "Should return successful restore with suffix" {
-            $results.RestoreComplete | Should Be $true
+            ($results.RestoreComplete -eq $true) | Should Be $true
         }
         It "Should return the 2 suffixed files" {
             (($Results.RestoredFile -split ',') -match "suffix\.").count | Should be 2
         }
         $results = Get-ChildItem $script:appeyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationFileSuffix suffix -DestinationFilePrefix prefix -WithReplace
         It "Should return successful restore with suffix and prefix" {
-            $results.RestoreComplete | Should Be $true
+            ($results.RestoreComplete -eq $true)  | Should Be $true
         }
         It "Should return the 2 prefixed and suffixed files" {
             (($Results.RestoredFile -split ',') -match "^prefix.*suffix\.").count | Should be 2
@@ -424,5 +424,15 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
+    }
+
+    Context "Checking OutputScriptOnly only outputs script"{
+        $DatabaseName = 'rectestSO'
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak  -DatabaseName $DatabaseName -OutputScriptOnly
+        $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
+        It "Should only output a script" {
+            $results -match 'RESTORE DATABASE' | Should be $True
+            ($null -eq $db) | Should be $True
+        }  
     }
 }

@@ -1,31 +1,31 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
-		$BackupLocation = "$script:appeyorlabrepo\singlerestore\singlerestore.bak"
 		$NetworkPath = "C:\temp"
-		$DBNameBackupRestore = "dbatoolsci_singlerestore"
+		$DBNameBackupRestore = "dbatoolsci_backuprestore"
 		$DBNameAttachDetach = "dbatoolsci_detachattach"
-		# cleanup
-		foreach ($instance in $Instances) {
-			Remove-DbaDatabase -Confirm:$false -SqlInstance $instance -Database $DBNameBackupRestore,$DBNameAttachDetach
-		}
+		$server = Connect-DbaInstance -SqlInstance $script:instance1
+		Stop-DbaProcess -SqlInstance $script:instance1 -Database model
+		$server.Query("CREATE DATABASE $DBNameBackupRestore")
+		$db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DBNameBackupRestore
+		$db.AutoClose = $false
+		$db.Alter()
+		Stop-DbaProcess -SqlInstance $script:instance1 -Database model
+		$server.Query("CREATE DATABASE $DBNameAttachDetach")
 	}
 	AfterAll {
-		foreach ($instance in $Instances) {
-			Remove-DbaDatabase -Confirm:$false -SqlInstance $instance -Database $DBNameBackupRestore,$DBNameAttachDetach
-		}
+		Remove-DbaDatabase -Confirm:$false -SqlInstance $Instances -Database $DBNameBackupRestore, $DBNameAttachDetach
 	}
-	
 	
 	# Restore and set owner for Single Restore
 	$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -WithReplace -DatabaseName $DBNameBackupRestore
 	Set-DbaDatabaseOwner -SqlInstance $script:instance1 -Database $DBNameBackupRestore -TargetLogin sa
 	
 	Context "Restores database with the same properties." {
-		It "Should copy a database and retain its name, recovery model, and status." {
+		It -Skip "Should copy a database and retain its name, recovery model, and status." {
 			
 			Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $DBNameBackupRestore -BackupRestore -NetworkShare $NetworkPath
 			
@@ -42,20 +42,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	Context "Doesn't write over existing databases" {
-		It "Should say skipped" {
+		It -Skip "Should say skipped" {
 			$result = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $DBNameBackupRestore -BackupRestore -NetworkShare $NetworkPath
 			$result.Status | Should be "Skipped"
 			$result.Notes | Should be "Already exists"
 		}
 	}
-	
-	foreach ($instance in $Instances) {
-		Remove-DbaDatabase -Confirm:$false -SqlInstance $instance -Database $DBNameBackupRestore
-	}
-	
+		
 	Context "Detach, copies and attaches database successfully." {
 		It "Should be success" {
-			$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\detachattach\detachattach.bak -WithReplace -DatabaseName $DBNameAttachDetach
 			$results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $DBNameAttachDetach -DetachAttach -Reattach -Force -WarningAction SilentlyContinue
 			$results.Status | Should Be "Successful"
 		}
