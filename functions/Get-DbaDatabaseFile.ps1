@@ -64,7 +64,16 @@ function Get-DbaDatabaseFile {
 	
 	process {
 		
-		$sql = "select 
+		foreach ($instance in $sqlInstance) {
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance"
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
+			
+			$sql = "select 
 			fg.name as FileGroupName,
 			df.file_id as 'ID',
 			df.Type,
@@ -93,16 +102,16 @@ function Get-DbaDatabaseFile {
 			case fg.is_default When 1 then 'True' when 0 then 'False' end as FileGroupDefault,
 			fg.is_read_only as FileGroupReadOnly"
 			
-		$sqlfrom = "from sys.database_files df
+			$sqlfrom = "from sys.database_files df
 			left outer join  sys.filegroups fg on df.data_space_id=fg.data_space_id
 			inner join sys.dm_io_virtual_file_stats(db_id(),NULL) vfs on df.file_id=vfs.file_id
 			inner join sys.master_files mf on df.file_id = mf.file_id
 			and mf.database_id = db_id()"
-
-		$sql2008 = ",vs.available_bytes as 'VolumeFreeSpace'"
-		$sql2008from = "cross apply sys.dm_os_volume_stats(db_id(),df.file_id) vs"
-
-		$sql2000 = "select 
+			
+			$sql2008 = ",vs.available_bytes as 'VolumeFreeSpace'"
+			$sql2008from = "cross apply sys.dm_os_volume_stats(db_id(),df.file_id) vs"
+			
+			$sql2000 = "select 
 			fg.groupname as FileGroupName,
 			df.fileid as ID,
 			CONVERT(INT,df.status & 0x40) / 64 as Type,
@@ -127,15 +136,6 @@ function Get-DbaDatabaseFile {
 			CAST(fg.Status & 0x8 as BIT) as FileGroupReadOnly
 			from sysfiles df
 			left outer join  sysfilegroups fg on df.groupid=fg.groupid"
-
-		foreach ($instance in $sqlInstance) {
-			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
 			
 			Write-Message -Level Verbose -Message "Databases provided"
 			
@@ -161,16 +161,16 @@ function Get-DbaDatabaseFile {
 				$version = +($version.DatabaseCompatibility.ToString().replace("Version","")) / 10
 
 				if ($version -ge 11) {
-					$sql = ($sql, $sql2008, $sqlfrom, $sql2008from) -join "`n"
+					$query = ($sql, $sql2008, $sqlfrom, $sql2008from) -join "`n"
 				}
 				elseif ($version -ge 9) {
-					$sql = ($sql, $sqlfrom) -join "`n"
+					$query = ($sql, $sqlfrom) -join "`n"
 				}
 				else {
-					$sql = $sql2000
+					$query = $sql2000
 				}
-
-				$results = $server.Query($sql,$db.name)
+				
+				$results = $server.Query($query,$db.name)
 				
 				foreach ($result in $results) {
 					$size = [dbasize]($result.Size * 8192)
