@@ -82,7 +82,7 @@ function Test-DbaPowerPlan {
 		foreach ($computer in $ComputerName) {
 			$server = Resolve-DbaNetworkName -ComputerName $computer -Credential $credential
 
-			$computerResolved = $server.ComputerName
+			$computerResolved = $server.FullComputerName
 
 			if (!$computerResolved) {
 				Stop-Function -Message "Couldn't resolve hostname. Skipping." -Continue
