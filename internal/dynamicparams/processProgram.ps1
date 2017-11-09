@@ -11,30 +11,25 @@
 		$fakeBoundParameter
 	)
 	
-	$start = Get-Date
-	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["processprogram"].LastExecution = $start
 	
 	$server = $fakeBoundParameter['SqlInstance']
 	if (-not $server) {
-		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["processprogram"].LastDuration = (Get-Date) - $start
 		return
 	}
 	$sqlCredential = $fakeBoundParameter['SqlCredential']
 	
 	try {
-		if ($sqlCredential) { $instance = Connect-DbaSqlServer -SqlInstance $server -ErrorAction Stop  }
-		else { $instance = Connect-DbaSqlServer -SqlInstance $server -ErrorAction Stop }
+		if ($sqlCredential) { $instance = Connect-SqlInstance -SqlInstance $server -ErrorAction Stop  }
+		else { $instance = Connect-SqlInstance -SqlInstance $server -ErrorAction Stop }
 		
 		$instance.EnumProcesses().Program | Select-Object -Unique | Where-DbaObject -Like "$wordToComplete*" | ForEach-Object {
 			if (-not ([string]::IsNullOrWhiteSpace($_))) { New-DbaTeppCompletionResult -CompletionText $_ -ToolTip $_ }
 		}
 	}
 	catch {
-		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["processprogram"].LastDuration = (Get-Date) - $start
 		return
 	}
 	finally {
-		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts["processprogram"].LastDuration = (Get-Date) - $start
 	}
 }
 

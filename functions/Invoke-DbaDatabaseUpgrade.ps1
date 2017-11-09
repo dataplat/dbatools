@@ -1,4 +1,4 @@
-﻿Function Invoke-DbaDatabaseUpgrade {
+Function Invoke-DbaDatabaseUpgrade {
 <#
 	.SYNOPSIS
 	Take a database and upgrades it to compatibility of the SQL Instance its hosted on. Based on https://thomaslarock.com/2014/06/upgrading-to-sql-server-2014-a-dozen-things-to-check/
@@ -49,10 +49,11 @@
 	Performing the operation "Update database" on target "pubs on SQL2016\VNEXT".
 	[Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
 
-	.PARAMETER Silent
-	Use this switch to disable any kind of verbose messages
-
-
+	.PARAMETER EnableException
+	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+	This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+	
 	.NOTES
 		Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 		Tags: Shrink, Databases
@@ -106,7 +107,7 @@
 		[switch]$Force,
 		[parameter(ValueFromPipeline)]
 		[Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		
@@ -124,6 +125,7 @@
 			try {
 				Write-Message -Level VeryVerbose -Message "Connecting to <c='green'>$instance</c>" -Target $instance
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+				$server.ConnectionContext.StatementTimeout = [Int32]::MaxValue
 			}
 			catch {
 				Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
@@ -182,6 +184,7 @@
 			}
 			
 			if (!($NoCheckDb)) {
+				Write-Message -Level Verbose -Message "Updating $db with DBCC CHECKDB DATA_PURITY"
 				If ($Pscmdlet.ShouldProcess($server, "Updating $db with DBCC CHECKDB DATA_PURITY")) {
 					$tsqlCheckDB = "DBCC CHECKDB ('$dbname') WITH DATA_PURITY, NO_INFOMSGS"
 					try {
@@ -199,6 +202,7 @@
 			}
 			
 			if (!($NoUpdateUsage)) {
+				Write-Message -Level Verbose -Message "Updating $db with DBCC UPDATEUSAGE"
 				If ($Pscmdlet.ShouldProcess($server, "Updating $db with DBCC UPDATEUSAGE")) {
 					$tsqlUpdateUsage = "DBCC UPDATEUSAGE ($db) WITH NO_INFOMSGS;"
 					try {
@@ -217,6 +221,7 @@
 			}
 			
 			if (!($NoUpdatestats)) {
+				Write-Message -Level Verbose -Message "Updating $db statistics"
 				If ($Pscmdlet.ShouldProcess($server, "Updating $db statistics")) {
 					$tsqlStats = "EXEC sp_updatestats;"
 					try {
@@ -235,6 +240,7 @@
 			}
 			
 			if (!($NoRefreshView)) {
+				Write-Message -Level Verbose -Message "Refreshing $db Views"
 				$dbViews = $db.Views | Where-Object IsSystemObject -eq $false
 				$RefreshViewResult = "Success"
 				foreach ($dbview in $dbviews) {

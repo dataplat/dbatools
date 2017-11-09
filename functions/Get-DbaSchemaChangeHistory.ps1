@@ -26,12 +26,14 @@ function Get-DbaSchemaChangeHistory {
 	.PARAMETER Object
 	The name of a SQL Server object you want to look for changes on
 
-	.PARAMETER Silent 
-	Use this switch to disable any kind of verbose messages
+	.PARAMETER EnableException 
+	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+	This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 	
 	.NOTES
 	Tags: Migration, Backup, Databases
-	Original Author: Stuart Moore (@napalmgram - http://stuart-moore.com)
+	Author: Stuart Moore (@napalmgram - http://stuart-moore.com)
 	
 	Website: https://dbatools.io
 	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -75,7 +77,7 @@ function Get-DbaSchemaChangeHistory {
 		[object[]]$ExcludeDatabase,
 		[DbaDateTime]$Since,
 		[string[]]$Object,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {
@@ -93,24 +95,25 @@ function Get-DbaSchemaChangeHistory {
 				return
 			}
 			$TraceFileQuery = "select path from sys.traces where is_default = 1"
-			$TraceFile = $server.ConnectionContext.ExecuteWithResults($TraceFileQuery).Tables.Rows | Select-Object Path
 			
-			if ($null -eq $Database) { $Database = $server.databases.name }
+			$TraceFile = $server.Query($TraceFileQuery) | Select-Object Path
 			
-			if ($ExcludeDatabase) {
-				$database = $database | Where-Object { $_ -notin $ExcludeDatabase }
-			}
+			$Databases = $server.Databases
 			
-			foreach ($db in $Database) {
-				if ($server.databases[$db].status -notlike '*normal*') {
-					Stop-Function -Message "Can't open database $db. Skipping." -Continue
+			if ($Database) { $Databases = $Databases | Where-Object Name -in $database }
+			
+			if ($ExcludeDatabase) { $Databases = $Databases | Where-Object Name -notin $ExcludeDatabase }
+			
+			foreach ($db in $Databases) {
+				if ($db.IsAccessible -eq $false) {
+					Stop-Function -Message "$db on $server is inaccessible" -Continue
 				}
 				
 				$sql = "select SERVERPROPERTY('MachineName') AS ComputerName, 
 						ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName, 
 						SERVERPROPERTY('ServerName') AS SqlInstance,
 						tt.databasename as 'DatabaseName',
-						starttime as 'StartTime',
+						starttime as 'DateModified',
 						Sessionloginname as 'LoginName',
 						NTusername as 'UserName',
 						applicationname as 'ApplicationName',
@@ -140,7 +143,7 @@ function Get-DbaSchemaChangeHistory {
 				Write-Message -Level Verbose -Message "Querying Database $db on $instance"
 				Write-Message -Level Debug -Message "SQL: $sql"
 				
-				$server.databases[$db].ExecuteWithResults($sql).Tables.Rows  | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName, starttime, LoginName, UserName, ApplicationName, DDLOperation, Object, ObjectType
+				$db.Query($sql)  | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName, DateModified, LoginName, UserName, ApplicationName, DDLOperation, Object, ObjectType
 			}	
 		}
 	}

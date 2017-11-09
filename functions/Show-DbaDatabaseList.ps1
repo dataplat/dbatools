@@ -1,62 +1,51 @@
-Function Show-DbaDatabaseList
-{
-<#
-.SYNOPSIS
-Shows a list of databases in a GUI
-	
-.DESCRIPTION
-Shows a list of databases in a GUI. Returns a simple string. Hitting cancel returns null.
-	
-.PARAMETER SqlInstance
-The SQL Server instance.
-	
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+function Show-DbaDatabaseList {
+	<#
+		.SYNOPSIS
+			Shows a list of databases in a GUI.
+			
+		.DESCRIPTION
+			Shows a list of databases in a GUI. Returns a string holding the name of the selected database. Hitting cancel returns null.
+			
+        .PARAMETER SqlInstance
+            The SQL Server Instance to connect to..
+        
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
-	
-.PARAMETER Title
-Title of the Window. Default is "Select Database".
-	
-.PARAMETER Header
-Header right above the databases. Default is "Select the database:".
-	
-.PARAMETER DefaultDb
-Highlight (select) a specified database by default	
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.NOTES 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+			To connect as a different Windows user, run PowerShell as that user.		
+		
+		.PARAMETER Title
+			Title of the window being displayed. Default is "Select Database".
+			
+		.PARAMETER Header
+			Header text displayed above the database listing. Default is "Select the database:".
+			
+		.PARAMETER DefaultDb
+			Specify a database to have selected when the window appears.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+		.NOTES
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+		.LINK
+			https://dbatools.io/Show-DbaDatabaseList
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.EXAMPLE
+			Show-DbaDatabaseList -SqlInstance sqlserver2014a
 
-.LINK
-https://dbatools.io/Show-DbaDatabaseList
+			Shows a GUI list of databases using Windows Authentication to connect to the SQL Server. Returns a string of the selected database.
+			
+		.EXAMPLE   
+			Show-DbaDatabaseList -Source sqlserver2014a -SqlCredential $cred
 
-.EXAMPLE
-Show-DbaDatabaseList -SqlInstance sqlserver2014a
-
-Shows a GUI list of databases and uses Windows Authentication to log into the SQL Server. Returns a string of the selected database.
-	
-.EXAMPLE   
-Show-DbaDatabaseList -Source sqlserver2014a -SqlCredential $cred
-
-Shows a GUI list of databases and SQL credentials to log into the SQL Server. Returns a string of the selected database.
-	
-#>
+			Shows a GUI list of databases using SQL credentials to connect to the SQL Server. Returns a string of the selected database.
+		
+	#>
 	[CmdletBinding()]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -68,13 +57,15 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 		[string]$DefaultDb
 	)
 	
-	BEGIN
-	{
-		try { Add-Type -AssemblyName PresentationFramework }
-		catch { throw "Windows Presentation Framework required but not installed" }
+	begin {
+		try {
+			Add-Type -AssemblyName PresentationFramework
+		}
+		catch {
+			throw "Windows Presentation Framework required but not installed"
+		}
 		
-		Function Add-TreeItem
-		{
+		function Add-TreeItem {
 			Param (
 				[string]$name,
 				[object]$parent,
@@ -94,8 +85,7 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 			$textblock.Text = $name
 			$childitem.Tag = $name
 			
-			if ($name -eq $DefaultDb)
-			{
+			if ($name -eq $DefaultDb) {
 				$childitem.IsSelected = $true
 				$script:selected = $name
 			}
@@ -107,8 +97,7 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 			[void]$parent.Items.Add($childitem)
 		}
 	
-		Function Convert-b64toimg
-		{
+		function Convert-b64toimg {
 			param ($base64)
 			
 			$bitmap = New-Object System.Windows.Media.Imaging.BitmapImage
@@ -123,11 +112,10 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 		$foldericon = Convert-b64toimg "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAYdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuNWWFMmUAAAHaSURBVDhPY/j//z9VMVZBSjBWQUowVkFKMApnzZL+/+gYWZ4YDGeANL95sun/j3fbwPjbm5X/Pz+cRLKhcAayq2B45YKe/8vndoHx4lltYLxgajMKhumHYRQDf37Yh4J/fNry//fb1f9/v1n6/8/Tqf//3O/6/+dO9f9fV4v+fzmV/v/L0aj/lflJQO1YDAS5AmwI1MvfPyAZ9KgbYtDlvP/fzyT9/3w45P+HPT7/z8+UwG0gyDvIBmIYBnQVyDCQq0CGPV9p8v94P/f/rKQwoHYsBs4HhgfIQJjLfr+YjdOwt5tt/z9eov1/fxf3/+ggD6B2HAaCXQYKM6hhv+81oYQXzLCXq03/P5qn/H9LE/9/LycroHYsBs7oq4EYCDIM6FVshr3Z4gg2DOS6O9Nk/q+sFvlvZawD1I7FwKldleC0h2zY9wuZEMP2+aMYdn+W/P/rE0T/zy+T+q+jJg/UjsXASe1l/z/cX/T/1dn8/492ePy/vc7s/82VOv8vLVT9f3yGwv89ffL/1zXL/l9dJwF2GciwaYVy/xVlxIDasRjY31Lyv7Uy+39ZTvz/1JiA/8Hejv8dLA3+62sqgTWJC/HixDAzQBjOoBbGKkgJxipICcYqSD7+zwAAkIiWzSGuSg0AAAAASUVORK5CYII="
 		$dbatoolsicon = Convert-b64toimg "iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAYdEVYdFNvZnR3YXJlAHBhaW50Lm5ldCA0LjAuNWWFMmUAAAO9SURBVEhL3VVdTFNXHO9MzPTF+OzDeBixFdTMINIWsAUK3AIVkFvAIQVFRLYZKR8Wi1IEKV9DYB8PGFAyEx8QScySabYY5+I2JvK18iWISKGk0JGhLzA3+e2c29uHtpcvH/0lv9yennN+v3vO/3fOFb2fCAg4vXWPNOmMRJ745TtTSskqeElviGXJ0XtkWvjJkyGLPoFAVQZoe/NkX/n6Mh/ysu4Qy7WZdJAutxRW6zT6LcNQaE4LiGgREH4cibpCMNqzCIk9hbScEoSSZ0zKOa7fRxG/k5d1h8ukvO4a5ubmMT1jw5E0vZcBZWzqOTS3dcB8tRXZeRX4/v5DZH5uIu0Wrn8NEzaNDjgYoUPd120oMjViX2iql8H6ZFd8DzE7eFl3iOWpuyQydlh44kbJroilSd8RuQ+cqh7wC9Z+JJaxY8KTN0gp+5Yk9DaREzYhb5FOBwZFZ6LlZifKa5ux//AxYTHCvSEp8A9O5n77B6dwqXS119guZ+GrGq9jfn4eM7ZZxB/PdxN2UfOpHq3kRWq/uoE8Yx3u/fQLzhSYUdN0g+tfN126z0oxNj6BJz0Dq0b4E2UawuJzuPhKyZmKYr/AocgMrk37VzWRBLGRdE/psuXqk9wkT/GNUCJLWqS3By/rDh9FxjaSrnahiZ7cq8wCUzKImLIJqC+Ngbk4gmjjIKKKB6Aq7l+OLBmfVF0YnlQZR1p4eSd2y5IiyEr+oyJ0CwIi0gUNKAOPmnG04Q0utf+DHweWkFjjQOyVWajLpsCUPkeUcRgqAzE09Dfz8k64aqI9YcDziUk87bMgOCZL0CQ0ux2J9UtIbXyFwall/PD0NeLKrU6DkhGymj8RXtRDjU7x8k64TKpJQmi6bLOzSEgv8DYhNWMujiK+9jU0VQs4Vm/H2MwSOh4vcP+rii2cQVh+F+IqbRJe3glyReuoSFBUJtpu3eWulv2h3ueE1iOu0g5N9QL3jLk8jerbdrz59y1yGoYQUdSLsII/CLscIsD9UPrLUz4myXhBhWjCPMVdPBBnhMbsIAZzSDDbcOvRIhyLy6i4+Qyq82QFxECR9xjK/K5OXtodNHo+CsW2tagunbxADbK+sXP16Bv/G7lNQ8hpHEX21UGoDb/j8NmfoSzoNvCymwdTPvMotsKGB32LaL1H0mS0oOHOFLpH/0L3iAOF3/YSk4dgTBMh/JTNgdVbtzNl1il12UuSpHE+SRayTb0IL3yCMP2vUJKtUuh/szNNK8Jfxw3BZNpiMoGjiKPJm54Ffw8gEv0PQRYX7wDAUKEAAAAASUVORK5CYII="
 		
-		$sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SourceSqlCredential
+		$sourceserver = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
 	
-	PROCESS
-	{
+	process {
 		# Create XAML form in Visual Studio, ensuring the ListView looks chromeless 
 		[xml]$xaml = "<Window 
 		xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' 
@@ -169,28 +157,30 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 		$childitem.Header = $stackpanel
 		$databaseParent = $treeview.Items.Add($childitem)
 		
-		try { $databases = $sourceserver.databases.name }
-		catch { return }
+		try {
+			$databases = $sourceserver.databases.name
+		}
+		catch {
+			return
+		}
 		
-		foreach ($database in $databases)
-		{
+		foreach ($database in $databases) {
 			Add-TreeItem -Name $database -Parent $childitem -Tag $nameSpace
 		}
 		
-		$okbutton.Add_Click({
+		$okbutton.Add_Click( {
 				$window.Close()
 				$script:okay = $true
 			})
 		
-		$cancelbutton.Add_Click({
+		$cancelbutton.Add_Click( {
 				$script:selected = $null
 				$window.Close()
 			})
 		
-		$window.Add_SourceInitialized({
+		$window.Add_SourceInitialized( {
 				[System.Windows.RoutedEventHandler]$Event = {
-					if ($_.OriginalSource -is [System.Windows.Controls.TreeViewItem])
-					{
+					if ($_.OriginalSource -is [System.Windows.Controls.TreeViewItem]) {
 						$script:selected = $_.OriginalSource.Tag
 					}
 				}
@@ -200,13 +190,11 @@ Shows a GUI list of databases and SQL credentials to log into the SQL Server. Re
 		$null = $window.ShowDialog()
 	}
 	
-	END
-	{
-		if ($script:selected.length -gt 0 -and $script:okay -eq $true)
-		{
+	end {
+		if ($script:selected.length -gt 0 -and $script:okay -eq $true) {
 			return $script:selected
 		}
 		
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Show-SqlDatabaseList
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Show-SqlDatabaseList
 	}
 }

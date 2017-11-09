@@ -22,7 +22,7 @@ Function Invoke-ManagedComputerCommand {
 			The arguments to pass to your scriptblock.
 			Access them within the scriptblock using the automatic variable $args
 		
-		.PARAMETER Silent
+		.PARAMETER EnableException
 			Left in for legacy reasons. This command will throw no matter what
 	#>	
 	[CmdletBinding()]
@@ -44,12 +44,12 @@ Function Invoke-ManagedComputerCommand {
 		$ArgumentList,
 		
 		[switch]
-		$Silent # Left in for legacy but this command needs to throw
+		[Alias('Silent')]$EnableException # Left in for legacy but this command needs to throw
 	)
 	
 	$computer = $ComputerName.ComputerName
 	
-	$null = Test-ElevationRequirement -ComputerName $computer -Silent $true
+	$null = Test-ElevationRequirement -ComputerName $computer -EnableException $true
 	
 	$resolved = Resolve-DbaNetworkName -ComputerName $computer
 	$ipaddr = $resolved.IpAddress
@@ -60,7 +60,6 @@ Function Invoke-ManagedComputerCommand {
 		
 		# Just in case we go remote, ensure the assembly is loaded
 		[void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
-		
 		$wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $ipaddr
 		$null = $wmi.Initialize()
 	}
@@ -77,8 +76,8 @@ Function Invoke-ManagedComputerCommand {
 		try {
 			Write-Message -Level Verbose -Message "Local connection attempt to $computer failed. Connecting remotely."
 			
-			# For surely resolve stuff
-			$hostname = $resolved.fqdn
+			# For surely resolve stuff, and going by default with kerberos, this needs to match FullComputerName
+			$hostname = $resolved.FullComputerName
 			
 			Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname -ErrorAction Stop
 		}

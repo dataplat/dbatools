@@ -1,4 +1,4 @@
-﻿function Copy-DbaAgentSharedSchedule {
+function Copy-DbaAgentSharedSchedule {
 	<#
 		.SYNOPSIS
 			Copy-DbaAgentSharedSchedule migrates shared job schedules from one SQL Server to another.
@@ -9,7 +9,7 @@
 			If the associated credential for the account does not exist on the destination, it will be skipped. If the shared job schedule already exists on the destination, it will be skipped unless -Force is used.
 
 		.PARAMETER Source
-			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or newer.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
@@ -21,7 +21,7 @@
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or newer.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
 		.PARAMETER DestinationSqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
@@ -41,9 +41,11 @@
 		.PARAMETER Force
 			If this switch is enabled, the Operator will be dropped and recreated on Destination.
 
-		.PARAMETER Silent 
-			If this switch is enabled, the internal messaging functions will be silenced.
-
+		.PARAMETER EnableException 
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: Migration, Agent
 			Author: Chrissy LeMaire (@cl), netnerds.net
@@ -77,7 +79,7 @@
 		[PSCredential]
 		$DestinationSqlCredential,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -97,30 +99,33 @@
 	process {
         foreach ($schedule in $serverSchedules) {
             $scheduleName = $schedule.Name
-            $copySharedScheduleStatus = [pscustomobject]@{
-                SourceServer        = $sourceServer.Name
-                DestinationServer   = $destServer.Name
-                Name                = $scheduleName
-                Status              = $null
-                DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
-            }
-
-            if ($schedules.Length -gt 0 -and $schedules -notcontains $scheduleName) {
+			$copySharedScheduleStatus = [pscustomobject]@{
+				SourceServer		 = $sourceServer.Name
+				DestinationServer    = $destServer.Name
+				Type				 = "Agent Schedule"
+				Name				 = $scheduleName
+				Status			     = $null
+				Notes			     = $null
+				DateTime			 = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+			}
+			
+			if ($schedules.Length -gt 0 -and $schedules -notcontains $scheduleName) {
                 continue
             }
 
             if ($destSchedules.Name -contains $scheduleName) {
                 if ($force -eq $false) {
-                    $copySharedScheduleStatus.Status = "Skipped"
-                    $copySharedScheduleStatus
-                    Write-Message -Level Warning -Message "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
+					$copySharedScheduleStatus.Status = "Skipped"
+					$copySharedScheduleStatus.Notes = "Already exists"
+                    $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    Write-Message -Level Verbose -Message "Shared job schedule $scheduleName exists at destination. Use -Force to drop and migrate."
                     continue
                 }
                 else {
                     if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
                         $copySharedScheduleStatus.Status = "Skipped"
-						$copySharedScheduleStatus
-						Write-Message -Level Warning -Message "Schedule [$scheduleName] has associated jobs. Skipping."
+						$copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+						Write-Message -Level Verbose -Message "Schedule [$scheduleName] has associated jobs. Skipping."
                         continue
                     }
                     else {
@@ -131,7 +136,7 @@
                             }
                             catch {
                                 $copySharedScheduleStatus.Status = "Failed"
-                                $copySharedScheduleStatus
+                                $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 Stop-Function -Message "Issue dropping schedule" -Target $scheduleName -InnerErrorRecord $_ -Continue
                             }
                         }
@@ -148,17 +153,17 @@
                     $destServer.Query($sql)
 
                     $copySharedScheduleStatus.Status = "Successful"
-                    $copySharedScheduleStatus
+                    $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
                 catch {
 					$copySharedScheduleStatus.Status = "Failed"
-					$copySharedScheduleStatus
+					$copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     Stop-Function -Message "Issue creating schedule" -Target $scheduleName -InnerErrorRecord $_ -Continue
                 }
             }
         }
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlSharedSchedule
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSharedSchedule
 	}
 }

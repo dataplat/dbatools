@@ -13,7 +13,7 @@ namespace Sqlcollaborative.Dbatools.Connection
         /// </summary>
         public static Dictionary<string, ManagementConnection> Connections = new Dictionary<string, ManagementConnection>();
 
-        #region Configuration
+        #region Configuration Computer Management
         /// <summary>
         /// The time interval that must pass, before a connection using a known to not work connection protocol is reattempted
         /// </summary>
@@ -48,6 +48,33 @@ namespace Sqlcollaborative.Dbatools.Connection
         /// Globally disables the persistence of Cim sessions used to connect to a target system.
         /// </summary>
         public static bool DisableCimPersistence = false;
-        #endregion Configuration
+
+        /// <summary>
+        /// Whether the CM connection using Cim over WinRM is disabled globally
+        /// </summary>
+        public static bool DisableConnectionCimRM = false;
+
+        /// <summary>
+        /// Whether the CM connection using Cim over DCOM is disabled globally
+        /// </summary>
+        public static bool DisableConnectionCimDCOM = false;
+
+        /// <summary>
+        /// Whether the CM connection using WMI is disabled globally
+        /// </summary>
+        public static bool DisableConnectionWMI = true;
+
+        /// <summary>
+        /// Whether the CM connection using PowerShell Remoting is disabled globally
+        /// </summary>
+        public static bool DisableConnectionPowerShellRemoting = true;
+        #endregion Configuration Computer Management
+
+        #region Configuration Sql Connection
+        /// <summary>
+        /// The number of seconds before a sql connection attempt times out
+        /// </summary>
+        public static int SqlConnectionTimeout = 15;
+        #endregion Configuration Sql Connection
     }
 }

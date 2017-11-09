@@ -1,5 +1,8 @@
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-Describe "Get-DbaSqlBuildReference Unit Test" -Tags Unittest {
+. "$PSScriptRoot\constants.ps1"
+
+Describe "$commandname Unit Test" -Tags Unittest {
 	$ModuleBase = (Get-Module -Name dbatools).ModuleBase
 	$idxfile = "$ModuleBase\bin\dbatools-buildref-index.json"
 	Context 'Validate data in json is correct' {
@@ -63,9 +66,9 @@ Describe "Get-DbaSqlBuildReference Unit Test" -Tags Unittest {
 			$SortedVersions = $Naturalized | Sort-Object
 			($SortedVersions -join ",") | Should Be ($Naturalized -join ",")
 		}
-		It "Names are at least 7" {
+		It "Names are at least 8" {
 			$Names = $IdxRef.Data.Name | Where-Object { $_ }
-			$Names.Length | Should BeGreaterThan 6
+			$Names.Length | Should BeGreaterThan 7
 		}
 	}
 	# These are groups by major release (aka "Name")
@@ -115,6 +118,26 @@ Describe "Get-DbaSqlBuildReference Unit Test" -Tags Unittest {
 			It "LATEST is on PAR with a SP" {
 				$LATEST = $Versions | Where-Object SP -contains "LATEST"
 				$LATEST.SP.Count | Should Be 2
+			}
+			# see https://github.com/sqlcollaborative/dbatools/pull/2466
+			It "KBList has only numbers on it" {
+				$NotNumbers = $Versions.KBList | Where-Object { $_ } | Where-Object { $_ -notmatch '^[\d]+$' }
+				if ($NotNumbers.Count -ne 0) {
+					foreach($Nn in $NotNumbers) {
+						$Nn | Should Be "Composed by integers"
+					}
+				}
+			}
+		}
+	}
+}
+
+Describe "$commandname Integration Tests" -Tags IntegrationTests {
+	Context "Test retrieving version from instances" {
+		$results = Get-DbaSqlBuildReference -SqlInstance $script:instance1,$script:instance2
+		It "Should return an exact match" {
+			foreach($r in $results) {
+				$r.MatchType | Should Be "Exact"
 			}
 		}
 	}

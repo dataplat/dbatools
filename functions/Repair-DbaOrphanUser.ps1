@@ -1,89 +1,91 @@
-Function Repair-DbaOrphanUser {
-<#
-.SYNOPSIS
-Find orphan users with existing login and remap.
+function Repair-DbaOrphanUser {
+	<#
+		.SYNOPSIS
+			Finds orphan users with existing login and remaps them.
 
-.DESCRIPTION
-An orphan user is defined by a user that does not have their matching login. (Login property = "")
+		.DESCRIPTION
+			An orphan user is defined by a user that does not have a matching login (Login property = "").
 
-If the matching login exists it must be:
-	Enabled
-	Not a system object
-	Not locked
-	Have the same name that user
+			If the matching login exists it must be:
+				Enabled
+				Not a system object
+				Not locked
+				Have the same name that user
 
-You can drop users that does not have their matching login by specifying the parameter -RemoveNotExisting This will be made by calling Remove-DbaOrphanUser function.
+			You can drop users that does not have their matching login by specifying the parameter -RemoveNotExisting.
 
+        .PARAMETER SqlInstance
+            The SQL Server Instance to connect to.
+        
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER SqlInstance
-The SQL Server instance.
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.PARAMETER SqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+			To connect as a different Windows user, run PowerShell as that user.
 
-Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+		.PARAMETER Database
+			Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+		.PARAMETER Users
+			Specifies the list of usernames to repair.
 
-.PARAMETER Users
-List of users to repair
+		.PARAMETER RemoveNotExisting
+			If this switch is enabled, all users that do not have a matching login will be dropped from the database.
 
-.PARAMETER RemoveNotExisting
-If passed, all users that not have their matching login will be dropped from database
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run. No actions are actually performed.
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-.PARAMETER Confirm
-Prompts you for confirmation before executing any changing operations within the command.
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
+		.EXAMPLE
+			Repair-DbaOrphanUser -SqlInstance sql2005
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+			Finds and repairs all orphan users of all databases present on server 'sql2005'
 
-.EXAMPLE
-Repair-DbaOrphanUser -SqlInstance sql2005
+		.EXAMPLE
+			Repair-DbaOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred
 
-Will find and repair all orphan users of all databases present on server 'sql2005'
+			Finds and repair all orphan users in all databases present on server 'sqlserver2014a'. SQL credentials are used to authenticate to the server.
 
-.EXAMPLE
-Repair-DbaOrphanUser -SqlInstance sqlserver2014a -SqlCredential $cred
+		.EXAMPLE
+			Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1, db2
 
-Will find and repair all orphan users of all databases present on server 'sqlserver2014a'. Will be verified using SQL credentials.
+			Finds and repairs all orphan users in both db1 and db2 databases.
 
-.EXAMPLE
-Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1, db2
+		.EXAMPLE
+			Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1 -Users OrphanUser
 
-Will find and repair all orphan users on both db1 and db2 databases
+			Finds and repairs user 'OrphanUser' in 'db1' database.
 
-.EXAMPLE
-Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Database db1 -Users OrphanUser
+		.EXAMPLE
+			Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Users OrphanUser
 
-Will find and repair user 'OrphanUser' on 'db1' database
+			Finds and repairs user 'OrphanUser' on all databases
 
-.EXAMPLE
-Repair-DbaOrphanUser -SqlInstance sqlserver2014a -Users OrphanUser
+		.EXAMPLE
+			Repair-DbaOrphanUser -SqlInstance sqlserver2014a -RemoveNotExisting
 
-Will find and repair user 'OrphanUser' on all databases
+			Finds all orphan users of all databases present on server 'sqlserver2014a'. Removes all users that do not have  matching Logins.
 
-.EXAMPLE
-Repair-DbaOrphanUser -SqlInstance sqlserver2014a -RemoveNotExisting
+		.NOTES
+			Tags: Orphan
+			Author: Claudio Silva (@ClaudioESSilva)
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-Will find all orphan users of all databases present on server 'sqlserver2014a'
-Will also remove all users that does not have their matching login by calling Remove-DbaOrphanUser function
-
-.NOTES
-Tags: Orphan
-Original Author: Claudio Silva (@ClaudioESSilva)
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-
-.LINK
-https://dbatools.io/Repair-DbaOrphanUser
-#>
+		.LINK
+			https://dbatools.io/Repair-DbaOrphanUser
+	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -95,19 +97,19 @@ https://dbatools.io/Repair-DbaOrphanUser
 		[parameter(Mandatory = $false, ValueFromPipeline = $true)]
 		[object[]]$Users,
 		[switch]$RemoveNotExisting,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {
-        $start = [System.Diagnostics.Stopwatch]::StartNew()
+		$start = [System.Diagnostics.Stopwatch]::StartNew()
 		foreach ($instance in $SqlInstance) {
 			
 			try {
-                Write-Message -Level Verbose -Message "Connecting to $instance"
+				Write-Message -Level Verbose -Message "Connecting to $instance."
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Write-Message -Level Warning -Message "Failed to connect to: $SqlInstance"
+				Write-Message -Level Warning -Message "Failed to connect to: $SqlInstance."
 				continue
 			}
 
@@ -136,7 +138,7 @@ https://dbatools.io/Repair-DbaOrphanUser
 							}
 						}
 
-						Write-Message -Level Verbose -Message "Validating users on database '$db'"
+						Write-Message -Level Verbose -Message "Validating users on database '$db'."
 
 						if ($Users.Count -eq 0) {
 							#the third validation will remove from list sql users without login. The rule here is Sid with length higher than 16
@@ -174,14 +176,14 @@ https://dbatools.io/Repair-DbaOrphanUser
 
 									if ($Pscmdlet.ShouldProcess($db.Name, "Mapping user '$($User.Name)'")) {
 										$server.Databases[$db.Name].ExecuteNonQuery($query) | Out-Null
-										Write-Message -Level Verbose -Message "`r`nUser '$($User.Name)' mapped with their login"
+										Write-Message -Level Verbose -Message "`r`nUser '$($User.Name)' mapped with their login."
 
 										[PSCustomObject]@{
-															SqlInstance = $server.name
-															DatabaseName = $db.Name
-															User = $User.Name
-															Status = "Success"
-														}
+											SqlInstance  = $server.name
+											DatabaseName = $db.Name
+											User         = $User.Name
+											Status       = "Success"
+										}
 									}
 								}
 								else {
@@ -192,25 +194,25 @@ https://dbatools.io/Repair-DbaOrphanUser
 									else {
 										Write-Message -Level Verbose -Message "Orphan user $($User.Name) does not have matching login."
 										[PSCustomObject]@{
-															SqlInstance = $server.name
-															DatabaseName = $db.Name
-															User = $User.Name
-															Status = "No matching login"
-														}
+											SqlInstance  = $server.name
+											DatabaseName = $db.Name
+											User         = $User.Name
+											Status       = "No matching login"
+										}
 									}
 								}
 							}
 
-							#With the colelction complete invoke remove.
+							#With the collection complete invoke remove.
 							if ($RemoveNotExisting -eq $true) {
 								if ($Pscmdlet.ShouldProcess($db.Name, "Remove-DbaOrphanUser")) {
-									Write-Message -Level Verbose -Message "Calling 'Remove-DbaOrphanUser'"
-									Remove-DbaOrphanUser -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $db.Name -Users $UsersToRemove
+									Write-Message -Level Verbose -Message "Calling 'Remove-DbaOrphanUser'."
+									Remove-DbaOrphanUser -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Database $db.Name -User $UsersToRemove
 								}
 							}
 						}
 						else {
-							Write-Message -Level Verbose -Message "No orphan users found on database '$db'"
+							Write-Message -Level Verbose -Message "No orphan users found on database '$db'."
 						}
 						#reset collection
 						$Users = $null
@@ -227,8 +229,8 @@ https://dbatools.io/Repair-DbaOrphanUser
 	}
 	end {
 		$totaltime = ($start.Elapsed)
-		Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime"
+		Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime."
 
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Repair-SqlOrphanUser
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Repair-SqlOrphanUser
 	}
 }

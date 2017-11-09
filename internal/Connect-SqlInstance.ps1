@@ -1,4 +1,4 @@
-﻿function Connect-SqlInstance {
+function Connect-SqlInstance {
     <#
         .SYNOPSIS
             Internal function to establish smo connections.
@@ -35,16 +35,42 @@
 	
 	[CmdletBinding()]
 	param (
-		[Parameter(Mandatory = $true)]
-		[Object]$SqlInstance,
+		[Parameter(Mandatory = $true)][object]$SqlInstance,
 		[object]$SqlCredential,
 		[switch]$ParameterConnection,
 		[switch]$RegularUser = $true,
-		# let's see how this goes
-
 		[int]$MinimumVersion
 	)
 	
+	#region Utility functions
+	function Invoke-TEPPCacheUpdate {
+		[CmdletBinding()]
+		Param (
+			[System.Management.Automation.ScriptBlock]
+			$ScriptBlock
+		)
+		
+		try {
+			[ScriptBlock]::Create($scriptBlock).Invoke()
+		}
+		catch {
+			# If the SQL Server version doesn't support the feature, we ignore it and silently continue
+			if ($_.Exception.InnerException.InnerException.GetType().FullName -eq "Microsoft.SqlServer.Management.Sdk.Sfc.InvalidVersionEnumeratorException") {
+				return
+			}
+			
+			if ($ENV:APPVEYOR_BUILD_FOLDER -or ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::DeveloperMode)) { throw }
+			<#
+			elseif ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::DevelopmentBranch) {
+				Write-Message -Level Warning -Message "Failed TEPP Caching: $($s | Select-String '"(.*?)"' | ForEach-Object { $_.Matches[0].Groups[1].Value })" -ErrorRecord $_ -EnableException $false
+			}
+			#>
+			else {
+				Write-Message -Level Warning -Message "Failed TEPP Caching: $($scriptBlock.ToString() | Select-String '"(.*?)"' | ForEach-Object { $_.Matches[0].Groups[1].Value })" -ErrorRecord $_ 3>$null
+			}
+		}
+	}
+	#endregion Utility functions
 	
 	#region Ensure Credential integrity
     <#
@@ -75,7 +101,7 @@
 		[DbaInstanceParameter]$ConvertedSqlInstance = [DbaInstanceParameter]($SqlInstance | Select-Object -First 1)
 		
 		if ($SqlInstance.Count -gt 1) {
-			Write-Message -Level Warning -Silent $true -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)"
+			Write-Message -Level Warning -EnableException $true -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)"
 		}
 	}
 	#endregion Safely convert input into instance parameters
@@ -83,34 +109,6 @@
 	#region Input Object was a server object
 	if ($ConvertedSqlInstance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
 		$server = $ConvertedSqlInstance.InputObject
-		if ($ParameterConnection) {
-			$paramserver = New-Object Microsoft.SqlServer.Management.Smo.Server
-			$paramserver.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
-			$paramserver.ConnectionContext.ConnectionString = $server.ConnectionContext.ConnectionString
-			
-			if ($SqlCredential.username -ne $null) {
-				$username = ($SqlCredential.username).TrimStart("\")
-				
-				if ($username -like "*\*") {
-					$username = $username.Split("\")[1]
-					$authtype = "Windows Authentication with Credential"
-					$paramserver.ConnectionContext.LoginSecure = $true
-					$paramserver.ConnectionContext.ConnectAsUser = $true
-					$paramserver.ConnectionContext.ConnectAsUserName = $username
-					$paramserver.ConnectionContext.ConnectAsUserPassword = ($SqlCredential).GetNetworkCredential().Password
-				}
-				else {
-					$authtype = "SQL Authentication"
-					$paramserver.ConnectionContext.LoginSecure = $false
-					$paramserver.ConnectionContext.set_Login($username)
-					$paramserver.ConnectionContext.set_SecurePassword($SqlCredential.Password)
-				}
-			}
-			
-			$paramserver.ConnectionContext.Connect()
-			return $paramserver
-		}
-		
 		if ($server.ConnectionContext.IsOpen -eq $false) {
 			$server.ConnectionContext.Connect()
 		}
@@ -127,20 +125,19 @@
 		if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
 			$FullSmoName = $ConvertedSqlInstance.FullSmoName.ToLower()
 			foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
-				$ExecutionContext.InvokeCommand.InvokeScript($false, $scriptBlock, $null, $null)
+				Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
 			}
 		}
-		
 		return $server
 	}
 	#endregion Input Object was a server object
 	
 	#region Input Object was anything else
 	# This seems a little complex but is required because some connections do TCP,SqlInstance
-	$loadedsmoversion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
+	$loadedSmoVersion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.FullName -like "Microsoft.SqlServer.SMO,*" }
 	
-	if ($loadedsmoversion) {
-		$loadedsmoversion = $loadedsmoversion | ForEach-Object {
+	if ($loadedSmoVersion) {
+		$loadedSmoVersion = $loadedSmoVersion | ForEach-Object {
 			if ($_.Location -match "__") {
 				((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0]
 			}
@@ -152,16 +149,13 @@
 	
 	$server = New-Object Microsoft.SqlServer.Management.Smo.Server $ConvertedSqlInstance.FullSmoName
 	$server.ConnectionContext.ApplicationName = "dbatools PowerShell module - dbatools.io"
-
-	if ($MinimumVersion -and $server.VersionMajor) {
-		if ($server.versionMajor -lt $MinimumVersion) {
-			throw "SQL Server version $MinimumVersion required - $server not supported."
-		}
-	}
+	if ($ConvertedSqlInstance.IsConnectionString) { $server.ConnectionContext.ConnectionString = $ConvertedSqlInstance.InputObject }
 	
 	try {
-		if ($SqlCredential.username -ne $null) {
-			$username = ($SqlCredential.username).TrimStart("\")
+		$server.ConnectionContext.ConnectTimeout = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout
+		
+		if ($SqlCredential.Username -ne $null) {
+			$username = ($SqlCredential.Username).TrimStart("\")
 			
 			if ($username -like "*\*") {
 				$username = $username.Split("\")[1]
@@ -182,19 +176,26 @@
 	catch { }
 	
 	try {
-		if ($ParameterConnection) {
-			$server.ConnectionContext.ConnectTimeout = 7
-		}
-		
 		$server.ConnectionContext.Connect()
 	}
 	catch {
 		$message = $_.Exception.InnerException.InnerException
-		$message = $message.ToString()
-		$message = ($message -Split '-->')[0]
-		$message = ($message -Split 'at System.Data.SqlClient')[0]
-		$message = ($message -Split 'at System.Data.ProviderBase')[0]
-		throw "Can't connect to $ConvertedSqlInstance`: $message "
+		if ($message) {
+			$message = $message.ToString()
+			$message = ($message -Split '-->')[0]
+			$message = ($message -Split 'at System.Data.SqlClient')[0]
+			$message = ($message -Split 'at System.Data.ProviderBase')[0]
+			throw "Can't connect to $ConvertedSqlInstance`: $message "
+		}
+		else {
+			throw $_
+		}
+	}
+	
+	if ($MinimumVersion -and $server.VersionMajor) {
+		if ($server.versionMajor -lt $MinimumVersion) {
+			throw "SQL Server version $MinimumVersion required - $server not supported."
+		}
 	}
 	
 	if (-not $RegularUser) {
@@ -203,33 +204,36 @@
 		}
 	}
 	
-	if ($loadedsmoversion -ge 11) {
-		if (-not $ParameterConnection -or ($Server.ServerType -ne 'SqlAzureDatabase')) {
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Trigger], 'IsSystemObject')
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Schema], 'IsSystemObject')
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.SqlAssembly], 'IsSystemObject')
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Table], 'IsSystemObject')
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.View], 'IsSystemObject')
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.StoredProcedure], 'IsSystemObject')
-			$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.UserDefinedFunction], 'IsSystemObject')
-			
-			if ($server.VersionMajor -eq 8) {
-				# 2000
-				$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Version')
-				$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType')
+	if ($loadedSmoVersion -ge 11) {
+		try {
+			if ($Server.ServerType -ne 'SqlAzureDatabase') {
+				$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Trigger], 'IsSystemObject')
+				$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Schema], 'IsSystemObject')
+				$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.SqlAssembly], 'IsSystemObject')
+				$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Table], 'IsSystemObject')
+				$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.View], 'IsSystemObject')
+				$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.StoredProcedure], 'IsSystemObject')
+				$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.UserDefinedFunction], 'IsSystemObject')
+				
+				if ($server.VersionMajor -eq 8) {
+					# 2000
+					$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Version')
+					$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'CreateDate', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'Name', 'Sid', 'WindowsLoginAccessType')
+				}
+				elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
+					# 2005 and 2008
+					$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
+					$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
+				}
+				else {
+					# 2012 and above
+					$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'ContainmentType', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
+					$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
+				}
 			}
-			
-			elseif ($server.VersionMajor -eq 9 -or $server.VersionMajor -eq 10) {
-				# 2005 and 2008
-				$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
-				$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
-			}
-			
-			else {
-				# 2012 and above
-				$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Database], 'ReplicationOptions', 'ActiveConnections', 'AvailabilityDatabaseSynchronizationState', 'AvailabilityGroupName', 'BrokerEnabled', 'Collation', 'CompatibilityLevel', 'ContainmentType', 'CreateDate', 'ID', 'IsAccessible', 'IsFullTextEnabled', 'IsMirroringEnabled', 'IsUpdateable', 'LastBackupDate', 'LastDifferentialBackupDate', 'LastLogBackupDate', 'Name', 'Owner', 'PrimaryFilePath', 'ReadOnly', 'RecoveryModel', 'Status', 'Trustworthy', 'Version')
-				$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
-			}
+		}
+		catch {
+			# perhaps a DLL issue, continue going	
 		}
 	}
 	
@@ -245,7 +249,7 @@
 	if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
 		$FullSmoName = $ConvertedSqlInstance.FullSmoName.ToLower()
 		foreach ($scriptBlock in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
-			$ExecutionContext.InvokeCommand.InvokeScript($false, $scriptBlock, $null, $null)
+			Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
 		}
 	}
 	

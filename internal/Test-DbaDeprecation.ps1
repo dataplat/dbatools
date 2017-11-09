@@ -1,4 +1,4 @@
-﻿function Test-DbaDeprecation
+function Test-DbaDeprecation
 {
     <#
         .SYNOPSIS
@@ -37,10 +37,11 @@
             This function will generate a default message. However, this may not always be appropriate.
             Use CustomMessage to tailor a response to the necessity of the moment.
         
-        .PARAMETER Silent
-            Replaces user friendly yellow warnings with bloody red exceptions of doom!
-            Use this if you want the function to throw terminating errors you want to catch.
-        
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            
         .EXAMPLE
             PS C:\> Test-DbaDeprecation -DeprecatedOn "1.0.0.0" -Parameter 'Details'
     
@@ -77,7 +78,8 @@
         $CustomMessage,
         
         [bool]
-        $Silent = $Silent
+		[Alias('Silent')]
+		$EnableException = $EnableException
     )
     
     switch ($PSCmdlet.ParameterSetName)
@@ -91,9 +93,9 @@
             if ($sub.CommandElements | Where-Object ParameterName -EQ $Parameter)
             {
                 if ($CustomMessage) { $Message = $CustomMessage }
-                else { $Message = "Using the parameter $Parameter is deprecated! This parameter will be removed in version $DeprecatedOn, check in the documentation what parameter to use instead" }
-                
-                Write-Message -Message $Message -Level Warning -Silent $Silent -FunctionName $FunctionName -Once "Deprecated.Alias.$Alias"
+                else { $Message = "Using the parameter $Parameter is deprecated. This parameter will be removed in version $DeprecatedOn, check in the documentation what parameter to use instead" }
+				
+				Write-Message -Message $Message -Level Warning -EnableException $EnableException -FunctionName $FunctionName -Once "Deprecated.Alias.$Alias"
             }
         }
         
@@ -102,9 +104,9 @@
             if ($Alias -eq $Call.InvocationName)
             {
                 if ($CustomMessage) { $Message = $CustomMessage }
-                else { $Message = "Using the alias $Alias is deprecated! This alias will be removed in version $DeprecatedOn, use $FunctionName instead" }
-                
-                Write-Message -Message $Message -Level Warning -Silent $Silent -FunctionName $FunctionName -Once "Deprecated.Alias.$Alias"
+                else { $Message = "Using the alias $Alias is deprecated. This alias will be removed in version $DeprecatedOn, use $FunctionName instead" }
+				
+				Write-Message -Message $Message -Level Warning -EnableException $EnableException -FunctionName $FunctionName -Once "Deprecated.Alias.$Alias"
             }
         }
     }

@@ -15,9 +15,11 @@ function Get-XpDirTreeRestoreFile {
     .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server as a different user
     
-    .PARAMETER Silent
-        Setting this to true will disable all verbosity.
-    
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
     .EXAMPLE
         PS C:\> Get-XpDirTreeRestoreFile -Path '\\foo\bar\' -SqlInstance $SqlInstance
     
@@ -31,7 +33,7 @@ function Get-XpDirTreeRestoreFile {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
 		[System.Management.Automation.PSCredential]$SqlCredential,
-		[bool]$Silent = $false
+		[bool][Alias('Silent')]$EnableException = $false
 	)
 	
 	Write-Message -Level InternalComment -Message "Starting"
@@ -39,16 +41,20 @@ function Get-XpDirTreeRestoreFile {
 	Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
 	$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	
-	if ($Path[-1] -ne "\") {
+	if (($path -like '*.bak') -or ($path -like '*trn')){
+
+	}
+	elseif ($Path[-1] -ne "\") {
 		$Path = $Path + "\"
 	}
 	
 	If (!(Test-DbaSqlPath -SqlInstance $server -path $path)) {
-		Stop-Function -Message "SqlInstance $SqlInstance cannot access $path" -Silent $true
+		Stop-Function -Message "SqlInstance $SqlInstance cannot access $path" -EnableException $true
 	}
 	
 	$query = "EXEC master.sys.xp_dirtree '$Path',1,1;"
-	$queryResult = Invoke-DbaSqlcmd -ServerInstance $server -Database tempdb -Query $query
+	$queryResult = Invoke-Sqlcmd2 -ServerInstance $SqlInstance -Credential $SqlCredential -Database tempdb -Query $query
+	#$queryResult = $Server.Query($query)
 	
 	$dirs = $queryResult | where-object file -eq 0
 	$Results = @()
@@ -57,7 +63,7 @@ function Get-XpDirTreeRestoreFile {
 	ForEach ($d in $dirs) {
 		$fullpath = "$path$($d.Subdirectory)"
 		Write-Message -Level Verbose -Message "Enumerating subdirectory '$fullpath'"
-		$Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlInstance $server
+		$Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlInstance $SqlInstance
 	}
 	return $Results
 	

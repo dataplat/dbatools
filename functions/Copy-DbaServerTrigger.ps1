@@ -45,9 +45,11 @@ function Copy-DbaServerTrigger {
 		.PARAMETER Force
 			Drops and recreates the Trigger if it exists
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: Migration
 			Author: Chrissy LeMaire (@cl), netnerds.net
@@ -88,7 +90,7 @@ function Copy-DbaServerTrigger {
 		[object[]]$ServerTrigger,
 		[object[]]$ExcludeServerTrigger,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -123,7 +125,7 @@ function Copy-DbaServerTrigger {
 				SourceServer      = $sourceServer.Name
 				DestinationServer = $destServer.Name
 				Name              = $triggerName
-				Type              = $null
+				Type              = "Server Trigger"
 				Status            = $null
 				Notes             = $null
 				DateTime          = [DbaDateTime](Get-Date)
@@ -135,10 +137,11 @@ function Copy-DbaServerTrigger {
 
 			if ($destTriggers.Name -contains $triggerName) {
 				if ($force -eq $false) {
-					Write-Message -Level Warning -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
-
+					Write-Message -Level Verbose -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
+					
 					$copyTriggerStatus.Status = "Skipped"
-					$copyTriggerStatus
+					$copyTriggerStatus.Status = "Already exists"
+					$copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				else {
@@ -150,7 +153,7 @@ function Copy-DbaServerTrigger {
 						catch {
 							$copyTriggerStatus.Status = "Failed"
 							$copyTriggerStatus.Notes = $_.Exception
-							$copyTriggerStatus
+							$copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 							Stop-Function -Message "Issue dropping trigger on destination" -Target $triggerName -ErrorRecord $_ -Continue
 						}
@@ -165,15 +168,18 @@ function Copy-DbaServerTrigger {
 					$sql = $sql -replace "CREATE TRIGGER", "`nGO`nCREATE TRIGGER"
 					$sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
 					Write-Message -Level Debug -Message $sql
-					$destServer.ConnectionContext.ExecuteNonQuery($sql) | Out-Null
-
+					
+					foreach ($query in ($sql -split '\nGO\b')) {
+						$destServer.Query($query) | Out-Null
+					}
+					
 					$copyTriggerStatus.Status = "Successful"
-					$copyTriggerStatus
+					$copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyTriggerStatus.Status = "Failed"
 					$copyTriggerStatus.Notes = $_.Exception
-					$copyTriggerStatus
+					$copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Stop-Function -Message "Issue creating trigger on destination" -Target $triggerName -ErrorRecord $_
 				}
@@ -181,6 +187,6 @@ function Copy-DbaServerTrigger {
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlServerTrigger
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlServerTrigger
 	}
 }

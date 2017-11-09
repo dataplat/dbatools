@@ -46,9 +46,11 @@ in the snapshot. To create a "partial" snapshot, you need to pass -Force explici
 NB: You can't then restore the Database from the newly-created snapshot.
 For details, check https://msdn.microsoft.com/en-us/library/bb895334.aspx
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Tags: DisasterRecovery, Snapshot, Restore, Databases
 Author: niphlod
@@ -98,7 +100,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		[string]$NameSuffix,
 		[string]$Path,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
@@ -139,15 +141,15 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		}
 	}
 	process {
-		if (!$Database -and $AllDatabases -eq $false -and !$smodatabase) {
-			Stop-Function -Message "You must specify a -AllDatabases or -Database to continue" -Silent $Silent
+		if (!$Database -and $AllDatabases -eq $false) {
+			Stop-Function -Message "You must specify a -AllDatabases or -Database to continue" -EnableException $EnableException
 			return
 		}
 		
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -155,7 +157,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 			#Checks for path existence
 			if ($Path.Length -gt 0) {
 				if (!(Test-DbaSqlPath -SqlInstance $instance -Path $Path)) {
-					Stop-Function -Message "$instance cannot access the directory $Path" -ErrorRecord $_ -Target $instance -Continue -Silent $Silent
+					Stop-Function -Message "$instance cannot access the directory $Path" -ErrorRecord $_ -Target $instance -Continue -EnableException $EnableException
 				}
 			}
 			
@@ -181,12 +183,15 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 				elseif ($db.name -in $NoSupportForSnap) {
 					Write-Message -Level Warning -Message "$($db.name) snapshots are prohibited"
 				}
+				elseif ($db.IsAccessible -ne $true) {
+					Write-Message -Level Verbose -Message "$($db.name) is not accessible, skipping"
+				}
 				else {
 					$sourcedbs += $db
 				}
 			}
 			if($sourcedbs.Length -gt 1 -and $Name) {
-				Stop-Function -Message "You passed the Name parameter that is fixed but selected multiple databases to snapshot: use the NameSuffix parameter" -Continue -Silent $Silent
+				Stop-Function -Message "You passed the Name parameter that is fixed but selected multiple databases to snapshot: use the NameSuffix parameter" -Continue -EnableException $EnableException
 			}
 			foreach ($db in $sourcedbs) {
 				if ($NameSuffix.Length -gt 0) {
@@ -195,6 +200,8 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 						#no interpolation, just append
 						$SnapName = '{0}{1}' -f $db.Name, $NameSuffix
 					}
+				} elseif ($Name.Length -gt 0) {
+					$SnapName = $Name
 				}
 				else {
 					$SnapName = "{0}_{1}" -f $db.Name, $DefaultSuffix
@@ -229,17 +236,16 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 						}
 						foreach ($file in $fg.Files) {
 							$counter += 1
-							# fixed extension is hardcoded as "ss", which seems a "de-facto" standard
-							$fname = [IO.Path]::ChangeExtension($file.Filename, "ss")
-							$fname = [IO.Path]::Combine((Split-Path $fname -Parent), ("{0}_{1}" -f $DefaultSuffix, (Split-Path $fname -Leaf)))
-							
+							$basename = [IO.Path]::GetFileNameWithoutExtension($file.FileName)
+							$basepath = Split-Path $file.FileName -Parent
 							# change path if specified
 							if ($Path.Length -gt 0) {
-								$basename = Split-Path $fname -Leaf
-								# we need to avoid cases where basename is the same for multiple FG
-								$basename = '{0:0000}_{1}' -f $counter, $basename
-								$fname = [IO.Path]::Combine($Path, $basename)
+								$basepath = $Path
 							}
+							# we need to avoid cases where basename is the same for multiple FG
+							$fname = [IO.Path]::Combine($basepath, ("{0}_{1}_{2:0000}_{3:000}" -f $basename, $DefaultSuffix, (Get-Date).MilliSecond, $counter))
+							# fixed extension is hardcoded as "ss", which seems a "de-facto" standard
+							$fname = [IO.Path]::ChangeExtension($fname, "ss")
 							$CustomFileStructure[$fg.Name] += @{ 'name' = $file.name; 'filename' = $fname }
 						}
 					}
@@ -284,7 +290,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 							$server.Databases.Refresh()
 							if ($SnapName -notin $server.Databases.Name) {
 								# previous creation failed completely, snapshot is not there already
-								$null = $server.ConnectionContext.ExecuteNonQuery($sql[0])
+								$null = $server.Query($sql[0])
 								$server.Databases.Refresh()
 								$SnapDB = $server.Databases[$Snapname]
 							}

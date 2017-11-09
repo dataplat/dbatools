@@ -1,4 +1,4 @@
-﻿function Remove-DbaDatabase {
+function Remove-DbaDatabase {
 <#
 .SYNOPSIS
 Drops a database, hopefully even the really stuck ones.
@@ -31,9 +31,11 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES
 Tags: Delete, Databases
 
@@ -58,8 +60,13 @@ Prompts then removes the databases containeddb and mydb on SQL Server sql2016
 Remove-DbaDatabase -SqlInstance sql2016 -Database containeddb -Confirm:$false
 
 Does not prompt and swiftly removes containeddb on SQL Server sql2016
+
+.EXAMPLE
+Get-DbaDatabase -SqlInstance server\instance -ExcludeAllSystemDb | Remove-DbaDatabase
+
+Removes all the user databases from server\instance
 #>
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', DefaultParameterSetName= "Default")]
+	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName= "Default")]
 	Param (
 		[parameter(, Mandatory, ParameterSetName = "instance")]
 		[Alias("ServerInstance", "SqlServer")]
@@ -74,7 +81,7 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 		[Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "databases")]
 		[Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
 		[switch]$IncludeSystemDb,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {
@@ -115,7 +122,7 @@ Does not prompt and swiftly removes containeddb on SQL Server sql2016
 			catch {
 				try {
 					if ($Pscmdlet.ShouldProcess("$db on $server", "alter db set single_user with rollback immediate then drop")) {
-						$null = $server.ConnectionContext.ExecuteNonQuery("alter database $db set single_user with rollback immediate; drop database $db")
+						$null = $server.Query("if exists (select * from sys.databases where name = '$($db.name)' and state = 0) alter database $db set single_user with rollback immediate; drop database $db")
 
 						[pscustomobject]@{
 							ComputerName = $server.NetName

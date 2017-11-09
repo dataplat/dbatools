@@ -12,10 +12,18 @@ function Get-DbaLinkedServer {
 
 		.PARAMETER SqlCredential
 			SqlCredential object to connect as. If not specified, current Windows login will be used.
+		
+		.PARAMETER LinkedServer
+			The linked server(s) to process - this list is auto-populated from the server. If unspecified, all linked servers will be processed.
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-
+		.PARAMETER ExcludeLinkedServer
+			The linked server(s) to exclude - this list is auto-populated from the server
+	
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Author: Stephen Bennett ( https://sqlnotesfromtheunderground.wordpress.com/ )
 
@@ -37,7 +45,9 @@ function Get-DbaLinkedServer {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
-		[switch]$Silent
+		[object[]]$LinkedServer,
+		[object[]]$ExcludeLinkedServer,
+		[switch][Alias('Silent')]$EnableException
 	)
 	foreach ($Instance in $SqlInstance) {
 		try {
@@ -53,7 +63,10 @@ function Get-DbaLinkedServer {
 		if ($LinkedServer) {
 			$lservers = $lservers | Where-Object { $_.Name -in $LinkedServer }
 		}
-
+		if ($ExcludeLinkedServer) {
+			$lservers = $lservers | Where-Object { $_.Name -notin $ExcludeLinkedServer }
+		}
+		
 		foreach ($ls in $lservers) {
 			Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name ComputerName -value $server.NetName
 			Add-Member -Force -InputObject $ls -MemberType NoteProperty -Name InstanceName -value $server.ServiceName

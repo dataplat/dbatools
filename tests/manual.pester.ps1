@@ -1,4 +1,3 @@
-﻿Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 <#
     .SYNOPSIS
         Runs dbatools tests.
@@ -24,6 +23,7 @@ Param (
     [switch]
     $SkipHelpTest
 )
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $ModuleBase = Split-Path -Path $PSScriptRoot -Parent
 if (Get-Module dbatools) { Remove-Module dbatools }
 

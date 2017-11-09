@@ -1,5 +1,4 @@
-Function New-DbaSsisCatalog
-{
+Function New-DbaSsisCatalog {
 <#
 .SYNOPSIS 
 Enables the SSIS Catalog on a SQL Server 2012+
@@ -11,10 +10,10 @@ After installing the SQL Server Engine and SSIS you still have to enable the SSI
 SQL Server you wish to run the function on.
 
 .PARAMETER SqlCredential
-Credenitals used to connect to the SQL Server
+Credentials used to connect to the SQL Server
 
-.PARAMETER SsisCredential
-Required password that will be used for the security key in SSISDB. You must pass in a PowerShell credential - only the password is required for SSIS but PowerShell insists you add a username, so add whatever.
+.PARAMETER Password
+Required password that will be used for the security key in SSISDB.
 
 .PARAMETER SsisCatalog
 SSIS catalog name. By default, this is SSISDB.	
@@ -25,28 +24,32 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm 
 Prompts you for confirmation before executing any changing operations within the command. 
 	
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException 
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES 
 Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-
+Tags: 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/New-DbaSsisCatalog
 
-.EXAMPLE   
-New-DbaSsisCatalog -SqlInstance DEV01 -SsisCredential (Get-Credential)
+.EXAMPLE
+$password = ConvertTo-SecureString MyVisiblePassWord -AsPlainText -Force
+New-DbaSsisCatalog -SqlInstance sql2016 -Password $password
 
-Prompts for username/password - while only password is used, the username must be filled out nevertheless. Then creates the SSIS Catalog on server DEV01 with the specified password. 
+Creates the SSIS Catalog on server DEV01 with the specified password. 
+
+.EXAMPLE
+$password = Read-Host -AsSecureString -Prompt "Enter password"
+New-DbaSsisCatalog -SqlInstance DEV01 -Password $password
+
+Creates the SSIS Catalog on server DEV01 with the specified password. 
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
@@ -56,31 +59,21 @@ Prompts for username/password - while only password is used, the username must b
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
 		[parameter(Mandatory = $true)]
-		[PSCredential]$SsisCredential,
+		[Security.SecureString]$Password,
 		[string]$SsisCatalog = "SSISDB",
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
-	process
-	{
-		foreach ($instance in $SqlInstance)
-		{
+	process {
+		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			
-			try
-			{
+			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 10
 			}
-			catch
-			{
+			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
-			
-			#if SQL 2012 or higher only validate databases with ContainmentType = NONE
-			if ($server.versionMajor -lt 10)
-			{
-				Stop-Function -Message "This version of SQL Server cannot have SSIS catalog" -Continue -Target $instance
 			}
 			
 			## check if SSIS and Engine running on box
@@ -88,44 +81,43 @@ Prompts for username/password - while only password is used, the username must b
 			
 			$ssisservice = $Services | Where-Object { $_.ServiceType -eq "SSIS" -and $_.State -eq "Running" }
 			
-			if (-not $ssisservice)
-			{
+			if (-not $ssisservice) {
 				Stop-Function -Message "SSIS is not running on $instance" -Continue -Target $instance
 			}
 			
 			#if SQL 2012 or higher only validate databases with ContainmentType = NONE
-			$clrenabled = Get-DbaSpConfigure -SqlInstance $server | Where-Object ConfigName -eq IsSqlClrEnabled
+			$clrenabled = Get-DbaSpConfigure -SqlInstance $server -Config IsSqlClrEnabled
 			
-			if (!$clrenabled.RunningValue)
-			{
+			if (!$clrenabled.RunningValue) {
 				Stop-Function -Message 'CLR Integration must be enabled.  You can enable it by running Set-DbaSpConfigure -SqlInstance sql2012 -Config IsSqlClrEnabled -Value $true' -Continue -Target $instance
 			}
 			
-			$ssis = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $server
+			try {
+				$ssis = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $server
+			}
+			catch {
+				Stop-Function -Message "Can't load server" -Target $instance -ErrorRecord $_
+				return 
+			}
 			
-			if ($ssis.Catalogs[$SsisCatalog])
-			{
+			if ($ssis.Catalogs[$SsisCatalog]) {
 				Stop-Function -Message "SSIS Catalog already exists" -Continue -Target $ssis.Catalogs[$SsisCatalog]
 			}
-			else
-			{
-				if ($Pscmdlet.ShouldProcess($server, "Creating SSIS catalog: $SsisCatalog"))
-				{
-					try
-					{
-						$ssisdb = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($ssis, $SsisCatalog, $($SsisCredential.GetNetworkCredential().Password))
+			else {
+				if ($Pscmdlet.ShouldProcess($server, "Creating SSIS catalog: $SsisCatalog")) {
+					try {
+						$ssisdb = New-Object Microsoft.SqlServer.Management.IntegrationServices.Catalog ($ssis, $SsisCatalog, $(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password)))))
 						$ssisdb.Create()
 						
 						[pscustomobject]@{
-							ComputerName = $server.NetName
-							InstanceName = $server.ServiceName
-							SqlInstance = $server.DomainInstanceName
-							SsisCatalog = $SsisCatalog
-							Created = $true
+							ComputerName  = $server.NetName
+							InstanceName  = $server.ServiceName
+							SqlInstance   = $server.DomainInstanceName
+							SsisCatalog   = $SsisCatalog
+							Created	      = $true
 						}
 					}
-					catch
-					{
+					catch {
 						Stop-Function -Message "Failed to create SSIS Catalog: $_" -Target $_ -Continue
 					}
 				}

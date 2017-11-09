@@ -79,12 +79,20 @@ function Backup-DbaDatabase {
 		.PARAMETER AzureCredential
 			The name of the credential on the SQL instance that can write to the AzureBaseUrl.
 
-		.PARAMETER Silent
-			If this switch is enabled, the internal messaging functions will be silenced.
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.NOTES
 			Tags: DisasterRecovery, Backup, Restore
-			Original Author: Stuart Moore (@napalmgram), stuart-moore.com
+			Author: Stuart Moore (@napalmgram), stuart-moore.com
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -105,7 +113,7 @@ function Backup-DbaDatabase {
 
 			Performs a full backup of all databases on the sql2016 instance to their own containers under the https://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql credential "dbatoolscred" registered on the sql2016 instance.
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default")]
+	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(ParameterSetName = "Pipe", Mandatory = $true)]
 		[DbaInstanceParameter[]]$SqlInstance,
@@ -117,7 +125,7 @@ function Backup-DbaDatabase {
 		[string]$BackupFileName,
 		[switch]$CopyOnly,
 		[ValidateSet('Full', 'Log', 'Differential', 'Diff', 'Database')]
-		[string]$Type = "Database",
+		[string]$Type = 'Database',
 		[parameter(ParameterSetName = "NoPipe", Mandatory = $true, ValueFromPipeline = $true)]
 		[object[]]$DatabaseCollection,
 		[switch]$CreateFolder,
@@ -130,7 +138,7 @@ function Backup-DbaDatabase {
 		[int]$BufferCount,
 		[string]$AzureBaseUrl,
 		[string]$AzureCredential,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
@@ -217,7 +225,7 @@ function Backup-DbaDatabase {
 			
 			if ($null -eq $server) { $server = $Database.Parent }
 			
-			Write-Message -Level Verbose -Message "Backup up database $database"
+			Write-Message -Level Verbose -Message "Backup database $database"
 			
 			if ($null -eq $Database.RecoveryModel) {
 				$Database.RecoveryModel = $server.databases[$Database.Name].RecoveryModel
@@ -232,16 +240,16 @@ function Backup-DbaDatabase {
 				Write-Message -Level Warning -Message "$failreason"
 			}
 			
-			$lastfull = $database.LastBackupDate.Year
+			$lastfull = $database.Refresh().LastBackupDate.Year
 			
-			if ($Type -ne "Database" -and $lastfull -eq 1) {
+			if ($Type -notin @("Database", "Full") -and $lastfull -eq 1) {
 				$failreason = "$database does not have an existing full backup, cannot take log or differentialbackup"
 				$failures += $failreason
 				Write-Message -Level Warning -Message "$failreason"
 			}
 			
 			if ($CopyOnly -ne $True) {
-				$CopyOnly -eq $false
+				$CopyOnly = $false
 			}
 			
 			$server.ConnectionContext.StatementTimeout  = 0
@@ -264,31 +272,32 @@ function Backup-DbaDatabase {
 			}
 			
 			if ($type -in 'diff', 'differential') {
-				Write-Message -Level Verbose -Message "Creating differential backup"
-				$type = "Database"
+				Write-Message -Level VeryVerbose -Message "Creating differential backup"
+				$SMOBackuptype = "Database"
 				$backup.Incremental = $true
-                $outputType = 'Differential'
+				$outputType = 'Differential'
 			}
 			
 			if ($Type -eq "Log") {
-				Write-Message -Level Verbose -Message "Creating log backup"
+				Write-Message -Level VeryVerbose -Message "Creating log backup"
 				$Suffix = "trn"
-                $OutputType = 'Log'
+				$OutputType = 'Log'
+				$SMOBackupType = 'Log'
 			}
 			
 			if ($type -in 'Full', 'Database') {
-                Write-verbose "Setting type"
-				$type = "Database"
-                $OutputType='Full'
+				Write-Message -Level VeryVerbose -Message "Creating full backup"
+				$SMOBackupType = "Database"
+				$OutputType='Full'
 			}
 			
 			$backup.CopyOnly = $copyonly
-			$backup.Action = $type
+			$backup.Action = $SMOBackupType
 			if ('' -ne $AzureBaseUrl) {
 				$backup.CredentialName = $AzureCredential
 			}
 			
-			Write-Message -Level Verbose -Message "Sorting Paths"
+			Write-Message -Level VeryVerbose -Message "Sorting Paths"
 			
 			#If a backupfilename has made it this far, use it
 			$FinalBackupPath = @()
@@ -318,11 +327,11 @@ function Backup-DbaDatabase {
 					$BackupDirectory += $server.BackupDirectory
 				}
 				
-				$timestamp = (Get-date -Format yyyyMMddHHmm)
-				Write-Message -Level Verbose -Message "Setting filename"
+				$timestamp = (Get-Date -Format yyyyMMddHHmm)
+				Write-Message -Level VeryVerbose -Message "Setting filename"
 				$BackupFileName = "$($dbname)_$timestamp"
 				if ('' -ne $AzureBaseUrl) {
-					write-verbose "Azure div"
+					Write-Message -Level VeryVerbose -Message "Azure div"
 					$PathDivider = "/"
 				}
 				else {
@@ -332,13 +341,15 @@ function Backup-DbaDatabase {
 					if ($CreateFolder) {
 						$Path = $path + $PathDivider + $Database.name
 						Write-Message -Level Verbose -Message "Creating Folder $Path"
-						if (((New-DbaSqlDirectory -SqlInstance $server -SqlCredential $SqlCredential -Path $path).Created -eq $false) -and '' -eq $AzureBaseUrl) {
-							$failreason = "Cannot create or write to folder $path"
-							$failures += $failreason
-							Write-Message -Level Warning -Message "$failreason"
-						}
-						else {
-							$FinalBackupPath += "$path$PathDivider$BackupFileName.$suffix"
+						if ($Pscmdlet.ShouldProcess($server.Name, "Creating folder $path")) {
+							if (((New-DbaSqlDirectory -SqlInstance $server -SqlCredential $SqlCredential -Path $path).Created -eq $false) -and '' -eq $AzureBaseUrl) {
+								$failreason = "Cannot create or write to folder $path"
+								$failures += $failreason
+								Write-Message -Level Warning -Message "$failreason"
+							}
+							else {
+								$FinalBackupPath += "$path$PathDivider$BackupFileName.$suffix"
+							}
 						}
 					}
 					else {
@@ -422,57 +433,66 @@ function Backup-DbaDatabase {
 				Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
 				
 				try {
-					$backup.SqlBackup($server)
-					$script = $backup.Script($server)
-					Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
-					$BackupComplete = $true
-					$Filelist = @()
-					$FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
-					$FileList += $server.Databases[$dbname].LogFiles | Select-Object @{ Name = "FileType"; Expression = { "L" } }, @{ Name = "Type"; Expression = { "L" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
-					$Verified = $false
-					if ($Verify) {
-						$verifiedresult = [PSCustomObject]@{
-							SqlInstance = $server.name
-							DatabaseName = $dbname
-							BackupComplete = $BackupComplete
-							BackupFilesCount = $FinalBackupPath.count
-							BackupFile = (split-path $FinalBackupPath -leaf)
-							BackupFolder = (split-path $FinalBackupPath | Sort-Object -Unique)
-							BackupPath = ($FinalBackupPath | Sort-Object -Unique)
-							Script = $script
-							Notes = $failures -join (',')
-							FullName = ($FinalBackupPath | Sort-Object -Unique)
-							FileList = $FileList
-							SoftwareVersionMajor = $server.VersionMajor
-                            Type = $outputType
-						} | Restore-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
-						if ($verifiedResult[0] -eq "Verify successful") {
-							$failures += $verifiedResult[0]
-							$Verified = $true
-						}
-						else {
-							$failures += $verifiedResult[0]
-							$Verified = $false
+					if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbname to $backupfile")) {
+							$backup.SqlBackup($server)
+						$script = $backup.Script($server)
+						Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
+						$BackupComplete = $true
+						$Filelist = @()
+						$HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly | Sort-Object -Property End -Descending | Select-Object -First 1
+						$FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
+						$FileList += $server.Databases[$dbname].LogFiles | Select-Object @{ Name = "FileType"; Expression = { "L" } }, @{ Name = "Type"; Expression = { "L" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
+						$Verified = $false
+						if ($Verify) {
+							$verifiedresult = [PSCustomObject]@{
+								SqlInstance = $server.name
+								DatabaseName = $dbname
+								BackupComplete = $BackupComplete
+								BackupFilesCount = $FinalBackupPath.count
+								BackupFile = (Split-Path $FinalBackupPath -leaf)
+								BackupFolder = (Split-Path $FinalBackupPath | Sort-Object -Unique)
+								BackupPath = ($FinalBackupPath | Sort-Object -Unique)
+								Script = $script
+								Notes = $failures -join (',')
+								FullName = ($FinalBackupPath | Sort-Object -Unique)
+								FileList = $FileList
+								SoftwareVersionMajor = $server.VersionMajor
+								Type = $outputType
+								FirstLsn = $HeaderInfo.FirstLsn
+								DatabaseBackupLsn = $HeaderInfo.DatabaseBackupLsn
+								CheckPointLsn = $HeaderInfo.CheckPointLsn
+								LastLsn = $HeaderInfo.LastLsn
+								BackupSetId = $HeaderInfo.BackupSetId
+								LastRecoveryForkGUID = $HeaderInfo.LastRecoveryForkGUID
+							} | Restore-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -DatabaseName DbaVerifyOnly -VerifyOnly
+							if ($verifiedResult[0] -eq "Verify successful") {
+								$failures += $verifiedResult[0]
+								$Verified = $true
+							}
+							else {
+								$failures += $verifiedResult[0]
+								$Verified = $false
+							}
 						}
 					}
 				}
 				catch {
 					Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
-					Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -Silent $Silent -ErrorRecord $_
+					Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -EnableException $EnableException -ErrorRecord $_
 					$BackupComplete = $false
 				}
 			}
 			$OutputExclude = 'FullName', 'FileList', 'SoftwareVersionMajor'
 			if ($failures.count -eq 0) {
-				$OutputExclude += ('Notes')
+				$OutputExclude += ('Notes', 'FirstLsn','DatabaseBackupLsn','CheckpointLsn','LastLsn','BackupSetId','LastRecoveryForkGuid')
 			}
 			[PSCustomObject]@{
 				SqlInstance = $server.name
 				DatabaseName = $dbname
 				BackupComplete = $BackupComplete
 				BackupFilesCount = $FinalBackupPath.count
-				BackupFile = (split-path $FinalBackupPath -leaf)
-				BackupFolder = (split-path $FinalBackupPath | Sort-Object -Unique)
+				BackupFile = (Split-Path $FinalBackupPath -leaf)
+				BackupFolder = (Split-Path $FinalBackupPath | Sort-Object -Unique)
 				BackupPath = ($FinalBackupPath | Sort-Object -Unique)
 				Script = $script
 				Notes = $failures -join (',')
@@ -480,7 +500,13 @@ function Backup-DbaDatabase {
 				FileList = $FileList
 				SoftwareVersionMajor = $server.VersionMajor
 				Verified = $Verified
-                Type = $outputType
+				Type = $outputType
+				FirstLsn = $HeaderInfo.FirstLsn
+				DatabaseBackupLsn = $HeaderInfo.DatabaseBackupLsn
+				CheckPointLsn = $HeaderInfo.CheckPointLsn
+				LastLsn = $HeaderInfo.LastLsn
+				BackupSetId = $HeaderInfo.BackupSetId
+				LastRecoveryForkGUID = $HeaderInfo.LastRecoveryForkGUID
 			} | Select-DefaultView -ExcludeProperty $OutputExclude
 			$BackupFileName = $null
 		}

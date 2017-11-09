@@ -86,14 +86,16 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
 
 .NOTES 
-Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Step
 	
 Website: https://dbatools.io
@@ -176,7 +178,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 		[Parameter(Mandatory = $false)]
 		[string]$ProxyName,
 		[Parameter(Mandatory = $false)]
-		[switch]$Silent,
+		[switch][Alias('Silent')]$EnableException,
 		[Parameter(Mandatory = $false)]
 		[switch]$Force
 	)
@@ -202,7 +204,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 		foreach ($instance in $sqlinstance) {
 			
 			# Try connecting to the instance
-			Write-Message -Message "Attempting to connect to $instance" -Level Output
+			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
 			try {
 				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
@@ -226,7 +228,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 						# Get the job step
 						$JobStep = $Server.JobServer.Jobs[$j].JobSteps[$StepName]
 						
-						Write-Message -Message "Modifying job $j on $instance" -Level Output
+						Write-Message -Message "Modifying job $j on $instance" -Level Verbose
 						
 						#region job step options
 						# Setting the options for the job step
@@ -327,7 +329,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 						# Execute 
 						if ($PSCmdlet.ShouldProcess($instance, "Changing the job step $StepName for job $j")) {
 							try {
-								Write-Message -Message "Changing the job step $StepName for job $j" -Level Output
+								Write-Message -Message "Changing the job step $StepName for job $j" -Level Verbose
 								
 								# Change the job step
 								$JobStep.Alter()

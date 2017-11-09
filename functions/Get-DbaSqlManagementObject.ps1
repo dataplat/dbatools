@@ -1,4 +1,4 @@
-﻿function Get-DbaSqlManagementObject {
+function Get-DbaSqlManagementObject {
 	<#
 		.SYNOPSIS
 			Gets SQL Mangaement Object versions installed on the machine.
@@ -17,12 +17,14 @@
 			This is the specific version number you are looking for. The function will look 
 			for that version only.
 		
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-		
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: SMO
-			Original Author: Ben Miller (@DBAduck - http://dbaduck.com)
+			Author: Ben Miller (@DBAduck - http://dbaduck.com)
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -50,7 +52,7 @@
 		[PSCredential]
 		$Credential,
 		[int]$VersionNumber,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin
@@ -76,7 +78,7 @@
 			}
 			
 			Write-Message -Level Verbose -Message "Looking for included smo library"
-			$localversion = [version](Get-ChildItem -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Smo.dll").VersionInfo.ProductVersion
+			$localversion = [version](Get-ChildItem -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll").VersionInfo.ProductVersion
 			
 			foreach ($version in $localversion) {
 				if ($VersionNumber -eq 0) {
@@ -85,7 +87,7 @@
 						ComputerName = $env:COMPUTERNAME
 						Version = $localversion
 						Loaded = $loadedversion -contains $localversion
-						LoadTemplate = "Add-Type -Path $("$script:PSModuleRoot\bin\Microsoft.SqlServer.Smo.dll")"
+						LoadTemplate = "Add-Type -Path $("$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll")"
 					}
 				}
 				else {
@@ -96,7 +98,7 @@
 							ComputerName = $env:COMPUTERNAME
 							Version = $localversion
 							Loaded = $loadedversion -contains $localversion
-							LoadTemplate = "Add-Type -Path $("$script:PSModuleRoot\bin\Microsoft.SqlServer.Smo.dll")"
+							LoadTemplate = "Add-Type -Path $("$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll")"
 						}
 					}
 				}

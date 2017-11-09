@@ -1,132 +1,136 @@
-Function Test-DbaNetworkLatency {
-<#
-	.SYNOPSIS
-	Tests how long a query takes to return from SQL Server
+function Test-DbaNetworkLatency {
+	<#
+		.SYNOPSIS
+			Tests how long a query takes to return from SQL Server
 
-	.DESCRIPTION
-	This function is intended to help measure SQL Server network latency by establishing a connection and making a simple query. This is a better alternative
-	than ping because it actually creates the connection to the SQL Server, and times not ony the entire routine, but also how long the actual queries take vs
-	how long it takes to get the results.
+		.DESCRIPTION
+			This function is intended to help measure SQL Server network latency by establishing a connection and executing a simple query. This is a better than a simple ping because it actually creates the connection to the SQL Server and measures the time required for only the entire routine, but the duration of the query as well how long it takes for the results to be returned.
 
-	Server
-	Count
-	Total
-	Avg
-	ExecuteOnlyTotal
-	ExecuteOnlyAvg
+			By default, this command will execute "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" three times.
 
-	.PARAMETER SqlInstance
-	The SQL Server instance.
+			It will then output how long the entire connection and command took, as well as how long *only* the execution of the command took.
 
-	.PARAMETER SqlCredential
-	Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			This allows you to see if the issue is with the connection or the SQL Server itself.
 
-	$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        .PARAMETER SqlInstance
+            The SQL Server you want to run the test on.
 
-	Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
+        .PARAMETER SqlCredential
+ 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-	.PARAMETER Query
-	Specifies the query to be executed. By default, "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" will be executed on master. To execute in other databases, use fully qualified table names.
+			$cred = Get-Credential, then pass $cred object to the -SqlCredential parameter.
 
-	.PARAMETER Count
-	Specifies how many times the query should be executed. By default, the query is executed three times.
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-	.PARAMETER WhatIf
-	Shows what would happen if the command were to run. No actions are actually performed.
+			To connect as a different Windows user, run PowerShell as that user.
 
-	.PARAMETER Confirm
-	Prompts you for confirmation before executing any changing operations within the command.
+		.PARAMETER Query
+			Specifies the query to be executed. By default, "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" will be executed on master. To execute in other databases, use fully qualified object names.
 
-	.PARAMETER Silent
-	Use this switch to disable any kind of verbose messages
+		.PARAMETER Count
+			Specifies how many times the query should be executed. By default, the query is executed three times.
 
-	.NOTES
-	Tags: Performance, Network
-	Website: https://dbatools.io
-	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-	.LINK
-	https://dbatools.io/Test-DbaNetworkLatency
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-	.EXAMPLE
-	Test-DbaNetworkLatency -SqlInstance sqlserver2014a, sqlcluster
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-	Times the roundtrip return of "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" on sqlserver2014a and sqlcluster using Windows credentials. 
+		.NOTES
+			Tags: Performance, Network
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-	.EXAMPLE
-	Test-DbaNetworkLatency -SqlInstance sqlserver2014a -SqlCredential $cred
+		.LINK
+			https://dbatools.io/Test-DbaNetworkLatency
 
-	Times the execution results return of "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" on sqlserver2014a using SQL credentials.
+		.EXAMPLE
+			Test-DbaNetworkLatency -SqlInstance sqlserver2014a, sqlcluster
 
-	.EXAMPLE
-	Test-DbaNetworkLatency -SqlInstance sqlserver2014a, sqlcluster, sqlserver -Query "select top 10 * from otherdb.dbo.table" -Count 10
+			Tests the roundtrip return of "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" on sqlserver2014a and sqlcluster using Windows credentials.
 
-	Times the execution results return of "select top 10 * from otherdb.dbo.table" 10 times on sqlserver2014a, sqlcluster, and sqlserver using Windows credentials. 
+		.EXAMPLE
+			Test-DbaNetworkLatency -SqlInstance sqlserver2014a -SqlCredential $cred
 
-#>
+			Tests the execution results return of "SELECT TOP 100 * FROM INFORMATION_SCHEMA.TABLES" on sqlserver2014a using SQL credentials.
+
+		.EXAMPLE
+			Test-DbaNetworkLatency -SqlInstance sqlserver2014a, sqlcluster, sqlserver -Query "select top 10 * from otherdb.dbo.table" -Count 10
+
+			Tests the execution results return of "select top 10 * from otherdb.dbo.table" 10 times on sqlserver2014a, sqlcluster, and sqlserver using Windows credentials.
+
+	#>
 	[CmdletBinding()]
 	[OutputType([System.Object[]])]
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[DbaInstance[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
 		[string]$Query = "select top 100 * from INFORMATION_SCHEMA.TABLES",
 		[int]$Count = 3,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	process {
 		foreach ($instance in $SqlInstance) {
 			try {
 				$start = [System.Diagnostics.Stopwatch]::StartNew()
-				$currentcount = 0
+				$currentCount = 0
 				try {
-					Write-Message -Level Verbose -Message "Connecting to $instance"
-					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+					Write-Message -Level Verbose -Message "Connecting to $instance."
+					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				}
 				catch {
 					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				}
-				
+
 				do {
-					
-					if (++$currentcount -eq 1) {
+					if (++$currentCount -eq 1) {
 						$first = [System.Diagnostics.Stopwatch]::StartNew()
 					}
-					$server.ConnectionContext.ExecuteWithResults($query) | Out-Null
-					if ($currentcount -eq $count) {
-						$last = $first.elapsed
+					$null = $server.Query($query)
+					if ($currentCount -eq $count) {
+						$last = $first.Elapsed
 					}
 				}
-				while ($currentcount -lt $count)
-				
-				$end = $start.elapsed
-				
-				$totaltime = $end.TotalMilliseconds
-				$avg = $totaltime / $count
-				
-				$totalwarm = $last.TotalMilliseconds
-				$avgwarm = $totalwarm / ($count - 1)
-				
-				[PSCustomObject]@{
-					ComputerName = $server.NetName
-					InstanceName = $server.ServiceName
-					SqlInstance = $server.DomainInstanceName
-					Count = $count
-					Total = [prettytimespan]::FromMilliseconds($totaltime)
-					Avg = [prettytimespan]::FromMilliseconds($avg)
-					ExecuteOnlyTotal = [prettytimespan]::FromMilliseconds($totalwarm)
-					ExecuteOnlyAvg = [prettytimespan]::FromMilliseconds($avgwarm)
+				while ($currentCount -lt $count)
+
+				$end = $start.Elapsed
+				$totalTime = $end.TotalMilliseconds
+				$average = $totalTime / $count
+
+				$totalWarm = $last.TotalMilliseconds
+				if ($Count -eq 1) {
+					$averageWarm = $totalWarm
 				}
+				else {
+					$averageWarm = $totalWarm / $count
+				}
+
+				[PSCustomObject]@{
+					ComputerName     = $server.NetName
+					InstanceName     = $server.ServiceName
+					SqlInstance      = $server.DomainInstanceName
+					Count            = $count
+					Total            = [prettytimespan]::FromMilliseconds($totalTime)
+					Avg              = [prettytimespan]::FromMilliseconds($average)
+					ExecuteOnlyTotal = [prettytimespan]::FromMilliseconds($totalWarm)
+					ExecuteOnlyAvg   = [prettytimespan]::FromMilliseconds($averageWarm)
+					NetworkOnlyTotal = [prettytimespan]::FromMilliseconds($totalTime - $totalWarm)
+				} | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, 'Count as ExecutionCount', Total, 'Avg as Average', ExecuteOnlyTotal, 'ExecuteOnlyAvg as ExecuteOnlyAverage', NetworkOnlyTotal #backwards compat
 			}
 			catch {
-				Stop-Function -Message "Error occurred: $_" -InnerErrorRecord $_ -Continue
+				Stop-Function -Message "Error occurred testing dba network latency: $_" -ErrorRecord $_ -Continue -Target $instance
 			}
 		}
 	}
-	
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Test-SqlNetworkLatency
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Test-SqlNetworkLatency
 	}
 }

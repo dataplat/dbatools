@@ -1,4 +1,4 @@
-﻿function Copy-DbaAgentCategory {
+function Copy-DbaAgentCategory {
 	<#
 		.SYNOPSIS
 			Copy-DbaAgentCategory migrates SQL Agent categories from one SQL Server to another. This is similar to sp_add_category.
@@ -15,7 +15,7 @@
 			If the category already exists on the destination, it will be skipped unless -Force is used.
 
 		.PARAMETER Source
-			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or newer.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
@@ -27,7 +27,7 @@
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or newer.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
 		.PARAMETER DestinationSqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
@@ -57,11 +57,13 @@
 			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 		.PARAMETER Force
-			If this switch is enabled, the Category will be dropped and recreated on Destination.i
+			If this switch is enabled, the Category will be dropped and recreated on Destination.
 
-		.PARAMETER Silent
-			If this switch is enabled, the internal messaging functions will be silenced.
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: Migration, Agent
 			Author: Chrissy LeMaire (@cl), netnerds.net
@@ -77,12 +79,12 @@
 		.EXAMPLE
 			Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster
 
-			Copies all operator categories from sqlserver2014a to sqlcluster, using Windows credentials. If operator categories with the same name exist on sqlcluster, they will be skipped.
+			Copies all operator categories from sqlserver2014a to sqlcluster using Windows authentication. If operator categories with the same name exist on sqlcluster, they will be skipped.
 
 		.EXAMPLE
 			Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -OperatorCategory PSOperator -SourceSqlCredential $cred -Force
 
-			Copies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+			Copies a single operator category, the PSOperator operator category from sqlserver2014a to sqlcluster using SQL credentials to authenticate to sqlserver2014a and Windows credentials for sqlcluster. If a operator category with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
 		.EXAMPLE
 			Copy-DbaAgentCategory -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
@@ -103,7 +105,7 @@
 		[ValidateSet('Job', 'Alert', 'Operator')]
 		[string[]]$CategoryType,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -133,8 +135,10 @@
 					$copyJobCategoryStatus = [pscustomobject]@{
 						SourceServer      = $sourceServer.Name
 						DestinationServer = $destServer.Name
-						Name              = $categoryName
-						Status            = $null
+						Name			   = $categoryName
+						Type			   = "Agent Job Category"
+						Status			   = $null
+						Notes			   = $null
 						DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 					}
 
@@ -145,8 +149,9 @@
 					if ($destJobCategories.Name -contains $jobCategory.name) {
 						if ($force -eq $false) {
 							$copyJobCategoryStatus.Status = "Skipped"
-							$copyJobCategoryStatus
-							Write-Message -Level Warning -Message "Job category $categoryName exists at destination. Use -Force to drop and migrate."
+							$copyJobCategoryStatus.Notes = "Already exists"
+							$copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+							Write-Message -Level Verbose -Message "Job category $categoryName exists at destination. Use -Force to drop and migrate."
 							continue
 						}
 						else {
@@ -172,11 +177,11 @@
 							$destServer.Query($sql)
 
 							$copyJobCategoryStatus.Status = "Successful"
-							$copyJobCategoryStatus
+							$copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						}
 						catch {
 							$copyJobCategoryStatus.Status = "Failed"
-							$copyJobCategoryStatus
+							$copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							Stop-Function -Message "Issue copying job category" -Target $categoryName -InnerErrorRecord $_
 						}
 					}
@@ -207,9 +212,11 @@
 
 					$copyOperatorCategoryStatus = [pscustomobject]@{
 						SourceServer      = $sourceServer.Name
-						DestinationServer = $destServer.Name
-						Name              = $categoryName
-						Status            = $null
+						DestinationServer  = $destServer.Name
+						Type			   = "Agent Operator Category"
+						Name               = $categoryName
+						Status			   = $null
+						Notes			   = $null
 						DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 					}
 
@@ -220,8 +227,9 @@
 					if ($destOperatorCategories.Name -contains $operatorCategory.Name) {
 						if ($force -eq $false) {
 							$copyOperatorCategoryStatus.Status = "Skipped"
-							$copyOperatorCategoryStatus
-							Write-Message -Level Warning -Message "Operator category $categoryName exists at destination. Use -Force to drop and migrate."
+							$copyOperatorCategoryStatus.Notes = "Already exists"
+							$copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+							Write-Message -Level Verbose -Message "Operator category $categoryName exists at destination. Use -Force to drop and migrate."
 							continue
 						}
 						else {
@@ -236,7 +244,7 @@
 								}
 								catch {
 									$copyOperatorCategoryStatus.Status = "Failed"
-									$copyOperatorCategoryStatus
+									$copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 									Stop-Function -Message "Issue dropping operator category" -Target $categoryName -InnerErrorRecord $_
 								}
 							}
@@ -251,11 +259,11 @@
 								$destServer.Query($sql)
 
 								$copyOperatorCategoryStatus.Status = "Successful"
-								$copyOperatorCategoryStatus
+								$copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							}
 							catch {
 								$copyOperatorCategoryStatus.Status = "Failed"
-								$copyOperatorCategoryStatus
+								$copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 								Stop-Function -Message "Issue copying operator category" -Target $categoryName -InnerErrorRecord $_
 							}
 						}
@@ -289,24 +297,27 @@
 
 				foreach ($alertCategory in $serverAlertCategories) {
 					$categoryName = $alertCategory.Name
-
+					
 					$copyAlertCategoryStatus = [pscustomobject]@{
-						SourceServer      = $sourceServer.Name
-						DestinationServer = $destServer.Name
-						Name              = $categoryName
-						Status            = $null
-						DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
+						SourceServer	   = $sourceServer.Name
+						DestinationServer  = $destServer.Name
+						Type			   = "Agent Alert Category"
+						Name			   = $categoryName
+						Status			   = $null
+						Notes			   = $null
+						DateTime		   = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 					}
-
+					
 					if ($alertCategories.Length -gt 0 -and $alertCategories -notcontains $categoryName) {
 						continue
 					}
 
 					if ($destAlertCategories.Name -contains $alertCategory.name) {
                         if ($force -eq $false) {
-                            $copyAlertCategoryStatus.Status = "Skipped"
+							$copyAlertCategoryStatus.Status = "Skipped"
+							$copyAlertCategoryStatus.Notes = "Already exists"
 							$copyAlertCategoryStatus
-							Write-Message -Level Warning -Message "Alert category $categoryName exists at destination. Use -Force to drop and migrate."
+							Write-Message -Level Verbose -Message "Alert category $categoryName exists at destination. Use -Force to drop and migrate."
 							continue
 						}
 						else {
@@ -398,6 +409,6 @@
 		Copy-JobCategory
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlAgentCategory
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlAgentCategory
 	}
 }

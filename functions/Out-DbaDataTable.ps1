@@ -1,7 +1,7 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 Function Out-DbaDataTable {
-<#
+	<#
 	.SYNOPSIS
 		Creates a DataTable for an object
 	
@@ -9,6 +9,8 @@ Function Out-DbaDataTable {
 		Creates a DataTable based on an objects properties. This allows you to easily write to SQL Server tables.
 		
 		Thanks to Chad Miller, this is based on his script. https://gallery.technet.microsoft.com/scriptcenter/4208a159-a52e-4b99-83d4-8048468d29dd
+	
+		If the attempt to convert to datatable fails, try the -Raw parameter for less accurate datatype detection.
 	
 	.PARAMETER InputObject
 		The object to transform into a DataTable
@@ -26,9 +28,14 @@ Function Out-DbaDataTable {
 	.PARAMETER IgnoreNull
 		If this switch is used, objects with null values will be ignored (empty rows will be added by default)
 	
-	.PARAMETER Silent
-		Use this switch to disable any kind of verbose messages
+	.PARAMETER Raw
+		Creates a datatable with all strings - no attempt to parse out datatypes is made
 	
+	.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 	.EXAMPLE
 		Get-Service | Out-DbaDataTable
 		
@@ -55,9 +62,7 @@ Function Out-DbaDataTable {
 	.NOTES
 		dbatools PowerShell module (https://dbatools.io)
 		Copyright (C) 2016 Chrissy LeMaire
-		This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-		This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-		You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 	
 	.LINK
 		https://dbatools.io/Out-DbaDataTable
@@ -66,33 +71,25 @@ Function Out-DbaDataTable {
 	[OutputType([System.Object[]])]
 	param (
 		[Parameter(Position = 0,
-					Mandatory = $true,
-					ValueFromPipeline = $true)]
+			Mandatory = $true,
+			ValueFromPipeline = $true)]
 		[AllowNull()]
-		[PSObject[]]
-		$InputObject,
-		
+		[PSObject[]]$InputObject,
 		[Parameter(Position = 1)]
 		[ValidateSet("Ticks",
-					"TotalDays",
-					"TotalHours",
-					"TotalMinutes",
-					"TotalSeconds",
-					"TotalMilliseconds",
-					"String")]
+			"TotalDays",
+			"TotalHours",
+			"TotalMinutes",
+			"TotalSeconds",
+			"TotalMilliseconds",
+			"String")]
 		[ValidateNotNullOrEmpty()]
-		[string]
-		$TimeSpanType = "TotalMilliseconds",
-		
+		[string]$TimeSpanType = "TotalMilliseconds",
 		[ValidateSet("Int64", "Int32", "String")]
-		[string]
-		$SizeType = "Int64",
-		
-		[switch]
-		$IgnoreNull,
-		
-		[switch]
-		$Silent
+		[string]$SizeType = "Int64",
+		[switch]$IgnoreNull,
+		[switch]$Raw,
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	Begin {
@@ -189,7 +186,7 @@ Function Out-DbaDataTable {
 		
 		# The shouldCreateColumns variable will be set to false as soon as the column definition has been added to the data table.
 		# This is to avoid that the rare scenario when columns are not created because the first object is null, which can be accepted.
-		# This means that we cannot relly on the first object to create columns, hence this variable.
+		# This means that we cannot rely on the first object to create columns, hence this variable.
 		$ShouldCreateCollumns = $true
 	}
 	
@@ -197,7 +194,7 @@ Function Out-DbaDataTable {
 		if (!$InputObject) {
 			if ($IgnoreNull) {
 				# If the object coming down the pipeline is null and the IgnoreNull parameter is set, ignore it.
-				Write-Message -Level Warning -Message "The InputObject from the pipe is null. Skipping." -Silent:$Silent
+				Write-Message -Level Warning -Message "The InputObject from the pipe is null. Skipping."
 			}
 			else {
 				# If the object coming down the pipeline is null, add an empty row and then skip to next.
@@ -210,7 +207,7 @@ Function Out-DbaDataTable {
 				if (!$object) {
 					if ($IgnoreNull) {
 						# If the object in the array is null and the IgnoreNull parameter is set, ignore it.
-						Write-Message -Level Warning -Message "Object in array is null. Skipping." -Silent $Silent
+						Write-Message -Level Warning -Message "Object in array is null. Skipping." -EnableException $EnableException
 					}
 					else {
 						# If the object in the array is null, add an empty row and then skip to next.
@@ -220,7 +217,8 @@ Function Out-DbaDataTable {
 				}
 				else {
 					$datarow = $datatable.NewRow()
-					foreach ($property in $object.PsObject.get_properties()) {
+					$objectProperties = $object.PsObject.get_properties()
+					foreach ($property in $objectProperties) {
 						# The converted variable will get the result from the ConvertType function and used for type and value conversion when adding to the datatable.
 						$converted = @{ }
 						if ($ShouldCreateCollumns) {
@@ -236,8 +234,8 @@ Function Out-DbaDataTable {
 										# Ends up here when the type is not possible to get so the call to ConvertType fails.
 										# In that case we make a string out of it. (in this scenario its often that a script property points to a null value so we can't get the type)
 										$converted = @{
-											type  = 'System.String'
-											Value = $property.value
+											type    = 'System.String'
+											Value   = $property.value
 											Special = $false
 										}
 									}
@@ -258,37 +256,48 @@ Function Out-DbaDataTable {
 							}
 							$column = New-Object System.Data.DataColumn
 							$column.ColumnName = $property.Name.ToString()
-							$column.DataType = [System.Type]::GetType($converted.type)
+							if (-not $Raw) {
+								$column.DataType = [System.Type]::GetType($converted.type)
+							}
 							$datatable.Columns.Add($column)
 						}
 						else {
 							# This is where we end up if the columns has been created in the data table.
 							# We still need to check for special columns again, to make sure that the value is converted properly.
-							if ($property.value -isnot [System.DBNull]) {
-								if ($specialColumns.Keys -contains $property.Name) {
+							if ($specialColumns.ContainsKey($property.Name)) {
+                                if ($property.value -isnot [System.DBNull]) {
 									$converted = ConvertType -type $specialColumns.($property.Name) -value $property.Value -timespantype $TimeSpanType -sizetype $SizeType
 								}
 							}
 						}
 						
-                        try {
-                            $propValueLength = $property.value.length
-                        } catch {
-                            $propValueLength = 0
-                        }
+						try {
+							$propValueLength = $property.value.length
+						}
+						catch {
+							$propValueLength = 0
+						}
 						if ($propValueLength -gt 0) {
-							if ($property.value.ToString() -eq 'System.Object[]') {
-								$datarow.Item($property.Name) = $property.value -join ", "
+							# If the typename was a special typename we want to use the value returned from ConvertType instead.
+							# We might get error if we try to change the value for $property.value if it is read-only. That's why we use $converted.value instead.
+							if ($converted.special) {
+								$datarow.Item($property.Name) = $converted.value
 							}
 							else {
-								# If the typename was a special typename we want to use the value returned from ConvertType instead.
-								# We might get error if we try to change the value for $property.value if it is read-only. That's why we use $converted.value instead.
-								if ($converted.special) {
-									$datarow.Item($property.Name) = $converted.value
-								}
-								else {
-									$datarow.Item($property.Name) = $property.value
-								}
+                                if ($property.value.ToString().length -eq 15) {
+                                    if ($property.value.ToString() -eq 'System.Object[]') {
+                                        $datarow.Item($property.Name) = $property.value -join ", "
+							        } 
+                                    elseif ($property.value.ToString() -eq 'System.String[]') {
+                                        $datarow.Item($property.Name) = $property.value -join ", "
+                                    }
+                                    else {
+                                        $datarow.Item($property.Name) = $property.value
+                                    }
+                                }
+                                else {
+    								$datarow.Item($property.Name) = $property.value
+                                }
 							}
 						}
 					}
@@ -306,6 +315,6 @@ Function Out-DbaDataTable {
 	
 	End {
 		Write-Message -Level InternalComment -Message "Finished"
-		return @( ,($datatable))
+		return @( , ($datatable))
 	}
 }

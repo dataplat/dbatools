@@ -1,5 +1,5 @@
 ﻿# Current library Version the module expects
-$currentLibraryVersion = New-Object System.Version(0, 6, 0, 17)
+$currentLibraryVersion = New-Object System.Version(0, 9, 1, 34)
 
 <#
 Library Versioning 101:
@@ -51,7 +51,7 @@ if ($ImportLibrary) {
 	try {
 		$libraryBase = $ExecutionContext.SessionState.Module.ModuleBase + "\bin"
 		# In strict security mode, only load from the already pre-compiled binary within the module
-		if ($dbatools_strictsecuritymode) {
+		if ($script:strictSecurityMode) {
 			if (Test-Path -Path "$libraryBase\dbatools.dll") {
 				Add-Type -Path "$libraryBase\dbatools.dll" -ErrorAction Stop
 			}
@@ -64,7 +64,7 @@ if ($ImportLibrary) {
 			$hasProject = Test-Path -Path "$libraryBase\projects\dbatools\dbatools.sln"
 			$hasCompiledDll = Test-Path -Path "$libraryBase\dbatools.dll"
 			
-			if ((-not $dbatools_alwaysbuildlibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo("$libraryBase\dbatools.dll").FileVersion -eq $currentLibraryVersion)) {
+			if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo("$libraryBase\dbatools.dll").FileVersion -eq $currentLibraryVersion)) {
 				$start = Get-Date
 				try {
 					Write-Verbose -Message "Found library, trying to copy & import"
@@ -90,22 +90,28 @@ if ($ImportLibrary) {
 				$start = Get-Date
 				$system = [Appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -like "System, *"
 				$msbuild = (Resolve-Path "$(Split-Path $system.Location)\..\..\..\..\Framework$(if ([intptr]::Size -eq 8) { "64" })\$($system.ImageRuntimeVersion)\msbuild.exe").Path
+				switch ($PSVersionTable.PSVersion.Major) {
+					3 { $msbuildConfiguration = "/p:Configuration=ps3" }
+					4 { $msbuildConfiguration = "/p:Configuration=ps4" }
+					default { $msbuildConfiguration = "/p:Configuration=Release" }
+				}
 				$msbuildOptions = ""
-				if($env:APPVEYOR -eq 'True') {
+				if ($env:APPVEYOR -eq 'True') {
 					# This doesn't seem to work. Keep it here for now
 					$msbuildOptions = '/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"'
+					$msbuildConfiguration = '/p:Configuration=Debug'
 					
 					if (-not (Test-Path "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll")) {
 						throw "msbuild logger not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
 					}
 				}
-
+				
 				if (-not (Test-Path $msbuild)) {
 					throw "msbuild not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
 				}
 				
 				Write-Verbose -Message "Building the library"
-				& $msbuild "$libraryBase\projects\dbatools\dbatools.sln" $msbuildOptions
+				& $msbuild "$libraryBase\projects\dbatools\dbatools.sln" $msbuildConfiguration $msbuildOptions
 				
 				try {
 					Write-Verbose -Message "Found library, trying to copy & import"
@@ -118,7 +124,7 @@ if ($ImportLibrary) {
 							$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999).dll"
 						}
 					}
-					if ($dbatools_alwaysbuildlibrary) { Move-Item -Path "$libraryBase\dbatools.dll" -Destination $libraryTempPath -Force -ErrorAction Stop }
+					if ($script:alwaysBuildLibrary) { Move-Item -Path "$libraryBase\dbatools.dll" -Destination $libraryTempPath -Force -ErrorAction Stop }
 					else { Copy-Item -Path "$libraryBase\dbatools.dll" -Destination $libraryTempPath -Force -ErrorAction Stop }
 					Add-Type -Path $libraryTempPath -ErrorAction Stop
 				}
@@ -174,7 +180,7 @@ aka "The guy who made most of The Library that Failed to import"
 }
 
 #region Version Warning
-if ($currentLibraryVersion -ne ([version](([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object ManifestModule -like "dbatools.dll").CustomAttributes | Where-Object AttributeType -like "System.Reflection.AssemblyFileVersionAttribute" ).ConstructorArguments.Value)) {
+if ($currentLibraryVersion -ne ([version](([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object ManifestModule -like "dbatools.dll").CustomAttributes | Where-Object AttributeType -like "System.Reflection.AssemblyFileVersionAttribute").ConstructorArguments.Value)) {
 	Write-Warning @"
 A version missmatch between the dbatools library loaded and the one expected by
 this module. This usually happens when you update the dbatools module and use

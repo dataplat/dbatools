@@ -1,4 +1,4 @@
-﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
 function Test-ElevationRequirement {
 	<#
@@ -12,24 +12,25 @@ function Test-ElevationRequirement {
 		
 		.PARAMETER ComputerName
 			The computer that is being targeted by the calling command.
-			This most be a localhost variety, for it to be able to fail.
+			This must be a localhost variety, for it to be able to fail.
 		
 		.PARAMETER Continue
-			When using the native capability to terminate on fail, this will call continue in non-silent mode.
+			When using the native capability to terminate on fail, this will call continue in non-EnableException mode.
 		
 		.PARAMETER ContinueLabel
 			When using the native capability to terminate on fail, and using a continue mode, the continue will continue with this label.
 		
 		.PARAMETER SilentlyContinue
-			When using the native capability to terminate on fail, this will call continue in silent mode.
+			When using the native capability to terminate on fail, this will call continue in EnableException mode.
 		
 		.PARAMETER NoStop
 			Does not call stop-function when the test fails, rather only returns $false instead
 	
-		.PARAMETER Silent
-		    Replaces user friendly yellow warnings with bloody red exceptions of doom!
-		    Use this if you want the function to throw terminating errors you want to catch.
-		
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.EXAMPLE
 			$null = Test-ElevationRequirement -ComputerName $instance -Continue
 	
@@ -68,30 +69,29 @@ function Test-ElevationRequirement {
 		$NoStop,
 		
 		[bool]
-		$Silent = $Silent
+		[Alias('Silent')]
+		$EnableException = $EnableException
 	)
 	
 	$isElevated = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 	$testResult = $true
 	if ($ComputerName.IsLocalHost -and (-not $isElevated)) { $testResult = $false }
 	
-	switch ($PSCmdlet.ParameterSetName) {
-		"NoStop" {
-			return $testResult
+	if ($PSCmdlet.ParameterSetName -like "NoStop") {
+		return $testResult
+	}
+	elseif ($PSCmdlet.ParameterSetName -like "Stop") {
+		if ($testResult) { return $testResult }
+		
+		$splatStopFunction = @{
+			Message = "Console not elevated, but elevation is required to perform all actions within this command"
 		}
-		"Stop" {
-			if ($testResult) { return $testResult }
-			
-			$splatStopFunction = @{
-				Message = "Console not elevated, but elevation is required to perform all actions within this command"
-			}
-			
-			if (Test-Bound "Continue") { $splatStopFunction["Continue"] = $Continue }
-			if (Test-Bound "ContinueLabel") { $splatStopFunction["ContinueLabel"] = $ContinueLabel }
-			if (Test-Bound "SilentlyContinue") { $splatStopFunction["SilentlyContinue"] = $SilentlyContinue }
-			
-			. Stop-Function @splatStopFunction -FunctionName (Get-PSCallStack)[1].Command
-			return $testResult
-		}
+		
+		if (Test-Bound "Continue") { $splatStopFunction["Continue"] = $Continue }
+		if (Test-Bound "ContinueLabel") { $splatStopFunction["ContinueLabel"] = $ContinueLabel }
+		if (Test-Bound "SilentlyContinue") { $splatStopFunction["SilentlyContinue"] = $SilentlyContinue }
+		
+		. Stop-Function @splatStopFunction -FunctionName (Get-PSCallStack)[1].Command
+		return $testResult
 	}
 }

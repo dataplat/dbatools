@@ -18,12 +18,14 @@ function Get-DbaAgReplica {
 		.PARAMETER Replica
 			Specify the replica to pull information on, is dependent up name that you want to get information on.
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: DisasterRecovery, AG, AvailabilityGroup, Replica
-			Original Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
+			Author: Shawn Melton (@wsmelton) | Chrissy LeMaire (@ctrlb)
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -57,7 +59,7 @@ function Get-DbaAgReplica {
 		[parameter(ValueFromPipeline = $true)]
 		[object[]]$AvailabilityGroup,
 		[object[]]$Replica,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {
@@ -89,7 +91,7 @@ function Get-DbaAgReplica {
 					Add-Member -Force -InputObject $currentReplica -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
 					Add-Member -Force -InputObject $currentReplica -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
 
-					$defaults = 'ComputerName','InstanceName','SqlInstance','Parent as AvailabilityGroup','Name as Replica','AvailabilityMode','BackupPriority','EndpointUrl','SessionTimeout','FailoverMode','ReadonlyRoutingList'
+					$defaults = 'ComputerName','InstanceName','SqlInstance','Parent as AvailabilityGroup','Name as Replica','Role','ConnectionState','RollupSynchronizationState','AvailabilityMode','BackupPriority','EndpointUrl','SessionTimeout','FailoverMode','ReadonlyRoutingList'
 					Select-DefaultView -InputObject $currentReplica -Property $defaults
 				}
 			}

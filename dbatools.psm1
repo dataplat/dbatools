@@ -1,3 +1,75 @@
+$start = Get-Date
+
+#region Import helper functions
+function Import-ModuleFile {
+<#
+	.SYNOPSIS
+		Helps import dbatools files according to configuration
+	
+	.DESCRIPTION
+		Helps import dbatools files according to configuration
+		Always dotsource this function!
+	
+	.PARAMETER Path
+		The full path to the file to import
+	
+	.EXAMPLE
+		PS C:\> Import-ModuleFile -Path $function.FullName
+	
+		Imports the file stored at '$function.FullName'
+#>
+	[CmdletBinding()]
+	Param (
+		$Path
+	)
+	
+	if ($script:doDotSource) { . $Path }
+	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($Path))), $null, $null)}
+}
+
+function Write-ImportTime {
+<#
+	.SYNOPSIS
+		Writes an entry to the import module time debug list
+	
+	.DESCRIPTION
+		Writes an entry to the import module time debug list
+	
+	.PARAMETER Text
+		The message to write
+	
+	.EXAMPLE
+		PS C:\> Write-ImportTime -Text "Starting SMO Import"
+	
+		Adds the message "Starting SMO Import" to the debug list
+#>
+	[CmdletBinding()]
+	Param (
+		[string]$Text,
+		
+		$Timestamp = (Get-Date)
+	)
+	
+	if ($dbatools_disableTimeMeasurements) { return }
+	
+	if (-not $script:dbatools_ImportPerformance) { $script:dbatools_ImportPerformance = @() }
+	
+	if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type -eq $null) {
+		$script:dbatools_ImportPerformance += New-Object PSObject -Property @{ Time = $timestamp; Action = $Text }
+	}
+	else {
+		if ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Count -eq 0) {
+			foreach ($entry in $script:dbatools_ImportPerformance) { [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($entry.Action, $entry.Time, ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId)))) }
+		}
+		
+		[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($Text, $timestamp, ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))))
+	}
+}
+
+Write-ImportTime -Text "Start" -Timestamp $start
+Write-ImportTime -Text "Loading import helper functions"
+#endregion Import helper functions
+
 # Not supporting the provider path at this time 2/28/2017 - 63ms
 if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\"))
 {
@@ -5,78 +77,52 @@ if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\"))
 	Write-Warning "Going to continue loading anyway, but expect issues."
 }
 
+Write-ImportTime -Text "Resolved path to not SQLSERVER PSDrive"
+
 $script:PSModuleRoot = $PSScriptRoot
 
+#region Import Defines
+$dbatoolsSystemUserNode = Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ErrorAction Ignore
+$dbatoolsSystemSystemNode = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ErrorAction Ignore
+
+#region Dot Sourcing
 # Detect whether at some level dotsourcing was enforced
 $script:doDotSource = $false
 if ($dbatools_dotsourcemodule) { $script:doDotSource = $true }
-if ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
-if ((Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
+if ($dbatoolsSystemSystemNode.DoDotSource) { $script:doDotSource = $true }
+if ($dbatoolsSystemUserNode.DoDotSource) { $script:doDotSource = $true }
+#endregion Dot Sourcing
 
+#region Strict Security Mode
+$script:strictSecurityMode = $false
+if ($dbatools_strictsecuritymode) { $script:strictSecurityMode = $true }
+if ($dbatoolsSystemSystemNode.StrictSecurityMode) { $script:strictSecurityMode = $true }
+if ($dbatoolsSystemUserNode.StrictSecurityMode) { $script:strictSecurityMode = $true }
+#endregion Strict Security Mode
 
-if (([environment]::OSVersion.Version).Major -gt 6) {
-	Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" | Unblock-File -ErrorAction SilentlyContinue
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Smo.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Dmf.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.SqlWmiManagement.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.ConnectionInfo.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.SmoExtended.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.RegisteredServers.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.Sdk.Sfc.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.SqlEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.RegSvrEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.WmiEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.ServiceBrokerEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.Collector.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.CollectorEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.Utility.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.UtilityEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.HadrDMF.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.XEvent.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.XEventEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.XEventDbScoped.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.XEventDbScopedEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.XEventEnum.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\Microsoft.SqlServer.Management.Collector.dll"
+#region Always Compile
+$script:alwaysBuildLibrary = $false
+if ($dbatools_alwaysbuildlibrary) { $script:alwaysBuildLibrary = $true }
+if ($dbatoolsSystemSystemNode.AlwaysBuildLibrary) { $script:alwaysBuildLibrary = $true }
+if ($dbatoolsSystemUserNode.AlwaysBuildLibrary) { $script:alwaysBuildLibrary = $true }
+#endregion Always Compile
+
+#region Serial Import
+$script:serialImport = $false
+if ($dbatools_serialimport) { $script:serialImport = $true }
+if ($dbatoolsSystemSystemNode.SerialImport) { $script:serialImport = $true }
+if ($dbatoolsSystemUserNode.SerialImport) { $script:serialImport = $true }
+#endregion Serial Import
+Write-ImportTime -Text  "Validated defines"
+#endregion Import Defines
+
+Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
+Write-ImportTime -Text  "Unblocking Files"
+
+if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type -eq $null) {
+	. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\smoLibraryImport.ps1"
+	Write-ImportTime -Text "Starting import SMO libraries"
 }
-else {
-<#
-	Attempt to load all versions of SMO from vNext to 2005 - this is why RequiredAssemblies can't be used.
-	Attempt to load all assemblies that will be needed in the module. 
-	Not all versions support supporting assemblies, so ignore and let the command catch it.
-	This takes about 11-50ms on a newer machine.
-#>
-	Write-Verbose "Had to failback"
-	$smoversions = "14.0.0.0", "13.0.0.0", "12.0.0.0", "11.0.0.0", "10.0.0.0", "9.0.242.0", "9.0.0.0"
-	
-	foreach ($smoversion in $smoversions) {
-		try {
-			Add-Type -AssemblyName "Microsoft.SqlServer.Smo, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
-			$smoadded = $true
-		}
-		catch {
-			$smoadded = $false
-		}
-		
-		if ($smoadded -eq $true) { break }
-	}
-	
-	if ($smoadded -eq $false) { throw "Can't load SMO assemblies. You must have SQL Server Management Studio installed to proceed." }
-	
-	$assemblies = "Management.Common", "Dmf", "Instapi", "SqlWmiManagement", "ConnectionInfo", "SmoExtended", "SqlTDiagM", "Management.Utility",
-	"SString", "Management.RegisteredServers", "Management.Sdk.Sfc", "SqlEnum", "RegSvrEnum", "WmiEnum", "ServiceBrokerEnum", "Management.XEvent",
-	"ConnectionInfoExtended", "Management.Collector", "Management.CollectorEnum", "Management.Dac", "Management.DacEnum", "Management.IntegrationServices"
-	
-	foreach ($assembly in $assemblies) {
-		try {
-			Add-Type -AssemblyName "Microsoft.SqlServer.$assembly, Version=$smoversion, Culture=neutral, PublicKeyToken=89845dcd8080cc91" -ErrorAction Stop
-		}
-		catch {
-			# Don't care
-		}
-	}
-}
-
 
 <# 
 
@@ -88,74 +134,68 @@ else {
 # https://becomelotr.wordpress.com/2017/02/13/expensive-dot-sourcing/
 
 # Load our own custom library
-# Should always come before function imports - 141ms
-if ($script:doDotSource) {
-	. "$script:PSModuleRoot\bin\library.ps1"
-	. "$script:PSModuleRoot\bin\typealiases.ps1"
+# Should always come before function imports
+. Import-ModuleFile "$script:PSModuleRoot\bin\library.ps1"
+. Import-ModuleFile "$script:PSModuleRoot\bin\typealiases.ps1"
+Write-ImportTime -Text "Loading dbatools library"
+
+# Tell the library where the module is based, just in case
+[Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase = $script:PSModuleRoot
+
+# Load configuration system
+# Should always go after library and path setting
+if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported))
+{
+	. Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
+	Write-ImportTime -Text "Configuration System"
 }
-else {
-	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\bin\library.ps1"))), $null, $null)
-	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\bin\typealiases.ps1"))), $null, $null)
+if (-not ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath))
+{
+	[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
 }
 
 # All internal functions privately available within the toolset - 221ms
-foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\*.ps1")) {
-	if ($script:doDotSource) { . $function.FullName }
-	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null) }
-}
-
-#region Finally register autocompletion - 32ms
-# Test whether we have Tab Expansion Plus available (used in dynamicparams scripts ran below)
-if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore)
+foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\*.ps1"))
 {
-	$script:TEPP = $true
+	. Import-ModuleFile $function.FullName
 }
-else
-{
-	$script:TEPP = $false
-}
-
-# dynamic params - 136ms
-foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1")) {
-	if ($script:doDotSource) { . $function.FullName }
-	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null) }
-}
-#endregion Finally register autocompletion
+Write-ImportTime -Text "Loading Internal Commands"
 
 # All exported functions - 600ms
 foreach ($function in (Get-ChildItem "$script:PSModuleRoot\functions\*.ps1")) {
-	if ($script:doDotSource) { . $function.FullName }
-	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null) }
+	. Import-ModuleFile $function.FullName
 }
+Write-ImportTime -Text "Loading Public Commands"
 
 # Run all optional code
 # Note: Each optional file must include a conditional governing whether it's run at all.
 # Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
 # 96ms
-foreach ($function in (Get-ChildItem "$script:PSModuleRoot\optional\*.ps1")) {
-	if ($script:doDotSource) { . $function.FullName }
-	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null) }
+foreach ($function in (Get-ChildItem "$script:PSModuleRoot\optional\*.ps1"))
+{
+	. Import-ModuleFile $function.FullName
 }
+Write-ImportTime -Text "Loading Optional Commands"
 
 # Process TEPP parameters
-if ($script:doDotSource) { . "$script:PSModuleRoot\internal\scripts\insertTepp.ps1" }
-else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\insertTepp.ps1"))), $null, $null) }
+. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\insertTepp.ps1"
+Write-ImportTime -Text "Loading TEPP"
 
-# Load configuration system
-# Should always go next to last
-if ($script:doDotSource) { . "$script:PSModuleRoot\internal\configurations\configuration.ps1" }
-else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\configurations\configuration.ps1"))), $null, $null) }
 
 # Load scripts that must be individually run at the end - 30ms #
 #--------------------------------------------------------------#
 
 # Start the logging system (requires the configuration system up and running)
-if ($script:doDotSource) { . "$script:PSModuleRoot\internal\scripts\logfilescript.ps1" }
-else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\logfilescript.ps1"))), $null, $null) }
+. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\logfilescript.ps1"
+Write-ImportTime -Text "Script: Logging"
 
 # Start the tepp asynchronous update system (requires the configuration system up and running)
-if ($script:doDotSource) { . "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1" }
-else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1"))), $null, $null) }
+. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1"
+Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
+
+# Start the maintenance system (requires pretty much everything else already up and running)
+. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1"
+Write-ImportTime -Text "Script: Maintenance"
 
 # I renamed this function to be more accurate - 1ms
 if (-not (Test-Path Alias:Copy-SqlAgentCategory)) { Set-Alias -Scope Global -Name Copy-SqlAgentCategory -Value Copy-DbaAgentCategory }
@@ -172,18 +212,18 @@ if (-not (Test-Path Alias:Copy-SqlDatabaseMail)) { Set-Alias -Scope Global -Name
 if (-not (Test-Path Alias:Copy-SqlDataCollector)) { Set-Alias -Scope Global -Name Copy-SqlDataCollector -Value Copy-DbaDataCollector }
 if (-not (Test-Path Alias:Copy-SqlEndpoint)) { Set-Alias -Scope Global -Name Copy-SqlEndpoint -Value Copy-DbaEndpoint }
 if (-not (Test-Path Alias:Copy-SqlExtendedEvent)) { Set-Alias -Scope Global -Name Copy-SqlExtendedEvent -Value Copy-DbaExtendedEvent }
-if (-not (Test-Path Alias:Copy-SqlJob)) { Set-Alias -Scope Global -Name Copy-SqlJob -Value Copy-DbaJob }
+if (-not (Test-Path Alias:Copy-SqlJob)) { Set-Alias -Scope Global -Name Copy-SqlJob -Value Copy-DbaAgentJob }
 if (-not (Test-Path Alias:Copy-SqlJobServer)) { Set-Alias -Scope Global -Name Copy-SqlJobServer -Value Copy-SqlServerAgent }
 if (-not (Test-Path Alias:Copy-SqlLinkedServer)) { Set-Alias -Scope Global -Name Copy-SqlLinkedServer -Value Copy-DbaLinkedServer }
 if (-not (Test-Path Alias:Copy-SqlLogin)) { Set-Alias -Scope Global -Name Copy-SqlLogin -Value Copy-DbaLogin }
-if (-not (Test-Path Alias:Copy-SqlOperator)) { Set-Alias -Scope Global -Name Copy-SqlOperator -Value Copy-DbaOperator }
+if (-not (Test-Path Alias:Copy-SqlOperator)) { Set-Alias -Scope Global -Name Copy-SqlOperator -Value Copy-DbaAgentOperator }
 if (-not (Test-Path Alias:Copy-SqlPolicyManagement)) { Set-Alias -Scope Global -Name Copy-SqlPolicyManagement -Value Copy-DbaPolicyManagement }
-if (-not (Test-Path Alias:Copy-SqlProxyAccount)) { Set-Alias -Scope Global -Name Copy-SqlProxyAccount -Value Copy-DbaProxyAccount }
+if (-not (Test-Path Alias:Copy-SqlProxyAccount)) { Set-Alias -Scope Global -Name Copy-SqlProxyAccount -Value Copy-DbaAgentProxyAccount }
 if (-not (Test-Path Alias:Copy-SqlResourceGovernor)) { Set-Alias -Scope Global -Name Copy-SqlResourceGovernor -Value Copy-DbaResourceGovernor }
 if (-not (Test-Path Alias:Copy-SqlServerAgent)) { Set-Alias -Scope Global -Name Copy-SqlServerAgent -Value Copy-DbaServerAgent }
 if (-not (Test-Path Alias:Copy-SqlServerRole)) { Set-Alias -Scope Global -Name Copy-SqlServerRole -Value Copy-DbaServerRole }
 if (-not (Test-Path Alias:Copy-SqlServerTrigger)) { Set-Alias -Scope Global -Name Copy-SqlServerTrigger -Value Copy-DbaServerTrigger }
-if (-not (Test-Path Alias:Copy-SqlSharedSchedule)) { Set-Alias -Scope Global -Name Copy-SqlSharedSchedule -Value Copy-DbaSharedSchedule }
+if (-not (Test-Path Alias:Copy-SqlSharedSchedule)) { Set-Alias -Scope Global -Name Copy-SqlSharedSchedule -Value Copy-DbaAgentSharedSchedule }
 if (-not (Test-Path Alias:Copy-SqlSpConfigure)) { Set-Alias -Scope Global -Name Copy-SqlSpConfigure -Value Copy-DbaSpConfigure }
 if (-not (Test-Path Alias:Copy-SqlSsisCatalog)) { Set-Alias -Scope Global -Name Copy-SqlSsisCatalog -Value Copy-DbaSsisCatalog }
 if (-not (Test-Path Alias:Copy-SqlSysDbUserObjects)) { Set-Alias -Scope Global -Name Copy-SqlSysDbUserObjects -Value Copy-DbaSysDbUserObjects }
@@ -195,11 +235,12 @@ if (-not (Test-Path Alias:Export-SqlUser)) { Set-Alias -Scope Global -Name Expor
 if (-not (Test-Path Alias:Find-SqlDuplicateIndex)) { Set-Alias -Scope Global -Name Find-SqlDuplicateIndex -Value Find-DbaDuplicateIndex }
 if (-not (Test-Path Alias:Find-SqlUnusedIndex)) { Set-Alias -Scope Global -Name Find-SqlUnusedIndex -Value Find-DbaUnusedIndex }
 if (-not (Test-Path Alias:Get-SqlMaxMemory)) { Set-Alias -Scope Global -Name Get-SqlMaxMemory -Value Get-DbaMaxMemory }
-if (-not (Test-Path Alias:Get-SqlRegisteredServerName)) { Set-Alias -Scope Global -Name Get-SqlRegisteredServerName -Value Get-DbaRegisteredServerName }
+if (-not (Test-Path Alias:Get-SqlRegisteredServerName)) { Set-Alias -Scope Global -Name Get-SqlRegisteredServerName -Value Get-DbaRegisteredServer }
+if (-not (Test-Path Alias:Get-DbaRegisteredServerName)) { Set-Alias -Scope Global -Name Get-DbaRegisteredServerName -Value Get-DbaRegisteredServer }
 if (-not (Test-Path Alias:Get-SqlServerKey)) { Set-Alias -Scope Global -Name Get-SqlServerKey -Value Get-DbaSqlProductKey }
 if (-not (Test-Path Alias:Import-SqlSpConfigure)) { Set-Alias -Scope Global -Name Import-SqlSpConfigure -Value Import-DbaSpConfigure }
 if (-not (Test-Path Alias:Install-SqlWhoIsActive)) { Set-Alias -Scope Global -Name Install-SqlWhoIsActive -Value Install-DbaWhoIsActive }
-if (-not (Test-Path Alias:Invoke-Sqlcmd2)) { Set-Alias -Scope Global -Name Invoke-Sqlcmd2 -Value Invoke-DbaSqlcmd }
+if (-not (Test-Path Alias:Invoke-DbaSqlcmd)) { Set-Alias -Scope Global -Name Invoke-DbaSqlcmd -Value Invoke-Sqlcmd2 }
 if (-not (Test-Path Alias:Remove-SqlDatabaseSafely)) { Set-Alias -Scope Global -Name Remove-SqlDatabaseSafely -Value Remove-DbaDatabaseSafely }
 if (-not (Test-Path Alias:Remove-SqlOrphanUser)) { Set-Alias -Scope Global -Name Remove-SqlOrphanUser -Value Remove-DbaOrphanUser }
 if (-not (Test-Path Alias:Repair-SqlOrphanUser)) { Set-Alias -Scope Global -Name Repair-SqlOrphanUser -Value Repair-DbaOrphanUser }
@@ -224,15 +265,71 @@ if (-not (Test-Path Alias:Watch-SqlDbLogin)) { Set-Alias -Scope Global -Name Wat
 if (-not (Test-Path Alias:Get-DiskSpace)) { Set-Alias -Scope Global -Name Get-DiskSpace -Value Get-DbaDiskSpace }
 if (-not (Test-Path Alias:Restore-HallengrenBackup)) { Set-Alias -Scope Global -Name Restore-HallengrenBackup -Value Restore-SqlBackupFromDirectory }
 if (-not (Test-Path Alias:Get-DbaDatabaseFreeSpace)) { Set-Alias -Scope Global -Name Get-DbaDatabaseFreeSpace -Value Get-DbaDatabaseSpace }
+if (-not (Test-Path Alias:Set-DbaQueryStoreConfig)) { Set-Alias -Scope Global -Name Set-DbaQueryStoreConfig -Value Set-DbaDbQueryStoreOptions }
+if (-not (Test-Path Alias:Get-DbaQueryStoreConfig)) { Set-Alias -Scope Global -Name Get-DbaQueryStoreConfig -Value Get-DbaDbQueryStoreOptions }
+if (-not (Test-Path Alias:Connect-DbaSqlServer)) { Set-Alias -Scope Global -Name Connect-DbaSqlServer -Value Connect-DbaInstance }
+if (-not (Test-Path Alias:Get-DbaInstance)) { Set-Alias -Scope Global -Name Get-DbaInstance -Value Connect-DbaInstance }
+if (-not (Test-Path Alias:Get-DbaXEventSession)) { Set-Alias -Scope Global -Name Get-DbaXEventSession -Value Get-DbaXESession }
+if (-not (Test-Path Alias:Get-DbaXEventSessionTarget)) { Set-Alias -Scope Global -Name Get-DbaXEventSessionTarget -Value Get-DbaXESessionTarget }
+if (-not (Test-Path Alias:Read-DbaXEventFile)) { Set-Alias -Scope Global -Name Read-DbaXEventFile -Value Read-DbaXEFile }
+if (-not (Test-Path Alias:Watch-DbaXEventSession)) { Set-Alias -Scope Global -Name Watch-DbaXEventSession -Value Watch-DbaXESession }
+
 
 # Leave forever
 Set-Alias -Scope Global -Name Attach-DbaDatabase -Value Mount-DbaDatabase
 Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
+
+#region Post-Import Cleanup
+Write-ImportTime -Text "Loading Aliases"
+
+$timeout = 10000
+$timeSpent = 0
+while (($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') -or ($script:dbatoolsConfigRunspace.Runspace.RunspaceAvailability -eq 'Busy'))
+{
+	Start-Sleep -Milliseconds 50
+	$timeSpent = $timeSpent + 50
+	
+	if ($timeSpent -ge $timeout) {
+		Write-Warning @"
+The module import has hit a timeout while waiting for some background tasks to finish.
+This may result in some commands not working as intended.
+This should not happen under reasonable circumstances, please file an issue at:
+https://github.com/sqlcollaborative/dbatools/issues
+Or contact us directly in the #dbatools channel of the SQL Server Community Slack Channel:
+https://dbatools.io/slack/
+Timeout waiting for temporary runspaces reached! The Module import will complete, but some things may not work as intended
+"@
+		$global:smoRunspace = $script:smoRunspace
+		$global:dbatoolsConfigRunspace = $script:dbatoolsConfigRunspace
+		break
+	}
+}
+
+if ($script:smoRunspace)
+{
+	$script:smoRunspace.Runspace.Close()
+	$script:smoRunspace.Runspace.Dispose()
+	$script:smoRunspace.Dispose()
+	Remove-Variable -Name smoRunspace -Scope script
+}
+
+if ($script:dbatoolsConfigRunspace)
+{
+	$script:dbatoolsConfigRunspace.Runspace.Close()
+	$script:dbatoolsConfigRunspace.Runspace.Dispose()
+	$script:dbatoolsConfigRunspace.Dispose()
+	Remove-Variable -Name dbatoolsConfigRunspace -Scope script
+}
+
+[Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true;
+Write-ImportTime -Text "Waiting for runspaces to finish"
+#endregion Post-Import Cleanup
+
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUzRLW4805MbEfA/JNGTG68T+6
-# hCyggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUyZg9qEp4cTQPDr/+mbpNXT2l
+# ASWggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -363,22 +460,22 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUOS1n68X24iMSZsiPkqjXEyuz5WAwDQYJKoZIhvcNAQEBBQAE
-# ggEAOBDM4hmLuJ5aQFOTvVPl3jvyzx4JnewS2x7cDkuphBqR1BBVAu+cAu02Ajqg
-# +Yw8tTbr+OaAGctIlCZ7aOEbuwqNZxjPNnFsoIBJdqllh/yJfaaYA+9gyUE2fier
-# Kdg4oZ2UsrLYoCBCoybiQ27MPU7a7WPHlJa2PIECjNyJXR0X09ARnYoS+/OtKNag
-# u+fboq9MEjL8zzY39IdKadU9wlQWLGyhZ7FHSqeMT0UnegEhv8LcDBaMQlswP5kX
-# hjpxT+DaqbPAnLZWQ0d0yQHMkg08ynOu5du/puX9D0Gy9RfHOtVmuGZcxkZnrQlz
-# E7uwf9KevOj7Cwg/ukqLet7zAqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUarmgu5RSv0EmIvb21sIpxHtDwXQwDQYJKoZIhvcNAQEBBQAE
+# ggEAM3MR4843G7O7OLZAUKzTpL2GBvkX6yNe5BLbLZsoivxBk4LxegQejmsxHenW
+# QQnzJUTohp4RVKEE+WlVf1MbqvtQx+PEJSMq2qvC38duboC9OTdUg+1MlxXNtQ7M
+# SPJ/l2MEtyCfPMnvrtSnWSqxCaKnCVx2rFS9TSkUA0+hQ1xNQeh4jk9vHKyBqY34
+# XDJwKy4VFxK7EisOpaJN++ps63isErmmA3NXObVraYnuFetIfmT4GMYaBjpapKOb
+# Lry8SeBHYPBAL/q9HD3RVSuNgsBnnkMZtj9p8ArfLr0Y9eNvuF4bdsJGdARxOdcn
+# H8+c0jqUv7WTBjYkF9oVngeDYaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIwMjEzODA3WjAj
-# BgkqhkiG9w0BCQQxFgQUelazw4VjI4W+PoeX3FiIx3VctwIwDQYJKoZIhvcNAQEB
-# BQAEggEAEc4juevWn5qgdHbEg4RekPhpsDF5uUyz98C+HPiMZU4yzCKi2wO1DP4K
-# nqiXRoRCN92DLI6UbQFrGS2KjNYCa0s82aXFnlyIvLdhwKA4CLhfP6Dc1JtAIXsO
-# 7mkTfQQrQWoAHxlPrwkNarkqO7+vr79GWm8gvJqA9g4vbs6OcrQRaIDDC3Mp4Cf/
-# b2c6eY6Yo3trg/ibZDFajdGApKnZ/Yfsyjb50A3pLiWNW5qr0xDSihF9xEWEhTx5
-# 4z1qeOAWyrwGNE7jRJRK9XnZVZbXYkYNa84ELFs5Oll5hrSdo7h82hbObPJ8ClQt
-# HvPzdOxwaF885nM0HWI0Prt9NoSVqA==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMTA5MTkyNzM0WjAj
+# BgkqhkiG9w0BCQQxFgQUW+g4dRVO2UPu8dB4XSduC428JXwwDQYJKoZIhvcNAQEB
+# BQAEggEANNDNliiIhb7s6X773+e0mQXzE33onAEaI46jEbZOpup1imTVz76IP6Aa
+# r6d2oRIykHPvRkcX1s2tosB8N9dCEZLrVfyiEffyPB6SpYmdMye6WANqNeEDYfpR
+# fW3cCTAFgSeK4U/2W3nLDvJDJOIZyiP0bjE374dKE3jNpcf9wKuxrswf9Bk921SR
+# a50Z5OvdhBm8szWtAZ1w4oznrweLzIkvxj0lf90pySHogq8ai6+ObLda5L/wsRvu
+# qafkmAysjRcg2SgUxlUapBwShf+xR0jw8wdwayfV9l+mozHkOpWqeY3qTxGkaQ1h
+# vD1zuzb0e057i03ozLhamDdquXtiSg==
 # SIG # End signature block

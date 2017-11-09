@@ -32,11 +32,13 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES 
-Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Step
 	
 Website: https://dbatools.io
@@ -79,7 +81,7 @@ Remove the job step from the job on multiple servers using pipeline
 		[ValidateNotNullOrEmpty()]
 		[string]$StepName,
 		[Parameter(Mandatory = $false)]
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {
@@ -87,7 +89,7 @@ Remove the job step from the job on multiple servers using pipeline
 		foreach ($instance in $sqlinstance) {
 			
 			# Try connecting to the instance
-			Write-Message -Message "Attempting to connect to $instance" -Level Output
+			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
 			try {
 				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
@@ -134,6 +136,6 @@ Remove the job step from the job on multiple servers using pipeline
 	} # process
 	
 	end {
-		Write-Message -Message "Finished removing the jobs step(s)" -Level Output
+		Write-Message -Message "Finished removing the jobs step(s)" -Level Verbose
 	}
 }

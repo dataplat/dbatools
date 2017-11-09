@@ -1,4 +1,4 @@
-﻿function Copy-DbaAgentOperator {
+function Copy-DbaAgentOperator {
 	<#
 		.SYNOPSIS 
 			Copy-DbaAgentOperator migrates operators from one SQL Server to another. 
@@ -9,7 +9,7 @@
 			If the associated credentials for the operator do not exist on the destination, it will be skipped. If the operator already exists on the destination, it will be skipped unless -Force is used.  
 
 		.PARAMETER Source
-			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or newer.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 		.PARAMETER SourceSqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
@@ -21,7 +21,7 @@
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or newer.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
 		.PARAMETER DestinationSqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
@@ -47,9 +47,11 @@
 		.PARAMETER Force
 			If this switch is enabled, the Operator will be dropped and recreated on Destination.
 
-		.PARAMETER Silent 
-			If this switch is enabled, the internal messaging functions will be silenced.
-
+		.PARAMETER EnableException 
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: Migration, Agent, Operator
 			Author: Chrissy LeMaire (@cl), netnerds.net
@@ -90,7 +92,7 @@
 		[object[]]$Operator,
 		[object[]]$ExcludeOperator,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -109,11 +111,13 @@
 			$operatorName = $sOperator.Name
 			
 			$copyOperatorStatus = [pscustomobject]@{
-				SourceServer        = $sourceServer.Name
-				DestinationServer   = $destServer.Name
-				Name                = $operatorName
-				Status              = $null
-				DateTime            = [DbaDateTime](Get-Date)
+				SourceServer    = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name		    = $operatorName
+				Type		    = "Agent Operator"
+				Status		    = $null
+				Notes		    = $null
+				DateTime	    = [DbaDateTime](Get-Date)
 			}
 			
 			if ($Operator -and $Operator -notcontains $operatorName -or $ExcludeOperator -in $operatorName) {
@@ -123,13 +127,14 @@
 			if ($destOperator.Name -contains $sOperator.Name) {
 				if ($force -eq $false) {
 					$copyOperatorStatus.Status = "Skipped"
-					$copyOperatorStatus
-					Write-Message -Level Warning -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
+					$copyOperatorStatus.Notes = "Already exists"
+					$copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+					Write-Message -Level Verbose -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
 					if ($failsafe.FailSafeOperator -eq $operatorName) {
-						Write-Message -Level Warning -Message "$operatorName is the failsafe operator. Skipping drop."
+						Write-Message -Level Verbose -Message "$operatorName is the failsafe operator. Skipping drop."
 						continue
 					}
 					
@@ -140,7 +145,7 @@
 						}
 						catch {
 							$copyOperatorStatus.Status = "Failed"
-							$copyOperatorStatus
+							$copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							
 							Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 						}
@@ -156,17 +161,17 @@
 					$destServer.Query($sql)
 					
 					$copyOperatorStatus.Status = "Successful"
-					$copyOperatorStatus
+					$copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyOperatorStatus.Status = "Failed"
-					$copyOperatorStatus
+					$copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					Stop-Function -Message "Issue creating operator." -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 				}
 			}
 		}
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlOperator
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlOperator
 	}
 }

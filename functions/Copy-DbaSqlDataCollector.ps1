@@ -48,9 +48,11 @@ function Copy-DbaSqlDataCollector {
 		.PARAMETER Force
 			If collection sets exists on destination server, it will be dropped and recreated.
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: Migration,DataCollection
 			Author: Chrissy LeMaire (@cl), netnerds.net
@@ -97,7 +99,7 @@ function Copy-DbaSqlDataCollector {
 		[object[]]$ExcludeCollectionSet,
 		[switch]$NoServerReconfig,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
@@ -113,7 +115,7 @@ function Copy-DbaSqlDataCollector {
 		if (Test-FunctionInterrupt) { return }
 
 		if ($NoServerReconfig -eq $false) {
-			Write-Message -Level Warning -Message "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
+			Write-Message -Level Verbose -Message "Server reconfiguration not yet supported. Only Collection Set migration will be migrated at this time."
 			$NoServerReconfig = $true
 
 			<# for future use when this support is added #>
@@ -126,7 +128,7 @@ function Copy-DbaSqlDataCollector {
 				Notes             = "Not supported at this time"
 				DateTime          = [DbaDateTime](Get-Date)
 			}
-			$copyServerConfigStatus
+			$copyServerConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 		}
 
@@ -151,14 +153,14 @@ function Copy-DbaSqlDataCollector {
 				}
 				catch {
 					$copyServerConfigStatus.Status = "Failed"
-					$copyServerConfigStatus
+					$copyServerConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					Stop-Function -Message "Issue modifying Data Collector configuration" -Target $destServer -ErrorRecord $_
 				}
 			}
 		}
 
 		if ($destStore.Enabled -eq $false) {
-			Write-Message -Level Warning -Message "The Data Collector must be setup initially for Collection Sets to be migrated. Setup the Data Collector and try again."
+			Write-Message -Level Verbose -Message "The Data Collector must be setup initially for Collection Sets to be migrated. Setup the Data Collector and try again."
 			return
 		}
 
@@ -186,11 +188,11 @@ function Copy-DbaSqlDataCollector {
 
 			if ($destStore.CollectionSets[$collectionName] -ne $null) {
 				if ($force -eq $false) {
-					Write-Message -Level Warning -Message "Collection Set '$collectionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
+					Write-Message -Level Verbose -Message "Collection Set '$collectionName' was skipped because it already exists on $destination. Use -Force to drop and recreate"
 
 					$copyCollectionSetStatus.Status = "Skipped"
-					$copyCollectionSetStatus.Notes = "Collection set Already exists on destination"
-					$copyCollectionSetStatus
+					$copyCollectionSetStatus.Notes = "Already exists"
+					$copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				else {
@@ -204,7 +206,7 @@ function Copy-DbaSqlDataCollector {
 						catch {
 							$copyCollectionSetStatus.Status = "Failed to drop on destination"
 							$copyCollectionSetStatus.Notes = $_.Exception
-							$copyCollectionSetStatus
+							$copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							Stop-Function -Message "Issue dropping collection" -Target $collectionName -ErrorRecord $_ -Continue
 						}
 					}
@@ -220,7 +222,7 @@ function Copy-DbaSqlDataCollector {
 					$destServer.Query($sql)
 
 					$copyCollectionSetStatus.Status = "Successful"
-					$copyCollectionSetStatus
+					$copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyCollectionSetStatus.Status = "Failed to create collection"
@@ -237,12 +239,13 @@ function Copy-DbaSqlDataCollector {
 					}
 
 					$copyCollectionSetStatus.Status = "Successful started Collection"
-					$copyCollectionSetStatus
+					$copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyCollectionSetStatus.Status = "Failed to start collection"
 					$copyCollectionSetStatus.Notes = $_.Exception
-
+					$copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+					
 					Stop-Function -Message "Issue starting collection set" -Target $collectionName -ErrorRecord $_
 				}
 			}
@@ -250,6 +253,6 @@ function Copy-DbaSqlDataCollector {
 	}
 	end {
 		if (Test-FunctionInterrupt) { return }
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDataCollector
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlDataCollector
 	}
 }

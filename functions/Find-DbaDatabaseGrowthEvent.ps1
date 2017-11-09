@@ -18,12 +18,14 @@ function Find-DbaDatabaseGrowthEvent {
 		.PARAMETER ExcludeDatabase
 			The database(s) to exclude - this list is auto-populated from the server
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: AutoGrow
-			Original Author: Aaron Nelson
+			Author: Aaron Nelson
 			Query Extracted from SQL Server Management Studio (SSMS) 2016.
 
 			Website: https://dbatools.io
@@ -58,7 +60,7 @@ function Find-DbaDatabaseGrowthEvent {
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {

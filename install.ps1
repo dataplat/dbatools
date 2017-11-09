@@ -13,7 +13,7 @@ catch {
 	Write-Output "dbatools was not installed by the PowerShell Gallery, continuing with web install."
 }
 
-$module = Import-Module -Name dbatools -ErrorAction SilentlyContinue -Force
+$module = Import-Module -Name dbatools -ErrorAction SilentlyContinue
 $localpath = $module.ModuleBase
 
 if ($null -eq $localpath) {
@@ -70,26 +70,18 @@ if (!(Test-Path -Path $path)) {
 		throw "Can't create $Path. You may need to Run as Administrator"
 	}
 }
-else {
-	try {
-		Write-Output "Deleting previously installed module"
-		Remove-Item -Path "$path\*" -Force -Recurse
-	}
-	catch {
-		throw "Can't delete $Path. You may need to Run as Administrator"
-	}
-}
 
 Write-Output "Downloading archive from github"
 try {
-	Invoke-WebRequest $url -OutFile $zipfile
+	(New-Object System.Net.WebClient).DownloadFile($url, $zipfile)
 }
 catch {
 	#try with default proxy and usersettings
 	Write-Output "Probably using a proxy for internet access, trying default proxy settings"
-	(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-	Invoke-WebRequest $url -OutFile $zipfile
+	$wc = (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+	$wc.DownloadFile($url, $zipfile)
 }
+
 
 # Unblock if there's a block
 Unblock-File $zipfile -ErrorAction SilentlyContinue
@@ -97,15 +89,16 @@ Unblock-File $zipfile -ErrorAction SilentlyContinue
 Write-Output "Unzipping"
 
 # Keep it backwards compatible
+Remove-Item -ErrorAction SilentlyContinue "$temp\dbatools-$branch" -Recurse -Force
 $shell = New-Object -ComObject Shell.Application
 $zipPackage = $shell.NameSpace($zipfile)
 $destinationFolder = $shell.NameSpace($temp)
 $destinationFolder.CopyHere($zipPackage.Items())
 
 Write-Output "Cleaning up"
-Move-Item -Path "$temp\dbatools-$branch\*" $path
-Remove-Item -Path "$temp\dbatools-$branch"
-Remove-Item -Path $zipfile
+Move-Item -Path "$temp\dbatools-$branch\*" $path -ErrorAction SilentlyContinue -Force
+Remove-Item -Path "$temp\dbatools-$branch" -Recurse -Force
+Remove-Item -Path $zipfile -Recurse -Force
 
 Write-Output "Done! Please report any bugs to dbatools.io/issues or clemaire@gmail.com."
 if ((Get-Command -Module dbatools).count -eq 0) { Import-Module "$path\dbatools.psd1" -Force }
@@ -115,8 +108,8 @@ Write-Output "`n`nIf you experience any function missing errors after update, pl
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUl30LA7ZrwnkjEkLry04xWFv1
-# uO6ggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUFwipdfi60t+Q+LaO7VdY/d9h
+# nWKggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -247,22 +240,22 @@ Write-Output "`n`nIf you experience any function missing errors after update, pl
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUde6pt5Lu5pbV2keOkFTFKZLEnmEwDQYJKoZIhvcNAQEBBQAE
-# ggEAhSRk1eURYwmmlj45sqIxn0cXKhiRhkx9jAgkXMfOJgHF7Bin8u4fkQ0aRtDu
-# EgfUz0lQhfhcBAOAFP9+h4BEoRRln384NXT+PuAahXUWd/zdPsfae/zILB4jvGss
-# Bl+y8C2BwFhlTXbk3jRNjkpoekFFnatoA4ctWgkfpVbxtGtw+e+lFN3L89iTiJQ0
-# D01x8yN84clhhOcHy1VgkAFRhiufzEbg5DENn6kf8NrZjNZ2XJTi9hKcp45N6KIP
-# 1652bCdxgb9G9i5pW9uv4BlWiVq8Q51iIE3flDVfEp88SoKnJcsFVqXMHydSBZiv
-# X1pzh3ScYhQYBngWKyh/trfNzKGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQU4mmARZg28l5sXUqxaUyW2ZJOv2QwDQYJKoZIhvcNAQEBBQAE
+# ggEADGzm5+tQDSo47bf3WlkwivhPtNZgwBOYk7wDkx+cbftE9sKPEzgZWt/LAqfE
+# lXLD//FZh0C//obCGuX2ztK9mjnyv8eQBMNSwo+XPDic00rDExt1w0DYExcpAFiJ
+# q2jDO6OGhl3juMbgIqi5s9UU5iP5vLGcb2uo4FeqslxLkAJCePiM7XhEpaxr2pez
+# FPBZr83+d9DAbRCvINh7aOUsOshwLnVvIP5fdX3qxAbxqWBvikt5VY0jAsn8hWdY
+# j85i9LVtQgms+rI7bOhOyl6KddIQ1m2W46kmEwsX9L0FeCDryJKjbBKYFvf+zYpE
+# EeHoeny5I36Cvx4DdKMfVIHInaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIwMjEzODExWjAj
-# BgkqhkiG9w0BCQQxFgQUfqq7umNZbQjoLbl6xBtze9cZVgAwDQYJKoZIhvcNAQEB
-# BQAEggEAX5dR4JoiKD/4di7cxqPLvTjEWf9zdmwk8mAjTvTFHQj/Wou9OFPdpfAL
-# KPWKcVEFZV4JY7eQj69qIOk+rEijpu4PTNvHHGa7RUY9MQWc0XAZaVIBXVB+EroH
-# VfUAgv6Nl2XLlonIzD3jg3bV9HyiYmfhh337YaAfT6Y1GWwTIz80N0mueF5Z7ZfH
-# Q0DIl8WfIIcfQY4okyAo3qekUPCPUqt3Xc3cW3O6E5xczK7lWxnkosvluy3TkNY/
-# modRykwkcL2922Trob4AqG2pMEy/zwdc49y9HXXkhb3kt/xVKx88oDE9JzWJhzVf
-# GBsiLWGqBJQzog43VIwlg1/f6I/GBg==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMTA5MTkyNzM1WjAj
+# BgkqhkiG9w0BCQQxFgQU71XF/YTjvsdHN0Qb3ODzGd72eC8wDQYJKoZIhvcNAQEB
+# BQAEggEAaQrdRELzHe2VWforB/3KOkRFp9VOx24Y8VOo7v+xkGFO8R5iOmkFhxz5
+# kdI0gqYDUhkAlQsxztBQbrfui78zazx61K6mvjw/WIfkt3fgal5qAmOecsJ2Au+1
+# wWhH8YTZS7FV536xj4Rti3jfZYXfzTx3UwzLdhMiVZlmRUgE3sIWKoHPMeMieaRN
+# XveFddtCNqNWeNgJbCEq4KA/qllmupduVwvqYxboCMuEUgGwOdNHfCzahf6SOdUj
+# aTe+rHFFcpt1CzWoXlXE2NnmzWAHjXe/832zR7mSJeDnGEW3AH7e4KhDHEV2bApu
+# GRs45MFCbEoXbsYmbCABFjkwS5RogQ==
 # SIG # End signature block

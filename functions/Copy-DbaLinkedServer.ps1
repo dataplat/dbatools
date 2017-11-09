@@ -36,6 +36,9 @@ function Copy-DbaLinkedServer {
 
 		.PARAMETER ExcludeLinkedServer
 			The linked server(s) to exclude - this list is auto-populated from the server
+	
+		.PARAMETER UpgradeSqlClient
+			Upgrade any SqlClient Linked Server to the current Version
 
 		.PARAMETER WhatIf
 			Shows what would happen if the command were to run. No actions are actually performed.
@@ -46,16 +49,18 @@ function Copy-DbaLinkedServer {
 		.PARAMETER Force
 			By default, if a Linked Server exists on the source and destination, the Linked Server is not copied over. Specifying -force will drop and recreate the Linked Server on the Destination server.
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: WSMan, Migration, LinkedServer
 			Author: Chrissy LeMaire (@cl), netnerds.net
-			Requires: sysadmin access on SQL Servers, Remote Registry & Remote Adminsitration enabled and accessible on source server.
+			Requires: sysadmin access on SQL Servers, Remote Registry & Remote Administration enabled and accessible on source server.
 
 			Limitations: Hasn't been tested thoroughly. Works on Win8.1 and SQL Server 2012 & 2014 so far.
-			This just copies the SQL portion. It does not copy files (ie. a local SQLITE database, or Access Db), nor does it configure ODBC entries.
+			This just copies the SQL portion. It does not copy files (ie. a local SQLite database, or Microsoft Access DB), nor does it configure ODBC entries.
 
 		.LINK
 			https://dbatools.io/Copy-DbaLinkedServer
@@ -82,10 +87,12 @@ function Copy-DbaLinkedServer {
 		[PSCredential]$DestinationSqlCredential,
 		[object[]]$LinkedServer,
 		[object[]]$ExcludeLinkedServer,
+		[switch]$UpgradeSqlClient,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
+		$null = Test-ElevationRequirement -ComputerName $Source.ComputerName
 		function Get-LinkedServerLogins {
 			<#
 			.SYNOPSIS
@@ -109,7 +116,7 @@ function Copy-DbaLinkedServer {
 				$smkbytes = $server.Query($sql).smk
 			}
 			catch {
-				Stop-Function -Message "Can't run query" -Target $server -InnerErrorRecord $_
+				Stop-Function -Message "Can't run query." -Target $server -InnerErrorRecord $_
 				return
 			}
 
@@ -126,7 +133,7 @@ function Copy-DbaLinkedServer {
 				}
 			}
 			catch {
-				Stop-Function -Message "Can't access registry keys on $sourceName. Quitting." -Target $server -InnerErrorRecord $_
+				Stop-Function -Message "Can't access registry keys on $sourceName. Quitting." -Target $server ErrorRecord $_
 				return
 			}
 
@@ -149,7 +156,9 @@ function Copy-DbaLinkedServer {
 			# Choose IV length based on the algorithm
 			if (($serviceKey.Length -ne 16) -and ($serviceKey.Length -ne 32)) {
 				Write-Message -Level Verbose -Message "ServiceKey found: $serviceKey.Length"
-				throw "Unknown key size. Cannot continue. Quitting."
+				Stop-Function -Message "Unknown key size. Cannot continue." -Target $source
+				return 
+				
 			}
 
 			if ($serviceKey.Length -eq 16) {
@@ -173,7 +182,7 @@ function Copy-DbaLinkedServer {
 				$dacEnabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
 
 				if ($dacEnabled -eq $false) {
-					If ($Pscmdlet.ShouldProcess($server.Name, "Enabling DAC on clustered instance")) {
+					If ($Pscmdlet.ShouldProcess($server.Name, "Enabling DAC on clustered instance.")) {
 						Write-Message -Level Verbose -Message "DAC must be enabled for clusters, even when accessed from active node. Enabling."
 						$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 						$server.Configuration.Alter()
@@ -211,13 +220,13 @@ function Copy-DbaLinkedServer {
 				}
 			}
 			catch {
-				Stop-Function -Message "Can't establish local DAC connection" -Target $server -InnerErrorRecord $_
+				Stop-Function -Message "Can't establish local DAC connection." -Target $server -InnerErrorRecord $_
 				return
 			}
 
 			if ($server.IsClustered -and $dacEnabled -eq $false) {
-				If ($Pscmdlet.ShouldProcess($server.Name, "Disabling DAC on clustered instance")) {
-					Write-Message -Level Verbose -Message "Setting DAC config back to 0"
+				If ($Pscmdlet.ShouldProcess($server.Name, "Disabling DAC on clustered instance.")) {
+					Write-Message -Level Verbose -Message "Setting DAC config back to 0."
 					$server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $false
 					$server.Configuration.Alter()
 				}
@@ -256,17 +265,17 @@ function Copy-DbaLinkedServer {
 
 		function Copy-DbaLinkedServers {
 			param (
-				[string[]]$LinkedServers,
+				[string[]]$LinkedServer,
 				[bool]$force
 			)
 
-			Write-Message -Level Verbose -Message "Collecting Linked Server logins and passwords on $($sourceServer.Name)"
+			Write-Message -Level Verbose -Message "Collecting Linked Server logins and passwords on $($sourceServer.Name)."
 			$sourcelogins = Get-LinkedServerLogins $sourceServer
 
 			$serverlist = $sourceServer.LinkedServers
 
-			if ($LinkedServers) {
-				$serverlist = $serverlist | Where-Object Name -In $LinkedServers
+			if ($LinkedServer) {
+				$serverlist = $serverlist | Where-Object Name -In $LinkedServer
 			}
 			if ($ExcludeLinkedServer) {
 				$serverList = $serverlist | Where-Object Name -NotIn $ExcludeLinkedServer
@@ -281,23 +290,25 @@ function Copy-DbaLinkedServer {
 				catch { }
 
 				$linkedServerName = $currentLinkedServer.Name
-
+				
 				$copyLinkedServer = [pscustomobject]@{
-					SourceServer        = $sourceServer.Name
-					DestinationServer   = $destServer.Name
-					Name                = $linkedServerName
-					Type                = $provider
-					Status              = $null
-					DateTime            = [DbaDateTime](Get-Date)
+					SourceServer		 = $sourceServer.Name
+					DestinationServer    = $destServer.Name
+					Name				 = $linkedServerName
+					Type				 = "Linked Server"
+					Status			     = $null
+					Notes			     = $provider
+					DateTime			 = [DbaDateTime](Get-Date)
 				}
-
+				
 				# This does a check to warn of missing OleDbProviderSettings but should only be checked on SQL on Windows
 				if ($destServer.Settings.OleDbProviderSettings.Name.Length -ne 0) {
 					if (!$destServer.Settings.OleDbProviderSettings.Name -contains $provider -and !$provider.StartsWith("SQLN")) {
 						$copyLinkedServer.Status = "Skipped"
-						$copyLinkedServer
+						$copyLinkedServer.Notes = "Already exists"
+						$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-						Write-Message -Level Warning -Message "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."
+						Write-Message -Level Verbose -Message "$($destServer.Name) does not support the $provider provider. Skipping $linkedServerName."
 						continue
 					}
 				}
@@ -305,15 +316,15 @@ function Copy-DbaLinkedServer {
 				if ($destServer.LinkedServers[$linkedServerName] -ne $null) {
 					if (!$force) {
 						$copyLinkedServer.Status = "Skipped"
-						$copyLinkedServer
+						$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-						Write-Message -Level Warning -Message "$linkedServerName exists $($destServer.Name). Skipping."
+						Write-Message -Level Verbose -Message "$linkedServerName exists $($destServer.Name). Skipping."
 						continue
 					}
 					else {
 						if ($Pscmdlet.ShouldProcess($destination, "Dropping $linkedServerName")) {
 							if ($currentLinkedServer.Name -eq 'repl_distributor') {
-								Write-Message -Level Warning -Message "repl_distributor cannot be dropped. Not going to try."
+								Write-Message -Level Verbose -Message "repl_distributor cannot be dropped. Not going to try."
 								continue
 							}
 
@@ -323,24 +334,30 @@ function Copy-DbaLinkedServer {
 					}
 				}
 
-				Write-Message -Level Verbose -Message "Attempting to migrate: $linkedServerName"
+				Write-Message -Level Verbose -Message "Attempting to migrate: $linkedServerName."
 				If ($Pscmdlet.ShouldProcess($destination, "Migrating $linkedServerName")) {
 					try {
 						$sql = $currentLinkedServer.Script() | Out-String
 						Write-Message -Level Debug -Message $sql
-
+						
+						if ($UpgradeSqlClient -and $sql -match "sqlncli") {
+							$newstring = "sqlncli$($destServer.VersionMajor)"
+							Write-Message -Level Verbose -Message "Changing sqlncli to $newstring"
+							$sql = $sql -replace ("sqlncli[0-9]+", $newstring)
+						}
+						
 						$destServer.Query($sql)
 						$destServer.LinkedServers.Refresh()
-						Write-Message -Level Verbose -Message "$linkedServerName successfully copied"
+						Write-Message -Level Verbose -Message "$linkedServerName successfully copied."
 
 						$copyLinkedServer.Status = "Successful"
-						$copyLinkedServer
+						$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					}
 					catch {
 						$copyLinkedServer.Status = "Failed"
-						$copyLinkedServer
+						$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-						Stop-Function -Message "Issue adding linked server $destServer" -Target $linkedServerName -InnerErrorRecord $_
+						Stop-Function -Message "Issue adding linked server $destServer." -Target $linkedServerName -InnerErrorRecord $_
 						$skiplogins = $true
 					}
 				}
@@ -361,13 +378,13 @@ function Copy-DbaLinkedServer {
 									$currentlogin.Alter()
 
 									$copyLinkedServer.Status = "Successful"
-									$copyLinkedServer
+									$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 								}
 								catch {
 									$copyLinkedServer.Status = "Failed"
-									$copyLinkedServer
+									$copyLinkedServer | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
-									Stop-Function -Message "Failed to copy login" -Target $login -InnerErrorRecord $_
+									Stop-Function -Message "Failed to copy login." -Target $login -InnerErrorRecord $_
 								}
 							}
 						}
@@ -377,9 +394,9 @@ function Copy-DbaLinkedServer {
 		}
 	}
 	process {
-
+		if (Test-FunctionInterrupt) { return }
 		if ($SourceSqlCredential.username -ne $null) {
-			Write-Message -Level Warning -Message "You are using a SQL Credential. Note that this script requires Windows Administrator access on the source server. Attempting with $($SourceSqlCredential.Username)."
+			Write-Message -Level Verbose -Message "You are using a SQL Credential. Note that this script requires Windows Administrator access on the source server. Attempting with $($SourceSqlCredential.Username)."
 		}
 
 		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
@@ -387,9 +404,6 @@ function Copy-DbaLinkedServer {
 
 		$source = $sourceServer.Name
 		$destination = $destServer.Name
-
-		Invoke-SmoCheck -SqlInstance $sourceServer
-		Invoke-SmoCheck -SqlInstance $destServer
 
 		if (!(Test-SqlSa -SqlInstance $sourceServer -SqlCredential $SourceSqlCredential)) {
 			Stop-Function -Message "Not a sysadmin on $source. Quitting." -Target $sourceServer
@@ -400,29 +414,22 @@ function Copy-DbaLinkedServer {
 			return
 		}
 
-		Write-Message -Level Verbose -Message "Getting NetBios name for $source"
+		Write-Message -Level Verbose -Message "Getting NetBios name for $source."
 		$sourceNetBios = Resolve-NetBiosName $sourceserver
 
-		Write-Message -Level Verbose -Message "Checking if remote access is enabled on $source"
-		winrm id -r:$sourceNetBios 2>$null | Out-Null
-
-		if ($LastExitCode -ne 0) {
-			Write-Message -Level Warning -Message "Having trouble accessing PowerShell remotely on $source. Windows admin access and PowerShell Remoting are required."
-		}
-
-		Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
+		Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source."
 		try {
 			Invoke-Command2 -Raw -Credential $Credential -ComputerName $sourceNetBios -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } -ErrorAction Stop
 		}
 		catch {
-			Stop-Function -Message "Can't connect to registry on $source. Quitting." -Target $sourceNetBios
+			Stop-Function -Message "Can't connect to registry on $source." -Target $sourceNetBios -ErrorRecord $_
 			return
 		}
 
 		# Magic happens here
-		Copy-DbaLinkedServers $linkedservers -Force:$force
+		Copy-DbaLinkedServers $LinkedServer -Force:$force
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlLinkedServer
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlLinkedServer
 	}
 }

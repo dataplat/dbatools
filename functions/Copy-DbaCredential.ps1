@@ -1,55 +1,61 @@
-﻿function Copy-DbaCredential {
+function Copy-DbaCredential {
 	<#
 		.SYNOPSIS
-			Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another, while maintaining Credential passwords.
+			Copy-DbaCredential migrates SQL Server Credentials from one SQL Server to another while maintaining Credential passwords.
 
 		.DESCRIPTION
-			By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another, while maintaining username and password.
+			By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another while maintaining username and password.
 
-			Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
-			License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
-
+			Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/ 
+			License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause 
+			  
 		.PARAMETER Source
-			Source SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 		.PARAMETER SourceSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
-	
-		.PARAMETER Credential
-			This command requires access to the Windows OS via PowerShell remoting. Use this credential to connect to Windows using alternative credentials.
 
 		.PARAMETER Destination
-			Destination SQL Server (2005 and above). You must have sysadmin access to both SQL Server and Windows.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
 		.PARAMETER DestinationSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
 			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
 			To connect as a different Windows user, run PowerShell as that user.
 
-		.PARAMETER CredentialIdentity
-			Auto-populated list of Credentials from Source. If no Credential is specified, all Credentials will be migrated.
-			Note: if spaces exist in the credential name, you will have to type "" or '' around it. I couldn't figure out a way around this.
+		.PARAMETER Credential
+ 			This command requires access to the Windows OS via PowerShell remoting. Use this credential to connect to Windows using alternative credentials.
 
+		.PARAMETER CredentialIdentity
+			Auto-populated list of Credentials from Source. If no Credential is specified, all Credentials will be migrated. If spaces exist in the credential name, it must be wrapped with quotes.
+
+		.PARAMETER ExcludeCredentialIdentity
+			Auto-populated list of Credentials from Source to be excluded from the migration.
+	
 		.PARAMETER Force
-			By default, if a Credential exists on the source and destination, the Credential is not copied over. Specifying -force will drop and recreate the Credential on the Destination server.
+			If this switch is enabled, the Credential will be dropped and recreated if it already exists on Destination.
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages.
-
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.NOTES
 			Tags: WSMan, Migration
 			Author: Chrissy LeMaire (@cl), netnerds.net
@@ -70,14 +76,12 @@
 		.EXAMPLE
 			Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster
 
-			Description
-			Copies all SQL Server Credentials on sqlserver2014a to sqlcluster. If credentials exist on destination, they will be skipped.
+			Copies all SQL Server Credentials on sqlserver2014a to sqlcluster. If Credentials exist on destination, they will be skipped.
 
 		.EXAMPLE
 			Copy-DbaCredential -Source sqlserver2014a -Destination sqlcluster -CredentialIdentity "PowerShell Proxy Account" -Force
 
-			Description
-			Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the credential already exists on the destination, it will be dropped and recreated.
+			Copies over one SQL Server Credential (PowerShell Proxy Account) from sqlserver to sqlcluster. If the Credential already exists on the destination, it will be dropped and recreated.
 	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
@@ -92,11 +96,14 @@
 		[PSCredential]
 		$DestinationSqlCredential,
 		[object[]]$CredentialIdentity,
+		[object[]]$ExcludeCredentialIdentity,
 		[switch]$Force,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
+		$null = Test-ElevationRequirement -ComputerName $Source.ComputerName
+		
 		function Get-SqlCredential {
 			<#
 				.SYNOPSIS
@@ -199,7 +206,7 @@
 				$connString = "Server=ADMIN:$sourceName;Trusted_Connection=True"
 			}
 			
-			$sql = "SELECT name,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass from sys.Credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"
+			$sql = "SELECT QUOTENAME(name) AS name,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass from sys.Credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"
 			
 			# Get entropy from the registry
 			try {
@@ -217,12 +224,14 @@
 						return $dt
 					}
 					catch {
-						Stop-Function -Message "Can't establish local DAC connection to $sourceName from $sourceName or other error. Quitting." -ErrorRecord $_
+						Stop-Function -Message "Can't establish local DAC connection to $sourceName or other error. Quitting." -ErrorRecord $_
+						return
 					}
 				} -Raw
 			}
 			catch {
-				Stop-Function -Message "Can't establish local DAC connection to $sourceName from $sourceName or other error. Quitting." -ErrorRecord $_
+				Stop-Function -Message "Can't establish local DAC connection to $sourceName or other error. Quitting." -ErrorRecord $_
+				return
 			}
 			
 			if ($server.IsClustered -and $dacEnabled -eq $false) {
@@ -287,12 +296,14 @@
 			
 			Write-Message -Level Verbose -Message "Collecting Credential logins and passwords on $($sourceServer.Name)"
 			$sourceCredentials = Get-SqlCredential $sourceServer
+			$credentialList = $sourceServer.Credentials
 			
-			if ($CredentialIdentity -ne $null) {
-				$credentialList = $sourceServer.Credentials | Where-Object { $CredentialIdentity -contains $_.Name }
+			if ($CredentialIdentity) {
+				$credentialList = $credentialList | Where-Object { $CredentialIdentity -contains $_.Name }
 			}
-			else {
-				$credentialList = $sourceServer.Credentials
+			
+			if ($ExcludeCredentialIdentity) {
+				$credentialList = $credentialList | Where-Object { $CredentialIdentity -notcontains $_.Name }
 			}
 			
 			Write-Message -Level Verbose -Message "Starting migration"
@@ -301,19 +312,22 @@
 				$credentialName = $credential.Name
 				
 				$copyCredentialStatus = [pscustomobject]@{
-					SourceServer = $sourceServer.Name
+					SourceServer  = $sourceServer.Name
 					DestinationServer = $destServer.Name
-					Name = $credentialName
-					Status = $null
-					DateTime = [DbaDateTime](Get-Date)
+					Type		  = "Credential"
+					Name		  = $credentialName
+					Status	      = $null
+					Notes		  = $null
+					DateTime	  = [DbaDateTime](Get-Date)
 				}
 				
 				if ($destServer.Credentials[$credentialName] -ne $null) {
 					if (!$force) {
 						$copyCredentialStatus.Status = "Skipping"
-						$copyCredentialStatus
+						$copyCredentialStatus.Notes = "Already exists"
+						$copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						
-						Write-Message -Level Warning -Message "$credentialName exists $($destServer.Name). Skipping."
+						Write-Message -Level Verbose -Message "$credentialName exists $($destServer.Name). Skipping."
 						continue
 					}
 					else {
@@ -338,11 +352,11 @@
 					}
 					
 					$copyCredentialStatus.Status = "Successful"
-					$copyCredentialStatus
+					$copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyCredentialStatus.Status = "Failed"
-					$copyCredentialStatus
+					$copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					
 					Stop-Function -Message "Error creating credential" -Target $credentialName -ErrorRecord $_
 				}
@@ -356,7 +370,7 @@
 		$destination = $destServer.DomainInstanceName
 		
 		if ($SourceSqlCredential.Username -ne $null) {
-			Write-Message -Level Warning -Message "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
+			Write-Message -Level Verbose -Message "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
 		}
 		
 		if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
@@ -367,27 +381,24 @@
 		Invoke-SmoCheck -SqlInstance $destServer
 	}
 	process {
+		if (Test-FunctionInterrupt) { return }
 		Write-Message -Level Verbose -Message "Getting NetBios name for $source"
 		$sourceNetBios = Resolve-NetBiosName $sourceServer
 		
-		Write-Message -Level Verbose -Message "Checking if remote access is enabled on $source"
-		winrm id -r:$sourceNetBios 2>$null | Out-Null
-		
-		if ($LastExitCode -ne 0) {
-			Write-Message -Level Warning -Message "Having trouble with accessing PowerShell remotely on $source. Do you have Windows admin access and is PowerShell Remoting enabled? Anyway, good luck! This may work."
-		}
-		
 		# This output is wrong. Will fix later.
 		Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
-		try { Invoke-Command2 -ComputerName $sourceNetBios -Credential $credential -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" } }
+		try {
+			Invoke-Command2 -ComputerName $sourceNetBios -Credential $credential -ScriptBlock { Get-ItemProperty -Path "HKLM:\SOFTWARE\" }
+		}
 		catch {
-			throw "Can't connect to registry on $source. Quitting."
+			Stop-Function -Message "Can't connect to registry on $source." -Target $sourceNetBios -ErrorRecord $_
+			return
 		}
 		
 		# Magic happens here
 		Copy-Credential $credentials -force:$force
 	}
 	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlCredential
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlCredential
 	}
 }

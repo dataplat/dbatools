@@ -5,7 +5,7 @@ function Get-RestoreContinuableDatabase
 Gets a list of databases from a SQL instance that are in a state for further restores
 
 .DESCRIPTION
-Takes a SQL instance and checks for databases with a redo_start_lsn value, and returns the database name and that vlaue
+Takes a SQL instance and checks for databases with a redo_start_lsn value, and returns the database name and that value
 -gt SQl 2005 it comes from master.sys.master_files
 -eq SQL 2000 DBCC DBINFO
 #>
@@ -14,7 +14,7 @@ Takes a SQL instance and checks for databases with a redo_start_lsn value, and r
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [switch]$silent
+        [switch][Alias('Silent')]$EnableException
 	)
 
 

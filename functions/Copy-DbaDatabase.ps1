@@ -1,108 +1,123 @@
 function Copy-DbaDatabase {
 	<#
 		.SYNOPSIS
-			Migrates Sql Server databases from one Sql Server to another.
+			Migrates SQL Server databases from one SQL Server to another.
 
 		.DESCRIPTION
-			This script provides the ability to migrate databases using detach/copy/attach or backup/restore. This script works with named instances, clusters and Sql Express.
+			This script provides the ability to migrate databases using detach/copy/attach or backup/restore. This script works with named instances, clusters and SQL Server Express Edition.
 
-			By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
+			By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
 
 		.PARAMETER Source
-			Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
 		.PARAMETER SourceSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-			$scred = Get-Credential, this pass $scred object to the param.
+			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Destination
-			Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
+			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
 		.PARAMETER DestinationSqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-			$dcred = Get-Credential, this pass this $dcred to the param.
+			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
+			To connect as a different Windows user, run PowerShell as that user.
+		
 		.PARAMETER Database
-			Migrates ONLY specified databases. This list is auto-populated for tab completion. Multiple databases are allowed.
+			Migrates only specified databases. This list is auto-populated from the server for tab completion. Multiple databases may be specified as a collection.
 
 		.PARAMETER ExcludeDatabase
-			Excludes specified databases when performing -AllDatabases migrations. This list is auto-populated for tab completion.
+			Excludes specified databases when performing -AllDatabases migrations. This list is auto-populated from the Source for tab completion.
 
 		.PARAMETER AllDatabases
-			This is a parameter that was included for safety, so you don't accidentally detach/attach all databases without specifying. Migrates user databases. Does not migrate system or support databases. Requires -BackupRestore or -DetachAttach.
+			If this switch is enabled, all user databases will be migrated. System and support databases will not be migrated. Requires -BackupRestore or -DetachAttach.
 
 		.PARAMETER BackupRestore
-			Use the a Copy-Only Backup and Restore Method. This parameter requires that you specify -NetworkShare in a valid UNC format (\\server\share)
+			If this switch is enabled, the copy-only backup and restore method will be used to migrate the database(s). This method requires that you specify -NetworkShare in a valid UNC format (\\server\share).
 
 			Backups will be immediately deleted after use unless -NoBackupCleanup is specified.
 
 		.PARAMETER NetworkShare
-			Specifies the network location for the backup files. The Sql Service service accounts must read/write permission to access this location.
+			Specifies the network location for the backup files. The SQL Server service accounts must have read/write permission on this path.
 
 		.PARAMETER WithReplace
-			It's exactly WITH REPLACE. This is useful if you want to stage some complex file paths.
+			If this switch is enabled, the restore is executed with WITH REPLACE. This is useful if you want to stage some complex file paths.
 
 		.PARAMETER NoRecovery
-			Sets restore to NoRecovery. Ideal for staging.
+			If this switch is enabled, the restore is executed with WITH NORECOVERY. Ideal for staging.
 
 		.PARAMETER NoBackupCleanup
-			By default, backups generated by the module will be deleted immediately after they are restored. Use this to skip.
-
+			If this switch is enabled, backups generated by this cmdlet will not be deleted after they are restored. The default behavior is to delete these backups.
+			
 		.PARAMETER NumberFiles
 			Number of files to split the backup. Default is 3.
 
 		.PARAMETER DetachAttach
-			Uses the detach/copy/attach method to perform database migrations. No files are deleted on the source. If the destination attachment fails, the source database will be reattached. File copies are performed over administrative shares (\\server\x$\mssql) using BITS. If a database is being mirrored, the mirror will be broken prior to migration.
+			If this switch is enabled, the detach/copy/attach method is used to perform database migrations. No files are deleted on Source. If Destination attachment fails, the Source database will be reattached. File copies are performed over administrative shares (\\server\x$\mssql) using BITS. If a database is being mirrored, the mirror will be broken prior to migration.
 
 		.PARAMETER Reattach
-			Reattaches all source databases after DetachAttach migration.
+			If this switch is enabled, all databases are reattached to Source after DetachAttach migration.
 
 		.PARAMETER SetSourceReadOnly
-			Sets all migrated databases to ReadOnly prior to detach/attach & backup/restore. If -Reattach is used, db is set to read-only after reattach.
+			If this switch is enabled, all migrated databases are set to ReadOnly on Source prior to detach/attach & backup/restore.
+			
+			If -Reattach is used, databases are set to read-only after reattaching.
 
 		.PARAMETER ReuseSourceFolderStructure
-			By default, databases will be migrated to the destination Sql Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure.
-			The same structure on the SOURCE will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
+			If this switch is enabled, databases will be migrated to a data and log directory structure on Destination mirroring that used on Source. By default, the default data and log directories for Destination will be used when the databases are migrated.
+			
+			The structure on Source  will be kept exactly, so consider this if you're migrating between different versions and use part of Microsoft's default Sql structure (MSSql12.INSTANCE, etc)
 
-			* note, to reuse destination folder structure, specify -WithReplace
+			To reuse Destination folder structure, use the  -WithReplace switch.
 
 		.PARAMETER IncludeSupportDbs
-			Migration of ReportServer, ReportServerTempDb, SSIDb, and distribution databases if they exist. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory. Requires -BackupRestore or -DetachAttach.
+			If this switch is enabled, ReportServer, ReportServerTempDb, SSISDB, and distribution databases will be copied if they exist on Source. A logfile named $SOURCE-$DESTINATION-$date-Sqls.csv will be written to the current directory.
+			
+			Use of this switch requires -BackupRestore or -DetachAttach as well.
 
 		.PARAMETER DatabaseCollection
-			Takes dbobject from pipeline
+			A collection of dbobjects from the pipeline.
 
 		.PARAMETER NoCopyOnly
-			By default, Copy-DbaDatabase backups are backed up with COPY_ONLY, which avoids breaking the LSN backup chain. This parameter will set CopyOnly to $false.
+ 			If this switch is enabled, backups will be taken without COPY_ONLY. This will break the LSN backup chain, which will interfere with the restore chain of the database.
+
+			By default this switch is disabled, so backups will be taken with COPY_ONLY. This will preserve the LSN backup chain.
+
+			For more details please refer to this MSDN article - https://msdn.microsoft.com/en-us/library/ms191495.aspx 
 
 		.PARAMETER SetSourceOffline
-			Sets the Source db to offline after copy
+			If this switch is enabled, the Source database will be set to Offline after being copied.
 
 		.PARAMETER WhatIf
-			Shows what would happen if the command were to run. No actions are actually performed.
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
-			Prompts you for confirmation before executing any changing operations within the command.
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
 		.PARAMETER Force
-			Drops existing databases with matching names. If using -DetachAttach, -Force will break mirrors and drop dbs from Availability Groups.
-
-		.PARAMETER Silent
-			Use this switch to disable any kind of verbose messages
+			If this switch is enabled, existing databases on Destination with matching names from Source will be dropped. If using -DetachReattach, mirrors will be broken and the database(s) dropped from Availability Groups.
 
 		.NOTES
 			Tags: Migration, DisasterRecovery, Backup, Restore
-			Original Author: Chrissy LeMaire (@cl), netnerds.net
+			Author: Chrissy LeMaire (@cl), netnerds.net
 			Requires: sysadmin access on SQL Servers
 			Limitations: Doesn't cover what it doesn't cover (replication, certificates, etc)
-						Sql Server 2000 databases cannot be directly migrated to Sql Server 2012 and above.
-						Logins within Sql Server 2012 and above logins cannot be migrated to Sql Server 2008 R2 and below.
+						SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
+						Logins within SQL Server 2012 and above logins cannot be migrated to SQL Server 2008 R2 and below.
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -119,7 +134,7 @@ function Copy-DbaDatabase {
 		.EXAMPLE
 			Copy-DbaDatabase -Source sqlserver2014a -Destination sqlcluster -DetachAttach -Reattach
 
-			Databases will be migrated from sqlserver2014a to sqlcluster using the detach/copy files/attach method.The following will be perfomed: kick all users out of the database, detach all data/log files, move files across the network over an admin share (\\SqlSERVER\M$\MSSql...), attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* exist and aren't in use, they will be overwritten.
+			Databases will be migrated from sqlserver2014a to sqlcluster using the detach/copy files/attach method.The following will be performed: kick all users out of the database, detach all data/log files, move files across the network over an admin share (\\SqlSERVER\M$\MSSql...), attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* exist and aren't in use, they will be overwritten.
 
 		.EXAMPLE
 			Copy-DbaDatabase -Source sqlserver2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -NetworkShare \\fileshare\sql\migration
@@ -164,7 +179,7 @@ function Copy-DbaDatabase {
 		$BackupRestore,
 		
 		[parameter(Mandatory = $true, ParameterSetName = "DbBackup",
-					HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and both Sql Server service accounts.")]
+					HelpMessage = "Specify a valid network share in the format \\server\share that can be accessed by your account and the SQL Server service accounts for both Source and Destination.")]
 		[string]
 		$NetworkShare,
 		
@@ -198,7 +213,7 @@ function Copy-DbaDatabase {
 		[switch]
 		$SetSourceReadOnly,
 		
-		[Alias("ReuseFolderstructure")]
+		[Alias("ReuseFolderStructure")]
 		[parameter(ParameterSetName = "DbBackup")]
 		[parameter(ParameterSetName = "DbAttachDetach")]
 		[switch]
@@ -223,10 +238,10 @@ function Copy-DbaDatabase {
 		$Force,
 		
 		[switch]
-		$Silent
+		[Alias('Silent')]$EnableException
 	)
 	begin {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlDatabase
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlDatabase
 
 		$CopyOnly = -not $NoCopyOnly
 		function Join-AdminUnc {
@@ -267,7 +282,7 @@ function Copy-DbaDatabase {
 			$databaseProgressbar = 0
 			
 			foreach ($db in $databaseList) {
-				Write-Progress -Id 1 -Activity "Processing database file structure" -PercentComplete ($databaseProgressbar / $dbCount * 100) -Status "Processing $databaseProgressbar of $dbCount"
+				Write-Progress -Id 1 -Activity "Processing database file structure" -PercentComplete ($databaseProgressbar / $dbCount * 100) -Status "Processing $databaseProgressbar of $dbCount."
 				$dbName = $db.Name
 				Write-Message -Level Verbose -Message $dbName
 				
@@ -316,7 +331,7 @@ function Copy-DbaDatabase {
 					$sourcefiles.add($file.Name, $s)
 				}
 				
-				# Add support for Full Text Catalogs in Sql Server 2005 and below
+				# Add support for Full Text Catalogs in SQL Server 2005 and below
 				if ($sourceServer.VersionMajor -lt 10) {
 					try {
 						$fttable = $null = $sourceServer.Databases[$dbName].ExecuteWithResults('sp_help_fulltext_catalogs')
@@ -421,11 +436,11 @@ function Copy-DbaDatabase {
 			$currentdb = $server.databases[$dbName]
 			if ($currentdb.IsMirroringEnabled) {
 				try {
-					Write-Message -Level Warning -Message "Breaking mirror for $dbName"
+					Write-Message -Level Verbose -Message "Breaking mirror for $dbName"
 					$currentdb.ChangeMirroringState([Microsoft.SqlServer.Management.Smo.MirroringOption]::Off)
 					$currentdb.Alter()
 					$currentdb.Refresh()
-					Write-Message -Level Warning -Message "Could not break mirror for $dbName. Skipping."
+					Write-Message -Level Verbose -Message "Could not break mirror for $dbName. Skipping."
 				}
 				catch {
 					Stop-Function -Message "Issue breaking mirror." -Target $dbName -ErrorRecord $_
@@ -435,18 +450,18 @@ function Copy-DbaDatabase {
 			
 			if ($currentdb.AvailabilityGroupName.Length -gt 0) {
 				$agName = $currentdb.AvailabilityGroupName
-				Write-Message -Level Verbose -Message "Attempting remove from Availability Group $agName"
+				Write-Message -Level Verbose -Message "Attempting remove from Availability Group $agName."
 				try {
 					$server.AvailabilityGroups[$currentdb.AvailabilityGroupName].AvailabilityDatabases[$dbName].Drop()
-					Write-Message -Level Verbose -Message "Successfully removed $dbName from  detach from $agName on $($server.Name)"
+					Write-Message -Level Verbose -Message "Successfully removed $dbName from  detach from $agName on $($server.Name)."
 				}
 				catch {
-					Stop-Function -Message "Could not remove $dbName from $agName on $($server.Name)" -Target $dbName -ErrorRecord $_
+					Stop-Function -Message "Could not remove $dbName from $agName on $($server.Name)." -Target $dbName -ErrorRecord $_
 					return $false
 				}
 			}
 			
-			Write-Message -Level Verbose -Message "Attempting detach from $dbName from $source"
+			Write-Message -Level Verbose -Message "Attempting detach from $dbName from $source."
 			
 			####### Using Sql to detach does not modify the $currentdb collection #######
 			
@@ -456,7 +471,7 @@ function Copy-DbaDatabase {
 				$sql = "ALTER DATABASE [$dbName] SET SINGLE_USER WITH ROLLBACK IMMEDIATE"
 				Write-Message -Level Verbose -Message $sql
 				$null = $server.Query($sql)
-				Write-Message -Level Verbose -Message "Successfully set $dbName to single-user from $source"
+				Write-Message -Level Verbose -Message "Successfully set $dbName to single-user from $source."
 			}
 			catch {
 				Stop-Function -Message "Issue setting database to single-user." -Target $dbName -ErrorRecord $_
@@ -466,11 +481,11 @@ function Copy-DbaDatabase {
 				$sql = "EXEC master.dbo.sp_detach_db N'$dbName'"
 				Write-Message -Level Verbose -Message $sql
 				$null = $server.Query($sql)
-				Write-Message -Level Verbose -Message "Successfully detached $dbName from $source"
+				Write-Message -Level Verbose -Message "Successfully detached $dbName from $source."
 				return $true
 			}
 			catch {
-				Stop-Function -Message "Issue detaching database" -Target $dbName -ErrorRecord $_
+				Stop-Function -Message "Issue detaching database." -Target $dbName -ErrorRecord $_
 				return $false
 			}
 		}
@@ -546,7 +561,7 @@ function Copy-DbaDatabase {
 						}
 					}
 					else {
-						Write-Message -Level Verbose -Message "Copying $from for $dbName"
+						Write-Message -Level Verbose -Message "Copying $from for $dbName."
 						Start-BitsTransfer -Source $from -Destination $remotefilename
 					}
 					$fn = Split-Path $($dbdestination[$file].physical) -leaf
@@ -557,12 +572,12 @@ function Copy-DbaDatabase {
 						Start-BitsTransfer -Source $from -Destination $remotefilename
 					}
 					catch {
-						Write-Message -Level Warning -Message "Start-BitsTransfer did not succeed. Now attempting with Copy-Item - no progress bar will be shown."
+						Write-Message -Level Verbose -Message "Start-BitsTransfer did not succeed. Now attempting with Copy-Item - no progress bar will be shown."
 						try {
 							Copy-Item -Path $from -Destination $remotefilename -ErrorAction Stop
 						}
 						catch {
-							Write-Message -Level Warning -Message "Access denied. This can happen for a number of reasons including issues with cloned disks."
+							Write-Message -Level Verbose -Message "Access denied. This can happen for a number of reasons including issues with cloned disks."
 							Stop-Function -Message "Alternatively, you may need to run PowerShell as Administrator, especially when running on localhost." -Target $from -ErrorRecord $_
 							return
 						}
@@ -576,8 +591,8 @@ function Copy-DbaDatabase {
 			<#
 
 			.SYNOPSIS
-			Internal function. Performs checks, then executes Dismount-SqlDatabase on a database, copies its files to the new server,
-			then performs Mount-SqlDatabase. $sourceServer and $destServer are SMO server objects.
+			Internal function. Performs checks, then executes Dismount-SqlDatabase on a database, copies its files to the new server,	then performs Mount-SqlDatabase. $sourceServer and $destServer are SMO server objects.
+			
 			$fileStructure is a custom object generated by Get-SqlFileStructure
 
 			#>
@@ -621,18 +636,18 @@ function Copy-DbaDatabase {
 				
 				if ($attachresult -eq $true) {
 					# add to added dbs because ATTACH was successful
-					Write-Message -Level Verbose -Message "Successfully attached $dbName to $destination"
+					Write-Message -Level Verbose -Message "Successfully attached $dbName to $destination."
 					return $true
 				}
 				else {
 					# add to failed because ATTACH was unsuccessful
-					Write-Message -Level Warning -Message "Could not attach $dbName."
+					Write-Message -Level Verbose -Message "Could not attach $dbName."
 					return "Could not attach database."
 				}
 			}
 			else {
 				# add to failed because DETACH was unsuccessful
-				Write-Message -Level Warning -Message "Could not detach $dbName."
+				Write-Message -Level Verbose -Message "Could not detach $dbName."
 				return "Could not detach database."
 			}
 		}
@@ -661,7 +676,7 @@ function Copy-DbaDatabase {
 			return
 		}
 		
-		Write-Message -Level Verbose -Message "Attempting to connect to Sql Servers"
+		Write-Message -Level Verbose -Message "Attempting to connect to SQL Servers."
 		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
 		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 		
@@ -680,14 +695,14 @@ function Copy-DbaDatabase {
 		$destVersionMinorLow = ($destServer.VersionMajor -eq 10 -and $sourceServer.VersionMajor -eq 10) -and ($destServer.VersionMinor -lt $sourceServer.VersionMinor)
 		
 		if ($destVersionLower -or $destVersionMinorLow) {
-			Stop-Function -Message "Error: copy database cannot be made from newer $($sourceServer.VersionString) to older $($destServer.VersionString) SQL Server version"
+			Stop-Function -Message "Error: copy database cannot be made from newer $($sourceServer.VersionString) to older $($destServer.VersionString) SQL Server version."
 			return
 		}
 		
 		if ($DetachAttach) {
 			if ($sourceServer.NetName -eq $env:COMPUTERNAME -or $destServer.NetName -eq $env:COMPUTERNAME) {
 				if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-					Write-Message -Level Warning -Message "When running DetachAttach locally on the console, it's possible you'll need to Run As Administrator. Trying anyway."
+					Write-Message -Level Verbose -Message "When running DetachAttach locally on the console, it's possible you'll need to Run As Administrator. Trying anyway."
 				}
 			}
 		}
@@ -697,11 +712,11 @@ function Copy-DbaDatabase {
 		
 		if ($NetworkShare.Length -gt 0) {
 			if ($(Test-DbaSqlPath -SqlInstance $sourceServer -Path $NetworkShare) -eq $false) {
-				Write-Message -Level Warning -Message "$Source may not be able to access $NetworkShare. Trying anyway."
+				Write-Message -Level Verbose -Message "$Source may not be able to access $NetworkShare. Trying anyway."
 			}
 			
 			if ($(Test-DbaSqlPath -SqlInstance $destServer -Path $NetworkShare) -eq $false) {
-				Write-Message -Level Warning -Message "$Destination may not be able to access $NetworkShare. Trying anyway."
+				Write-Message -Level Verbose -Message "$Destination may not be able to access $NetworkShare. Trying anyway."
 			}
 			
 			if ($NetworkShare.StartsWith('\\')) {
@@ -710,7 +725,7 @@ function Copy-DbaDatabase {
 					$hostEntry = ([Net.Dns]::GetHostEntry($shareServer)).HostName -split "\."
 					
 					if ($shareServer -ne $hostEntry[0]) {
-						Write-Message -Level Warning -Message "Using CNAME records for the network share may present an issue if an SPN has not been created. Trying anyway. If it doesn't work, use a different (A record) hostname."
+						Write-Message -Level Verbose -Message "Using CNAME records for the network share may present an issue if an SPN has not been created. Trying anyway. If it doesn't work, use a different (A record) hostname."
 					}
 				}
 				catch {
@@ -720,22 +735,22 @@ function Copy-DbaDatabase {
 			}
 		}
 		
-		Write-Message -Level Verbose -Message "Resolving NetBIOS names"
+		Write-Message -Level Verbose -Message "Resolving NetBIOS names."
 		$sourceNetBios = Resolve-NetBiosName $sourceServer
 		$destNetBios = Resolve-NetBiosName $destServer
 		
-		Write-Message -Level Verbose -Message "Performing SMO version check"
+		Write-Message -Level Verbose -Message "Performing SMO version check."
 		Invoke-SmoCheck -SqlInstance $sourceServer
 		Invoke-SmoCheck -SqlInstance $destServer
 		
-		Write-Message -Level Verbose -Message "Checking to ensure the source isn't the same as the destination"
+		Write-Message -Level Verbose -Message "Checking to ensure the source isn't the same as the destination."
 		if ($source -eq $destination) {
-			Stop-Function -Message "Source and Destination Sql Servers instances are the same. Quitting."
+			Stop-Function -Message "Source and Destination SQL Servers instances are the same. Quitting."
 			return
 		}
 		
 		if ($NetworkShare.Length -gt 0) {
-			Write-Message -Level Verbose -Message "Checking to ensure network path is valid"
+			Write-Message -Level Verbose -Message "Checking to ensure network path is valid."
 			if (!($NetworkShare.StartsWith("\\")) -and !$script:sameserver) {
 				Stop-Function -Message "Network share must be a valid UNC path (\\server\share)."
 				return
@@ -748,51 +763,51 @@ function Copy-DbaDatabase {
 					}
 				}
 				catch {
-					Write-Message -Level Warning -Message "$NetworkShare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
+					Write-Message -Level Verbose -Message "$NetworkShare share cannot be accessed. Still trying anyway, in case the SQL Server service accounts have access."
 				}
 			}
 		}
 		
-		Write-Message -Level Verbose -Message "Checking to ensure server is not SQL Server 7 or below"
+		Write-Message -Level Verbose -Message "Checking to ensure server is not SQL Server 7 or below."
 		if ($sourceServer.VersionMajor -lt 8 -and $destServer.VersionMajor -lt 8) {
-			Stop-Function -Message "This script can only be run on Sql Server 2000 and above. Quitting."
+			Stop-Function -Message "This script can only be run on SQL Server 2000 and above. Quitting."
 			return
 		}
 		
-		Write-Message -Level Verbose -Message "Checking to ensure detach/attach is not attempted on SQL Server 2000"
+		Write-Message -Level Verbose -Message "Checking to ensure detach/attach is not attempted on SQL Server 2000."
 		if ($destServer.VersionMajor -lt 9 -and $DetachAttach) {
-			Stop-Function -Message "Detach/Attach not supported when destination Sql Server is version 2000. Quitting." -Target $destServer
+			Stop-Function -Message "Detach/Attach not supported when destination SQL Server is version 2000. Quitting." -Target $destServer
 			return
 		}
 		
-		Write-Message -Level Verbose -Message "Checking to ensure SQL Server 2000 migration isn't directly attempted to SQL Server 2012"
+		Write-Message -Level Verbose -Message "Checking to ensure SQL Server 2000 migration isn't directly attempted to SQL Server 2012."
 		if ($sourceServer.VersionMajor -lt 9 -and $destServer.VersionMajor -gt 10) {
-			Stop-Function -Message "Sql Server 2000 databases cannot be migrated to Sql Server versions 2012 and above. Quitting." -Target $destServer
+			Stop-Function -Message "SQL Server 2000 databases cannot be migrated to SQL Server versions 2012 and above. Quitting." -Target $destServer
 			return
 		}
 		
 		Write-Message -Level Verbose -Message "Warning if migration from 2005 to 2012 and above and attach/detach is used."
 		if ($sourceServer.VersionMajor -eq 9 -and $destServer.VersionMajor -gt 9 -and !$BackupRestore -and !$Force -and $DetachAttach) {
-			Stop-Function -Message "Backup and restore is the safest method for migrating from Sql Server 2005 to other Sql Server versions. Please use the -BackupRestore switch or override this requirement by specifying -Force."
+			Stop-Function -Message "Backup and restore is the safest method for migrating from SQL Server 2005 to other SQL Server versions. Please use the -BackupRestore switch or override this requirement by specifying -Force."
 			return
 		}
 		
 		if ($sourceServer.Collation -ne $destServer.Collation) {
-			Write-Message -Level Verbose -Message "Warning on different collation"
-			Write-Message -Level Warning -Message "Collation on $Source, $($sourceServer.Collation) differs from the $Destination, $($destServer.Collation)."
+			Write-Message -Level Verbose -Message "Warning on different collation."
+			Write-Message -Level Verbose -Message "Collation on $Source, $($sourceServer.Collation) differs from the $Destination, $($destServer.Collation)."
 		}
 		
-		Write-Message -Level Verbose -Message "Ensuring user databases exist (counting databases)"
+		Write-Message -Level Verbose -Message "Ensuring user databases exist (counting databases)."
 		$dbTotal = $sourceServer.Databases.Count
 		
 		if ($dbTotal -le 4) {
 			Stop-Function -Message "No user databases to migrate. Quitting."
 		}
 		
-		Write-Message -Level Verbose -Message "Ensuring destination server version is equal to or greater than source"
+		Write-Message -Level Verbose -Message "Ensuring destination server version is equal to or greater than source."
 		if ($sourceServer.VersionMajor -ge $destServer.VersionMajor) {
 			if ($sourceServer.VersionMinor -gt $destServer.VersionMinor) {
-				Stop-Function -Message "Source Sql Server version build must be <= destination Sql Server for database migration."
+				Stop-Function -Message "Source SQL Server version build must be <= destination SQL Server for database migration."
 			}
 		}
 		
@@ -804,42 +819,42 @@ function Copy-DbaDatabase {
 			$fsWarning = $true
 		}
 		
-		Write-Message -Level Verbose -Message "Writing warning about filestream being enabled"
+		Write-Message -Level Verbose -Message "Writing warning about filestream being enabled."
 		if ($fsWarning) {
-			Write-Message -Level Warning -Message "FILESTREAM enabled on $source but not $destination. Databases that use FILESTREAM will be skipped."
+			Write-Message -Level Verbose -Message "FILESTREAM enabled on $source but not $destination. Databases that use FILESTREAM will be skipped."
 		}
 		
 		if ($DetachAttach -eq $true) {
-			Write-Message -Level Verbose -Message "Checking access to remote directories"
+			Write-Message -Level Verbose -Message "Checking access to remote directories."
 			$remoteSourcePath = Join-AdminUNC $sourceNetBios (Get-SqlDefaultPaths -SqlInstance $sourceServer -filetype data)
 			
 			if ((Test-Path $remoteSourcePath) -ne $true -and $DetachAttach) {
-				Write-Message -Level Warning -Message "Can't access remote Sql directories on $source which is required to perform detach/copy/attach."
-				Write-Message -Level Warning -Message "You can manually try accessing $remoteSourcePath to diagnose any issues."
+				Write-Message -Level Verbose -Message "Can't access remote Sql directories on $source which is required to perform detach/copy/attach."
+				Write-Message -Level Verbose -Message "You can manually try accessing $remoteSourcePath to diagnose any issues."
 				Stop-Function -Message "Halting database migration."
 				return
 			}
 			
 			$remoteDestPath = Join-AdminUNC $destNetBios (Get-SqlDefaultPaths -SqlInstance $destServer -filetype data)
 			If ((Test-Path $remoteDestPath) -ne $true -and $DetachAttach) {
-				Write-Message -Level Warning -Message "Can't access remote Sql directories on $destination which is required to perform detach/copy/attach."
-				Write-Message -Level Warning -Message "You can manually try accessing $remoteDestPath to diagnose any issues."
+				Write-Message -Level Verbose -Message "Can't access remote Sql directories on $destination which is required to perform detach/copy/attach."
+				Write-Message -Level Verbose -Message "You can manually try accessing $remoteDestPath to diagnose any issues."
 				Stop-Function -Message "Halting database migration."
 				return
 			}
 		}
 		
 		if (($Database -or $ExcludeDatabase -or $IncludeSupportDbs) -and (!$DetachAttach -and !$BackupRestore)) {
-			Stop-Function -Message "You did not select a migration method. Please use -BackupRestore or -DetachAttach"
+			Stop-Function -Message "You did not select a migration method. Please use -BackupRestore or -DetachAttach."
 			return
 		}
 		
 		if ((!$Database -and !$AllDatabases -and !$IncludeSupportDbs) -and ($DetachAttach -or $BackupRestore)) {
-			Stop-Function -Message "You did not select any databases to migrate. Please use -AllDatabases or -Database or -IncludeSupportDbs"
+			Stop-Function -Message "You did not select any databases to migrate. Please use -AllDatabases or -Database or -IncludeSupportDbs."
 			return
 		}
 		
-		Write-Message -Level Verbose -Message "Building database list"
+		Write-Message -Level Verbose -Message "Building database list."
 		$databaseList = New-Object System.Collections.ArrayList
 		$SupportDBs = "ReportServer", "ReportServerTempDB", "distribution"
 		foreach ($currentdb in $sourceServer.Databases) {
@@ -855,10 +870,10 @@ function Copy-DbaDatabase {
 			$null = $databaseList.Add($currentdb)
 		}
 		
-		Write-Message -Level Verbose -Message "Performing count"
+		Write-Message -Level Verbose -Message "Performing count."
 		$dbCount = $databaseList.Count
 		
-		Write-Message -Level Verbose -Message "Building file structure inventory for $dbCount databases"
+		Write-Message -Level Verbose -Message "Building file structure inventory for $dbCount databases."
 		
 		if ($sourceServer.VersionMajor -eq 8) {
 			$sql = "select DB_NAME (dbid) as dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END as filetype from sysaltfiles"
@@ -893,14 +908,14 @@ function Copy-DbaDatabase {
 				$dbOwner = $currentdb.Owner
 				
 				$copyDatabaseStatus = [pscustomobject]@{
-					SourceServer	    = $sourceServer.Name
-					SourceDatabase	    = $dbName
-					DestinationServer   = $destServer.Name
+					SourceServer	  = $sourceServer.Name
+					DestinationServer = $destServer.Name
+					Name			  = $dbName
 					DestinationDatabase = $dbname
-					Type			    = "Database"
-					Status			    = $null
-					Notes			    = $null
-					DateTime		    = [DbaDateTime](Get-Date)
+					Type			  = "Database"
+					Status		      = $null
+					Notes			  = $null
+					DateTime		  = [DbaDateTime](Get-Date)
 				}
 				
 				Write-Message -Level Verbose -Message "`n######### Database: $dbName #########"
@@ -911,13 +926,13 @@ function Copy-DbaDatabase {
 					continue
 				}
 				
-				Write-Message -Level Verbose -Message "Checking for accessibility"
+				Write-Message -Level Verbose -Message "Checking for accessibility."
 				if ($currentdb.IsAccessible -eq $false) {
-					Write-Message -Level Warning -Message "Skipping $dbName. Database is inaccessible."
+					Write-Message -Level Verbose -Message "Skipping $dbName. Database is inaccessible."
 					
 					$copyDatabaseStatus.Status = "Skipped"
-					$copyDatabaseStatus.Notes = "Database is not accessible."
-					$copyDatabaseStatus
+					$copyDatabaseStatus.Notes = "Database is not accessible"
+					$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				
@@ -925,10 +940,10 @@ function Copy-DbaDatabase {
 					$fsRows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and FileType = 'FileStream'")
 					
 					if ($fsRows.Count -gt 0) {
-						Write-Message -Level Warning -Message "Skipping $dbName (contains FILESTREAM)"
+						Write-Message -Level Verbose -Message "Skipping $dbName (contains FILESTREAM)."
 						$copyDatabaseStatus.Status = "Skipped"
 						$copyDatabaseStatus.Notes = "Contains FILESTREAM"
-						$copyDatabaseStatus
+						$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						continue
 					}
 				}
@@ -943,53 +958,53 @@ function Copy-DbaDatabase {
 						
 						$copyDatabaseStatus.Status = "Failed"
 						$copyDatabaseStatus.Notes = "Can't resolve $remotePath"
-						$copyDatabaseStatus
+						$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						return
 					}
 				}
 				
-				Write-Message -Level Verbose -Message "Checking Availability Group status"
+				Write-Message -Level Verbose -Message "Checking Availability Group status."
 				if ($currentdb.AvailabilityGroupName.Length -gt 0 -and !$force -and $DetachAttach) {
 					$agName = $currentdb.AvailabilityGroupName
-					Write-Message -Level Warning -Message "Database is part of an Availability Group ($agName). Use -Force to drop from $agName and migrate. Alternatively, you can use the safer backup/restore method."
+					Write-Message -Level Verbose -Message "Database is part of an Availability Group ($agName). Use -Force to drop from $agName and migrate. Alternatively, you can use the safer backup/restore method."
 					continue
 				}
 				
 				$dbStatus = $currentdb.Status.ToString()
 				
 				if ($dbStatus.StartsWith("Normal") -eq $false) {
-					Write-Message -Level Warning -Message "$dbName is not in a Normal state. Skipping."
+					Write-Message -Level Verbose -Message "$dbName is not in a Normal state. Skipping."
 					
 					$copyDatabaseStatus.Status = "Skipped"
 					$copyDatabaseStatus.Notes = "Not in normal state"
-					$copyDatabaseStatus
+					$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				
 				if ($currentdb.ReplicationOptions -ne "None" -and $DetachAttach -eq $true) {
-					Write-Message -Level Warning -Message "$dbName is part of replication. Skipping."
+					Write-Message -Level Verbose -Message "$dbName is part of replication. Skipping."
 					
 					$copyDatabaseStatus.Status = "Skipped"
 					$copyDatabaseStatus.Notes = "Part of replication"
-					$copyDatabaseStatus
+					$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				
 				if ($currentdb.IsMirroringEnabled -and !$force -and $DetachAttach) {
-					Write-Message -Level Warning -Message "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method."
+					Write-Message -Level Verbose -Message "Database is being mirrored. Use -Force to break mirror and migrate. Alternatively, you can use the safer backup/restore method."
 					
 					$copyDatabaseStatus.Status = "Skipped"
-					$copyDatabaseStatus.Notes = "Database is mirrored. Use -Force to break mirror."
-					$copyDatabaseStatus
+					$copyDatabaseStatus.Notes = "Database is mirrored"
+					$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				
 				if (($destServer.Databases[$dbName] -ne $null) -and !$force -and !$WithReplace) {
-					Write-Message -Level Warning -Message "Database exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
+					Write-Message -Level Verbose -Message "Database exists at destination. Use -Force to drop and migrate. Aborting routine for this database."
 					
 					$copyDatabaseStatus.Status = "Skipped"
-					$copyDatabaseStatus.Notes = "Already exist on destination"
-					$copyDatabaseStatus
+					$copyDatabaseStatus.Notes = "Already exists"
+					$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					continue
 				}
 				elseif ($destServer.Databases[$dbName] -ne $null -and $force) {
@@ -998,11 +1013,11 @@ function Copy-DbaDatabase {
 						$dropResult = Remove-SqlDatabase $destServer $dbName
 						
 						if ($dropResult -eq $false) {
-							Write-Message -Level Warning -Message "Database could not be dropped. Aborting routine for this database"
+							Write-Message -Level Verbose -Message "Database could not be dropped. Aborting routine for this database."
 							
 							$copyDatabaseStatus.Status = "Failed"
-							$copyDatabaseStatus.Notes = "Issue dropping database"
-							$copyDatabaseStatus
+							$copyDatabaseStatus.Notes = "Could not drop database"
+							$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							continue
 						}
 					}
@@ -1013,7 +1028,7 @@ function Copy-DbaDatabase {
 				}
 				
 				if ($Pscmdlet.ShouldProcess("console", "Showing start time")) {
-					Write-Message -Level Verbose -Message "Started: $dbStart"
+					Write-Message -Level Verbose -Message "Started: $dbStart."
 				}
 				
 				if ($sourceServer.VersionMajor -ge 9) {
@@ -1026,11 +1041,11 @@ function Copy-DbaDatabase {
 				
 				if ($SetSourceReadOnly) {
 					If ($Pscmdlet.ShouldProcess($source, "Set $dbName to read-only")) {
-						Write-Message -Level Verbose -Message "Setting database to read-only"
-						$result = Update-SqldbReadOnly -SqlInstance $sourceServer -dbname $dbName -readonly $true
+						Write-Message -Level Verbose -Message "Setting database to read-only."
+						$result = Update-SqldbReadOnly -SqlInstance $sourceServer -dbname $dbName -readonly:$true
 						
 						if ($result -eq $false) {
-							Write-Message -Level Warning -Message "Couldn't set database to read-only. Aborting routine for this database"
+							Write-Message -Level Verbose -Message "Couldn't set database to read-only. Aborting routine for this database."
 							continue
 						}
 					}
@@ -1046,39 +1061,39 @@ function Copy-DbaDatabase {
 						$backupResult = $BackupTmpResult.BackupComplete
 						if ($backupResult -eq $false) {
 							$serviceAccount = $sourceServer.ServiceAccount
-							Write-Message -Level Warning -Message "Backup Failed. Does Sql Server account $serviceAccount have access to $NetworkShare? Aborting routine for this database"
+							Write-Message -Level Verbose -Message "Backup Failed. Does SQL Server account $serviceAccount have access to $($NetworkShare)? Aborting routine for this database."
 							
 							$copyDatabaseStatus.Status = "Failed"
-							$copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $NetworkShare"
-							$copyDatabaseStatus
+							$copyDatabaseStatus.Notes = "Backup failed. Verify service account access to $NetworkShare."
+							$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							continue
 						}
 						
-						Write-Message -Level Verbose -Message "Resuse = $ReuseSourceFolderStructure"
+						Write-Message -Level Verbose -Message "Resuse = $ReuseSourceFolderStructure."
 						$restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $dbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace
 						$restoreResult = $restoreResultTmp.RestoreComplete
 						
 						if ($restoreResult -eq $true) {
-							Write-Message -Level Verbose -Message "Successfully restored $dbName to $destination"
+							Write-Message -Level Verbose -Message "Successfully restored $dbName to $destination."
 							$copyDatabaseStatus.Status = "Successful"
-							$copyDatabaseStatus
+							$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						}
 						else {
 							if ($ReuseSourceFolderStructure) {
-								Write-Message -Level Warning -Message "Failed to restore $dbName to $destination. You specified -ReuseSourceFolderStructure. Does the exact same destination directory structure exist?"
-								Write-Message -Level Warning -Message "Aborting routine for this database"
+								Write-Message -Level Verbose -Message "Failed to restore $dbName to $destination. You specified -ReuseSourceFolderStructure. Does the exact same destination directory structure exist?"
+								Write-Message -Level Verbose -Message "Aborting routine for this database."
 								
 								$copyDatabaseStatus.Status = "Failed"
 								$copyDatabaseStatus.Notes = "Failed to restore. ReuseSourceFolderStructure was specified, verify same directory structure exist on destination."
-								$copyDatabaseStatus
+								$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 								continue
 							}
 							else {
-								Write-Message -Level Warning -Message "Failed to restore $dbName to $destination. Aborting routine for this database."
+								Write-Message -Level Verbose -Message "Failed to restore $dbName to $destination. Aborting routine for this database."
 								
 								$copyDatabaseStatus.Status = "Failed"
-								$copyDatabaseStatus.Notes = "Failed to restore database."
-								$copyDatabaseStatus
+								$copyDatabaseStatus.Notes = "Failed to restore database"
+								$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 								continue
 							}
 						}
@@ -1086,19 +1101,19 @@ function Copy-DbaDatabase {
 							foreach ($backupFile in ($restoreResultTmp.BackupFile -split ',')) {
 								try {
 									if (Test-Path $backupFile -ErrorAction Stop) {
-										Write-Message -Level Verbose -Message "Deleting $backupFile"
+										Write-Message -Level Verbose -Message "Deleting $backupFile."
 										Remove-Item $backupFile -ErrorAction Stop
 									}
 								}
 								catch {
 									try {
-										Write-Message -Level Verbose -Message "Trying alternate SQL method to delete $backupFile"
+										Write-Message -Level Verbose -Message "Trying alternate SQL method to delete $backupFile."
 										$sql = "EXEC master.sys.xp_delete_file 0, '$backupFile'"
 										Write-Message -Level Debug -Message $sql
 										$null = $sourceServer.Query($sql)
 									}
 									catch {
-										Write-Message -Level Warning -Message "Cannot delete backup file $backupFile"
+										Write-Message -Level Verbose -Message "Cannot delete backup file $backupFile."
 										
 										# Set NoBackupCleanup so that there's a warning at the end
 										$NoBackupCleanup = $true
@@ -1116,10 +1131,10 @@ function Copy-DbaDatabase {
 						if ($null -eq $dbOwner -or $destServer.Logins.Name -notcontains $dbOwner) {
 							$dbOwner = Get-SaLoginName -SqlInstance $destServer
 						}
-						Write-Message -Level Verbose -Message "Updating database owner to $dbOwner"
-						$OwnerResult = Set-DbaDatabaseOwner -SqlInstance $destServer -Database $dbName -TargetLogin $dbOwner -Silent
+						Write-Message -Level Verbose -Message "Updating database owner to $dbOwner."
+						$OwnerResult = Set-DbaDatabaseOwner -SqlInstance $destServer -Database $dbName -TargetLogin $dbOwner -EnableException
 						if ($OwnerResult.Length -eq 0) {
-							Write-Message -Level Warning -Message "Failed to update database owner"
+							Write-Message -Level Verbose -Message "Failed to update database owner."
 						}
 					}
 				}
@@ -1161,27 +1176,27 @@ function Copy-DbaDatabase {
 									$null = Update-SqldbReadOnly -SqlInstance $sourceServer -dbname $dbName -readonly $sourceDbReadOnly
 								}
 								
-								Write-Message -Level Verbose -Message "Successfully reattached $dbName to $source"
+								Write-Message -Level Verbose -Message "Successfully reattached $dbName to $source."
 							}
 							else {
-								Write-Message -Level Warning -Message "Could not reattach $dbName to $source."
+								Write-Message -Level Verbose -Message "Could not reattach $dbName to $source."
 								$copyDatabaseStatus.Status = "Failed"
 								$copyDatabaseStatus.Notes = "Could not reattach database to $source"
-								$copyDatabaseStatus
+								$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							}
 						}
 						
 						if ($migrationResult -eq $true) {
-							Write-Message -Level Verbose -Message "Successfully attached $dbName to $destination"
+							Write-Message -Level Verbose -Message "Successfully attached $dbName to $destination."
 							$copyDatabaseStatus.Status = "Successful"
-							$copyDatabaseStatus
+							$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						}
 						else {
-							Write-Message -Level Warning -Message "Failed to attach $dbName to $destination. Aborting routine for this database."
+							Write-Message -Level Verbose -Message "Failed to attach $dbName to $destination. Aborting routine for this database."
 							
 							$copyDatabaseStatus.Status = "Failed"
 							$copyDatabaseStatus.Notes = "Failed to attach database to destination"
-							$copyDatabaseStatus
+							$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							
 							continue
 						}
@@ -1189,19 +1204,19 @@ function Copy-DbaDatabase {
 				}
 				$destServer.Databases.Refresh()
 				
-				# restore poentially lost settings
+				# restore potentially lost settings
 				if ($destServer.VersionMajor -ge 9 -and $NoRecovery -eq $false) {
 					if ($sourceDbOwnerChaining -ne $destServer.Databases[$dbName].DatabaseOwnershipChaining) {
 						if ($Pscmdlet.ShouldProcess($destination, "Updating DatabaseOwnershipChaining on $dbName")) {
 							try {
 								$destServer.Databases[$dbName].DatabaseOwnershipChaining = $sourceDbOwnerChaining
 								$destServer.Databases[$dbName].Alter()
-								Write-Message -Level Verbose -Message "Successfully updated DatabaseOwnershipChaining for $sourceDbOwnerChaining on $dbName on $destination"
+								Write-Message -Level Verbose -Message "Successfully updated DatabaseOwnershipChaining for $sourceDbOwnerChaining on $dbName on $destination."
 							}
 							catch {
-								$copyDatabaseStatus.Status = "Successful - failed to apply DatabaseOwnershipChaining"
-								$copyDatabaseStatus
-								Stop-Function -Message "Failed to update DatabaseOwnershipChaining for $sourceDbOwnerChaining on $dbName on $destination" -Target $destination -ErrorRecord $_ -Continue
+								$copyDatabaseStatus.Status = "Successful - failed to apply DatabaseOwnershipChaining."
+								$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+								Stop-Function -Message "Failed to update DatabaseOwnershipChaining for $sourceDbOwnerChaining on $dbName on $destination." -Target $destination -ErrorRecord $_ -Continue
 							}
 						}
 					}
@@ -1214,9 +1229,9 @@ function Copy-DbaDatabase {
 								Write-Message -Level Verbose -Message "Successfully updated Trustworthy to $sourceDbTrustworthy for $dbName on $destination"
 							}
 							catch {
-								$copyDatabaseStatus.Status = "Successful - failed to apply Trusthworthy"
-								$copyDatabaseStatus
-								Stop-Function -Message "Failed to update Trustworthy to $sourceDbTrustworthy for $dbName on $destination" -Target $destination -ErrorRecord $_ -Continue
+								$copyDatabaseStatus.Status = "Successful - failed to apply Trustworthy"
+								$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+								Stop-Function -Message "Failed to update Trustworthy to $sourceDbTrustworthy for $dbName on $destination." -Target $destination -ErrorRecord $_ -Continue
 							}
 						}
 					}
@@ -1226,12 +1241,12 @@ function Copy-DbaDatabase {
 							try {
 								$destServer.Databases[$dbName].BrokerEnabled = $sourceDbBrokerEnabled
 								$destServer.Databases[$dbName].Alter()
-								Write-Message -Level Verbose -Message "Successfully updated BrokerEnabled to $sourceDbBrokerEnabled for $dbName on $destination"
+								Write-Message -Level Verbose -Message "Successfully updated BrokerEnabled to $sourceDbBrokerEnabled for $dbName on $destination."
 							}
 							catch {
 								$copyDatabaseStatus.Status = "Successful - failed to apply BrokerEnabled"
-								$copyDatabaseStatus
-								Stop-Function -Message "Failed to update BrokerEnabled to $sourceDbBrokerEnabled for $dbName on $destination" -Target $destination -ErrorRecord $_ -Continue
+								$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+								Stop-Function -Message "Failed to update BrokerEnabled to $sourceDbBrokerEnabled for $dbName on $destination." -Target $destination -ErrorRecord $_ -Continue
 							}
 						}
 					}
@@ -1241,12 +1256,12 @@ function Copy-DbaDatabase {
 					if ($Pscmdlet.ShouldProcess($destination, "Updating ReadOnly status on $dbName")) {
 						$update = Update-SqldbReadOnly -SqlInstance $destServer -dbname $dbName -readonly $sourceDbReadOnly
 						if ($update -eq $true) {
-							Write-Message -Level Verbose -Message "Successfully updated readonly status on $dbName"
+							Write-Message -Level Verbose -Message "Successfully updated readonly status on $dbName."
 						}
 						else {
-							$copyDatabaseStatus.Status = "Successful - failed to apply ReadOnly"
-							$copyDatabaseStatus
-							Stop-Function -Message "Failed to update ReadOnly status on $dbName" -Target $destination -ErrorRecord $_ -Continue
+							$copyDatabaseStatus.Status = "Successful - failed to apply ReadOnly."
+							$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+							Stop-Function -Message "Failed to update ReadOnly status on $dbName." -Target $destination -ErrorRecord $_ -Continue
 						}
 					}
 				}
@@ -1262,8 +1277,8 @@ function Copy-DbaDatabase {
 					$dbTotalTime = $dbFinish - $dbStart
 					$dbTotalTime = ($dbTotalTime.ToString().Split(".")[0])
 					
-					Write-Message -Level Verbose -Message "Finished: $dbFinish"
-					Write-Message -Level Verbose -Message "Elapsed time: $dbTotalTime"
+					Write-Message -Level Verbose -Message "Finished: $dbFinish."
+					Write-Message -Level Verbose -Message "Elapsed time: $dbTotalTime."
 				}
 			} # end db by db processing
 		}
@@ -1282,7 +1297,7 @@ function Copy-DbaDatabase {
 				Write-Message -Level Verbose -Message "Total Elapsed time: $totalTime"
 				
 				if ($NetworkShare.length -gt 0 -and $NoBackupCleanup) {
-					Write-Message -Level Warning -Message "Backups still exist at $NetworkShare."
+					Write-Message -Level Verbose -Message "Backups still exist at $NetworkShare."
 				}
 			}
 			else {

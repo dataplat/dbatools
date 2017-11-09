@@ -30,11 +30,13 @@ Shows what would happen if the command were to run. No actions are actually perf
 .PARAMETER Confirm
 Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
-
+.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 .NOTES 
-Original Author: Sander Stad (@sqlstad, sqlstad.nl)
+Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job
 	
 Website: https://dbatools.io
@@ -86,7 +88,7 @@ Removes the job from multiple servers using pipe line
         [switch]$KeepUnusedSchedule,
         
         [Parameter(Mandatory = $false)]
-        [switch]$Silent
+        [switch][Alias('Silent')]$EnableException
     )
 
     process {
@@ -94,7 +96,7 @@ Removes the job from multiple servers using pipe line
         foreach ($instance in $sqlinstance) {
 
             # Try connecting to the instance
-            Write-Message -Message "Attempting to connect to $instance" -Level Output
+            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
@@ -111,7 +113,7 @@ Removes the job from multiple servers using pipe line
                 else {   
                     # Get the job
                     try {
-                        $smoJob = $Server.JobServer.Jobs[$j] 
+                        $currentjob = $Server.JobServer.Jobs[$j] 
                     }
                     catch {
                         Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Target $instance -Continue
@@ -120,7 +122,7 @@ Removes the job from multiple servers using pipe line
                     # Delete the history
                     if (-not $KeepHistory) {
                         Write-Message -Message "Purging job history" -Level Verbose
-                        $smoJob.PurgeHistory()
+                        $currentjob.PurgeHistory()
                     }
 
                     # Execute 
@@ -131,12 +133,12 @@ Removes the job from multiple servers using pipe line
                             if ($KeepUnusedSchedule) {
                                 # Drop the job keeping the unused schedules
                                 Write-Message -Message "Removing job keeping unused schedules" -Level Verbose
-                                $smoJob.Drop($true) 
+                                $currentjob.Drop($true) 
                             }
                             else {
                                 # Drop the job removing the unused schedules
                                 Write-Message -Message "Removing job removing unused schedules" -Level Verbose
-                                $smoJob.Drop($false) 
+                                $currentjob.Drop($false) 
                             }
                     
                         }
@@ -151,6 +153,6 @@ Removes the job from multiple servers using pipe line
     } # process
 
     end {
-        Write-Message -Message "Finished removing jobs(s)." -Level Output
+        Write-Message -Message "Finished removing jobs(s)." -Level Verbose
     }
 }

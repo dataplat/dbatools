@@ -1,89 +1,88 @@
 function Get-DbaPermission {
 	<#
-.SYNOPSIS
-Get a list of Server and Database level permissions
+		.SYNOPSIS
+			Get a list of Server and Database level permissions
 
-.DESCRIPTION
-Retrieves a list of permissions
+		.DESCRIPTION
+			Retrieves a list of permissions
 
-Permissions link principals to securables.
-Principals exist on Windows, Instance and Database level.
-Securables exist on Instance and Database level.
-A permission state can be GRANT, DENY or REVOKE.
-The permission type can be SELECT, CONNECT, EXECUTE and more.
+			Permissions link principals to securables.
+			Principals exist on Windows, Instance and Database level.
+			Securables exist on Instance and Database level.
+			A permission state can be GRANT, DENY or REVOKE.
+			The permission type can be SELECT, CONNECT, EXECUTE and more.
 
-See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information
+			See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information
 
-.PARAMETER SqlInstance
-The SQL Server that you're connecting to.
+		.PARAMETER SqlInstance
+			The SQL Server that you're connecting to.
 
-.PARAMETER SqlCredential
-Credential object used to connect to the SQL Server as a different user
+		.PARAMETER SqlCredential
+			Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Database
-The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+		.PARAMETER Database
+			The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto-populated from the server
+		.PARAMETER ExcludeDatabase
+			The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER IncludeServerLevel
-Shows also information on Server Level Permissions
+		.PARAMETER IncludeServerLevel
+			Shows also information on Server Level Permissions
 
-.PARAMETER NoSystemObjects
-Excludes all permissions on system securables
+		.PARAMETER NoSystemObjects
+			Excludes all permissions on system securables
 
-.PARAMETER Silent 
-Use this switch to disable any kind of verbose messages
+		.PARAMETER EnableException 
+				By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+				This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+				Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.NOTES
-Tags: Permissions, Databases
-Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+		.NOTES
+			Tags: Permissions, Databases
+			Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.LINK
-https://dbatools.io/Get-DbaPermission
+		.LINK
+			https://dbatools.io/Get-DbaPermission
 
-.EXAMPLE
-Get-DbaPermission -SqlInstance ServerA\sql987
+		.EXAMPLE
+			Get-DbaPermission -SqlInstance ServerA\sql987
 
-Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
+			Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
 
-.EXAMPLE
-Get-DbaPermission -SqlInstance ServerA\sql987 | Format-Table -AutoSize
+		.EXAMPLE
+			Get-DbaPermission -SqlInstance ServerA\sql987 | Format-Table -AutoSize
 
-Returns a formatted table displaying Server, Database, permission state, permission type, grantee, granteetype, securable and securabletype
+			Returns a formatted table displaying Server, Database, permission state, permission type, grantee, granteetype, securable and securabletype
 
-.EXAMPLE
-Get-DbaPermission -SqlInstance ServerA\sql987 -NoSystemObjects -IncludeServerLevel
+		.EXAMPLE
+			Get-DbaPermission -SqlInstance ServerA\sql987 -NoSystemObjects -IncludeServerLevel
 
-Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
-in all databases and on the server level, but not on system securables
+			Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
+			in all databases and on the server level, but not on system securables
 
-.EXAMPLE
-Get-DbaPermission -SqlInstance sql2016 -Database master
+		.EXAMPLE
+			Get-DbaPermission -SqlInstance sql2016 -Database master
 
-Returns a custom object with permissions for the master database
-
-#>
+			Returns a custom object with permissions for the master database
+	#>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[DbaInstance[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential]
-		$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[switch]$IncludeServerLevel,
 		[switch]$NoSystemObjects,
-		[switch]$Silent
+		[switch][Alias('Silent')]$EnableException
 	)
-
 	begin {
 		if ($NoSystemObjects) {
 			$ExcludeSystemObjectssql = "WHERE major_id > 0 "
@@ -95,14 +94,13 @@ Returns a custom object with permissions for the master database
 						, [Database] = ''
 						, [PermState] = state_desc
 						, [PermissionName] = permission_name
-						, [SecurableType] = COALESCE(O.type_desc,sp.class_desc)
+						, [SecurableType] = COALESCE(o.type_desc,sp.class_desc)
 						, [Securable] = CASE	WHEN class = 100 THEN @@SERVERNAME
 												WHEN class = 105 THEN OBJECT_NAME(major_id)
 												ELSE OBJECT_NAME(major_id)
 												END
 						, [Grantee] = SUSER_NAME(grantee_principal_id)
 						, [GranteeType] = pr.type_desc
-
 					FROM sys.server_permissions sp
 						JOIN sys.server_principals pr ON pr.principal_id = sp.grantee_principal_id
 						LEFT OUTER JOIN sys.all_objects o ON o.object_id = sp.major_id
@@ -115,13 +113,12 @@ Returns a custom object with permissions for the master database
 					, [Database] = DB_NAME()
 					, [PermState] = state_desc
 					, [PermissionName] = permission_name
-					, [SecurableType] = COALESCE(O.type_desc,dp.class_desc)
+					, [SecurableType] = COALESCE(o.type_desc,dp.class_desc)
 					, [Securable] = CASE	WHEN class = 0 THEN DB_NAME()
 											WHEN class = 1 THEN ISNULL(s.name + '.','')+OBJECT_NAME(major_id)
 											WHEN class = 3 THEN SCHEMA_NAME(major_id) END
 					, [Grantee] = USER_NAME(grantee_principal_id)
 					, [GranteeType] = pr.type_desc
-
 				FROM sys.database_permissions dp
 					JOIN sys.database_principals pr ON pr.principal_id = dp.grantee_principal_id
 					LEFT OUTER JOIN sys.all_objects o ON o.object_id = dp.major_id
@@ -136,17 +133,12 @@ Returns a custom object with permissions for the master database
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			if ($server.versionMajor -lt 9) {
-				Write-Warning "Get-DbaPermission is only supported on SQL Server 2005 and above. Skipping $instance."
-				Continue
-			}
-
 			if ($IncludeServerLevel) {
 				Write-Message -Level Debug -Message "T-SQL: $ServPermsql"
 				$server.Query($ServPermsql).Tables.Rows

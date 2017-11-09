@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Management.Automation;
 
 namespace Sqlcollaborative.Dbatools.dbaSystem
@@ -74,6 +75,11 @@ namespace Sqlcollaborative.Dbatools.dbaSystem
         /// Enables the developer mode. In this additional information and logs are written, in order to make it easier to troubleshoot issues.
         /// </summary>
         public static bool DeveloperMode = false;
+
+        /// <summary>
+        /// Returns whether the module is currently in a development branch. Some warnings will only be shown in development branch, but hidden in master / public releases
+        /// </summary>
+        public static bool DevelopmentBranch = true;
         #endregion Defines
 
         #region Queues
@@ -164,5 +170,29 @@ namespace Sqlcollaborative.Dbatools.dbaSystem
             }
         }
         #endregion Access Queues
+
+        #region Start Times
+        /// <summary>
+        /// Lists the duration for the last import of dbatools.
+        /// </summary>
+        public static List<StartTimeEntry> ImportTimeEntries = new List<StartTimeEntry>();
+
+        /// <summary>
+        /// Returns the calculated time each phase took during the last import of dbatool.
+        /// </summary>
+        public static List<StartTimeResult> ImportTime
+        {
+            get
+            {
+                List<StartTimeResult> result = new List<StartTimeResult>();
+                int n = 0;
+                foreach (StartTimeEntry entry in ImportTimeEntries)
+                    if (n++ > 0)
+                        result.Add(new StartTimeResult(entry.Action, ImportTimeEntries[n - 2].Timestamp, entry.Timestamp));
+
+                return result;
+            }
+        }
+        #endregion Start Times
     }
 }
