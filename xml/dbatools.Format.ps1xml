@@ -59,15 +59,19 @@
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>Capacity</PropertyName>
+								<Alignment>Right</Alignment>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>Free</PropertyName>
+								<Alignment>Right</Alignment>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>PercentFree</PropertyName>
+								<Alignment>Right</Alignment>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>BlockSize</PropertyName>
+								<Alignment>Right</Alignment>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>IsSqlDisk</PropertyName>
