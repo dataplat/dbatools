@@ -282,7 +282,7 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 #region Post-Import Cleanup
 Write-ImportTime -Text "Loading Aliases"
 
-$timeout = 3000
+$timeout = 10000
 $timeSpent = 0
 while (($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') -or ($script:dbatoolsConfigRunspace.Runspace.RunspaceAvailability -eq 'Busy'))
 {
