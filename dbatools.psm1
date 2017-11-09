@@ -282,7 +282,7 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 #region Post-Import Cleanup
 Write-ImportTime -Text "Loading Aliases"
 
-$timeout = 3000
+$timeout = 10000
 $timeSpent = 0
 while (($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') -or ($script:dbatoolsConfigRunspace.Runspace.RunspaceAvailability -eq 'Busy'))
 {
@@ -328,8 +328,8 @@ Write-ImportTime -Text "Waiting for runspaces to finish"
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUJHpDvNdv1QUk1Q+k94sttW6w
-# 3PSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUyZg9qEp4cTQPDr/+mbpNXT2l
+# ASWggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -460,22 +460,22 @@ Write-ImportTime -Text "Waiting for runspaces to finish"
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUDfsRPt0p1hSYcuHhgSZ6Rjeu4gswDQYJKoZIhvcNAQEBBQAE
-# ggEAGutV6Gfmdaevowr/rir9hS6mDxxhkHr5ovatHsaqu5sWSybTOjU3CyVr8HAB
-# t+TErngh7worDJOefBd9egqlbuqJpMGbua/bkWMaRR7J7W+u5IqbBj1yatjhOksz
-# Q3htSWsXsXH8C3CqHSzrT3xv8/DaptDJcgcgLMGT0M6QGtIDVUueeJLJwSzBAc69
-# 0aDk7VPnayslzXDGOZVaJGyFjoL0bEct144Uscgs3MK93mcrGnFf/W0LvK1HVsJs
-# SS7FWKMu+3H9vo4o2YVpNbEPK9TXPRNCST2fLzlGifuC550H4dAUa635mLA2qZsT
-# OVH6HfGYAb+9kbZsfocwqZEF4qGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUarmgu5RSv0EmIvb21sIpxHtDwXQwDQYJKoZIhvcNAQEBBQAE
+# ggEAM3MR4843G7O7OLZAUKzTpL2GBvkX6yNe5BLbLZsoivxBk4LxegQejmsxHenW
+# QQnzJUTohp4RVKEE+WlVf1MbqvtQx+PEJSMq2qvC38duboC9OTdUg+1MlxXNtQ7M
+# SPJ/l2MEtyCfPMnvrtSnWSqxCaKnCVx2rFS9TSkUA0+hQ1xNQeh4jk9vHKyBqY34
+# XDJwKy4VFxK7EisOpaJN++ps63isErmmA3NXObVraYnuFetIfmT4GMYaBjpapKOb
+# Lry8SeBHYPBAL/q9HD3RVSuNgsBnnkMZtj9p8ArfLr0Y9eNvuF4bdsJGdARxOdcn
+# H8+c0jqUv7WTBjYkF9oVngeDYaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMTA4MjEzMzE3WjAj
-# BgkqhkiG9w0BCQQxFgQUO4ILLnvVyAYabUAbQIWfe3ESuPEwDQYJKoZIhvcNAQEB
-# BQAEggEAO2Nb/6hwv3iJynSTlpbuPQ8+UyUvsdC5hQ4Q5ilOWz/q+2HGfpazcZuz
-# wc9Cgb4I4X2La3kpnVd0BWIr/UFdjrmUKLnG3IRl/yt5ld3UJFlES81MGEa/+t7Q
-# XkuUmmseqObNMKKMQv2JFU9I8BGjdTCAibWaoKVOrJ+Wsl/yJ3ckcTO2wGaoOdAs
-# /qJddJ2BgtasbPbCc5ULzaX5Ui8WSLTlY8YKxaAZry8vLb3t8v1AU1HmAha9DYmx
-# wPCAs0N/BfMazWUPrHN6ONysDUJadQX23h16ldctrbUK0CEfuRj6ynJREZHkummc
-# PxRCN7CD1/6oV2ss9vPsPbdbEC9xEg==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMTA5MTkyNzM0WjAj
+# BgkqhkiG9w0BCQQxFgQUW+g4dRVO2UPu8dB4XSduC428JXwwDQYJKoZIhvcNAQEB
+# BQAEggEANNDNliiIhb7s6X773+e0mQXzE33onAEaI46jEbZOpup1imTVz76IP6Aa
+# r6d2oRIykHPvRkcX1s2tosB8N9dCEZLrVfyiEffyPB6SpYmdMye6WANqNeEDYfpR
+# fW3cCTAFgSeK4U/2W3nLDvJDJOIZyiP0bjE374dKE3jNpcf9wKuxrswf9Bk921SR
+# a50Z5OvdhBm8szWtAZ1w4oznrweLzIkvxj0lf90pySHogq8ai6+ObLda5L/wsRvu
+# qafkmAysjRcg2SgUxlUapBwShf+xR0jw8wdwayfV9l+mozHkOpWqeY3qTxGkaQ1h
+# vD1zuzb0e057i03ozLhamDdquXtiSg==
 # SIG # End signature block
