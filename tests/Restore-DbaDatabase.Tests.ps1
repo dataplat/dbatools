@@ -419,8 +419,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }        
     }
 
-    Context "All user databases are removed post history test" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1_detailed -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+    Context "All user databases are removed post port test" {
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
@@ -435,9 +435,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             ($null -eq $db) | Should be $True
         }  
     }
-    Context "All user databases are removed post history test" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1
-        -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+    Context "All user databases are removed post Output script test" {
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
