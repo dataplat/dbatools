@@ -201,7 +201,7 @@ function New-DbaAgentSchedule {
 		}
 
 		# Check if the recurrence factor is set for weekly or monthly interval
-		if (($FrequencyType -in 16) -and $FrequencyRecurrenceFactor -lt 1) {
+		if (($FrequencyType -in (16,8)) -and $FrequencyRecurrenceFactor -lt 1) {
 			if ($Force) {
 				$FrequencyRecurrenceFactor = 1
 				Write-Message -Message "Recurrence factor not set for weekly or monthly interval. Setting it to $FrequencyRecurrenceFactor." -Level Verbose
