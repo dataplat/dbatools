@@ -1,7 +1,7 @@
 function Enable-DbaTraceFlag {
 	<# 
 	.SYNOPSIS 
-		Enable a Global Trace Flag 
+		Enable Global Trace Flag(s)
 	.DESCRIPTION
 		The function will set one or multiple trace flags on the SQL Server instance(s) listed
 	
@@ -9,13 +9,13 @@ function Enable-DbaTraceFlag {
 		Allows you to specify a comma separated list of servers to query.
 
 	.PARAMETER SqlCredential
-		Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-		$cred = Get-Credential, this pass this $cred to the param. 
-
-		Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+		Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+		$scred = Get-Credential, this pass this $scred object to the -SqlCredential parameter.
+		Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+		To connect as a different Windows user, run PowerShell as that user.	
 	
 	.PARAMETER TraceFlag
-		Trace flag number to enable globally
+		Trace flag number(s) to enable globally
 	
 	.PARAMETER EnableException 
 		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -35,7 +35,7 @@ function Enable-DbaTraceFlag {
 
 	.EXAMPLE   
 		Enable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 3226
-		Enable the trace flag 32266 on SQL Server instance sql2016
+		Enable the trace flag 3226 on SQL Server instance sql2016
 
 	.EXAMPLE
 		Enable-DbaTraceFlag -SqlInstance sql2016 -TraceFlag 1117, 1118
@@ -71,14 +71,14 @@ function Enable-DbaTraceFlag {
 					SourceServer    = $server.NetName
 					InstanceName 	= $server.ServiceName
 					SqlInstance 	= $server.DomainInstanceName
-					TraceFlag	    = $tf
+					TraceFlag	= $tf
 					Status          = $null
 					Notes           = $null
 					DateTime        = [DbaDateTime](Get-Date)
 				}
 				If ($CurrentRunningTraceFlags.TraceFlag -contains $tf) {
 					$TraceFlagInfo.Status = 'Skipped'
-					$TraceFlagInfo.Notes = "The Trace flag is already running."
+					$TraceFlagInfo.Notes  = "The Trace flag is already running."
 					$TraceFlagInfo
 					Write-Message -Level Warning -Message "The Trace flag [$tf] is already running globally."
 					continue
@@ -91,7 +91,7 @@ function Enable-DbaTraceFlag {
 				}
 				catch {
 					$TraceFlagInfo.Status = "Failed"
-					$TraceFlagInfo.Notes = $_.Exception.Message
+					$TraceFlagInfo.Notes  = $_.Exception.Message
 					$TraceFlagInfo
 					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
 				}
