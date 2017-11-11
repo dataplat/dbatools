@@ -171,6 +171,15 @@ function Import-DbaCsvToSql {
 
 			Upload the single column Csv SingleColumn.csv to Temptable which has just one column
 
+		.EXAMPLE   
+			Import-DbaCsvToSql -Csv "\\FileServer\To Import\housing.csv" -SqlInstance sql001 -Database markets
+
+			Imports the entire comma-delimited housing.csv located in the share named "To Import" on FileServer to the SQL "markets" database on a SQL Server named sql001.
+
+		.EXAMPLE   
+			Import-DbaCsvToSql -Csv '\\FileServer\R$\To Import\housing.csv' -SqlInstance sql001 -Database markets
+
+			Imports the entire comma-delimited housing.csv located in the directory R:\To Import on FileServer using the administrative share to the SQL "markets" database on a SQL Server named sql001.
 	#>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
