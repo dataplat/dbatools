@@ -241,7 +241,7 @@ Function Invoke-DbaAdvancedRestore{
 
                         if ($OutputScriptOnly -eq $false) {
                             [PSCustomObject]@{
-                                SqlInstance            = $backup.SqlInstance
+                                SqlInstance            = $SqlInstance
                                 DatabaseName           = $backup.Database
                                 DatabaseOwner          = $server.ConnectionContext.TrueLogin
                                 NoRecovery             = $Restore.NoRecovery

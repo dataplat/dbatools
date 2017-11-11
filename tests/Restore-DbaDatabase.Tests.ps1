@@ -419,8 +419,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }        
     }
 
-    Context "All user databases are removed post history test" {
-        $results = Get-DbaDatabase -SqlInstance $script:instance1_detailed -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+    Context "All user databases are removed post port test" {
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
         It "Should say the status was dropped" {
             Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
         }
@@ -434,5 +434,31 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results -match 'RESTORE DATABASE' | Should be $True
             ($null -eq $db) | Should be $True
         }  
+    }
+    Context "All user databases are removed post Output script test" {
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+        It "Should say the status was dropped" {
+            Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
+        }
+    }
+    Context "Checking Output vs input"{
+        $DatabaseName = 'rectestSO'
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak  -DatabaseName $DatabaseName -BufferCount 24 -MaxTransferSize 128kb -BlockSize 64kb
+        
+        It "Should return the destination instance"{
+            $results.SqlInstance = $script:instance1
+        }
+
+        It "Should have a BlockSize of 65536"{
+            $results.Script | Should match 'BLOCKSIZE = 65536' 
+        }
+
+        It "Should have a BufferCount of 24"{
+            $results.Script | Should match 'BUFFERCOUNT = 24' 
+        }
+
+        It "Should have a MaxTransferSize of 131072" {
+            $results.Script | Should match 'MAXTRANSFERSIZE = 131072' 
+        }
     }
 }
