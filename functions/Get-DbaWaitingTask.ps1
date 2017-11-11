@@ -10,7 +10,7 @@ function Get-DbaWaitingTask {
 		.PARAMETER SqlInstance
 			The SQL Server instance. Server version must be SQL Server version XXXX or higher.
 
-        .PARAMETER SqlCredential
+		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
 			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
@@ -18,6 +18,9 @@ function Get-DbaWaitingTask {
 			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
 			To connect as a different Windows user, run PowerShell as that user.
+			
+		.PARAMETER Spid
+			Find the waiting task of one or more specific process ids
 
 		.PARAMETER IncludeSystemSpid
 			If this switch is enabled, the output will include the system sessions.
