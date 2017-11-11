@@ -2586,6 +2586,19 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a\r\n\r\nRemoves all database snapshots from sqlserver2014a\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, HR_snap_20161101\r\n\r\nRemoves database snapshots named HR_snap_20161201 and HR_snap_20161101\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting\r\n\r\nRemoves all database snapshots having HR and Accounting as base dbs\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snapshot, Accounting_snapshot\r\n\r\nRemoves HR_snapshot and Accounting_snapshot\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseSnapshot -SqlInstance sql2016 | Where SnapshotOf -like \u0027*dumpsterfire*\u0027 | \r\nRemove-DbaDatabaseSnapshot\r\n\r\nRemoves all snapshots associated with databases that have dumpsterfire in the name\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Remove-DbaDbUser",
+        "Description":  "If user is the owner of a schema with the same name and if if the schema does not have any underlying objects the schema will be\ndropped.  If user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be\nchanged to \u0027dbo\u0027. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.",
+        "Tags":  [
+                     "Databases",
+                     "User"
+                 ],
+        "Author":  "Doug Meyers (@dgmyrs)",
+        "Synopsis":  "Drop database user",
+        "Name":  "Remove-DbaDbUser",
+        "Links":  "https://dbatools.io/Remove-DbaDbUser",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDbUser -SqlInstance sqlserver2014 -User user1\r\n\r\nDrops user1 from all databases it exists in on server \u0027sqlserver2014\u0027.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDbUser -SqlInstance sqlserver2014 -Database database1 -User user1\r\n\r\nDrops user1 from the database1 database on server \u0027sqlserver2014\u0027.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaDbUser -SqlInstance sqlserver2014 -ExcludeDatabase model -User user1\r\n\r\nDrops user1 from all databases it exists in on server \u0027sqlserver2014\u0027 except for the model database.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDatabaseUser sqlserver2014 | Where-Object Name -In \"user1\" | Remove-DbaDbUser\r\n\r\nDrops user1 from all databases it exists in on server \u0027sqlserver2014\u0027.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Remove-DbaNetworkCertificate",
         "Description":  "Removes the network certificate for SQL Server instance. This setting is found in Configuration Manager.",
         "Tags":  "Certificate",
