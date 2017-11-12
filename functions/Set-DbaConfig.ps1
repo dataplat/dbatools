@@ -278,21 +278,20 @@ function Set-DbaConfig
 				}
 				$Value = $testResult.Value
 			}
-			if ((-not $DisableHandler) -and ($cfg.Handler) -and (Test-Bound -ParameterName "Value"))
-			{
-				try { [scriptblock]::Create($cfg.Handler.ToString()).Invoke($Value) }
-				catch
-				{
-					Stop-Function -Message "Could not update configuration $internalFullName | Failed handling $_" -EnableException $EnableException -Category InvalidResult -Target $internalFullName
-					return
-				}
-			}
 			
 			if (Test-Bound -ParameterName "Hidden") { [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].Hidden = $Hidden }
 			if (Test-Bound -ParameterName "Value") { [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].Value = $Value }
 			if (Test-Bound -ParameterName "Description") { [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].Description = $Description }
 			if (Test-Bound -ParameterName "Handler") { [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].Handler = $Handler }
 			if (Test-Bound -ParameterName "Validation") { [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Configurations[$internalFullName].Validation = [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::Validation[$Validation.ToLower()] }
+			
+			if ((-not $DisableHandler) -and ($cfg.Handler) -and (Test-Bound -ParameterName "Value")) {
+				try { [scriptblock]::Create($cfg.Handler.ToString()).Invoke($Value) }
+				catch {
+					Stop-Function -Message "Could not update configuration $internalFullName | Failed handling $_" -EnableException $EnableException -Category InvalidResult -Target $internalFullName
+					return
+				}
+			}
 		}
 	}
 	#endregion Regular configuration update
