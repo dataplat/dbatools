@@ -4,18 +4,16 @@ function Get-DbaRunningJob {
 			Returns all non-idle Agent jobs running on the server.
 
 		.DESCRIPTION
-			This function returns agent jobs that active on the SQL Server instance when calling the command. The information is gathered the SMO JobServer.jobs and be returned either in detailed or standard format.
+			This function returns agent jobs that active on the SQL Server instance when calling the command. The information is gathered
+			from the SMO JobServer.jobs and can be returned either in detailed or standard format.
 
  		.PARAMETER SqlInstance
 			The SQL Server instance to connect to.
 
-        .PARAMETER SqlCredential
+ 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
 			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
 			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER EnableException
