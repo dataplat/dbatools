@@ -6,12 +6,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Testing if memory dump is present" {
 		BeforeAll {
 			$Server = Connect-DbaInstance -SqlInstance $script:instance2
-			$null = $Server.Query("DBCC STACKDUMP;")
+			$Server.Query("DBCC STACKDUMP;")
 		}
 		
 		$results = Get-DbaSqlDump -SqlInstance $server
 		It "function should return a count of 1 dump found" {
-			$results.Count -eq 1 | Should Be $true
+			$results.MemoryDumpCount -eq 1 | Should Be $true
 		}
 	}
 }
