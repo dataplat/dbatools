@@ -211,7 +211,7 @@ Function Get-DbaSqlService {
 									Set-ServiceStartMode -ServiceCollection $this -Mode $Mode -ErrorAction Stop
 									$this.StartMode = $Mode
 								}
-								Select-DefaultView -InputObject $service -Property ComputerName, ServiceName, ServiceType, InstanceName, DisplayName, State, StartMode -TypeName DbaSqlService
+								Select-DefaultView -InputObject $service -Property ComputerName, ServiceName, ServiceType, InstanceName, DisplayName, StartName, State, StartMode -TypeName DbaSqlService
 							}
 						}
 					}
