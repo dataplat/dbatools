@@ -112,6 +112,7 @@ function Remove-DbaDbUser {
             foreach ($user in $users) {
                 $db = $user.Parent
                 $server = $db.Parent
+                $ownedObjects = $false
                 Write-Message -Level Verbose -Message "Removing User $user from Database $db on target $server"
 
                 # Drop Schemas owned by the user before droping the user
@@ -122,7 +123,6 @@ function Remove-DbaDbUser {
                     # Need to gather up the schema changes so they can be done in a non-desctructive order
                     $alterSchemas = @()
                     $dropSchemas = @()
-                    $ownedObjects = $false
 
                     foreach ($schemaUrn in $schemaUrns) {
                         $schema = $server.GetSmoObject($schemaUrn)
@@ -180,25 +180,21 @@ function Remove-DbaDbUser {
                             $user.Drop()
                         }
 
-                        [pscustomobject]@{
-                            ComputerName = $server.NetName
-                            InstanceName = $server.ServiceName
-                            SqlInstance  = $server.DomainInstanceName
-                            Database     = $db.name
-                            User         = $user
-                            Status       = "Dropped"
-                        }
+                        $status = "Dropped"
+
                     } catch {
                         Write-Error -Message "Could not drop $user from Database $db on target $server"
-                        [pscustomobject]@{
-                            ComputerName = $server.NetName
-                            InstanceName = $server.ServiceName
-                            SqlInstance  = $server.DomainInstanceName
-                            Database     = $db.name
-                            User         = $user
-                            Status       = "Not Dropped"
-                        }
+                        $status = "Not Dropped"
                     }
+
+                    [pscustomobject]@{
+                        ComputerName = $server.NetName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Database     = $db.name
+                        User         = $user
+                        Status       = $status
+                    }    
                 }
             }
 		}
