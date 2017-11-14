@@ -10,7 +10,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		
 		$results = Get-DbaDump -SqlInstance $script:instance2
-		It "finds least one dump" {
+		It -Skip "finds least one dump" {
 			($results).Count -ge 1 | Should Be $true
 		}
 	}
