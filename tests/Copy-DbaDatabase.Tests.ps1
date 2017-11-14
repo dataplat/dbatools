@@ -65,8 +65,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$db1.Owner | Should be $db2.Owner
 		}
 		
-		It -Skip "Should say skipped" {
-			$result = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
+		It "Should say skipped" {
+			$result = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $detachattachdb -BackupRestore -NetworkShare $NetworkPath
 			$result.Status | Should be "Skipped"
 			$result.Notes | Should be "Already exists"
 		}
