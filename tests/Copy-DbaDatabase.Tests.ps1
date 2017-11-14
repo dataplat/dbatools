@@ -52,7 +52,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 	}
 	
-	if (-not $appveyor) {
+	if (-not $env:appveyor) {
 		Context "Backup restore" {
 			It "copies a database and retain its name, recovery model, and status." {
 				

@@ -2,7 +2,7 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-if (-not $appveyor) {
+if (-not $env:appveyor) {
 	Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		Context "Setup" {
 			BeforeAll {
