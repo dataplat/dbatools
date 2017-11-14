@@ -734,6 +734,15 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaView -SqlInstance DEV01 -Pattern whatever\r\n\r\nSearches all user databases views for \"whatever\" in the textbody\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaView -SqlInstance sql2016 -Pattern \u0027\\w+@\\w+\\.\\w+\u0027\r\n\r\nSearches all databases for all views that contain a valid email pattern in the textbody\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaView -SqlInstance DEV01 -Database MyDB -Pattern \u0027some string\u0027 -Verbose\r\n\r\nSearches in \"mydb\" database views for \"some string\" in the textbody\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaView -SqlInstance sql2016 -Database MyDB -Pattern RUNTIME -IncludeSystemObjects\r\n\r\nSearches in \"mydb\" database views for \"runtime\" in the textbody\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Format-DbaBackupInformation",
+        "Description":  "Performs various mapping on Backup History, ready restoring\nOptions include changing restore paths, backup paths, database name and many others",
+        "Author":  "Stuart Moore (@napalmgram stuart-moore.com )",
+        "Synopsis":  "Transforms the data in a dbatools backuphistory object for a restore",
+        "Name":  "Format-DbaBackupInformation",
+        "Links":  "https://dbatools.io/Format-DbaBackupInformation",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$History | Format-DbaBackupInformation -ReplaceDatabaseName NewDb\r\n\r\nChanges as databasename references to NewDb, both in the database name and any restore paths. Note, this will fail if \r\nthe BackupHistory object contains backups for more than 1 database\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$History | Format-DbaBackupInformation -ReplaceDatabaseName @{\u0027OldB\u0027=\u0027NewDb\u0027;\u0027ProdHr\u0027=\u0027DevHr\u0027}\r\n\r\nWill change all occurences of original database name in the backup history (names and restore paths) using the mapping \r\nin the hashtable.\r\nIn this example any occurance of OldDb will be replaced with NewDb and ProdHr with DevPR\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$History | Format-DbaBackupInformation -DataFileDirectory \u0027D:\\DataFiles\\\u0027 -LogFileDirectory \u0027E:\\LogFiles\\\r\n\r\nThis example with change the restore path for all datafiles (everything that is not a log file) to d:\\datafiles\r\nAnd all Transaction Log files will be restored to E:\\Logfiles\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$History | Formate-DbaBackupInformation -RebaseBackupFolder f:\\backups\r\n\r\nThis example changes the location that SQL Server will look for the backups. This is useful if you\u0027ve moved the backups \r\nto a different location\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaAgDatabase",
         "Description":  "Default view provides most common set of properties for information on the database in an Availability Group(s).\n\nInformation returned on the database will be specific to that replica, whether it is primary or a secondary.\n\nThis command will return an SMO object, but it is the AvailabilityDatabases object\tand not the Server.Databases object.",
         "Tags":  [
@@ -799,6 +808,19 @@
         "Name":  "Get-DbaAgentJobOutputFile",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Job \u0027The Agent Job\u0027\r\n\r\nThis will return the configured paths to the output files for each of the job step of the The Agent Job Job \r\non the SERVERNAME instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME\r\n\r\nThis will return the configured paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME,SERVERNAME2 -Job \u0027The Agent Job\u0027\r\n\r\nThis will return the configured paths to the output files for each of the job step of the The Agent Job Job \r\non the SERVERNAME instance and SERVERNAME2\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$Servers = \u0027SERVER\u0027,\u0027SERVER\\INSTANCE1\u0027\r\n\r\nGet-DbaAgentJobOutputFile -SqlInstance $Servers -Job \u0027The Agent Job\u0027 -OpenFile \r\n\r\nThis will return the configured paths to the output files for each of the job step of the The Agent Job Job \r\non the SERVER instance and the SERVER\\INSTANCE1 and open the files if they are available\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME  | Out-GridView\r\n\r\nThis will return the configured paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance and Pipe them to Out-GridView\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e(Get-DbaAgentJobOutputFile -SqlInstance SERVERNAME | ogv -PassThru).FileName | Invoke-Item\r\n\r\nThis will return the configured paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance and Pipe them to Out-GridView and enable you to choose the output\r\nfile and open it\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobOutputFile -SqlInstance SERVERNAME -Verbose\r\n\r\nThis will return the configured paths to the output files for each of the job step of all the Agent Jobs\r\non the SERVERNAME instance and also show the job steps without an output file\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaAgentJobStep",
+        "Description":  "The Get-DbaAgentJobStep returns connected SMO object for SQL Agent Job Step for each instance(s) of SQL Server.",
+        "Tags":  [
+                     "Job",
+                     "Agent"
+                 ],
+        "Author":  "Klaas Vandenberghe (@PowerDbaKlaas), http://powerdba.eu",
+        "Synopsis":  "Gets SQL Agent Job Step information for each instance(s) of SQL Server.",
+        "Name":  "Get-DbaAgentJobStep",
+        "Links":  "https://dbatools.io/Get-DbaAgentJobStep",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobStep -SqlInstance localhost\r\n\r\nReturns all SQL Agent Job Steps on the local default SQL Server instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobStep -SqlInstance localhost, sql2016\r\n\r\nReturns all SQl Agent Job Steps for the local and sql2016 SQL Server instances\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobStep -SqlInstance localhost -Job BackupData, BackupDiff\r\n\r\nReturns all SQL Agent Job Steps for the jobs named BackupData and BackupDiff from the local SQL Server instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobStep -SqlInstance localhost -ExcludeJob BackupDiff\r\n\r\nReturns all SQl Agent Job Steps for the local SQL Server instances, except for the BackupDiff Job.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobStep -SqlInstance localhost -NoDisabledJobs\r\n\r\nReturns all SQl Agent Job Steps for the local SQL Server instances, excluding the disabled jobs.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e$servers | Get-DbaAgentJobStep\r\n\r\nFind all of your Job Steps from servers in the $server collection\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaAgentLog",
@@ -1297,6 +1319,19 @@
         "Name":  "Get-DbaDistributor",
         "Links":  "https://dbatools.io/Get-DbaDistributor",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDistributor -SqlInstance sql2008, sqlserver2012\r\n\r\nRetrieve distributor information for servers sql2008 and sqlserver2012.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaDump",
+        "Description":  "The type of dump included in the search include minidump, all-thread dump, or a full dump.  The files have an extendion of .mdmp.",
+        "Tags":  [
+                     "Engine",
+                     "Corruption"
+                 ],
+        "Author":  "Garry Bargsley (@gbargsley), http://blog.garrybargsley.com",
+        "Synopsis":  "Locate a SQL Server that has generated any memory dump files.",
+        "Name":  "Get-DbaDump",
+        "Links":  "https://dbatools.io/Get-DbaDump",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDump -SqlInstance sql2016\r\n\r\nShows the detailed information for memory dump(s) located on sql2016 instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDump -SqlInstance sql2016 -SqlCredential (Get-Credential sqladmin)\r\n\r\nShows the detailed information for memory dump(s) located on sql2016 instance. Logs into the SQL Server using the SQL \r\nlogin \u0027sqladmin\u0027\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaEndpoint",
@@ -2044,6 +2079,14 @@
         "Name":  "Install-DbaWhoIsActive",
         "Links":  "https://dbatools.io/Install-DbaWhoIsActive",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master\r\n\r\nDownloads sp_WhoisActive from the internet and installs to sqlserver2014a\u0027s master database. Connects to SQL Server \r\nusing Windows Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -SqlCredential $cred\r\n\r\nPops up a dialog box asking which database on sqlserver2014a you want to install the procedure into. Connects to SQL \r\nServer using SQL Authentication.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInstall-DbaWhoIsActive -SqlInstance sqlserver2014a -Database master -LocalFile \r\nc:\\SQLAdmin\\whoisactive_install.sql\r\n\r\nInstalls sp_WhoisActive to sqlserver2014a\u0027s master database from the local file whoisactive_install.sql\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$instances = Get-DbaRegisteredServer sqlserver\r\n\r\nInstall-DbaWhoIsActive -SqlInstance $instances -Database master\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Invoke-DbaAdvancedRestore",
+        "Description":  "This is the final piece in the Restore-DbaDatabase Stack. Uusally a BackupHistory object will arrive here from Restore-DbaDatabse via the following pipeline:\nGet-DbaBackupInformation  | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore\n\nWe have exposed these functions publically to allow advanced users to perform operations that we don\u0027t support, or won\u0027t add as they would make things too complex for the majority of our users\n\nFor example if you wanted to do some very complex redirection during a migration, then doing the rewrite of destinations may be better done with your own custom scripts rather than via Format-DbaBackupInformation\n\nWe would recommend ALWAYS pushing your input through Test-DbaBackupInformation just to make sure that it makes sense to us.",
+        "Synopsis":  "Allows the restore of modified BackupHistory Objects\nFor 90% of users Restore-DbaDatabase should be your point of access to this function. The other 10% use it at their own risk",
+        "Name":  "Invoke-DbaAdvancedRestore",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance\r\n\r\nWill restore all the backups in the BackupHistory object according to the transformations it contains\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance -OutputScriptOnly\r\n\r\n$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance\r\n\r\nFirst generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the \r\nfull restore. By  reusing the BackupHistory object there is no need to rescan all the backup files again\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Invoke-DbaCycleErrorLog",
