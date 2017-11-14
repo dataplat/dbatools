@@ -112,6 +112,7 @@ function Remove-DbaDbUser {
             foreach ($user in $users) {
                 $db = $user.Parent
                 $server = $db.Parent
+                $ownedObjects = $false
                 Write-Message -Level Verbose -Message "Removing User $user from Database $db on target $server"
 
                 # Drop Schemas owned by the user before droping the user
@@ -138,7 +139,7 @@ function Remove-DbaDbUser {
                                     $obj = $server.GetSmoObject($ownedUrn)
                                     Write-Message -Level Warning -Message "User $user owns $($obj.GetType().Name) $obj"
                                 }
-                                return  # exit function
+                                $ownedObjects = $true
                             }
                         }
 
@@ -150,46 +151,50 @@ function Remove-DbaDbUser {
                                 $alterSchemas += $schema
                             } else {
                                 Write-Message -Level Warning -Message "User $user owns the Schema $schema, which owns $($ownedUrns.Count) Object(s).  If you want to change the schemas' owner to [dbo] and drop the user anyway, use -Force parameter.  User $user will not be removed."
-                                return  #exit the function
+                                $ownedObjects = $true
                             }
-                        }
-                    }
-
-                    # Perform the changes with the owner alters first so function can exit w/o a drop if -Force wasn't used
-                    foreach ($schema in $alterSchemas) {
-                        Write-Message -Level Verbose -Message "Owner of Schema $schema will be changed to [dbo]."
-                        if ($PSCmdlet.ShouldProcess($server, "Change the owner of Schema $schema to [dbo].")) {
-                            $schema.Owner = "dbo"
-                            $schema.Alter()
-                        }
-                    }
-
-                    foreach ($schema in $dropSchemas) {
-                        if ($PSCmdlet.ShouldProcess($server, "Drop Schema $schema from Database $db.")) {
-                            $schema.Drop()
                         }
                     }
                 }
 
-                # Drop the User
-                if ($PSCmdlet.ShouldProcess($server, "Drop User $user from Database $db.")) {
+                if (-Not $ownedObjects) {
                     try {
-                        $user.Drop()
-                        [pscustomobject]@{
-                            SqlInstance = $server.name
-                            Database    = $db.name
-                            User        = $user
-                            Status      = "Dropped"
+                        # Alter Schemas
+                        foreach ($schema in $alterSchemas) {
+                            Write-Message -Level Verbose -Message "Owner of Schema $schema will be changed to [dbo]."
+                            if ($PSCmdlet.ShouldProcess($server, "Change the owner of Schema $schema to [dbo].")) {
+                                $schema.Owner = "dbo"
+                                $schema.Alter()
+                            }
                         }
+
+                        # Drop Schemas
+                        foreach ($schema in $dropSchemas) {
+                            if ($PSCmdlet.ShouldProcess($server, "Drop Schema $schema from Database $db.")) {
+                                $schema.Drop()
+                            }
+                        }
+
+                        # Finally, Drop user
+                        if ($PSCmdlet.ShouldProcess($server, "Drop User $user from Database $db.")) {
+                            $user.Drop()
+                        }
+
+                        $status = "Dropped"
+
                     } catch {
-                        Write-Message -Level Verbose -Message "Could not drop $user from Database $db on target $server"
-                        [pscustomobject]@{
-                            SqlInstance = $server.name
-                            Database    = $db.name
-                            User        = $user
-                            Status      = "Not Dropped"
-                        }
+                        Write-Error -Message "Could not drop $user from Database $db on target $server"
+                        $status = "Not Dropped"
                     }
+
+                    [pscustomobject]@{
+                        ComputerName = $server.NetName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Database     = $db.name
+                        User         = $user
+                        Status       = $status
+                    }    
                 }
             }
 		}
@@ -208,7 +213,7 @@ function Remove-DbaDbUser {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
                 
-                $databases = $server.Databases
+                $databases = $server.Databases | Where-Object Status -EQ "normal"
                 
                 if ($Database) {
                     $databases = $databases | Where-Object Name -In $Database
