@@ -5,11 +5,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Testing if memory dump is present" {
 		BeforeAll {
-			$Server = Connect-DbaInstance -SqlInstance $script:instance1
+			$Server = Connect-DbaInstance -SqlInstance $script:instance2
 			$Server.Query("DBCC STACKDUMP;")
 		}
 		
-		$results = Get-DbaDump -SqlInstance $server
+		$results = Get-DbaDump -SqlInstance $script:instance2
 		It "finds least one dump" {
 			($results).Count -ge 1 | Should Be $true
 		}
