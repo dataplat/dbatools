@@ -18,11 +18,13 @@ function Get-DbaSqlDump {
   
 			To connect as a different Windows user, run PowerShell as that user.
   
-		.PARAMETER Detailed
-			If parameter is used you will get detailed information for the memory dump for a SQL Instance.
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
   
 		.NOTES
-			Tags: Engine, Corruption, Failures
+			Tags: Engine, Corruption
 			Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
   
 			Website: https://dbatools.io
@@ -35,82 +37,44 @@ function Get-DbaSqlDump {
 		.EXAMPLE
 			Get-DbaSqlDump -SqlInstance sql2016
   
-			Shows a count of memory dump(s) for the sql2016 instance.
-  
-		.EXAMPLE
-			Get-DbaSqlDump -SqlInstance sql2016 -Detailed
-  
-			Shows the detailed information for memory dump(s) located on sql2016 instance.
+			Shows the detailed information for memory dump(s) located on sql2016 instance	
   
 	#>
-	  [CmdletBinding()]
-	  Param (
-		  [parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		  [Alias("ServerInstance", "SqlServer")]
-		  [DbaInstanceParameter[]]$SqlInstance,
-		  [PSCredential]$SqlCredential,
-		  [switch]$Detailed
-	  )
-	  process {
-		foreach ($servername in $SqlInstance) {
-			$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $SqlCredential
-  
-			if ($server.versionMajor -lt 11 -and ( -not ($server.versionMajor -eq 10 -and $server.versionMinor -eq 50)) ) {
-				Write-Warning "This function does not support versions lower than SQL Server 2008 R2 (v10.50). Skipping server '$servername'."
-				continue
-			}
-  
-			if ($Detailed) {
-				$sql = "
-				  SELECT
-					  filename,
-					  creation_time,
-					  size_in_bytes
-				  FROM sys.dm_server_memory_dumps;"
-			}
-			else {
-				$sql = "
-				  SELECT
-					  COUNT(*) AS [MemoryDumpCount]
-				  FROM sys.dm_server_memory_dumps;"
+	[CmdletBinding()]
+	Param (
+		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential,
+		[switch]$EnableException
+	)
+	begin {
+		$sql = "SELECT filename,  creation_time,  size_in_bytes FROM sys.dm_server_memory_dumps"
+	}
+	
+	process {
+		foreach ($instance in $SqlInstance) {
+			$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+			
+			if ($server.versionMajor -lt 11 -and (-not ($server.versionMajor -eq 10 -and $server.versionMinor -eq 50))) {
+				Stop-Function -Message "This function does not support versions lower than SQL Server 2008 R2 (v10.50). Skipping server '$instance'" -Continue
 			}
 			
-			$results = $null
 			try {
-			  $results = $server.Query($sql)
-			}
-			catch {
-			  Stop-Function -Message "Issue collecting data on $server" -Target $server -ErrorRecord $_ -Continue
-			}
-  
-			if ((Measure-Object -InputObject $results) -eq 0 -or ($results.MemoryDumpCount -eq 0)) {
-			  Write-Message -Level Warning -Message "Server '$servername' does not have any memory dumps." -EnableException $false
-			}
-			else {
-			  foreach ($result in $results) {
-				if ($Detailed) {
+				foreach ($result in $server.Query($sql)) {
 					[PSCustomObject]@{
-						ComputerName    = $server.NetName
-						InstanceName    = $server.ServiceName
-						SqlInstance     = $server.DomainInstanceName
-						FileName        = $result.filename
-						CreationTime    = $result.creation_time
-						size_in_bytes   = $result.size_in_bytes
+						ComputerName	 = $server.NetName
+						InstanceName	 = $server.ServiceName
+						SqlInstance	     = $server.DomainInstanceName
+						FileName		 = $result.filename
+						CreationTime	 = $result.creation_time
+						Size			 = [dbasize]$result.size_in_bytes
 					}
 				}
-				else {                  
-				  [PSCustomObject]@{
-					  ComputerName    = $server.NetName
-					  InstanceName    = $server.ServiceName
-					  SqlInstance     = $server.DomainInstanceName
-					  MemoryDumpCount = $results.MemoryDumpCount
-				  }
-				}
-			  }
 			}
-		  }
+			catch {
+				Stop-Function -Message "Issue collecting data on $server" -Target $server -ErrorRecord $_ -Continue
+			}
 		}
-	  }
-	
-  
-  
+	}
+}

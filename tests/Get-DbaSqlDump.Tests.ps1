@@ -10,8 +10,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		
 		$results = Get-DbaSqlDump -SqlInstance $server
-		It "function should return a count of 1 dump found" {
-			$results.MemoryDumpCount -eq 1 | Should Be $true
+		It "finds least one dump" {
+			$results.Count -ge 1 | Should Be $true
 		}
 	}
 }
