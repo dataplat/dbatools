@@ -179,7 +179,7 @@ function Get-DbaBackupInformation {
                 ForEach ($f in $path) {
                     if ($f -match '\.\w{3}\Z') {
                         Write-Message -Message "Testing a single file $f " -Level Verbose
-                        if ((Test-DbaSqlPath -Path $f -SqlInstance $SqlInstance -SqlCredential $SqlCredential) -and $p -notlike 'http*') {
+                        if ((Test-DbaSqlPath -Path $f -SqlInstance $server) -and $p -notlike 'http*') {
                             $f = $f | Select-Object *, @{ Name = "FullName"; Expression = { $f } }
                             $files += $f
                         }
@@ -187,7 +187,7 @@ function Get-DbaBackupInformation {
                     else
                     {
                         Write-Message -Message "Testing a folder $f" -Level Verbose
-                        $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                        $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server
                     }
                 }
             } 
@@ -207,7 +207,7 @@ function Get-DbaBackupInformation {
                 }
             }
             
-            $FileDetails = $Files | Read-DbaBackupHeader -SqlInstance $SqlInstance -SqlCredential $sqlcredential
+            $FileDetails = $Files | Read-DbaBackupHeader -SqlInstance $server
 
             $groupdetails = $FileDetails | group-object -Property BackupSetGUID
             
