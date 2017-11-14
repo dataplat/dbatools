@@ -342,7 +342,8 @@ function Restore-DbaDatabase {
         [string]$FormatBackupInformation,
         [switch]$StopAfterFormatBackupInformation,
         [string]$TestBackupInformation,
-        [switch]$StopAfterTestBackupInformation
+        [switch]$StopAfterTestBackupInformation,
+        [int]$StatementTimeout = 0
 
     )
     begin {
