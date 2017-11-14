@@ -1,4 +1,4 @@
-function Get-DbaSqlDump {
+function Get-DbaDump {
 	<#
 		.SYNOPSIS
 			Locate a SQL Server that has generated any memory dump files.
@@ -7,7 +7,7 @@ function Get-DbaSqlDump {
 			The type of dump included in the search include minidump, all-thread dump, or a full dump.  The files have an extendion of .mdmp.
   
 		.PARAMETER SqlInstance
-			The SQL Server instance to connect to.
+			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
   
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
@@ -32,13 +32,19 @@ function Get-DbaSqlDump {
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
   
 		.LINK
-			https://dbatools.io/Get-DbaSqlDump
+			https://dbatools.io/Get-DbaDump
   
 		.EXAMPLE
-			Get-DbaSqlDump -SqlInstance sql2016
+			Get-DbaDump -SqlInstance sql2016
   
 			Shows the detailed information for memory dump(s) located on sql2016 instance	
   
+	  
+		.EXAMPLE
+			Get-DbaDump -SqlInstance sql2016 -SqlCredential (Get-Credential sqladmin)
+  
+			Shows the detailed information for memory dump(s) located on sql2016 instance. Logs into the SQL Server using the SQL login 'sqladmin'
+	
 	#>
 	[CmdletBinding()]
 	Param (
