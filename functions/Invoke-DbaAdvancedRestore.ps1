@@ -212,9 +212,9 @@ Function Invoke-DbaAdvancedRestore{
                             $script = $Restore.Script($server)
                         }
                         elseif ($VerifyOnly) {
-                            Write-Progress -id 2 -activity "Verifying $Database backup file on $servername" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                            Write-Progress -id 2 -activity "Verifying $Database backup file on $sqlinstance" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                             $Verify = $Restore.sqlverify($server)
-                            Write-Progress -id 2 -activity "Verifying $Database backup file on $servername" -status "Complete" -Completed
+                            Write-Progress -id 2 -activity "Verifying $Database backup file on $sqlinstance" -status "Complete" -Completed
     
                             if ($verify -eq $true) {
                                 return "Verify successful"
@@ -224,10 +224,10 @@ Function Invoke-DbaAdvancedRestore{
                             }
                         }
                         else {
-                            Write-Progress -id 2 -activity "Restoring $Database to $ServerName" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                            Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                             $script = $Restore.Script($Server)
                             $Restore.sqlrestore($Server)
-                            Write-Progress -id 2 -activity "Restoring $Database to $ServerName" -status "Complete" -Completed
+                            Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance" -status "Complete" -Completed
                         }
                     }
                     catch {
