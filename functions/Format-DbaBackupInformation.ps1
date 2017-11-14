@@ -42,6 +42,13 @@ Function Format-DbaBackupInformation{
         
     .PARAMETER ReplaceDbNameInFile
         If set, will replace the old databasename with the new name if it occurs in the file name
+
+    .PARAMETER FileMapping
+        A hashtable that can be used to move specific files to a location.
+        $FileMapping = @{'DataFile1'='c:\restoredfiles\Datafile1.mdf';'DataFile3'='d:\DataFile3.mdf'}
+        And files not specified in the mapping will be restored to their original location
+        This Parameter is exclusive with DestinationDataDirectory
+        If specified, this will override any other file renaming/relocation options.
     
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -95,6 +102,7 @@ Function Format-DbaBackupInformation{
         [string]$DatabaseFileSuffix,
         [string]$RebaseBackupFolder,
         [switch]$Continue,
+        [hashtable]$FileMapping,
         [switch]$EnableException
     )
     Begin{
@@ -162,27 +170,34 @@ Function Format-DbaBackupInformation{
             $History.Database = $DatabaseNamePrefix+$History.Database
             if ($true -ne $Continue){
                 $History.FileList | ForEach-Object {
-                    if ($ReplaceDbNameInFile -eq $true) {
-                        $_.PhysicalName = $_.PhysicalName -Replace $History.OriginalDatabase, $History.Database
+                    if ($null -ne $FileMapping ){
+                        if ($null -ne $FileMapping[$_.LogicalName]){
+                            $_.PhysicalName = $FileMapping[$_.LogicalName]
+                        }
+                    }    
+                    else{                    
+                        if ($ReplaceDbNameInFile -eq $true) {
+                            $_.PhysicalName = $_.PhysicalName -Replace $History.OriginalDatabase, $History.Database
+                        }
+                        Write-message -Message " 1 PhysicalName = $($_.PhysicalName) " -Level Verbose
+                        $Pname = [System.Io.FileInfo]$_.PhysicalName
+                        $RestoreDir = $Pname.DirectoryName
+                        if ($_.Type -eq 'D' -or $_.FileType -eq 'D'){
+                            if ('' -ne $DataFileDirectory){
+                                $RestoreDir = $DataFileDirectory
+                            }
+                        }elseif ($_.Type -eq 'L' -or $_.FileType -eq 'L'){
+                            if ('' -ne $LogFileDirectory){
+                                $RestoreDir = $LogFileDirectory
+                            }
+                            elseif ('' -ne $DataFileDirectory){
+                                $RestoreDir = $DataFileDirectory
+                            }
+                        }
+                        
+                        $_.PhysicalName = $RestoreDir+"\"+$DatabaseFilePrefix+$Pname.BaseName+$DatabaseFileSuffix+$pname.extension
+                        Write-message -Message "PhysicalName = $($_.PhysicalName) " -Level Verbose
                     }
-                    Write-message -Message " 1 PhysicalName = $($_.PhysicalName) " -Level Verbose
-                    $Pname = [System.Io.FileInfo]$_.PhysicalName
-                    $RestoreDir = $Pname.DirectoryName
-                    if ($_.Type -eq 'D' -or $_.FileType -eq 'D'){
-                        if ('' -ne $DataFileDirectory){
-                            $RestoreDir = $DataFileDirectory
-                        }
-                    }elseif ($_.Type -eq 'L' -or $_.FileType -eq 'L'){
-                        if ('' -ne $LogFileDirectory){
-                            $RestoreDir = $LogFileDirectory
-                        }
-                        elseif ('' -ne $DataFileDirectory){
-                            $RestoreDir = $DataFileDirectory
-                        }
-                    }
-                    
-                    $_.PhysicalName = $RestoreDir+"\"+$DatabaseFilePrefix+$Pname.BaseName+$DatabaseFileSuffix+$pname.extension
-                    Write-message -Message "PhysicalName = $($_.PhysicalName) " -Level Verbose
                 }
             }
             if ($null -ne $RebaseBackupFolder){
