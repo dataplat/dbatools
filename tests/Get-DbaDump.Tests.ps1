@@ -9,7 +9,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$Server.Query("DBCC STACKDUMP;")
 		}
 		
-		$results = Get-DbaSqlDump -SqlInstance $server
+		$results = Get-DbaDump -SqlInstance $server
 		It "finds least one dump" {
 			$results.Count -ge 1 | Should Be $true
 		}
