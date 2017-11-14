@@ -151,7 +151,22 @@ function Restore-DbaDatabase {
     .PARAMETER TestBackupInformation
         Passing a string value into this parameter will cause a global variable to be created holding the output of Test-DbaBackupInformation
 
-	.PARAMETER EnableException
+    .PARAMETER StopAfterGetBackupInformation
+        Switch which will cause the function to exit after returning GetBackupInformation
+
+    .PARAMETER StopAfterSelectBackupInformation
+        Switch which will cause the function to exit after returning SelectBackupInformation
+
+    .PARAMETER StopAfterFormatBackupInformation
+         Switch which will cause the function to exit after returning FormatBackupInformation
+
+    .PARAMETER StopAfterTestBackupInformation
+         Switch which will cause the function to exit after returning TestBackupInformation
+    
+    .PARAMETER StatementTimeOut
+        Timeout in minutes. Defaults to infinity (restores can take a while.)
+
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
@@ -321,9 +336,13 @@ function Restore-DbaDatabase {
         [switch]$Recover,
         [switch]$AllowContinue,
         [string]$GetBackupInformation,
+        [switch]$StopAfterGetBackupInformation,
         [string]$SelectBackupInformation,
+        [switch]$StopAfterSelectBackupInformation,
         [string]$FormatBackupInformation,
-        [string]$TestBackupInformation
+        [switch]$StopAfterFormatBackupInformation,
+        [string]$TestBackupInformation,
+        [switch]$StopAfterTestBackupInformation
 
     )
     begin {
@@ -401,6 +420,15 @@ function Restore-DbaDatabase {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
+
+            # changing statement timeout to $StatementTimeout
+			if ($StatementTimeout -eq 0) {
+				Write-Message -Level Verbose -Message "Changing statement timeout to infinity"
+			}
+			else {
+				Write-Message -Level Verbose -Message "Changing statement timeout to ($StatementTimeout) minutes"
+			}
+			$server.ConnectionContext.StatementTimeout = ($StatementTimeout * 60)
         #endregion Validation
 		
         $isLocal = [dbavalidate]::IsLocalHost($SqlInstance.ComputerName)
@@ -514,6 +542,10 @@ function Restore-DbaDatabase {
                 Write-Message -Message "Setting $GetBackupInformation to BackupHistory" -Level Verbose
                 Set-Variable -Name $GetBackupInformation -Value $BackupHistory -Scope Global
             }
+            if ($StopAfterGetBackupInformation){
+                return
+            }
+
             $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints
             
             if ( Test-Bound -ParameterName SelectBackupInformation){
@@ -521,16 +553,26 @@ function Restore-DbaDatabase {
                 Set-Variable -Name $SelectBackupInformation -Value $FilteredBackupHistory -Scope Global
                 
             }
-            $null = $FilteredBackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatababaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile
+            if ($StopAfterSelectBackupInformation){
+                return
+            }
+            
+            $null = $FilteredBackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatababaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping
             
             if ( Test-Bound -ParameterName FormatBackupInformation){
                 Set-Variable -Name $FormatBackupInformation -Value $FilteredBackupHistory -Scope Global
+            }
+            if ($StopAfterFormatBackupInformation){
+                return
             }
             
             $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $SqlInstance -SqlCredential $SqlCredential  -WithReplace:$WithReplace -Continue:$Continue
             
             if ( Test-Bound -ParameterName TestBackupInformation){
                 Set-Variable -Name $TestBackupInformation -Value $FilteredBackupHistory -Scope Global
+            }
+            if ($StopAfterTestBackupInformation){
+                return
             }
             $DbVerfied = ($FilteredBackupHistory | Where-Object {$_.IsVerified -eq $True} | Select-Object -Property Database -Unique).Database -join ','
             Write-Message -Message "$DbVerfied passed testing" -Level Verbose 
