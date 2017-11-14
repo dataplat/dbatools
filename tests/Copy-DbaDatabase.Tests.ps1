@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
-		$NetworkPath = "C:\github"
+		$NetworkPath = "C:\temp"
 		$backuprestoredb = "dbatoolsci_backuprestore"
 		$detachattachdb = "dbatoolsci_detachattach"
 		$server = Connect-DbaInstance -SqlInstance $script:instance1
@@ -43,13 +43,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			(Connect-DbaInstance -SqlInstance localhost).Databases[$detachattachdb].Name | Should Be (Connect-DbaInstance -SqlInstance localhost\sql2016).Databases[$detachattachdb].Name
 			(Connect-DbaInstance -SqlInstance localhost).Databases[$detachattachdb].Tables.Count | Should Be (Connect-DbaInstance -SqlInstance localhost\sql2016).Databases[$detachattachdb].Tables.Count
 			(Connect-DbaInstance -SqlInstance localhost).Databases[$detachattachdb].Status | Should Be (Connect-DbaInstance -SqlInstance localhost\sql2016).Databases[$detachattachdb].Status
-			
 		}
 		
 		It "Should say skipped" {
-			$results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $detachattachdb -DetachAttach -Reattach -Force -WarningAction SilentlyContinue
-			$result.Status | Should be "Skipped"
-			$result.Notes | Should be "Already exists"
+			$results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $detachattachdb -DetachAttach -Reattach
+			$results.Status | Should be "Skipped"
+			$results.Notes | Should be "Already exists"
 		}
 	}
 	
@@ -60,8 +59,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
 			
 			$db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $backuprestoredb
-			$db1 | Should Not BeNullOrEmpty
 			$db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $backuprestoredb
+			$db1 | Should Not BeNullOrEmpty
 			$db2 | Should Not BeNullOrEmpty
 			
 			# Compare its valuable.
