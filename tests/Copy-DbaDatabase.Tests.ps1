@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
-		$NetworkPath = "C:\temp"
+		$NetworkPath = "C:\github"
 		$backuprestoredb = "dbatoolsci_backuprestore"
 		$detachattachdb = "dbatoolsci_detachattach"
 		$server = Connect-DbaInstance -SqlInstance $script:instance1
@@ -45,10 +45,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			(Connect-DbaInstance -SqlInstance localhost).Databases[$detachattachdb].Status | Should Be (Connect-DbaInstance -SqlInstance localhost\sql2016).Databases[$detachattachdb].Status
 			
 		}
+		
+		It "Should say skipped" {
+			$results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $detachattachdb -DetachAttach -Reattach -Force -WarningAction SilentlyContinue
+			$result.Status | Should be "Skipped"
+			$result.Notes | Should be "Already exists"
+		}
 	}
 	
 	Context "Backup restore" {
-		It -Skip "Should copy a database and retain its name, recovery model, and status." {
+		It "copies a database and retain its name, recovery model, and status." {
 			
 			Set-DbaDatabaseOwner -SqlInstance $script:instance1 -Database $backuprestoredb -TargetLogin sa
 			Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
@@ -66,7 +72,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		
 		It "Should say skipped" {
-			$result = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $detachattachdb -BackupRestore -NetworkShare $NetworkPath
+			$result = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
 			$result.Status | Should be "Skipped"
 			$result.Notes | Should be "Already exists"
 		}
