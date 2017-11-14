@@ -11,7 +11,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		$results = Get-DbaDump -SqlInstance $server
 		It "finds least one dump" {
-			$results.Count -ge 1 | Should Be $true
+			($results).Count -ge 1 | Should Be $true
 		}
 	}
 }
