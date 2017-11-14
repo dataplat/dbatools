@@ -351,6 +351,13 @@ function Restore-DbaDatabase {
         Write-Message -Level Debug -Message "Parameters bound: $($PSBoundParameters.Keys -join ", ")"
 		#[string]$DatabaseName = 'testparam'
         #region Validation
+        try {
+            $RestoreInstance = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        }
+        catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            return
+        }
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
             $useDestinationDefaultDirectories = $true
             $paramCount = 0
@@ -398,13 +405,13 @@ function Restore-DbaDatabase {
                 }
             }
             if ('' -ne $StandbyDirectory) {
-                if (!(Test-DbaSqlPath -Path $StandbyDirectory -SqlInstance $SqlInstance -SqlCredential $SqlCredential)) {
+                if (!(Test-DbaSqlPath -Path $StandbyDirectory -SqlInstance $RestoreInstance)) {
                     Stop-Function -Message "$SqlSever cannot see the specified Standby Directory $StandbyDirectory" -Target $SqlInstance
                     return
                 }
             }
             if ($Continue) {
-                $ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                $ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $RestoreInstance
                 #$WithReplace = $true 
                 #$ContinuePoints
             }
@@ -414,13 +421,7 @@ function Restore-DbaDatabase {
             
         }
         
-        try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            return
-        }
+
 
             # changing statement timeout to $StatementTimeout
 			if ($StatementTimeout -eq 0) {
@@ -429,13 +430,13 @@ function Restore-DbaDatabase {
 			else {
 				Write-Message -Level Verbose -Message "Changing statement timeout to ($StatementTimeout) minutes"
 			}
-			$server.ConnectionContext.StatementTimeout = ($StatementTimeout * 60)
+			$RestoreInstance.ConnectionContext.StatementTimeout = ($StatementTimeout * 60)
         #endregion Validation
 		
         $isLocal = [dbavalidate]::IsLocalHost($SqlInstance.ComputerName)
         
         if($useDestinationDefaultDirectories) {
-            $DefaultPath = (Get-DbaDefaultPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential)
+            $DefaultPath = (Get-DbaDefaultPath -SqlInstance $RestoreInstance)
             $DestinationDataDirectory = $DefaultPath.Data
             $DestinationLogDirectory = $DefaultPath.Log
         }
@@ -482,7 +483,7 @@ function Restore-DbaDatabase {
                     if ($f -is [System.IO.FileSystemInfo]){
                         $f = $f.fullname
                     }
-                    $BackupHistory += $f | Get-DbaBackupInformation -SqlInstance $SqlInstance -SqlCredential $SqlCredential -DirectoryRecurse:$DirectoryRecurse
+                    $BackupHistory += $f | Get-DbaBackupInformation -SqlInstance $RestoreInstance -DirectoryRecurse:$DirectoryRecurse
                 }
             }
             
@@ -501,14 +502,14 @@ function Restore-DbaDatabase {
                         [string]$DataBase = $database.name
                     }
                 }
-                Write-Verbose "existence - $($server.Databases[$DataBase].State)"
-                if ($server.Databases[$DataBase].State -ne 'Existing'){
-                    Write-Message -Message "$Database does not exist on $server" -level Warning
+                Write-Verbose "existence - $($RestoreInstance.Databases[$DataBase].State)"
+                if ($RestoreInstance.Databases[$DataBase].State -ne 'Existing'){
+                    Write-Message -Message "$Database does not exist on $RestoreInstance" -level Warning
                     Continue
                     
                 }
-                if ($server.Databases[$Database].Status -ne "Restoring"){
-                    Write-Message -Message "$Database on $server is not in a Restoring State" -Level Warning
+                if ($RestoreInstance.Databases[$Database].Status -ne "Restoring"){
+                    Write-Message -Message "$Database on $RestoreInstance is not in a Restoring State" -Level Warning
                     Continue
                     
                 }
@@ -516,12 +517,12 @@ function Restore-DbaDatabase {
                 $RecoverSql  = "RESTORE DATABASE $Database WITH RECOVERY"
                 Write-Message -Message "Recovery Sql Query - $RecoverSql" -level verbose
                 Try{
-                    $server.query($RecoverSql)
+                    $RestoreInstance.query($RecoverSql)
                 }
                 Catch {
                     $RestoreComplete = $False
                     $ExitError = $_.Exception.InnerException
-                    Write-Message -Level Warning -Message "Failed to recover $Database on $server," 
+                    Write-Message -Level Warning -Message "Failed to recover $Database on $RestoreInstance," 
                 }
                 Finally {
                     [PSCustomObject]@{
@@ -567,7 +568,7 @@ function Restore-DbaDatabase {
                 return
             }
             
-            $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $SqlInstance -SqlCredential $SqlCredential  -WithReplace:$WithReplace -Continue:$Continue
+            $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $RestoreInstance  -WithReplace:$WithReplace -Continue:$Continue
             
             if ( Test-Bound -ParameterName TestBackupInformation){
                 Set-Variable -Name $TestBackupInformation -Value $FilteredBackupHistory -Scope Global
@@ -590,7 +591,7 @@ function Restore-DbaDatabase {
             }
             
             Write-Message -Message "Passing in to restore" -Level Verbose
-            $FilteredBackupHistory | Where-Object {$_.IsVerified -eq $true} | Invoke-DbaAdvancedRestore -SqlInstance $SqlInstance -SqlCredential $SqlCredential -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount
+            $FilteredBackupHistory | Where-Object {$_.IsVerified -eq $true} | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount
         
         }
     }

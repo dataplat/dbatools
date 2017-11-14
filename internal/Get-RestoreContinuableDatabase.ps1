@@ -29,7 +29,7 @@ Takes a SQL instance and checks for databases with a redo_start_lsn value, and r
 		}
         if ($Server.VersionMajor -ge 9)
         {
-            $sql  = "select db_name(database_id) as 'Database', redo_start_lsn, redo_start_fork_guid as 'FirstRecoveryForkID' from master.sys.master_files where redo_start_lsn is not NULL"
+            $sql  = "select distinct db_name(database_id) as 'Database', redo_start_lsn, redo_start_fork_guid as 'FirstRecoveryForkID' from master.sys.master_files where redo_start_lsn is not NULL"
         }
         else
         {

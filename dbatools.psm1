@@ -119,7 +119,7 @@ Write-ImportTime -Text  "Validated defines"
 Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
 Write-ImportTime -Text  "Unblocking Files"
 
-if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type -eq $null) {
+if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
 	. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\smoLibraryImport.ps1"
 	Write-ImportTime -Text "Starting import SMO libraries"
 }
@@ -328,8 +328,8 @@ Write-ImportTime -Text "Waiting for runspaces to finish"
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUyZg9qEp4cTQPDr/+mbpNXT2l
-# ASWggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUrACNxAC182X5IwKhmQVyAjCs
+# aVSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -460,22 +460,22 @@ Write-ImportTime -Text "Waiting for runspaces to finish"
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUarmgu5RSv0EmIvb21sIpxHtDwXQwDQYJKoZIhvcNAQEBBQAE
-# ggEAM3MR4843G7O7OLZAUKzTpL2GBvkX6yNe5BLbLZsoivxBk4LxegQejmsxHenW
-# QQnzJUTohp4RVKEE+WlVf1MbqvtQx+PEJSMq2qvC38duboC9OTdUg+1MlxXNtQ7M
-# SPJ/l2MEtyCfPMnvrtSnWSqxCaKnCVx2rFS9TSkUA0+hQ1xNQeh4jk9vHKyBqY34
-# XDJwKy4VFxK7EisOpaJN++ps63isErmmA3NXObVraYnuFetIfmT4GMYaBjpapKOb
-# Lry8SeBHYPBAL/q9HD3RVSuNgsBnnkMZtj9p8ArfLr0Y9eNvuF4bdsJGdARxOdcn
-# H8+c0jqUv7WTBjYkF9oVngeDYaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUY/htJayxE8RydAKiUxkcUfr27kkwDQYJKoZIhvcNAQEBBQAE
+# ggEAO9FQcGBIYYW6L7GAJCcpVgROQ0XH/JtsWo2NIMuzx1WtXuViSSnIqzfW2BC9
+# 1wF1qa0MUE2pe8qpAjtg2BpTYqTWAH2b4quefFkLBAb6rcMWDcK9/LuNbDVblS/d
+# goxNFptCXBP6ScutP+7NMhXYvMpb2kKU/0CtJRF5QRFXIG2BsNclNhVYPeS5k/Re
+# ygpr3gMPSbWiKwL/lkvV85yv52zgaZcHl7mdumQSOeaTVMs0XUH2tZF5BSmFPvJW
+# J5ExJ8yJjmtPX8lfxhwV02sMeERn4O2HQHD2udRcRI1NLzhNag6RADS63Uj0J+VO
+# id5BO/K22gdVqjyq9tb9Er2YoaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMTE0MTQxNjI3WjAj
-# BgkqhkiG9w0BCQQxFgQUW+g4dRVO2UPu8dB4XSduC428JXwwDQYJKoZIhvcNAQEB
-# BQAEggEAl5R8/OozxjacBZ97DlZrzyAAMC60eI4NUzTgbTxu2qMjxf5RDXdtRNCW
-# 8/N0Zu/h0EEWrweZqT4bX8Brugb5/3qZ0fuTnEXzkLNgJvRX+exEV/lo0RIRU0TH
-# psM7H3o++sXXeWq458W2NSiWNeEBZ8HvyYpVYU+JB7FvP7IJS+mv1JUsPecy+wRh
-# 3IjCl3xW6TEELGnPrX9A5TwCIfD7IFutz34sx+JC3cQlyTg/nVJVH+7Id+w+FnuJ
-# A+muT7CbeW2EkDFjEarvLT5zWLoBri1QFr7Cuts2X0+72UySzctYmKuuK9425LnC
-# 7SosgEmLri4opPh3RZoUflKkz0IeCA==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMTE0MjAzNDI0WjAj
+# BgkqhkiG9w0BCQQxFgQUt0jRi/npyG0F6HBg5v/0ilmZYg8wDQYJKoZIhvcNAQEB
+# BQAEggEAZVhe6csx6IOi4ZYx5JTWOo8DpzWtgASV24GtuzFfFVntDBXq5S2sTIJb
+# fRPJWnKCCxEnvXIUPfSnxW/nXJlrtGOA3EEOuis6v6wKzI+oaTbC9G4uYg4dMQFG
+# teFAWRqCkRuaWvmGRWIyF2kowD0tPQOrdaomrBluLehvB6H9mhLg/9wrnrECitLJ
+# X2LiyO+GQ//sfezPIDBTHEuahzHkQlZY0nCUytTncMOYDd6qiwBS47oNOSPEFzcy
+# /sOsQpbmRZbNtM13/jyQF/T6v4h7chE+6kUz4JUUYRiEC4Z1BbCeJKyIMVmgbvl5
+# bydnn0lnTA6gFld8l2oGmADPFvrQTg==
 # SIG # End signature block
