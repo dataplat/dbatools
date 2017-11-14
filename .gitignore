@@ -8,11 +8,6 @@ dbatools-exceptions.txt
 *.psproj
 dbatools.psprojs
 
-# ignore library
-bin/dbatools.dll
-bin/dbatools.xml
-bin/dbatools.pdb
-
 # VIM backup files
 *~
 
