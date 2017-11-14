@@ -38,7 +38,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$db2.Name | Should Be $detachattachdb
 		}
 		
-		It -Skip "Name, recovery model, and status should match" {
+		It "Name, recovery model, and status should match" {
 			# This is crazy
 			(Connect-DbaInstance -SqlInstance localhost).Databases[$detachattachdb].Name | Should Be (Connect-DbaInstance -SqlInstance localhost\sql2016).Databases[$detachattachdb].Name
 			(Connect-DbaInstance -SqlInstance localhost).Databases[$detachattachdb].Tables.Count | Should Be (Connect-DbaInstance -SqlInstance localhost\sql2016).Databases[$detachattachdb].Tables.Count
@@ -48,7 +48,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	Context "Backup restore" {
-		It -Skip "Should copy a database and retain its name, recovery model, and status." {
+		It "Should copy a database and retain its name, recovery model, and status." {
 			
 			Set-DbaDatabaseOwner -SqlInstance $script:instance1 -Database $backuprestoredb -TargetLogin sa
 			Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
@@ -65,7 +65,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$db1.Owner | Should be $db2.Owner
 		}
 		
-		It -Skip "Should say skipped" {
+		It "Should say skipped" {
 			$result = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
 			$result.Status | Should be "Skipped"
 			$result.Notes | Should be "Already exists"
