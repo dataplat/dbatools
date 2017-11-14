@@ -38,7 +38,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$db2.Name | Should Be $detachattachdb
 		}
 		
-		It -Skip "Name, recovery model, and status should match" {
+		It "Name, recovery model, and status should match" {
 			# This is crazy
 			(Connect-DbaInstance -SqlInstance localhost).Databases[$detachattachdb].Name | Should Be (Connect-DbaInstance -SqlInstance localhost\sql2016).Databases[$detachattachdb].Name
 			(Connect-DbaInstance -SqlInstance localhost).Databases[$detachattachdb].Tables.Count | Should Be (Connect-DbaInstance -SqlInstance localhost\sql2016).Databases[$detachattachdb].Tables.Count
