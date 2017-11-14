@@ -78,7 +78,7 @@ Function Test-DbaBackupInformation {
 
     Begin{
         try {
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $RestoreInstance = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
         catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -104,7 +104,7 @@ Function Test-DbaBackupInformation {
                 
             }
             #Test Db Existance on destination
-            $DbCheck = Get-DbaDatabase -SqlInstance $Sqlinstance -SqlCredential $SqlCredential -Database $Database
+            $DbCheck = Get-DbaDatabase -SqlInstance $RestoreInstance -Database $Database
             
             if ($null -ne $DbCheck -and ($WithReplace -ne $true -and $continue -ne $true)){
                 Write-Message -Message "Database $Database exists and WithReplace not specified, stopping" -Level Warning
@@ -112,10 +112,10 @@ Function Test-DbaBackupInformation {
             }
             
             #Test no destinations exist
-            $DbFileCheck = (Get-DbaDatabaseFile -SqlInstance $Sqlinstance -SqlCredential $SqlCredential -Database $Database).PhysicalName
-            $OtherFileCheck = (Get-DbaDatabaseFile -SqlInstance $Sqlinstance -SqlCredential $SqlCredential -ExcludeDatabase $Database).PhysicalName
+            $DbFileCheck = (Get-DbaDatabaseFile -SqlInstance $RestoreInstance -Database $Database).PhysicalName
+            $OtherFileCheck = (Get-DbaDatabaseFile -SqlInstance $RestoreInstance -ExcludeDatabase $Database).PhysicalName
             ForEach ($path in ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object PhysicalName -Unique).physicalname){
-                if(Test-DbaSqlPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $path){
+                if(Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $path){
                     if (($path -in $DBFileCheck) -and ($WithReplace -ne $True -and $Continue -ne $True)) {
                         Write-Message -Message "File $Path already exists on $SqlInstance and WithReplace not specified, cannot restore" -Level Warning
                         $VerificationErrors++
@@ -126,10 +126,10 @@ Function Test-DbaBackupInformation {
                     }
                 }
                 else {
-                    if (!(Test-DbaSqlPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path (Split-path $path)) ){
+                    if (!(Test-DbaSqlPath -SqlInstance $RestoreInstance -Path (Split-path $path)) ){
                         $ConfirmMessage = "`n Creating Folder $(Split-Path $path) on $SqlInstance `n"                  
                         If ($Pscmdlet.ShouldProcess("$Path on $SqlInstance `n `n", $ConfirmMessage)) {
-                            if (New-DbaSqlDirectory -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path (Split-path $path)){
+                            if (New-DbaSqlDirectory -SqlInstance $RestoreInstance -Path (Split-path $path)){
                                 Write-Message -Message "Created Folder $(Split-path $path) on $SqlInstance" -Level Verbose
                             }
                             else {
@@ -143,7 +143,7 @@ Function Test-DbaBackupInformation {
 
             #Test all backups readable
             Foreach ($path in ($DbHistory | Select-Object -ExpandProperty FullName)){
-                if(!(Test-DbaSqlPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Path $path)){
+                if(!(Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $path)){
                     Write-Message -Message "Backup File $path cannot be read" -Level Warning
                     $VerificationErrors++
                 }
