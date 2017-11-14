@@ -7,7 +7,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         Context "Everything as it should" {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
-            Mock Connect-SqlInstance { $true }
+            Mock Connect-SqlInstance { [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]"done" }
             Mock Get-DbaDatabase { $null }
             Mock Get-DbaDatabaseFile { $null }
             Mock New-DbaSqlDirectory  {$true}
@@ -23,7 +23,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 		Context "Not being able to see backups is bad" {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
-            Mock Connect-SqlInstance { $true }
+            Mock Connect-SqlInstance { [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]"done" }
             Mock Get-DbaDatabase { $null }
             Mock Get-DbaDatabaseFile { $null }
             Mock New-DbaSqlDirectory  {$true}
@@ -40,7 +40,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
             $BackupHistory[1].OriginalDatabase = 'Error'
-            Mock Connect-SqlInstance { $true }
+            Mock Connect-SqlInstance { [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]"done" }
             Mock Get-DbaDatabase { $null }
             Mock Get-DbaDatabaseFile { $null }
             Mock New-DbaSqlDirectory  {$true}
@@ -57,7 +57,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
             $BackupHistory[1].OriginalDatabase = 'Error'
-            Mock Connect-SqlInstance { $true }
+            Mock Connect-SqlInstance { [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]"done" }
             Mock Get-DbaDatabase { '1' }
             Mock Get-DbaDatabaseFile { $null }
             Mock New-DbaSqlDirectory  {$true}
@@ -74,7 +74,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation 
             $BackupHistory[1].OriginalDatabase = 'Error'
-            Mock Connect-SqlInstance { $true }
+            Mock Connect-SqlInstance { [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]"done" }
             Mock Get-DbaDatabase { '1' }
             Mock Get-DbaDatabaseFile { $null }
             Mock New-DbaSqlDirectory  {$true}
