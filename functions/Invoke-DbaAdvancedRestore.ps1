@@ -152,7 +152,6 @@ Function Invoke-DbaAdvancedRestore{
                 if (($backup -ne $backups[-1] -and $StandbyDirectory -eq '') -or $true -eq $NoRecovery){
                     $Restore.NoRecovery = $True
                 }elseif ($backup -eq $backups[-1] -and '' -ne $StandbyDirectory) {
-                    
                     $Restore.StandbyFile = $StandByDirectory + "\" + $Database + (get-date -Format yyyMMddHHmmss) + ".bak"
                     Write-Message -Level Verbose -Message "Setting standby on last file $($Restore.StandbyFile)"
                 }
@@ -212,18 +211,19 @@ Function Invoke-DbaAdvancedRestore{
                 If ($Pscmdlet.ShouldProcess("$Database on $SqlInstance `n `n", $ConfirmMessage)) {
                     try {
                         $RestoreComplete = $true
-                        if ($KeepCDC){
+                        if ($KeepCDC -and $Restore.NoRecovery -eq $false){
                             $script = $Restore.Script($server)
                             if ($script -like '*WITH*'){
-                                $script = $script+' , KEEP_CDC'
+                                $script = $script.TrimEnd()+' , KEEP_CDC'
                             }
                             else{
-                                $script = $script + ' WITH KEEP_CDC'
+                                $script = $script.TrimEnd() + ' WITH KEEP_CDC'
                             }
-                            Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-                            $output = $server.Query($script)
-                            Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance" -status "Complete" -Completed
-                            
+                            if ($true -ne $OutputScriptOnly){
+                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                                $output = $server.ConnectionContext.ExecuteNonQuery($script)
+                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance" -status "Complete" -Completed
+                            }
                         }
                         elseif ($OutputScriptOnly) {
                             $script = $Restore.Script($server)

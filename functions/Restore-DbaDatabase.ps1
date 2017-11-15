@@ -337,7 +337,7 @@ function Restore-DbaDatabase {
         [string]$DestinationFileSuffix,
         [parameter(ParameterSetName="Recovery")]
         [switch]$Recover,
-        [parameter(ParameterSetName="Recovery")]
+        [parameter(ParameterSetName="Restore")]
         [switch]$KeepCDC,        
         [switch]$AllowContinue,
         [string]$GetBackupInformation,
