@@ -1,6 +1,6 @@
 ﻿Write-Host -Object "appveyor.post: Sending coverage data" -ForeGroundColor DarkGreen
 Push-AppveyorArtifact PesterResultsCoverage.json -FileName "PesterResultsCoverage"
-codecov -f PesterResultsCoverage.json --flag "PS,$($env:SCENARIO)" | Out-Null
+codecov -f PesterResultsCoverage.json --flag "ps,$($env:SCENARIO.toLower())" | Out-Null
 # DLL unittests only in default scenario
 if($env:SCENARIO -eq 'default') {
   Write-Host -Object "appveyor.post: DLL unittests"  -ForeGroundColor DarkGreen
@@ -13,5 +13,5 @@ if($env:SCENARIO -eq 'default') {
     -filter:"+[dbatools]*" `
     -returntargetcode | Out-Null
   Push-AppveyorArtifact coverage.xml -FileName "OpenCover c# report"
-  codecov -f "coverage.xml" --flag "C#" | Out-Null
+  codecov -f "coverage.xml" --flag "dll,$($env:SCENARIO.toLower())" | Out-Null
 }
