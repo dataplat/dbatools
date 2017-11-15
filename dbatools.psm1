@@ -204,9 +204,9 @@ Write-ImportTime -Text "Script: Maintenance"
 @{"AliasName" = "Copy-SqlAlert"
 "Definition" = "Copy-DbaAgentAlert" },
 @{"AliasName" = "Copy-SqlAudit"
-"Definition" = "Copy-DbaAudit" },
+"Definition" = "Copy-DbaServerAudit" },
 @{"AliasName" = "Copy-SqlAuditSpecification"
-"Definition" = "Copy-DbaAuditSpecification" },
+"Definition" = "Copy-DbaServerAuditSpecification" },
 @{"AliasName" = "Copy-SqlBackupDevice"
 "Definition" = "Copy-DbaBackupDevice" },
 @{"AliasName" = "Copy-SqlCentralManagementServer"
@@ -222,7 +222,7 @@ Write-ImportTime -Text "Script: Maintenance"
 @{"AliasName" = "Copy-SqlDatabaseMail"
 "Definition" = "Copy-DbaDatabaseMail" },
 @{"AliasName" = "Copy-SqlDataCollector"
-"Definition" = "Copy-DbaDataCollector" },
+"Definition" = "Copy-DbaSqlDataCollector" },
 @{"AliasName" = "Copy-SqlEndpoint"
 "Definition" = "Copy-DbaEndpoint" },
 @{"AliasName" = "Copy-SqlExtendedEvent"
@@ -238,15 +238,13 @@ Write-ImportTime -Text "Script: Maintenance"
 @{"AliasName" = "Copy-SqlOperator"
 "Definition" = "Copy-DbaAgentOperator" },
 @{"AliasName" = "Copy-SqlPolicyManagement"
-"Definition" = "Copy-DbaPolicyManagement" },
+"Definition" = "Copy-DbaSqlPolicyManagement" },
 @{"AliasName" = "Copy-SqlProxyAccount"
 "Definition" = "Copy-DbaAgentProxyAccount" },
 @{"AliasName" = "Copy-SqlResourceGovernor"
 "Definition" = "Copy-DbaResourceGovernor" },
 @{"AliasName" = "Copy-SqlServerAgent"
-"Definition" = "Copy-DbaServerAgent" },
-@{"AliasName" = "Copy-SqlServerRole"
-"Definition" = "Copy-DbaServerRole" },
+"Definition" = "Copy-DbaSqlServerAgent" },
 @{"AliasName" = "Copy-SqlServerTrigger"
 "Definition" = "Copy-DbaServerTrigger" },
 @{"AliasName" = "Copy-SqlSharedSchedule"
@@ -256,7 +254,7 @@ Write-ImportTime -Text "Script: Maintenance"
 @{"AliasName" = "Copy-SqlSsisCatalog"
 "Definition" = "Copy-DbaSsisCatalog" },
 @{"AliasName" = "Copy-SqlSysDbUserObjects"
-"Definition" = "Copy-DbaSysDbUserObjects" },
+"Definition" = "Copy-DbaSysDbUserObject" },
 @{"AliasName" = "Copy-SqlUserDefinedMessage"
 "Definition" = "Copy-SqlCustomError" },
 @{"AliasName" = "Expand-SqlTLogResponsibly"
@@ -312,7 +310,7 @@ Write-ImportTime -Text "Script: Maintenance"
 @{"AliasName" = "Start-SqlMigration"
 "Definition" = "Start-DbaMigration" },
 @{"AliasName" = "Sync-SqlLoginPermissions"
-"Definition" = "Sync-DbaLoginPermissions" },
+"Definition" = "Sync-DbaSqlLoginPermission" },
 @{"AliasName" = "Test-SqlConnection"
 "Definition" = "Test-DbaConnection" },
 @{"AliasName" = "Test-SqlDiskAllocation"
@@ -322,7 +320,7 @@ Write-ImportTime -Text "Script: Maintenance"
 @{"AliasName" = "Test-SqlNetworkLatency"
 "Definition" = "Test-DbaNetworkLatency" },
 @{"AliasName" = "Test-SqlPath"
-"Definition" = "Test-DbaPath" },
+"Definition" = "Test-DbaSqlPath" },
 @{"AliasName" = "Test-SqlTempDbConfiguration"
 "Definition" = "Test-DbaTempDbConfiguration" },
 @{"AliasName" = "Watch-SqlDbLogin"
