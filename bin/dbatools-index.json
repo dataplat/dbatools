@@ -2089,6 +2089,19 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance\r\n\r\nWill restore all the backups in the BackupHistory object according to the transformations it contains\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance -OutputScriptOnly\r\n\r\n$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance\r\n\r\nFirst generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the \r\nfull restore. By  reusing the BackupHistory object there is no need to rescan all the backup files again\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Invoke-DbaBalanceDataFiles",
+        "Description":  "When you have a large database with a single data file and add another file, SQL Server will only use the new file until it\u0027s about the same size.\nYou may want to balance the data between all the data files.\n\nThe function will check the server version and edition to see if the it allows for online index rebuilds.\nIf the server does support it, it will try to rebuild the index online.\nIf the server doesn\u0027t support it, it will rebuild the index offline. Be carefull though, this can cause downtime\n\nThe tables must have a clustered index to be able to balance out the data.\nThe function does NOT yet support heaps.\n\nThe function will also check if the file groups are subject to balance out.\nA file group whould have at least have 2 data files and should be writable.\nIf a table is within such a file group it will be subject for processing. If not the table will be skipped.",
+        "Tags":  [
+                     "Database",
+                     "File management",
+                     "data management"
+                 ],
+        "Synopsis":  "Re-balance data between data files",
+        "Name":  "Invoke-DbaBalanceDataFiles",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1\r\n\r\nThis command will distribute the data in database db1 on instance sql1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1 | Select-Object -ExpandProperty DataFilesEnd\r\n\r\nThis command will distribute the data in database db1 on instance sql1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1 -Table table1,table2,table5\r\n\r\nThis command will distribute the data for only the tables table1,table2 and table5\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eInvoke-DbaBalanceDataFiles -SqlInstance sql1 -Database db1 -RebuildOffline\r\n\r\nThis command will consider the fact that there might be a SQL Server edition that does not support online rebuilds of \r\nindexes.\r\nBy supplying this parameter you give permission to do the rebuilds offline if the edition does not support it.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Invoke-DbaCycleErrorLog",
         "Description":  "Cycles the current error log for the instance (SQL Server) and/or SQL Server Agent.",
         "Tags":  [
@@ -3155,6 +3168,15 @@
         "Name":  "Sync-DbaSqlLoginPermission",
         "Links":  "https://dbatools.io/Sync-DbaSqlLoginPermission",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSync-DbaSqlLoginPermission -Source sqlserver2014a -Destination sqlcluster\r\n\r\nSyncs only SQL Server login permissions, roles, etc. Does not add or drop logins or users. To copy logins and their \r\npermissions, use Copy-SqlLogin.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSync-DbaSqlLoginPermission -Source sqlserver2014a -Destination sqlcluster -Exclude realcajun \r\n-SourceSqlCredential $scred -DestinationSqlCredential $dcred\r\n\r\nCopies all login permissions except for realcajun using SQL Authentication to connect to each server. If a login \r\nalready exists on the destination, the permissions will not be migrated.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSync-DbaSqlLoginPermission -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds\r\n\r\nCopies permissions ONLY for logins netnerds and realcajun.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Test-DbaBackupInformation",
+        "Description":  "Normally takes in a backuphistory object from Format-DbaBackupInformation\n\nThis is then parse to check that it\u0027s valid for restore. Tests performed include:\n    Checking unbroken LSN chain\n    If the target database exists and WithReplace has been provided\n    If any files already exist, but owned by other databases\n    Creates any new folders required\n    That the backupfiles exists at the location specified, and can be seen by the Sql Instance\n\nIf no errors are found then the objects for that database will me marked as Verified.",
+        "Author":  "Stuart Moore (@napalmgram stuart-moore.com )",
+        "Synopsis":  "Tests a dbatools backuphistory object is correct for restoring",
+        "Name":  "Test-DbaBackupInformation",
+        "Links":  "https://dbatools.io/Test-DbaBackupInformation",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$BackupHistory | Test-DbaBackupInformation -SqlInstance MyInstance\r\n\r\n$PassedDbs = $BackupHistory | Where-Object {$_.IsVerified -eq $True}\r\n$FailedDbs = $BackupHistory | Where-Object {$_.IsVerified -ne $True}\r\n\r\nPass in a BackupHistory object to be tested against MyInstance.\r\n\r\nThose records that pass are marked as verified. We can then use the IsVerified property to divide the failures and \r\nsucceses\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaCmConnection",
