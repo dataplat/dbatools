@@ -153,7 +153,6 @@ function Copy-DbaAgentAlert {
 				Status            = $null
 				DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
 			}
-
 			if (($Alert -and $Alert -notcontains $alertName) -or ($ExcludeAlert -and $ExcludeAlert -contains $alertName)) {
 				continue
 			}
@@ -166,7 +165,7 @@ function Copy-DbaAgentAlert {
 					Write-Message -Message "Alert [$alertName] exists at destination. Use -Force to drop and migrate." -Level Verbose
 					continue
 				}
-
+			
 				if ($PSCmdlet.ShouldProcess($Destination, "Dropping alert $alertName and recreating")) {
 					try {
 						Write-Message -Message "Dropping Alert $alertName on $destServer." -Level Verbose
@@ -174,6 +173,7 @@ function Copy-DbaAgentAlert {
 						$sql = "EXEC msdb.dbo.sp_delete_alert @name = N'$($alertname)';"
 						Write-Message -Message $sql -Level Debug
 						$null = $destServer.Query($sql)
+						$destAlerts.Refresh()
 					}
 					catch {
 						$copyAgentAlertStatus.Status = "Failed"
@@ -183,24 +183,20 @@ function Copy-DbaAgentAlert {
 				}
 			}
 
-			$destSevConflict = $destAlerts | Where-Object Severity -eq $serverAlert.Severity
-			$destSevDbConflict = $destAlerts | Where-Object { $_.Severity -eq $serverAlert.Severity -and $_.DatabaseName -eq $serverAlert.DatabaseName }
-			if ($destSevConflict) {
-				Write-Message -Level Verbose -Message "Alert [$($destSevConflict.Name)] has already been defined to use the severity $($serverAlert.Severity). Skipping."
-				
+			if ($destAlerts | Where-Object { $_.Severity -eq $serverAlert.Severity -and $_.MessageID -eq $serverAlert.MessageID -and $_.DatabaseName -eq $serverAlert.DatabaseName -and $_.EventDescriptionKeyword -eq $serverAlert.EventDescriptionKeyword }) {
+				$conflictMessage = "Alert [$alertName] has already been defined to use"
+				if ($serverAlert.Severity -gt 0) { $conflictMessage += " severity $($serverAlert.Severity)" }
+				if ($serverAlert.MessageID -gt 0) { $conflictMessage += " error number $($serverAlert.MessageID)" }
+				if ($serverAlert.DatabaseName) { $conflictMessage += " on database '$($serverAlert.DatabaseName)'" }
+				if ($serverAlert.EventDescriptionKeyword) { $conflictMessage += " with error text '$($serverAlert.Severity)'" }
+				$conflictMessage += ". Skipping."
+
+				Write-Message -Level Verbose -Message $conflictMessage
 				$copyAgentAlertStatus.Status = "Skipped"
-				$copyAgentAlertStatus.Notes = "Already defined"
+				$copyAgentAlertStatus.Notes = $conflictMessage
 				$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				continue
 			}
-			if ($destSevDbConflict) {
-				Write-Message -Level Verbose -Message "Alert [$($destSevConflict.Name)] has already been defined to use the severity $($serverAlert.Severity) on database $($severAlert.DatabaseName). Skipping."
-
-				$copyAgentAlertStatus.Status = "Skipped"
-				$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-				continue
-			}
-
 			if ($serverAlert.JobName -and $destServer.JobServer.Jobs.Name -NotContains $serverAlert.JobName) {
 				Write-Message -Level Verbose -Message "Alert [$alertName] has job [$($serverAlert.JobName)] configured as response. The job does not exist on destination $destServer. Skipping."
 
