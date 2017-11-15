@@ -6,13 +6,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
 		if ($env:appveyor) {
 			try {
-				$connstring = "Server=ADMIN:$server1;Trusted_Connection=True"
-				$server = New-Object Microsoft.SqlServer.Management.Smo.Server $server1
+				$connstring = "Server=ADMIN:$script:instance1;Trusted_Connection=True"
+				$server = New-Object Microsoft.SqlServer.Management.Smo.Server $script:instance1
 				$server.ConnectionContext.ConnectionString = $connstring
 				$server.ConnectionContext.Connect()
 				$server.ConnectionContext.Disconnect()
 			}
 			catch {
+				$bail = $true
 				Write-Host "DAC not working this round, likely due to Appveyor resources"
 				break
 			}
@@ -36,6 +37,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		$dropsql = "EXEC master.dbo.sp_dropserver @server=N'dbatools-localhost', @droplogins='droplogins'"
 		$server2.Query($dropsql)
 	}
+	
+	if ($bail) { break }
 	
 	Context "Copy Credential with the same properties" {
 		It "copies successfully" {
