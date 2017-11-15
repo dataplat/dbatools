@@ -166,6 +166,9 @@ function Restore-DbaDatabase {
     .PARAMETER StatementTimeOut
         Timeout in minutes. Defaults to infinity (restores can take a while.)
 
+    .PARAMETER KeepCDC
+        Indicates whether CDC information should be restored as part of the database
+    
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -334,6 +337,8 @@ function Restore-DbaDatabase {
         [string]$DestinationFileSuffix,
         [parameter(ParameterSetName="Recovery")]
         [switch]$Recover,
+        [parameter(ParameterSetName="Recovery")]
+        [switch]$KeepCDC,        
         [switch]$AllowContinue,
         [string]$GetBackupInformation,
         [switch]$StopAfterGetBackupInformation,
@@ -591,7 +596,7 @@ function Restore-DbaDatabase {
             }
             
             Write-Message -Message "Passing in to restore" -Level Verbose
-            $FilteredBackupHistory | Where-Object {$_.IsVerified -eq $true} | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount
+            $FilteredBackupHistory | Where-Object {$_.IsVerified -eq $true} | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -KeepCDC:$KeepCDC
         
         }
     }

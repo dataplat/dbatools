@@ -62,6 +62,9 @@ Function Invoke-DbaAdvancedRestore{
     .PARAMETER WithReplace    
         Indicated that if the database already exists it should be replaced
     
+    .PARAMETER KeepCDC
+        Indicates whether CDC information should be restored as part of the database
+    
     .PARAMETER WhatIf
         Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
@@ -101,6 +104,7 @@ Function Invoke-DbaAdvancedRestore{
         [switch]$Continue,
         [PSCredential]$AzureCredential,
         [switch]$WithReplace,
+        [switch]$KeepCDC,
         [switch]$EnableException
     )
     begin{
@@ -208,7 +212,20 @@ Function Invoke-DbaAdvancedRestore{
                 If ($Pscmdlet.ShouldProcess("$Database on $SqlInstance `n `n", $ConfirmMessage)) {
                     try {
                         $RestoreComplete = $true
-                        if ($OutputScriptOnly) {
+                        if ($KeepCDC){
+                            $script = $Restore.Script($server)
+                            if ($script -like '*WITH*'){
+                                $script = $script+' , KEEP_CDC'
+                            }
+                            else{
+                                $script = $script + ' WITH KEEP_CDC'
+                            }
+                            Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                            $output = $server.Query($script)
+                            Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance" -status "Complete" -Completed
+                            
+                        }
+                        elseif ($OutputScriptOnly) {
                             $script = $Restore.Script($server)
                         }
                         elseif ($VerifyOnly) {
