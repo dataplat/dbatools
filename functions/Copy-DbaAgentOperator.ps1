@@ -111,11 +111,13 @@ function Copy-DbaAgentOperator {
 			$operatorName = $sOperator.Name
 			
 			$copyOperatorStatus = [pscustomobject]@{
-				SourceServer        = $sourceServer.Name
-				DestinationServer   = $destServer.Name
-				Name                = $operatorName
-				Status              = $null
-				DateTime            = [DbaDateTime](Get-Date)
+				SourceServer    = $sourceServer.Name
+				DestinationServer = $destServer.Name
+				Name		    = $operatorName
+				Type		    = "Agent Operator"
+				Status		    = $null
+				Notes		    = $null
+				DateTime	    = [DbaDateTime](Get-Date)
 			}
 			
 			if ($Operator -and $Operator -notcontains $operatorName -or $ExcludeOperator -in $operatorName) {
@@ -125,13 +127,14 @@ function Copy-DbaAgentOperator {
 			if ($destOperator.Name -contains $sOperator.Name) {
 				if ($force -eq $false) {
 					$copyOperatorStatus.Status = "Skipped"
-					$copyOperatorStatus
-					Write-Message -Level Warning -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
+					$copyOperatorStatus.Notes = "Already exists"
+					$copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+					Write-Message -Level Verbose -Message "Operator $operatorName exists at destination. Use -Force to drop and migrate."
 					continue
 				}
 				else {
 					if ($failsafe.FailSafeOperator -eq $operatorName) {
-						Write-Message -Level Warning -Message "$operatorName is the failsafe operator. Skipping drop."
+						Write-Message -Level Verbose -Message "$operatorName is the failsafe operator. Skipping drop."
 						continue
 					}
 					
@@ -142,7 +145,7 @@ function Copy-DbaAgentOperator {
 						}
 						catch {
 							$copyOperatorStatus.Status = "Failed"
-							$copyOperatorStatus
+							$copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 							
 							Stop-Function -Message "Issue dropping operator" -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer -Continue
 						}
@@ -158,11 +161,11 @@ function Copy-DbaAgentOperator {
 					$destServer.Query($sql)
 					
 					$copyOperatorStatus.Status = "Successful"
-					$copyOperatorStatus
+					$copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copyOperatorStatus.Status = "Failed"
-					$copyOperatorStatus
+					$copyOperatorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					Stop-Function -Message "Issue creating operator." -Category InvalidOperation -InnerErrorRecord $_ -Target $destServer
 				}
 			}

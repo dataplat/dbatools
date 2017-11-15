@@ -201,13 +201,13 @@ function New-DbaAgentSchedule {
 		}
 
 		# Check if the recurrence factor is set for weekly or monthly interval
-		if (($FrequencyType -in 16) -and $FrequencyRecurrenceFactor -lt 1) {
+		if (($FrequencyType -in (16,8)) -and $FrequencyRecurrenceFactor -lt 1) {
 			if ($Force) {
 				$FrequencyRecurrenceFactor = 1
 				Write-Message -Message "Recurrence factor not set for weekly or monthly interval. Setting it to $FrequencyRecurrenceFactor." -Level Verbose
 			}
 			else {
-				Stop-Function -Message "The recurrence factor $FrequencyRecurrenceFactor needs to be at least one when using a weekly or monthly interval." -Target $SqlInstance
+				Stop-Function -Message "The recurrence factor $FrequencyRecurrenceFactor (parameter FrequencyRecurrenceFactor) needs to be at least one when using a weekly or monthly interval." -Target $SqlInstance
 				return
 			}
 		}
@@ -509,7 +509,7 @@ function New-DbaAgentSchedule {
 						if ($PSCmdlet.ShouldProcess($SqlInstance, "Adding the schedule $Schedule to job $j on $instance")) {
 							try {
 								Write-Message -Message "Adding the schedule $Schedule to job $j" -Level Output
-								$JobSchedule
+								#$JobSchedule
 								$JobSchedule.Create()
 
 								Write-Message -Message "Job schedule created with UID $($JobSchedule.ScheduleUid)" -Level Verbose

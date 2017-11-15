@@ -1,5 +1,4 @@
-Function Get-DbaPageFileSetting
-{
+Function Get-DbaPageFileSetting {
 <#
 .SYNOPSIS
 Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).
@@ -29,9 +28,7 @@ Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
 dbatools PowerShell module (https://dbatools.io)
 Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
  https://dbatools.io/Get-DbaPageFileSetting
@@ -54,14 +51,11 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 		[PSCredential] $Credential,
 		[switch][Alias('Silent')]$EnableException
 	)
-	PROCESS
-	{
-		foreach ( $Computer in $ComputerName )
-		{
+	PROCESS {
+		foreach ( $Computer in $ComputerName ) {
 			$reply = Resolve-DbaNetworkName -ComputerName $Computer -Credential $Credential -ErrorAction silentlycontinue
 			
-			if ( !$reply.FullComputerName ) # we can reach $computer
-			{
+			if ( !$reply.FullComputerName ) { # we can reach $computer 
 				Write-Message -Level Warning -Message "$Computer is not available."
 				continue
 			}
@@ -70,27 +64,22 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 			Write-Message -Level Verbose -Message "Getting computer information from $Computer via CIM (WSMan)"
 			$CompSys = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_computersystem" -ErrorAction SilentlyContinue
 			
-			if ( $CompSys ) # we have computersystem class via WSMan
-			{
+			if ( $CompSys ) { # we have computersystem class via WSMan
 				Write-Message -Level Verbose -Message "Successfully retrieved ComputerSystem information on $Computer via CIM (WSMan)"
-				if ( $CompSys.PSobject.Properties.Name -contains "automaticmanagedpagefile" ) # pagefile exists on $computer
-				{
+				if ( $CompSys.PSobject.Properties.Name -contains "automaticmanagedpagefile" ) { # pagefile exists on $computer
 					Write-Message -Level Verbose -Message "Successfully retrieved PageFile information on $Computer via CIM (WSMan)"
-					if ( $CompSys.automaticmanagedpagefile -eq $False ) # pagefile is not automatically managed, so get settings via WSMan
-					{
+					if ( $CompSys.automaticmanagedpagefile -eq $False ) { # pagefile is not automatically managed, so get settings via WSMan
 						$PF = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_pagefile" # deprecated !
 						$PFU = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_pagefileUsage"
 						$PFS = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_pagefileSetting"
 					}
 				}
-				else # pagefile does not exist on $computer, warn and try next computer
-				{
+				else { # pagefile does not exist on $computer, warn and try next computer
 					Write-Message -Level Verbose -Message "$computer Operating System too old. No Pagefile information available."
 					continue
 				}
 			}
-			else # we do not get computersystem class via WSMan, try via DCom
-			{
+			else {# we do not get computersystem class via WSMan, try via DCom 
 				Write-Message -Level Verbose -Message "No WSMan connection to $Computer"
 				Write-Message -Level Verbose -Message "Getting computer information from $Computer via CIM (DCOM)"
 				
@@ -98,33 +87,27 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 				$CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -Credential $Credential -ErrorAction SilentlyContinue
 				$CompSys = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_computersystem" -ErrorVariable $MyErr -ErrorAction SilentlyContinue
 				
-				if ( $CompSys ) # we have computersystem class via DCom
-				{
+				if ( $CompSys ) { # we have computersystem class via DCom
 					Write-Message -Level Verbose -Message "Successfully retrieved ComputerSystem information on $Computer via CIM (DCOM)"
-					if ( $CompSys.PSobject.Properties.Name -contains "automaticmanagedpagefile" ) # pagefile exists on $computer
-					{
+					if ( $CompSys.PSobject.Properties.Name -contains "automaticmanagedpagefile" ) { # pagefile exists on $computer
 						Write-Message -Level Verbose -Message "Successfully retrieved PageFile information on $Computer via CIM (DCOM)"
-						if ( $CompSys.automaticmanagedpagefile -eq $False ) # pagefile is not automatically managed, so get settings via DCom CimSession
-						{
+						if ( $CompSys.automaticmanagedpagefile -eq $False ) { # pagefile is not automatically managed, so get settings via DCom CimSession
 							$PF = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_pagefile" # deprecated !
 							$PFU = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_pagefileUsage"
 							$PFS = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_pagefileSetting"
 						}
 					}
-					else # pagefile does not exist on $computer, warn and try next computer
-					{
+					else { # pagefile does not exist on $computer, warn and try next computer
 						Write-Message -Level Warning -Message "$computer Operating System too old. No Pagefile information available."
 						continue
 					}
 				}
-				else # we don't get computersystem, not wia WSMan nor via DCom, warn and try next computer
-				{
+				else { # we don't get computersystem, not wia WSMan nor via DCom, warn and try next computer
 					Write-Message -Level Warning -Message "No WSMan nor DCom connection to $Computer. If you're not local admin on $Computer, you need to run this command as a different user."
 					continue
 				}
 			}
-			if ( $CompSys.automaticmanagedpagefile -eq $False ) # pagefile is not automatic managed, so return settings
-			{
+			if ( $CompSys.automaticmanagedpagefile -eq $False ) {# pagefile is not automatic managed, so return settings
 				[PSCustomObject]@{
 					ComputerName = $Computer
 					AutoPageFile = $CompSys.automaticmanagedpagefile
@@ -139,8 +122,7 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 					CurrentUsage = $PFU.currentusage # in MB
 				}
 			}
-			else # pagefile is automatic managed, so there are no settings
-			{
+			else { # pagefile is automatic managed, so there are no settings
 				[PSCustomObject]@{
 					ComputerName = $Computer
 					AutoPageFile = $CompSys.automaticmanagedpagefile
@@ -155,7 +137,9 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
 					CurrentUsage = $null
 				} | Select-DefaultView -Property ComputerName, AutoPageFile
 			}
-			if ( [void]$CIMsession.TestConnection() ) { Remove-CimSession $CIMsession }
+			if ( [void]$CIMsession.TestConnection() ) {
+				Remove-CimSession $CIMsession
+			}
 		}
 	}
 }

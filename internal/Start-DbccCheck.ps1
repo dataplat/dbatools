@@ -19,7 +19,7 @@ Function Start-DbccCheck {
 				Write-Verbose "Dbcc CheckTables finished successfully for $dbname on $servername"
 			}
 			else {
-				$null = $server.Query("dbcc checkdb ([$dbname])")
+				$null = $server.Query("DBCC CHECKDB ([$dbname])")
 				Write-Verbose "Dbcc CHECKDB finished successfully for $dbname on $servername"
 			}
 			return "Success"

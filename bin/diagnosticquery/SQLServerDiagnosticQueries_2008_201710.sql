@@ -2,7 +2,7 @@
 -- SQL Server 2008 Diagnostic Information Queries
 -- Glenn Berry 
 -- CY 2017
--- Last Modified: JAugust 7, 2017
+-- Last Modified: October 5, 2017
 -- https://sqlserverperformance.wordpress.com/
 -- https://www.sqlskills.com/blogs/glenn/
 -- Twitter: GlennAlanBerry
@@ -110,6 +110,9 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 --
 -- The SQL Server 2008 builds that were released after SQL Server 2008 Service Pack 3 was released
 -- http://support.microsoft.com/kb/2629969					   
+
+-- Download SQL Server Management Studio (SSMS)
+-- https://msdn.microsoft.com/en-us/library/mt238290.aspx
 
 
 
@@ -1047,7 +1050,8 @@ INNER JOIN sys.dm_db_missing_index_details AS mid WITH (NOLOCK)
 ON mig.index_handle = mid.index_handle
 INNER JOIN sys.partitions AS p WITH (NOLOCK)
 ON p.[object_id] = mid.[object_id]
-WHERE mid.database_id = DB_ID() 
+WHERE mid.database_id = DB_ID()
+AND p.index_id < 2 
 ORDER BY index_advantage DESC OPTION (RECOMPILE);
 ------
 

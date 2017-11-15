@@ -149,7 +149,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance"
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential -MinimumVersion 9
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue

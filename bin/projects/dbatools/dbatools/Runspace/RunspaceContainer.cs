@@ -58,11 +58,26 @@ namespace Sqlcollaborative.Dbatools.Runspace
             if (Runspace == null)
             {
                 Runspace = PowerShell.Create();
+                try { SetName(Runspace.Runspace); }
+                catch { }
                 Runspace.AddScript(Script.ToString());
                 _State = DbaRunspaceState.Running;
                 try { Runspace.BeginInvoke(); }
                 catch { _State = DbaRunspaceState.Stopped; }
             }
+        }
+
+        /// <summary>
+        /// Sets the name on a runspace. This WILL FAIL for PowerShell v3!
+        /// </summary>
+        /// <param name="Runspace">The runspace to be named</param>
+        private void SetName(System.Management.Automation.Runspaces.Runspace Runspace)
+        {
+            #if (NORUNSPACENAME)
+
+            #else
+            Runspace.Name = Name;
+            #endif
         }
 
         /// <summary>

@@ -267,10 +267,13 @@ function Write-DbaDataTable {
 		}
 
 		$bulkCopyOptions = 0
-		$options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default", "Truncate"
+		$options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
 
 		foreach ($option in $options) {
 			$optionValue = Get-Variable $option -ValueOnly -ErrorAction SilentlyContinue
+			if ($option -eq "TableLock" -and (!$NoTableLock)) {
+				$optionValue = $true
+			}
 			if ($optionValue -eq $true) {
 				$bulkCopyOptions += $([Data.SqlClient.SqlBulkCopyOptions]::$option).value__
 			}
@@ -354,7 +357,7 @@ function Write-DbaDataTable {
 		$validTypes = @([System.Data.DataSet], [System.Data.DataTable], [System.Data.DataRow], [System.Data.DataRow[]])
 
 		if ($InputObject.GetType() -notin $validTypes) {
-			Stop-Function -Message "Data is not of the right type (DbDataReader, DataTable, DataRow, or IDataReader). Tip: Try using Out-DbaDataTable to convert the object first."
+			Stop-Function -Message "Data is not of the right type (DbDataReader, DataTable, or DataRow). Tip: Try using Out-DbaDataTable to convert the object first."
 			return
 		}
 

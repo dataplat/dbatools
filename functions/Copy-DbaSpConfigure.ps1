@@ -117,7 +117,7 @@ function Copy-DbaSpConfigure {
 				SourceServer      = $sourceServer.Name
 				DestinationServer = $destServer.Name
 				Name              = $sConfigName
-				Type              = $null
+				Type              = "Configuration Value"
 				Status            = $null
 				Notes             = $null
 				DateTime          = [DbaDateTime](Get-Date)
@@ -129,11 +129,12 @@ function Copy-DbaSpConfigure {
 
 			$destProp = $destProps | Where-Object ConfigName -eq $sConfigName
 			if (!$destProp) {
-				Write-Message -Level Warning -Message "Configuration $sConfigName ('$displayName') does not exist on the destination instance."
+				Write-Message -Level Verbose -Message "Configuration $sConfigName ('$displayName') does not exist on the destination instance."
 
 				$copySpConfigStatus.Status = "Skipped"
 				$copySpConfigStatus.Notes = "Configuration does not exist on destination"
-				$copySpConfigStatus
+				$copySpConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+				
 				continue
 			}
 
@@ -147,16 +148,16 @@ function Copy-DbaSpConfigure {
 					}
 
 					if ($requiresRestart -eq $false) {
-						Write-Message -Level Warning -Message "Configuration option $sConfigName ($displayName) requires restart."
+						Write-Message -Level Verbose -Message "Configuration option $sConfigName ($displayName) requires restart."
 						$copySpConfigStatus.Notes = "Requires restart"
 					}
 					$copySpConfigStatus.Status = "Successful"
-					$copySpConfigStatus
+					$copySpConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 				}
 				catch {
 					$copySpConfigStatus.Status = "Failed"
 					$copySpConfigStatus.Notes = $_.Exception
-					$copySpConfigStatus
+					$copySpConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 
 					Stop-Function -Message "Could not set $($destProp.ConfigName) to $sConfiguredValue." -Target $sConfigName -ErrorRecord $_
 				}

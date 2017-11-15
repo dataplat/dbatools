@@ -36,12 +36,7 @@ Name of the SQL Server credential that should be used for Azure storage access
 Tags: DisasterRecovery, Backup, Restore
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
 https://dbatools.io/Read-DbaBackupHeader
@@ -181,6 +176,7 @@ Gets the backup header information from the SQL Server backup file stored at htt
                     }
                     Return
                 }
+
                 $fl = $datatable.Columns.Add("FileList", [object])
                 #$datatable.rows[0].FileList = $allfiles.rows
                 
@@ -215,7 +211,8 @@ Gets the backup header information from the SQL Server backup file stored at htt
                     $row.BackupPath = $file
                     try {
                         $restore.FileNumber = $BackupSlot
-                        $allfiles = $restore.ReadFileList($server)
+                        #Select-Object does a quick and dirty conversion from datatable to PS object
+                        $allfiles = $restore.ReadFileList($server) | select-object *
                     }
                     catch {
                         $shortname = Split-Path $file -Leaf
@@ -231,7 +228,7 @@ Gets the backup header information from the SQL Server backup file stored at htt
                     }
                     $row.FileList = $allfiles
                     $BackupSlot++
-                    
+                   
                 }
             }
             else {

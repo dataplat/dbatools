@@ -1,3 +1,75 @@
+$start = Get-Date
+
+#region Import helper functions
+function Import-ModuleFile {
+<#
+	.SYNOPSIS
+		Helps import dbatools files according to configuration
+	
+	.DESCRIPTION
+		Helps import dbatools files according to configuration
+		Always dotsource this function!
+	
+	.PARAMETER Path
+		The full path to the file to import
+	
+	.EXAMPLE
+		PS C:\> Import-ModuleFile -Path $function.FullName
+	
+		Imports the file stored at '$function.FullName'
+#>
+	[CmdletBinding()]
+	Param (
+		$Path
+	)
+	
+	if ($script:doDotSource) { . $Path }
+	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($Path))), $null, $null)}
+}
+
+function Write-ImportTime {
+<#
+	.SYNOPSIS
+		Writes an entry to the import module time debug list
+	
+	.DESCRIPTION
+		Writes an entry to the import module time debug list
+	
+	.PARAMETER Text
+		The message to write
+	
+	.EXAMPLE
+		PS C:\> Write-ImportTime -Text "Starting SMO Import"
+	
+		Adds the message "Starting SMO Import" to the debug list
+#>
+	[CmdletBinding()]
+	Param (
+		[string]$Text,
+		
+		$Timestamp = (Get-Date)
+	)
+	
+	if ($dbatools_disableTimeMeasurements) { return }
+	
+	if (-not $script:dbatools_ImportPerformance) { $script:dbatools_ImportPerformance = @() }
+	
+	if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type -eq $null) {
+		$script:dbatools_ImportPerformance += New-Object PSObject -Property @{ Time = $timestamp; Action = $Text }
+	}
+	else {
+		if ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Count -eq 0) {
+			foreach ($entry in $script:dbatools_ImportPerformance) { [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($entry.Action, $entry.Time, ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId)))) }
+		}
+		
+		[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($Text, $timestamp, ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))))
+	}
+}
+
+Write-ImportTime -Text "Start" -Timestamp $start
+Write-ImportTime -Text "Loading import helper functions"
+#endregion Import helper functions
+
 # Not supporting the provider path at this time 2/28/2017 - 63ms
 if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\"))
 {
@@ -5,188 +77,52 @@ if (((Resolve-Path .\).Path).StartsWith("SQLSERVER:\"))
 	Write-Warning "Going to continue loading anyway, but expect issues."
 }
 
+Write-ImportTime -Text "Resolved path to not SQLSERVER PSDrive"
+
 $script:PSModuleRoot = $PSScriptRoot
 
+#region Import Defines
+$dbatoolsSystemUserNode = Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ErrorAction Ignore
+$dbatoolsSystemSystemNode = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -ErrorAction Ignore
+
+#region Dot Sourcing
 # Detect whether at some level dotsourcing was enforced
 $script:doDotSource = $false
 if ($dbatools_dotsourcemodule) { $script:doDotSource = $true }
-if ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
-if ((Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\System" -Name "DoDotSource" -ErrorAction Ignore).DoDotSource) { $script:doDotSource = $true }
+if ($dbatoolsSystemSystemNode.DoDotSource) { $script:doDotSource = $true }
+if ($dbatoolsSystemUserNode.DoDotSource) { $script:doDotSource = $true }
+#endregion Dot Sourcing
 
-Get-ChildItem -Path "$script:PSModuleRoot\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
+#region Strict Security Mode
+$script:strictSecurityMode = $false
+if ($dbatools_strictsecuritymode) { $script:strictSecurityMode = $true }
+if ($dbatoolsSystemSystemNode.StrictSecurityMode) { $script:strictSecurityMode = $true }
+if ($dbatoolsSystemUserNode.StrictSecurityMode) { $script:strictSecurityMode = $true }
+#endregion Strict Security Mode
 
-try {
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.BatchParser.dll" -ErrorAction Stop
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.BatchParserClient.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.BulkInsertTaskConnections.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DTSRuntimeWrap.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DtsServer.Interop.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DTSUtilities.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ForEachFileEnumeratorWrap.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ManagedDTS.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.ODataConnectionManager.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.ODataSrc.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.PipelineHost.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.PackageFormatUpdate.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SqlCEDest.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SQLTask.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.TxScript.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XE.Core.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XEvent.Configuration.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XEvent.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XEvent.Linq.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XmlSrc.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Rmo.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DTSPipelineWrap.dll"
-	Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ScriptTask.dll" -ErrorAction Stop
+#region Always Compile
+$script:alwaysBuildLibrary = $false
+if ($dbatools_alwaysbuildlibrary) { $script:alwaysBuildLibrary = $true }
+if ($dbatoolsSystemSystemNode.AlwaysBuildLibrary) { $script:alwaysBuildLibrary = $true }
+if ($dbatoolsSystemUserNode.AlwaysBuildLibrary) { $script:alwaysBuildLibrary = $true }
+#endregion Always Compile
+
+#region Serial Import
+$script:serialImport = $false
+if ($dbatools_serialimport) { $script:serialImport = $true }
+if ($dbatoolsSystemSystemNode.SerialImport) { $script:serialImport = $true }
+if ($dbatoolsSystemUserNode.SerialImport) { $script:serialImport = $true }
+#endregion Serial Import
+Write-ImportTime -Text  "Validated defines"
+#endregion Import Defines
+
+Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
+Write-ImportTime -Text  "Unblocking Files"
+
+if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
+	. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\smoLibraryImport.ps1"
+	Write-ImportTime -Text "Starting import SMO libraries"
 }
-catch {
-	# don't care ;)
-}
-
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Accessibility.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\EnvDTE.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.AnalysisServices.AppLocal.Core.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.AnalysisServices.AppLocal.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Azure.KeyVault.Core.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Data.Edm.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Data.OData.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Practices.TransientFaultHandling.Core.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.DataTransfer.Common.Utils.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ASTasks.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ConnectionInfo.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ConnectionInfoExtended.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DataProfiler.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DataProfilingTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Diagnostics.STrace.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dmf.Common.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dmf.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DMQueryTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DTEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dts.Design.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dts.DtsClient.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DtsMsg.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Edition.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ExecProcTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ExpressionTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.FileSystemTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ForEachADOEnumerator.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ForEachFromVarEnumerator.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ForEachNodeListEnumerator.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ForEachSMOEnumerator.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.FtpTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.GridControl.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Instapi.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.ClusterManagement.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.Common.ObjectModel.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.ISServerDBUpgrade.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.Server.Common.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.Server.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.Server.IPC.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.server.shared.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.TaskScheduler.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ManagedConnections.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Collector.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.CollectorEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.CollectorTasks.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.HadrDMF.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.HelpViewer.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.IntegrationServices.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.IntegrationServicesEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.RegisteredServers.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Sdk.Sfc.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.SmartAdminPolicies.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.SqlParser.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.SystemMetadataProvider.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.Utility.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.UtilityEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEvent.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventDbScoped.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventDbScopedEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.XEventEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.MSMQTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.PipelineXML.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.PolicyEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.RegSvrEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Replication.BusinessLogicSupport.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SendMailTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ServiceBrokerEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Smo.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SmoExtended.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SqlClrProvider.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SqlEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SQLTaskConnectionsWrap.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SqlTDiagM.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SqlWmiManagement.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.SString.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.TransferDatabasesTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.TransferErrorMessagesTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.TransferJobsTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.TransferLoginsTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.TransferObjectsTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.TransferSqlServerObjectsTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.TransferStoredProceduresTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Types.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Types.resources.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.VSTAScriptingLib.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WebServiceTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WMIDRTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WmiEnum.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WMIEWTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.XMLTask.dll"
-# x86
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dmf.Adapters.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DmfSqlClrWrapper.dll"
-
-<#
-Likely don't need yet
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WizardFramework.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WizardFrameworkLite.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.WorkerAgent.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.SqlTaskScheduler.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.CustomControls.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.NetEnterpriseServers.ExceptionMessageBox.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.MasterService.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.MasterServiceClient.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Practices.TransientFaultHandling.Core.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.Scale.ResourceProvider.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.Scale.ScaleoutContract.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.ScaleOut.Telemetry.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.ScaleOut.Utilities.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationService.Hadoop.Common.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationService.HadoopComponents.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationService.HadoopConnections.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationService.HadoopEnumerators.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationService.HadoopTasks.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.ExceptionMessageBox.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlTools.Telemetry.Interop.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Ssdqs.Component.DataCorrection.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Ssdqs.Component.DataQualityConnectionManager.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.WindowsAzure.Configuration.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.WindowsAzure.Storage.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.WindowsAzure.StorageClient.dll"
-
-# Throws exceptions but likes to be added
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Data.Services.Client.dll" -ErrorAction Stop
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.DataTransfer.Common.dll" -ErrorAction Stop
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.DataTransfer.DataContracts.dll" -ErrorAction Stop
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.AnalysisServices.AppLocal.Tabular.dll" -ErrorAction Stop
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Management.SmoMetadataProvider.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Hadoop.Avro.dll"
-
-# Can't load, won't load
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.Data.DataFeedClient.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.DataTransfer.ClientLibrary.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ADONETDest.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.ADONETSrc.dllv"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.BulkInsertTask.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DataReaderDest.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DataStreaming.Dest.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.DTSPipelineWrap.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.IntegrationServices.RuntimeTelemetry.dll"
-Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.MaintenancePlanTasks.dll"
-#>
 
 <# 
 
@@ -198,81 +134,68 @@ Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.MaintenancePlan
 # https://becomelotr.wordpress.com/2017/02/13/expensive-dot-sourcing/
 
 # Load our own custom library
-# Should always come before function imports - 141ms
-if ($script:doDotSource) {
-	. "$script:PSModuleRoot\bin\library.ps1"
-	. "$script:PSModuleRoot\bin\typealiases.ps1"
-}
-else {
-	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\bin\library.ps1"))), $null, $null)
-	$ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\bin\typealiases.ps1"))), $null, $null)
-}
+# Should always come before function imports
+. Import-ModuleFile "$script:PSModuleRoot\bin\library.ps1"
+. Import-ModuleFile "$script:PSModuleRoot\bin\typealiases.ps1"
+Write-ImportTime -Text "Loading dbatools library"
 
 # Tell the library where the module is based, just in case
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase = $script:PSModuleRoot
 
+# Load configuration system
+# Should always go after library and path setting
+if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported))
+{
+	. Import-ModuleFile "$script:PSModuleRoot\internal\configurations\configuration.ps1"
+	Write-ImportTime -Text "Configuration System"
+}
+if (-not ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath))
+{
+	[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath = "$($env:AppData)\PowerShell\dbatools"
+}
+
 # All internal functions privately available within the toolset - 221ms
-foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\*.ps1")) {
-	if ($script:doDotSource) { . $function.FullName }
-	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null) }
-}
-
-#region Finally register autocompletion - 32ms
-# Test whether we have Tab Expansion Plus available (used in dynamicparams scripts ran below)
-if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore)
+foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\*.ps1"))
 {
-	$script:TEPP = $true
+	. Import-ModuleFile $function.FullName
 }
-else
-{
-	$script:TEPP = $false
-}
-
-# dynamic params - 136ms
-foreach ($function in (Get-ChildItem "$PSScriptRoot\internal\dynamicparams\*.ps1")) {
-	if ($script:doDotSource) { . $function.FullName }
-	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null) }
-}
-#endregion Finally register autocompletion
+Write-ImportTime -Text "Loading Internal Commands"
 
 # All exported functions - 600ms
 foreach ($function in (Get-ChildItem "$script:PSModuleRoot\functions\*.ps1")) {
-	if ($script:doDotSource) { . $function.FullName }
-	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function, [System.Text.Encoding]::UTF8))), $null, $null) }
+	. Import-ModuleFile $function.FullName
 }
+Write-ImportTime -Text "Loading Public Commands"
 
 # Run all optional code
 # Note: Each optional file must include a conditional governing whether it's run at all.
 # Validations were moved into the other files, in order to prevent having to update dbatools.psm1 every time
 # 96ms
-foreach ($function in (Get-ChildItem "$script:PSModuleRoot\optional\*.ps1")) {
-	if ($script:doDotSource) { . $function.FullName }
-	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($function))), $null, $null) }
+foreach ($function in (Get-ChildItem "$script:PSModuleRoot\optional\*.ps1"))
+{
+	. Import-ModuleFile $function.FullName
 }
+Write-ImportTime -Text "Loading Optional Commands"
 
 # Process TEPP parameters
-if ($script:doDotSource) { . "$script:PSModuleRoot\internal\scripts\insertTepp.ps1" }
-else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\insertTepp.ps1"))), $null, $null) }
+. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\insertTepp.ps1"
+Write-ImportTime -Text "Loading TEPP"
 
-# Load configuration system
-# Should always go next to last
-if ($script:doDotSource) { . "$script:PSModuleRoot\internal\configurations\configuration.ps1" }
-else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\configurations\configuration.ps1"))), $null, $null) }
 
 # Load scripts that must be individually run at the end - 30ms #
 #--------------------------------------------------------------#
 
 # Start the logging system (requires the configuration system up and running)
-if ($script:doDotSource) { . "$script:PSModuleRoot\internal\scripts\logfilescript.ps1" }
-else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\logfilescript.ps1"))), $null, $null) }
+. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\logfilescript.ps1"
+Write-ImportTime -Text "Script: Logging"
 
 # Start the tepp asynchronous update system (requires the configuration system up and running)
-if ($script:doDotSource) { . "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1" }
-else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1"))), $null, $null) }
+. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\updateTeppAsync.ps1"
+Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
 
 # Start the maintenance system (requires pretty much everything else already up and running)
-if ($script:doDotSource) { . "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1" }
-else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1"))), $null, $null) }
+. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1"
+Write-ImportTime -Text "Script: Maintenance"
 
 # I renamed this function to be more accurate - 1ms
 if (-not (Test-Path Alias:Copy-SqlAgentCategory)) { Set-Alias -Scope Global -Name Copy-SqlAgentCategory -Value Copy-DbaAgentCategory }
@@ -356,11 +279,57 @@ if (-not (Test-Path Alias:Watch-DbaXEventSession)) { Set-Alias -Scope Global -Na
 Set-Alias -Scope Global -Name Attach-DbaDatabase -Value Mount-DbaDatabase
 Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 
+#region Post-Import Cleanup
+Write-ImportTime -Text "Loading Aliases"
+
+$timeout = 10000
+$timeSpent = 0
+while (($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') -or ($script:dbatoolsConfigRunspace.Runspace.RunspaceAvailability -eq 'Busy'))
+{
+	Start-Sleep -Milliseconds 50
+	$timeSpent = $timeSpent + 50
+	
+	if ($timeSpent -ge $timeout) {
+		Write-Warning @"
+The module import has hit a timeout while waiting for some background tasks to finish.
+This may result in some commands not working as intended.
+This should not happen under reasonable circumstances, please file an issue at:
+https://github.com/sqlcollaborative/dbatools/issues
+Or contact us directly in the #dbatools channel of the SQL Server Community Slack Channel:
+https://dbatools.io/slack/
+Timeout waiting for temporary runspaces reached! The Module import will complete, but some things may not work as intended
+"@
+		$global:smoRunspace = $script:smoRunspace
+		$global:dbatoolsConfigRunspace = $script:dbatoolsConfigRunspace
+		break
+	}
+}
+
+if ($script:smoRunspace)
+{
+	$script:smoRunspace.Runspace.Close()
+	$script:smoRunspace.Runspace.Dispose()
+	$script:smoRunspace.Dispose()
+	Remove-Variable -Name smoRunspace -Scope script
+}
+
+if ($script:dbatoolsConfigRunspace)
+{
+	$script:dbatoolsConfigRunspace.Runspace.Close()
+	$script:dbatoolsConfigRunspace.Runspace.Dispose()
+	$script:dbatoolsConfigRunspace.Dispose()
+	Remove-Variable -Name dbatoolsConfigRunspace -Scope script
+}
+
+[Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true;
+Write-ImportTime -Text "Waiting for runspaces to finish"
+#endregion Post-Import Cleanup
+
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUKPmTafnghISCeT6z6mokbxhL
-# hPeggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUrACNxAC182X5IwKhmQVyAjCs
+# aVSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -491,22 +460,22 @@ Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQU/vvPj5QHfPJ5KKQBuQZT/Uuh5vEwDQYJKoZIhvcNAQEBBQAE
-# ggEAY3u7loZXNv74HmTSd2md1la08MICgkoNTjiE69JEHp6NLJEE3+i1LVDOdGoP
-# bRtdeMOWSafW5OHnvqp3QsPwoXRXOed7sXIUoH64SsxK+ey5DBK2eF6G9CszujqR
-# EgFYaNn79FkCtJsfbx6eQSOF8YRH0uYTb1k8rfXRr8xNgRq+5Hp60CWiOAiqUr4e
-# TtzjtPOV4Lk4XCWB0b2O5utk/Nbms/+elwEAaLJ26ZqLVdl0J5FDAo7CXZ/MNtWX
-# 3YrbWWDrSjobdDJc8GixEDyZDtthpkeif1vTFHWR7YXGX1PioA61voOPcTdrl3vK
-# +vZrl5kaWa+LboivNzJbLgh8haGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUY/htJayxE8RydAKiUxkcUfr27kkwDQYJKoZIhvcNAQEBBQAE
+# ggEAO9FQcGBIYYW6L7GAJCcpVgROQ0XH/JtsWo2NIMuzx1WtXuViSSnIqzfW2BC9
+# 1wF1qa0MUE2pe8qpAjtg2BpTYqTWAH2b4quefFkLBAb6rcMWDcK9/LuNbDVblS/d
+# goxNFptCXBP6ScutP+7NMhXYvMpb2kKU/0CtJRF5QRFXIG2BsNclNhVYPeS5k/Re
+# ygpr3gMPSbWiKwL/lkvV85yv52zgaZcHl7mdumQSOeaTVMs0XUH2tZF5BSmFPvJW
+# J5ExJ8yJjmtPX8lfxhwV02sMeERn4O2HQHD2udRcRI1NLzhNag6RADS63Uj0J+VO
+# id5BO/K22gdVqjyq9tb9Er2YoaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMDE5MTMxMjE2WjAj
-# BgkqhkiG9w0BCQQxFgQUApjnsF8n8IxuJx9ct0SQmqXG8q0wDQYJKoZIhvcNAQEB
-# BQAEggEAScKeBOvz5lfkUwNYQd6of44Cc+QhxbUwj88VoKWvKd0s4h6noJOkxaan
-# qIwulQjYWyuHH0yK+HdsNOL9SyPWZor702rwJR6A8vnHcFcQf6bXx0qi1zO/AzHj
-# AXrb8fs8u7AkwS3eGIZxMZKkcqxtHDCng2pA/WfH/KLASORFe6T/C1ppzUyb58ms
-# eAd6fb5C6HkWNl32a/gp4jLiG0htZGkF5bX0Jcwc9SehCb5h8PyadXuzP4d0Uxwt
-# VJnGTRE9q4kHq7YlSdg1v6DmKHy97p2Fqm98m5J+D6oFZhx/QvENdFExBj1djZ0K
-# ZJPVXoH0spwBl2ytHZ0vkdMosMjapw==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMTE1MDIzMzIxWjAj
+# BgkqhkiG9w0BCQQxFgQUt0jRi/npyG0F6HBg5v/0ilmZYg8wDQYJKoZIhvcNAQEB
+# BQAEggEAf8RG/rMh5Ep9d680yyCeGy7bph8ieYhLQh1LMm4rTrI2fxQb6IpCWfXS
+# oSSUXkFYrU6CBPL3++M9KFDlFt99Ph8LQ6BgxoFRHXZ6Tg8MH3B4deT2I5GRw9Ax
+# g2c7p5ILRjgtqfq6976YOXuJJM8i/kxHSH9HFcz5sJW2L7RWqj0hqVhvsovMfawG
+# uFUKvhEFKAFui7n8HIijIfl9tITmIPh8mOqgzobSmm9jFph8kuhG2IRlTE1QaCy3
+# UkfbN71rwHxjUmsxCIBmJ26bk4XLJID1B6diV84sYrbUA2S0LE+VM6nupJ8K5xkI
+# cSRFsmdOv0qfuY9D3kYoVRtNX1ySbA==
 # SIG # End signature block

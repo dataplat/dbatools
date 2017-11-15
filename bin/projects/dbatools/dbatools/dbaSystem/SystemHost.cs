@@ -19,6 +19,20 @@ namespace Sqlcollaborative.Dbatools.dbaSystem
         /// <summary>
         /// Path where the module was located when imported
         /// </summary>
-        public static string ModuleBase;
+        public static string ModuleBase
+        {
+            get { return _ModuleBase; }
+            set
+            {
+                if (String.IsNullOrEmpty(_ModuleBase))
+                    _ModuleBase = value;
+            }
+        }
+        private static string _ModuleBase;
+
+        /// <summary>
+        /// Flag whether the module has ever been imported in the current process. If that is true, several things (such as importing libraries) is no longer necessary and will be skipped on import.
+        /// </summary>
+        public static bool ModuleImported;
     }
 }

@@ -28,7 +28,7 @@ Restart-Service "MSSQL`$$instance" -WarningAction SilentlyContinue
 $server = Connect-DbaInstance -SqlInstance $sqlinstance
 $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 $server.Configuration.Alter()
-$null = Set-DbaStartupParameter -SqlInstance $sqlinstance -TraceFlagsOverride -TraceFlags 7806 -Confirm:$false -ErrorAction SilentlyContinue
+$null = Set-DbaStartupParameter -SqlInstance $sqlinstance -TraceFlagsOverride -TraceFlags 7806 -Confirm:$false -ErrorAction SilentlyContinue -EnableException
 Restart-Service "MSSQL`$SQL2008R2SP2" -WarningAction SilentlyContinue
 $server = Connect-DbaInstance -SqlInstance $sqlinstance
 $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
