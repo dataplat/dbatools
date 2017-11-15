@@ -63,10 +63,11 @@ function Test-DbaDatabaseCollation {
 	#>
 	[CmdletBinding()]
 	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]$Credential,
+		[Alias("Credential")]
+		[PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
@@ -81,7 +82,7 @@ function Test-DbaDatabaseCollation {
 			# Try connecting to the instance
 			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
 			try {
-				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
