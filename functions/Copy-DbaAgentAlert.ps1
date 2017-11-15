@@ -160,7 +160,7 @@ function Copy-DbaAgentAlert {
 			if ($destAlerts.name -contains $serverAlert.name) {
 				if ($force -eq $false) {
 					$copyAgentAlertStatus.Status = "Skipped"
-					$copyAgentAlertStatus.Notes = "Already exists among the alerts: $($destAlerts.name -join ', ')"
+					$copyAgentAlertStatus.Notes = "Already exists"
 					$copyAgentAlertStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 					Write-Message -Message "Alert [$alertName] exists at destination. Use -Force to drop and migrate." -Level Verbose
 					continue
