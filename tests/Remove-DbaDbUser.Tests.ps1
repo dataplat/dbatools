@@ -59,7 +59,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $col1 = New-Object Microsoft.SqlServer.Management.SMO.Column($table, "col1", [Microsoft.SqlServer.Management.SMO.DataType]::Int)
             $table.Columns.Add($col1)
             $table.Create()
-            Remove-DbaDbUser $server -Database tempdb -User $user.Name
+            Remove-DbaDbUser $server -Database tempdb -User $user.Name -WarningAction SilentlyContinue
             $db.Users[$user.Name] | Should Be $user
         }
 	}
