@@ -1,5 +1,4 @@
 .vs
-bin/
 obj/
 vstest.*/
 /*.pdb/
