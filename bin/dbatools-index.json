@@ -3217,11 +3217,14 @@
     {
         "CommandName":  "Test-DbaDatabaseCollation",
         "Description":  "Compares Database Collations to Server Collation",
-        "Tags":  "",
+        "Tags":  [
+                     "Database",
+                     "Collation"
+                 ],
         "Synopsis":  "Compares Database Collations to Server Collation",
         "Name":  "Test-DbaDatabaseCollation",
         "Links":  "https://dbatools.io/Test-DbaDatabaseCollation",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDatabaseCollation -SqlInstance sqlserver2014a\r\n\r\nReturns server name, database name and true/false if the collations match for all databases on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDatabaseCollation -SqlInstance sqlserver2014a -Database db1, db2\r\n\r\nReturns server name, database name and true/false if the collations match for the db1 and db2 databases on \r\nsqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDatabaseCollation -SqlInstance sqlserver2014a, sql2016 -Detailed -Exclude db1\r\n\r\nReturns detailed information for database and server collations for all databases except db1 on sqlserver2014a and \r\nsql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2016 | Test-DbaDatabaseCollation\r\n\r\nReturns db/server collation information for every database on every server listed in the Central Management Server on \r\nsql2016.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDatabaseCollation -SqlInstance sqlserver2014a\r\n\r\nReturns server name, database name and true/false if the collations match for all databases on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDatabaseCollation -SqlInstance sqlserver2014a -Database db1, db2\r\n\r\nReturns detailed inforamtion for the db1 and db2 databases on sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaDatabaseCollation -SqlInstance sqlserver2014a, sql2016 -Exclude db1\r\n\r\nReturns detailed information for database and server collations for all databases except db1 on sqlserver2014a and \r\nsql2016.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaRegisteredServer -SqlInstance sql2016 | Test-DbaDatabaseCollation\r\n\r\nReturns db/server collation information for every database on every server listed in the Central Management Server on \r\nsql2016.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Test-DbaDatabaseCompatibility",
