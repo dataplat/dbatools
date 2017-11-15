@@ -15,7 +15,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			catch {
 				$bail = $true
 				Write-Host "DAC not working this round, likely due to Appveyor resources"
-				break
 			}
 		}
 		
@@ -27,15 +26,23 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		EXEC master.dbo.sp_addlinkedserver @server = N'dbatools-localhost2', @srvproduct=N'SQL Server';
 		EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname=N'dbatools-localhost2',@useself=N'False',@locallogin=NULL,@rmtuser=N'testuser1',@rmtpassword='supfool';"
 		
-		$server1 = Connect-DbaInstance -SqlInstance $script:instance1
-		$server2 = Connect-DbaInstance -SqlInstance $script:instance2
-		$server1.Query($createsql)
+		try {
+			$server1 = Connect-DbaInstance -SqlInstance $script:instance1
+			$server2 = Connect-DbaInstance -SqlInstance $script:instance2
+			$server1.Query($createsql)
+		}
+		catch {
+			$bail = $true
+			Write-Host "Couldn't setup Linked Servers, bailing"
+		}
 	}
 	
 	AfterAll {
-		$server1.Query($dropsql)
-		$dropsql = "EXEC master.dbo.sp_dropserver @server=N'dbatools-localhost', @droplogins='droplogins'"
-		$server2.Query($dropsql)
+		try {
+			$server1.Query($dropsql)
+			$dropsql = "EXEC master.dbo.sp_dropserver @server=N'dbatools-localhost', @droplogins='droplogins'"
+			$server2.Query($dropsql)
+		} catch {}
 	}
 	
 	if ($bail) { return }
