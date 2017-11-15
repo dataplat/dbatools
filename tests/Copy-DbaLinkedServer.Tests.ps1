@@ -38,25 +38,25 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		$server2.Query($dropsql)
 	}
 	
-	if ($bail) { break }
+	if ($bail) { return }
 	
 	Context "Copy Credential with the same properties" {
 		It "copies successfully" {
-			$result = Copy-DbaLinkedServer -Source $server1 -Destination $server2 -LinkedServer dbatools-localhost
+			$result = Copy-DbaLinkedServer -Source $server1 -Destination $server2 -LinkedServer dbatools-localhost -WarningAction SilentlyContinue
 			$result.Name | Should Be "dbatools-localhost"
 			$result.Status | Should Be "Successful"
 		}
 		
 		It "retains the same properties" {
-			$LinkedServer1 = Get-DbaLinkedServer -SqlInstance $server1 -LinkedServer dbatools-localhost
-			$LinkedServer2 = Get-DbaLinkedServer -SqlInstance $server2 -LinkedServer dbatools-localhost
+			$LinkedServer1 = Get-DbaLinkedServer -SqlInstance $server1 -LinkedServer dbatools-localhost -WarningAction SilentlyContinue
+			$LinkedServer2 = Get-DbaLinkedServer -SqlInstance $server2 -LinkedServer dbatools-localhost -WarningAction SilentlyContinue
 			
 			# Compare its value
 			$LinkedServer1.Name | Should Be $LinkedServer2.Name
 			$LinkedServer1.LinkedServer | Should Be $LinkedServer2.LinkedServer
 		}
 		
-		$results = Copy-DbaLinkedServer -Source $server1 -Destination $server2 -LinkedServer dbatools-localhost
+		$results = Copy-DbaLinkedServer -Source $server1 -Destination $server2 -LinkedServer dbatools-localhost -WarningAction SilentlyContinue
 		$results.Status | Should Be "Skipped"
 	}
 }
