@@ -6,18 +6,18 @@ function Test-DbaDatabaseCollation {
 		.DESCRIPTION
 			Compares Database Collations to Server Collation
 
-		.PARAMETER SqlInstance
-			The SQL Server that you're connecting to.
+        .PARAMETER SqlInstance
+            The target SQL Server instance or instances.
 
-		.PARAMETER Credential
-			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+        .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-			$scred = Get-Credential, then pass $scred object to the -Credential parameter.
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-			Windows Authentication will be used if Credential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-			To connect as a different Windows user, run PowerShell as that user.
-
+            To connect as a different Windows user, run PowerShell as that user.
+	
 		.PARAMETER Database
 			Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 		
@@ -25,10 +25,15 @@ function Test-DbaDatabaseCollation {
 			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 		
 		.PARAMETER Detailed
-			If this switch is enabled, full details about database & server collations and whether they match is returned.
+			Does nothing, this is deprecatated. Now Detailed is the default.
 
+	    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+	
 		.NOTES
-			Tags: 
+			Tags: Database, Collation
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -44,10 +49,10 @@ function Test-DbaDatabaseCollation {
 		.EXAMPLE
 			Test-DbaDatabaseCollation -SqlInstance sqlserver2014a -Database db1, db2
 
-			Returns server name, database name and true/false if the collations match for the db1 and db2 databases on sqlserver2014a.
+			Returns detailed inforamtion for the db1 and db2 databases on sqlserver2014a.
 
 		.EXAMPLE
-			Test-DbaDatabaseCollation -SqlInstance sqlserver2014a, sql2016 -Detailed -Exclude db1
+			Test-DbaDatabaseCollation -SqlInstance sqlserver2014a, sql2016 -Exclude db1
 
 			Returns detailed information for database and server collations for all databases except db1 on sqlserver2014a and sql2016.
 
@@ -57,7 +62,6 @@ function Test-DbaDatabaseCollation {
 			Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016.
 	#>
 	[CmdletBinding()]
-	[OutputType("System.Collections.ArrayList")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
@@ -66,68 +70,45 @@ function Test-DbaDatabaseCollation {
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[switch]$Detailed
+		[switch]$Detailed,
+		[switch]$EnableException
 	)
-
 	begin {
-		$collection = New-Object System.Collections.ArrayList
-
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Detailed"
 	}
-
 	process {
-		foreach ($servername in $SqlInstance) {
+		foreach ($instance in $sqlinstance) {
+			# Try connecting to the instance
+			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
 			try {
-				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $Credential
+				$Server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				if ($SqlInstance.count -eq 1) {
-					throw $_
-				}
-				else {
-					Write-Message -Level Warning -Message  "Can't connect to $servername. Moving on."
-					Continue
-				}
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-
+			
 			$dbs = $server.Databases
-
+			
 			if ($Database) {
 				$dbs = $dbs | Where-Object { $Database -contains $_.Name }
 			}
-
+			
 			if ($ExcludeDatabase) {
 				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
-
+			
 			foreach ($db in $dbs) {
 				Write-Message -Level Verbose -Message "Processing $($db.name) on $servername."
-				$null = $collection.Add([PSCustomObject]@{
-						Server            = $server.name
-						ServerCollation   = $server.collation
-						Database          = $db.name
-						DatabaseCollation = $db.collation
-						IsEqual           = $db.collation -eq $server.collation
-					})
+				[PSCustomObject]@{
+					ComputerName	 = $server.NetName
+					InstanceName	 = $server.ServiceName
+					SqlInstance	     = $server.DomainInstanceName
+					Database		 = $db.name
+					ServerCollation  = $server.collation
+					DatabaseCollation = $db.collation
+					IsEqual		     = $db.collation -eq $server.collation
+				}
 			}
-		}
-	}
-
-	end {
-		if ($detailed) {
-			return $collection
-		}
-
-		if ($Database.count -eq 1) {
-			if ($SqlInstance.count -eq 1) {
-				return $collection.IsEqual
-			}
-			else {
-				return ($collection | Select-Object Server, isEqual)
-			}
-		}
-		else {
-			return ($collection | Select-Object Server, Database, IsEqual)
 		}
 	}
 }
-
