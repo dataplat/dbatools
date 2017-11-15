@@ -1,8 +1,3 @@
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-# Imports some assemblies
-Write-Host -Object "Importing dbatools" -ForegroundColor DarkGreen
-Import-Module C:\github\dbatools\dbatools.psd1
-
 Write-Host -Object "Creating migration & backup directories" -ForegroundColor DarkGreen
 New-Item -Path C:\temp -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
 New-Item -Path C:\temp\migration -ItemType Directory -ErrorAction SilentlyContinue | Out-Null

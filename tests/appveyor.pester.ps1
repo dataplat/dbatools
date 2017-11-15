@@ -255,7 +255,6 @@ if (-not $Finalize) {
 #Run a test with the current version of PowerShell
 #Make things faster by removing most output
 if (-not $Finalize) {
-	Write-Output "Testing with PowerShell $PSVersion"
 	Import-Module Pester
 	Set-Variable ProgressPreference -Value SilentlyContinue
 	if ($AllScenarioTests.Count -eq 0) {
