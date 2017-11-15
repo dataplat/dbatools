@@ -179,6 +179,8 @@ Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql201
 			Write-Message -Level Verbose -Message "Adding paths"
 			$sql = Get-SQLDirTreeQuery $Path
 			Write-Message -Level Verbose -Message $sql
+			
+			# This should remain as not .Query() to be compat with a PSProvider Chrissy is working on
 			$datatable = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
 			
 			Write-Message -Level Verbose -Message "$($datatable.Rows.Count) files found."
