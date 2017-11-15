@@ -146,7 +146,6 @@ function Get-DbaDatabase {
 			Returns databases 'OneDb' and 'OtherDB' from SQL Server instances SQL2 and SQL3 if databases by those names exist on those instances.
 	#>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
-	[OutputType([Microsoft.SqlServer.Management.Smo.Database[]])]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer")]
