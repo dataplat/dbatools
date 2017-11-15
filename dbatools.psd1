@@ -11,7 +11,7 @@
 	RootModule			    = 'dbatools.psm1'
 	
 	# Version number of this module.
-	ModuleVersion		    = '0.9.98'
+	ModuleVersion		    = '0.9.99'
 	
 	# ID used to uniquely identify this module
 	GUID				    = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -390,7 +390,9 @@
 		'Get-DbaDump',
 		'Invoke-DbaAdvancedRestore',
 		'Format-DbaBackupInformation',
-		'Get-DbaAgentJobStep'
+		'Get-DbaAgentJobStep',
+		'Test-DbaBackupInformation',
+		'Invoke-DbaBalanceDataFiles'
 	)
 	
 	# Cmdlets to export from this module
