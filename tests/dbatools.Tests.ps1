@@ -13,6 +13,26 @@ Describe 'dbatools module test' -Tag 'Compliance' {
 }
 
 
+Describe "$ModuleName Aliases" -tag Build , Aliases {
+    ## Get the Aliases that should be set from the psm1 file
+
+    $psm1 = Get-Content $ModulePath\$ModuleName.psm1 -Verbose
+    $Matches = [regex]::Matches($psm1, "AliasName`"\s=\s`"(\w*-\w*)`"")
+    $Aliases = $Matches.ForEach{$_.Groups[1].Value}
+
+    foreach ($Alias in $Aliases) {
+        Context "Testing $Alias Alias" {
+            $Definition = (Get-Alias $Alias).Definition
+            It "$Alias Alias should exist" {
+                Get-Alias $Alias| Should Not BeNullOrEmpty
+            }   
+            It "$Alias Aliased Command $Definition Should Exist" {
+                Get-Command $Definition -ErrorAction SilentlyContinue | Should Not BeNullOrEmpty
+            }
+        }
+    }
+}
+
 # test the module manifest - exports the right functions, processes the right formats, and is generally correct
 <#
 Describe "Manifest" {
