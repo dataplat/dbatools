@@ -19,11 +19,17 @@ function Invoke-DbaBalanceDataFiles {
 		A file group whould have at least have 2 data files and should be writable.
 		If a table is within such a file group it will be subject for processing. If not the table will be skipped.
 
-	.PARAMETER SqlInstance
-		The SQL Server instance hosting the databases to be backed up.
+        .PARAMETER SqlInstance
+            The target SQL Server instance or instances.
 
-	.PARAMETER SqlCredential
-		Credentials to connect to the SQL Server instance if the calling user doesn't have permission.
+        .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+            To connect as a different Windows user, run PowerShell as that user.
 
 	.PARAMETER Database
 		The database(s) to process.

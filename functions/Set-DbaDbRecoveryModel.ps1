@@ -7,7 +7,7 @@ function Set-DbaDbRecoveryModel {
             Set-DbaDbRecoveryModel sets the Recovery Model for user databases.
 
         .PARAMETER SqlInstance
-            The SQL Server instance. Server version must be SQL Server version XXXX or higher.
+            The target SQL Server instance or instances.
 
         .PARAMETER SqlCredential
             Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
