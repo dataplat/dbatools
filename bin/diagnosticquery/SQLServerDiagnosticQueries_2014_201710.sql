@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 5, 2017
+-- Last Modified: November 15, 2017
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -78,7 +78,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 --															12.0.4511		SP1 CU12        4/17/2017				12.0.5546		SP2 CU5			4/17/2017
 --															12.0.4522		SP1	CU13		7/17/2017				12.0.5552		SP2 CU6			7/17/2017
 --																													12.0.5556		SP2 CU7			8/28/2017
---																													12.0.5557		SP2 CU8			10/17/2017
+--																													12.0.5557		SP2 CU8			10/16/2017
 
 
 
@@ -107,19 +107,25 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- Announcing updates to the SQL Server Incremental Servicing Model (ISM)
 -- https://blogs.msdn.microsoft.com/sqlreleaseservices/announcing-updates-to-the-sql-server-incremental-servicing-model-ism/
 
+-- Update Center for Microsoft SQL Server
+-- http://bit.ly/2pZptuQ
+
 -- Download SQL Server Management Studio (SSMS)
 -- https://msdn.microsoft.com/en-us/library/mt238290.aspx
 
+-- Download and install Microsoft SQL Operations Studio 
+-- https://docs.microsoft.com/en-us/sql/sql-operations-studio/download
+
 
 -- Get socket, physical core and logical core count from the SQL Server Error log. (Query 2) (Core Counts)
--- This query might take a few seconds if you have not recycled your error log recently
+-- This query might take a few seconds depending on the size of your error log
 EXEC sys.xp_readerrorlog 0, 1, N'detected', N'socket';
 ------
 
 -- This can help you determine the exact core counts used by SQL Server and whether HT is enabled or not
 -- It can also help you confirm your SQL Server licensing model
--- Be on the lookout for this message "using 20 logical processors based on SQL Server licensing" 
--- (when you have more than 20 logical cores) which means grandfathered Server/CAL licensing
+-- Be on the lookout for this message "using 40 logical processors based on SQL Server licensing" 
+-- (when you have more than 40 logical cores) which means grandfathered Server/CAL licensing
 -- This query will return no results if your error log has been recycled since the instance was last started
 
 
@@ -188,15 +194,15 @@ DBCC TRACESTATUS (-1);
 
 -- Common trace flags that should be enabled in most cases
 -- TF 1117 - When growing a data file, grow all files at the same time so they remain the same size, reducing allocation contention points
---           http://support2.microsoft.com/kb/2154845
+--           https://support2.microsoft.com/kb/2154845
 -- 
 -- TF 1118 - Helps alleviate allocation contention in tempdb, SQL Server allocates full extents to each database object, 
 --           thereby eliminating the contention on SGAM pages (more important with older versions of SQL Server)
 --           Recommendations to reduce allocation contention in SQL Server tempdb database
---           http://support2.microsoft.com/kb/2154845
+--           https://support2.microsoft.com/kb/2154845
 
--- TF 2371 - Lowers auto update statistics threshold for large tables
---           http://blogs.msdn.com/b/saponsqlserver/archive/2011/09/07/changes-to-automatic-update-statistics-in-sql-server-traceflag-2371.aspx
+-- TF 2371 - Lowers auto update statistics threshold for large tables (on tables with more than 25,000 rows)
+--           https://blogs.msdn.com/b/saponsqlserver/archive/2011/09/07/changes-to-automatic-update-statistics-in-sql-server-traceflag-2371.aspx
 
 -- TF 3226 - Supresses logging of successful database backup messages to the SQL Server Error Log
 --           https://www.sqlskills.com/blogs/paul/fed-up-with-backup-success-messages-bloating-your-error-logs/
@@ -206,6 +212,9 @@ DBCC TRACESTATUS (-1);
 
 -- TF 6534 - Enables use of native code to improve performance with spatial data
 --           https://blogs.msdn.microsoft.com/bobsql/2016/06/03/sql-2016-it-just-runs-faster-native-spatial-implementations/
+
+-- TF 8079 - Enables automatic soft-NUMA on systems with eight or more physical cores per NUMA node (with SQL Server 2014 SP2)
+--           https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-2014-service-pack-2-is-now-available/
 
 -- SQL Server query optimizer hotfix trace flag 4199 servicing model
 -- https://support.microsoft.com/en-us/kb/974006

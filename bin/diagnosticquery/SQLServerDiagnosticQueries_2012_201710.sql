@@ -1,7 +1,7 @@
 
 -- SQL Server 2012 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 5, 2017
+-- Last Modified: November 15, 2017
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -88,6 +88,9 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 --																																									   11.0.6607		SP3 CU10		  8/8/2017																											
 --																																																							11.0.7001		SP4 RTM			10/3/2017	
 
+-- SQL Server 2012 Service Pack 4 (SP4) Released!
+-- https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-server-2012-service-pack-4-sp4-released/
+
 -- How to determine the version, edition and update level of SQL Server and its components 
 -- https://support.microsoft.com/en-us/kb/321185
 
@@ -124,19 +127,26 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- Announcing updates to the SQL Server Incremental Servicing Model (ISM)
 -- https://blogs.msdn.microsoft.com/sqlreleaseservices/announcing-updates-to-the-sql-server-incremental-servicing-model-ism/
 
+-- Update Center for Microsoft SQL Server
+-- http://bit.ly/2pZptuQ
+
 -- Download SQL Server Management Studio (SSMS)
 -- https://msdn.microsoft.com/en-us/library/mt238290.aspx
 
+-- Download and install Microsoft SQL Operations Studio 
+-- https://docs.microsoft.com/en-us/sql/sql-operations-studio/download
+
 
 -- Get socket, physical core and logical core count from the SQL Server Error log. (Query 2) (Core Counts)
--- This query might take a few seconds if you have not recycled your error log recently
+-- This query might take a few seconds depending on the size of your error log 
 EXEC sys.xp_readerrorlog 0, 1, N'detected', N'socket';
 ------
 
+-- New in SQL Server 2012 SP4
 -- This can help you determine the exact core counts used by SQL Server and whether HT is enabled or not
 -- It can also help you confirm your SQL Server licensing model
--- Be on the lookout for this message "using 20 logical processors based on SQL Server licensing" 
--- (when you have more than 20 logical cores) which means grandfathered Server/CAL licensing
+-- Be on the lookout for this message "using 40 logical processors based on SQL Server licensing" 
+-- (when you have more than 40 logical cores) which means grandfathered Server/CAL licensing
 -- This query will return no results if your error log has been recycled since the instance was last started
 
 
@@ -203,15 +213,18 @@ DBCC TRACESTATUS (-1);
 
 -- Common trace flags that should be enabled in most cases
 -- TF 1117 - When growing a data file, grow all files at the same time so they remain the same size, reducing allocation contention points
---           http://support2.microsoft.com/kb/2154845
+--           https://support2.microsoft.com/kb/2154845
 -- 
 -- TF 1118 - Helps alleviate allocation contention in tempdb, SQL Server allocates full extents to each database object, 
 --           thereby eliminating the contention on SGAM pages (more important with older versions of SQL Server)
 --           Recommendations to reduce allocation contention in SQL Server tempdb database
---           http://support2.microsoft.com/kb/2154845
+--           https://support2.microsoft.com/kb/2154845
 
--- TF 2371 - Lowers auto update statistics threshold for large tables
---           http://blogs.msdn.com/b/saponsqlserver/archive/2011/09/07/changes-to-automatic-update-statistics-in-sql-server-traceflag-2371.aspx
+-- TF 2371 - Lowers auto update statistics threshold for large tables (on tables with more than 25,000 rows)
+--           https://blogs.msdn.com/b/saponsqlserver/archive/2011/09/07/changes-to-automatic-update-statistics-in-sql-server-traceflag-2371.aspx
+
+-- TF 3023 - Enables backup checksum default
+--           https://support.microsoft.com/en-us/help/2656988/how-to-enable-the-checksum-option-if-backup-utilities-do-not-expose-th
 
 -- TF 3226 - Supresses logging of successful database backup messages to the SQL Server Error Log
 --           https://www.sqlskills.com/blogs/paul/fed-up-with-backup-success-messages-bloating-your-error-logs/
