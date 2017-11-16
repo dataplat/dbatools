@@ -415,6 +415,10 @@ function Restore-DbaDatabase {
                     return
                 }
             }
+            if ($KeepCDC -and ($NoRecovery -or ('' -ne $StandbyDirectory)){
+                Stop-Function -Category InvalidArgument -Message "KeepCDC cannot be specified with Norecovery or Standby as it needs recovery to work"
+                return
+            }
             if ($Continue) {
                 $ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $RestoreInstance
                 #$WithReplace = $true 

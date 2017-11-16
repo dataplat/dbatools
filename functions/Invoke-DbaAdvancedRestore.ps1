@@ -115,6 +115,10 @@ Function Invoke-DbaAdvancedRestore{
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
+        if ($KeepCDC -and ($NoRecovery -or ('' -ne $StandbyDirectory)){
+            Stop-Function -Category InvalidArgument -Message "KeepCDC cannot be specified with Norecovery or Standby as it needs recovery to work"
+            return
+        }
         $ScriptOnly  = $false
         $InternalHistory = @()
     }
