@@ -101,11 +101,46 @@ function Get-DbaPermission {
 												END
 						, [Grantee] = SUSER_NAME(grantee_principal_id)
 						, [GranteeType] = pr.type_desc
+                        , [revokeStatement] = 'REVOKE ' + permission_name + ' ' + COALESCE(OBJECT_NAME(major_id),'') + ' FROM [' + SUSER_NAME(grantee_principal_id) + ']'
+                        , [grantStatement] = 'GRANT ' + permission_name + ' ' + COALESCE(OBJECT_NAME(major_id),'') + ' TO [' + SUSER_NAME(grantee_principal_id) + ']'
 					FROM sys.server_permissions sp
 						JOIN sys.server_principals pr ON pr.principal_id = sp.grantee_principal_id
 						LEFT OUTER JOIN sys.all_objects o ON o.object_id = sp.major_id
 
-					$ExcludeSystemObjectssql;"
+					$ExcludeSystemObjectssql
+
+                    UNION ALL
+                    SELECT	  SERVERPROPERTY('MachineName') AS ComputerName
+		                    , ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName
+		                    , SERVERPROPERTY('ServerName') AS SqlInstance
+		                    , [database] = ''
+		                    , [PermState] = 'GRANT'
+		                    , [PermissionName] = pb.[permission_name]
+		                    , [SecurableType] = pb.class_desc
+		                    , [Securable] = @@SERVERNAME
+		                    , [Grantee] = spr.name
+		                    , [GranteeType] = spr.type_desc
+		                    , [revokestatement] = ''
+		                    , [grantstatement] = ''
+                    FROM sys.server_principals AS spr
+                    INNER JOIN sys.fn_builtin_permissions('SERVER') AS pb ON
+	                    spr.[name]='bulkadmin' AND pb.[permission_name]='ADMINISTER BULK OPERATIONS'
+	                    OR
+	                    spr.[name]='dbcreator' AND pb.[permission_name]='CREATE ANY DATABASE'
+	                    OR
+	                    spr.[name]='diskadmin' AND pb.[permission_name]='ALTER RESOURCES'
+	                    OR
+	                    spr.[name]='processadmin' AND pb.[permission_name] IN ('ALTER ANY CONNECTION', 'ALTER SERVER STATE')
+	                    OR
+	                    spr.[name]='sysadmin' AND pb.[permission_name]='CONTROL SERVER'
+	                    OR
+	                    spr.[name]='securityadmin' AND pb.[permission_name]='ALTER ANY LOGIN'
+	                    OR
+	                    spr.[name]='serveradmin'  AND pb.[permission_name] IN ('ALTER ANY ENDPOINT', 'ALTER RESOURCES','ALTER SERVER STATE', 'ALTER SETTINGS','SHUTDOWN', 'VIEW SERVER STATE')
+	                    OR
+	                    spr.[name]='setupadmin' AND pb.[permission_name]='ALTER ANY LINKED SERVER'
+                    WHERE spr.[type]='R'
+                    ;"
 
 		$DBPermsql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName,
 					ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
@@ -116,15 +151,63 @@ function Get-DbaPermission {
 					, [SecurableType] = COALESCE(o.type_desc,dp.class_desc)
 					, [Securable] = CASE	WHEN class = 0 THEN DB_NAME()
 											WHEN class = 1 THEN ISNULL(s.name + '.','')+OBJECT_NAME(major_id)
-											WHEN class = 3 THEN SCHEMA_NAME(major_id) END
+											WHEN class = 3 THEN SCHEMA_NAME(major_id)
+                                            WHEN class = 6 THEN SCHEMA_NAME(t.schema_id)+'.' + t.name
+                                            END
 					, [Grantee] = USER_NAME(grantee_principal_id)
 					, [GranteeType] = pr.type_desc
+                    , [revokeStatement] = 'REVOKE ' + permission_name + ' ON ' + isnull(schema_name(o.object_id)+'.','')+OBJECT_NAME(major_id)+ ' FROM [' + USER_NAME(grantee_principal_id) + ']'
+                    , [grantStatement] = 'GRANT ' + permission_name + ' ON ' + isnull(schema_name(o.object_id)+'.','')+OBJECT_NAME(major_id)+ ' TO [' + USER_NAME(grantee_principal_id) + ']'
 				FROM sys.database_permissions dp
 					JOIN sys.database_principals pr ON pr.principal_id = dp.grantee_principal_id
 					LEFT OUTER JOIN sys.all_objects o ON o.object_id = dp.major_id
 					LEFT OUTER JOIN sys.schemas s ON s.schema_id = o.schema_id
+                    LEFT OUTER JOIN sys.types t on t.user_type_id = dp.major_id
 
 				$ExcludeSystemObjectssql
+
+                UNION ALL
+                SELECT	  SERVERPROPERTY('MachineName') AS ComputerName
+		                , ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName
+		                , SERVERPROPERTY('ServerName') AS SqlInstance
+		                , [database] = DB_NAME()
+		                , [PermState] = ''
+		                , [PermissionName] = p.[permission_name]
+		                , [SecurableType] = p.class_desc
+		                , [Securable] = DB_NAME()
+		                , [Grantee] = dp.name
+		                , [GranteeType] = dp.type_desc
+		                , [revokestatement] = ''
+		                , [grantstatement] = ''
+                FROM sys.database_principals AS dp
+                INNER JOIN sys.fn_builtin_permissions('DATABASE') AS p ON
+	                dp.[name]='db_accessadmin' AND p.[permission_name] IN ('ALTER ANY USER', 'CREATE SCHEMA')
+	                OR
+	                dp.[name]='db_backupoperator' AND p.[permission_name] IN ('BACKUP DATABASE', 'BACKUP LOG', 'CHECKPOINT')
+	                OR
+	                dp.[name] IN ('db_datareader', 'db_denydatareader') AND p.[permission_name]='SELECT'
+	                OR
+	                dp.[name] IN ('db_datawriter', 'db_denydatawriter') AND p.[permission_name] IN ('INSERT', 'DELETE', 'UPDATE')
+	                OR
+	                dp.[name]='db_ddladmin' AND
+	                p.[permission_name] IN ('ALTER ANY ASSEMBLY', 'ALTER ANY ASYMMETRIC KEY',
+							                'ALTER ANY CERTIFICATE', 'ALTER ANY CONTRACT',
+							                'ALTER ANY DATABASE DDL TRIGGER', 'ALTER ANY DATABASE EVENT',
+							                'NOTIFICATION', 'ALTER ANY DATASPACE', 'ALTER ANY FULLTEXT CATALOG',
+							                'ALTER ANY MESSAGE TYPE', 'ALTER ANY REMOTE SERVICE BINDING',
+							                'ALTER ANY ROUTE', 'ALTER ANY SCHEMA', 'ALTER ANY SERVICE',
+							                'ALTER ANY SYMMETRIC KEY', 'CHECKPOINT', 'CREATE AGGREGATE',
+							                'CREATE DEFAULT', 'CREATE FUNCTION', 'CREATE PROCEDURE',
+							                'CREATE QUEUE', 'CREATE RULE', 'CREATE SYNONYM', 'CREATE TABLE',
+							                'CREATE TYPE', 'CREATE VIEW', 'CREATE XML SCHEMA COLLECTION',
+							                'REFERENCES')
+	                OR
+	                dp.[name]='db_owner' AND p.[permission_name]='CONTROL'
+	                OR
+	                dp.[name]='db_securityadmin' AND p.[permission_name] IN ('ALTER ANY APPLICATION ROLE', 'ALTER ANY ROLE', 'CREATE SCHEMA', 'VIEW DEFINITION')
+ 
+                WHERE dp.[type]='R'
+	                AND dp.is_fixed_role=1
 				;"
 	}
 
@@ -141,7 +224,7 @@ function Get-DbaPermission {
 			
 			if ($IncludeServerLevel) {
 				Write-Message -Level Debug -Message "T-SQL: $ServPermsql"
-				$server.Query($ServPermsql).Tables.Rows
+				$server.Query($ServPermsql)
 			}
 
 			$dbs = $server.Databases
