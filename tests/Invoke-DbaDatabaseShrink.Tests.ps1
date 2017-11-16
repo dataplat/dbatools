@@ -5,7 +5,8 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Verifying Database is shrunk" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $script:instance1 
+            $server = Connect-DbaInstance -SqlInstance $script:instance1
+            $defaultPath = $server | Get-DbaDefaultPath
         }
         BeforeEach {
             # Create Database with small size and grow it
@@ -14,14 +15,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $primaryFileGroup = New-Object Microsoft.SqlServer.Management.Smo.Filegroup($db, "PRIMARY")
             $db.FileGroups.Add($primaryFileGroup)
             $primaryFile = New-Object Microsoft.SqlServer.Management.Smo.DataFile($primaryFileGroup, $db.Name)
-            $primaryFile.FileName = "$($server.DefaultFile)\$($db.Name).mdf"
+            $primaryFile.FileName = "$($defaultPath.Data)\$($db.Name).mdf"
             $primaryFile.Size = 8 * 1024
             $primaryFile.Growth = 8 * 1024
             $primaryFile.GrowthType = "KB"
             $primaryFileGroup.Files.Add($primaryFile)
 
             $logFile = New-Object Microsoft.SqlServer.Management.Smo.LogFile($db, "$($db.Name)_log")
-            $logFile.FileName = "$($server.DefaultLog)\$($db.Name)_log.ldf"
+            $logFile.FileName = "$($defaultPath.Log)\$($db.Name)_log.ldf"
             $logFile.Size = 8 * 1024
             $logFile.Growth = 8 * 1024
             $logFile.GrowthType = "KB"
