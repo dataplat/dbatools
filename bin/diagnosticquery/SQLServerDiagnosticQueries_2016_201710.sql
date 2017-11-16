@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 5, 2017
+-- Last Modified: November 15, 2017
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -81,8 +81,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- How to obtain the latest Service Pack for SQL Server 2016
 -- https://support.microsoft.com/en-us/kb/3177534
 
--- Microsoft SQL Server 2016 RTM Latest Cumulative Update 
--- https://www.microsoft.com/en-us/download/details.aspx?id=53338
+-- Microsoft SQL Server 2016 SP1 Latest Cumulative Update
+-- https://www.microsoft.com/en-us/download/details.aspx?id=54613 
 
 -- SQL Server 2016 build versions 
 -- https://support.microsoft.com/en-us/kb/3177312
@@ -96,23 +96,26 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- Announcing updates to the SQL Server Incremental Servicing Model (ISM)
 -- https://blogs.msdn.microsoft.com/sqlreleaseservices/announcing-updates-to-the-sql-server-incremental-servicing-model-ism/
 
--- Download SQL Server Management Studio (SSMS)
--- https://msdn.microsoft.com/en-us/library/mt238290.aspx	
-
 -- Update Center for Microsoft SQL Server
 -- http://bit.ly/2pZptuQ
 
+-- Download SQL Server Management Studio (SSMS)
+-- https://msdn.microsoft.com/en-us/library/mt238290.aspx
+
+-- Download and install Microsoft SQL Operations Studio 
+-- https://docs.microsoft.com/en-us/sql/sql-operations-studio/download
+	
 
 
 -- Get socket, physical core and logical core count from the SQL Server Error log. (Query 2) (Core Counts)
--- This query might take a few seconds if you have not recycled your error log recently
+-- This query might take a few seconds depending on the size of your error log
 EXEC sys.xp_readerrorlog 0, 1, N'detected', N'socket';
 ------
 
 -- This can help you determine the exact core counts used by SQL Server and whether HT is enabled or not
 -- It can also help you confirm your SQL Server licensing model
--- Be on the lookout for this message "using 20 logical processors based on SQL Server licensing" 
--- (when you have more than 20 logical cores) which means grandfathered Server/CAL licensing
+-- Be on the lookout for this message "using 40 logical processors based on SQL Server licensing" 
+-- (when you have more than 40 logical cores) which means grandfathered Server/CAL licensing
 -- This query will return no results if your error log has been recycled since the instance was last started
 
 
