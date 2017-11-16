@@ -108,6 +108,7 @@ function Get-DbaPermission {
 						LEFT OUTER JOIN sys.all_objects o ON o.object_id = sp.major_id
 
 					$ExcludeSystemObjectssql
+
                     UNION ALL
                     SELECT	  SERVERPROPERTY('MachineName') AS ComputerName
 		                    , ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName
@@ -164,6 +165,49 @@ function Get-DbaPermission {
                     LEFT OUTER JOIN sys.types t on t.user_type_id = dp.major_id
 
 				$ExcludeSystemObjectssql
+
+                UNION ALL
+                SELECT	  SERVERPROPERTY('MachineName') AS ComputerName
+		                , ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName
+		                , SERVERPROPERTY('ServerName') AS SqlInstance
+		                , [database] = DB_NAME()
+		                , [PermState] = ''
+		                , [PermissionName] = p.[permission_name]
+		                , [SecurableType] = p.class_desc
+		                , [Securable] = DB_NAME()
+		                , [Grantee] = dp.name
+		                , [GranteeType] = dp.type_desc
+		                , [revokestatement] = ''
+		                , [grantstatement] = ''
+                FROM sys.database_principals AS dp
+                INNER JOIN sys.fn_builtin_permissions('DATABASE') AS p ON
+	                dp.[name]='db_accessadmin' AND p.[permission_name] IN ('ALTER ANY USER', 'CREATE SCHEMA')
+	                OR
+	                dp.[name]='db_backupoperator' AND p.[permission_name] IN ('BACKUP DATABASE', 'BACKUP LOG', 'CHECKPOINT')
+	                OR
+	                dp.[name] IN ('db_datareader', 'db_denydatareader') AND p.[permission_name]='SELECT'
+	                OR
+	                dp.[name] IN ('db_datawriter', 'db_denydatawriter') AND p.[permission_name] IN ('INSERT', 'DELETE', 'UPDATE')
+	                OR
+	                dp.[name]='db_ddladmin' AND
+	                p.[permission_name] IN ('ALTER ANY ASSEMBLY', 'ALTER ANY ASYMMETRIC KEY',
+							                'ALTER ANY CERTIFICATE', 'ALTER ANY CONTRACT',
+							                'ALTER ANY DATABASE DDL TRIGGER', 'ALTER ANY DATABASE EVENT',
+							                'NOTIFICATION', 'ALTER ANY DATASPACE', 'ALTER ANY FULLTEXT CATALOG',
+							                'ALTER ANY MESSAGE TYPE', 'ALTER ANY REMOTE SERVICE BINDING',
+							                'ALTER ANY ROUTE', 'ALTER ANY SCHEMA', 'ALTER ANY SERVICE',
+							                'ALTER ANY SYMMETRIC KEY', 'CHECKPOINT', 'CREATE AGGREGATE',
+							                'CREATE DEFAULT', 'CREATE FUNCTION', 'CREATE PROCEDURE',
+							                'CREATE QUEUE', 'CREATE RULE', 'CREATE SYNONYM', 'CREATE TABLE',
+							                'CREATE TYPE', 'CREATE VIEW', 'CREATE XML SCHEMA COLLECTION',
+							                'REFERENCES')
+	                OR
+	                dp.[name]='db_owner' AND p.[permission_name]='CONTROL'
+	                OR
+	                dp.[name]='db_securityadmin' AND p.[permission_name] IN ('ALTER ANY APPLICATION ROLE', 'ALTER ANY ROLE', 'CREATE SCHEMA', 'VIEW DEFINITION')
+ 
+                WHERE dp.[type]='R'
+	                AND dp.is_fixed_role=1
 				;"
 	}
 
