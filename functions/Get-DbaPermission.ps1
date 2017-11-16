@@ -180,7 +180,7 @@ function Get-DbaPermission {
 			
 			if ($IncludeServerLevel) {
 				Write-Message -Level Debug -Message "T-SQL: $ServPermsql"
-				$server.Query($ServPermsql).Tables.Rows
+				$server.Query($ServPermsql)
 			}
 
 			$dbs = $server.Databases
