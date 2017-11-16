@@ -107,7 +107,39 @@ function Get-DbaPermission {
 						JOIN sys.server_principals pr ON pr.principal_id = sp.grantee_principal_id
 						LEFT OUTER JOIN sys.all_objects o ON o.object_id = sp.major_id
 
-					$ExcludeSystemObjectssql;"
+					$ExcludeSystemObjectssql
+                    UNION ALL
+                    SELECT	  SERVERPROPERTY('MachineName') AS ComputerName
+		                    , ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName
+		                    , SERVERPROPERTY('ServerName') AS SqlInstance
+		                    , [database] = ''
+		                    , [PermState] = 'GRANT'
+		                    , [PermissionName] = pb.[permission_name]
+		                    , [SecurableType] = pb.class_desc
+		                    , [Securable] = @@SERVERNAME
+		                    , [Grantee] = spr.name
+		                    , [GranteeType] = spr.type_desc
+		                    , [revokestatement] = ''
+		                    , [grantstatement] = ''
+                    FROM sys.server_principals AS spr
+                    INNER JOIN sys.fn_builtin_permissions('SERVER') AS pb ON
+	                    spr.[name]='bulkadmin' AND pb.[permission_name]='ADMINISTER BULK OPERATIONS'
+	                    OR
+	                    spr.[name]='dbcreator' AND pb.[permission_name]='CREATE ANY DATABASE'
+	                    OR
+	                    spr.[name]='diskadmin' AND pb.[permission_name]='ALTER RESOURCES'
+	                    OR
+	                    spr.[name]='processadmin' AND pb.[permission_name] IN ('ALTER ANY CONNECTION', 'ALTER SERVER STATE')
+	                    OR
+	                    spr.[name]='sysadmin' AND pb.[permission_name]='CONTROL SERVER'
+	                    OR
+	                    spr.[name]='securityadmin' AND pb.[permission_name]='ALTER ANY LOGIN'
+	                    OR
+	                    spr.[name]='serveradmin'  AND pb.[permission_name] IN ('ALTER ANY ENDPOINT', 'ALTER RESOURCES','ALTER SERVER STATE', 'ALTER SETTINGS','SHUTDOWN', 'VIEW SERVER STATE')
+	                    OR
+	                    spr.[name]='setupadmin' AND pb.[permission_name]='ALTER ANY LINKED SERVER'
+                    WHERE spr.[type]='R'
+                    ;"
 
 		$DBPermsql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName,
 					ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
