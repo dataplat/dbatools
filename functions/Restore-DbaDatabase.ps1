@@ -415,7 +415,7 @@ function Restore-DbaDatabase {
                     return
                 }
             }
-            if ($KeepCDC -and ($NoRecovery -or ('' -ne $StandbyDirectory)){
+            if ($KeepCDC -and ($NoRecovery -or ('' -ne $StandbyDirectory))){
                 Stop-Function -Category InvalidArgument -Message "KeepCDC cannot be specified with Norecovery or Standby as it needs recovery to work"
                 return
             }
@@ -449,11 +449,12 @@ function Restore-DbaDatabase {
             $DestinationDataDirectory = $DefaultPath.Data
             $DestinationLogDirectory = $DefaultPath.Log
         }
-        $backupFiles = @()
+
         $BackupHistory = @()
         #$useDestinationDefaultDirectories = $true
     }
     process{
+        if (Test-FunctionInterrupt) { return }
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
             if ($PipeDatabaseName -eq $true){$DatabaseName  = ''}
             Write-Message -message "ParameterSet  = Restore" -Level Verbose
@@ -531,7 +532,7 @@ function Restore-DbaDatabase {
                 Catch {
                     $RestoreComplete = $False
                     $ExitError = $_.Exception.InnerException
-                    Write-Message -Level Warning -Message "Failed to recover $Database on $RestoreInstance," 
+                    Write-Message -Level Warning -Message "Failed to recover $Database on $RestoreInstance, `n $ExitError" 
                 }
                 Finally {
                     [PSCustomObject]@{

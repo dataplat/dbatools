@@ -115,7 +115,7 @@ Function Invoke-DbaAdvancedRestore{
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             return
         }
-        if ($KeepCDC -and ($NoRecovery -or ('' -ne $StandbyDirectory)){
+        if ($KeepCDC -and ($NoRecovery -or ('' -ne $StandbyDirectory))){
             Stop-Function -Category InvalidArgument -Message "KeepCDC cannot be specified with Norecovery or Standby as it needs recovery to work"
             return
         }
@@ -128,6 +128,7 @@ Function Invoke-DbaAdvancedRestore{
         }
     }
     end{
+        if (Test-FunctionInterrupt) { return }
         $Databases  = $InternalHistory.Database | select-Object -unique
         ForEach ($Database in $Databases){
             If ($Database -in $Server.databases.name) {
@@ -225,7 +226,7 @@ Function Invoke-DbaAdvancedRestore{
                             }
                             if ($true -ne $OutputScriptOnly){
                                 Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
-                                $output = $server.ConnectionContext.ExecuteNonQuery($script)
+                                $null = $server.ConnectionContext.ExecuteNonQuery($script)
                                 Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance" -status "Complete" -Completed
                             }
                         }
