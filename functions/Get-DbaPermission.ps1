@@ -118,7 +118,9 @@ function Get-DbaPermission {
 					, [SecurableType] = COALESCE(o.type_desc,dp.class_desc)
 					, [Securable] = CASE	WHEN class = 0 THEN DB_NAME()
 											WHEN class = 1 THEN ISNULL(s.name + '.','')+OBJECT_NAME(major_id)
-											WHEN class = 3 THEN SCHEMA_NAME(major_id) END
+											WHEN class = 3 THEN SCHEMA_NAME(major_id)
+                                            WHEN class = 6 THEN SCHEMA_NAME(t.schema_id)+'.' + t.name
+                                            END
 					, [Grantee] = USER_NAME(grantee_principal_id)
 					, [GranteeType] = pr.type_desc
                     , [revokeStatement] = 'REVOKE ' + permission_name + ' ON ' + isnull(schema_name(o.object_id)+'.','')+OBJECT_NAME(major_id)+ ' FROM [' + USER_NAME(grantee_principal_id) + ']'
@@ -127,6 +129,7 @@ function Get-DbaPermission {
 					JOIN sys.database_principals pr ON pr.principal_id = dp.grantee_principal_id
 					LEFT OUTER JOIN sys.all_objects o ON o.object_id = dp.major_id
 					LEFT OUTER JOIN sys.schemas s ON s.schema_id = o.schema_id
+                    LEFT OUTER JOIN sys.types t on t.user_type_id = dp.major_id
 
 				$ExcludeSystemObjectssql
 				;"
