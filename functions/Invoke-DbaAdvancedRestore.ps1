@@ -62,6 +62,9 @@ Function Invoke-DbaAdvancedRestore{
     .PARAMETER WithReplace    
         Indicated that if the database already exists it should be replaced
     
+    .PARAMETER KeepCDC
+        Indicates whether CDC information should be restored as part of the database
+    
     .PARAMETER WhatIf
         Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
@@ -101,6 +104,7 @@ Function Invoke-DbaAdvancedRestore{
         [switch]$Continue,
         [PSCredential]$AzureCredential,
         [switch]$WithReplace,
+        [switch]$KeepCDC,
         [switch]$EnableException
     )
     begin{
@@ -109,6 +113,10 @@ Function Invoke-DbaAdvancedRestore{
         }
         catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            return
+        }
+        if ($KeepCDC -and ($NoRecovery -or ('' -ne $StandbyDirectory))){
+            Stop-Function -Category InvalidArgument -Message "KeepCDC cannot be specified with Norecovery or Standby as it needs recovery to work"
             return
         }
         $ScriptOnly  = $false
@@ -120,6 +128,7 @@ Function Invoke-DbaAdvancedRestore{
         }
     }
     end{
+        if (Test-FunctionInterrupt) { return }
         $Databases  = $InternalHistory.Database | select-Object -unique
         ForEach ($Database in $Databases){
             If ($Database -in $Server.databases.name) {
@@ -148,7 +157,6 @@ Function Invoke-DbaAdvancedRestore{
                 if (($backup -ne $backups[-1] -and $StandbyDirectory -eq '') -or $true -eq $NoRecovery){
                     $Restore.NoRecovery = $True
                 }elseif ($backup -eq $backups[-1] -and '' -ne $StandbyDirectory) {
-                    
                     $Restore.StandbyFile = $StandByDirectory + "\" + $Database + (get-date -Format yyyMMddHHmmss) + ".bak"
                     Write-Message -Level Verbose -Message "Setting standby on last file $($Restore.StandbyFile)"
                 }
@@ -208,7 +216,21 @@ Function Invoke-DbaAdvancedRestore{
                 If ($Pscmdlet.ShouldProcess("$Database on $SqlInstance `n `n", $ConfirmMessage)) {
                     try {
                         $RestoreComplete = $true
-                        if ($OutputScriptOnly) {
+                        if ($KeepCDC -and $Restore.NoRecovery -eq $false){
+                            $script = $Restore.Script($server)
+                            if ($script -like '*WITH*'){
+                                $script = $script.TrimEnd()+' , KEEP_CDC'
+                            }
+                            else{
+                                $script = $script.TrimEnd() + ' WITH KEEP_CDC'
+                            }
+                            if ($true -ne $OutputScriptOnly){
+                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                                $null = $server.ConnectionContext.ExecuteNonQuery($script)
+                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance" -status "Complete" -Completed
+                            }
+                        }
+                        elseif ($OutputScriptOnly) {
                             $script = $Restore.Script($server)
                         }
                         elseif ($VerifyOnly) {
