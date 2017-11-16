@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Can get a certificate" {
 		BeforeAll {
-			$null = Add-DbaComputerCertificate -Path $script:appeyorlabrepo\certificates\localhost.crt -Confirm:$false
+			$null = Add-DbaComputerCertificate -Path $script:appveyorlabrepo\certificates\localhost.crt -Confirm:$false
 			$thumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
 		}
 		AfterAll {

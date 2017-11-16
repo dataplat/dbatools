@@ -12,7 +12,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		$random = Get-Random
 		$dbname = "dbatoolsci_history_$random"
 		$null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
-		$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname -DestinationFilePrefix $dbname
+		$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname -DestinationFilePrefix $dbname
 		$db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
 		$db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
 		$db | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
