@@ -101,6 +101,8 @@ function Get-DbaPermission {
 												END
 						, [Grantee] = SUSER_NAME(grantee_principal_id)
 						, [GranteeType] = pr.type_desc
+                        , [revokeStatement] = 'REVOKE ' + permission_name + ' ' + COALESCE(OBJECT_NAME(major_id),'') + ' FROM [' + SUSER_NAME(grantee_principal_id) + ']'
+                        , [grantStatement] = 'GRANT ' + permission_name + ' ' + COALESCE(OBJECT_NAME(major_id),'') + ' TO [' + SUSER_NAME(grantee_principal_id) + ']'
 					FROM sys.server_permissions sp
 						JOIN sys.server_principals pr ON pr.principal_id = sp.grantee_principal_id
 						LEFT OUTER JOIN sys.all_objects o ON o.object_id = sp.major_id
@@ -119,6 +121,8 @@ function Get-DbaPermission {
 											WHEN class = 3 THEN SCHEMA_NAME(major_id) END
 					, [Grantee] = USER_NAME(grantee_principal_id)
 					, [GranteeType] = pr.type_desc
+                    , [revokeStatement] = 'REVOKE ' + permission_name + ' ON ' + isnull(schema_name(o.object_id)+'.','')+OBJECT_NAME(major_id)+ ' FROM [' + USER_NAME(grantee_principal_id) + ']'
+                    , [grantStatement] = 'GRANT ' + permission_name + ' ON ' + isnull(schema_name(o.object_id)+'.','')+OBJECT_NAME(major_id)+ ' TO [' + USER_NAME(grantee_principal_id) + ']'
 				FROM sys.database_permissions dp
 					JOIN sys.database_principals pr ON pr.principal_id = dp.grantee_principal_id
 					LEFT OUTER JOIN sys.all_objects o ON o.object_id = dp.major_id
