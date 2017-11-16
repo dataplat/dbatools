@@ -461,4 +461,28 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.Script | Should match 'MAXTRANSFERSIZE = 131072' 
         }
     }
+
+    Context "All user databases are removed post Output vs Input test" {
+        $results = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
+        It "Should say the status was dropped" {
+            Foreach ($db in $results) { $db.Status | Should Be "Dropped" }
+        }
+    }
+
+    Context "Checking CDC parameter " {
+        $output = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak  -DatabaseName $DatabaseName -OutputScriptOnly -KeepCDC -WithReplace
+        It "Should have KEEP_CDC in the SQL" {
+            ($output -like '*KEEP_CDC*') | Should be $True
+        }
+        $output = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak  -DatabaseName $DatabaseName -OutputScriptOnly -KeepCDC -WithReplace -WarningVariable warnvar -NoRecovery -WarningAction SilentlyContinue
+        It "Should not ouput, and warn if Norecovery and KeepCDC specified"{
+           ( $warnvar -like '*KeepCDC cannot be specified with Norecovery or Standby as it needs recovery to work') | Should be $True
+           $output | Should be $null
+        }
+        $output = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak  -DatabaseName $DatabaseName -OutputScriptOnly -KeepCDC -WithReplace -WarningVariable warnvar -StandbyDirectory c:\temp\ -WarningAction SilentlyContinue
+        It "Should not ouput, and warn if StandbyDirectory and KeepCDC specified"{
+           ( $warnvar -like '*KeepCDC cannot be specified with Norecovery or Standby as it needs recovery to work') | Should be $True
+           $output | Should be $null
+        }
+    }
 }
