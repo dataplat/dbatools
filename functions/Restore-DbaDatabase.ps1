@@ -166,6 +166,9 @@ function Restore-DbaDatabase {
     .PARAMETER StatementTimeOut
         Timeout in minutes. Defaults to infinity (restores can take a while.)
 
+    .PARAMETER KeepCDC
+        Indicates whether CDC information should be restored as part of the database
+    
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -334,6 +337,8 @@ function Restore-DbaDatabase {
         [string]$DestinationFileSuffix,
         [parameter(ParameterSetName="Recovery")]
         [switch]$Recover,
+        [parameter(ParameterSetName="Restore")]
+        [switch]$KeepCDC,        
         [switch]$AllowContinue,
         [string]$GetBackupInformation,
         [switch]$StopAfterGetBackupInformation,
@@ -410,6 +415,10 @@ function Restore-DbaDatabase {
                     return
                 }
             }
+            if ($KeepCDC -and ($NoRecovery -or ('' -ne $StandbyDirectory))){
+                Stop-Function -Category InvalidArgument -Message "KeepCDC cannot be specified with Norecovery or Standby as it needs recovery to work"
+                return
+            }
             if ($Continue) {
                 $ContinuePoints = Get-RestoreContinuableDatabase -SqlInstance $RestoreInstance
                 #$WithReplace = $true 
@@ -440,11 +449,12 @@ function Restore-DbaDatabase {
             $DestinationDataDirectory = $DefaultPath.Data
             $DestinationLogDirectory = $DefaultPath.Log
         }
-        $backupFiles = @()
+
         $BackupHistory = @()
         #$useDestinationDefaultDirectories = $true
     }
     process{
+        if (Test-FunctionInterrupt) { return }
         if ($PSCmdlet.ParameterSetName -eq "Restore") {
             if ($PipeDatabaseName -eq $true){$DatabaseName  = ''}
             Write-Message -message "ParameterSet  = Restore" -Level Verbose
@@ -522,7 +532,7 @@ function Restore-DbaDatabase {
                 Catch {
                     $RestoreComplete = $False
                     $ExitError = $_.Exception.InnerException
-                    Write-Message -Level Warning -Message "Failed to recover $Database on $RestoreInstance," 
+                    Write-Message -Level Warning -Message "Failed to recover $Database on $RestoreInstance, `n $ExitError" 
                 }
                 Finally {
                     [PSCustomObject]@{
@@ -591,7 +601,7 @@ function Restore-DbaDatabase {
             }
             
             Write-Message -Message "Passing in to restore" -Level Verbose
-            $FilteredBackupHistory | Where-Object {$_.IsVerified -eq $true} | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount
+            $FilteredBackupHistory | Where-Object {$_.IsVerified -eq $true} | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -KeepCDC:$KeepCDC
         
         }
     }

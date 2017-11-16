@@ -108,7 +108,7 @@ Function Format-DbaBackupInformation{
     Begin{
         
         Write-Message -Message "Starting" -Level Verbose
-        if (Test-Bound -ParameterName ReplaceDatabaseName) {
+        if ($null -ne $ReplaceDatabaseName) {
             if ($ReplaceDatabaseName -is [string] -or $ReplaceDatabaseName.ToString() -ne 'System.Collections.Hashtable'){
                 Write-Message -Message "String passed in for DB rename" -Level Verbose
                 $ReplaceDatabaseNameType = 'single'
