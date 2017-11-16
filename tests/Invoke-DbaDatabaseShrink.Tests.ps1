@@ -49,7 +49,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $oldDataSize = $db.FileGroups[0].Files[0].Size
         }
         AfterEach {
-            $db.Drop()
+            $db | Remove-DbaDatabase -Confirm:$false
         }
 
         It "Shrinks just the log file when Type is Log" {
