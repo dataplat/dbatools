@@ -15,6 +15,16 @@ Describe "Get-DbaPermission Unit Tests" -Tag "UnitTests" {
 				$params.ContainsKey("EnableException") | Should Be $true
 			}
 		}
+		Context "parameters work" {
+			it "returns server level permissions with -IncludeServerLevel" {
+                $results = Get-DbaPermission -SqlInstance $script:instance2 -IncludeServerLevel
+				$results.where({$_.Database -eq ''}).count | Should Be Greater Than 0
+			}
+			it "returns no server level permissions without -IncludeServerLevel" {
+                $results = Get-DbaPermission -SqlInstance $script:instance2
+				$results.where({$_.Database -eq ''}).count | Should Be 0
+			}
+		}
 		Context "Validate input" {
 			it "Cannot resolve hostname of computer" {
 				mock Resolve-DbaNetworkName {$null}
