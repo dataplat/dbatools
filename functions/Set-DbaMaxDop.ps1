@@ -121,11 +121,11 @@ function Set-DbaMaxDop {
 		$collection | Add-Member -Force -NotePropertyName OldInstanceMaxDopValue -NotePropertyValue 0
 		$collection | Add-Member -Force -NotePropertyName OldDatabaseMaxDopValue -NotePropertyValue 0
 		
-		$servers = $collection | Select-Object Instance -Unique
+		$servers = $collection | Select-Object SqlInstance -Unique
 		
 		foreach ($server in $servers) {
 			if ($server.Instance -ne $null) {
-				$servername = $server.Instance
+				$servername = $server.InstanceName
 			}
 			else {
 				$servername = $server
@@ -182,7 +182,7 @@ function Set-DbaMaxDop {
 				}
 			}
 			
-			foreach ($row in $collection | Where-Object { $_.Instance -eq $servername }) {
+			foreach ($row in $collection | Where-Object { $_.InstanceName -eq $servername }) {
 				if ($UseRecommended -and ($row.RecommendedMaxDop -eq $row.CurrentInstanceMaxDop) -and !($dbscopedconfiguration)) {
 					Write-Output "$servername is configured properly :) No change required."
 					Continue
