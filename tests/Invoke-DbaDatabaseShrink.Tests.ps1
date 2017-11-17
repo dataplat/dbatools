@@ -53,8 +53,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $db | Remove-DbaDatabase -Confirm:$false
         }
 
-        It "Shrinks just the log file when Type is Log" {
-            Invoke-DbaDatabaseShrink $server -Database $db.Name -LogsOnly -ShrinkMethod TruncateOnly
+        It "Shrinks just the log file when FileType is Log" {
+            Invoke-DbaDatabaseShrink $server -Database $db.Name -FileType Log
             $db.Refresh()
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()
@@ -63,8 +63,18 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $db.LogFiles[0].Size | Should BeLessThan $oldLogSize
         }
 
-        It "Shrinks the entire database when Type is All" {
-            Invoke-DbaDatabaseShrink $server -Database $db.Name
+        It "Shrinks just the data file(s) when FileType is Data" {
+            Invoke-DbaDatabaseShrink $server -Database $db.Name -FileType Data
+            $db.Refresh()
+            $db.RecalculateSpaceUsage()
+            $db.FileGroups[0].Files[0].Refresh()
+            $db.LogFiles[0].Refresh()
+            $db.FileGroups[0].Files[0].Size | Should BeLessThan $oldDataSize
+            $db.LogFiles[0].Size | Should Be $oldLogSize
+        }
+
+        It "Shrinks the entire database when FileType is All" {
+            Invoke-DbaDatabaseShrink $server -Database $db.Name -FileType All
             $db.Refresh()
             $db.RecalculateSpaceUsage()
             $db.FileGroups[0].Files[0].Refresh()

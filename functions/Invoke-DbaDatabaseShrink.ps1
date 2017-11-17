@@ -55,7 +55,17 @@ Specifies the method that is used to shrink the database
 Timeout in minutes. Defaults to infinity (shrinks can take a while.)
 
 .PARAMETER LogsOnly
-Only shrink the log file, not the entire database
+Deprecated. Use FileType instead
+
+.PARAMETER FileType
+Specifies the files types that will be shrunk
+
+		All
+			All Data and Log files are shrunk, using database shrink (Default)
+		Data
+			Just the Data files are shrunk using file shrink
+		Log
+			Just the Log files are shrunk using file shrink
 
 .PARAMETER ExcludeIndexStats
 Exclude statistics about fragmentation
@@ -117,6 +127,8 @@ Shrinks all databases on SQL2012 (not ideal for production)
 		[int]$PercentFreeSpace = 0,
 		[ValidateSet('Default', 'EmptyFile', 'NoTruncate', 'TruncateOnly')]
 		[string]$ShrinkMethod = "Default",
+		[ValidateSet('All', 'Data', 'Log')]
+		[string]$FileType = "All",
 		[int]$StatementTimeout = 0,
 		[switch]$LogsOnly,
 		[switch]$ExcludeIndexStats,
@@ -124,6 +136,11 @@ Shrinks all databases on SQL2012 (not ideal for production)
 	)
 
 	begin {
+		if ($LogsOnly) {
+			Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "LogsOnly"
+			$FileType = 'Log'
+		}
+
 		$StatementTimeoutMinutes = $StatementTimeout * 60
 
 		$sql = "SELECT
@@ -217,35 +234,56 @@ Shrinks all databases on SQL2012 (not ideal for production)
 						}
 						
 						$start = Get-Date
-						
-						if ($LogsOnly) {
-							try {
-								Write-Message -Level Verbose -Message "Beginning shrink of log files"
-								$db.LogFiles.Shrink($PercentFreeSpace, $ShrinkMethod)
-								$db.Refresh()
-								Write-Message -Level Verbose -Message "Recalculating space usage"
-								$db.RecalculateSpaceUsage()
-								$success = $true
-								$notes = $null
+
+						switch ($FileType) {
+							'Log' {
+								try {
+									Write-Message -Level Verbose -Message "Beginning shrink of log files"
+									$db.LogFiles.Shrink($PercentFreeSpace, $ShrinkMethod)
+									$db.Refresh()
+									Write-Message -Level Verbose -Message "Recalculating space usage"
+									$db.RecalculateSpaceUsage()
+									$success = $true
+									$notes = $null
+								}
+								catch {
+									$success = $false
+									$notes = $_.Exception.InnerException
+								}
 							}
-							catch {
-								$success = $false
-								$notes = $_.Exception.InnerException
+							'Data' {
+								try {
+									Write-Message -Level Verbose -Message "Beginning shrink of data files"
+									foreach ($fileGroup in $db.FileGroups) {
+										foreach ($file in $fileGroup.Files) {
+											Write-Message -Level Verbose -Message "Beggining shrink of $($file.Name)"
+											$file.Shrink($PercentFreeSpace, $ShrinkMethod)
+										}
+									}
+									$db.Refresh()
+									Write-Message -Level Verbose -Message "Recalculating space usage"
+									$db.RecalculateSpaceUsage()
+									$success = $true
+									$notes = $null
+								} catch {
+									$success = $false
+									$notes = $_.Exception.InnerException
+								}
 							}
-						}
-						else {
-							try {
-								Write-Message -Level Verbose -Message "Beginning shrink of entire database"
-								$db.Shrink($PercentFreeSpace, $ShrinkMethod)
-								$db.Refresh()
-								Write-Message -Level Verbose -Message "Recalculating space usage"
-								$db.RecalculateSpaceUsage()
-								$success = $true
-								$notes = $null
-							}
-							catch {
-								$success = $false
-								$notes = $_.Exception.InnerException
+							default {
+								try {
+									Write-Message -Level Verbose -Message "Beginning shrink of entire database"
+									$db.Shrink($PercentFreeSpace, $ShrinkMethod)
+									$db.Refresh()
+									Write-Message -Level Verbose -Message "Recalculating space usage"
+									$db.RecalculateSpaceUsage()
+									$success = $true
+									$notes = $null
+								}
+								catch {
+									$success = $false
+									$notes = $_.Exception.InnerException
+								}
 							}
 						}
 						
