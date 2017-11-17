@@ -107,8 +107,8 @@ Returns all active directory users within all windows AD groups that have logins
 								InstanceName = $server.ServiceName
 								ComputerName = $server.NetName
 								Login = $memberDomain + "\" + $member.SamAccountName
-								MemberOf = $AdGroup
 								DisplayName = $member.DisplayName
+								MemberOf = $AdGroup
 							}
 						}
 					}
@@ -135,7 +135,7 @@ Returns all active directory users within all windows AD groups that have logins
 		}
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($Instance in $SqlInstance)
 		{
