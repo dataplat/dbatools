@@ -109,8 +109,10 @@ function Connect-SqlInstance {
 	#region Input Object was a server object
 	if ($ConvertedSqlInstance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
 		$server = $ConvertedSqlInstance.InputObject
-		 if ($server.ConnectionContext.IsOpen -eq $false) {
-		 	$null = $server.Name
+		if ($server.ConnectionContext.IsOpen -eq $false) {
+			# .Connect() in ConnectionContext messes with the pool. So let's cause a connect implicitly, while making minimal impact
+			# Out-Null is required. Isn't that weird? $null = doesn't work. I guess it needed to enumerate.
+		 	$server.Logins.Name | Out-Null
 		 }
 
 		# Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
@@ -174,9 +176,11 @@ function Connect-SqlInstance {
 		}
 	}
 	catch { }
-
+	
 	try {
-		$null = $server.Name
+		# .Connect() in ConnectionContext messes with the pool. So let's cause a connect implicitly, while making minimal impact
+		# Out-Null is required. Isn't that weird? $null = doesn't work. I guess it needed to enumerate.
+		$server.Logins.Name | Out-Null
 	 }
 	 catch {
 		$message = $_.Exception.InnerException.InnerException
