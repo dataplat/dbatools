@@ -340,7 +340,7 @@ function Copy-DbaCredential {
 				
 				Write-Message -Level Verbose -Message "Attempting to migrate $credentialName"
 				try {
-					$currentCred = $sourceCredentials | Where-Object { $_.Credential -eq $credentialName }
+					$currentCred = $sourceCredentials | Where-Object { $_.Credential -eq "[$credentialName]" }
 					$identity = $currentCred.Identity
 					$password = $currentCred.Password
 					if ($Pscmdlet.ShouldProcess($destination.Name, "Copying $identity")) {
