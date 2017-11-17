@@ -108,6 +108,7 @@ Returns all active directory users within all windows AD groups that have logins
 								ComputerName = $server.NetName
 								Login = $memberDomain + "\" + $member.SamAccountName
 								MemberOf = $AdGroup
+								DisplayName = $member.DisplayName
 							}
 						}
 					}
