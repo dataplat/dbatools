@@ -55,7 +55,7 @@ Specifies the method that is used to shrink the database
 Timeout in minutes. Defaults to infinity (shrinks can take a while.)
 
 .PARAMETER LogsOnly
-Only shrink the log file, not the entire database
+Deprecated. Use FileType instead
 
 .PARAMETER FileType
 Specifies the files types that will be shrunk
@@ -137,7 +137,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 
 	begin {
 		if ($LogsOnly) {
-			Write-Message -Level Warning -Message "LogsOnly is deprecated and will be removed in dbatools 1.0."
+			Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "LogsOnly"
 			$FileType = 'Log'
 		}
 
