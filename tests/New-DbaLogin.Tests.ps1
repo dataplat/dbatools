@@ -108,7 +108,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$results.Name | Should Be "tester"
 			
 			$results = Get-DbaLogin -SqlInstance $server1 -Login claudio,port | New-DbaLogin -SqlInstance $server2 -Force -PasswordPolicy -PasswordExpiration -DefaultDatabase tempdb -Disabled -Language Nederlands -NewSid -LoginRenameHashtable @{claudio = 'port'; port = 'claudio'} -MapToCredential $null
-			$results.Name | Should Be @("claudio", "port")
+			$results.Name | Should Be @("port", "claudio")
 			
 			$results = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server1 -LoginRenameHashtable @{tester = 'port'} -Force -NewSid
 			$results.Name | Should Be "tester"
