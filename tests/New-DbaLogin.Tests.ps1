@@ -66,23 +66,23 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Create new logins" {
 		It "Should be created successfully - Hashed password" {
 			$results = New-DbaLogin -SqlInstance $server1 -Login tester -HashedPassword (Get-PasswordHash $securePassword $server1.VersionMajor)
-			$results.Status | Should Be "Successful"
+			$results.Name | Should Be "tester"
 		}
 		It "Should be created successfully - password, credential and a custom sid " {
 			$results = New-DbaLogin -SqlInstance $server1 -Login claudio -Password $securePassword -Sid $sid -MapToCredential $credLogin
-			$results.Status | Should Be "Successful"
+			$results.Name | Should Be "claudio"
 		}
 		It "Should be created successfully - password and all the flags" {
 			$results = New-DbaLogin -SqlInstance $server1 -Login port -Password $securePassword -PasswordPolicy -PasswordExpiration -DefaultDatabase tempdb -Disabled -Language Nederlands
-			$results.Status | Should Be "Successful"
+			$results.Name | Should Be "port"
 		}
 		It "Should be created successfully - Windows login" {
 			$results = New-DbaLogin -SqlInstance $server1 -Login $winLogin
-			$results.Status | Should Be "Successful"
+			$results.Name | Should Be "$winLogin"
 		}
 		It "Should be created successfully - certificate" {
 			$results = New-DbaLogin -SqlInstance $server1 -Login certifico -MapToCertificate $certificateName
-			$results.Status | Should Be "Successful"
+			$results.Name | Should Be "certifico"
 		}
 		It "Should have specific parameters" {
 			$login1 = Get-Dbalogin -SqlInstance $server1 -login claudio
@@ -105,13 +105,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		It "Should be copied successfully" {
 			$results = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server2 -Disabled:$false
-			$results.Status | Should Be "Successful"
+			$results.Name | Should Be "tester"
 			
 			$results = Get-DbaLogin -SqlInstance $server1 -Login claudio,port | New-DbaLogin -SqlInstance $server2 -Force -PasswordPolicy -PasswordExpiration -DefaultDatabase tempdb -Disabled -Language Nederlands -NewSid -LoginRenameHashtable @{claudio = 'port'; port = 'claudio'} -MapToCredential $null
-			$results.Status | Should Be @("Successful", "Successful")
+			$results.Name | Should Be @("claudio", "port")
 			
 			$results = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server1 -LoginRenameHashtable @{tester = 'port'} -Force -NewSid
-			$results.Status | Should Be "Successful"
+			$results.Name | Should Be "tester"
 		}
 		
 		It "Should retain its same properties" {
