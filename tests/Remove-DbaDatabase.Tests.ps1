@@ -30,7 +30,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		It "Should remove a non system database." {
 			Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
 			Get-DbaProcess -SqlInstance $script:instance1 -Database singlerestore | Stop-DbaProcess
-			Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -WithReplace
+			Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -WithReplace
             (Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore).IsAccessible | Should Be $true
             Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
             Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore | Should Be $null
@@ -40,7 +40,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		It "Should remove a non system database." {
 			Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
 			Get-DbaProcess -SqlInstance $script:instance1 -Database singlerestore | Stop-DbaProcess
-			Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -WithReplace -NoRecovery
+			Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -WithReplace -NoRecovery
             (Connect-DbaInstance -SqlInstance $script:instance1).Databases['singlerestore'].IsAccessible | Should Be $false
             Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
             Get-DbaDatabase -SqlInstance $script:instance1 -Database singlerestore | Should Be $null
