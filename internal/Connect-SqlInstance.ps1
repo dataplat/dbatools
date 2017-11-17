@@ -109,9 +109,9 @@ function Connect-SqlInstance {
 	#region Input Object was a server object
 	if ($ConvertedSqlInstance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
 		$server = $ConvertedSqlInstance.InputObject
-		# if ($server.ConnectionContext.IsOpen -eq $false) {
-		# 	$server.ConnectionContext.Connect()
-		# }
+		 if ($server.ConnectionContext.IsOpen -eq $false) {
+		 	$null = $server.Name
+		 }
 
 		# Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
 		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($ConvertedSqlInstance.FullSmoName.ToLower(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
@@ -175,22 +175,22 @@ function Connect-SqlInstance {
 	}
 	catch { }
 
-	# try {
-	# 	$server.ConnectionContext.Connect()
-	# }
-	# catch {
-	# 	$message = $_.Exception.InnerException.InnerException
-	# 	if ($message) {
-	# 		$message = $message.ToString()
-	# 		$message = ($message -Split '-->')[0]
-	# 		$message = ($message -Split 'at System.Data.SqlClient')[0]
-	# 		$message = ($message -Split 'at System.Data.ProviderBase')[0]
-	# 		throw "Can't connect to $ConvertedSqlInstance`: $message "
-	# 	}
-	# 	else {
-	# 		throw $_
-	# 	}
-	# }
+	try {
+		$null = $server.Name
+	 }
+	 catch {
+		$message = $_.Exception.InnerException.InnerException
+	 	if ($message) {
+	 		$message = $message.ToString()
+	 		$message = ($message -Split '-->')[0]
+	 		$message = ($message -Split 'at System.Data.SqlClient')[0]
+	 		$message = ($message -Split 'at System.Data.ProviderBase')[0]
+	 		throw "Can't connect to $ConvertedSqlInstance`: $message "
+	 	}
+	 	else {
+	 		throw $_
+	 	}
+	 }
 
 	if ($MinimumVersion -and $server.VersionMajor) {
 		if ($server.versionMajor -lt $MinimumVersion) {
