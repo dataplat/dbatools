@@ -110,9 +110,7 @@ function Connect-SqlInstance {
 	if ($ConvertedSqlInstance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
 		$server = $ConvertedSqlInstance.InputObject
 		if ($server.ConnectionContext.IsOpen -eq $false) {
-			# .Connect() in ConnectionContext messes with the pool. So let's cause a connect implicitly, while making minimal impact
-			# Out-Null is required. Isn't that weird? $null = doesn't work. I guess it needed to enumerate.
-		 	$server.Logins.Name | Out-Null
+			$server.ConnectionContext.SqlConnectionObject.Open()
 		 }
 
 		# Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
@@ -178,9 +176,7 @@ function Connect-SqlInstance {
 	catch { }
 	
 	try {
-		# .Connect() in ConnectionContext messes with the pool. So let's cause a connect implicitly, while making minimal impact
-		# Out-Null is required. Isn't that weird? $null = doesn't work. I guess it needed to enumerate.
-		$server.Logins.Name | Out-Null
+		$server.ConnectionContext.SqlConnectionObject.Open()
 	 }
 	 catch {
 		$message = $_.Exception.InnerException.InnerException
@@ -188,8 +184,13 @@ function Connect-SqlInstance {
 	 		$message = $message.ToString()
 	 		$message = ($message -Split '-->')[0]
 	 		$message = ($message -Split 'at System.Data.SqlClient')[0]
-	 		$message = ($message -Split 'at System.Data.ProviderBase')[0]
-	 		throw "Can't connect to $ConvertedSqlInstance`: $message "
+			$message = ($message -Split 'at System.Data.ProviderBase')[0]
+			
+			if ($message -match "network path was not found") {
+				$message = "Can't connect to $sqlinstance`: System.Data.SqlClient.SqlException (0x80131904): A network-related or instance-specific error occurred while establishing a connection to SQL Server. The server was not found or was not accessible. Verify that the instance name is correct and that SQL Server is configured to allow remote connections."
+			}
+			
+			throw "Can't connect to $ConvertedSqlInstance`: $message "
 	 	}
 	 	else {
 	 		throw $_
