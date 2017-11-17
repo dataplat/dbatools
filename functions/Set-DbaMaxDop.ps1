@@ -124,7 +124,7 @@ function Set-DbaMaxDop {
 		$servers = $collection | Select-Object SqlInstance -Unique
 		
 		foreach ($server in $servers) {
-			if ($server.Instance -ne $null) {
+			if ($server.InstanceName -ne $null) {
 				$servername = $server.InstanceName
 			}
 			else {
