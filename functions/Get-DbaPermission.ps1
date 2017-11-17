@@ -14,28 +14,32 @@ function Get-DbaPermission {
 
 			See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information
 
-		.PARAMETER SqlInstance
-			The SQL Server that you're connecting to.
+ 		.PARAMETER SqlInstance
+			The SQL Server instance to connect to.
 
-		.PARAMETER SqlCredential
-			Credential object used to connect to the SQL Server as a different user
+        .PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Database
-			The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+			Specifies one or more database(s) to process. If unspecified, all databases will be processed.
 
 		.PARAMETER ExcludeDatabase
-			The database(s) to exclude - this list is auto-populated from the server
+			Specifies one or more database(s) to exclude from processing.
 
 		.PARAMETER IncludeServerLevel
-			Shows also information on Server Level Permissions
+			If this switch is enabled, information about Server Level Permissions will be output.
 
 		.PARAMETER NoSystemObjects
-			Excludes all permissions on system securables
+			If this switch is enabled, permissions on system securables will be excluded.
 
 		.PARAMETER EnableException 
-				By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-				This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-				Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			If this switch is enabled exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and provide a friendly error message.
 
 		.NOTES
 			Tags: Permissions, Databases
@@ -51,23 +55,23 @@ function Get-DbaPermission {
 		.EXAMPLE
 			Get-DbaPermission -SqlInstance ServerA\sql987
 
-			Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
+			Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable.
 
 		.EXAMPLE
 			Get-DbaPermission -SqlInstance ServerA\sql987 | Format-Table -AutoSize
 
-			Returns a formatted table displaying Server, Database, permission state, permission type, grantee, granteetype, securable and securabletype
+			Returns a formatted table displaying Server, Database, permission state, permission type, grantee, granteetype, securable and securabletype.
 
 		.EXAMPLE
 			Get-DbaPermission -SqlInstance ServerA\sql987 -NoSystemObjects -IncludeServerLevel
 
 			Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
-			in all databases and on the server level, but not on system securables
+			in all databases and on the server level, but not on system securables.
 
 		.EXAMPLE
 			Get-DbaPermission -SqlInstance sql2016 -Database master
 
-			Returns a custom object with permissions for the master database
+			Returns a custom object with permissions for the master database.
 	#>
 	[CmdletBinding()]
 	param (
@@ -213,7 +217,7 @@ function Get-DbaPermission {
 
 	process {
 		foreach ($instance in $SqlInstance) {
-			Write-Message -Level Verbose -Message "Connecting to $instance"
+			Write-Message -Level Verbose -Message "Connecting to $instance."
 			
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
@@ -238,7 +242,7 @@ function Get-DbaPermission {
 			}
 
 			foreach ($db in $dbs) {
-				Write-Message -Level Verbose -Message "Processing $db on $instance"
+				Write-Message -Level Verbose -Message "Processing $db on $instance."
 
 				if ($db.IsAccessible -eq $false) {
 					Write-Warning "The database $db is not accessible. Skipping database."
