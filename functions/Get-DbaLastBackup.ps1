@@ -106,39 +106,39 @@ function Get-DbaLastBackup {
 				# To avoid complicated manipulations on datetimes depending on locale settings and culture,
 				# dates are compared to 0, which represents 1/01/0001 0:00:00
 				$SinceFull = if ($db.LastBackupdate -eq 0) {
-					[String]::Empty();
+					[String]::Empty
 				}
 				else {
 					(New-TimeSpan -Start $db.LastBackupdate).Tostring()
 				}
 				$SinceFull = if ($db.LastBackupdate -eq 0) {
-					[String]::Empty();
+					[String]::Empty
 				}
 				else {
 					$SinceFull.split('.')[0 .. ($SinceFull.split('.').count - 2)] -join ' days '
 				}
 
 				$SinceDiff = if ($db.LastDifferentialBackupDate -eq 0) {
-					[String]::Empty();
+					[String]::Empty
 				}
 				else {
 					(New-TimeSpan -Start $db.LastDifferentialBackupDate).Tostring()
 				}
 				$SinceDiff = if ($db.LastDifferentialBackupDate -eq 0) {
-					[String]::Empty();
+					[String]::Empty
 				}
 				else {
 					$SinceDiff.split('.')[0 .. ($SinceDiff.split('.').count - 2)] -join ' days '
 				}
 
 				$SinceLog = if ($db.LastLogBackupDate -eq 0) {
-					[String]::Empty();
+					[String]::Empty
 				}
 				else {
 					(New-TimeSpan -Start $db.LastLogBackupDate).Tostring()
 				}
 				$SinceLog = if ($db.LastLogBackupDate -eq 0) {
-					[String]::Empty();
+					[String]::Empty
 				}
 				else {
 					$SinceLog.split('.')[0 .. ($SinceLog.split('.').count - 2)] -join ' days '
