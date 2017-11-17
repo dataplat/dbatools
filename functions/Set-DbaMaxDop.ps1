@@ -182,7 +182,7 @@ function Set-DbaMaxDop {
 				}
 			}
 			
-			foreach ($row in $collection | Where-Object { $_.InstanceName -eq $servername }) {
+			foreach ($row in $collection | Where-Object { $_.SqlInstance -eq $servername }) {
 				if ($UseRecommended -and ($row.RecommendedMaxDop -eq $row.CurrentInstanceMaxDop) -and !($dbscopedconfiguration)) {
 					Write-Output "$servername is configured properly :) No change required."
 					Continue
