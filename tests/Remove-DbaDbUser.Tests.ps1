@@ -11,12 +11,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $loginTest = New-DbaLogin $server -Login dbatoolsci_remove_dba_db_user -Password $securePassword
         }
         BeforeEach {
-            $user = New-Object Microsoft.SqlServer.Management.SMO.User($db, $loginTest.Login)
-            $user.Login = $loginTest.Login
+            $user = New-Object Microsoft.SqlServer.Management.SMO.User($db, $loginTest.Name)
+            $user.Login = $loginTest.Name
             $user.Create()
         }
         AfterEach {
-            $user = $db.Users[$loginTest.Login]
+            $user = $db.Users[$loginTest.Name]
             if ($user) {
                 $schemaUrns = $user.EnumOwnedObjects() | Where-Object Type -EQ Schema
                 foreach ($schemaUrn in $schemaUrns) {
@@ -32,13 +32,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             }
         }
         AfterAll {
-            $login = $server.Logins.Item($loginTest.Login)
-            if ($login) {
-                $login.Drop()
+            if ($loginTest) {
+                $loginTest.Drop()
             }
         }
 	
-		It "drops a user with no ownerships" {
+	It "drops a user with no ownerships" {
             Remove-DbaDbUser $server -Database tempdb -User $user.Name
 			$db.Users[$user.Name] | Should BeNullOrEmpty
         }
