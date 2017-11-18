@@ -79,19 +79,19 @@ function Get-DbaServerRole {
 
 				if ($members) {
 					foreach ($member in $members) {
-						if ($Login -and $member -ne $Login) { continue }
-						if ($Login -and $IsMember -and $ServerRole) {
-							$roleMember = [PSCustomObject]@{
-								ComputerName = $server.NetName
-								Instance     = $server.ServiceName
-								SqlInstance  = $server.DomainInstanceName
-								Role         = $role.Name
-								IsMember     = $null
+						if ($Login -and $member -notin $Login) { continue }
+						if (Test-Bound -Parameter 'Login', 'IsMember', '$ServerRole') {
+							foreach ($l in $Login) {
+								[PSCustomObject]@{
+									ComputerName = $server.NetName
+									Instance     = $server.ServiceName
+									SqlInstance  = $server.DomainInstanceName
+									Role         = $role.Name
+									Login        = $member
+									IsMember     = if ($l -eq $member) { $true } else { $false }
+								}
 							}
-
-							if ($member -eq $Login) {
-								$roleMember.IsMember = $true
-							}
+							return
 						}
 
 						Add-Member -Force -InputObject $role -MemberType NoteProperty -Name Login -Value $member
