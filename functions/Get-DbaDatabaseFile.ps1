@@ -203,6 +203,7 @@ function Get-DbaDatabaseFile {
  					else {
  						$nextgrowtheventadd = [dbasize]($result.Growth * 8 * 1024)
  					}
+                    if ( $nextgrowtheventadd.Byte -lt $AvailableSpace.Byte ) { [dbasize]$nextgrowtheventadd = 0 }
 					
 					[PSCustomObject]@{
 						ComputerName             = $server.NetName
