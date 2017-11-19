@@ -59,17 +59,22 @@ Returns a gridview displaying SQLServer, Database, Role for all DatabaseRoles on
 .EXAMPLE
 Get-DbaDbRole -SqlInstance ServerB\sql16 -ExcludeDatabase DBADB,TestDB
 
-Returns a gridview displaying SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\sql16, except those in databases DBADB and TestDB.
+Returns SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\sql16, except those in databases DBADB and TestDB.
 
 .EXAMPLE
 'ServerB\sql16','ServerA' | Get-DbaDbRole
 
-Returns a gridview displaying SQLServer, Database, Role for DatabaseRoles on sql instances ServerA and ServerB\sql16.
+Returns SQLServer, Database, Role for DatabaseRoles on sql instances ServerA and ServerB\sql16.
 
 .EXAMPLE
 Get-DbaDbRole -SqlInstance ServerB\sql16 -Database AccountingDB
 
-Returns a gridview displaying SQLServer, Database, Role for DatabaseRoles in database AccountingDB on sql instance ServerB\sql16.
+Returns SQLServer, Database, Role for DatabaseRoles in database AccountingDB on sql instance ServerB\sql16.
+
+.EXAMPLE
+Get-DbaDbRole -SqlInstance ServerB\sql16 -ExcludeFixedRoles
+
+Returns SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\sql16, but not the fixed roles.
 
 #>
 	[CmdletBinding()]
