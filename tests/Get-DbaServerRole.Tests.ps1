@@ -65,5 +65,16 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 			$results = Get-DbaServerRole -SqlInstance $script:instance2 -ServerRole sysadmin -Login 'sa'
 			$results.Login -contains "sa" | Should Be $true
 		}
+
+		It "Returns nothing for [sa] being member of diskadmin role" {
+			$results = Get-DbaServerRole -SqlInstance $script:instance2 -ServerRole diskadmin -Login 'sa'
+			$results | Should BeNullOrEmpty
+		}
+
+		It "Should exclude sysadmin from output" {
+			$results = Get-DbaServerRole -SqlInstance $script:instance2 -ExcludeServerRole sysadmin
+			'sysadmin' -NotIn $results.Role | Should Be $true
+		}
+
 	}
 }
