@@ -51,7 +51,6 @@ function Get-DbaServerRole {
 		[object[]]$ExcludeServerRole,
 		[Parameter(ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
 		[object[]]$Login,
-		[switch]$IsMember,
 		[switch]$EnableException
 	)
 
@@ -76,24 +75,12 @@ function Get-DbaServerRole {
 
 			foreach ($role in $roles) {
 				$members = $role.EnumMemberNames()
+				if ($Login) {
+					$members = $members | Where-Object {$_ -in $Login}
+				}
 
 				if ($members) {
 					foreach ($member in $members) {
-						if ($Login -and $member -notin $Login) { continue }
-						if (Test-Bound -Parameter 'Login', 'IsMember', '$ServerRole') {
-							foreach ($l in $Login) {
-								[PSCustomObject]@{
-									ComputerName = $server.NetName
-									Instance     = $server.ServiceName
-									SqlInstance  = $server.DomainInstanceName
-									Role         = $role.Name
-									Login        = $member
-									IsMember     = if ($l -eq $member) { $true } else { $false }
-								}
-							}
-							return
-						}
-
 						Add-Member -Force -InputObject $role -MemberType NoteProperty -Name Login -Value $member
 						Add-Member -Force -InputObject $role -MemberType NoteProperty -Name ComputerName -value $server.NetName
 						Add-Member -Force -InputObject $role -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
@@ -111,9 +98,7 @@ function Get-DbaServerRole {
 					$default = 'ComputerName', 'InstanceName', 'SqlInstance', 'Id', 'Name as Role', 'IsFixedRole', 'Owner', 'Login', 'DateCreated', 'DateModified'
 					Select-DefaultView -InputObject $role -Property $default
 				}
-
 			}
-
-		} #end foreach instance
-	} #end process
-} #end function
+		}
+	}
+}
