@@ -17,10 +17,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 				- Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
 				- Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
 		#>
-		$paramCount = 6
+		$paramCount = 7
 		$defaultParamCount = 11
 		[object[]]$params = (Get-ChildItem function:\Get-DbaServerRole).Parameters.Keys
-		$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'ServerRole', 'ExcludeServerRole', 'Login'
+		$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'ServerRole', 'ExcludeServerRole', 'ExcludeFixedRole', 'Login'
 		It "Should contain our specific parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}
@@ -73,6 +73,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
 		It "Should exclude sysadmin from output" {
 			$results = Get-DbaServerRole -SqlInstance $script:instance2 -ExcludeServerRole sysadmin
+			'sysadmin' -NotIn $results.Role | Should Be $true
+		}
+
+		It "Should exclude fixed server-level roles" {
+			$results = Get-DbaServerRole -SqlInstance $script:instance2 -ExcludeFixedRole
 			'sysadmin' -NotIn $results.Role | Should Be $true
 		}
 
