@@ -24,7 +24,7 @@ The database(s) to process - this list is auto-populated from the server. If uns
 .PARAMETER ExcludeDatabase
 The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER NoFixedRole
+.PARAMETER ExcludeFixedRole
 Excludes all fixed roles.
 
 .PARAMETER Credential
@@ -81,13 +81,13 @@ Returns a gridview displaying SQLServer, Database, Role for DatabaseRoles in dat
 		[PSCredential]$SqlCredential,
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[switch]$NoFixedRole,
+		[switch]$ExcludeFixedRole,
 		[switch][Alias('Silent')]$EnableException
 	)
 	
 	process {
 		
-		foreach ($Instance in $sqlInstance) {
+		foreach ($instance in $sqlInstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -119,8 +119,8 @@ Returns a gridview displaying SQLServer, Database, Role for DatabaseRoles in dat
 				$dbroles = $db.roles
 				Write-Message -Level Verbose -Message "Getting Database Roles for $db on $instance"
 				
-				if ($NoFixedRole) {
-					$dbroles = $dbroles | Where-Object { $_.isfixedrole -eq $false }
+				if ($ExcludeFixedRole) {
+					$dbroles = $dbroles | Where-Object IsFixedRole -eq $false
 				}
 				
 				foreach ($dbrole in $dbroles) {
