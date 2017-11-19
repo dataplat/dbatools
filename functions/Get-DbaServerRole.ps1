@@ -24,6 +24,9 @@ function Get-DbaServerRole {
 		.PARAMETER ExcludeServerRole
 			Server-Level role to exclude from results.
 
+		.PARAMETER ExcludeFixedRole
+			Filter the fixed server-level roles. Only applies to SQL Server 2017 that supports custom server-level roles.
+
 		.PARAMETER Login
 			SQL Server login to filter results, will only return roles where the login(s) are a member.
 
@@ -52,6 +55,11 @@ function Get-DbaServerRole {
 			Outputs members of sysadmin server-level role on sql2016a instance.
 
 		.EXAMPLE
+			Get-DbaServerRole -SqlInstance sql2017a -ExcludeFixedRole
+
+			Outputs the user server-level role(s) on sql2017a instance. A SQL Server 2017 supported feature only.
+
+		.EXAMPLE
 			Get-DbaServerRole -SqlInstance sql2016a -Login Bob
 
 			Outputs the server-level role(s) that the login Bob is a member of on sql2016a instance.
@@ -72,6 +80,7 @@ function Get-DbaServerRole {
 		[PSCredential]$SqlCredential,
 		[object[]]$ServerRole,
 		[object[]]$ExcludeServerRole,
+		[switch]$ExcludeFixedRole,
 		[Parameter(ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
 		[object[]]$Login,
 		[switch]$EnableException
@@ -94,6 +103,9 @@ function Get-DbaServerRole {
 			}
 			if ($ExcludeServerRole) {
 				$roles = $roles | Where-Object Name -NotIn $ExcludeServerRole
+			}
+			if ($ExcludeFixedRole) {
+				$roles = $roles | Where-Object IsFixedRole -eq $false
 			}
 
 			foreach ($role in $roles) {
