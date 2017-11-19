@@ -2,50 +2,42 @@
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "Get-DbaDbRole Unit Tests" -Tag "UnitTests" {
-	InModuleScope dbatools {
-		Context "Validate parameters" {
-			$params = (Get-ChildItem function:\Get-DbaDbRole).Parameters
-			it "should have a parameter named SqlInstance" {
-				$params.ContainsKey("SqlInstance") | Should Be $true
-			}
-			it "should have a parameter named SqlCredential" {
-				$params.ContainsKey("SqlCredential") | Should Be $true
-			}
-			it "should have a parameter named Database" {
-				$params.ContainsKey("Database") | Should Be $true
-			}
-			it "should have a parameter named ExcludeDatabase" {
-				$params.ContainsKey("ExcludeDatabase") | Should Be $true
-			}
-			it "should have a parameter named EnableException" {
-				$params.ContainsKey("EnableException") | Should Be $true
-			}
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+	Context "Validate parameters" {
+		<#
+			The $paramCount is adjusted based on the parameters your command will have.
+			The $defaultParamCount is adjusted based on what type of command you are writing the test for:
+				- Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
+				- Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
+		#>
+		$paramCount = 7
+		$defaultParamCount = 11
+		[object[]]$params = (Get-ChildItem function:\Get-DbaServerRole).Parameters.Keys
+		$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'ServerRole', 'ExcludeServerRole', 'Login'
+		It "Should contain our specific parameters" {
+			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}
-}
+		It "Should only contain $paramCount parameters" {
+			$params.Count - $defaultParamCount | Should Be $paramCount
+		}
+	}
 Describe "Get-DbaDbRole Integration Tests" -Tag "IntegrationTests" {
 		Context "parameters work" {
-			it "returns no roles from excluded DB with -ExcludeDatabase" {
+			It "returns no roles from excluded DB with -ExcludeDatabase" {
                 $results = Get-DbaDbRole -SqlInstance $script:instance2 -ExcludeDatabase master
 				$results.where({$_.Database -eq 'master'}).count | Should Be 0
 			}
-			it "returns only roles from selected DB with -Database" {
+			It "returns only roles from selected DB with -Database" {
                 $results = Get-DbaDbRole -SqlInstance $script:instance2 -Database master
 				$results.where({$_.Database -ne 'master'}).count | Should Be 0
 			}
-			it "returns no fixed roles with -NoFixedRole" {
+			It "returns no fixed roles with -NoFixedRole" {
                 $results = Get-DbaDbRole -SqlInstance $script:instance2 -NoFixedRole
 				$results.where({$_.name -match 'db_datareader|db_datawriter|db_ddladmin'}).count | Should Be 0
 			}
-			it "returns fixed roles without -NoFixedRole" {
+			It "returns fixed roles without -NoFixedRole" {
                 $results = Get-DbaDbRole -SqlInstance $script:instance2
 				$results.where({$_.name -match 'db_datareader|db_datawriter|db_ddladmin'}).count | Should BeGreaterThan 0
-			}
-		}
-		Context "Validate input" {
-			it "Cannot resolve hostname of computer" {
-				mock Resolve-DbaNetworkName {$null}
-				{Get-DbaComputerSystem -ComputerName 'DoesNotExist142' -WarningAction Stop 3> $null} | Should Throw
 			}
 		}
 	}
