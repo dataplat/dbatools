@@ -17,10 +17,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 				- Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
 				- Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
 		#>
-		$paramCount = x
+		$paramCount = 6
 		$defaultParamCount = 11
-		[object[]]$params = (Get-ChildItem function:\Verb-DbaXyz).Parameters.Keys
-		$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'ServerRole', 'ExcludeServerRole'
+		[object[]]$params = (Get-ChildItem function:\Get-DbaServerRole).Parameters.Keys
+		$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'ServerRole', 'ExcludeServerRole', 'Login'
 		It "Should contain our specific parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}
@@ -28,15 +28,32 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 			$params.Count - $defaultParamCount | Should Be $paramCount
 		}
 	}
+	Context "Input validation" {
+		BeforeAll {
+			Mock Stop-Function { } -ModuleName dbatools
+		}
+		It "Should Call Stop-Function if instance does not exist or connection failure" {
+			Set-DbaConfig -FullName sql.connection.timeout -Value 1
+			Get-DbaServerRole -SqlInstance Dummy | Should Be
+		}
+		It "Validates that Stop Function Mock has been called" {
+			$assertMockParams = @{
+				'CommandName' = 'Stop-Function'
+				'Times'       = 1
+				'Exactly'     = $true
+				'Module'      = 'dbatools'
+			}
+			Assert-MockCalled @assertMockParams
+		}
+	}
 }
 
-# Get-DbaNoun
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Context "Command actually works" {
 		$results = Get-DbaServerRole -SqlInstance $script:instance2
 		It "Should have correct properties" {
-			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Id,Role,IsFixedRole,Owner,Member,DateCreated,DateModified'.Split(',')
-			($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Id,Role,IsFixedRole,Owner,Login,DateCreated,DateModified,DatabaseEngineEdition,DatabaseEngineType,Events,ExecutionManager,Name,Parent,Properties,State,Urn,UserData'.Split(',')
+			($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 		}
 
 		It "Shows only one value with ServerRole parameter" {
@@ -45,7 +62,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		}
 
 		It "Returns [sa] member name for sysadmin role" {
-			$results.Member -contains "sa" | Should Be $true
+			$results = Get-DbaServerRole -SqlInstance $script:instance2 -ServerRole sysadmin -Login 'sa'
+			$results.Login -contains "sa" | Should Be $true
 		}
 	}
 }
