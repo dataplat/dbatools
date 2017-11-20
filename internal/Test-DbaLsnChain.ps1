@@ -115,14 +115,15 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
             {
                 if ($TranLogBackups[$i].FirstLSN -ge $TlogAnchor.LastLSN)
                 {
-                    Write-Warning "$FunctionName - Break in LSN Chain between $($TlogAnchor.BackupPath) and $($TranLogBackups[($i)].BackupPath) "
+                    Write-Warning "$FunctionName - Break in LSN Chain between $($TlogAnchor.FullName) and $($TranLogBackups[($i)].FullName) "
+                    Write-Verbose "Anchor $($TlogAnchor.LastLSN) - FirstLSN $($TranLogBackups[$i].FirstLSN)"
                     return $false
                     break
                 }
             }else {
                 if ($TranLogBackups[($i-1)].LastLsn -ne $TranLogBackups[($i)].FirstLSN -and ($TranLogBackups[($i)] -ne $TranLogBackups[($i-1)]))
                 {
-                    Write-Warning "$FunctionName - Break in transaction log between $($TranLogBackups[($i-1)].BackupPath) and $($TranLogBackups[($i)].BackupPath) "
+                    Write-Warning "$FunctionName - Break in transaction log between $($TranLogBackups[($i-1)].FullName) and $($TranLogBackups[($i)].FullName) "
                     return $false
                     break
                 }
