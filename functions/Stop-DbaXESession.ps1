@@ -86,11 +86,15 @@ function Stop-DbaXESession {
 				$session = $xe.Name
 				if ($xe.isRunning) {
 					Write-Message -Level Verbose -Message "Stopping XEvent Session $session on $instance."
-					$xe.Stop()
-					Get-DbaXESession -SqlInstance $xe.Parent -Session $session
+					try {
+						$xe.Stop()
+					} catch {
+						Write-Error -Message "Could not stop XEvent Session $session on $instance"
+					}
 				} else {
 					Write-Message -Level Warning -Message "$session on $instance is already stopped"
 				}
+				Get-DbaXESession -SqlInstance $xe.Parent -Session $session
 			}
 		}
 	}
