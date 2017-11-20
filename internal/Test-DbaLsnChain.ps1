@@ -113,7 +113,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
             Write-Verbose "looping t logs"
             if ($i -eq 0)
             {
-                if ($TranLogBackups[$i].FirstLSN -ge $TlogAnchor.LastLSN)
+                if ($TranLogBackups[$i].FirstLSN -gt $TlogAnchor.LastLSN)
                 {
                     Write-Warning "$FunctionName - Break in LSN Chain between $($TlogAnchor.FullName) and $($TranLogBackups[($i)].FullName) "
                     Write-Verbose "Anchor $($TlogAnchor.LastLSN) - FirstLSN $($TranLogBackups[$i].FirstLSN)"
