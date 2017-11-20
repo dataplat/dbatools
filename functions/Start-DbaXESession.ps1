@@ -86,11 +86,15 @@ function Start-DbaXESession {
 				$session = $xe.Name
 				if (-Not $xe.isRunning) {
 					Write-Message -Level Verbose -Message "Starting XEvent Session $session on $instance."
-					$xe.Start()
-					Get-DbaXESession -SqlInstance $xe.Parent -Session $session
+					try {
+						$xe.Start()
+					} catch {
+						Write-Error -Message "Could not start XEvent Session $session on $instance"
+					}
 				} else {
 					Write-Message -Level Warning -Message "$session on $instance is already running"
 				}
+				Get-DbaXESession -SqlInstance $xe.Parent -Session $session
 			}
 		}
 	}
