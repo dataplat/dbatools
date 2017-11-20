@@ -114,17 +114,17 @@ function Get-DbaTopResourceUsage {
 						)
 						select $instancecolumns
 						    coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') AS [Database],
-						    coalesce(object_name(ST.objectid, ST.dbid), '<none>') as ObjectName,
+						    coalesce(object_name(st.objectid, st.dbid), '<none>') as ObjectName,
 						    qs.query_hash as QueryHash,
 						    qs.total_elapsed_time / 1000 as TotalElapsedTimeMs,
 						    qs.execution_count as ExecutionCount,
 						    cast((total_elapsed_time / 1000) / (execution_count + 0.0) as money) as AverageDurationMs,
 						    lq.elapsed_time / 1000 as QueryTotalElapsedTimeMs,
-						    SUBSTRING(ST.TEXT,(QS.statement_start_offset + 2) / 2,
+						    SUBSTRING(st.TEXT,(qs.statement_start_offset + 2) / 2,
 						        (CASE
-						            WHEN QS.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),ST.text)) * 2
-						            ELSE QS.statement_end_offset
-						            END - QS.statement_start_offset) / 2) as QueryText,
+						            WHEN qs.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),st.text)) * 2
+						            ELSE qs.statement_end_offset
+						            END - qs.statement_start_offset) / 2) as QueryText,
 						    qp.query_plan as QueryPlan
 						from sys.dm_exec_query_stats qs
 						join long_queries lq
@@ -150,15 +150,15 @@ function Get-DbaTopResourceUsage {
 						)
 						select $instancecolumns
 						    coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') AS [Database],
-						    coalesce(object_name(ST.objectid, ST.dbid), '<none>') as ObjectName,
+						    coalesce(object_name(st.objectid, st.dbid), '<none>') as ObjectName,
 						    qs.query_hash as QueryHash,
 						    qs.execution_count as ExecutionCount,
 						    executions as QueryTotalExecutions,
-						    SUBSTRING(ST.TEXT,(QS.statement_start_offset + 2) / 2,
+						    SUBSTRING(st.TEXT,(qs.statement_start_offset + 2) / 2,
 						        (CASE
-						            WHEN QS.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),ST.text)) * 2
-						            ELSE QS.statement_end_offset
-						            END - QS.statement_start_offset) / 2) as QueryText,
+						            WHEN qs.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),st.text)) * 2
+						            ELSE qs.statement_end_offset
+						            END - qs.statement_start_offset) / 2) as QueryText,
 						    qp.query_plan as QueryPlan
 						from sys.dm_exec_query_stats qs
 						join frequent_queries fq
@@ -184,17 +184,17 @@ function Get-DbaTopResourceUsage {
 				)
 				select $instancecolumns
 				    coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') AS [Database],
-				    coalesce(object_name(ST.objectid, ST.dbid), '<none>') as ObjectName,
+				    coalesce(object_name(st.objectid, st.dbid), '<none>') as ObjectName,
 				    qs.query_hash as QueryHash,
 				    qs.total_logical_reads + total_logical_writes as TotalIO,
 				    qs.execution_count as ExecutionCount,
 				    cast((total_logical_reads + total_logical_writes) / (execution_count + 0.0) as money) as AverageIO,
 				    io as QueryTotalIO,
-				    SUBSTRING(ST.TEXT,(QS.statement_start_offset + 2) / 2,
+				    SUBSTRING(st.TEXT,(qs.statement_start_offset + 2) / 2,
 				        (CASE
-				            WHEN QS.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),ST.text)) * 2
-				            ELSE QS.statement_end_offset
-				            END - QS.statement_start_offset) / 2) as QueryText,
+				            WHEN qs.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),st.text)) * 2
+				            ELSE qs.statement_end_offset
+				            END - qs.statement_start_offset) / 2) as QueryText,
 				    qp.query_plan as QueryPlan
 				from sys.dm_exec_query_stats qs
 				join high_io_queries fq
@@ -220,17 +220,17 @@ function Get-DbaTopResourceUsage {
 				)
 				select $instancecolumns
 				    coalesce(db_name(st.dbid), db_name(cast(pa.value AS INT)), 'Resource') AS [Database],
-				    coalesce(object_name(ST.objectid, ST.dbid), '<none>') as ObjectName,
+				    coalesce(object_name(st.objectid, st.dbid), '<none>') as ObjectName,
 				    qs.query_hash as QueryHash,
 				    qs.total_worker_time as CpuTime,
 				    qs.execution_count as ExecutionCount,
 				    cast(total_worker_time / (execution_count + 0.0) as money) as AverageCpuMs,
 				    cpuTime as QueryTotalCpu,
-				    SUBSTRING(ST.TEXT,(QS.statement_start_offset + 2) / 2,
+				    SUBSTRING(st.TEXT,(qs.statement_start_offset + 2) / 2,
 				        (CASE
-				            WHEN QS.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),ST.text)) * 2
-				            ELSE QS.statement_end_offset
-				            END - QS.statement_start_offset) / 2) as QueryText,
+				            WHEN qs.statement_end_offset = -1  THEN LEN(CONVERT(NVARCHAR(MAX),st.text)) * 2
+				            ELSE qs.statement_end_offset
+				            END - qs.statement_start_offset) / 2) as QueryText,
 				    qp.query_plan as QueryPlan
 				from sys.dm_exec_query_stats qs
 				join high_cpu_queries hcq
