@@ -1,7 +1,7 @@
 <#
 	The below statement stays in for every test you build.
 #>
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -51,18 +51,9 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Context "Command actually works" {
 		$results = Get-DbaServerRole -SqlInstance $script:instance2
-		if ($env:AppVeyor) {
-			<# Default environment for Appveyor will not have login output like local instances will #>
-			It "Should have correct properties" {
-				$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Id,Role,IsFixedRole,Owner,DateCreated,DateModified,DatabaseEngineEdition,DatabaseEngineType,Events,ExecutionManager,Name,Parent,Properties,State,Urn,UserData'.Split(',')
-				($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-			}
-		}
-		else {
-			It "Should have correct properties" {
-				$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Id,Role,IsFixedRole,Owner,Login,DateCreated,DateModified,DatabaseEngineEdition,DatabaseEngineType,Events,ExecutionManager,Name,Parent,Properties,State,Urn,UserData'.Split(',')
-				($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
-			}
+		It "Should have correct properties" {
+			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Id,Role,IsFixedRole,Owner,DateCreated,DateModified,Login,DatabaseEngineEdition,DatabaseEngineType,Events,ExecutionManager,Name,Parent,Properties,State,Urn,UserData'.Split(',')
+			($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 		}
 
 		It "Shows only one value with ServerRole parameter" {
