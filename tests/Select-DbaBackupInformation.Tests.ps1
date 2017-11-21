@@ -10,7 +10,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 			$Output = Select-DbaBackupInformation -BackupHistory $header #-EnableException:$true
 			
 			It "Should return an array of 3 items" {
-				$Output.count | Should be 3
+				$Output.count | Should be 2
 			}
 			It "Should return 1 Full backups" {
 				($Output | Where-Object { $_.BackupTypeDescription -eq 'Database' } | Measure-Object).count | Should Be 1
@@ -19,7 +19,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
 				($Output | Where-Object { $_.BackupTypeDescription -eq 'Database Differential' } | Measure-Object).count | Should Be 0
 			}
 			It "Should return 2 log backups" {
-				($Output | Where-Object { $_.BackupTypeDescription -eq 'Transaction Log' } | Measure-Object).count | Should Be 2
+				($Output | Where-Object { $_.BackupTypeDescription -eq 'Transaction Log' } | Measure-Object).count | Should Be 1
 			}
 		}
 		Context "General Diff Restore" {
