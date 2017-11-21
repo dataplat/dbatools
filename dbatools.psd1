@@ -67,7 +67,6 @@
 	
 	# Functions to export from this module
 	FunctionsToExport	    = @(
-		'Select-DbaBackupInformation',
 		'Start-DbaMigration',
 		'Copy-DbaDatabase',
 		'Copy-DbaLogin',
