@@ -164,11 +164,16 @@ Function Invoke-DbaAdvancedRestore{
                 else {
                     $Restore.NoRecovery = $False
                 }
-                if ($restoretime -gt (Get-Date)) {
+                if ($restoretime -gt (Get-Date) -or $Restore.RestoreTime -gt (Get-Date)) {
                     $Restore.ToPointInTime = $null
                 }
                 else {
-                    $Restore.ToPointInTime = $RestoreTime
+                    if ($RestoreTime -ne $Restore.RestoreTime){
+                        $Restore.ToPointInTime = $backup.RestoreTime                       
+                    }
+                    else{
+                        $Restore.ToPointInTime = $RestoreTime
+                    }
                 }
                 $Restore.Database = $database
                 $Restore.ReplaceDatabase = $WithReplace
