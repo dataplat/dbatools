@@ -51,8 +51,11 @@ function Get-XpDirTreeRestoreFile {
 	If (!(Test-DbaSqlPath -SqlInstance $Server -path $path)) {
 		Stop-Function -Message "SqlInstance $SqlInstance cannot access $path" -EnableException $true
 	}
-	
-	$query = "EXEC master.sys.xp_dirtree '$Path',1,1;"
+	if ($Server.VersionMajor -lt 9) {
+		$query = "EXEC master..xp_dirtree '$Path',1,1;"
+	} else {
+		$query = "EXEC master.sys.xp_dirtree '$Path',1,1;"
+	}
 	#$queryResult = Invoke-Sqlcmd2 -ServerInstance $SqlInstance -Credential $SqlCredential -Database tempdb -Query $query
 	$queryResult = $Server.Query($query)
 	
