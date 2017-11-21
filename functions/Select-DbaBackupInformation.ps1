@@ -107,6 +107,11 @@ function Select-DbaBackupInformation{
     }
     
     end{ 
+        ForEach ($History in $InternalHistory){
+            if ("RestoreTime" -notin $History.PSobject.Properties.name){
+               $History | Add-Member -Name 'RestoreTime' -Type NoteProperty -Value $RestoreTime
+            }
+        }
         if ((Test-Bound -ParameterName DatabaseName) -and '' -ne $DatabaseName){
             Write-Message -Message "Filtering by DatabaseName" -Level Verbose 
             $InternalHistory = $InternalHistory | Where-Object {$_.Database -in $DatabaseName}
