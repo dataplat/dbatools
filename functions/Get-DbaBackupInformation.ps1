@@ -1,7 +1,7 @@
 function Get-DbaBackupInformation {
     <#
     .SYNOPSIS
-        Restores a SQL Server Database from a set of backupfiles
+        Scan backup files and creates a set, compatible with Restore-DbaDatabase
     
     .DESCRIPTION
         Upon bein passed a list of potential backups files this command will scan the files, select those that contain SQL Server
@@ -75,8 +75,8 @@ function Get-DbaBackupInformation {
         This allows you to move backup history across servers, or to preserve backuphistory even after the original server has been purged
     
     .EXAMPLE
-        Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse -ExportPath c:\store\BackupHistory.xml -PassThru !
-                Restore-DbaDatabse -SqlInstance Server2 -TrustDbBackupHistory
+        Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse -ExportPath c:\store\BackupHistory.xml -PassThru |
+                Restore-DbaDatabase -SqlInstance Server2 -TrustDbBackupHistory
         
         In this example we gather backup information, export it to an xml file, and then pass it on through to Restore-DbaDatabase
         This allows us to repeat the restore without having to scan all the backup files again
@@ -193,14 +193,14 @@ function Get-DbaBackupInformation {
             } 
             else {
                 ForEach ($f in $path) {
-                    Write-Verbose "Not using sql for $f"
+                    Write-Message -Level VeryVerbose -Message "Not using sql for $f"
                     if ($f -is [System.IO.FileSystemInfo]){
                         if ($f.PsIsContainer -eq $true){
-                            Write-Verbose "folder $($f.fullname)"
+                            Write-Message -Level VeryVerbose -Message "folder $($f.fullname)"
                             $Files = Get-ChildItem -Path $f.fullname -File -Recurse:$DirectoryRecurse
                         }
                         else {
-                            Write-verbose "File"
+                            Write-Message -Level VeryVerbose -Message "File"
                             $Files += $f.fullname
                         }
                     }
