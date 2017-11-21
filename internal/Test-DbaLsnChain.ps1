@@ -88,7 +88,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
             }
         }
         $DiffAnchor = $TestHistory | Where-Object {$_.$TypeName -in ('Database Differential','Differential')}
-        #Check for no more than a single Differential backup
+        #Check for no more than a single Differential backup 
         if (($DiffAnchor.FirstLSN | Select-Object -unique | Measure-Object).count -gt 1)
         {
             Write-Warning "$FunctionName - More than 1 differential backup, not  supported"
