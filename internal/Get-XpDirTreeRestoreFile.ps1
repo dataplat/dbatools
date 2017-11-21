@@ -66,7 +66,7 @@ function Get-XpDirTreeRestoreFile {
 	ForEach ($d in $dirs) {
 		$fullpath = "$path$($d.Subdirectory)"
 		Write-Message -Level Verbose -Message "Enumerating subdirectory '$fullpath'"
-		$Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlInstance $Server -SqlCredential $SqlCredential
+		$Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlInstance $Server
 	}
 	return $Results
 	
