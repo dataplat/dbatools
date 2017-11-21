@@ -48,13 +48,13 @@ function Get-XpDirTreeRestoreFile {
 		$Path = $Path + "\"
 	}
 	
-	If (!(Test-DbaSqlPath -SqlInstance $server -path $path)) {
+	If (!(Test-DbaSqlPath -SqlInstance $Server -path $path)) {
 		Stop-Function -Message "SqlInstance $SqlInstance cannot access $path" -EnableException $true
 	}
 	
 	$query = "EXEC master.sys.xp_dirtree '$Path',1,1;"
-	$queryResult = Invoke-Sqlcmd2 -ServerInstance $SqlInstance -Credential $SqlCredential -Database tempdb -Query $query
-	#$queryResult = $Server.Query($query)
+	#$queryResult = Invoke-Sqlcmd2 -ServerInstance $SqlInstance -Credential $SqlCredential -Database tempdb -Query $query
+	$queryResult = $Server.Query($query)
 	
 	$dirs = $queryResult | where-object file -eq 0
 	$Results = @()
@@ -63,7 +63,7 @@ function Get-XpDirTreeRestoreFile {
 	ForEach ($d in $dirs) {
 		$fullpath = "$path$($d.Subdirectory)"
 		Write-Message -Level Verbose -Message "Enumerating subdirectory '$fullpath'"
-		$Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlInstance $SqlInstance
+		$Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlInstance $Server -SqlCredential $SqlCredential
 	}
 	return $Results
 	
