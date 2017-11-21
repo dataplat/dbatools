@@ -21,10 +21,31 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests'{
 			}
 		}
 		Context "Non recursive filestructure" {
-			Mock Connect-SqlInstance { [DbaInstanceParameter]"Foo\Bar" }
 			$array = (@{ subdirectory = 'full.bak'; depth = 1; file = 1 },
 				@{ subdirectory = 'full2.bak'; depth = 1; file = 1 })
-			Mock Invoke-Sqlcmd2 { $array } -ParameterFilter { $Query -and $Query -eq "EXEC master.sys.xp_dirtree 'c:\temp\',1,1;" }
+			Mock Connect-SqlInstance -MockWith {
+				$obj = [PSCustomObject]@{
+					Name                 = 'BASEName'
+					NetName              = 'BASENetName'
+					InstanceName         = 'BASEInstanceName'
+					DomainInstanceName   = 'BASEDomainInstanceName'
+					InstallDataDirectory = 'BASEInstallDataDirectory'
+					ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
+					ServiceName          = 'BASEServiceName'
+					VersionMajor         = 9
+					ConnectionContext    = New-Object PSObject
+				}
+				Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
+				Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
+					param($query)
+					if ($query -eq "EXEC master.sys.xp_dirtree 'c:\temp\',1,1;") {
+						return $array
+					}
+				}
+				$obj.PSObject.TypeNames.Clear()
+				$obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
+				return $obj
+			}
 			$results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -EnableException $true
 			It "Should return an array of 2 files" {
 				$results.count | Should Be 2
@@ -37,14 +58,39 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests'{
 			}
 		}
 		Context "Recursive Filestructure" {
-			Mock Connect-SqlInstance { [DbaInstanceParameter]"Foo\Bar" }
 			$array = (@{ subdirectory = 'full.bak'; depth = 1; file = 1 },
 				@{ subdirectory = 'full2.bak'; depth = 1; file = 1 },
 				@{ subdirectory = 'recurse'; depth = 1; file = 0 })
-			Mock Invoke-Sqlcmd2 { $array } -ParameterFilter { $query -and $query -eq "EXEC master.sys.xp_dirtree 'c:\temp\',1,1;" }
 			$array2 = (@{ subdirectory = 'fulllow.bak'; depth = 1; file = 1 },
 				@{ subdirectory = 'full2low.bak'; depth = 1; file = 1 })
-			Mock Invoke-Sqlcmd2 { $array2 } -ParameterFilter { $query -and $query -eq "EXEC master.sys.xp_dirtree 'c:\temp\recurse\',1,1;" }
+			Mock Connect-SqlInstance -MockWith {
+				$obj = [PSCustomObject]@{
+					Name                 = 'BASEName'
+					NetName              = 'BASENetName'
+					InstanceName         = 'BASEInstanceName'
+					DomainInstanceName   = 'BASEDomainInstanceName'
+					InstallDataDirectory = 'BASEInstallDataDirectory'
+					ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
+					ServiceName          = 'BASEServiceName'
+					VersionMajor         = 9
+					ConnectionContext    = New-Object PSObject
+				}
+				Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
+				Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
+					param($query)
+					if ($query -eq "EXEC master.sys.xp_dirtree 'c:\temp\recurse\',1,1;") {
+						return $array2
+					}
+					if ($query -eq "EXEC master.sys.xp_dirtree 'c:\temp\',1,1;") {
+						return $array
+					}
+				}
+				$obj.PSObject.TypeNames.Clear()
+				$obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
+				return $obj
+			}
+			
+			
 			$results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -EnableException $true
 			It "Should return array of 4 files - recursion" {
 				$results.count | Should Be 4
