@@ -89,7 +89,7 @@ function Start-DbaXESession {
 					try {
 						$xe.Start()
 					} catch {
-						Write-Error -Message "Could not start XEvent Session $session on $instance"
+						Stop-Function -Message "Could not start XEvent Session on $instance" -Target $session -ErrorRecord $_
 					}
 				} else {
 					Write-Message -Level Warning -Message "$session on $instance is already running"

@@ -89,7 +89,7 @@ function Stop-DbaXESession {
 					try {
 						$xe.Stop()
 					} catch {
-						Write-Error -Message "Could not stop XEvent Session $session on $instance"
+						Stop-Function -Message "Could not stop XEvent Session on $instance" -Target $session -ErrorRecord $_
 					}
 				} else {
 					Write-Message -Level Warning -Message "$session on $instance is already stopped"
