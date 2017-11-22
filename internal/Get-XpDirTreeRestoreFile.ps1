@@ -39,7 +39,7 @@ function Get-XpDirTreeRestoreFile {
 	Write-Message -Level InternalComment -Message "Starting"
 	
 	Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
-	$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+	$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	
 	if (($path -like '*.bak') -or ($path -like '*trn')){
 
@@ -48,26 +48,25 @@ function Get-XpDirTreeRestoreFile {
 		$Path = $Path + "\"
 	}
 	
-	If (!(Test-DbaSqlPath -SqlInstance $Server -path $path)) {
+	if (!(Test-DbaSqlPath -SqlInstance $server -path $path)) {
 		Stop-Function -Message "SqlInstance $SqlInstance cannot access $path" -EnableException $true
 	}
-	if ($Server.VersionMajor -lt 9) {
-		$query = "EXEC master..xp_dirtree '$Path',1,1;"
+	if ($server.VersionMajor -lt 9) {
+		$sql = "EXEC master..xp_dirtree '$Path',1,1;"
 	} else {
-		$query = "EXEC master.sys.xp_dirtree '$Path',1,1;"
+		$sql = "EXEC master.sys.xp_dirtree '$Path',1,1;"
 	}
 	#$queryResult = Invoke-Sqlcmd2 -ServerInstance $SqlInstance -Credential $SqlCredential -Database tempdb -Query $query
-	$queryResult = $Server.Query($query)
-	
+	$queryResult = $server.Query($sql)
+	Write-Message -Level Debug -Message $sql
 	$dirs = $queryResult | where-object file -eq 0
 	$Results = @()
-	$Results += $queryResult | where-object file -eq 1 | Select-Object @{ Name = "FullName"; Expression = { $PATH + $_."Subdirectory" } }
+	$Results += $queryResult | where-object file -eq 1 | Select-Object @{ Name = "FullName"; Expression = { $path + $_."Subdirectory" } }
 	
-	ForEach ($d in $dirs) {
+	foreach ($d in $dirs) {
 		$fullpath = "$path$($d.Subdirectory)"
 		Write-Message -Level Verbose -Message "Enumerating subdirectory '$fullpath'"
-		$Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlInstance $Server
+		$Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlInstance $server
 	}
 	return $Results
-	
 }
