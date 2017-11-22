@@ -157,7 +157,7 @@ function Select-DbaBackupInformation{
                 $dbHistory += $DatabaseHistory | Where-Object {$_.Type -in ('Log','Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn  | Select-Object -First 1
             }
 
-            $dbHistory
+            $dbHistory | Select-Object -Unique BackupSetID
         }    
     }
 }
