@@ -240,14 +240,17 @@ Function Invoke-DbaAdvancedRestore{
                             $script = $Restore.Script($server)
                         }
                         elseif ($VerifyOnly) {
+                            Write-Message -Message "VerifyOnly restore" -Level Verbose
                             Write-Progress -id 2 -activity "Verifying $Database backup file on $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                             $Verify = $Restore.sqlverify($server)
                             Write-Progress -id 2 -activity "Verifying $Database backup file on $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
     
                             if ($verify -eq $true) {
+                                Write-Message -Message "VerifyOnly restore Suceeded" -Level Verbose
                                 return "Verify successful"
                             }
                             else {
+                                Write-Message -Message "VerifyOnly restore Failed" -Level Verbose
                                 return "Verify failed"
                             }
                         }
