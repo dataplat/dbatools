@@ -219,8 +219,6 @@ function Find-DbaOrphanedFile {
 			}
 			$dirtreefiles = $dirtreefiles | Where-Object { $_ } | Sort-Object Comparison -Unique
 
-			$filestructure = Get-SqlFileStructure $server
-
 			foreach ($file in $filestructure) {
 				$valid += [IO.Path]::GetFullPath($(Format-Path $file))
 			}
