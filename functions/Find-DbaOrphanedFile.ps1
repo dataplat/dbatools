@@ -191,6 +191,13 @@ function Find-DbaOrphanedFile {
 			# Reset all the arrays
 			$dirtreefiles = $valid = $paths = $matching = @()
 
+			$filestructure = Get-SqlFileStructure $server
+			
+			# Get any paths associated with current data and log files
+			foreach ($file in $filestructure) {
+				$paths += Split-Path -Path $file
+			}
+
 			# Get the default data and log directories from the instance
 			Write-Message -Level Debug -Message "Adding paths"
 			$paths += $server.RootDirectory + "\DATA"
