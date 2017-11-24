@@ -1,7 +1,7 @@
 function Get-DbaBackupInformation {
     <#
     .SYNOPSIS
-        Restores a SQL Server Database from a set of backupfiles
+        Scan backup files and creates a set, compatible with Restore-DbaDatabase
     
     .DESCRIPTION
         Upon bein passed a list of potential backups files this command will scan the files, select those that contain SQL Server
@@ -55,15 +55,10 @@ function Get-DbaBackupInformation {
     
     .PARAMETER Import
         When specified along with a path the command will import a previously exported 
+    
     .PARAMETER EnableException
         Replaces user friendly yellow warnings with bloody red exceptions of doom!
         Use this if you want the function to throw terminating errors you want to catch.
-    
-	.PARAMETER Confirm
-        Prompts to confirm certain actions
-    
-    .PARAMETER WhatIf
-        Shows what would happen if the command would execute, but does not actually perform the command
     
     .EXAMPLE
         Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse
@@ -80,8 +75,8 @@ function Get-DbaBackupInformation {
         This allows you to move backup history across servers, or to preserve backuphistory even after the original server has been purged
     
     .EXAMPLE
-        Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse -ExportPath c:\store\BackupHistory.xml -PassThru !
-                Restore-DbaDatabse -SqlInstance Server2 -TrustDbBackupHistory
+        Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse -ExportPath c:\store\BackupHistory.xml -PassThru |
+                Restore-DbaDatabase -SqlInstance Server2 -TrustDbBackupHistory
         
         In this example we gather backup information, export it to an xml file, and then pass it on through to Restore-DbaDatabase
         This allows us to repeat the restore without having to scan all the backup files again
@@ -127,13 +122,13 @@ function Get-DbaBackupInformation {
     )
     begin {
 
-        Function Hash-String{
+        Function Get-HashString{
             param(
                 [String]$InString
                 )
 
             $StringBuilder = New-Object System.Text.StringBuilder
-            [System.Security.Cryptography.HashAlgorithm]::Create("md5").ComputeHash([System.Text.Encoding]::UTF8.GetBytes($InString))| ForEach{
+            [System.Security.Cryptography.HashAlgorithm]::Create("md5").ComputeHash([System.Text.Encoding]::UTF8.GetBytes($InString))| ForEach-Object{
                 [Void]$StringBuilder.Append($_.ToString("x2"))
             }
             return $StringBuilder.ToString()
@@ -173,7 +168,7 @@ function Get-DbaBackupInformation {
                     }
                 }
                 else {
-                    Write-Message -Message "$f does not exist or is unreadable" -Leve Warning
+                    Write-Message -Message "$f does not exist or is unreadable" -Level Warning
                 }
             }
         }
@@ -182,16 +177,37 @@ function Get-DbaBackupInformation {
             $groupResults = @()
             if ($NoXpDirTree -ne $true){
                 ForEach ($f in $path) {
-                    $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                    if ($f -match '\.\w{3}\Z') {
+                        Write-Message -Message "Testing a single file $f " -Level Verbose
+                        if ((Test-DbaSqlPath -Path $f -SqlInstance $server) -and $p -notlike 'http*') {
+                            $f = $f | Select-Object *, @{ Name = "FullName"; Expression = { $f } }
+                            $files += $f
+                        }
+                    }
+                    else
+                    {
+                        Write-Message -Message "Testing a folder $f" -Level Verbose
+                        $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server
+                    }
                 }
             } 
             else {
                 ForEach ($f in $path) {
-                    $Files += Get-ChildItem -Path $f -file -Recurse:$recurse
+                    Write-Message -Level VeryVerbose -Message "Not using sql for $f"
+                    if ($f -is [System.IO.FileSystemInfo]){
+                        if ($f.PsIsContainer -eq $true){
+                            Write-Message -Level VeryVerbose -Message "folder $($f.fullname)"
+                            $Files = Get-ChildItem -Path $f.fullname -File -Recurse:$DirectoryRecurse
+                        }
+                        else {
+                            Write-Message -Level VeryVerbose -Message "File"
+                            $Files += $f.fullname
+                        }
+                    }
                 }
             }
             
-            $FileDetails = $Files | Read-DbaBackupHeader -SqlInstance $SqlInstance -SqlCredential $sqlcredential
+            $FileDetails = $Files | Read-DbaBackupHeader -SqlInstance $server
 
             $groupdetails = $FileDetails | group-object -Property BackupSetGUID
             
@@ -230,13 +246,13 @@ function Get-DbaBackupInformation {
         }
         if ($true -eq $Anonymise){
             ForEach ($group in $GroupResults){
-                $group.ComputerName = Hash-String -InString $group.ComputerName 
-                $group.InstanceName = Hash-String -InString $group.InstanceName
-                $group.SqlInstance = Hash-String -InString $group.SqlInstance
-                $group.Database = Hash-String -InString $group.Database 
-                $group.UserName = Hash-String -InString $group.UserName 
-                $group.Path = Hash-String -InString  $Group.Path
-                $group.FullName = Hash-String -InString $Group.Fullname 
+                $group.ComputerName = Get-HashString -InString $group.ComputerName 
+                $group.InstanceName = Get-HashString -InString $group.InstanceName
+                $group.SqlInstance = Get-HashString -InString $group.SqlInstance
+                $group.Database = Get-HashString -InString $group.Database 
+                $group.UserName = Get-HashString -InString $group.UserName 
+                $group.Path = Get-HashString -InString  $Group.Path
+                $group.FullName = Get-HashString -InString $Group.Fullname 
             }
         }
         if ((Test-Bound -parameterName exportpath) -and $null -ne $ExportPath) {

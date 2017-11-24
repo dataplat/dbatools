@@ -86,7 +86,8 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 		[switch]$UseSelectionHelper,
 		[switch]$InstanceOnly,
 		[switch]$DatabaseSpecific,
-		[switch][Alias('Silent')]$EnableException
+		[switch][Alias('Silent')]
+		$EnableException
 	)
 	
 	begin {
@@ -99,7 +100,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 			)
 			
 			$ParsedScript | Select-Object QueryNr, QueryName, DBSpecific, Description | Out-GridView -Title "Diagnostic Query Overview" -OutputMode Multiple | Sort-Object QueryNr | Select-Object -ExpandProperty QueryName
-
+			
 		}
 		
 		Write-Message -Level Verbose -Message "Interpreting DMV Script Collections"
@@ -112,7 +113,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 		}
 		
 		$scriptversions = @()
-		$scriptfiles = Get-ChildItem "$Path\*.sql"
+		$scriptfiles = Get-ChildItem "$Path\SQLServerDiagnosticQueries_*_*.sql"
 		
 		if (!$scriptfiles) {
 			Write-Message -Level Warning -Message "Diagnostic scripts not found in $Path. Using the ones within the module."
@@ -121,7 +122,7 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 			
 			$scriptfiles = Get-ChildItem "$base\bin\diagnosticquery\SQLServerDiagnosticQueries_*_*.sql"
 			if (!$scriptfiles) {
-				Stop-Function -Message "Unable to download scripts, do you have an internet connection? $_" -InnerErrorRecord $_
+				Stop-Function -Message "Unable to download scripts, do you have an internet connection? $_" -ErrorRecord $_
 				return
 			}
 		}
@@ -139,8 +140,8 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 				$parsedscript = Invoke-DbaDiagnosticQueryScriptParser -filename $file.fullname
 				
 				$newscript = [pscustomobject]@{
-					Version = $file.Basename.Split(" ")[2]
-					Script = $parsedscript
+					Version  = $file.Basename.Split("_")[1]
+					Script   = $parsedscript
 				}
 				$scriptversions += $newscript
 			}
@@ -216,16 +217,16 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 							
 							if (!$result) {
 								$result = [pscustomobject]@{
-									ComputerName = $server.NetName
-									InstanceName = $server.ServiceName
-									SqlInstance = $server.DomainInstanceName
-									Number = $scriptpart.QueryNr
-									Name = $scriptpart.QueryName
-									Description = $scriptpart.Description
+									ComputerName  = $server.NetName
+									InstanceName  = $server.ServiceName
+									SqlInstance   = $server.DomainInstanceName
+									Number	      = $scriptpart.QueryNr
+									Name		  = $scriptpart.QueryName
+									Description   = $scriptpart.Description
 									DatabaseSpecific = $scriptpart.DBSpecific
-									DatabaseName = $null
-									Notes = "Empty Result for this Query"
-									Result = $null
+									DatabaseName  = $null
+									Notes		  = "Empty Result for this Query"
+									Result	      = $null
 								}
 								Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description)
 							}
@@ -236,16 +237,16 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 						if ($result) {
 							
 							[pscustomobject]@{
-								ComputerName = $server.NetName
-								InstanceName = $server.ServiceName
-								SqlInstance = $server.DomainInstanceName
-								Number = $scriptpart.QueryNr
-								Name = $scriptpart.QueryName
-								Description = $scriptpart.Description
+								ComputerName  = $server.NetName
+								InstanceName  = $server.ServiceName
+								SqlInstance   = $server.DomainInstanceName
+								Number	      = $scriptpart.QueryNr
+								Name		  = $scriptpart.QueryName
+								Description   = $scriptpart.Description
 								DatabaseSpecific = $scriptpart.DBSpecific
-								DatabaseName = $null
-								Notes = $null
-								Result = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
+								DatabaseName  = $null
+								Notes		  = $null
+								Result	      = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
 							}
 						}
 					}
@@ -258,19 +259,19 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 							if (-not $EnableException) { Write-Progress -Id 1 -ParentId 0 -Activity "Collecting diagnostic query data from $dbname on $instance" -Status ('Processing {0} of {1}' -f $counter, $scriptcount) -CurrentOperation $scriptpart.QueryName -PercentComplete (($Counter / $scriptcount) * 100) }
 							Write-Message -Level Output -Message "Collecting diagnostic query data from $dbname for $($scriptpart.QueryName) on $instance"
 							try {
-								$result = $server.Query($scriptpart.Text,$currentdb.Name)
+								$result = $server.Query($scriptpart.Text, $currentdb.Name)
 								if (!$result) {
 									$result = [pscustomobject]@{
-										ComputerName = $server.NetName
-										InstanceName = $server.ServiceName
-										SqlInstance = $server.DomainInstanceName
-										Number = $scriptpart.QueryNr
-										Name = $scriptpart.QueryName
-										Description = $scriptpart.Description
+										ComputerName  = $server.NetName
+										InstanceName  = $server.ServiceName
+										SqlInstance   = $server.DomainInstanceName
+										Number	      = $scriptpart.QueryNr
+										Name		  = $scriptpart.QueryName
+										Description   = $scriptpart.Description
 										DatabaseSpecific = $scriptpart.DBSpecific
-										DatabaseName = $null
-										Notes = "Empty Result for this Query"
-										Result = $null
+										DatabaseName  = $null
+										Notes		  = "Empty Result for this Query"
+										Result	      = $null
 									}
 									Write-Message -Level Verbose -Message ("Empty result for Query {0} - {1} - {2}" -f $scriptpart.QueryNr, $scriptpart.QueryName, $scriptpart.Description) -Target $scriptpart -ErrorRecord $_
 								}
@@ -280,16 +281,16 @@ Then it will export the results to Export-DbaDiagnosticQuery.
 							}
 							
 							[pscustomobject]@{
-								ComputerName = $server.NetName
-								InstanceName = $server.ServiceName
-								SqlInstance = $server.DomainInstanceName
-								Number = $scriptpart.QueryNr
-								Name = $scriptpart.QueryName
-								Description = $scriptpart.Description
+								ComputerName  = $server.NetName
+								InstanceName  = $server.ServiceName
+								SqlInstance   = $server.DomainInstanceName
+								Number	      = $scriptpart.QueryNr
+								Name		  = $scriptpart.QueryName
+								Description   = $scriptpart.Description
 								DatabaseSpecific = $scriptpart.DBSpecific
-								DatabaseName = $currentdb.name
-								Notes = $null
-								Result = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
+								DatabaseName  = $currentdb.name
+								Notes		  = $null
+								Result	      = $result | Select-Object * -ExcludeProperty RowError, RowState, Table, ItemArray, HasErrors
 							}
 						}
 					}

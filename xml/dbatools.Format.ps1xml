@@ -59,15 +59,19 @@
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>Capacity</PropertyName>
+								<Alignment>Right</Alignment>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>Free</PropertyName>
+								<Alignment>Right</Alignment>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>PercentFree</PropertyName>
+								<Alignment>Right</Alignment>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>BlockSize</PropertyName>
+								<Alignment>Right</Alignment>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>IsSqlDisk</PropertyName>
@@ -452,12 +456,11 @@
 		</View>
 	</ViewDefinitions>
 </Configuration>
-
 <!-- SIG # Begin signature block -->
 <!-- MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB -->
 <!-- gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR -->
-<!-- AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUK2N2MCS7foewOwNuNoCCbLwQ -->
-<!-- 0wmggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B -->
+<!-- AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQULE3KaP+5cDv8xSIV/y6BJ+Di -->
+<!-- gWOggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B -->
 <!-- AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD -->
 <!-- VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz -->
 <!-- c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx -->
@@ -588,22 +591,22 @@
 <!-- c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr -->
 <!-- DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx -->
 <!-- DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq -->
-<!-- hkiG9w0BCQQxFgQUG/ke4HhfQIDAkl3r0F9VLd8Qx+owDQYJKoZIhvcNAQEBBQAE -->
-<!-- ggEALXcRMQczBTYV7aN7dPv8ufjJpkHZ4pmNiepfoeLKOSlxfayA2kSbes0Uwtou -->
-<!-- 8kn7sTWcTUT82dNLoeRo9NVx06RUPy1rDGOCJXaJkkSrnkLOWj54Vf7L+4b0rGeR -->
-<!-- fgj5TyCgEziewilFLM2Sis7BoxU83vW73BfJ32ibuiU1d4t/MvpZC0opd+H/zw+/ -->
-<!-- WgV3aXQVZM9P/WxW5ARhDJE/364YyTG3/+CgwgFwxblB2OtyO/gXSGNHQr3TAaVS -->
-<!-- xkqYyO4W9fXs3UYFqMc5MFz0OAVgkIN8AYF8OeSowIhCdUxmcwuZmK7+oWK/zM5A -->
-<!-- Bd65Mwxg5ghSG7167NP/5mY1CaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB -->
+<!-- hkiG9w0BCQQxFgQUmupNg4B91glYRXcsduNh7LSaFBIwDQYJKoZIhvcNAQEBBQAE -->
+<!-- ggEAQlqUe02HbUgVsW13mexwEW2CASQye/7ukLPOpdE73OumL6VCOSAxU7nR8MIi -->
+<!-- SOhYt0jfGKzPrZrDH0gMObfpxhmpgNdAwz992Rv173Lfl/ISu0W6eBEXO7gS9BRC -->
+<!-- Ki+14sYZdId+ttyrZze5rUaQFn+AaRC1BtCJOKNx32Bc/mOh7RAXUS73jaZF6U+K -->
+<!-- Q2Md4zatFjZ4Mok/w2LoWE5+NbS3ZeyXiXOAuqtTqkHOJldB0eKN7HgSXWbfNR94 -->
+<!-- IUjKn3d+GFkq5ZNxzFdhB+ywnDpjsryHRo46KLQdNhFzd02UhzndNAycmEEMhXwE -->
+<!-- 9AECfM+OTIXxkCfTzcn9UNC3u6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB -->
 <!-- ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV -->
 <!-- BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg -->
 <!-- SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN -->
-<!-- AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMDMwMDIyNTEzWjAj -->
-<!-- BgkqhkiG9w0BCQQxFgQUry+KQSOcqwIIyC7JN34gZPFoDb8wDQYJKoZIhvcNAQEB -->
-<!-- BQAEggEAf4Nmyb5Z7r779ELIdZn0ROBi7jvJnfU3nQjfAPUrNpdXOXNwtaFHLh5+ -->
-<!-- Puz+O90nPlyLVu5Khy/9MdbGLoLSHNqxCwwrWrqkeuzs77mi2PrMxZZcoj/8TYBu -->
-<!-- 5DVpoJczZ8JXFd2WcpQZB3/yVooU1jGrI+YvECsrJJqa9aWLEA2Ao4+hSzBQouA3 -->
-<!-- V/XTsYBIiXqp7E2P+DOy1inzvDYrmwM6ExKCy263N34QgjZ/0GNO8ERjDT9lbCPq -->
-<!-- ++MiLo4b3Z1eB5er2YgB9/u0PUY7hKXNHUtEJEdu1VlVkxhCvsJw3OBESuN1WBow -->
-<!-- Ln3q9QjBsErfarLKKtmMrrkobZA0Zg== -->
+<!-- AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMTE3MjAwNzUwWjAj -->
+<!-- BgkqhkiG9w0BCQQxFgQU1BSp8yRdwEMcLPl4Qlil9gN9K68wDQYJKoZIhvcNAQEB -->
+<!-- BQAEggEAKdpbxBisa+iXu3l5HUvOeIZy48KuhyUjn5ygwTm757ZxQtltoso1PJDM -->
+<!-- ZVzPgxohYe6gG5MYogCVBCinXHyBGXgpsLqIAF3QWZQAA1WyTv9ntxmqlCtjyMZQ -->
+<!-- dboNaU7a5xF61DM1dxon3qEQymvehsn2a5gWZ6AG3MHgVCZzQDZfcEL/YQSmvDWF -->
+<!-- w9hIV6tXC2iKh2Uft1jPFvMFzlswMzz9QL3ZzYL9q9D1o8YmVNJZHXb1Gv+ykp7R -->
+<!-- pglOn4u9b1JFfUNRAsbfOg7CupXdrmlQK4suki9akQB4IjjzlC1j4L6+HQCJopTA -->
+<!-- SlKFAi9nqD7P2JvRzLSyfAb6og8LtQ== -->
 <!-- SIG # End signature block -->

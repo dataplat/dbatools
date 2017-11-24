@@ -181,6 +181,10 @@ function Get-DbaCmObject {
 									if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
 									Stop-Function -Message "[$computer] Invalid connection credentials" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
 								}
+								elseif ($_.Exception.InnerException.MessageId -eq "HRESULT 0x80041013") {
+									if ($ParSet -eq "Class") { Stop-Function -Message "[$computer] Failed to access $class in namespace $Namespace!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -Exception $_.Exception.InnerException }
+									else { Stop-Function -Message "[$computer] Failed to execute $query in namespace $Namespace!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -Exception $_.Exception.InnerException }
+								}
 								else {
 									$connection.ReportFailure('CimRM')
 									$excluded += "CimRM"
@@ -241,6 +245,10 @@ function Get-DbaCmObject {
 									$connection.AddBadCredential($cred)
 									if (-not $disable_cache) { [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::Connections[$computer] = $connection }
 									Stop-Function -Message "[$computer] Invalid connection credentials" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -OverrideExceptionMessage
+								}
+								elseif ($_.Exception.InnerException.MessageId -eq "HRESULT 0x80041013") {
+									if ($ParSet -eq "Class") { Stop-Function -Message "[$computer] Failed to access $class in namespace $Namespace!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -Exception $_.Exception.InnerException }
+									else { Stop-Function -Message "[$computer] Failed to execute $query in namespace $Namespace!" -Target $computer -Continue -ContinueLabel "main" -ErrorRecord $_ -SilentlyContinue:$SilentlyContinue -Exception $_.Exception.InnerException }
 								}
 								else {
 									$connection.ReportFailure('CimDCOM')

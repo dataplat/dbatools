@@ -9,9 +9,9 @@
 	
 	# Script module or binary module file associated with this manifest.
 	RootModule			    = 'dbatools.psm1'
-	
+
 	# Version number of this module.
-	ModuleVersion		    = '0.9.84'
+	ModuleVersion		     = '0.9.105'
 	
 	# ID used to uniquely identify this module
 	GUID				    = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -50,7 +50,7 @@
 	RequiredModules		    = @()
 	
 	# Assemblies that must be loaded prior to importing this module
-	RequiredAssemblies	    = @()
+	RequiredAssemblies	    = @("bin\dbatools.dll")
 	
 	# Script files () that are run in the caller's environment prior to importing this module
 	ScriptsToProcess	    = @()
@@ -382,7 +382,18 @@
 		'Register-DbaConfig',
 		'Get-DbaBackupInformation',
 		'Start-DbaXESession',
-		'Stop-DbaXESession'
+		'Stop-DbaXESession',
+		'Set-DbaDbRecoveryModel',
+		'Get-DbaDbRecoveryModel',
+		'Get-DbaWaitingTask',
+		'Remove-DbaDbUser',
+		'Get-DbaDump',
+		'Invoke-DbaAdvancedRestore',
+		'Format-DbaBackupInformation',
+		'Get-DbaAgentJobStep',
+		'Test-DbaBackupInformation',
+		'Invoke-DbaBalanceDataFiles',
+		'Select-DbaBackupInformation'
 	)
 	
 	# Cmdlets to export from this module
@@ -515,8 +526,8 @@
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUrJybDqUtWvWj3E+FDz1Obr3f
-# tL6ggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU0+h5yChpUDiNdGPf1vBot45S
+# EMqggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -647,22 +658,22 @@
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUxvCYToea6n62RahPkILtnY6OQtIwDQYJKoZIhvcNAQEBBQAE
-# ggEAftq9iKY4lMpwDhZt0qd4m+UllSbuaxZFQPUDUDQdw4xY/346WjJLJKRTTcSR
-# u2qfx4kZjAhyjVt3b2VOkTF3ATSxKOULb9YmSBj7pN8Zdk696efLkyF4JrnZ4Azh
-# 4QdLX0ORxYMmDD3g1HlsCIOoQcf3PxAK4/S92hdhDHjvUFGh7r/8vOUoFmfND12e
-# e/VqyPaRHjArmYOiQIUosCq0UkFdhnH+PL/NcvOijUwiKJNoTiaGG1Vzjsaz1ZXV
-# 7RY6cocuJjGI0qwJL/89H1A3A8qTkYsGFubZJCgc8Uj0JHNuJquM600em+71sNYr
-# mWlHAyvreKtEZMJ2CoSSSzo+B6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUPqKmlPBYozUA9NiB7zmnw0PBwmEwDQYJKoZIhvcNAQEBBQAE
+# ggEAgAx3A3qAa/SKLlIaHbvcdQo7Rrez1OKmCtPaHpnd7I09u97A+TTnDIvATxlr
+# D65w6UQ0f9XQuQ1FQJ6puCyWVjplqoaz/XU1YlJ82pV+W9IyYwF8HIMbtwXwt5n+
+# HDBjIBLluHMlA3RQDucIS7lXsWgHWcXBDUsX1GlGbKM1lNNZP7UF1umUW+KdSR3Y
+# 4bI0masJ1X7QzFLES0iJU6JN8uV++wbr/0Sd5dQwvln2FPG0C6uMEC8CBMDO5tNC
+# rvvf2tP7S/LBFEF7PEoaY5mXjiCBOZXYMpkM77Azvep7mtP47trzxgha7l27OrgI
+# sgW8mM/wiYp+Hp5zCmxfayaRiqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMDMwMDIyNTEyWjAj
-# BgkqhkiG9w0BCQQxFgQUSrUPhpTwZAxiozSgURYwf8YPHhQwDQYJKoZIhvcNAQEB
-# BQAEggEAhm6nFPJKC4JvEbupQ35cuqWrSPP6pTtWcz3MNsP/hZ1w25KuVSgfcwgY
-# IB/Za2GaVi6WIzI7BlDtIXMjNJVp+1uTcSUYqetL0aSCykKyeCx20xtqD4BcKA09
-# ypVU4QcRBtKKJfpX6tyKMVjBCA8/CZvxzyZZ9lAmX/O8yuQh6fAxpfPyKNVLXZIT
-# OADx5IthtWCYBqHDJq1oCCSuSJs7txArjWui6cIgwtI24MvADgXwIZA5dBwbx6UN
-# Kuse5DRO3iE9Rq+C9Yx+hWjw9UmAeXSotER3DFFEQvs6WTjfvzWDFVvbo8Ym3b/W
-# FFbXXAifrTZLdSspGb77qH/oqfup2Q==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMTE3MjAwNzQ4WjAj
+# BgkqhkiG9w0BCQQxFgQUV7iQRDhkNyLmsygOlSwMusyt7DgwDQYJKoZIhvcNAQEB
+# BQAEggEAhUDWwRrMZmVX8vUmeR4kL5o0EWMOTDVgasNrrOY3r4xZTVbrlaVynPd4
+# zWAp2p3l6v500ArNDi9mdiDDc3KCGr0hxDm3MNeCoc23fguiOKqQx4+dve5R8irn
+# JUFCQ+0Ro1fFeoRMkkxwtwhBTDMhkbWZgpdGyK2zl2zIB9UNYdVIXZMJdbEEb1LM
+# A2rSaH1J8GfShb73SsO6gusQ+EC4rdWwLTYXRp6BTKlzVZMPW9YAiVrPGTr+iO10
+# Ti3I27A4d1jspqlHtefJQnwl7uceQypE9cVe9n60v52h7UUHSPyt3qL7oWsrwaNz
+# 7q46JUZJXXLyj9wWQ47YslMtP0KLHw==
 # SIG # End signature block

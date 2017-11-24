@@ -71,10 +71,10 @@ For -Detached it is required to break mirroring and Availability Groups
 		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
+
 .PARAMETER DatabaseCollection
 Internal parameter for piped objects - this will likely go away once we move to better dynamic parameters
-	
+
 .NOTES
 Author: niphlod
 Website: https://dbatools.io
@@ -142,7 +142,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 		[parameter(Mandatory = $true, ValueFromPipeline, ParameterSetName = "Database")]
 		[PsCustomObject[]]$DatabaseCollection
 	)
-	
+
 	begin {
 		function Get-WrongCombo($optset, $allparams) {
 			$x = 0
@@ -155,7 +155,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 				throw $msg
 			}
 		}
-		
+
 		function Edit-DatabaseState($sqlinstance, $dbname, $opt, $immediate = $false) {
 			$warn = $null
 			$sql = "ALTER DATABASE [$dbname] SET $opt"
@@ -181,7 +181,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 			}
 			return $warn
 		}
-		
+
 		$UserAccessHash = @{
 			'Single' = 'SINGLE_USER'
 			'Restricted' = 'RESTRICTED_USER'
@@ -196,7 +196,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 			'Normal' = 'ONLINE'
 			'EmergencyMode' = 'EMERGENCY'
 		}
-		
+
 		function Get-DbState($db) {
 			$base = [PSCustomObject]@{
 				'Access' = $null
@@ -213,7 +213,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 			}
 			return $base
 		}
-		
+
 		$RWExclusive = @('ReadOnly', 'ReadWrite')
 		$StatusExclusive = @('Online', 'Offline', 'Emergency', 'Detached')
 		$AccessExclusive = @('SingleUser', 'RestrictedUser', 'MultiUser')
@@ -244,7 +244,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 			Stop-Function -Message "You must specify a -AllDatabases or -Database to continue"
 			return
 		}
-		
+
 		if ($DatabaseCollection) {
 			if ($DatabaseCollection.Database) {
 				# comes from Get-DbaDatabaseState
@@ -258,14 +258,14 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 			foreach ($instance in $SqlInstance) {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
 				try {
-					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
+					$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				}
 				catch {
 					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				}
 				$all_dbs = $server.Databases
 				$dbs += $all_dbs | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
-				
+
 				if ($database) {
 					$dbs = $dbs | Where-Object { $database -contains $_.Name }
 				}
@@ -274,7 +274,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 				}
 			}
 		}
-		
+
 		# need to pick up here
 		foreach ($db in $dbs) {
 			if ($db.Name -in @('master', 'model', 'msdb', 'tempdb', 'distribution')) {
@@ -284,15 +284,15 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 			$server = $db.Parent
 			# normalizing properties returned by SMO to something more "fixed"
 			$db_status = Get-DbState $db
-			
-			
+
+
 			$warn = @()
-			
+
 			if ($db.DatabaseSnapshotBaseName.Length -gt 0) {
 				Write-Message -Level Warning -Message "Database $db is a snapshot, skipping"
 				Continue
 			}
-			
+
 			if ($ReadOnly -eq $true) {
 				if ($db_status.RW -eq 'READ_ONLY') {
 					Write-Message -Level VeryVerbose -Message "Database $db is already READ_ONLY"
@@ -308,7 +308,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 					}
 				}
 			}
-			
+
 			if ($ReadWrite -eq $true) {
 				if ($db_status.RW -eq 'READ_WRITE') {
 					Write-Message -Level VeryVerbose -Message "Database $db is already READ_WRITE"
@@ -324,7 +324,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 					}
 				}
 			}
-			
+
 			if ($Online -eq $true) {
 				if ($db_status.Status -eq 'ONLINE') {
 					Write-Message -Level VeryVerbose -Message "Database $db is already ONLINE"
@@ -340,7 +340,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 					}
 				}
 			}
-			
+
 			if ($Offline -eq $true) {
 				if ($db_status.Status -eq 'OFFLINE') {
 					Write-Message -Level VeryVerbose -Message "Database $db is already OFFLINE"
@@ -356,7 +356,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 					}
 				}
 			}
-			
+
 			if ($Emergency -eq $true) {
 				if ($db_status.Status -eq 'EMERGENCY') {
 					Write-Message -Level VeryVerbose -Message "Database $db is already EMERGENCY"
@@ -371,7 +371,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 					}
 				}
 			}
-			
+
 			if ($SingleUser -eq $true) {
 				if ($db_status.Access -eq 'SINGLE_USER') {
 					Write-Message -Level VeryVerbose -Message "Database $db is already SINGLE_USER"
@@ -386,7 +386,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 					}
 				}
 			}
-			
+
 			if ($RestrictedUser -eq $true) {
 				if ($db_status.Access -eq 'RESTRICTED_USER') {
 					Write-Message -Level VeryVerbose -Message "Database $db is already RESTRICTED_USER"
@@ -401,7 +401,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 					}
 				}
 			}
-			
+
 			if ($MultiUser -eq $true) {
 				if ($db_status.Access -eq 'MULTI_USER') {
 					Write-Message -Level VeryVerbose -Message "Database $db is already MULTI_USER"
@@ -416,7 +416,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 					}
 				}
 			}
-			
+
 			if ($Detached -eq $true) {
 				# Refresh info about database state here (before detaching)
 				$db.Refresh()
@@ -433,7 +433,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 						Continue
 					}
 				}
-				
+
 				if ($db.IsMirroringEnabled) {
 					if ($Pscmdlet.ShouldProcess($server, "Break mirroring for $db")) {
 						try {
@@ -447,7 +447,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 						}
 					}
 				}
-				
+
 				if ($db.AvailabilityGroupName) {
 					$agname = $db.AvailabilityGroupName
 					if ($Pscmdlet.ShouldProcess($server, "Removing $db from AG [$agname]")) {
@@ -460,7 +460,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 						}
 					}
 				}
-				
+
 				# DBA 101 should encourage detaching just OFFLINE databases
 				# we can do that here
 				if ($Pscmdlet.ShouldProcess($server, "Detaching $db")) {
@@ -477,9 +477,9 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 						Stop-Function -Message "Failed to detach $db" -ErrorRecord $_ -Target $server -Continue
 						$warn += "Failed to detach"
 					}
-					
+
 				}
-				
+
 			}
 			if ($warn) {
 				$warn = $warn | Get-Unique
@@ -508,7 +508,7 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 				} else {
 					$newstate = Get-DbState $db
 				}
-				
+
 				[PSCustomObject]@{
 					ComputerName = $server.NetName
 					InstanceName = $server.ServiceName
@@ -522,10 +522,10 @@ Gets the databases from Get-DbaDatabase, and sets them as SINGLE_USER, dropping 
 				} | Select-DefaultView -ExcludeProperty Database
 			}
 		}
-		
+
 	}
-	
+
 	end {
-		
+
 	}
 }

@@ -81,6 +81,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 		}
 		
 		$scriptblock = {
+            param( $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters )
 			Write-Verbose "Searching for Memory Manager Counters on $Computer"
 			try {
 				$availablecounters = (Get-Counter -ListSet '*sql*:Memory Manager*' -ErrorAction SilentlyContinue).paths
@@ -204,7 +205,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
 			if ($reply.FullComputerName) {
 				$Computer = $reply.FullComputerName
 				Write-Message -Level Verbose -Message "Connecting to $Computer"
-				Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock
+				Invoke-Command2 -ComputerName $Computer -Credential $Credential -ScriptBlock $scriptblock -argumentlist $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters
 			}
 			else {
 				Write-Message -Level Warning -Message "Can't resolve $Computer."

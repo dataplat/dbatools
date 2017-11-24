@@ -91,7 +91,7 @@ function Install-DbaWhoIsActive {
 
 		if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
 			$baseUrl = "http://whoisactive.com/downloads"
-			$latest = ((Invoke-WebRequest -uri http://whoisactive.com/downloads).Links | where-object {$PSItem.href -match "who_is_active"} | Select-Object href -First 1).href	
+			$latest = ((Invoke-WebRequest -UseBasicParsing -uri http://whoisactive.com/downloads).Links | where-object {$PSItem.href -match "who_is_active"} | Select-Object href -First 1).href	
 			$LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $latest;
 
 			if ((Test-Path -Path $LocalCachedCopy -PathType Leaf) -and (-not $Force)) {
@@ -106,13 +106,13 @@ function Install-DbaWhoIsActive {
 						Write-Message -Level Verbose -Message "Downloading sp_WhoisActive zip file, unzipping and installing."
 						$url = $baseUrl + "/" + $latest
 						try {
-							Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop
+							Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
 							Copy-Item -Path $zipfile -Destination $LocalCachedCopy
 						}
 						catch {
 							#try with default proxy and usersettings
 							(New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-							Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop
+							Invoke-WebRequest $url -OutFile $zipfile -ErrorAction Stop -UseBasicParsing
 						}
 					}
 					catch {
