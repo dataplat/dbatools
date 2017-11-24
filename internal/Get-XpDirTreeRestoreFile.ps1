@@ -41,7 +41,10 @@ function Get-XpDirTreeRestoreFile {
 	Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
 	$Server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	
-	if ($Path[-1] -ne "\") {
+	if (($path -like '*.bak') -or ($path -like '*trn')){
+
+	}
+	elseif ($Path[-1] -ne "\") {
 		$Path = $Path + "\"
 	}
 	
@@ -60,7 +63,7 @@ function Get-XpDirTreeRestoreFile {
 	ForEach ($d in $dirs) {
 		$fullpath = "$path$($d.Subdirectory)"
 		Write-Message -Level Verbose -Message "Enumerating subdirectory '$fullpath'"
-		$Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlInstance $server
+		$Results += Get-XpDirTreeRestoreFile -path $fullpath -SqlInstance $SqlInstance
 	}
 	return $Results
 	

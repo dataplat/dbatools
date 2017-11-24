@@ -25,53 +25,22 @@ environment:
 # Set alternative clone folder
 clone_folder: c:\github\dbatools
 
-artifacts:
-  - path: msbuild.log
-    name: MSBuild Log
-
-
 before_test:
-  # Install codecov to upload results
-  - ps: choco install codecov | Out-Null
-
-  # grab appveyor lab files
+  # grab appveyor lab files and needed requirements for tests in CI
   - ps: .\Tests\appveyor.prep.ps1
-  # "Get Pester manually"
-  - ps: Install-Module -Name Pester -Repository PSGallery -Force | Out-Null
-  # "Installing nuget and PSScriptAnalyzer"
-  #- ps: Install-PackageProvider NuGet -MinimumVersion '2.8.5.201' -Force | Out-Null
-  #- ps: Import-PackageProvider NuGet -MinimumVersion '2.8.5.201' -Force | Out-Null
-  #- ps: Install-Module -Name PSScriptAnalyzer -RequiredVersion 1.6.0 -Repository PSGallery -Force | Out-Null
-  # "Setting up the local SQL Server environments"
+
+  # Setting up the local SQL Server environments
   - ps: .\Tests\appveyor.sqlserver.ps1
-
+ 
 test_script:
-   # "Test with native PS version"
+   # Test with native PS version
   - ps: .\Tests\appveyor.pester.ps1 -IncludeCoverage
-  
-  # "Test with PS version 3" - Removed because it's not a true test. Even PS4+ .Where() works
-  # - ps: powershell.exe -version 3.0 -executionpolicy bypass -noprofile -file .\Tests\appveyor.pester.ps1
 
-  # "Collecting and uploading results"
-  - ps: |
-        .\Tests\appveyor.pester.ps1 -Finalize -IncludeCoverage
-        Push-AppveyorArtifact PesterResultsCoverage.json -FileName "PesterResultsCoverage"
-        codecov -f PesterResultsCoverage.json
-  # DLL unittests only in default scenario
-  - ps: |
-        if($env:SCENARIO -eq 'default') {
-          choco install opencover.portable | Out-Null
-          OpenCover.Console.exe `
-              -register:user `
-              -target:"vstest.console.exe" `
-              -targetargs:"/logger:Appveyor bin\projects\dbatools\dbatools.Tests\bin\Debug\dbatools.Tests.dll" `
-              -output:"coverage.xml" `
-              -filter:"+[dbatools]*" `
-              -returntargetcode | Out-Null
-          Push-AppveyorArtifact coverage.xml -FileName "OpenCover c# report"
-          codecov -f "coverage.xml" | Out-Null
-        }
+  # Collecting results
+  - ps: .\Tests\appveyor.pester.ps1 -Finalize -IncludeCoverage
 
+after_test:
+  - ps: .\Tests\appveyor.post.ps1
 
 #on_finish:
 #  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))

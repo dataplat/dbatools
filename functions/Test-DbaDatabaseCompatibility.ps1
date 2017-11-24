@@ -27,6 +27,11 @@ function Test-DbaDatabaseCompatibility {
 		.PARAMETER Detailed
 			If this switch is enabled, full details about database & server compatibility levels and whether they match is returned.
 
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
 		.NOTES
 			Tags: 
 			Website: https://dbatools.io
@@ -66,7 +71,9 @@ function Test-DbaDatabaseCompatibility {
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
-		[switch]$Detailed
+		[switch]$Detailed,
+		[Alias('Silent')]
+		[switch]$EnableException
 	)
 
 	begin {
@@ -74,19 +81,13 @@ function Test-DbaDatabaseCompatibility {
 	}
 
 	process {
-		foreach ($servername in $SqlInstance) {
-			Write-Message -Level Verbose -Message "Connecting to $servername."
+		foreach ($instance in $SqlInstance) {
+			Write-Message -Level Verbose -Message "Connecting to $instance."
 			try {
-				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
 			}
 			catch {
-				if ($SqlInstance.count -eq 1) {
-					throw $_
-				}
-				else {
-					Write-Message -Level Warning -Message "Can't connect to $servername. Moving on."
-					Continue
-				}
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			$serverversion = "Version$($server.VersionMajor)0"
@@ -101,7 +102,7 @@ function Test-DbaDatabaseCompatibility {
 			}
 
 			foreach ($db in $dbs) {
-				Write-Message -Level Verbose -Message "Processing $($db.name) on $servername."
+				Write-Message -Level Verbose -Message "Processing $($db.name) on $instance."
 				$null = $collection.Add([PSCustomObject]@{
 						Server                = $server.name
 						ServerLevel           = $serverversion
@@ -131,4 +132,3 @@ function Test-DbaDatabaseCompatibility {
 		}
 	}
 }
-

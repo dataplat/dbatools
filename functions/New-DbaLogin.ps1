@@ -204,7 +204,7 @@ function New-DbaLogin {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -EnableException $EnableException -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			foreach ($loginItem in $loginCollection) {
@@ -314,15 +314,6 @@ function New-DbaLogin {
 					$Password = Read-Host -AsSecureString -Prompt "Enter a new password for the SQL Server login(s)"
 				}
 				
-				$newLoginStatus = [pscustomobject]@{
-					Server = $server.Name
-					Login = $loginName
-					Type = $loginType
-					Status = $null
-					Notes = $null
-					DateTime = [DbaDateTime](Get-Date)
-				}
-				
 				#verify if login exists on the server
 				if ($existingLogin = $server.Logins[$loginName]) {
 					if ($force) {
@@ -331,12 +322,12 @@ function New-DbaLogin {
 								$existingLogin.Drop()
 							}
 							catch {
-								Stop-Function -Message "Could not remove existing login $loginName on $instance, skipping." -Target $loginName -EnableException $EnableException -Continue
+								Stop-Function -Message "Could not remove existing login $loginName on $instance, skipping." -Target $loginName -Continue
 							}
 						}
 					}
 					else {
-						Stop-Function -Message "Login $loginName already exists on $instance and -Force was not specified" -Target $loginName -EnableException $EnableException -Continue
+						Stop-Function -Message "Login $loginName already exists on $instance and -Force was not specified" -Target $loginName -Continue
 					}
 				}
 				
@@ -427,11 +418,10 @@ function New-DbaLogin {
 								}
 								catch {
 									$newLogin.Drop()
-									throw $_
+									Stop-Function -Message "Failed to add $loginName to $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
 								}
 							}
 							Write-Message -Level Verbose -Message "Successfully added $loginName to $instance."
-							$newLoginStatus.Status = "Successful"
 						}
 						catch {
 							Write-Message -Level Verbose -Message "Failed to create $loginName on $instance using SMO, trying T-SQL."
@@ -444,13 +434,9 @@ function New-DbaLogin {
 								$null = $server.Query($sql)
 								$newLogin = $server.logins[$loginName]
 								Write-Message -Level Verbose -Message "Successfully added $loginName to $instance."
-								$newLoginStatus.Status = "Successful"
 							}
 							catch {
-								$newLoginStatus.Status = "Failed"
-								$newLoginStatus.Notes = $_.Exception.GetBaseException().Message
-								$newLoginStatus
-								Stop-Function -Message "Failed to add $loginName to $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -EnableException $EnableException -Continue 3>$null
+								Stop-Function -Message "Failed to add $loginName to $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
 							}
 						}
 						
@@ -468,18 +454,15 @@ function New-DbaLogin {
 									Write-Message -Level Verbose -Message "Login $loginName has been disabled on $instance."
 								}
 								catch {
-									$newLoginStatus.Status = "Failed"
-									$newLoginStatus.Notes = $_.Exception.GetBaseException().Message
-									$newLoginStatus
-									Stop-Function -Message "Failed to disable $loginName on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -EnableException $EnableException -Continue 3>$null
+									Stop-Function -Message "Failed to disable $loginName on $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
 								}
 							}
 						}
 						#Display results
-						$newLoginStatus
+						Get-DbaLogin -SqlInstance $server -Login $loginName
 					}
 					catch {
-						Stop-Function -Message "Failed to create login $loginName on $instance. Exception: $($_.Exception.InnerException)" -Target $credential -EnableException $EnableException -InnerErrorRecord $_ -Continue
+						Stop-Function -Message "Failed to create login $loginName on $instance." -Target $credential -InnerErrorRecord $_ -Continue
 					}
 				}
 			}

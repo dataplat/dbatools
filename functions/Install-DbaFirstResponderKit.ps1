@@ -21,6 +21,9 @@ Database to store the FRK stored procs, typically master and master by default
 Use SqlCredential to connect to SqlInstance with SQL authentication. 
 If SqlCredential is not specified, Windows authentication will be used.
 
+.PARAMETER Branch
+Allows you to download other branches of the First Responder Kit instead of the master branch.
+
 .PARAMETER EnableException
 		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -70,15 +73,17 @@ Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authe
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]
 		$SqlCredential,
+		[string]$Branch = "master",
 		[object]$Database = "master",
 		[switch][Alias('Silent')]$EnableException
 	)
 	
 	begin {
-		$url = 'https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/master.zip'
+		$url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
+		
 		$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-		$zipfile = "$temp\SQL-Server-First-Responder-Kit-master.zip"
-		$zipfolder = "$temp\SQL-Server-First-Responder-Kit-master\"
+		$zipfile = "$temp\SQL-Server-First-Responder-Kit-$Branch.zip"
+		$zipfolder = "$temp\SQL-Server-First-Responder-Kit-$Branch\"
 		
 		if ($zipfile | Test-Path) {
 			Remove-Item -Path $zipfile -ErrorAction SilentlyContinue
@@ -116,7 +121,7 @@ Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authe
 			Remove-Item -Path $zipfile
 		}
 		catch {
-			Stop-Function -Message "Couldn't download the First Responder Kit. Download and install manually from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/master.zip." -ErrorRecord $_
+			Stop-Function -Message "Couldn't download the First Responder Kit. Download and install manually from https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip." -ErrorRecord $_
 			return
 		}
 	}

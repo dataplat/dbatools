@@ -119,7 +119,7 @@ Write-ImportTime -Text  "Validated defines"
 Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
 Write-ImportTime -Text  "Unblocking Files"
 
-if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type -eq $null) {
+if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
 	. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\smoLibraryImport.ps1"
 	Write-ImportTime -Text "Starting import SMO libraries"
 }
@@ -198,91 +198,174 @@ Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
 Write-ImportTime -Text "Script: Maintenance"
 
 # I renamed this function to be more accurate - 1ms
-if (-not (Test-Path Alias:Copy-SqlAgentCategory)) { Set-Alias -Scope Global -Name Copy-SqlAgentCategory -Value Copy-DbaAgentCategory }
-if (-not (Test-Path Alias:Copy-SqlAlert)) { Set-Alias -Scope Global -Name Copy-SqlAlert -Value Copy-DbaAgentAlert }
-if (-not (Test-Path Alias:Copy-SqlAudit)) { Set-Alias -Scope Global -Name Copy-SqlAudit -Value Copy-DbaAudit }
-if (-not (Test-Path Alias:Copy-SqlAuditSpecification)) { Set-Alias -Scope Global -Name Copy-SqlAuditSpecification -Value Copy-DbaAuditSpecification }
-if (-not (Test-Path Alias:Copy-SqlBackupDevice)) { Set-Alias -Scope Global -Name Copy-SqlBackupDevice -Value Copy-DbaBackupDevice }
-if (-not (Test-Path Alias:Copy-SqlCentralManagementServer)) { Set-Alias -Scope Global -Name Copy-SqlCentralManagementServer -Value Copy-DbaCentralManagementServer }
-if (-not (Test-Path Alias:Copy-SqlCredential)) { Set-Alias -Scope Global -Name Copy-SqlCredential -Value Copy-DbaCredential }
-if (-not (Test-Path Alias:Copy-SqlCustomError)) { Set-Alias -Scope Global -Name Copy-SqlCustomError -Value Copy-DbaCustomError }
-if (-not (Test-Path Alias:Copy-SqlDatabase)) { Set-Alias -Scope Global -Name Copy-SqlDatabase -Value Copy-DbaDatabase }
-if (-not (Test-Path Alias:Copy-SqlDatabaseAssembly)) { Set-Alias -Scope Global -Name Copy-SqlDatabaseAssembly -Value Copy-DbaDatabaseAssembly }
-if (-not (Test-Path Alias:Copy-SqlDatabaseMail)) { Set-Alias -Scope Global -Name Copy-SqlDatabaseMail -Value Copy-DbaDatabaseMail }
-if (-not (Test-Path Alias:Copy-SqlDataCollector)) { Set-Alias -Scope Global -Name Copy-SqlDataCollector -Value Copy-DbaDataCollector }
-if (-not (Test-Path Alias:Copy-SqlEndpoint)) { Set-Alias -Scope Global -Name Copy-SqlEndpoint -Value Copy-DbaEndpoint }
-if (-not (Test-Path Alias:Copy-SqlExtendedEvent)) { Set-Alias -Scope Global -Name Copy-SqlExtendedEvent -Value Copy-DbaExtendedEvent }
-if (-not (Test-Path Alias:Copy-SqlJob)) { Set-Alias -Scope Global -Name Copy-SqlJob -Value Copy-DbaAgentJob }
-if (-not (Test-Path Alias:Copy-SqlJobServer)) { Set-Alias -Scope Global -Name Copy-SqlJobServer -Value Copy-SqlServerAgent }
-if (-not (Test-Path Alias:Copy-SqlLinkedServer)) { Set-Alias -Scope Global -Name Copy-SqlLinkedServer -Value Copy-DbaLinkedServer }
-if (-not (Test-Path Alias:Copy-SqlLogin)) { Set-Alias -Scope Global -Name Copy-SqlLogin -Value Copy-DbaLogin }
-if (-not (Test-Path Alias:Copy-SqlOperator)) { Set-Alias -Scope Global -Name Copy-SqlOperator -Value Copy-DbaAgentOperator }
-if (-not (Test-Path Alias:Copy-SqlPolicyManagement)) { Set-Alias -Scope Global -Name Copy-SqlPolicyManagement -Value Copy-DbaPolicyManagement }
-if (-not (Test-Path Alias:Copy-SqlProxyAccount)) { Set-Alias -Scope Global -Name Copy-SqlProxyAccount -Value Copy-DbaAgentProxyAccount }
-if (-not (Test-Path Alias:Copy-SqlResourceGovernor)) { Set-Alias -Scope Global -Name Copy-SqlResourceGovernor -Value Copy-DbaResourceGovernor }
-if (-not (Test-Path Alias:Copy-SqlServerAgent)) { Set-Alias -Scope Global -Name Copy-SqlServerAgent -Value Copy-DbaServerAgent }
-if (-not (Test-Path Alias:Copy-SqlServerRole)) { Set-Alias -Scope Global -Name Copy-SqlServerRole -Value Copy-DbaServerRole }
-if (-not (Test-Path Alias:Copy-SqlServerTrigger)) { Set-Alias -Scope Global -Name Copy-SqlServerTrigger -Value Copy-DbaServerTrigger }
-if (-not (Test-Path Alias:Copy-SqlSharedSchedule)) { Set-Alias -Scope Global -Name Copy-SqlSharedSchedule -Value Copy-DbaAgentSharedSchedule }
-if (-not (Test-Path Alias:Copy-SqlSpConfigure)) { Set-Alias -Scope Global -Name Copy-SqlSpConfigure -Value Copy-DbaSpConfigure }
-if (-not (Test-Path Alias:Copy-SqlSsisCatalog)) { Set-Alias -Scope Global -Name Copy-SqlSsisCatalog -Value Copy-DbaSsisCatalog }
-if (-not (Test-Path Alias:Copy-SqlSysDbUserObjects)) { Set-Alias -Scope Global -Name Copy-SqlSysDbUserObjects -Value Copy-DbaSysDbUserObjects }
-if (-not (Test-Path Alias:Copy-SqlUserDefinedMessage)) { Set-Alias -Scope Global -Name Copy-SqlUserDefinedMessage -Value Copy-SqlCustomError }
-if (-not (Test-Path Alias:Expand-SqlTLogResponsibly)) { Set-Alias -Scope Global -Name Expand-SqlTLogResponsibly -Value Expand-DbaTLogResponsibly }
-if (-not (Test-Path Alias:Export-SqlLogin)) { Set-Alias -Scope Global -Name Export-SqlLogin -Value Export-DbaLogin }
-if (-not (Test-Path Alias:Export-SqlSpConfigure)) { Set-Alias -Scope Global -Name Export-SqlSpConfigure -Value Export-DbaSpConfigure }
-if (-not (Test-Path Alias:Export-SqlUser)) { Set-Alias -Scope Global -Name Export-SqlUser -Value Export-DbaUser }
-if (-not (Test-Path Alias:Find-SqlDuplicateIndex)) { Set-Alias -Scope Global -Name Find-SqlDuplicateIndex -Value Find-DbaDuplicateIndex }
-if (-not (Test-Path Alias:Find-SqlUnusedIndex)) { Set-Alias -Scope Global -Name Find-SqlUnusedIndex -Value Find-DbaUnusedIndex }
-if (-not (Test-Path Alias:Get-SqlMaxMemory)) { Set-Alias -Scope Global -Name Get-SqlMaxMemory -Value Get-DbaMaxMemory }
-if (-not (Test-Path Alias:Get-SqlRegisteredServerName)) { Set-Alias -Scope Global -Name Get-SqlRegisteredServerName -Value Get-DbaRegisteredServer }
-if (-not (Test-Path Alias:Get-DbaRegisteredServerName)) { Set-Alias -Scope Global -Name Get-DbaRegisteredServerName -Value Get-DbaRegisteredServer }
-if (-not (Test-Path Alias:Get-SqlServerKey)) { Set-Alias -Scope Global -Name Get-SqlServerKey -Value Get-DbaSqlProductKey }
-if (-not (Test-Path Alias:Import-SqlSpConfigure)) { Set-Alias -Scope Global -Name Import-SqlSpConfigure -Value Import-DbaSpConfigure }
-if (-not (Test-Path Alias:Install-SqlWhoIsActive)) { Set-Alias -Scope Global -Name Install-SqlWhoIsActive -Value Install-DbaWhoIsActive }
-if (-not (Test-Path Alias:Invoke-DbaSqlcmd)) { Set-Alias -Scope Global -Name Invoke-DbaSqlcmd -Value Invoke-Sqlcmd2 }
-if (-not (Test-Path Alias:Remove-SqlDatabaseSafely)) { Set-Alias -Scope Global -Name Remove-SqlDatabaseSafely -Value Remove-DbaDatabaseSafely }
-if (-not (Test-Path Alias:Remove-SqlOrphanUser)) { Set-Alias -Scope Global -Name Remove-SqlOrphanUser -Value Remove-DbaOrphanUser }
-if (-not (Test-Path Alias:Repair-SqlOrphanUser)) { Set-Alias -Scope Global -Name Repair-SqlOrphanUser -Value Repair-DbaOrphanUser }
-if (-not (Test-Path Alias:Reset-SqlAdmin)) { Set-Alias -Scope Global -Name Reset-SqlAdmin -Value Reset-DbaAdmin }
-if (-not (Test-Path Alias:Reset-SqlSaPassword)) { Set-Alias -Scope Global -Name Reset-SqlSaPassword -Value Reset-SqlAdmin }
-if (-not (Test-Path Alias:Restore-SqlBackupFromDirectory)) { Set-Alias -Scope Global -Name Restore-SqlBackupFromDirectory -Value Restore-DbaBackupFromDirectory }
-if (-not (Test-Path Alias:Set-SqlMaxMemory)) { Set-Alias -Scope Global -Name Set-SqlMaxMemory -Value Set-DbaMaxMemory }
-if (-not (Test-Path Alias:Set-SqlTempDbConfiguration)) { Set-Alias -Scope Global -Name Set-SqlTempDbConfiguration -Value Set-DbaTempDbConfiguration }
-if (-not (Test-Path Alias:Show-SqlDatabaseList)) { Set-Alias -Scope Global -Name Show-SqlDatabaseList -Value Show-DbaDatabaseList }
-if (-not (Test-Path Alias:Show-SqlMigrationConstraint)) { Set-Alias -Scope Global -Name Show-SqlMigrationConstraint -Value Test-SqlMigrationConstraint }
-if (-not (Test-Path Alias:Show-SqlServerFileSystem)) { Set-Alias -Scope Global -Name Show-SqlServerFileSystem -Value Show-DbaServerFileSystem }
-if (-not (Test-Path Alias:Show-SqlWhoIsActive)) { Set-Alias -Scope Global -Name Show-SqlWhoIsActive -Value Invoke-DbaWhoIsActive }
-if (-not (Test-Path Alias:Start-SqlMigration)) { Set-Alias -Scope Global -Name Start-SqlMigration -Value Start-DbaMigration }
-if (-not (Test-Path Alias:Sync-SqlLoginPermissions)) { Set-Alias -Scope Global -Name Sync-SqlLoginPermissions -Value Sync-DbaLoginPermissions }
-if (-not (Test-Path Alias:Test-SqlConnection)) { Set-Alias -Scope Global -Name Test-SqlConnection -Value Test-DbaConnection }
-if (-not (Test-Path Alias:Test-SqlDiskAllocation)) { Set-Alias -Scope Global -Name Test-SqlDiskAllocation -Value Test-DbaDiskAllocation }
-if (-not (Test-Path Alias:Test-SqlMigrationConstraint)) { Set-Alias -Scope Global -Name Test-SqlMigrationConstraint -Value Test-DbaMigrationConstraint }
-if (-not (Test-Path Alias:Test-SqlNetworkLatency)) { Set-Alias -Scope Global -Name Test-SqlNetworkLatency -Value Test-DbaNetworkLatency }
-if (-not (Test-Path Alias:Test-SqlPath)) { Set-Alias -Scope Global -Name Test-SqlPath -Value Test-DbaPath }
-if (-not (Test-Path Alias:Test-SqlTempDbConfiguration)) { Set-Alias -Scope Global -Name Test-SqlTempDbConfiguration -Value Test-DbaTempDbConfiguration }
-if (-not (Test-Path Alias:Watch-SqlDbLogin)) { Set-Alias -Scope Global -Name Watch-SqlDbLogin -Value Watch-DbaDbLogin }
-if (-not (Test-Path Alias:Get-DiskSpace)) { Set-Alias -Scope Global -Name Get-DiskSpace -Value Get-DbaDiskSpace }
-if (-not (Test-Path Alias:Restore-HallengrenBackup)) { Set-Alias -Scope Global -Name Restore-HallengrenBackup -Value Restore-SqlBackupFromDirectory }
-if (-not (Test-Path Alias:Get-DbaDatabaseFreeSpace)) { Set-Alias -Scope Global -Name Get-DbaDatabaseFreeSpace -Value Get-DbaDatabaseSpace }
-if (-not (Test-Path Alias:Set-DbaQueryStoreConfig)) { Set-Alias -Scope Global -Name Set-DbaQueryStoreConfig -Value Set-DbaDbQueryStoreOptions }
-if (-not (Test-Path Alias:Get-DbaQueryStoreConfig)) { Set-Alias -Scope Global -Name Get-DbaQueryStoreConfig -Value Get-DbaDbQueryStoreOptions }
-if (-not (Test-Path Alias:Connect-DbaSqlServer)) { Set-Alias -Scope Global -Name Connect-DbaSqlServer -Value Connect-DbaInstance }
-if (-not (Test-Path Alias:Get-DbaInstance)) { Set-Alias -Scope Global -Name Get-DbaInstance -Value Connect-DbaInstance }
-if (-not (Test-Path Alias:Get-DbaXEventSession)) { Set-Alias -Scope Global -Name Get-DbaXEventSession -Value Get-DbaXESession }
-if (-not (Test-Path Alias:Get-DbaXEventSessionTarget)) { Set-Alias -Scope Global -Name Get-DbaXEventSessionTarget -Value Get-DbaXESessionTarget }
-if (-not (Test-Path Alias:Read-DbaXEventFile)) { Set-Alias -Scope Global -Name Read-DbaXEventFile -Value Read-DbaXEFile }
-if (-not (Test-Path Alias:Watch-DbaXEventSession)) { Set-Alias -Scope Global -Name Watch-DbaXEventSession -Value Watch-DbaXESession }
+@(
+@{"AliasName" = "Copy-SqlAgentCategory"
+"Definition" = "Copy-DbaAgentCategory" },
+@{"AliasName" = "Copy-SqlAlert"
+"Definition" = "Copy-DbaAgentAlert" },
+@{"AliasName" = "Copy-SqlAudit"
+"Definition" = "Copy-DbaServerAudit" },
+@{"AliasName" = "Copy-SqlAuditSpecification"
+"Definition" = "Copy-DbaServerAuditSpecification" },
+@{"AliasName" = "Copy-SqlBackupDevice"
+"Definition" = "Copy-DbaBackupDevice" },
+@{"AliasName" = "Copy-SqlCentralManagementServer"
+"Definition" = "Copy-DbaCentralManagementServer" },
+@{"AliasName" = "Copy-SqlCredential"
+"Definition" = "Copy-DbaCredential" },
+@{"AliasName" = "Copy-SqlCustomError"
+"Definition" = "Copy-DbaCustomError" },
+@{"AliasName" = "Copy-SqlDatabase"
+"Definition" = "Copy-DbaDatabase" },
+@{"AliasName" = "Copy-SqlDatabaseAssembly"
+"Definition" = "Copy-DbaDatabaseAssembly" },
+@{"AliasName" = "Copy-SqlDatabaseMail"
+"Definition" = "Copy-DbaDatabaseMail" },
+@{"AliasName" = "Copy-SqlDataCollector"
+"Definition" = "Copy-DbaSqlDataCollector" },
+@{"AliasName" = "Copy-SqlEndpoint"
+"Definition" = "Copy-DbaEndpoint" },
+@{"AliasName" = "Copy-SqlExtendedEvent"
+"Definition" = "Copy-DbaExtendedEvent" },
+@{"AliasName" = "Copy-SqlJob"
+"Definition" = "Copy-DbaAgentJob" },
+@{"AliasName" = "Copy-SqlJobServer"
+"Definition" = "Copy-SqlServerAgent" },
+@{"AliasName" = "Copy-SqlLinkedServer"
+"Definition" = "Copy-DbaLinkedServer" },
+@{"AliasName" = "Copy-SqlLogin"
+"Definition" = "Copy-DbaLogin" },
+@{"AliasName" = "Copy-SqlOperator"
+"Definition" = "Copy-DbaAgentOperator" },
+@{"AliasName" = "Copy-SqlPolicyManagement"
+"Definition" = "Copy-DbaSqlPolicyManagement" },
+@{"AliasName" = "Copy-SqlProxyAccount"
+"Definition" = "Copy-DbaAgentProxyAccount" },
+@{"AliasName" = "Copy-SqlResourceGovernor"
+"Definition" = "Copy-DbaResourceGovernor" },
+@{"AliasName" = "Copy-SqlServerAgent"
+"Definition" = "Copy-DbaSqlServerAgent" },
+@{"AliasName" = "Copy-SqlServerTrigger"
+"Definition" = "Copy-DbaServerTrigger" },
+@{"AliasName" = "Copy-SqlSharedSchedule"
+"Definition" = "Copy-DbaAgentSharedSchedule" },
+@{"AliasName" = "Copy-SqlSpConfigure"
+"Definition" = "Copy-DbaSpConfigure" },
+@{"AliasName" = "Copy-SqlSsisCatalog"
+"Definition" = "Copy-DbaSsisCatalog" },
+@{"AliasName" = "Copy-SqlSysDbUserObjects"
+"Definition" = "Copy-DbaSysDbUserObject" },
+@{"AliasName" = "Copy-SqlUserDefinedMessage"
+"Definition" = "Copy-SqlCustomError" },
+@{"AliasName" = "Expand-SqlTLogResponsibly"
+"Definition" = "Expand-DbaTLogResponsibly" },
+@{"AliasName" = "Export-SqlLogin"
+"Definition" = "Export-DbaLogin" },
+@{"AliasName" = "Export-SqlSpConfigure"
+"Definition" = "Export-DbaSpConfigure" },
+@{"AliasName" = "Export-SqlUser"
+"Definition" = "Export-DbaUser" },
+@{"AliasName" = "Find-SqlDuplicateIndex"
+"Definition" = "Find-DbaDuplicateIndex" },
+@{"AliasName" = "Find-SqlUnusedIndex"
+"Definition" = "Find-DbaUnusedIndex" },
+@{"AliasName" = "Get-SqlMaxMemory"
+"Definition" = "Get-DbaMaxMemory" },
+@{"AliasName" = "Get-SqlRegisteredServerName"
+"Definition" = "Get-DbaRegisteredServer" },
+@{"AliasName" = "Get-DbaRegisteredServerName"
+"Definition" = "Get-DbaRegisteredServer" },
+@{"AliasName" = "Get-SqlServerKey"
+"Definition" = "Get-DbaSqlProductKey" },
+@{"AliasName" = "Import-SqlSpConfigure"
+"Definition" = "Import-DbaSpConfigure" },
+@{"AliasName" = "Install-SqlWhoIsActive"
+"Definition" = "Install-DbaWhoIsActive" },
+@{"AliasName" = "Invoke-DbaSqlcmd"
+"Definition" = "Invoke-Sqlcmd2" },
+@{"AliasName" = "Remove-SqlDatabaseSafely"
+"Definition" = "Remove-DbaDatabaseSafely" },
+@{"AliasName" = "Remove-SqlOrphanUser"
+"Definition" = "Remove-DbaOrphanUser" },
+@{"AliasName" = "Repair-SqlOrphanUser"
+"Definition" = "Repair-DbaOrphanUser" },
+@{"AliasName" = "Reset-SqlAdmin"
+"Definition" = "Reset-DbaAdmin" },
+@{"AliasName" = "Reset-SqlSaPassword"
+"Definition" = "Reset-SqlAdmin" },
+@{"AliasName" = "Restore-SqlBackupFromDirectory"
+"Definition" = "Restore-DbaBackupFromDirectory" },
+@{"AliasName" = "Set-SqlMaxMemory"
+"Definition" = "Set-DbaMaxMemory" },
+@{"AliasName" = "Set-SqlTempDbConfiguration"
+"Definition" = "Set-DbaTempDbConfiguration" },
+@{"AliasName" = "Show-SqlDatabaseList"
+"Definition" = "Show-DbaDatabaseList" },
+@{"AliasName" = "Show-SqlMigrationConstraint"
+"Definition" = "Test-SqlMigrationConstraint" },
+@{"AliasName" = "Show-SqlServerFileSystem"
+"Definition" = "Show-DbaServerFileSystem" },
+@{"AliasName" = "Show-SqlWhoIsActive"
+"Definition" = "Invoke-DbaWhoIsActive" },
+@{"AliasName" = "Start-SqlMigration"
+"Definition" = "Start-DbaMigration" },
+@{"AliasName" = "Sync-SqlLoginPermissions"
+"Definition" = "Sync-DbaSqlLoginPermission" },
+@{"AliasName" = "Test-SqlConnection"
+"Definition" = "Test-DbaConnection" },
+@{"AliasName" = "Test-SqlDiskAllocation"
+"Definition" = "Test-DbaDiskAllocation" },
+@{"AliasName" = "Test-SqlMigrationConstraint"
+"Definition" = "Test-DbaMigrationConstraint" },
+@{"AliasName" = "Test-SqlNetworkLatency"
+"Definition" = "Test-DbaNetworkLatency" },
+@{"AliasName" = "Test-SqlPath"
+"Definition" = "Test-DbaSqlPath" },
+@{"AliasName" = "Test-SqlTempDbConfiguration"
+"Definition" = "Test-DbaTempDbConfiguration" },
+@{"AliasName" = "Watch-SqlDbLogin"
+"Definition" = "Watch-DbaDbLogin" },
+@{"AliasName" = "Get-DiskSpace"
+"Definition" = "Get-DbaDiskSpace" },
+@{"AliasName" = "Restore-HallengrenBackup"
+"Definition" = "Restore-SqlBackupFromDirectory" },
+@{"AliasName" = "Get-DbaDatabaseFreeSpace"
+"Definition" = "Get-DbaDatabaseSpace" },
+@{"AliasName" = "Set-DbaQueryStoreConfig"
+"Definition" = "Set-DbaDbQueryStoreOptions" },
+@{"AliasName" = "Get-DbaQueryStoreConfig"
+"Definition" = "Get-DbaDbQueryStoreOptions" },
+@{"AliasName" = "Connect-DbaSqlServer"
+"Definition" = "Connect-DbaInstance" },
+@{"AliasName" = "Get-DbaInstance"
+"Definition" = "Connect-DbaInstance" },
+@{"AliasName" = "Get-DbaXEventSession"
+"Definition" = "Get-DbaXESession" },
+@{"AliasName" = "Get-DbaXEventSessionTarget"
+"Definition" = "Get-DbaXESessionTarget" },
+@{"AliasName" = "Read-DbaXEventFile"
+"Definition" = "Read-DbaXEFile" },
+@{"AliasName" = "Watch-DbaXEventSession"
+"Definition" = "Watch-DbaXESession" }
+) | ForEach-Object {
+	if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
+}
 
 
 # Leave forever
-Set-Alias -Scope Global -Name Attach-DbaDatabase -Value Mount-DbaDatabase
-Set-Alias -Scope Global -Name Detach-DbaDatabase -Value Dismount-DbaDatabase
+@(
+	@{"AliasName" = "Attach-DbaDatabase"
+	"Definition" = "Mount-DbaDatabase" },
+	@{"AliasName" = "Detach-DbaDatabase"
+	"Definition" = "Dismount-DbaDatabase" }
+) | ForEach-Object {
+if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
+}
 
 #region Post-Import Cleanup
 Write-ImportTime -Text "Loading Aliases"
 
-$timeout = 3000
+$timeout = 10000
 $timeSpent = 0
 while (($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') -or ($script:dbatoolsConfigRunspace.Runspace.RunspaceAvailability -eq 'Busy'))
 {
@@ -325,11 +408,12 @@ if ($script:dbatoolsConfigRunspace)
 Write-ImportTime -Text "Waiting for runspaces to finish"
 #endregion Post-Import Cleanup
 
+
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUJHpDvNdv1QUk1Q+k94sttW6w
-# 3PSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUXz3g0wtKw21mvwnBmTApIUBY
+# tviggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -460,22 +544,22 @@ Write-ImportTime -Text "Waiting for runspaces to finish"
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUDfsRPt0p1hSYcuHhgSZ6Rjeu4gswDQYJKoZIhvcNAQEBBQAE
-# ggEAGutV6Gfmdaevowr/rir9hS6mDxxhkHr5ovatHsaqu5sWSybTOjU3CyVr8HAB
-# t+TErngh7worDJOefBd9egqlbuqJpMGbua/bkWMaRR7J7W+u5IqbBj1yatjhOksz
-# Q3htSWsXsXH8C3CqHSzrT3xv8/DaptDJcgcgLMGT0M6QGtIDVUueeJLJwSzBAc69
-# 0aDk7VPnayslzXDGOZVaJGyFjoL0bEct144Uscgs3MK93mcrGnFf/W0LvK1HVsJs
-# SS7FWKMu+3H9vo4o2YVpNbEPK9TXPRNCST2fLzlGifuC550H4dAUa635mLA2qZsT
-# OVH6HfGYAb+9kbZsfocwqZEF4qGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUWlQr0pRWs355b9fE2Mvq+BVYLX4wDQYJKoZIhvcNAQEBBQAE
+# ggEAWQaksMRPGoo/XngeoiK7ZlFpCz2Z+Ihh6rPd1l7l3M8vuLc77/uhfIJ5h2IU
+# lEjeb29mk4+njUN8SupE31iCVH52WgLfQRy5Fv3i8IbVXXkV3eCtWrmoRdt6cBIC
+# aJ8I7ACstoh0BZcIA/sZ8XpZydYGfIhLlJm6Ko3KDW+A4urY1+BscMsfzB9Rwt4u
+# ORD+wx8VYA0VDxTfPvwK1oxTKS9ZaycoWuKSfOkp8ZS0FQ4dYgsFOMYblu2l9WMg
+# KMasEOdHtGM/BFqb+QIGRKDrV1XaZ3WzFdPTO9BArdEn5xcAIMR30utsUwpzpljh
+# BDa4iAk1m9yD/dZYHrhI0P+1dqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMDMwMDIyNTEzWjAj
-# BgkqhkiG9w0BCQQxFgQUO4ILLnvVyAYabUAbQIWfe3ESuPEwDQYJKoZIhvcNAQEB
-# BQAEggEAMgq61RMQFIEGK9fee75mHdzG/Y4yXn5MLHYAAyj0sfD6HlhdYTdno8QR
-# 1L9YtNsNrEgXV+8/drTATcG6Z3AJxi2aYV7dxGq45MZdrK1mxjrd6uefWqXswChG
-# if7EFLgPO5fSl0gOPuZKlyWGVAuW1PPPclsu09oRpgawQq6EB4DkLXyjQ0gO2S3l
-# /LsCqitCSfsMH+t+0SCuZceZSvag8IUAbOQm1R/+9ImlA4tpcPtBK0hQ/VGP9dz4
-# PZz/AMqmdje95thGPGQXW/jsUx+y6n2vU6n6vGYRN1aTShBIWQoeFU9hcc3mkNJo
-# /dZxOHN1TqqVSDqp0GCRW2m1rB6OHQ==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMTE3MjAwNzQ5WjAj
+# BgkqhkiG9w0BCQQxFgQUR0fdxgnmPoYVOKyRLLFqzxhalhwwDQYJKoZIhvcNAQEB
+# BQAEggEAMbijwB/2XFq2IfGs0mKfVDXQyDD6H1FJGdQeqAB4XiJeZpb1UtXMvurW
+# h/KN3pzgWkgtTc8N0JJsZ/U4gUGkWl+HKsQKbxznZvLnMT8Wl96e8BlYdXzsq3DG
+# /nh/RHFWLhiUS9mMa8b2i7isAi9tZpvqHkpb3dMM5ub/DGYHUf2/MiQd+DA7eInC
+# /SMf3GikK7vL/0QJyLj52uz0x0qGn8G1XEVq5ZiEhxRpQ77pe1XJFtyAg/107fRU
+# xIdblXqlfWcgSSaTL+K+qVNZc8CwqalN/9mYddn+k+nvY8tCPQU0v+YxJUQHv6yg
+# fPY7A+u+rhe/cIr7LwMCB3U7ASKF6A==
 # SIG # End signature block

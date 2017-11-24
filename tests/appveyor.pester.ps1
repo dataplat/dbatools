@@ -236,7 +236,7 @@ if (-not $Finalize) {
 						$FoundFlag += 1
 					}
 				}
-				if ($FoundFlag -eq $ScanFor.Count) {
+				if ($FoundFlag -eq $ScanFor.Count -or $FoundFlag -eq 0) {
 					$ScanTests += $test
 				}
 			}
@@ -255,9 +255,12 @@ if (-not $Finalize) {
 #Run a test with the current version of PowerShell
 #Make things faster by removing most output
 if (-not $Finalize) {
-	Write-Output "Testing with PowerShell $PSVersion"
 	Import-Module Pester
 	Set-Variable ProgressPreference -Value SilentlyContinue
+	if ($AllScenarioTests.Count -eq 0) {
+		Write-Host -ForegroundColor DarkGreen "Nothing to do in this scenario"
+		return
+	}
 	# invoking a single invoke-pester consumes too much memory, let's go file by file
 	$AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests
 	$Counter = 0
@@ -300,7 +303,6 @@ else {
 		Write-Output "You can download it from https://ci.appveyor.com/api/buildjobs/$($env:APPVEYOR_JOB_ID)/tests"
 	}
 	#>
-	
 	#What failed? How many tests did we run ?
 	$results = @(Get-ChildItem -Path "$ModuleBase\PesterResults*.xml" | Import-Clixml)
 	

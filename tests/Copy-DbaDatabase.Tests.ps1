@@ -1,93 +1,81 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".ps1", "")
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
-		$BackupLocation = "$script:appeyorlabrepo\singlerestore\singlerestore.bak"
 		$NetworkPath = "C:\temp"
-		$DBNameBackupRestore = "dbatoolsci_singlerestore"
-		$DBNameAttachDetach = "dbatoolsci_detachattach"
-		# cleanup
-		foreach ($instance in $Instances) {
-			Remove-DbaDatabase -Confirm:$false -SqlInstance $instance -Database $DBNameBackupRestore,$DBNameAttachDetach
+		$backuprestoredb = "dbatoolsci_backuprestore"
+		$detachattachdb = "dbatoolsci_detachattach"
+		$server = Connect-DbaInstance -SqlInstance $script:instance1
+		Stop-DbaProcess -SqlInstance $script:instance1 -Database model
+		$server.Query("CREATE DATABASE $backuprestoredb")
+		$db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $backuprestoredb
+		if ($db.AutoClose) {
+			$db.AutoClose = $false
+			$db.Alter()
 		}
+		Stop-DbaProcess -SqlInstance $script:instance1 -Database model
+		$server.Query("CREATE DATABASE $detachattachdb")
 	}
 	AfterAll {
-		foreach ($instance in $Instances) {
-			Remove-DbaDatabase -Confirm:$false -SqlInstance $instance -Database $DBNameBackupRestore,$DBNameAttachDetach
-		}
+		Remove-DbaDatabase -Confirm:$false -SqlInstance $Instances -Database $backuprestoredb, $detachattachdb
 	}
 	
-	
-	# Restore and set owner for Single Restore
-	$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\singlerestore\singlerestore.bak -WithReplace -DatabaseName $DBNameBackupRestore
-	Set-DbaDatabaseOwner -SqlInstance $script:instance1 -Database $DBNameBackupRestore -TargetLogin sa
-	
-	Context "Restores database with the same properties." {
-		It "Should copy a database and retain its name, recovery model, and status." {
-			
-			Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $DBNameBackupRestore -BackupRestore -NetworkShare $NetworkPath
-			
-			$db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DBNameBackupRestore
-			$db1 | Should Not BeNullOrEmpty
-			$db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $DBNameBackupRestore
-			$db2 | Should Not BeNullOrEmpty
-			
-			# Compare its valuable.
-			$db1.Name | Should Be $db2.Name
-			$db1.RecoveryModel | Should Be $db2.RecoveryModel
-			$db1.Status | Should be $db2.Status
-		}
-	}
-	
-	Context "Doesn't write over existing databases" {
-		It "Should say skipped" {
-			$result = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $DBNameBackupRestore -BackupRestore -NetworkShare $NetworkPath
-			$result.Status | Should be "Skipped"
-			$result.Notes | Should be "Already exists"
-		}
-	}
-	
-	foreach ($instance in $Instances) {
-		Remove-DbaDatabase -Confirm:$false -SqlInstance $instance -Database $DBNameBackupRestore
-	}
-	
-	Context "Detach, copies and attaches database successfully." {
+	Context "Detach Attach" {
 		It "Should be success" {
-			$null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appeyorlabrepo\detachattach\detachattach.bak -WithReplace -DatabaseName $DBNameAttachDetach
-			$results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $DBNameAttachDetach -DetachAttach -Reattach -Force -WarningAction SilentlyContinue
+			$results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $detachattachdb -DetachAttach -Reattach -Force -WarningAction SilentlyContinue
 			$results.Status | Should Be "Successful"
 		}
-	}
-	
-	Context "Database with the same properties." {
+		
 		It "should not be null" {
-			
-			$db1 = (Connect-DbaInstance -SqlInstance localhost).Databases[$DBNameAttachDetach]
-			$db2 = (Connect-DbaInstance -SqlInstance localhost\sql2016).Databases[$DBNameAttachDetach]
-			
+			$db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $detachattachdb
+			$db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $detachattachdb
 			$db1 | Should Not Be $null
 			$db2 | Should Not Be $null
 			
-			$db1.Name | Should Be $DBNameAttachDetach
-			$db2.Name | Should Be $DBNameAttachDetach
+			$db1.Name | Should Be $detachattachdb
+			$db2.Name | Should Be $detachattachdb
 		}
-	<#
+		
 		It "Name, recovery model, and status should match" {
 			# This is crazy
-			(Connect-DbaInstance -SqlInstance localhost).Databases['detachattach'].Name | Should Be (Connect-DbaInstance -SqlInstance localhost\sql2016).Databases['detachattach'].Name
-			(Connect-DbaInstance -SqlInstance localhost).Databases['detachattach'].Tables.Count | Should Be (Connect-DbaInstance -SqlInstance localhost\sql2016).Databases['detachattach'].Tables.Count
-			(Connect-DbaInstance -SqlInstance localhost).Databases['detachattach'].Status | Should Be (Connect-DbaInstance -SqlInstance localhost\sql2016).Databases['detachattach'].Status
+			(Connect-DbaInstance -SqlInstance localhost).Databases[$detachattachdb].Name | Should Be (Connect-DbaInstance -SqlInstance localhost\sql2016).Databases[$detachattachdb].Name
+			(Connect-DbaInstance -SqlInstance localhost).Databases[$detachattachdb].Tables.Count | Should Be (Connect-DbaInstance -SqlInstance localhost\sql2016).Databases[$detachattachdb].Tables.Count
+			(Connect-DbaInstance -SqlInstance localhost).Databases[$detachattachdb].Status | Should Be (Connect-DbaInstance -SqlInstance localhost\sql2016).Databases[$detachattachdb].Status
+		}
+		
+		It "Should say skipped" {
+			$results = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $detachattachdb -DetachAttach -Reattach
+			$results.Status | Should be "Skipped"
+			$results.Notes | Should be "Already exists"
+		}
+	}
+	
+	if (-not $env:appveyor) {
+		Context "Backup restore" {
+			It "copies a database and retain its name, recovery model, and status." {
+				
+				Set-DbaDatabaseOwner -SqlInstance $script:instance1 -Database $backuprestoredb -TargetLogin sa
+				Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
+				
+				$db1 = Get-DbaDatabase -SqlInstance $script:instance1 -Database $backuprestoredb
+				$db2 = Get-DbaDatabase -SqlInstance $script:instance2 -Database $backuprestoredb
+				$db1 | Should Not BeNullOrEmpty
+				$db2 | Should Not BeNullOrEmpty
+				
+				# Compare its valuable.
+				$db1.Name | Should Be $db2.Name
+				$db1.RecoveryModel | Should Be $db2.RecoveryModel
+				$db1.Status | Should be $db2.Status
+				$db1.Owner | Should be $db2.Owner
+			}
 			
+			It "Should say skipped" {
+				$result = Copy-DbaDatabase -Source $script:instance1 -Destination $script:instance2 -Database $backuprestoredb -BackupRestore -NetworkShare $NetworkPath
+				$result.Status | Should be "Skipped"
+				$result.Notes | Should be "Already exists"
+			}
 		}
 	}
-	
-	Context "Clean up" {
-		foreach ($instance in $instances) {
-			Get-DbaDatabase -SqlInstance $instance -NoSystemDb | Remove-DbaDatabase -Confirm:$false
-		}
-		#>
-	}
-	
 }

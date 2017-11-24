@@ -1,234 +1,204 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-
 function Get-DbaBackupHistory {
 	<#
-	.SYNOPSIS
-		Returns backup history details for databases on a SQL Server
-	
-	.DESCRIPTION
-		Returns backup history details for some or all databases on a SQL Server.
+		.SYNOPSIS
+			Returns backup history details for databases on a SQL Server.
 		
-		You can even get detailed information (including file path) for latest full, differential and log files.
+		.DESCRIPTION
+			Returns backup history details for some or all databases on a SQL Server.
+			
+			You can even get detailed information (including file path) for latest full, differential and log files.
 
-		Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present
+			Backups taken with the CopyOnly option will NOT be returned, unless the IncludeCopyOnly switch is present
+			
+			Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
+	
+ 		.PARAMETER SqlInstance
+			The SQL Server instance to connect to.
+
+        .PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
+	
+		.PARAMETER Database
+			Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+
+		.PARAMETER ExcludeDatabase
+			Specifies one or more database(s) to exclude from processing.
+	
+		.PARAMETER IncludeCopyOnly
+			By default Get-DbaBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them
 		
-		Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
-	
-	.PARAMETER SqlInstance
-		The SQL Server that you're connecting to.
-	
-	.PARAMETER SqlCredential
-		Credential object used to connect to the SQL Server as a different user
-	
-	.PARAMETER Database
-		The database(s) to process.
-		If unspecified, all databases will be scanned for backup history.
-	
-	.PARAMETER ExcludeDatabase
-		The database(s) to not process.
-	
-	.PARAMETER IncludeCopyOnly
-		By default Get-DbaBackupHistory will ignore backups taken with the CopyOnly option. This switch will include them
-	
-	.PARAMETER Force
-		Returns a boatload of information, the way SQL Server returns it
-	
-	.PARAMETER Since
-		Datetime object used to narrow the results to a date
-	
-	.PARAMETER Last
-		Returns last entire chain of full, diff and log backup sets - starting backwards from most recent log
-	
-	.PARAMETER LastFull
-		Returns last full backup set
-	
-	.PARAMETER LastDiff
-		Returns last differential backup set
-	
-	.PARAMETER LastLog
-		Returns last log backup set
-	
-	.PARAMETER DeviceType
-		Filters the backup set by this DeviceType. It takes well-known types ('Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device') as well as custom integers (bring your own types)
-	
-	.PARAMETER Raw
-		By default the command will group mediasets (striped backups across multiple files) into a single return object. If you'd prefer to have an object per backup file returned, use this switch
-	
-	.PARAMETER Type
-		By default this command returns all types of backup together, unless one of the -Last* parameters is passed. Passing this allows to filter with this types
-	
-	.PARAMETER LastLsn
-		Internal parameter: filter out backup history with last_lsn greater than this value (this helps speed up the retrieval process without resorting to process the full history)
-	
-	.PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		.PARAMETER Force
+			If this switch is enabled, a large amount of information is returned, similar to what SQL Server itself returns.
 		
-	.EXAMPLE
-		Get-DbaBackupHistory -SqlInstance SqlInstance2014a
+		.PARAMETER Since
+			Specifies a Datetimeobject to use as the starting point for the search for backups.
 		
-		Returns server name, database, username, backup type, date for all backups databases on SqlInstance2014a. This may return a ton of rows; consider using filters that are included in other examples.
-	
-	.EXAMPLE
-		$cred = Get-Credential sqladmin
-		Get-DbaBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred
+		.PARAMETER Last
+			If this switch is enabled, the most recent full chain of full, diff and log backup sets is returned.
 		
-		Does the same as above but logs in as SQL user "sqladmin"
-	
-	.EXAMPLE
-		Get-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since '7/1/2016 10:47:00'
+		.PARAMETER LastFull
+			If this switch is enabled, the most recent full backup set is returned.
 		
-		Returns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.
-	
-	.EXAMPLE
-		Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table
+		.PARAMETER LastDiff
+			If this switch is enabled, the most recent differential backup set is returned.
 		
-		Returns information only for AdventureWorks2014 and pubs, and makes the output pretty
-	
-	.EXAMPLE
-		Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last
+		.PARAMETER LastLog
+			If this switch is enabled, the most recent log backup is returned.
 		
-		Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014
-	
-	.EXAMPLE
-		Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk
+		.PARAMETER DeviceType
+			Specifieds a filter for backupsets based on DeviceTypees. Valid options are 'Disk','Permanent Disk Device', 'Tape', 'Permanent Tape Device','Pipe','Permanent Pipe Device','Virtual Device', in addition to custom integers for your own DeviceTypes.
 		
-		Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, only for backups to disk
-	
-	.EXAMPLE
-		Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107
+		.PARAMETER Raw
+			If this switch is enabled, one object per backup file is returned. Otherwise, mediasets (striped backups across multiple files) will be grouped into a single return object.
 		
-		Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, only for backups with device_type 148 and 107
-	
-	.EXAMPLE
-		Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull
+		.PARAMETER Type
+			Specifies one or more types of backups to return. Valid options are 'Full', 'Log', 'Differential', 'File', 'Differential File', 'Partial Full', and 'Partial Differential'. Otherwise, all types of backups will be returned unless one of the -Last* switches is enabled.
 		
-		Returns information about the most recent full backup for AdventureWorks2014 on sql2014
-	
-	.EXAMPLE
-		Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full
+		.PARAMETER LastLsn
+			Specifies a minimum LSN to use in filtering backup history. Only backups with an LSN greater than this value will be returned, which helps speed the retrieval process.
 		
-		Returns information about all Full backups for AdventureWorks2014 on sql2014
-	
-	.EXAMPLE
-		Get-DbaRegisteredServer -SqlInstance sql2016 | Get-DbaBackupHistory
+		.PARAMETER EnableException 
+			If this switch is enabled exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and provide a friendly error message.
+			
+		.EXAMPLE
+			Get-DbaBackupHistory -SqlInstance SqlInstance2014a
+			
+			Returns server name, database, username, backup type, date for all backups databases on SqlInstance2014a. This may return many rows; consider using filters that are included in other examples.
 		
-		Returns database backup information for every database on every server listed in the Central Management Server on sql2016
-	
-	.EXAMPLE
-		Get-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force
+		.EXAMPLE
+			$cred = Get-Credential sqladmin
+			Get-DbaBackupHistory -SqlInstance SqlInstance2014a -SqlCredential $cred
+			
+			Does the same as above but logs in as SQL user "sqladmin"
 		
-		Lots of detailed information for all databases on SqlInstance2014a and sql2016.
-	
-	.NOTES
-		Tags: Storage, DisasterRecovery, Backup
-		dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-		Copyright (C) 2016 Chrissy LeMaire
-		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0	
-	
-	.LINK
-		https://dbatools.io/Get-DbaBackupHistory
-#>
+		.EXAMPLE
+			Get-DbaBackupHistory -SqlInstance SqlInstance2014a -Database db1, db2 -Since '7/1/2016 10:47:00'
+			
+			Returns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.
+		
+		.EXAMPLE
+			Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table
+			
+			Returns information only for AdventureWorks2014 and pubs and formats the results as a table.
+		
+		.EXAMPLE
+			Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last
+			
+			Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014.
+		
+		.EXAMPLE
+			Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType Disk
+			
+			Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups to disk.
+		
+		.EXAMPLE
+			Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Last -DeviceType 148,107
+			
+			Returns information about the most recent full, differential and log backups for AdventureWorks2014 on sql2014, but only for backups with device_type 148 and 107.
+		
+		.EXAMPLE
+			Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -LastFull
+			
+			Returns information about the most recent full backup for AdventureWorks2014 on sql2014.
+		
+		.EXAMPLE
+			Get-DbaBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014 -Type Full
+			
+			Returns information about all Full backups for AdventureWorks2014 on sql2014.
+		
+		.EXAMPLE
+			Get-DbaRegisteredServer -SqlInstance sql2016 | Get-DbaBackupHistory
+			
+			Returns database backup information for every database on every server listed in the Central Management Server on sql2016.
+		
+		.EXAMPLE
+			Get-DbaBackupHistory -SqlInstance SqlInstance2014a, sql2016 -Force
+			
+			Returns detailed backup history for all databases on SqlInstance2014a and sql2016.
+		
+		.NOTES
+			Tags: Storage, DisasterRecovery, Backup
+			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+			Copyright (C) 2016 Chrissy LeMaire
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0	
+		
+		.LINK
+			https://dbatools.io/Get-DbaBackupHistory
+	#>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]
 		$SqlInstance,
-		
 		[Alias("Credential")]
-		[PsCredential]
-		$SqlCredential,
-		
+		[PsCredential]$SqlCredential,
 		[Alias("Databases")]
-		[object[]]
-		$Database,
-		
-		[object[]]
-		$ExcludeDatabase,
-		
-		[switch]
-		$IncludeCopyOnly,
-		
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
+		[switch]$IncludeCopyOnly,
 		[Parameter(ParameterSetName = "NoLast")]
-		[switch]
-		$Force,
-		
+		[switch]$Force,
 		[Parameter(ParameterSetName = "NoLast")]
-		[DateTime]
-		$Since,
-		
+		[DateTime]$Since,
 		[Parameter(ParameterSetName = "Last")]
-		[switch]
-		$Last,
-		
+		[switch]$Last,
 		[Parameter(ParameterSetName = "Last")]
-		[switch]
-		$LastFull,
-		
+		[switch]$LastFull,
 		[Parameter(ParameterSetName = "Last")]
-		[switch]
-		$LastDiff,
-		
+		[switch]$LastDiff,
 		[Parameter(ParameterSetName = "Last")]
-		[switch]
-		$LastLog,
-		
-		[string[]]
-		$DeviceType,
-		
-		
-		[switch]
-		$Raw,
-		
-		[bigint]
-		$LastLsn,
-		
+		[switch]$LastLog,
+		[string[]]$DeviceType,
+		[switch]$Raw,
+		[bigint]$LastLsn,
 		[ValidateSet("Full", "Log", "Differential", "File", "Differential File", "Partial Full", "Partial Differential")]
 		[string[]]$Type,
-		
-		[switch]
-		[Alias('Silent')]$EnableException
+		[Alias('Silent')]
+		[switch]$EnableException
 	)
 	
 	begin {
-		Write-Message -Level System -Message "Active Parameterset: $($PSCmdlet.ParameterSetName)"
+		Write-Message -Level System -Message "Active Parameterset: $($PSCmdlet.ParameterSetName)."
 		Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
-		
-		$IgnoreCopyOnly = $true
-		If ($IncludeCopyOnly -eq $True) {
-			$IgnoreCopyOnly = $false
-		}
+	
 
 		$DeviceTypeMapping = @{
-			'Disk' = 2
+			'Disk'                  = 2
 			'Permanent Disk Device' = 102
-			'Tape' = 5
+			'Tape'                  = 5
 			'Permanent Tape Device' = 105
-			'Pipe' = 6
+			'Pipe'                  = 6
 			'Permanent Pipe Device' = 106
-			'Virtual Device' = 7
+			'Virtual Device'        = 7
 		}
 		$DeviceTypeFilter = @()
-		foreach($DevType in $DeviceType) {
+		foreach ($DevType in $DeviceType) {
 			if ($DevType -in $DeviceTypeMapping.Keys) {
 				$DeviceTypeFilter += $DeviceTypeMapping[$DevType]
-			} else {
+			}
+			else {
 				$DeviceTypeFilter += $DevType
 			}
 		}
 		$BackupTypeMapping = @{
-			'Log' = 'L'
-			'Full' = 'D'
-			'File' = 'F'
-			'Differential' = 'I'
-			'Differential File' = 'G'
-			'Partial Full' = 'P'
+			'Log'                  = 'L'
+			'Full'                 = 'D'
+			'File'                 = 'F'
+			'Differential'         = 'I'
+			'Differential File'    = 'G'
+			'Partial Full'         = 'P'
 			'Partial Differential' = 'Q'
 		}
 		$BackupTypeFilter = @()
-		foreach($TypeFilter in $Type) {
+		foreach ($TypeFilter in $Type) {
 			$BackupTypeFilter += $BackupTypeMapping[$TypeFilter]
 		}
 	
@@ -238,15 +208,15 @@ function Get-DbaBackupHistory {
 		foreach ($instance in $SqlInstance) {
 			
 			try {
-				Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
+				Write-Message -Level VeryVerbose -Message "Connecting to $instance." -Target $instance
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Failed to process Instance $Instance" -InnerErrorRecord $_ -Target $instance -Continue
+				Stop-Function -Message "Failed to process Instance $Instance." -InnerErrorRecord $_ -Target $instance -Continue
 			}
 			
 			if ($server.VersionMajor -lt 9) {
-				Stop-Function -Message "SQL Server 2000 not supported" -Category LimitsExceeded -Target $instance -Continue
+				Stop-Function -Message "SQL Server 2000 not supported." -Category LimitsExceeded -Target $instance -Continue
 			}
 			$backupSizeColumn = 'backup_size'
 			if ($server.VersionMajor -ge 10) {
@@ -256,7 +226,7 @@ function Get-DbaBackupHistory {
 			
 			$databases = @()
 			if ($null -ne $Database) {
-				ForEach ($db in $Database){
+				ForEach ($db in $Database) {
 					$databases += [PScustomObject]@{name = $db}
 				}
 			}
@@ -266,11 +236,11 @@ function Get-DbaBackupHistory {
 			if ($ExcludeDatabase) {
 				$databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
 			}
-			foreach($d in $DeviceTypeFilter) {
+			foreach ($d in $DeviceTypeFilter) {
 				$DeviceTypeFilterRight = "IN ('" + ($DeviceTypeFilter -Join "','") + "')"
 			}
 			
-			foreach($b in $BackupTypeFilter) {
+			foreach ($b in $BackupTypeFilter) {
 				$BackupTypeFilterRight = "IN ('" + ($BackupTypeFilter -Join "','") + "')"
 			}
 
@@ -280,8 +250,8 @@ function Get-DbaBackupHistory {
 					
 					#Get the full and build upwards
 					$allbackups = @()
-					$allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType
-					$DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType
+					$allbackups += $Fulldb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly
+					$DiffDB = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly
 					if ($DiffDb.LastLsn -gt $Fulldb.LastLsn -and  $DiffDb.DatabaseBackupLSN -eq $Fulldb.CheckPointLSN ) {
 						Write-Message -Level Verbose -Message "Valid Differential backup "
 						$Allbackups += $DiffDB
@@ -289,14 +259,14 @@ function Get-DbaBackupHistory {
 					}
 					else {
 						Write-Message -Level Verbose -Message "No Diff found"
-						try { 
-							[bigint]$TLogStartLSN = $Fulldb.FirstLsn 
+						try {
+							[bigint]$TLogStartLSN = $Fulldb.FirstLsn.ToString() 
 						}
 						catch {
 							continue
 						}
 					}
-					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $TLogstartLSN | Where-Object { 
+					$Allbackups += $Logdb = Get-DbaBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $TLogstartLSN -IncludeCopyOnly:$IncludeCopyOnly | Where-Object { 
 						$_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$TLogstartLSN -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$Fulldb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $Fulldb.LastRecoveryForkGuid
 					}
 					#This line does the output for -Last!!!
@@ -321,7 +291,9 @@ function Get-DbaBackupHistory {
 				foreach ($db in $databases) {
 					Write-Message -Level Verbose -Message "Processing $($db.name)" -Target $db
 					$wherecopyonly = $null
-					if ($IgnoreCopyOnly) { $wherecopyonly = "AND is_copy_only='0'" }
+					if ($true -ne $IncludeCopyOnly) {
+						$wherecopyonly = " AND is_copy_only='0' "
+					}
 					if ($DeviceTypeFilter) {
 						$DevTypeFilterWhere = "AND mediafamily.device_type $DeviceTypeFilterRight"
 					}
@@ -354,7 +326,7 @@ function Get-DbaBackupHistory {
 									a.is_copy_only,
 									a.last_recovery_fork_guid
 								FROM (SELECT
-								  RANK() OVER (ORDER BY backupset.last_lsn DESC) AS 'BackupSetRank',
+								  RANK() OVER (ORDER BY backupset.last_lsn desc, backupset.backup_finish_date DESC) AS 'BackupSetRank',
 								  backupset.database_name AS [Database],
 								  backupset.user_name AS Username,
 								  backupset.backup_start_date AS Start,
@@ -466,8 +438,9 @@ function Get-DbaBackupHistory {
 				$from = " FROM msdb..backupmediafamily mediafamily
 							 INNER JOIN msdb..backupmediaset mediaset ON mediafamily.media_set_id = mediaset.media_set_id
 							 INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
-				if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $IgnoreCopyOnly -or $DeviceTypeFilter -or $LastLsn -or $BackupTypeFilter) {
+				if ($Database -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $DeviceTypeFilter -or $LastLsn -or $BackupTypeFilter) {
 					$where = " WHERE "
+					write-verbose "setting where"
 				}
 				
 				$wherearray = @()
@@ -475,6 +448,11 @@ function Get-DbaBackupHistory {
 				if ($Database.length -gt 0) {
 					$dblist = $Database -join "','"
 					$wherearray += "database_name IN ('$dblist')"
+				}
+
+				if ($true -ne $IncludeCopyOnly) {
+					Write-Verbose "excluding copyonly Ico = $IncludeCopyOnly"
+					$wherearray += "is_copy_only='0'"
 				}
 				
 				if ($Last -or $LastFull -or $LastLog -or $LastDiff) {
@@ -486,9 +464,8 @@ function Get-DbaBackupHistory {
 					$wherearray += "backupset.backup_finish_date >= '$($Since.ToString("yyyy-MM-ddTHH:mm:ss"))'"
 				}
 				
-				if ($IgnoreCopyOnly -eq $true) {
-					$wherearray += "is_copy_only='0'"
-				}
+
+
 				if ($DeviceTypeFilter) {
 					$wherearray += "mediafamily.device_type $DeviceTypeFilterRight"
 				}
@@ -508,18 +485,18 @@ function Get-DbaBackupHistory {
 			}
 
 			Write-Message -Level Debug -Message $sql
-			Write-Message -Level SomewhatVerbose -Message "Executing sql query"
+			Write-Message -Level SomewhatVerbose -Message "Executing sql query."
 			$results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
 			
 			if ($raw) {
-				Write-Message -Level SomewhatVerbose -Message "Processing as Raw Output"
+				Write-Message -Level SomewhatVerbose -Message "Processing as Raw Output."
 				$results | Select-Object *, @{ Name = "FullName"; Expression = { $_.Path } }
-				Write-Message -Level SomewhatVerbose -Message "$($results.Count) result sets found"
+				Write-Message -Level SomewhatVerbose -Message "$($results.Count) result sets found."
 			}
 			else {
-				Write-Message -Level SomewhatVerbose -Message "Processing as Grouped output"
+				Write-Message -Level SomewhatVerbose -Message "Processing as grouped output."
 				$GroupedResults = $results | Group-Object -Property backupsetid
-				Write-Message -Level SomewhatVerbose -Message "$($GroupedResults.Count) result-groups found"
+				Write-Message -Level SomewhatVerbose -Message "$($GroupedResults.Count) result-groups found."
 				$groupResults = @()
 				foreach ($group in $GroupedResults) {
 					
@@ -551,7 +528,12 @@ function Get-DbaBackupHistory {
 					$historyObject.CheckpointLsn = $group.Group[0].checkpoint_lsn
 					$historyObject.LastLsn = $group.Group[0].Last_Lsn
 					$historyObject.SoftwareVersionMajor = $group.Group[0].Software_Major_Version
-					$historyObject.IsCopyOnly = if($group.Group[0].is_copy_only -eq 1){$true}else{$false}
+					$historyObject.IsCopyOnly = if ($group.Group[0].is_copy_only -eq 1) {
+						$true
+					}
+					else {
+						$false
+					}
 					$HistoryObject.LastRecoveryForkGuid = $group.Group[0].last_recovery_fork_guid
 					$groupResults += $historyObject
 				}

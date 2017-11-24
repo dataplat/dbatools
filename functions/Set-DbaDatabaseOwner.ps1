@@ -8,9 +8,9 @@ function Set-DbaDatabaseOwner {
 
 			Best Practice reference: http://weblogs.sqlteam.com/dang/archive/2008/01/13/Database-Owner-Troubles.aspx
 
-		.PARAMETER SqlInstance 
+		.PARAMETER SqlInstance
 			Specifies the SQL Server instance(s) to scan.
-			
+
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
@@ -22,10 +22,10 @@ function Set-DbaDatabaseOwner {
 
 		.PARAMETER Database
 			Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
-		
+
 		.PARAMETER ExcludeDatabase
 			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
-		
+
 		.PARAMETER TargetLogin
 			Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
 
@@ -39,9 +39,9 @@ function Set-DbaDatabaseOwner {
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
+
 		.NOTES
-			Tags: 
+			Tags:
 			Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
 			Website: https://dbatools.io
@@ -85,7 +85,7 @@ function Set-DbaDatabaseOwner {
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance."
 			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -100,13 +100,13 @@ function Set-DbaDatabaseOwner {
 			if (($server.Logins.Name) -notcontains $TargetLogin) {
 				Stop-Function -Message "$TargetLogin is not a valid login on $instance. Moving on." -Continue -EnableException $EnableException
 			}
-			
+
 			#Owner cannot be a group
 			$TargetLoginObject = $server.Logins | where-object {$PSItem.Name -eq $TargetLogin }| Select-Object -property  Name, LoginType
 			if ($TargetLoginObject.LoginType -eq 'WindowsGroup') {
 				Stop-Function -Message "$TargetLogin is a group, therefore can't be set as owner. Moving on." -Continue -EnableException $EnableException
 			}
-			
+
 			#Get database list. If value for -Database is passed, massage to make it a string array.
 			#Otherwise, use all databases on the instance where owner not equal to -TargetLogin
 			#use where owner and target login do not match
