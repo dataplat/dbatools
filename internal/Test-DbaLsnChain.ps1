@@ -88,7 +88,7 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
             }
         }
         $DiffAnchor = $TestHistory | Where-Object {$_.$TypeName -in ('Database Differential','Differential')}
-        #Check for no more than a single Differential backup
+        #Check for no more than a single Differential backup 
         if (($DiffAnchor.FirstLSN | Select-Object -unique | Measure-Object).count -gt 1)
         {
             Write-Warning "$FunctionName - More than 1 differential backup, not  supported"
@@ -113,16 +113,17 @@ Checks that the Restore chain in $FilteredFiles is complete and can be fully res
             Write-Verbose "looping t logs"
             if ($i -eq 0)
             {
-                if ($TranLogBackups[$i].FirstLSN -ge $TlogAnchor.LastLSN)
+                if ($TranLogBackups[$i].FirstLSN -gt $TlogAnchor.LastLSN)
                 {
-                    Write-Warning "$FunctionName - Break in LSN Chain between $($TlogAnchor.BackupPath) and $($TranLogBackups[($i)].BackupPath) "
+                    Write-Warning "$FunctionName - Break in LSN Chain between $($TlogAnchor.FullName) and $($TranLogBackups[($i)].FullName) "
+                    Write-Verbose "Anchor $($TlogAnchor.LastLSN) - FirstLSN $($TranLogBackups[$i].FirstLSN)"
                     return $false
                     break
                 }
             }else {
                 if ($TranLogBackups[($i-1)].LastLsn -ne $TranLogBackups[($i)].FirstLSN -and ($TranLogBackups[($i)] -ne $TranLogBackups[($i-1)]))
                 {
-                    Write-Warning "$FunctionName - Break in transaction log between $($TranLogBackups[($i-1)].BackupPath) and $($TranLogBackups[($i)].BackupPath) "
+                    Write-Warning "$FunctionName - Break in transaction log between $($TranLogBackups[($i-1)].FullName) and $($TranLogBackups[($i)].FullName) "
                     return $false
                     break
                 }

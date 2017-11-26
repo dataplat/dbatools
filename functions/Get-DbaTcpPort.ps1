@@ -13,10 +13,10 @@ function Get-DbaTcpPort {
 		.PARAMETER SqlInstance
 			The SQL Server that you're connecting to.
 
-		.PARAMETER Credential
+		.PARAMETER SqlCredential
 			Allows you to connect to servers using alternate Windows credentials
 
-			$scred = Get-Credential, then pass $scred object to the -Credential parameter.
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
 		.PARAMETER Detailed
 			If this switch is enabled, an object with server name, IPAddress (ipv4 and ipv6), port and static ($true/$false) for one or more SQL Servers is returned.
@@ -28,7 +28,7 @@ function Get-DbaTcpPort {
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
+
 		.NOTES
 			Tags: SQLWMI, tcp
 
@@ -66,37 +66,38 @@ function Get-DbaTcpPort {
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[Alias("SqlCredential")][PSCredential]$Credential,
+		[Alias("Credential")]
+		[PSCredential]$SqlCredential,
 		[switch]$Detailed,
 		[Alias("Ipv4")]
 		[switch]$ExcludeIpv6,
 		[switch][Alias('Silent')]$EnableException
 	)
-	
+
 	process {
 		foreach ($instance in $SqlInstance) {
 			if ($detailed -eq $true) {
 				try {
 					$scriptblock = {
 						$instance = $args[0]
-						
+
 						Add-Type -AssemblyName Microsoft.VisualBasic
-						
+
 						foreach ($servername in $wmi.ServerInstances) {
 							$instanceName = $servername.Name
 							$wmiinstance = $wmi.Services | Where-Object { $_.DisplayName -eq "SQL Server ($instanceName)" }
 							$vsname = ($wmiinstance.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }).Value
-							
+
 							if ($vsname.length -eq 0) {
 								$vsname = "$instance\$instanceName"
 							}
-							
+
 							$vsname = $vsname.Replace("\MSSQLSERVER", "")
-							
+
 							try {
 								$regroot = ($wmiinstance.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }).Value
 								$dacport = (Get-ItemProperty "HKLM:\$regroot\MSSQLServer\SuperSocketNetLib\AdminConnection\Tcp").TcpDynamicPorts
-								
+
 								[PsCustomObject]@{
 									ComputerName = $instance
 									InstanceName = $instanceName
@@ -110,15 +111,15 @@ function Get-DbaTcpPort {
 							catch {
 								# it's just not our day
 							}
-							
+
 							$tcp = $servername.ServerProtocols | Where-Object Name -eq Tcp
 							$ips = $tcp.IPAddresses
-							
+
 							# This is a remote command so do not use Write-message
 							Write-Verbose "Parsing information for $($ips.count) IP addresses."
 							foreach ($ip in $ips) {
 								$props = $ip.IPAddressProperties | Where-Object { $_.Name -eq "TcpPort" -or $_.Name -eq "TcpDynamicPorts" }
-								
+
 								foreach ($prop in $props) {
 									if ([Microsoft.VisualBasic.Information]::IsNumeric($prop.value)) {
 										$port = $prop.value
@@ -131,7 +132,7 @@ function Get-DbaTcpPort {
 										break
 									}
 								}
-								
+
 								[PsCustomObject]@{
 									ComputerName = $instance
 									InstanceName = $instanceName
@@ -144,11 +145,11 @@ function Get-DbaTcpPort {
 							}
 						}
 					}
-					
+
 					$computer = $instance.ComputerName
 					$resolved = Resolve-DbaNetworkName -ComputerName $instance -Verbose:$false
 					$computername = $resolved.FullComputerName
-					
+
 					try {
 						Write-Message -Level Verbose -Message "Trying with ComputerName ($computer)."
 						$someIps = Invoke-ManagedComputerCommand -ComputerName $computer -ArgumentList $computer -ScriptBlock $scriptblock
@@ -161,30 +162,30 @@ function Get-DbaTcpPort {
 				catch {
 					Stop-Function -Message "Could not get detailed information." -Target $instance -ErrorRecord $_
 				}
-				
+
 				$cleanedUp = $someIps | Sort-Object IPAddress
-				
+
 				if ($ExcludeIpv6) {
 					$octet = '(?:0?0?[0-9]|0?[1-9][0-9]|1[0-9]{2}|2[0-5][0-5]|2[0-4][0-9])'
 					[regex]$ipv4 = "^(?:$octet\.){3}$octet$"
 					$cleanedUp = $cleanedUp | Where-Object { $_.IPAddress -match $ipv4 }
 				}
-				
+
 				$cleanedUp
 			}
-			
+
 			if ($Detailed -eq $false -or ($Detailed -eq $true -and $someIps -eq $null)) {
 				try {
-					$server = Connect-SqlInstance -SqlInstance "TCP:$instance" -SqlCredential $Credential -MinimumVersion 9
+					$server = Connect-SqlInstance -SqlInstance "TCP:$instance" -SqlCredential $SqlCredential -MinimumVersion 9
 				}
 				catch {
 					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $servername -Continue
 				}
-				
+
 				# WmiComputer can be unreliable :( Use T-SQL
 				$sql = "SELECT local_tcp_port FROM sys.dm_exec_connections WHERE session_id = @@SPID"
 				$port = $server.Query($sql)
-				
+
 				[PSCustomObject]@{
 					ComputerName = $server.NetName
 					InstanceName = $server.ServiceName
