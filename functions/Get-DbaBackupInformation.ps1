@@ -53,6 +53,12 @@ function Get-DbaBackupInformation {
     .PARAMETER PassThru
         When data is exported the cmdlet will return no other output, this switch means it will also return the normal output which can be then piped into another command
     
+    .PARAMETER MaintenanceSolution
+        This switch tells the function that the folder is the root of a Ola Hallengren backup folder
+
+    .PARAMETER IgnoreLogBackup
+        This switch only works with MaintenanceSoltion, as we can then now that all file in LOG are to be ignored.
+
     .PARAMETER Import
         When specified along with a path the command will import a previously exported 
     
@@ -112,6 +118,8 @@ function Get-DbaBackupInformation {
         [parameter(ParameterSetName="Create")]
         [switch]$DirectoryRecurse,
         [switch]$EnableException,
+        [switch]$MaintenanceSolution,
+        [switch]$IgnoreLogBackup,
         [string]$ExportPath,
         [parameter(ParameterSetName="Import")]
         [switch]$Import,
@@ -152,6 +160,9 @@ function Get-DbaBackupInformation {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 return
             }
+        }
+        if($true -eq $MaintenanceSolution){
+            $NoXpDirTree = $True
         }
     }
     process {
@@ -195,14 +206,29 @@ function Get-DbaBackupInformation {
                 ForEach ($f in $path) {
                     Write-Message -Level VeryVerbose -Message "Not using sql for $f"
                     if ($f -is [System.IO.FileSystemInfo]){
-                        if ($f.PsIsContainer -eq $true){
+                        if ($f.PsIsContainer -eq $true -and $true -ne $MaintenanceSolution){
                             Write-Message -Level VeryVerbose -Message "folder $($f.fullname)"
                             $Files = Get-ChildItem -Path $f.fullname -File -Recurse:$DirectoryRecurse
+                        }
+                        elseif ($f.PsIsContainer -eq $true -and $true -eq $MaintenanceSolution){
+                            $Files += Get-OlaHRestoreFile -Path $f.fullname -IgnoreLogBackup:$IgnoreLogBackup
+                        }
+                        elseif ($true -eq $MaintenanceSolution){
+                            $Files += Get-OlaHRestoreFile -Path $f.fullname -IgnoreLogBackup:$IgnoreLogBackup
                         }
                         else {
                             Write-Message -Level VeryVerbose -Message "File"
                             $Files += $f.fullname
                         }
+                    }
+                    else{
+                        if ($true -eq $MaintenanceSolution){
+                            $Files += Get-OlaHRestoreFile -Path $f -IgnoreLogBackup:$IgnoreLogBackup
+                        }
+                        else {
+                            Write-Message -Level VeryVerbose -Message "File"
+                            $Files += $f
+                        }   
                     }
                 }
             }
