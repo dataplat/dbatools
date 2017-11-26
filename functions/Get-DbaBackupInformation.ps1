@@ -95,12 +95,20 @@ function Get-DbaBackupInformation {
         This lets you keep a record of all backup history from the last month on hand to speed up refreshes 
     
     .EXAMPLE
-        $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backupps
+        $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups
         $Backups += Get-DbaBackupInformation -SqlInstance Server2 -NoXpDirTree -Path c:\backups
 
         Scan the unc folder \\network\backups with Server1, and then scan the C:\backups folder on 
         Server2 not using xp_dirtree, adding the results to the first set.
+    
+    .EXAMPLE
+        $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups -MaintenanceSolution
 
+        When MaintenanceSolution is indicated we know we are dealing with the output from Ola Hallengren's backup scripts. So we make sure that a FULL folder exists in the first level of Path, if not we shortcut scanning all the files as we have nothing to work with
+    .EXAMPLE
+        $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups -MaintenanceSolution -IgnoreLogBackup
+
+        As we know we are dealing with an Ola Hallengren style backup folder from the MaintenanceSolution switch, when IgnoreLogBackup is also included we can ignore the LOG folder to skip any scanning of log backups. Note this also means then WON'T be restored
     #>
     [CmdletBinding( DefaultParameterSetName="Create")]
     param (
@@ -161,8 +169,13 @@ function Get-DbaBackupInformation {
                 return
             }
         }
+        
         if($true -eq $MaintenanceSolution){
             $NoXpDirTree = $True
+        }
+
+        if ($true -eq $IgnoreLogBackup -and $true -ne $MaintenanceSolution){
+            Write-Message -Message "IgnoreLogBackup can only by used with Maintenance Soultion. Will not be used" -Level Warning
         }
     }
     process {
