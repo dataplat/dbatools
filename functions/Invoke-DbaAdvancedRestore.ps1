@@ -155,7 +155,7 @@ Function Invoke-DbaAdvancedRestore{
             $BackupCnt = 1
             ForEach ($backup in $backups){
                 $Restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
-                if (($backup -ne $backups[-1] -and $StandbyDirectory -eq '') -or $true -eq $NoRecovery){
+                if (($backup -ne $backups[-1]) -or $true -eq $NoRecovery){
                     $Restore.NoRecovery = $True
                 }elseif ($backup -eq $backups[-1] -and '' -ne $StandbyDirectory) {
                     $Restore.StandbyFile = $StandByDirectory + "\" + $Database + (get-date -Format yyyMMddHHmmss) + ".bak"
