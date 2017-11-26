@@ -313,29 +313,6 @@ function Export-DbaLogin {
 					$credentialName = $credential.Name
 					$outsql += "PRINT '$userName is associated with the $credentialName credential'"
 				}
-
-				# Endpoint permissions
-				foreach ($endpoint in $server.endpoints) {
-                    $perms = $endpoint.EnumObjectPermissions($userName)
-
-                    foreach ($perm in $perms) {
-                        $permState = $perm.permissionstate
-                        $permType = $perm.PermissionType
-                        $grantor = $perm.grantor
-
-                        if ($permState -eq "GrantWithGrant") {
-                            $grantWithGrant = "WITH GRANT OPTION"
-                            $permState = "GRANT"
-                        }
-                        else {
-                            $grantWithGrant = $null
-                        }
-
-                        $outsql += "$permState $permType ON ENDPOINT::[$($endpoint.Name)] TO [$userName] $grantWithGrant AS [$grantor]"
-					}
-					
-
-				}
 			}
 
 			if ($NoDatabases -eq $false) {
