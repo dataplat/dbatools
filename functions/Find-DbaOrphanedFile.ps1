@@ -195,7 +195,7 @@ function Find-DbaOrphanedFile {
 			
 			# Get any paths associated with current data and log files
 			foreach ($file in $filestructure) {
-				$paths += Split-Path -Path $file
+				$paths += Split-Path -Path $file -Parent
 			}
 
 			# Get the default data and log directories from the instance
