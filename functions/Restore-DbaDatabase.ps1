@@ -493,7 +493,7 @@ function Restore-DbaDatabase {
                     if ($f -is [System.IO.FileSystemInfo]){
                         $f = $f.fullname
                     }
-                    $BackupHistory += $f | Get-DbaBackupInformation -SqlInstance $RestoreInstance -DirectoryRecurse:$DirectoryRecurse
+                    $BackupHistory += $f | Get-DbaBackupInformation -SqlInstance $RestoreInstance -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreLogBackup:$IgnoreLogBackup
                 }
             }
             
