@@ -117,7 +117,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		}
 		It "Should be 0 log backups" {
             ($resultsSanLog | Where-Object {$_.Type -eq 'Transaction Log'}).count | Should be 0
-        }
+		}
+		$ResultsSanLog = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDirOla -IgnoreLogBackup -WarningVariable warnvar -WarningAction SilentlyContinue	
+		It "Should Warn if IgnoreLogBackup without Maintenance Solution" {
+			($WarnVar -match  "IgnoreLogBackup can only by used with Maintenance Soultion. Will not be used") | Should Be $True
+		}
+		It "Should ignore IgnoreLogBackup and return 3 backups" {
+			$resultsSanLog.count | Should Be 3
+		}
+
 	}
 
 }
