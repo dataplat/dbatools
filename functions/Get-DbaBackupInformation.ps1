@@ -1,7 +1,7 @@
 function Get-DbaBackupInformation {
     <#
     .SYNOPSIS
-        Restores a SQL Server Database from a set of backupfiles
+        Scan backup files and creates a set, compatible with Restore-DbaDatabase
     
     .DESCRIPTION
         Upon bein passed a list of potential backups files this command will scan the files, select those that contain SQL Server
@@ -53,6 +53,12 @@ function Get-DbaBackupInformation {
     .PARAMETER PassThru
         When data is exported the cmdlet will return no other output, this switch means it will also return the normal output which can be then piped into another command
     
+    .PARAMETER MaintenanceSolution
+        This switch tells the function that the folder is the root of a Ola Hallengren backup folder
+
+    .PARAMETER IgnoreLogBackup
+        This switch only works with MaintenanceSoltion, as we can then now that all file in LOG are to be ignored.
+
     .PARAMETER Import
         When specified along with a path the command will import a previously exported 
     
@@ -75,8 +81,8 @@ function Get-DbaBackupInformation {
         This allows you to move backup history across servers, or to preserve backuphistory even after the original server has been purged
     
     .EXAMPLE
-        Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse -ExportPath c:\store\BackupHistory.xml -PassThru !
-                Restore-DbaDatabse -SqlInstance Server2 -TrustDbBackupHistory
+        Get-DbaBackupInformation -SqlInstance Server1 -Path c:\backups\ -DirectoryRecurse -ExportPath c:\store\BackupHistory.xml -PassThru |
+                Restore-DbaDatabase -SqlInstance Server2 -TrustDbBackupHistory
         
         In this example we gather backup information, export it to an xml file, and then pass it on through to Restore-DbaDatabase
         This allows us to repeat the restore without having to scan all the backup files again
@@ -89,12 +95,20 @@ function Get-DbaBackupInformation {
         This lets you keep a record of all backup history from the last month on hand to speed up refreshes 
     
     .EXAMPLE
-        $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backupps
+        $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups
         $Backups += Get-DbaBackupInformation -SqlInstance Server2 -NoXpDirTree -Path c:\backups
 
         Scan the unc folder \\network\backups with Server1, and then scan the C:\backups folder on 
         Server2 not using xp_dirtree, adding the results to the first set.
+    
+    .EXAMPLE
+        $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups -MaintenanceSolution
 
+        When MaintenanceSolution is indicated we know we are dealing with the output from Ola Hallengren's backup scripts. So we make sure that a FULL folder exists in the first level of Path, if not we shortcut scanning all the files as we have nothing to work with
+    .EXAMPLE
+        $Backups = Get-DbaBackupInformation -SqlInstance Server1 -Path \\network\backups -MaintenanceSolution -IgnoreLogBackup
+
+        As we know we are dealing with an Ola Hallengren style backup folder from the MaintenanceSolution switch, when IgnoreLogBackup is also included we can ignore the LOG folder to skip any scanning of log backups. Note this also means then WON'T be restored
     #>
     [CmdletBinding( DefaultParameterSetName="Create")]
     param (
@@ -112,6 +126,8 @@ function Get-DbaBackupInformation {
         [parameter(ParameterSetName="Create")]
         [switch]$DirectoryRecurse,
         [switch]$EnableException,
+        [switch]$MaintenanceSolution,
+        [switch]$IgnoreLogBackup,
         [string]$ExportPath,
         [parameter(ParameterSetName="Import")]
         [switch]$Import,
@@ -153,6 +169,14 @@ function Get-DbaBackupInformation {
                 return
             }
         }
+        
+        if($true -eq $MaintenanceSolution){
+            $NoXpDirTree = $True
+        }
+
+        if ($true -eq $IgnoreLogBackup -and $true -ne $MaintenanceSolution){
+            Write-Message -Message "IgnoreLogBackup can only by used with Maintenance Soultion. Will not be used" -Level Warning
+        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -193,16 +217,31 @@ function Get-DbaBackupInformation {
             } 
             else {
                 ForEach ($f in $path) {
-                    Write-Verbose "Not using sql for $f"
+                    Write-Message -Level VeryVerbose -Message "Not using sql for $f"
                     if ($f -is [System.IO.FileSystemInfo]){
-                        if ($f.PsIsContainer -eq $true){
-                            Write-Verbose "folder $($f.fullname)"
+                        if ($f.PsIsContainer -eq $true -and $true -ne $MaintenanceSolution){
+                            Write-Message -Level VeryVerbose -Message "folder $($f.fullname)"
                             $Files = Get-ChildItem -Path $f.fullname -File -Recurse:$DirectoryRecurse
                         }
+                        elseif ($f.PsIsContainer -eq $true -and $true -eq $MaintenanceSolution){
+                            $Files += Get-OlaHRestoreFile -Path $f.fullname -IgnoreLogBackup:$IgnoreLogBackup
+                        }
+                        elseif ($true -eq $MaintenanceSolution){
+                            $Files += Get-OlaHRestoreFile -Path $f.fullname -IgnoreLogBackup:$IgnoreLogBackup
+                        }
                         else {
-                            Write-verbose "File"
+                            Write-Message -Level VeryVerbose -Message "File"
                             $Files += $f.fullname
                         }
+                    }
+                    else{
+                        if ($true -eq $MaintenanceSolution){
+                            $Files += Get-OlaHRestoreFile -Path $f -IgnoreLogBackup:$IgnoreLogBackup
+                        }
+                        else {
+                            Write-Message -Level VeryVerbose -Message "File"
+                            $Files += $f
+                        }   
                     }
                 }
             }

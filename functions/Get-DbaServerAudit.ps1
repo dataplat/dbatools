@@ -11,14 +11,14 @@ Gets SQL Security Audit information for each instance(s) of SQL Server.
 SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function
 to be executed against multiple SQL Server instances.
 
-.PARAMETER Credential
+.PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, current Windows login will be used.
 
 .PARAMETER EnableException
 		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
+
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
@@ -42,21 +42,22 @@ Returns all Security Audits for the local and sql2016 SQL Server instances
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $true)]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]$Credential,
+		[Alias("Credential")]
+		[PSCredential]$SqlCredential,
 		[switch][Alias('Silent')]$EnableException
 	)
-	
+
 	process {
 		foreach ($instance in $SqlInstance)
 		{
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $Credential
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-			
+
 			if ($server.versionMajor -lt 10) {
 				Write-Warning "Server Audits are only supported in SQL Server 2008 and above. Quitting."
 				continue
@@ -65,7 +66,7 @@ Returns all Security Audits for the local and sql2016 SQL Server instances
 				Add-Member -Force -InputObject $audit -MemberType NoteProperty -Name ComputerName -value $audit.Parent.NetName
 				Add-Member -Force -InputObject $audit -MemberType NoteProperty -Name InstanceName -value $audit.Parent.ServiceName
 				Add-Member -Force -InputObject $audit -MemberType NoteProperty -Name SqlInstance -value $audit.Parent.DomainInstanceName
-				
+
 				Select-DefaultView -InputObject $audit -Property ComputerName, InstanceName, SqlInstance, Name, 'Enabled as IsEnabled', FilePath, FileName
 			}
 			if($server.Audits.Count -eq 0) {

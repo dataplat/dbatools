@@ -237,8 +237,10 @@ function Backup-DbaDatabaseCertificate {
                 $DBCertificateCollection = Get-DbaDatabaseCertificate -SqlInstance $server -Database $db
                 if ($Certificate) {
 					$CertificateCollection += $DBCertificateCollection | Where-Object Name -In $Certificate
-				}
-				$CertificateCollection += $DBCertificateCollection | Where-Object Name -NotLike "##*"
+                }
+                else {
+                    $CertificateCollection += $DBCertificateCollection | Where-Object Name -NotLike "##*"
+                }
 				if (!$CertificateCollection) {
 					Write-Message -Level Output -Message "No certificates found to export in $db."
 					continue
