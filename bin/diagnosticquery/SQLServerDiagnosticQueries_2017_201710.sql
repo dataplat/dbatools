@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 15, 2017
+-- Last Modified: November 22, 2017
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -85,6 +85,9 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 
 -- Announcing the Modern Servicing Model for SQL Server
 -- https://blogs.msdn.microsoft.com/sqlreleaseservices/announcing-the-modern-servicing-model-for-sql-server/
+
+-- SQL Server Service Packs are discontinued starting from SQL Server 2017 
+-- https://support.microsoft.com/en-us/help/4041553
 
 -- Update Center for Microsoft SQL Server
 -- http://bit.ly/2pZptuQ
