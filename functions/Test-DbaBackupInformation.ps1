@@ -142,13 +142,14 @@ Function Test-DbaBackupInformation {
             }
 
             #Test all backups readable
-            Foreach ($path in ($DbHistory | Select-Object -ExpandProperty FullName)){
-                if(!(Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $path)){
+            $allpaths = $DbHistory | Select-Object -ExpandProperty FullName
+            $allpaths_validity = Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $allpaths
+            Foreach($path in $allpaths_validity) {
+                if ($path.fileexists -eq $false) {
                     Write-Message -Message "Backup File $path cannot be read" -Level Warning
                     $VerificationErrors++
                 }
             }
-
             #Test for LSN chain
             if ($true -ne $Continue){   
                 if (!($DbHistory | Test-DbaLsnChain)) {
