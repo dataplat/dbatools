@@ -197,6 +197,7 @@ Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
 . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1"
 Write-ImportTime -Text "Script: Maintenance"
 
+#region Aliases
 # I renamed this function to be more accurate - 1ms
 @(
 @{"AliasName" = "Copy-SqlAgentCategory"
@@ -361,6 +362,7 @@ Write-ImportTime -Text "Script: Maintenance"
 ) | ForEach-Object {
 if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
 }
+#endregion Aliases
 
 #region Post-Import Cleanup
 Write-ImportTime -Text "Loading Aliases"
