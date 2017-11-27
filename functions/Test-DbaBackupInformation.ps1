@@ -112,8 +112,8 @@ Function Test-DbaBackupInformation {
             }
             
             #Test no destinations exist
-            $DbFileCheck = (Get-DbaDatabaseFile -SqlInstance $RestoreInstance -Database $Database).PhysicalName
-            $OtherFileCheck = (Get-DbaDatabaseFile -SqlInstance $RestoreInstance -ExcludeDatabase $Database).PhysicalName
+            $DbFileCheck = (Get-DbaDatabaseFile -SqlInstance $RestoreInstance -Database $Database -WarningAction SilentlyContinue).PhysicalName
+            $OtherFileCheck = (Get-DbaDatabaseFile -SqlInstance $RestoreInstance -ExcludeDatabase $Database -WarningAction SilentlyContinue).PhysicalName
             ForEach ($path in ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object PhysicalName -Unique).physicalname){
                 if(Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $path){
                     if (($path -in $DBFileCheck) -and ($WithReplace -ne $True -and $Continue -ne $True)) {
