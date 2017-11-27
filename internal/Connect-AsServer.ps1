@@ -1,7 +1,7 @@
 Function Connect-AsServer
 {
-<# 
-.SYNOPSIS 
+<#
+.SYNOPSIS
 Internal function that creates SMO server object.
 
 .DESCRIPTION
@@ -29,23 +29,23 @@ Connects to SSAS on the local server
 		[object]$AsServer,
 		[switch]$ParameterConnection
 	)
-	
+
 	if ($AsServer.GetType() -eq [Microsoft.AnalysisServices.Server])
 	{
-		
+
 		if ($ParameterConnection)
 		{
 			$paramserver = New-Object Microsoft.AnalysisServices.Server
 			$paramserver.Connect("Data Source=$($AsServer.Name);Connect Timeout=2")
 			return $paramserver
 		}
-		
+
 		if ($AsServer.Connected -eq $false) { $AsServer.Connect("Data Source=$($AsServer.Name);Connect Timeout=3") }
 		return $AsServer
 	}
-	
+
 	$server = New-Object Microsoft.AnalysisServices.Server
-	
+
 	try
 	{
 		if ($ParameterConnection)
@@ -63,6 +63,6 @@ Connects to SSAS on the local server
 		$message = ($message -Split 'at System.Data.ProviderBase')[0]
 		throw "Can't connect to $asserver`: $message "
 	}
-	
+
 	return $server
 }
