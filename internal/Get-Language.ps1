@@ -1,7 +1,7 @@
 ﻿function Get-Language {
 	<#
 		.SYNOPSIS
-			Converts Microsoft's language ID to human readable format 
+			Converts Microsoft's language ID to human readable format
 
 		.DESCRIPTION
 			Converts Microsoft's language ID to human readable format
@@ -19,11 +19,11 @@
 		[int]$id
 	)
 	process {
-		
+
 		$culture = [System.Globalization.CultureInfo]::GetCultureInfo($id)
-		
-		$excludeProps = 'Parent','IetfLanguageTag','CompareInfo','TextInfo','IsNeutralCulture','NumberFormat','DateTimeFormat','Calendar'
-			,'OptionalCalendars','UseUserOverride','IsReadOnly'
+
+		$excludeProps = 'Parent', 'IetfLanguageTag', 'CompareInfo', 'TextInfo', 'IsNeutralCulture', 'NumberFormat', 'DateTimeFormat', 'Calendar'
+		, 'OptionalCalendars', 'UseUserOverride', 'IsReadOnly'
 		Select-DefaultView -InputObject $culture -ExcludeProperty $excludeProps
 	}
 }

@@ -1,86 +1,86 @@
 #ValidationTags#FlowControl,Pipeline#
 Function Get-DbaADObject {
 	<#
-.SYNOPSIS
-Get-DbaADObject tries to facilitate searching AD with dbatools, which ATM can't require AD cmdlets.
+	.SYNOPSIS
+	Get-DbaADObject tries to facilitate searching AD with dbatools, which ATM can't require AD cmdlets.
 
-.DESCRIPTION
-As working with multiple domains, forests, ldap filters, partitions, etc is quite hard to grasp, let's try to do "the right thing" here and
-facilitate everybody's work with it. It either returns the exact matched result or None if it isn't found. You can inspect the raw object
-calling GetUnderlyingObject() on the returned object.
+	.DESCRIPTION
+	As working with multiple domains, forests, ldap filters, partitions, etc is quite hard to grasp, let's try to do "the right thing" here and
+	facilitate everybody's work with it. It either returns the exact matched result or None if it isn't found. You can inspect the raw object
+	calling GetUnderlyingObject() on the returned object.
 
-.PARAMETER ADObject
-Pass in both the domain and the login name in Domain\sAMAccountName format (the one everybody is accustomed to)
-You can also pass a UserPrincipalName format (with the correct IdentityType, either with Domain\UserPrincipalName or UserPrincipalName@Domain)
-Beware: the "Domain" part of the UPN *can* be different from the real domain, see "UPN suffixes" (https://msdn.microsoft.com/en-us/library/windows/desktop/aa380525(v=vs.85).aspx)
-It's always best to pass the real domain name in (see the examples)
-For any other format, please beware that the domain part must always be specified (again, for the best result, before the slash)
+	.PARAMETER ADObject
+	Pass in both the domain and the login name in Domain\sAMAccountName format (the one everybody is accustomed to)
+	You can also pass a UserPrincipalName format (with the correct IdentityType, either with Domain\UserPrincipalName or UserPrincipalName@Domain)
+	Beware: the "Domain" part of the UPN *can* be different from the real domain, see "UPN suffixes" (https://msdn.microsoft.com/en-us/library/windows/desktop/aa380525(v=vs.85).aspx)
+	It's always best to pass the real domain name in (see the examples)
+	For any other format, please beware that the domain part must always be specified (again, for the best result, before the slash)
 
-.PARAMETER Type
-You *should* always know what you are asking for. Please pass in Computer,Group or User to help speeding up the search
+	.PARAMETER Type
+	You *should* always know what you are asking for. Please pass in Computer,Group or User to help speeding up the search
 
-.PARAMETER IdentityType
-By default objects are searched using sAMAccountName format, here you can pass different representation that need to match the passed in ADObject
+	.PARAMETER IdentityType
+	By default objects are searched using sAMAccountName format, here you can pass different representation that need to match the passed in ADObject
 
-.PARAMETER Credential
-Use this credential to connect to the domain and search for the needed ADObject. If not passed, uses the current process' one.
+	.PARAMETER Credential
+	Use this credential to connect to the domain and search for the needed ADObject. If not passed, uses the current process' one.
 
-.PARAMETER SearchAllDomains
-Search for the object in all domains connected to the current one. If you are unsure what domain the object is coming from,
-using this switch will search through all domains in your forest and also in the ones that are trusted. This is HEAVY, but it can save
-some headaches.
+	.PARAMETER SearchAllDomains
+	Search for the object in all domains connected to the current one. If you are unsure what domain the object is coming from,
+	using this switch will search through all domains in your forest and also in the ones that are trusted. This is HEAVY, but it can save
+	some headaches.
 
-.PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
-.NOTES
-Author: Niphlod, https://github.com/niphlod
-Tags:
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+	.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.EXAMPLE
-Get-DbaADObject -ADObject "contoso\ctrlb" -Type User
+	.NOTES
+	Author: Niphlod, https://github.com/niphlod
+	Tags:
+	dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+	Copyright (C) 2016 Chrissy LeMaire
+	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-Searches in the contoso domain for a ctrlb user
+	.EXAMPLE
+	Get-DbaADObject -ADObject "contoso\ctrlb" -Type User
 
-.EXAMPLE
-Get-DbaADObject -ADObject "ctrlb@contoso.com" -Type User -IdentityType UserPrincipalName
+	Searches in the contoso domain for a ctrlb user
 
-Searches in the contoso domain for a ctrlb user using the UserPrincipalName format. Again, beware of the UPN suffixes in elaborate AD structures!
+	.EXAMPLE
+	Get-DbaADObject -ADObject "ctrlb@contoso.com" -Type User -IdentityType UserPrincipalName
 
-.EXAMPLE
-Get-DbaADObject -ADObject "contoso\ctrlb@super.contoso.com" -Type User -IdentityType UserPrincipalName
+	Searches in the contoso domain for a ctrlb user using the UserPrincipalName format. Again, beware of the UPN suffixes in elaborate AD structures!
 
-Searches in the contoso domain for a ctrlb@super.contoso.com user using the UserPrincipalName format. This kind of search is better than the previous one
-because it takes into account possible UPN suffixes
+	.EXAMPLE
+	Get-DbaADObject -ADObject "contoso\ctrlb@super.contoso.com" -Type User -IdentityType UserPrincipalName
 
-.EXAMPLE
-Get-DbaADObject -ADObject "ctrlb@super.contoso.com" -Type User -IdentityType UserPrincipalName -SearchAllDomains
+	Searches in the contoso domain for a ctrlb@super.contoso.com user using the UserPrincipalName format. This kind of search is better than the previous one
+	because it takes into account possible UPN suffixes
 
-As a last resort, searches in all the current forest for a ctrlb@super.contoso.com user using the UserPrincipalName format
+	.EXAMPLE
+	Get-DbaADObject -ADObject "ctrlb@super.contoso.com" -Type User -IdentityType UserPrincipalName -SearchAllDomains
 
-.EXAMPLE
-Get-DbaADObject -ADObject "contoso\sqlcollaborative" -Type Group
+	As a last resort, searches in all the current forest for a ctrlb@super.contoso.com user using the UserPrincipalName format
 
-Searches in the contoso domain for a sqlcollaborative group
+	.EXAMPLE
+	Get-DbaADObject -ADObject "contoso\sqlcollaborative" -Type Group
 
-.EXAMPLE
-Get-DbaADObject -ADObject "contoso\SqlInstance2014$" -Type Group
+	Searches in the contoso domain for a sqlcollaborative group
 
-Searches in the contoso domain for a SqlInstance2014 computer (remember the ending $ for computer objects)
+	.EXAMPLE
+	Get-DbaADObject -ADObject "contoso\SqlInstance2014$" -Type Group
 
-.EXAMPLE
-Get-DbaADObject -ADObject "contoso\ctrlb" -Type User -EnableException
+	Searches in the contoso domain for a SqlInstance2014 computer (remember the ending $ for computer objects)
 
-Searches in the contoso domain for a ctrlb user, suppressing all error messages and throw exceptions that can be caught instead
+	.EXAMPLE
+	Get-DbaADObject -ADObject "contoso\ctrlb" -Type User -EnableException
+
+	Searches in the contoso domain for a ctrlb user, suppressing all error messages and throw exceptions that can be caught instead
 
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[string[]]$ADObject,
 		[ValidateSet("User", "Group", "Computer")]
 		[string]$Type,
@@ -88,11 +88,11 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 		[ValidateSet("DistinguishedName", "Guid", "Name", "SamAccountName", "Sid", "UserPrincipalName")]
 		[string]$IdentityType = "SamAccountName",
 
-		$Credential,
+		[PSCredential]$Credential,
 		[switch]$SearchAllDomains,
 		[switch][Alias('Silent')]$EnableException
 	)
-	BEGIN {
+	begin {
 		try {
 			Add-Type -AssemblyName System.DirectoryServices.AccountManagement
 		}
@@ -114,12 +114,12 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 				$searchClass = [System.DirectoryServices.AccountManagement.Principal]
 			}
 		}
-		
+
 		function Get-DbaADObjectInternal($Domain, $IdentityType, $obj, $EnableException) {
 			try {
 				# can we simply resolve the passed domain ? This has the benefit of raising almost instantly if the domain is not valid
-				$Context = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext('Domain', $Domain)
-				$DContext = [System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($Context)
+				New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext('Domain', $Domain) | Out-Null
+				[System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($Context) | Out-Null
 				if ($Credential) {
 					$ctx = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('Domain', $Domain, $Credential.UserName, $Credential.GetNetworkCredential().Password)
 				}
@@ -134,7 +134,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 			}
 		}
 	}
-	PROCESS {
+	process {
 		if (Test-FunctionInterrupt) { return }
 		foreach ($ADObj in $ADObject) {
 			# passing the domain as the first part before the \ wins always in defining the domain to search into
@@ -150,7 +150,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 						$obj, $Domain = $Splitted
 					}
 					else {
-						# if searching for a UserPrincipalName format without a specific domain passed in before the slash, 
+						# if searching for a UserPrincipalName format without a specific domain passed in before the slash,
 						# we can assume there are no custom UPN suffixes in place
 						$obj, $Domain = $AdObj, $Splitted[1]
 					}
@@ -178,7 +178,7 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 						}
 					}
 					# we are very unlucky, let's search also in all trusted domains
-					$AllTrusted = ($ForestObject.GetAllTrustRelationships().TopLevelNames | where Status -eq 'Enabled').Name
+					$AllTrusted = ($ForestObject.GetAllTrustRelationships().TopLevelNames | Where-Object Status -eq 'Enabled').Name
 					foreach ($ForestDomain in $AllTrusted) {
 						Write-Message -Message "Searching for $obj under domain $ForestDomain in $IdentityType format" -Level 4 -EnableException $EnableException
 						$found = Get-DbaADObjectInternal -Domain $ForestDomain -IdentityType $IdentityType -obj $obj
@@ -193,7 +193,6 @@ Searches in the contoso domain for a ctrlb user, suppressing all error messages 
 				Write-Message -Message "Searching for $obj under domain $domain in $IdentityType format" -Level 4 -EnableException $EnableException
 				Get-DbaADObjectInternal -Domain $Domain -IdentityType $IdentityType -obj $obj
 			}
-			
 		}
 	}
 }
