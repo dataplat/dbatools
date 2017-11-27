@@ -1,6 +1,8 @@
 ﻿$scriptBlock = {
 	Param (
-		$ModuleRoot
+		$ModuleRoot,
+		
+		$DllRoot
 	)
 	
 	try
