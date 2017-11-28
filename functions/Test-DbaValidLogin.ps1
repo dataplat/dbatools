@@ -52,14 +52,14 @@ function Test-DbaValidLogin {
 			Tests all logins in the current Active Directory domain that are either disabled or do not exist on the SQL Server instance Dev01
 
 		.EXAMPLE
-			Test-DbaValidLogin -SqlInstance Dev01 -FilterBy GroupsOnly
+			Test-DbaValidLogin -SqlInstance Dev01 -FilterBy GroupsOnly | Select-Object -Properties *
 
-			Tests all Active Directory groups that have logins on Dev01.
+			Tests all Active Directory groups that have logins on Dev01, and shows all information for those logins
 
 		.EXAMPLE
-			Test-DbaValidLogin -SqlInstance Dev01 -ExcludeDomains subdomain
+			Test-DbaValidLogin -SqlInstance Dev01 -IgnoreDomains testdomain
 
-			Tests all logins excluding any that are from the subdomain Domain
+			Tests all Domain logins excluding any that are from the testdomain
 
 	#>
 	[CmdletBinding()]
@@ -179,7 +179,7 @@ function Test-DbaValidLogin {
 					AllowReversiblePasswordEncryption = $null
 					CannotChangePassword              = $null
 					PasswordExpired                   = $null
-					Lockedout                         = $null
+					LockedOut                         = $null
 					Enabled                           = $null
 					PasswordNeverExpires              = $null
 					PasswordNotRequired               = $null
@@ -192,7 +192,7 @@ function Test-DbaValidLogin {
 						AllowReversiblePasswordEncryption = [bool]($uac.Value -band $mappingRaw['ENCRYPTED_TEXT_PASSWORD_ALLOWED'])
 						CannotChangePassword              = [bool]($uac.Value -band $mappingRaw['PASSWD_CANT_CHANGE'])
 						PasswordExpired                   = [bool]($uac.Value -band $mappingRaw['PASSWORD_EXPIRED'])
-						Lockedout                         = [bool]($uac.Value -band $mappingRaw['LOCKOUT'])
+						LockedOut                         = [bool]($uac.Value -band $mappingRaw['LOCKOUT'])
 						Enabled                           = !($uac.Value -band $mappingRaw['ACCOUNTDISABLE'])
 						PasswordNeverExpires              = [bool]($uac.Value -band $mappingRaw['DONT_EXPIRE_PASSWD'])
 						PasswordNotRequired               = [bool]($uac.Value -band $mappingRaw['PASSWD_NOTREQD'])
@@ -212,7 +212,7 @@ function Test-DbaValidLogin {
 					AllowReversiblePasswordEncryption = $additionalProps.AllowReversiblePasswordEncryption
 					CannotChangePassword              = $additionalProps.CannotChangePassword
 					PasswordExpired                   = $additionalProps.PasswordExpired
-					Lockedout                         = $additionalProps.Lockedout
+					LockedOut                         = $additionalProps.LockedOut
 					Enabled                           = $additionalProps.Enabled
 					PasswordNeverExpires              = $additionalProps.PasswordNeverExpires
 					PasswordNotRequired               = $additionalProps.PasswordNotRequired
@@ -221,7 +221,7 @@ function Test-DbaValidLogin {
 					UserAccountControl                = $additionalProps.UserAccountControl
 				}
 				
-				Select-DefaultView -InputObject $rtn -ExcludeProperty UserAccountControl
+				Select-DefaultView -InputObject $rtn -ExcludeProperty AccountNotDelegated, AllowReversiblePasswordEncryption, CannotChangePassword, PasswordNeverExpires, SmartcardLogonRequired, TrustedForDelegation, UserAccountControl
 
 			}
 
@@ -262,7 +262,7 @@ function Test-DbaValidLogin {
 					AllowReversiblePasswordEncryption = $null
 					CannotChangePassword              = $null
 					PasswordExpired                   = $null
-					Lockedout                         = $null
+					LockedOut                         = $null
 					Enabled                           = $null
 					PasswordNeverExpires              = $null
 					PasswordNotRequired               = $null
@@ -271,7 +271,7 @@ function Test-DbaValidLogin {
 					UserAccountControl                = $null
 				}
 
-				Select-DefaultView -InputObject $rtn -ExcludeProperty UserAccountControl
+				Select-DefaultView -InputObject $rtn -ExcludeProperty AccountNotDelegated, AllowReversiblePasswordEncryption, CannotChangePassword, PasswordNeverExpires, SmartcardLogonRequired, TrustedForDelegation, UserAccountControl
 				
 			}
 		}
