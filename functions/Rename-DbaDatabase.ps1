@@ -1,7 +1,7 @@
 Function Rename-DbaDatabase {
 	<#
 	.SYNOPSIS
-		Changes database name, logical file names, file group names and physical file names (optionally handling the move).
+		Changes database name, logical file names, file group names and physical file names (optionally handling the move). BETA VERSION.
 
 	.DESCRIPTION
 		Can change every database metadata that can be renamed.
@@ -127,11 +127,9 @@ Function Rename-DbaDatabase {
 	.NOTES
 		Author: niphlod
 
-		dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-		Copyright (C) 2016 Chrissy LeMaire
-		This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-		This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-		You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		Website: https://dbatools.io
+		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.LINK
 		https://dbatools.io/Rename-DbaDatabase
@@ -567,7 +565,7 @@ Function Rename-DbaDatabase {
 					if ( !$InstanceFiles[$Server_Id].ContainsKey($dirname) ) {
 						$InstanceFiles[$Server_Id][$dirname] = @{}
 						try {
-							$dirfiles = Get-DbaFile -SqlInstance $server -Path $dirname -Silent
+							$dirfiles = Get-DbaFile -SqlInstance $server -Path $dirname -EnableException
 						}
 						catch {
 							Write-Message -Level Warning -Message "Failed to enumerate existing files at $dirname, move could go wrong"
@@ -586,11 +584,6 @@ Function Rename-DbaDatabase {
 							'MemoryOptimizedDataFileGroup' { 'MMO' }
 							'FileStreamDataFileGroup' { 'FS' }
 							default { 'STD' }
-						}
-						if ($FileType -in @('FS', 'MMO')) {
-							## FIXME (do we wanna handle FS and MMO "moving" ? If so, renaming the dir is enough ?? )
-							Write-Message -Level VeryVerbose -Message "FileStream/MMO moving is not supported ATM, skipping"
-							continue
 						}
 						$FNName = $logical.FileName
 						$FNNameDir = [IO.Path]::GetDirectoryName($FNName)
