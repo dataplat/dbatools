@@ -80,12 +80,12 @@ function Test-DbaSqlPath {
 		$groupSize = 100
 		$groups = $Path | Group-Object -Property { [math]::Floor($counter.Value++ / $groupSize) }
 		foreach($g in $groups) {
-			$paths_batch = $g.Group
-			$q = @()
-			foreach($p in $paths_batch) {
-				$q += "EXEC master.dbo.xp_fileexist '$p'"
+			$PathsBatch = $g.Group
+			$query = @()
+			foreach($p in $PathsBatch) {
+				$query += "EXEC master.dbo.xp_fileexist '$p'"
 			}
-			$sql = $q -join ';'
+			$sql = $query -join ';'
 			$batchresult = $server.ConnectionContext.ExecuteWithResults($sql)
 			if ($Path.Count -eq 1) {
 				if ($batchresult.Tables.rows[0] -eq $true -or $batchresult.Tables.rows[1] -eq $true) {
@@ -96,10 +96,10 @@ function Test-DbaSqlPath {
 			} else {
 				$i = 0
 				foreach($r in $batchresult.tables.rows) {
-					$doespass = $r[0] -eq $true -or $r[1] -eq $true
+					$DoesPass = $r[0] -eq $true -or $r[1] -eq $true
 					[pscustomobject]@{
-						filepath = $paths_batch[$i]
-						fileexists = $doespass
+						FilePath   = $PathsBatch[$i]
+						FileExists = $DoesPass
 					}
 					$i += 1
 				}
