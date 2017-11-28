@@ -17,10 +17,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 				- Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
 				- Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
 		#>
-		$paramCount = 3
+		$paramCount = 4
 		$defaultParamCount = 11
 		[object[]]$params = (Get-ChildItem function:\Test-DbaTempDbConfiguration).Parameters.Keys
-		$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
+		$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'Detailed'
 		It "Should contain our specific parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}
