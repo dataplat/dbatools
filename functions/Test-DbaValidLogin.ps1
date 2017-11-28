@@ -30,11 +30,14 @@ function Test-DbaValidLogin {
 		.PARAMETER IgnoreDomains
 			Specifies a list of Active Directory domains to ignore. By default, all domains in the forest as well as all trusted domains are traversed.
 
+		.PARAMETER Detailed
+			Output all properties, will be depreciated in 1.0.0 release.
+
 		.PARAMETER EnableException
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
+
 		.NOTES
 			Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
 			Author: Chrissy LeMaire (@cl), netnerds.net
@@ -73,10 +76,13 @@ function Test-DbaValidLogin {
 		[ValidateSet("LoginsOnly", "GroupsOnly", "None")]
 		[string]$FilterBy = "None",
 		[string[]]$IgnoreDomains,
+		[switch]$Detailed,
 		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
+		Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
+
 		if ($IgnoreDomains) {
 			$IgnoreDomainsNormalized = $IgnoreDomains.ToUpper()
 			Write-Message -Message ("Excluding logins for domains " + ($IgnoreDomains -join ',')) -Level Verbose
@@ -220,7 +226,7 @@ function Test-DbaValidLogin {
 					TrustedForDelegation              = $additionalProps.TrustedForDelegation
 					UserAccountControl                = $additionalProps.UserAccountControl
 				}
-				
+
 				Select-DefaultView -InputObject $rtn -ExcludeProperty AccountNotDelegated, AllowReversiblePasswordEncryption, CannotChangePassword, PasswordNeverExpires, SmartcardLogonRequired, TrustedForDelegation, UserAccountControl
 
 			}
@@ -272,7 +278,7 @@ function Test-DbaValidLogin {
 				}
 
 				Select-DefaultView -InputObject $rtn -ExcludeProperty AccountNotDelegated, AllowReversiblePasswordEncryption, CannotChangePassword, PasswordNeverExpires, SmartcardLogonRequired, TrustedForDelegation, UserAccountControl
-				
+
 			}
 		}
 	}
