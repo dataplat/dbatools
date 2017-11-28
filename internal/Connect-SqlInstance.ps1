@@ -1,5 +1,5 @@
 function Connect-SqlInstance {
-    <#
+	<#
         .SYNOPSIS
             Internal function to establish smo connections.
 
@@ -32,20 +32,22 @@ function Connect-SqlInstance {
 
             Connect to the Server sql2014 with native credentials.
     #>
-
 	[CmdletBinding()]
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidDefaultValueSwitchParameter", "")]
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingEmptyCatchBlock", "")]
 	param (
 		[Parameter(Mandatory = $true)][object]$SqlInstance,
 		[object]$SqlCredential,
 		[switch]$ParameterConnection,
 		[switch]$RegularUser = $true,
-		[int]$MinimumVersion
+		[int]$MinimumVersion,
+		[switch]$NonPooled
 	)
 
 	#region Utility functions
 	function Invoke-TEPPCacheUpdate {
 		[CmdletBinding()]
-		Param (
+		param (
 			[System.Management.Automation.ScriptBlock]
 			$ScriptBlock
 		)
@@ -73,7 +75,7 @@ function Connect-SqlInstance {
 	#endregion Utility functions
 
 	#region Ensure Credential integrity
-    <#
+	<#
     Usually, the parameter type should have been not object but off the PSCredential type.
     When binding null to a PSCredential type parameter on PS3-4, it'd then show a prompt, asking for username and password.
 
@@ -87,7 +89,7 @@ function Connect-SqlInstance {
 	#endregion Ensure Credential integrity
 
 	#region Safely convert input into instance parameters
-    <#
+	<#
     This is a bit ugly, but:
     In some cases functions would directly pass their own input through when the parameter on the calling function was typed as [object[]].
     This would break the base parameter class, as it'd automatically be an array and the parameterclass is not designed to handle arrays (Shouldn't have to).
@@ -110,8 +112,14 @@ function Connect-SqlInstance {
 	if ($ConvertedSqlInstance.InputObject.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
 		$server = $ConvertedSqlInstance.InputObject
 		if ($server.ConnectionContext.IsOpen -eq $false) {
-			$server.ConnectionContext.SqlConnectionObject.Open()
-		 }
+			if ($NonPooled) {
+				$server.ConnectionContext.Connect()
+			}
+			else {
+				$server.ConnectionContext.SqlConnectionObject.Open()
+			}
+			
+		}
 
 		# Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
 		[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($ConvertedSqlInstance.FullSmoName.ToLower(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
@@ -154,7 +162,7 @@ function Connect-SqlInstance {
 	try {
 		$server.ConnectionContext.ConnectTimeout = [Sqlcollaborative.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout
 
-		if ($SqlCredential.Username -ne $null) {
+		if ($null -ne $SqlCredential.Username) {
 			$username = ($SqlCredential.Username).TrimStart("\")
 
 			if ($username -like "*\*") {
@@ -174,16 +182,21 @@ function Connect-SqlInstance {
 		}
 	}
 	catch { }
-	
+
 	try {
-		$server.ConnectionContext.SqlConnectionObject.Open()
-	 }
-	 catch {
+		if ($NonPooled) {
+			$server.ConnectionContext.Connect()
+		}
+		else {
+			$server.ConnectionContext.SqlConnectionObject.Open()
+		}
+	}
+	catch {
 		$message = $_.Exception.InnerException.InnerException
-	 	if ($message) {
-	 		$message = $message.ToString()
-	 		$message = ($message -Split '-->')[0]
-	 		$message = ($message -Split 'at System.Data.SqlClient')[0]
+		if ($message) {
+			$message = $message.ToString()
+			$message = ($message -Split '-->')[0]
+			$message = ($message -Split 'at System.Data.SqlClient')[0]
 			$message = ($message -Split 'at System.Data.ProviderBase')[0]
 			
 			if ($message -match "network path was not found") {
@@ -191,12 +204,12 @@ function Connect-SqlInstance {
 			}
 			
 			throw "Can't connect to $ConvertedSqlInstance`: $message "
-	 	}
-	 	else {
-	 		throw $_
-	 	}
-	 }
-
+		}
+		else {
+			throw $_
+		}
+	}
+	
 	if ($MinimumVersion -and $server.VersionMajor) {
 		if ($server.versionMajor -lt $MinimumVersion) {
 			throw "SQL Server version $MinimumVersion required - $server not supported."
