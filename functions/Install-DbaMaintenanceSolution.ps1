@@ -1,106 +1,107 @@
 function Install-DbaMaintenanceSolution {
 	<#
-    .SYNOPSIS
-        Download and Install SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)
-    .DESCRIPTION
-        This script will download and install the latest version of SQL Server Maintenance Solution created by Ola Hallengren
+		.SYNOPSIS
+			Download and Install SQL Server Maintenance Solution created by Ola Hallengren (https://ola.hallengren.com)
+		.DESCRIPTION
+			This script will download and install the latest version of SQL Server Maintenance Solution created by Ola Hallengren
 
-    .PARAMETER SqlInstance
-        The target SQL Server instance
+		.PARAMETER SqlInstance
+			The target SQL Server instance
 
-    .PARAMETER SqlCredential
-        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-        To connect as a different Windows user, run PowerShell as that user.
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+			To connect as a different Windows user, run PowerShell as that user.
 
-    .PARAMETER Database
-        The database where Ola Hallengren's solution will be installed. Defaults to master
+		.PARAMETER Database
+			The database where Ola Hallengren's solution will be installed. Defaults to master
 
-    .PARAMETER BackupLocation
-        Location of the backup root directory. If this is not supplied, the default backup directory will be used.
+		.PARAMETER BackupLocation
+			Location of the backup root directory. If this is not supplied, the default backup directory will be used.
 
-    .PARAMETER CleanupTime
-        Time in hours, after which backup files are deleted
+		.PARAMETER CleanupTime
+			Time in hours, after which backup files are deleted
 
-    .PARAMETER OutputFileDirectory
-        Specify the output file directory
+		.PARAMETER OutputFileDirectory
+			Specify the output file directory
 
-    .PARAMETER ReplaceExisting
-        If the objects are already present in the chosen database, we drop and recreate them
+		.PARAMETER ReplaceExisting
+			If the objects are already present in the chosen database, we drop and recreate them
 
-    .PARAMETER LogToTable
-        Log commands to a table
+		.PARAMETER LogToTable
+			Log commands to a table
 
-    .PARAMETER Solution
-        You can choose to install the complete solution (All) or only one of:  Backup / IntegrityCheck / IndexOptimize
+		.PARAMETER Solution
+			You can choose to install the complete solution (All) or only one of:  Backup / IntegrityCheck / IndexOptimize
 
-    .PARAMETER InstallJobs
-        Create SQL Agent Jobs
+		.PARAMETER InstallJobs
+			Create SQL Agent Jobs
 
-    .PARAMETER WhatIf
-        Shows what would happen if the command were to run. No actions are actually performed.
+		.PARAMETER WhatIf
+			Shows what would happen if the command were to run. No actions are actually performed.
 
-    .PARAMETER Confirm
-        Prompts you for confirmation before executing any changing operations within the command.
+		.PARAMETER Confirm
+			Prompts you for confirmation before executing any changing operations within the command.
 
-    .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .NOTES
-        Author: Viorel Ciucu, viorel.ciucu@gmail.com, cviorel.com
+		.NOTES
+			Author: Viorel Ciucu, viorel.ciucu@gmail.com, cviorel.com
 
-    .LINK
-        http://dbatools.io/Install-DbaMaintenanceSolution
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-    .EXAMPLE
-        Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72
+		.LINK
+			http://dbatools.io/Install-DbaMaintenanceSolution
 
-        Installs Ola Hallengren's Solution objects on RES14224 in the DBA database.
-        Backups will default to the default Backup Directory.
-        If the Maintenance Solution already exists, the script will be halted.
+		.EXAMPLE
+			Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -CleanupTime 72
 
-    .EXAMPLE
-        Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -ReplaceExisting -CleanupTime 72 -LogToTable -Solution "Backup" -BackupLocation "Z:\SQLBackup" -InstallJobs
+			Installs Ola Hallengren's Solution objects on RES14224 in the DBA database.
+			Backups will default to the default Backup Directory.
+			If the Maintenance Solution already exists, the script will be halted.
 
-    .EXAMPLE
-        Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72
+		.EXAMPLE
+			Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -ReplaceExisting -CleanupTime 72 -LogToTable -Solution "Backup" -BackupLocation "Z:\SQLBackup" -InstallJobs
 
-        This will create the Ola Hallengren's Solution objects. Existing objects are not affected in any way.
+		.EXAMPLE
+			Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72
 
-    .EXAMPLE
-        Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72 -ReplaceExisting
+			This will create the Ola Hallengren's Solution objects. Existing objects are not affected in any way.
 
-        This will drop and then recreate the Ola Hallengren's Solution objects
-        The cleanup script will drop and recreate:
-            - TABLE [dbo].[CommandLog]
-            - STORED PROCEDURE [dbo].[CommandExecute]
-            - STORED PROCEDURE [dbo].[DatabaseBackup]
-            - STORED PROCEDURE [dbo].[DatabaseIntegrityCheck]
-            - STORED PROCEDURE [dbo].[IndexOptimize]
+		.EXAMPLE
+			Install-DbaMaintenanceSolution -SqlInstance RES14224 -Database DBA -BackupLocation "Z:\SQLBackup" -CleanupTime 72 -ReplaceExisting
 
-        The follwing SQL Agent jobs will be deleted:
-            - 'Output File Cleanup'
-            - 'IndexOptimize - USER_DATABASES'
-            - 'sp_delete_backuphistory'
-            - 'DatabaseBackup - USER_DATABASES - LOG'
-            - 'DatabaseBackup - SYSTEM_DATABASES - FULL'
-            - 'DatabaseBackup - USER_DATABASES - FULL'
-            - 'sp_purge_jobhistory'
-            - 'DatabaseIntegrityCheck - SYSTEM_DATABASES'
-            - 'CommandLog Cleanup'
-            - 'DatabaseIntegrityCheck - USER_DATABASES'
-            - 'DatabaseBackup - USER_DATABASES - DIFF'
+			This will drop and then recreate the Ola Hallengren's Solution objects
+			The cleanup script will drop and recreate:
+				- TABLE [dbo].[CommandLog]
+				- STORED PROCEDURE [dbo].[CommandExecute]
+				- STORED PROCEDURE [dbo].[DatabaseBackup]
+				- STORED PROCEDURE [dbo].[DatabaseIntegrityCheck]
+				- STORED PROCEDURE [dbo].[IndexOptimize]
 
-    #>
-
-
+			The follwing SQL Agent jobs will be deleted:
+				- 'Output File Cleanup'
+				- 'IndexOptimize - USER_DATABASES'
+				- 'sp_delete_backuphistory'
+				- 'DatabaseBackup - USER_DATABASES - LOG'
+				- 'DatabaseBackup - SYSTEM_DATABASES - FULL'
+				- 'DatabaseBackup - USER_DATABASES - FULL'
+				- 'sp_purge_jobhistory'
+				- 'DatabaseIntegrityCheck - SYSTEM_DATABASES'
+				- 'CommandLog Cleanup'
+				- 'DatabaseIntegrityCheck - USER_DATABASES'
+				- 'DatabaseBackup - USER_DATABASES - DIFF'
+	#>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias('ServerInstance', 'SqlServer')]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[DbaInstance[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
 		[object]$Database = "master",
 		[string]$BackupLocation,
@@ -127,7 +128,7 @@ function Install-DbaMaintenanceSolution {
 
 			if ((Test-Bound -Parameter ReplaceExisting -Not)) {
 				$procs = Get-DbaSqlModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
-				$table = Get-DbaTable -SqlInstance $server -Database $Database -Table CommandLog -IncludeSystemDBs  | where Database -eq $Database
+				$table = Get-DbaTable -SqlInstance $server -Database $Database -Table CommandLog -IncludeSystemDBs  | Where-Object Database -eq $Database
 
 				if ($null -ne $procs -or $null -ne $table) {
 					Stop-Function -Message "The Maintenance Solution already exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."
@@ -180,13 +181,12 @@ function Install-DbaMaintenanceSolution {
 			}
 
 			$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-			$shell = New-Object -ComObject Shell.Application
 			$zipfile = "$temp\ola.zip"
 
 			# Start the download
 			$url = "https://github.com/olahallengren/sql-server-maintenance-solution/archive/master.zip"
 			try {
-				$job = Start-BitsTransfer -Source $url -DisplayName 'Downloading SQL Server Maintenance Solution - https://ola.hallengren.com' -Destination $zipfile -ErrorAction Stop
+				Start-BitsTransfer -Source $url -DisplayName 'Downloading SQL Server Maintenance Solution - https://ola.hallengren.com' -Destination $zipfile -ErrorAction Stop
 			}
 			catch {
 				Stop-Function -Message "You need to re-run the script, there is a problem with the proxy or the download link has changed." -ErrorRecord $_
@@ -286,7 +286,7 @@ function Install-DbaMaintenanceSolution {
 					Write-Message -Level Output -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution"
 					$jobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
 					if ($jobs) {
-						$jobs | foreach { Remove-DbaAgentJob -SqlInstance $instance -Job $_.name }
+						$jobs | ForEach-Object { Remove-DbaAgentJob -SqlInstance $instance -Job $_.name }
 					}
 				}
 			}
@@ -318,14 +318,14 @@ function Install-DbaMaintenanceSolution {
 		if ((Test-Path $path)) {
 			Remove-Item -Path $temp\sql-server-maintenance-solution-master -Recurse -Force -ErrorAction SilentlyContinue
 		}
-		Write-Message -Level Output -Message "Installation complete"
-	}
-	end {
+
 		# Only here due to need for non-pooled connection in this command
 		try {
 			$server.ConnectionContext.Disconnect()
 		}
 		catch {
 		}
+
+		Write-Message -Level Output -Message "Installation complete"
 	}
 }
