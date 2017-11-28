@@ -31,13 +31,13 @@ function Test-DbaValidLogin {
 			Specifies a list of Active Directory domains to ignore. By default, all domains in the forest as well as all trusted domains are traversed.
 
 		.PARAMETER Detailed
-			If this switch is enabled, more detailed results are returned. This includes the Active Directory account type and whether the login on SQL Server is enabled or disabled.
+			Output all properties, will be depreciated in 1.0.0 release.
 
 		.PARAMETER EnableException
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
+
 		.NOTES
 			Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
 			Author: Chrissy LeMaire (@cl), netnerds.net
@@ -55,14 +55,14 @@ function Test-DbaValidLogin {
 			Tests all logins in the current Active Directory domain that are either disabled or do not exist on the SQL Server instance Dev01
 
 		.EXAMPLE
-			Test-DbaValidLogin -SqlInstance Dev01 -FilterBy GroupsOnly -Detailed
+			Test-DbaValidLogin -SqlInstance Dev01 -FilterBy GroupsOnly | Select-Object -Property *
 
-			Tests all Active Directory groups that have logins on Dev01, returning a detailed view.
+			Tests all Active Directory groups that have logins on Dev01, and shows all information for those logins
 
 		.EXAMPLE
-			Test-DbaValidLogin -SqlInstance Dev01 -ExcludeDomains subdomain
+			Test-DbaValidLogin -SqlInstance Dev01 -IgnoreDomains testdomain
 
-			Tests all logins excluding any that are from the subdomain Domain
+			Tests all Domain logins excluding any that are from the testdomain
 
 	#>
 	[CmdletBinding()]
@@ -81,12 +81,11 @@ function Test-DbaValidLogin {
 	)
 
 	begin {
+		Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
+
 		if ($IgnoreDomains) {
 			$IgnoreDomainsNormalized = $IgnoreDomains.ToUpper()
 			Write-Message -Message ("Excluding logins for domains " + ($IgnoreDomains -join ',')) -Level Verbose
-		}
-		if ($Detailed) {
-			Write-Message -Message "Detailed is deprecated and will be removed in dbatools 1.0." -Once "DetailedDeprecation" -Level Warning
 		}
 
 		$mappingRaw = @{
@@ -186,7 +185,7 @@ function Test-DbaValidLogin {
 					AllowReversiblePasswordEncryption = $null
 					CannotChangePassword              = $null
 					PasswordExpired                   = $null
-					Lockedout                         = $null
+					LockedOut                         = $null
 					Enabled                           = $null
 					PasswordNeverExpires              = $null
 					PasswordNotRequired               = $null
@@ -199,7 +198,7 @@ function Test-DbaValidLogin {
 						AllowReversiblePasswordEncryption = [bool]($uac.Value -band $mappingRaw['ENCRYPTED_TEXT_PASSWORD_ALLOWED'])
 						CannotChangePassword              = [bool]($uac.Value -band $mappingRaw['PASSWD_CANT_CHANGE'])
 						PasswordExpired                   = [bool]($uac.Value -band $mappingRaw['PASSWORD_EXPIRED'])
-						Lockedout                         = [bool]($uac.Value -band $mappingRaw['LOCKOUT'])
+						LockedOut                         = [bool]($uac.Value -band $mappingRaw['LOCKOUT'])
 						Enabled                           = !($uac.Value -band $mappingRaw['ACCOUNTDISABLE'])
 						PasswordNeverExpires              = [bool]($uac.Value -band $mappingRaw['DONT_EXPIRE_PASSWD'])
 						PasswordNotRequired               = [bool]($uac.Value -band $mappingRaw['PASSWD_NOTREQD'])
@@ -219,7 +218,7 @@ function Test-DbaValidLogin {
 					AllowReversiblePasswordEncryption = $additionalProps.AllowReversiblePasswordEncryption
 					CannotChangePassword              = $additionalProps.CannotChangePassword
 					PasswordExpired                   = $additionalProps.PasswordExpired
-					Lockedout                         = $additionalProps.Lockedout
+					LockedOut                         = $additionalProps.LockedOut
 					Enabled                           = $additionalProps.Enabled
 					PasswordNeverExpires              = $additionalProps.PasswordNeverExpires
 					PasswordNotRequired               = $additionalProps.PasswordNotRequired
@@ -227,12 +226,8 @@ function Test-DbaValidLogin {
 					TrustedForDelegation              = $additionalProps.TrustedForDelegation
 					UserAccountControl                = $additionalProps.UserAccountControl
 				}
-				if ($Detailed) {
-					Select-DefaultView -InputObject $rtn -ExcludeProperty UserAccountControl
-				}
-				else {
-					Select-DefaultView -InputObject $rtn -ExcludeProperty UserAccountControl, AccountNotDelegated, AllowReversiblePasswordEncryption, CannotChangePassword, PasswordNeverExpires, SmartcardLogonRequired, TrustedForDelegation
-				}
+
+				Select-DefaultView -InputObject $rtn -ExcludeProperty AccountNotDelegated, AllowReversiblePasswordEncryption, CannotChangePassword, PasswordNeverExpires, SmartcardLogonRequired, TrustedForDelegation, UserAccountControl
 
 			}
 
@@ -273,7 +268,7 @@ function Test-DbaValidLogin {
 					AllowReversiblePasswordEncryption = $null
 					CannotChangePassword              = $null
 					PasswordExpired                   = $null
-					Lockedout                         = $null
+					LockedOut                         = $null
 					Enabled                           = $null
 					PasswordNeverExpires              = $null
 					PasswordNotRequired               = $null
@@ -281,12 +276,9 @@ function Test-DbaValidLogin {
 					TrustedForDelegation              = $null
 					UserAccountControl                = $null
 				}
-				if ($Detailed) {
-					Select-DefaultView -InputObject $rtn -ExcludeProperty UserAccountControl
-				}
-				else {
-					Select-DefaultView -InputObject $rtn -ExcludeProperty UserAccountControl, AccountNotDelegated, AllowReversiblePasswordEncryption, CannotChangePassword, PasswordNeverExpires, SmartcardLogonRequired, TrustedForDelegation
-				}
+
+				Select-DefaultView -InputObject $rtn -ExcludeProperty AccountNotDelegated, AllowReversiblePasswordEncryption, CannotChangePassword, PasswordNeverExpires, SmartcardLogonRequired, TrustedForDelegation, UserAccountControl
+
 			}
 		}
 	}

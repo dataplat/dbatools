@@ -1,4 +1,4 @@
-﻿<#
+<#
 	The below statement stays in for every test you build.
 #>
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
@@ -17,10 +17,10 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 				- Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
 				- Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
 		#>
-		$paramCount = 4
+		$paramCount = 8
 		$defaultParamCount = 11
-		[object[]]$params = (Get-ChildItem function:\Test-DbaTempDbConfiguration).Parameters.Keys
-		$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'Detailed'
+		[object[]]$params = (Get-ChildItem function:\Test-DbaValidLogin).Parameters.Keys
+		$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'ExcludeLogin', 'FilterBy', 'IgnoreDomains', 'EnableException', 'Detailed'
 		It "Should contain our specific parameters" {
 			( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
 		}
@@ -29,25 +29,22 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 		}
 	}
 }
-
+<#
+Did not include these tests yet as I was unsure if AppVeyor was capable of testing domain logins. Included these for future use.
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Context "Command actually works" {
-		$results = Test-DbaTempDbConfiguration -SqlInstance $script:instance2
-		It "Should have correct properties" {
-			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Rule,Recommended,CurrentSetting,IsBestPractice,Notes'.Split(',')
+		$results = Test-DbaValidLogin -SqlInstance $script:instance2
+		It "Should return correct properties" {
+			$ExpectedProps = 'AccountNotDelegated,AllowReversiblePasswordEncryption,CannotChangePassword,DisabledInSQLServer,Domain,Enabled,Found,LockedOut,Login,PasswordExpired,PasswordNeverExpires,PasswordNotRequired,Server,SmartcardLogonRequired,TrustedForDelegation,Type,UserAccountControl'.Split(',')
 			($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 		}
 
-		$rule = 'File Location'
-		It "Should return false for IsBestPractice with rule: $rule" {
-			($results | Where-Object Rule -match $rule).IsBestPractice | Should Be $false
+		$Type = 'User'
+		It "Should return true if Account type is: $Type" {
+			($results | Where-Object Type -match $Type) | Should Be $true
 		}
-		It "Should return false for Recommended with rule: $rule" {
-			($results | Where-Object Rule -match $rule).Recommended | Should Be $false
-		}
-		$rule = 'TF 1118 Enabled'
-		It "Should return true for IsBestPractice with rule: $rule" {
-			($results | Where-Object Rule -match $rule).Recommended | Should Be $true
+		It "Should return true if Account is Found" {
+			($results | Where-Object Found).Found | Should Be $true
 		}
 	}
-}
+}#>

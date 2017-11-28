@@ -56,41 +56,53 @@ function Test-DbaSqlPath {
 
 	#>
 	[CmdletBinding()]
-	[OutputType([bool])]
 	param (
 		[Parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstance[]]$SqlInstance,
+		[DbaInstance]$SqlInstance,
 		[PSCredential]$SqlCredential,
 		[Parameter(Mandatory = $true)]
-		[string]$Path,
+		[string[]]$Path,
 		[switch][Alias('Silent')]$EnableException
 	)
-
+	begin {
+		try {
+			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+		}
+		catch {
+			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
+		}
+	}
 	process {
-		foreach ($instance in $SqlInstance) {
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+		if (Test-FunctionInterrupt) { return }
+		
+		$counter = [pscustomobject] @{ Value = 0 }
+		$groupSize = 100
+		$groups = $Path | Group-Object -Property { [math]::Floor($counter.Value++ / $groupSize) }
+		foreach($g in $groups) {
+			$PathsBatch = $g.Group
+			$query = @()
+			foreach($p in $PathsBatch) {
+				$query += "EXEC master.dbo.xp_fileexist '$p'"
 			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
-
-			Write-Message -Level VeryVerbose -Message "Checking access to $path for $instance."
-			$sql = "EXEC master.dbo.xp_fileexist '$path'"
-			try {
-				Write-Message -Level Debug -Message "Executing: $sql."
-				$fileExist = $server.Query($sql)
-			}
-
-			catch {
-				Stop-Function -Message "Failed to test the path $Path." -ErrorRecord $_ -Target $instance -Continue
-			}
-			if ($fileExist[0] -eq 1 -or $fileExist[1] -eq 1) {
-				return $true
-			}
-			else {
-				return $false
+			$sql = $query -join ';'
+			$batchresult = $server.ConnectionContext.ExecuteWithResults($sql)
+			if ($Path.Count -eq 1) {
+				if ($batchresult.Tables.rows[0] -eq $true -or $batchresult.Tables.rows[1] -eq $true) {
+					return $true
+				} else {
+					return $false
+				}
+			} else {
+				$i = 0
+				foreach($r in $batchresult.tables.rows) {
+					$DoesPass = $r[0] -eq $true -or $r[1] -eq $true
+					[pscustomobject]@{
+						FilePath   = $PathsBatch[$i]
+						FileExists = $DoesPass
+					}
+					$i += 1
+				}
 			}
 		}
 	}
