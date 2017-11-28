@@ -18,7 +18,7 @@ function Get-JobList {
 		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
+
 	.EXAMPLE
 		Get-JobList -SqlInstance sql2016
 
@@ -65,7 +65,7 @@ function Get-JobList {
 		[switch][Alias('Silent')]$EnableException
 	)
 	process {
-		$server= Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 
 		$jobs = $server.JobServer.Jobs
 		if ( (Test-Bound 'JobFilter') -or (Test-Bound 'StepFilter') ) {
@@ -107,7 +107,6 @@ function Get-JobList {
 							if ($stepFound.Count -gt 0) {
 								$job
 							}
-							
 						}
 					}
 					elseif ($StepName.Count -gt 1) {

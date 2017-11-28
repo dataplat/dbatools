@@ -4,7 +4,7 @@ Function Get-DBASQLServiceErrorMessage {
     Internal function. Returns the list of error code messages for Windows service management.
 
 #>
-	Param(
+	param(
 		[parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)]
 			[int]$ErrorNumber
 	)

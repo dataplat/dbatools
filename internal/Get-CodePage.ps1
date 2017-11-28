@@ -1,7 +1,7 @@
 ﻿function Get-CodePage {
 	<#
 		.SYNOPSIS
-			Converts Microsoft's code page ID to human readable format 
+			Converts Microsoft's code page ID to human readable format
 
 		.DESCRIPTION
 			Converts Microsoft's code page ID to human readable format
