@@ -52,7 +52,7 @@ function Test-DbaValidLogin {
 			Tests all logins in the current Active Directory domain that are either disabled or do not exist on the SQL Server instance Dev01
 
 		.EXAMPLE
-			Test-DbaValidLogin -SqlInstance Dev01 -FilterBy GroupsOnly | Select-Object -Properties *
+			Test-DbaValidLogin -SqlInstance Dev01 -FilterBy GroupsOnly | Select-Object -Property *
 
 			Tests all Active Directory groups that have logins on Dev01, and shows all information for those logins
 
