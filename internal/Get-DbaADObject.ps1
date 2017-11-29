@@ -118,8 +118,8 @@ Function Get-DbaADObject {
 		function Get-DbaADObjectInternal($Domain, $IdentityType, $obj, $EnableException) {
 			try {
 				# can we simply resolve the passed domain ? This has the benefit of raising almost instantly if the domain is not valid
-				New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext('Domain', $Domain) | Out-Null
-				[System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($Context) | Out-Null
+				$null = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext('Domain', $Domain)
+				$null = [System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($Context)
 				if ($Credential) {
 					$ctx = New-Object System.DirectoryServices.AccountManagement.PrincipalContext('Domain', $Domain, $Credential.UserName, $Credential.GetNetworkCredential().Password)
 				}

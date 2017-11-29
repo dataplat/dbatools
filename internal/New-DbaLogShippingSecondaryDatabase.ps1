@@ -1,7 +1,7 @@
 function New-DbaLogShippingSecondaryDatabase {
 	<#
-.SYNOPSIS 
-New-DbaLogShippingSecondaryDatabase sets up a secondary databases for log shipping. 
+.SYNOPSIS
+New-DbaLogShippingSecondaryDatabase sets up a secondary databases for log shipping.
 
 .DESCRIPTION
 New-DbaLogShippingSecondaryDatabase sets up a secondary databases for log shipping.
@@ -12,7 +12,7 @@ SQL Server instance. You must have sysadmin access and server version must be SQ
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER BufferCount
@@ -32,16 +32,16 @@ Is the length of time in minutes in which the history is retained.
 The default is 14420.
 
 .PARAMETER MaxTransferSize
-The size, in bytes, of the maximum input or output request which is issued by SQL Server to the backup device. 
+The size, in bytes, of the maximum input or output request which is issued by SQL Server to the backup device.
 
 .PARAMETER PrimaryServer
 The name of the primary instance of the Microsoft SQL Server Database Engine in the log shipping configuration.
 
 .PARAMETER PrimaryDatabase
-Is the name of the database on the primary server. 
+Is the name of the database on the primary server.
 
 .PARAMETER RestoreAll
-If set to 1, the secondary server restores all available transaction log backups when the restore job runs. 
+If set to 1, the secondary server restores all available transaction log backups when the restore job runs.
 The default is 1.
 
 .PARAMETER RestoreDelay
@@ -51,7 +51,7 @@ The default is 0.
 .PARAMETER RestoreMode
 The restore mode for the secondary database. The default is 0.
 0 = Restore log with NORECOVERY.
-1 = Restore log with STANDBY. 
+1 = Restore log with STANDBY.
 
 .PARAMETER RestoreThreshold
 The number of minutes allowed to elapse between restore operations before an alert is generated.
@@ -60,11 +60,11 @@ The number of minutes allowed to elapse between restore operations before an ale
 Is the name of the secondary database.
 
 .PARAMETER ThresholdAlert
-Is the alert to be raised when the backup threshold is exceeded. 
+Is the alert to be raised when the backup threshold is exceeded.
 The default is 14420.
 
 .PARAMETER ThresholdAlertEnabled
-Specifies whether an alert is raised when backup_threshold is exceeded. 
+Specifies whether an alert is raised when backup_threshold is exceeded.
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
@@ -76,29 +76,26 @@ Prompts you for confirmation before executing any changing operations within the
 		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
+
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
 It will also remove the any present schedules with the same name for the specific job.
 
-.NOTES 
+.NOTES
 Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Log shippin, secondary database
-	
+
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.LINK
-https://dbatools.io/New-DbaLogShippingSecondaryDatabase
-
-.EXAMPLE   
+.EXAMPLE
 New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR -PrimaryServer sql1 -PrimaryDatabase DB1 -RestoreDelay 0 -RestoreMode standby -DisconnectUsers -RestoreThreshold 45 -ThresholdAlertEnabled -HistoryRetention 14420 
 
 #>
 
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
-	
+
 	param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
@@ -108,7 +105,7 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 		$SqlCredential,
 
 		[int]$BufferCount = -1,
-        
+
 		[int]$BlockSize = -1,
 
 		[switch]$DisconnectUsers,
@@ -218,10 +215,10 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 	}
 
 	# Set up the query
-	$Query = "EXEC master.sys.sp_add_log_shipping_secondary_database  
+	$Query = "EXEC master.sys.sp_add_log_shipping_secondary_database
         @secondary_database = '$SecondaryDatabase'
         ,@primary_server = '$PrimaryServer'
-        ,@primary_database = '$PrimaryDatabase' 
+        ,@primary_database = '$PrimaryDatabase'
         ,@restore_delay = $RestoreDelay
         ,@restore_all = $RestoreAll
         ,@restore_mode = $RestoreMode
@@ -230,7 +227,7 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
         ,@threshold_alert = $ThresholdAlert
         ,@threshold_alert_enabled = $ThresholdAlertEnabled
         ,@history_retention_period = $HistoryRetention "
-    
+
 	# Addinf extra options to the query when needed
 	if ($BlockSize -ne -1) {
 		$Query += ",@block_size = $BlockSize"
@@ -250,11 +247,11 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 	else {
 		$Query += ";"
 	}
-    
+
 	# Execute the query to add the log shipping primary
 	if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance"))) {
 		try {
-			Write-Message -Message "Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance." -Level Output 
+			Write-Message -Message "Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance." -Level Output
 			Write-Message -Message "Executing query:`n$Query" -Level Verbose
 			$ServerSecondary.Query($Query)
 		}
@@ -264,6 +261,6 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 		}
 	}
 
-	Write-Message -Message "Finished adding the secondary database $SecondaryDatabase to log shipping." -Level Output 
+	Write-Message -Message "Finished adding the secondary database $SecondaryDatabase to log shipping." -Level Output
 
 }
