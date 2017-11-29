@@ -27,9 +27,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 			$server = Connect-DbaInstance -SqlInstance $script:instance2
 			$dbname = "dbatoolsci_findme"
 			Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
-			$server.Query("CREATE DATABASE $dbname")
+			$null = $server.ConnectionContext.ExecuteNonQuery("CREATE DATABASE $dbname")
 			$result = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname
-			if ($result.count -ne 0) {
+			if ($result.count -eq 0) {
 				it "has failed setup" {
 					Set-TestInconclusive -message "Setup failed"
 				}
