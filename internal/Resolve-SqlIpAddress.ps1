@@ -1,4 +1,4 @@
-Function Resolve-SqlIpAddress
+function Resolve-SqlIpAddress
 {
 	[CmdletBinding()]
 	param (
@@ -7,7 +7,7 @@ Function Resolve-SqlIpAddress
 		[object]$SqlInstance,
 		[PSCredential]$SqlCredential
 	)
-	
+
 	$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	$servernetbios = $server.ComputerNamePhysicalNetBIOS
 	$ipaddr = (Test-Connection $servernetbios -count 1).Ipv4Address
