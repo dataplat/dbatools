@@ -30,7 +30,7 @@ function Test-DbaMaxDop {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Detailed
-			If this switch is enabled, detailed information related to MaxDop settings is returned.
+   			Output all properties, will be depreciated in 1.0.0 release.
 
 		.PARAMETER EnableException
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -55,12 +55,12 @@ function Test-DbaMaxDop {
 			Get Max DOP setting for servers sql2008 and sqlserver2012 and also the recommended one.
 
 		.EXAMPLE
-			Test-DbaMaxDop -SqlInstance sql2014 -Detailed
+			Test-DbaMaxDop -SqlInstance sql2014 | Select-Object *
 
 			Shows Max DOP setting for server sql2014 with the recommended value. As the -Detailed switch was used will also show the 'NUMANodes' and 'NumberOfCores' of each instance
 
 		.EXAMPLE
-			Test-DbaMaxDop -SqlInstance sqlserver2016 -Detailed
+			Test-DbaMaxDop -SqlInstance sqlserver2016 | Select-Object *
 
 			Get Max DOP setting for servers sql2016 with the recommended value. As the -Detailed switch was used will also show the 'NUMANodes' and 'NumberOfCores' of each instance. Because it is an 2016 instance will be shown 'InstanceVersion', 'Database' and 'DatabaseMaxDop' columns.
 	#>
