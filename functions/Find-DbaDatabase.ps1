@@ -26,6 +26,11 @@ Search for an exact match instead of a pattern
 .PARAMETER Detailed
 Output all properties, will be depreciated in 1.0.0 release.
 
+.PARAMETER EnableException
+By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
 .NOTES
 Tags: DisasterRecovery
 Author: Stephen Bennett: https://sqlnotesfromtheunderground.wordpress.com/
@@ -62,7 +67,8 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 		[parameter(Mandatory = $true)]
 		[string]$Pattern,
 		[switch]$Exact,
-		[switch]$Detailed
+		[switch]$Detailed,
+		[switch][Alias('Silent')]$EnableException
 	)
 	begin {
 		Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
