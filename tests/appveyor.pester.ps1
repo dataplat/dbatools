@@ -1,5 +1,5 @@
-<# 
-.SYNOPSIS 
+<#
+.SYNOPSIS
 This script will invoke Pester tests, then serialize XML results and pull them in appveyor.yml
 
 .DESCRIPTION
@@ -15,7 +15,7 @@ The version of PS
 The output file
 
 .PARAMETER ProjectRoot
-The appveyor project root 
+The appveyor project root
 
 .PARAMETER ModuleBase
 The location of the module
@@ -45,9 +45,12 @@ Set-Location $ModuleBase
 # required to calculate coverage
 $global:dbatools_dotsourcemodule = $true
 
+#removes previously imported dbatools, if any
 Remove-Module dbatools -ErrorAction Ignore
+#imports the module making sure DLL is loaded ok
+Import-Module "$ModuleBase\dbatools.psd1" -DisableNameChecking
+#imports the psm1 to be able to use internal functions in tests
 Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
-
 
 function Get-CoverageIndications($Path, $ModuleBase) {
 	# takes a test file path and figures out what to analyze for coverage (i.e. dependencies)
@@ -65,7 +68,7 @@ function Get-CoverageIndications($Path, $ModuleBase) {
 		$source = $f.Definition
 		$CBH = $CBHRex.match($source).Value
 		$cmdonly = $source.Replace($CBH, '')
-		foreach($e in $everyfunction) {
+		foreach ($e in $everyfunction) {
 			# hacky, I know, but every occurrence of any function plus a space kinda denotes usage !?
 			$searchme = "$e "
 			if ($cmdonly.contains($searchme)) {
@@ -75,7 +78,7 @@ function Get-CoverageIndications($Path, $ModuleBase) {
 	}
 	$testpaths = @()
 	$allfiles = Get-ChildItem -File -Path "$ModuleBase\internal", "$ModuleBase\functions" -Filter '*.ps1'
-	foreach($f in $funcs) {
+	foreach ($f in $funcs) {
 		# exclude always used functions ?!
 		if ($f -in ('Connect-SqlInstance', 'Select-DefaultView', 'Stop-Function', 'Write-Message')) { continue }
 		# can I find a correspondence to a physical file (again, on the convenience of having Get-DbaFoo.ps1 actually defining Get-DbaFoo)?
@@ -89,26 +92,26 @@ function Get-CoverageIndications($Path, $ModuleBase) {
 
 function Get-CodecovReport($Results, $ModuleBase) {
 	#handle coverage https://docs.codecov.io/reference#upload
-	$report = @{'coverage'=@{}}
+	$report = @{'coverage' = @{}}
 	#needs correct casing to do the replace
 	$ModuleBase = (Resolve-Path $ModuleBase).Path
 	# things we wanna a report for (and later backfill if not tested)
 	$allfiles = Get-ChildItem -File -Path "$ModuleBase\internal", "$ModuleBase\functions" -Filter '*.ps1'
-	
-	$missed = $results.CodeCoverage | Select-Object -ExpandProperty MissedCommands | Sort-Object -Property File,Line -Unique
-	$hits = $results.CodeCoverage | Select-Object -ExpandProperty HitCommands | Sort-Object -Property File,Line -Unique
+
+	$missed = $results.CodeCoverage | Select-Object -ExpandProperty MissedCommands | Sort-Object -Property File, Line -Unique
+	$hits = $results.CodeCoverage | Select-Object -ExpandProperty HitCommands | Sort-Object -Property File, Line -Unique
 	$LineCount = @{}
 	$hits | ForEach-Object {
-		$filename = $_.File.Replace("$ModuleBase\", '').Replace('\','/')
+		$filename = $_.File.Replace("$ModuleBase\", '').Replace('\', '/')
 		if ($filename -notin $report['coverage'].Keys) {
 			$report['coverage'][$filename] = @{}
 			$LineCount[$filename] = (Get-Content $_.File -Raw | Measure-Object -Line).Lines
 		}
 		$report['coverage'][$filename][$_.Line] = 1
 	}
-	
+
 	$missed | ForEach-Object {
-		$filename = $_.File.Replace("$ModuleBase\", '').Replace('\','/')
+		$filename = $_.File.Replace("$ModuleBase\", '').Replace('\', '/')
 		if ($filename -notin $report['coverage'].Keys) {
 			$report['coverage'][$filename] = @{}
 			$LineCount[$filename] = (Get-Content $_.File | Measure-Object -Line).Lines
@@ -118,21 +121,21 @@ function Get-CodecovReport($Results, $ModuleBase) {
 			$report['coverage'][$filename][$_.Line] = 0
 		}
 	}
-	
-	$newreport = @{'coverage'=[ordered]@{}}
-	foreach($fname in $report['coverage'].Keys) {
+
+	$newreport = @{'coverage' = [ordered]@{}}
+	foreach ($fname in $report['coverage'].Keys) {
 		$Linecoverage = [ordered]@{}
-		for($i=1; $i -le $LineCount[$fname]; $i++){
+		for ($i = 1; $i -le $LineCount[$fname]; $i++) {
 			if ($i -in $report['coverage'][$fname].Keys) {
 				$Linecoverage["$i"] = $report['coverage'][$fname][$i]
 			}
 		}
 		$newreport['coverage'][$fname] = $Linecoverage
 	}
-	
+
 	#backfill it
-	foreach($target in $allfiles) {
-		$target_relative = $target.FullName.Replace("$ModuleBase\", '').Replace('\','/')
+	foreach ($target in $allfiles) {
+		$target_relative = $target.FullName.Replace("$ModuleBase\", '').Replace('\', '/')
 		if ($target_relative -notin $newreport['coverage'].Keys) {
 			$newreport['coverage'][$target_relative] = @{"1" = $null}
 		}
@@ -154,7 +157,7 @@ function Send-CodecovReport($CodecovReport) {
 	Add-Type -AssemblyName System.Web
 	$CodeCovParams = [System.Web.HttpUtility]::ParseQueryString([String]::Empty)
 	$params.GetEnumerator() | Where-Object Value | ForEach-Object { $CodeCovParams.Add($_.Name, $_.Value) }
-	$Request  = [System.UriBuilder]('https://codecov.io/upload/v2')
+	$Request = [System.UriBuilder]('https://codecov.io/upload/v2')
 	$Request.Query = $CodeCovParams.ToString()
 	Invoke-RestMethod -Uri $Request.Uri -Method Post -InFile $CodecovReport -ContentType 'multipart/form-data'
 }
@@ -180,7 +183,8 @@ if (-not $Finalize) {
 		if ($AllTests.Count -eq 0) {
 			throw "something went wrong, nothing to test"
 		}
-	} else {
+	}
+	else {
 		$TestsToRun = "*.Tests.*"
 	}
 
@@ -200,11 +204,11 @@ if (-not $Finalize) {
 				# and exclude other instances in autodetect
 				$ExcludeScanFor = @() + ($TestsRunGroups.GetEnumerator() | Where-Object { ($_.Name -ne $env:SCENARIO) -and ($_.Value -like 'autodetect_*') }).Value.Replace('autodetect_', '')
 				$ScanTests = @()
-				foreach($test in $RemainingTests) {
+				foreach ($test in $RemainingTests) {
 					$testcontent = Get-Content $test -Raw
 					if ($testcontent -like "*$ScanFor*") {
 						$ExcludeFlag = $false
-						foreach($exclude in $ExcludeScanFor) {
+						foreach ($exclude in $ExcludeScanFor) {
 							if ($testcontent -like "*$exclude*") {
 								$ExcludeFlag = $true
 								break
@@ -216,10 +220,12 @@ if (-not $Finalize) {
 					}
 				}
 				$AllScenarioTests = $ScanTests
-			} else {
+			}
+			else {
 				$AllScenarioTests = $AllTests | Where-Object { ($_.Name -replace '\.Tests\.ps1$', '') -in $TestsRunGroups[$env:SCENARIO] }
 			}
-		} else {
+		}
+		else {
 			$AllScenarioTests = $AllTests
 			# we have a scenario, but no specific group. Let's run any other test
 			# exclude any test specifically tied to a non-autodetect scenario
@@ -228,10 +234,10 @@ if (-not $Finalize) {
 			# scan for all tests containing ALL autodetect strings
 			$ScanFor = @() + ($TestsRunGroups.GetEnumerator() | Where-Object { $_.Value -like 'autodetect_*' }).Value.Replace('autodetect_', '')
 			$ScanTests = @()
-			foreach($test in $RemainingTests) {
+			foreach ($test in $RemainingTests) {
 				$FoundFlag = 0
 				$testcontent = Get-Content $test -Raw
-				foreach($Scan in $ScanFor) {
+				foreach ($Scan in $ScanFor) {
 					if ($testcontent -like "*$Scan*") {
 						$FoundFlag += 1
 					}
@@ -242,7 +248,8 @@ if (-not $Finalize) {
 			}
 			$AllScenarioTests = $ScanTests
 		}
-	} else {
+	}
+	else {
 		$AllScenarioTests = $AllTests
 	}
 
@@ -264,11 +271,11 @@ if (-not $Finalize) {
 	# invoking a single invoke-pester consumes too much memory, let's go file by file
 	$AllTestsWithinScenario = Get-ChildItem -File -Path $AllScenarioTests
 	$Counter = 0
-	foreach($f in $AllTestsWithinScenario) {
+	foreach ($f in $AllTestsWithinScenario) {
 		$Counter += 1
 		$PesterSplat = @{
 			'Script'   = $f.FullName
-			'Show'     = 'None'
+			'Show'	   = 'None'
 			'PassThru' = $true
 		}
 		#opt-in
@@ -289,43 +296,33 @@ else {
 	$allfiles = Get-ChildItem -Path $ModuleBase\*Results*.xml | Select-Object -ExpandProperty FullName
 	Write-Output "Finalizing results and collating the following files:"
 	Write-Output ($allfiles | Out-String)
-	
 	#Upload results for test page
 	Get-ChildItem -Path "$ModuleBase\TestResultsPS*.xml" | Foreach-Object {
-		
 		$Address = "https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)"
 		$Source = $_.FullName
-		
 		Write-Output "Uploading files: $Address $Source"
-		
 		(New-Object System.Net.WebClient).UploadFile($Address, $Source)
-		
 		Write-Output "You can download it from https://ci.appveyor.com/api/buildjobs/$($env:APPVEYOR_JOB_ID)/tests"
 	}
 	#>
 	#What failed? How many tests did we run ?
 	$results = @(Get-ChildItem -Path "$ModuleBase\PesterResults*.xml" | Import-Clixml)
-	
-	$totalcount = $results | Select-Object -ExpandProperty TotalCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+	#$totalcount = $results | Select-Object -ExpandProperty TotalCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
 	$failedcount = $results | Select-Object -ExpandProperty FailedCount | Measure-Object -Sum | Select-Object -ExpandProperty Sum
-	
-	
 	if ($failedcount -gt 0) {
 		$faileditems = $results | Select-Object -ExpandProperty TestResult | Where-Object { $_.Passed -notlike $True }
-		
 		if ($faileditems) {
 			Write-Warning "Failed tests summary:"
 			$faileditems | ForEach-Object {
 				$name = $_.Name
 				[pscustomobject]@{
 					Describe = $_.Describe
-					Context = $_.Context
-					Name = "It $name"
-					Result = $_.Result
-					Message = $_.FailureMessage
+					Context  = $_.Context
+					Name     = "It $name"
+					Result   = $_.Result
+					Message  = $_.FailureMessage
 				}
 			} | Sort-Object Describe, Context, Name, Result, Message | Format-List
-			
 			throw "$failedcount tests failed."
 		}
 	}
