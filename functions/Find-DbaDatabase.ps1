@@ -24,7 +24,12 @@ Value that is searched for. This is a regular expression match but you can just 
 Search for an exact match instead of a pattern
 
 .PARAMETER Detailed
-Output a more detailed view showing regular output plus Tables, StoredProcedures, Views and ExtendedProperties to see they closely match to help find related databases.
+Output all properties, will be depreciated in 1.0.0 release.
+
+.PARAMETER EnableException
+By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 .NOTES
 Tags: DisasterRecovery
@@ -42,11 +47,11 @@ Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PRO
 Returns all database from the SqlInstances that have a database with Report in the name
 	
 .EXAMPLE
-Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern TestDB -Exact -Detailed 
+Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern TestDB -Exact | Select-Object *
 Returns all database from the SqlInstances that have a database named TestDB with a detailed output.
 
 .EXAMPLE
-Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Property ServiceBrokerGuid -Pattern '-faeb-495a-9898-f25a782835f5' -Detailed 
+Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Property ServiceBrokerGuid -Pattern '-faeb-495a-9898-f25a782835f5' | Select-Object * 
 Returns all database from the SqlInstances that have the same Service Broker GUID with a deatiled output
 
 #>
@@ -62,8 +67,12 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 		[parameter(Mandatory = $true)]
 		[string]$Pattern,
 		[switch]$Exact,
-		[switch]$Detailed
+		[switch]$Detailed,
+		[switch][Alias('Silent')]$EnableException
 	)
+	begin {
+		Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
+	}
 	process {
 		foreach ($instance in $SqlInstance) {
 			try {
@@ -91,45 +100,32 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 			}
 			
 			foreach ($db in $dbs) {
-				if ($Detailed) {
-					$extendedproperties = @()
-					foreach ($xp in $db.ExtendedProperties) {
-						$extendedproperties += [PSCustomObject]@{
-							Name  = $db.ExtendedProperties[$xp.Name].Name
-							Value = $db.ExtendedProperties[$xp.Name].Value
-						}
+				
+				$extendedproperties = @()
+				foreach ($xp in $db.ExtendedProperties) {
+					$extendedproperties += [PSCustomObject]@{
+						Name  = $db.ExtendedProperties[$xp.Name].Name
+						Value = $db.ExtendedProperties[$xp.Name].Value
 					}
-					
-					if ($extendedproperties.count -eq 0) { $extendedproperties = 0 }
-					
-					[PSCustomObject]@{
-						ComputerName       = $server.NetName
-						InstanceName       = $server.ServiceName
-						SqlInstance        = $server.Name
-						Name               = $db.Name
-						SizeMB             = $db.Size
-						Owner              = $db.Owner
-						CreateDate         = $db.CreateDate
-						ServiceBrokerGuid  = $db.ServiceBrokerGuid
-						Tables             = ($db.Tables | Where-Object { $_.IsSystemObject -eq $false }).Count
-						StoredProcedures   = ($db.StoredProcedures | Where-Object { $_.IsSystemObject -eq $false }).Count
-						Views              = ($db.Views | Where-Object { $_.IsSystemObject -eq $false }).Count
-						ExtendedProperties = $extendedproperties
-						Database           = $db
-					} | Select-DefaultView -ExcludeProperty Database
 				}
-				else {
-					[PSCustomObject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance  = $server.Name
-						Name         = $db.Name
-						SizeMB       = $db.Size
-						Owner        = $db.Owner
-						CreateDate   = $db.CreateDate
-						Database     = $db
-					} | Select-DefaultView -ExcludeProperty Database
-				}
+					
+				if ($extendedproperties.count -eq 0) { $extendedproperties = 0 }
+					
+				[PSCustomObject]@{
+					ComputerName       = $server.NetName
+					InstanceName       = $server.ServiceName
+					SqlInstance        = $server.Name
+					Name               = $db.Name
+					SizeMB             = $db.Size
+					Owner              = $db.Owner
+					CreateDate         = $db.CreateDate
+					ServiceBrokerGuid  = $db.ServiceBrokerGuid
+					Tables             = ($db.Tables | Where-Object { $_.IsSystemObject -eq $false }).Count
+					StoredProcedures   = ($db.StoredProcedures | Where-Object { $_.IsSystemObject -eq $false }).Count
+					Views              = ($db.Views | Where-Object { $_.IsSystemObject -eq $false }).Count
+					ExtendedProperties = $extendedproperties
+					Database           = $db
+				} | Select-DefaultView -ExcludeProperty Database, ExtendedProperties, ServiceBrokerGuid, StoredProcedures, Tables, Views 
 			}
 		}
 	}
