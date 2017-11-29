@@ -1,6 +1,6 @@
 function New-DbaLogShippingPrimarySecondary {
 	<#
-.SYNOPSIS 
+.SYNOPSIS
 New-DbaLogShippingPrimarySecondary adds an entry for a secondary database.
 
 .DESCRIPTION
@@ -12,11 +12,11 @@ SQL Server instance. You must have sysadmin access and server version must be SQ
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER PrimaryDatabase
-Is the name of the database on the primary server. 
+Is the name of the database on the primary server.
 
 .PARAMETER SecondaryDatabase
 Is the name of the secondary database.
@@ -26,7 +26,7 @@ Is the name of the secondary server.
 
 .PARAMETER SecondarySqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SecondarySqlCredential parameter. 
+$scred = Get-Credential, then pass $scred object to the -SecondarySqlCredential parameter.
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
@@ -38,26 +38,26 @@ Prompts you for confirmation before executing any changing operations within the
 		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
-.NOTES 
+
+.NOTES
 Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Log shipping, primary database, secondary database
-	
+
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .LINK
-https://dbatools.io/New-DbaLogShippingPrimarySecondary
 
-.EXAMPLE   
+
+.EXAMPLE
 New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -SecondaryServer sql2 -SecondaryDatabase DB1_DR
 
 
 #>
 
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
-	
+
 	param (
 		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
@@ -73,7 +73,7 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[object]$SecondaryDatabase,
-        
+
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[object]$SecondaryServer,
@@ -111,7 +111,7 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 	if ($ServerSecondary.Databases.Name -notcontains $SecondaryDatabase) {
 		Stop-Function -Message "Database $SecondaryDatabase is not available on instance $SecondaryServer" -ErrorRecord $_ -Target $SecondaryServer -Continue
 	}
-    
+
 	$Query = "SELECT primary_database FROM msdb.dbo.log_shipping_primary_databases WHERE primary_database = '$PrimaryDatabase'"
 
 	try {
@@ -126,18 +126,18 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 	}
 
 	# Set the query for the log shipping primary and secondary
-	$Query = "EXEC master.sys.sp_add_log_shipping_primary_secondary 
-        @primary_database = N'$PrimaryDatabase' 
-        ,@secondary_server = N'$SecondaryServer' 
+	$Query = "EXEC master.sys.sp_add_log_shipping_primary_secondary
+        @primary_database = N'$PrimaryDatabase'
+        ,@secondary_server = N'$SecondaryServer'
 		,@secondary_database = N'$SecondaryDatabase' "
-		
+
 	if ($ServerPrimary.Version.Major -gt 9) {
 		$Query += ",@overwrite = 1;"
 	}
 	else {
 		$Query += ";"
 	}
-    
+
 	# Execute the query to add the log shipping primary
 	if ($PSCmdlet.ShouldProcess($SqlInstance, ("Configuring logshipping connecting the primary database $PrimaryDatabase to secondary database $SecondaryDatabase on $SqlInstance"))) {
 		try {
@@ -152,5 +152,5 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 	}
 
 	Write-Message -Message "Finished configuring of primary database $PrimaryDatabase to secondary database $SecondaryDatabase." -Level Output 
-    
+
 }
