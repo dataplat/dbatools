@@ -48,9 +48,9 @@ $global:dbatools_dotsourcemodule = $true
 #removes previously imported dbatools, if any
 Remove-Module dbatools -ErrorAction Ignore
 #imports the module making sure DLL is loaded ok
-Import-Module "$ModuleBase\dbatools.psd1" -DisableNameChecking
+Import-Module "$ModuleBase\dbatools.psd1"
 #imports the psm1 to be able to use internal functions in tests
-Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking
+Import-Module "$ModuleBase\dbatools.psm1"
 
 function Get-CoverageIndications($Path, $ModuleBase) {
 	# takes a test file path and figures out what to analyze for coverage (i.e. dependencies)
