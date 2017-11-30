@@ -29,7 +29,7 @@ function Test-DbaDiskAllocation {
 			To connect as a different Windows user, run PowerShell as that user.		
 		
 		.PARAMETER Detailed
-			If this switch is enabled, detailed output is produced.
+    		Output all properties, will be deprecated in 1.0.0 release.
 
 		.PARAMETER WhatIf
 			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -59,7 +59,7 @@ function Test-DbaDiskAllocation {
 			Scans all disks on server sqlserver2014a for best practice allocation unit size.
 
 		.EXAMPLE   
-			Test-DbaDiskAllocation -ComputerName sqlserver2014 -Detailed
+			Test-DbaDiskAllocation -ComputerName sqlserver2014 | Select-Output *
 			
 			Scans all disks on server sqlserver2014a for allocation unit size and returns detailed results for each.
 			
@@ -81,9 +81,7 @@ function Test-DbaDiskAllocation {
 	)
 	
 	begin {
-		if ($Detailed) {
-			Write-Message -Level Warning -Message "Detailed is deprecated and will be removed in dbatools 1.0."
-		}
+		Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed		
 		
 		$sessionoptions = New-CimSessionOption -Protocol DCOM
 		
