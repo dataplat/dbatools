@@ -25,7 +25,7 @@ function Test-DbaDatabaseCollation {
 			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 		
 		.PARAMETER Detailed
-			Does nothing, this is deprecatated. Now Detailed is the default.
+    		Output all properties, will be deprecated in 1.0.0 release.
 
 	    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -49,12 +49,12 @@ function Test-DbaDatabaseCollation {
 		.EXAMPLE
 			Test-DbaDatabaseCollation -SqlInstance sqlserver2014a -Database db1, db2
 
-			Returns detailed inforamtion for the db1 and db2 databases on sqlserver2014a.
+			Returns inforamtion for the db1 and db2 databases on sqlserver2014a.
 
 		.EXAMPLE
-			Test-DbaDatabaseCollation -SqlInstance sqlserver2014a, sql2016 -Exclude db1
+			Test-DbaDatabaseCollation -SqlInstance sqlserver2014a, sql2016 -Exclude db1 
 
-			Returns detailed information for database and server collations for all databases except db1 on sqlserver2014a and sql2016.
+			Returns information for database and server collations for all databases except db1 on sqlserver2014a and sql2016.
 
 		.EXAMPLE
 			Get-DbaRegisteredServer -SqlInstance sql2016 | Test-DbaDatabaseCollation
