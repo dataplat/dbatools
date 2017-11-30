@@ -15,6 +15,7 @@ catch {
 
 $module = Import-Module -Name dbatools -ErrorAction SilentlyContinue
 $localpath = $module.ModuleBase
+Remove-Module -Name dbatools -ErrorAction SilentlyContinue
 
 if ($null -eq $localpath) {
 	$localpath = "$HOME\Documents\WindowsPowerShell\Modules\dbatools"
@@ -46,8 +47,6 @@ if (-not $path -or (Test-Path -Path "$path\.git")) {
 }
 
 Write-Output "Installing module to $path"
-
-Remove-Module -Name dbatools -ErrorAction SilentlyContinue
 
 if ($beta) {
 	$url = 'https://dbatools.io/devzip'
@@ -109,8 +108,8 @@ Write-Output "`n`nIf you experience any function missing errors after update, pl
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUfbDyZowPWBuGMsU2XW/c7rOL
-# cwWggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUJWfQalDeoHuBYlx9WeJoae/W
+# cKCggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -241,22 +240,22 @@ Write-Output "`n`nIf you experience any function missing errors after update, pl
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUN2EevcHkNBTA6rIacNrocow6ZRMwDQYJKoZIhvcNAQEBBQAE
-# ggEAdWqWVmhGV+fDpbr78VMNU4eao4NTC/aueueE+RTXLv40e+pLEGA1hWJT2buU
-# Pjp3v8PHFc6MyNRuAhB1bk7JOKVU27eCxsvwabEGtb8dDExsAIJWvfC/8r2Qxvy3
-# hUyh/giWiPGwgkZTFgzJ7wTpa0YSrUsKGm24k1GsvJzGpGKSbgW3Fs5b1Eqm1lJP
-# Gdzqwuz8JMYZWxrNBQRaoEO/KbAvy8nfh8nFEsEoRSdqjpoT9qpykE2GtevtVJ8X
-# 8sGYPBqydX+7DeuIV0a20q81JCJ9pLAFdu7vgOM6A5Woj/U9WaobbxJfbcsVS2TC
-# /uGd1+PlUSGMvTkn1Yrb75ZcTqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUSDOt1BfG7iEjj7wIxycUFpuT2q8wDQYJKoZIhvcNAQEBBQAE
+# ggEALGcCIMdPhIykTZeVYy7CbRxrDXbjB0kpXAptjOUeUB0NRG6BjrjzO+sYra7J
+# 8eDoJF/sz8sZKsCmQ76G8/L54ast4MpbxudNcQS4/Ax6K/EJQg0dYComEfZyrPv7
+# 2+D5YrnHuK1NvXMDknMipz8WyPu2TemOmCVT2vhQYzXw3ZnHkBwzlube3CK6+S1v
+# d9a7DBCj9sP/1TBc8I8jcBJIe8DJqh4ehhwhg09p6yL0DOzYj0aZJURRtDi1BDzq
+# wP5RRn2tL22kTxFGWpYJxb1+pE55znutag6B23b66Rr614s5z7hH6MDBh7vo5XaT
+# AgdUDJQsJV6N5vuxZbiOvZHTPaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMTI4MTUyODUyWjAj
-# BgkqhkiG9w0BCQQxFgQUdZUbiCYZZjNDHyUdTUeUP2wWOQwwDQYJKoZIhvcNAQEB
-# BQAEggEAJ0pjSssyog/Mn2L7oqV3c3v3Hpnk6fbfqQF2fLEk2KSDjRiMVqXAzr+q
-# RXb9HoGxeTD9PqEtaiUJqT0B7OywdpA0mU/a9SCe8vgANST1QOZdAvDZonLhl9aQ
-# PyLj7PoW/VOBD8qYJNAFVaOCcpJnQzTGU1U9YBXZXjWNCkHxHf0PJFg2WiD3yt+d
-# iRyoQ6yCJqU8yMA8TcvRLbwxshrXVKliHWCx85o9VgmvHTe8UtBgqrEwqffrWP8Z
-# apzIs9hQzZA8YRG7YUn5j0Zd7uLKOjEFvBBIkRTSmMS9pq9UtWznUyJsYGBSzRQg
-# rmMmdCrVSNaXXzRr/XghT5uSNRq56g==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMTI5MTk1NDA0WjAj
+# BgkqhkiG9w0BCQQxFgQUDx1FARAMx8uzTP96vZGmn52Z5icwDQYJKoZIhvcNAQEB
+# BQAEggEARKkcZBpaLufX6U7YhJ3jixLTnBcD7laQVt3r3yTTUxWS92va0gkw6a/R
+# rF4Gk1+a2u65M8NcvcLL6r0RSMqbvlk40aSajDYbKLaMeEpy0Bzo30se0ZKugm3x
+# a9VrJE2hhWZLUd8WN+u9gSlxg4LjaWvgmx4gt5/B1JUPY5ZRpzMzeBQn9+ZYjCoh
+# XBLmCG6xGPp9Q1WmpbshdJEBFJy7COlJ1Tfll/kZaOtrWp4jNjUMiCSqRcYeAyOe
+# 7HNDOjXHSquTpAhEkEvKo/ukqkTA4CuKkQlkpp4414Cs45cfVnkXihMBqJxmq4ax
+# KBKnQ/qW2OCJw9fzaWnvdbWipZuu2A==
 # SIG # End signature block
