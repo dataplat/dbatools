@@ -30,7 +30,7 @@ function Test-DbaMaxDop {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Detailed
-   			Output all properties, will be depreciated in 1.0.0 release.
+   			Output all properties, will be deprecated in 1.0.0 release.
 
 		.PARAMETER EnableException
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
