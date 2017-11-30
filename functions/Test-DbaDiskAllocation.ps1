@@ -29,7 +29,7 @@ function Test-DbaDiskAllocation {
 			To connect as a different Windows user, run PowerShell as that user.		
 		
 		.PARAMETER Detailed
-    		Output all properties, will be depreciated in 1.0.0 release.
+    		Output all properties, will be deprecated in 1.0.0 release.
 
 		.PARAMETER WhatIf
 			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
