@@ -30,9 +30,7 @@ Ultimately, you can think of dbatools as a command-line SQL Server Management St
 
 ## Usage examples
 
-dbatools now offers over 325 commands! Here are some of the ones we highlight at conferences.
-
-<script src="https://gist.github.com/potatoqualitee/e8932b64aeb6ef404e252d656b6318a2.js"></script>
+dbatools now offers over 325 commands! [Here are some of the ones we highlight at conferences](https://gist.github.com/potatoqualitee/e8932b64aeb6ef404e252d656b6318a2).
 
 ## Support
 
