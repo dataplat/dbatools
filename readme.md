@@ -264,3 +264,5 @@ dbatools aims to support as many configurations as possible, including
  	<li>Multiple instances on one server</li>
  	<li>Auto-populated parameters for command-line completion (think -Database and -Login)</li>
 </ul>
+
+Read more at our website at [dbatools.io](https://dbatools.io)
