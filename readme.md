@@ -1,6 +1,6 @@
 # dbatools
 
-dbatools is sort of like a command-line SQL Server Management Studio. The project initially started out as Start-SqlMigration.ps1, but has now grown into a collection of over 3000 commands that help automate SQL Server tasks and encourage best practices.
+dbatools is sort of like a command-line SQL Server Management Studio. The project initially started out as Start-SqlMigration.ps1, but has now grown into a collection of [over 300 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
 
 ![dbatools logo](https://blog.netnerds.net/wp-content/uploads/2016/05/dbatools.png)
 
@@ -30,7 +30,7 @@ In addition to the simple things you can do in SSMS (like starting a job), we've
 
 ## Usage examples
 
-dbatools now offers over 325 commands! [Here are some of the ones we highlight at conferences](https://gist.github.com/potatoqualitee/e8932b64aeb6ef404e252d656b6318a2).
+As previously mentioned, dbatools now offers [over 300 commands](https://dbatools.io/commands)! [Here are some of the ones we highlight at conferences](https://gist.github.com/potatoqualitee/e8932b64aeb6ef404e252d656b6318a2).
 
 ```powershell
 # Set some vars
