@@ -17,9 +17,6 @@ function Get-DbaSpConfigure {
 		.PARAMETER ConfigName
 			Return only specific configurations -- auto-populated from source server
 
-		.PARAMETER Detailed
-			Returns more information about the configuration settings than standard
-
 		.NOTES
 			Author: Nic Cain, https://sirsql.net/
 
