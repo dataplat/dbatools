@@ -102,7 +102,7 @@ function Repair-DbaServerName {
 			# Check to see if we can easily proceed
 			Write-Verbose "Executing Test-DbaServerName to see if the server is in a state to be renamed. "
 
-			$nametest = Test-DbaServerName $servername -Detailed -NoWarning
+			$nametest = Test-DbaServerName $servername -NoWarning | Select-Object *
 			$serverinstancename = $nametest.ServerInstanceName
 			$SqlInstancename = $nametest.SqlServerName
 
