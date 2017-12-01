@@ -40,15 +40,16 @@ Function Publish-DbaDacpac {
             https://dbatools.io/Test-Noun
 
         .EXAMPLE
-            $srv = "SERVER=(localdb)\MSSQLLocalDB;Integrated Security=True;Database=master"
-            $db = "WorldWideImporters"
-            $tfp = "C:\Users\Richie\Documents\dbaToolsScripts\$($db).dacpac"
+            $svrConnstring = "SERVER=(localdb1)\MSSQLLocalDB;Integrated Security=True;Database=master"
+            $output_NAME = "WideWorldImporters"
+            $output = "C:\Users\Richie\Source\Repos\PoshSSDTBuildDeploy\tests\wwi-dw-ssdt"
+            $output_SLN = Join-Path $output "\WideWorldImportersDW.sqlproj"
+            $output_DAC = Join-Path $output "\Microsoft.Data.Tools.Msbuild\lib\net46"
+            $output_DACFX = Join-Path $output_DAC "\Microsoft.SqlServer.Dac.dll"
+            $output_DACPAC = Join-Path $output "\bin\Debug\WideWorldImportersDW.dacpac"
+            $output_PUB = Join-Path $output "\bin\Debug\WideWorldImportersDW.publish.xml"
+        Publish-DbaDacpac -dacpac $output_DACPAC -publishXml $output_PUB -targetConnectionString $svrConnstring -targetDatabaseName $output_NAME -GenerateDeploymentScript $true -GenerateDeployMentReport $true -ScriptPath $output -Verbose -EnableException
 
-            $eParams = "/tf:$tfp /SourceConnectionString:`"$srv`""
-            $eProperties = "/p:VerifyExtraction=$true /p:CommandTimeOut=10 /p:bob"
-            Export-DbaDacpac -extractParams $eParams -extractProperties $eProperties
-
-            Extracts the dacpac
     #>
     [CmdletBinding()]
     param(
