@@ -79,6 +79,9 @@ function Backup-DbaDatabase {
 		.PARAMETER AzureCredential
 			The name of the credential on the SQL instance that can write to the AzureBaseUrl.
 
+		.PARAMETER NoRecovery
+			This is passed in to perform a tail log backup if needed
+
 		.PARAMETER EnableException
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -138,6 +141,7 @@ function Backup-DbaDatabase {
 		[int]$BufferCount,
 		[string]$AzureBaseUrl,
 		[string]$AzureCredential,
+		[switch]$NoRecovery,
 		[switch][Alias('Silent')]$EnableException
 	)
 	
@@ -296,7 +300,7 @@ function Backup-DbaDatabase {
 			if ('' -ne $AzureBaseUrl) {
 				$backup.CredentialName = $AzureCredential
 			}
-			
+			$Backup.NoRecovery = $NoRecovery
 			Write-Message -Level VeryVerbose -Message "Sorting Paths"
 			
 			#If a backupfilename has made it this far, use it
