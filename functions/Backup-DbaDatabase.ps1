@@ -281,12 +281,13 @@ function Backup-DbaDatabase {
 				$backup.Incremental = $true
 				$outputType = 'Differential'
 			}
-			
+			$Backup.NoRecovery = $False
 			if ($Type -eq "Log") {
 				Write-Message -Level VeryVerbose -Message "Creating log backup"
 				$Suffix = "trn"
 				$OutputType = 'Log'
 				$SMOBackupType = 'Log'
+				$Backup.NoRecovery = $NoRecovery
 			}
 			
 			if ($type -in 'Full', 'Database') {
@@ -300,7 +301,7 @@ function Backup-DbaDatabase {
 			if ('' -ne $AzureBaseUrl) {
 				$backup.CredentialName = $AzureCredential
 			}
-			$Backup.NoRecovery = $NoRecovery
+
 			Write-Message -Level VeryVerbose -Message "Sorting Paths"
 			
 			#If a backupfilename has made it this far, use it
