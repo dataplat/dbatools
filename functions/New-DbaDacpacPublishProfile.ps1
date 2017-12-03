@@ -46,7 +46,7 @@ Function New-DbaDacpacPublishProfile {
 
 
     #>
-    [commandBinding()]
+    [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
         $targetDatabaseName,
