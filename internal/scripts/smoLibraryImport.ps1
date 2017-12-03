@@ -3,8 +3,7 @@
 		$ModuleRoot
 	)
 	
-	try
-	{
+	try{
 		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.BatchParser.dll" -ErrorAction Stop
 		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.BatchParserClient.dll"
 		Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.BulkInsertTaskConnections.dll"
@@ -125,6 +124,7 @@
 	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.WmiEnum.dll"
 	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.WMIEWTask.dll"
 	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.XMLTask.dll"
+	Add-Type -Path "$ModuleRoot\bin\DacFX\Microsoft.SqlServer.Dac.dll"
 	# x86
 	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.Dmf.Adapters.dll"
 	Add-Type -Path "$ModuleRoot\bin\smo\Microsoft.SqlServer.DmfSqlClrWrapper.dll"
