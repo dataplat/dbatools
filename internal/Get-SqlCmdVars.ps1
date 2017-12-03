@@ -1,4 +1,3 @@
-
 Function Get-SqlCmdVars {
         <#
         .SYNOPSIS
