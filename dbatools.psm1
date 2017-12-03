@@ -119,7 +119,18 @@ Write-ImportTime -Text  "Validated defines"
 Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
 Write-ImportTime -Text  "Unblocking Files"
 
-if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
+# Define folder in which to copy dll files before importing
+if ($script:strictSecurityMode) { $script:DllRoot = "$script:PSModuleRoot\bin" }
+else {
+	$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)"
+	while (Test-Path -Path $libraryTempPath) {
+		$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)"
+	}
+	$script:DllRoot = $libraryTempPath
+	$null = New-Item -Path $libraryTempPath -ItemType Directory
+}
+
+if (-not ([System.Management.Automation.PSTypeName]'Microsoft.SqlServer.Management.Smo.Server').Type) {
 	. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\smoLibraryImport.ps1"
 	Write-ImportTime -Text "Starting import SMO libraries"
 }
