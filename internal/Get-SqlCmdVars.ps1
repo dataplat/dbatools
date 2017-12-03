@@ -8,7 +8,7 @@ Function Get-SqlCmdVars {
             Attempt to resolve SQLCmd variables via matching powershell variables explicitly defined in the current context.
             To try and avoid 'bad' default values getting deployed, block a deployment if we have SqlCmd variables that aren't defined in current context.
             Function has one reference and is executed when the "getSqlCmdVars" switch is included.
-        .PARAMETER sqlCommandVariableValues
+        .PARAMETER SqlCommandVariableValues
             Mandatory. The SqlCommandVariableValues from the DeployOptions property in the Microsoft.SqlServer.Dac.DacProfile
         .PARAMETER EnableException
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -64,15 +64,15 @@ Function Get-SqlCmdVars {
     param
     (
         [Parameter(Mandatory = $true)]
-        $sqlCommandVariableValues,
-        [switch][Alias('Silent')]$EnableException
+        $SqlCommandVariableValues,
+        [switch]$EnableException
     )
     $missingVariables = @()
-    $keys = $($sqlCommandVariableValues.Keys)
+    $keys = $($SqlCommandVariableValues.Keys)
     foreach ($var in $keys) {
         if (Test-Path variable:$var) {
             $value = Get-Variable $var -ValueOnly
-            $sqlCommandVariableValues[$var] = $value
+            $SqlCommandVariableValues[$var] = $value
         }
         else {
             $missingVariables += $var
