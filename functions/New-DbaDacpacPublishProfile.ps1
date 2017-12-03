@@ -1,10 +1,10 @@
-Function New-DbaPublishProfile {
+Function New-DbaDacpacPublishProfile {
      <#
         .SYNOPSIS
             Creates a new Publish Profile.
 
         .DESCRIPTION
-            The New-PublishProfile CmdLet generates a standard publish profile xml file that can be used by the DacFx (this and everything else) to control the deployment of your dacpac
+            The New-PublishProfile command generates a standard publish profile xml file that can be used by the DacFx (this and everything else) to control the deployment of your dacpac
             This generates a standard template XML which is enough to dpeloy a dacpac but it is highly recommended that you add additional options to the publish profile. 
             If you use Visual Studio you can open a publish.xml file and use the ui to edit the file -
             To create a new file, right click on an SSDT project, choose "Publish" then "Load Profile" and load your profile or create a new one. 
@@ -24,7 +24,7 @@ Function New-DbaPublishProfile {
 			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
-            Tags: TAGS_HERE 
+            Tags: Dacpac 
             Author: Richie lee (@bzzzt_io)
 
             Website: https://dbatools.io
@@ -39,14 +39,14 @@ Function New-DbaPublishProfile {
         $TCS = "SERVER=(localdb)\MSSQLLocalDB;Integrated Security=True;Database=master"
         
         This example will return filepath
-        $newProfilePath = New-DbaPublishProfile -PublishProfilePath $PPP -targetDatabaseName $TDN -targetConnectionString $TCS
+        $newProfilePath = New-DbaDacpacPublishProfile -PublishProfilePath $PPP -targetDatabaseName $TDN -targetConnectionString $TCS
 
         This example will return the xml
-        $newProfileXml = New-DbaPublishProfile -targetDatabaseName $TDN -targetConnectionString $TCS
+        $newProfileXml = New-DbaDacpacPublishProfile -targetDatabaseName $TDN -targetConnectionString $TCS
 
 
     #>
-    [CmdletBinding()]
+    [commandBinding()]
     param(
         [Parameter(Mandatory = $true)]
         $targetDatabaseName,
