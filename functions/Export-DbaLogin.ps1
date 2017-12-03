@@ -66,7 +66,7 @@ function Export-DbaLogin {
 		.EXAMPLE
 			Export-DbaLogin -SqlInstance sql2005 -FilePath C:\temp\sql2005-logins.sql
 
-			Exports SQL for the logins in server "sql2005" and writes them to the file "C:\temp\sql2005-logins.sql"
+			Exports the logins for SQL server "sql2005" and writes them to the file "C:\temp\sql2005-logins.sql"
 
 		.EXAMPLE
 			Export-DbaLogin -SqlInstance sqlserver2014a -Exclude realcajun -SqlCredential $scred -FilePath C:\temp\logins.sql -Append
