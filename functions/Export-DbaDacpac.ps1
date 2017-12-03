@@ -89,7 +89,7 @@ Function Export-DbaDacpac {
 	)
 	
 	process {
-		if (!$Database -and !$ExcludeDatabase -and !$AllUserDatabases) {
+		if ((Test-Bound -Not -ParameterName Database) -and (Test-Bound -Not -ParameterName ExcludeDatabase) -and (Test-Bound -Not -ParameterName AllUserDatabases)) {
 			Stop-Function -Message "You must specify databases to execute against using either -Database, -ExcludeDatabase or -AllUserDatabases" -Continue
 		}
 		
@@ -106,8 +106,9 @@ Function Export-DbaDacpac {
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
+			$cleaninstance = $instance.ToString().Replace('\', '$')
 			
-			$dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
+			$dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible }
 			
 			if ($Database) {
 				$dbs = $dbs | Where-Object Name -in $Database
@@ -123,15 +124,14 @@ Function Export-DbaDacpac {
 				if ($connstring -notmatch 'Database=') {
 					$connstring = "$connstring;Database=$dbname"
 				}
-				$path = "$Directory\$dbname.dacpac"
+				$path = "$Directory\$cleaninstance-$dbname.dacpac"
 				Write-Message -Level Verbose -Message "Exporting $path"
 				Write-Message -Level Verbose -Message "Using connection string $connstring"
 				
 				$sqlPackageArgs = "/action:Extract /tf:""$path"" /SourceConnectionString:""$connstring"" $ExtendedParameters $ExtendedProperties"
+				$resultstime = [diagnostics.stopwatch]::StartNew()
 				
 				try {
-					$resultstime = [diagnostics.stopwatch]::StartNew()
-					
 					$startprocess = New-Object System.Diagnostics.ProcessStartInfo
 					$startprocess.FileName = "$script:PSModuleRoot\bin\dacfx\sqlpackage.exe"
 					$startprocess.Arguments = $sqlPackageArgs
@@ -163,7 +163,7 @@ Function Export-DbaDacpac {
 						SqlInstance	     = $server.DomainInstanceName
 						Database		 = $dbname
 						FileName	   = $path
-						Elapsed	       = [prettytimespan]($elapsed)
+						Elapsed	       = [prettytimespan]($resultstime.Elapsed)
 						Status		   = "Failure"
 					} | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
 					
