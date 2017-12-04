@@ -147,6 +147,10 @@ Function Publish-DbaDacpac {
 			$db = $server.Databases | Where-Object Name -eq $Database
 			$dbname = $db.name
 			
+			if (-not $dbname) {
+				Stop-Function -Message "Database $Database does not exist on $instance" -Target $instance -Continue
+			}
+			
 			$connstring = $server.ConnectionContext.ConnectionString.Replace('"', "'")
 			if ($connstring -notmatch 'Database=') {
 				$connstring = "$connstring;Database=$dbname"
@@ -160,11 +164,11 @@ Function Publish-DbaDacpac {
 			}
 			
 			$options = @{
-				GenerateDeploymentScript	 = $GenerateDeploymentScript
-				GenerateDeploymentReport	 = $GenerateDeploymentReport
-				DatabaseScriptPath		     = $dbnameScriptPath
-				MasterDbScriptPath		     = $MasterDbScriptPath
-				DeployOptions			     = $dacProfile.DeployOptions
+				GenerateDeploymentScript   = $GenerateDeploymentScript
+				GenerateDeploymentReport   = $GenerateDeploymentReport
+				DatabaseScriptPath		   = $dbnameScriptPath
+				MasterDbScriptPath		   = $MasterDbScriptPath
+				DeployOptions			   = $dacProfile.DeployOptions
 			}
 			
 			try {
@@ -184,7 +188,7 @@ Function Publish-DbaDacpac {
 				}
 			}
 			catch [Microsoft.SqlServer.Dac.DacServicesException] {
-				$message = ('Deployment failed: ''{0}'' Reason: ''{1}''' -f $_.Exception.Message, $_.Exception.InnerException.Message)
+				$message = ('Deployment failed: {0} `nReason: {1}' -f $_.Exception.Message, $_.Exception.InnerException.Message)
 			}
 			finally {
 				Unregister-Event -SourceIdentifier "msg"
