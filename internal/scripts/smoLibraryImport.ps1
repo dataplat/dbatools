@@ -150,6 +150,14 @@ $names = @(
 		
 		'Microsoft.SqlServer.Dmf.Adapters',
 		'Microsoft.SqlServer.DmfSqlClrWrapper',
+		
+		'Microsoft.Data.Tools.Schema.Sql',
+		'Microsoft.Data.Tools.Utilities',
+		'Microsoft.SqlServer.TransactSql.ScriptDom',
+		'Microsoft.Data.Tools.Schema.Utilities.Sql',
+		'Microsoft.Data.Tools.Components',
+		'Microsoft.Data.Tools.Contracts',
+		'Microsoft.SqlServer.Dac.Extensions',
 		'Microsoft.SqlServer.Dac'
 	)
 	#endregion Names
