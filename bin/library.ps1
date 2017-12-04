@@ -68,17 +68,8 @@ if ($ImportLibrary) {
 				$start = Get-Date
 				try {
 					Write-Verbose -Message "Found library, trying to copy & import"
-					$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999).dll"
-					while (Test-Path -Path $libraryTempPath) {
-						try {
-							Remove-Item -Path $libraryTempPath -Force -ErrorAction Stop
-						}
-						catch {
-							$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999).dll"
-						}
-					}
-					Copy-Item -Path "$libraryBase\dbatools.dll" -Destination $libraryTempPath -Force -ErrorAction Stop
-					Add-Type -Path $libraryTempPath -ErrorAction Stop
+					Copy-Item -Path "$libraryBase\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop
+					Add-Type -Path "$script:DllRoot\dbatools.dll" -ErrorAction Stop
 				}
 				catch {
 					Write-Verbose -Message "Failed to copy&import, attempting to import straight from the module directory"
@@ -115,18 +106,9 @@ if ($ImportLibrary) {
 				
 				try {
 					Write-Verbose -Message "Found library, trying to copy & import"
-					$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999).dll"
-					while (Test-Path -Path $libraryTempPath) {
-						try {
-							Remove-Item -Path $libraryTempPath -Force -ErrorAction Stop
-						}
-						catch {
-							$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999).dll"
-						}
-					}
-					if ($script:alwaysBuildLibrary) { Move-Item -Path "$libraryBase\dbatools.dll" -Destination $libraryTempPath -Force -ErrorAction Stop }
-					else { Copy-Item -Path "$libraryBase\dbatools.dll" -Destination $libraryTempPath -Force -ErrorAction Stop }
-					Add-Type -Path $libraryTempPath -ErrorAction Stop
+					if ($script:alwaysBuildLibrary) { Move-Item -Path "$libraryBase\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop }
+					else { Copy-Item -Path "$libraryBase\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop }
+					Add-Type -Path "$script:DllRoot\dbatools.dll" -ErrorAction Stop
 				}
 				catch {
 					Write-Verbose -Message "Failed to copy&import, attempting to import straight from the module directory"
