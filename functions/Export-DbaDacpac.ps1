@@ -153,20 +153,9 @@ Function Export-DbaDacpac {
 						Database		 = $dbname
 						FileName	   = $path
 						Elapsed	       = [prettytimespan]($resultstime.Elapsed)
-						Status		   = "Success"
 					} | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
 				}
-				catch {
-					[pscustomobject]@{
-						ComputerName	 = $server.NetName
-						InstanceName	 = $server.ServiceName
-						SqlInstance	     = $server.DomainInstanceName
-						Database		 = $dbname
-						FileName	   = $path
-						Elapsed	       = [prettytimespan]($resultstime.Elapsed)
-						Status		   = "Failure"
-					} | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
-					
+				catch {		
 					Stop-Function -Message "SQLPackage Failure" -ErrorRecord $_ -Continue
 				}
 				
