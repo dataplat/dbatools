@@ -119,7 +119,18 @@ Write-ImportTime -Text  "Validated defines"
 Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
 Write-ImportTime -Text  "Unblocking Files"
 
-if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
+# Define folder in which to copy dll files before importing
+if ($script:strictSecurityMode) { $script:DllRoot = "$script:PSModuleRoot\bin" }
+else {
+	$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)"
+	while (Test-Path -Path $libraryTempPath) {
+		$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)"
+	}
+	$script:DllRoot = $libraryTempPath
+	$null = New-Item -Path $libraryTempPath -ItemType Directory
+}
+
+if (-not ([System.Management.Automation.PSTypeName]'Microsoft.SqlServer.Management.Smo.Server').Type) {
 	. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\smoLibraryImport.ps1"
 	Write-ImportTime -Text "Starting import SMO libraries"
 }
@@ -197,6 +208,7 @@ Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
 . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1"
 Write-ImportTime -Text "Script: Maintenance"
 
+#region Aliases
 # I renamed this function to be more accurate - 1ms
 @(
 @{"AliasName" = "Copy-SqlAgentCategory"
@@ -361,6 +373,7 @@ Write-ImportTime -Text "Script: Maintenance"
 ) | ForEach-Object {
 if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
 }
+#endregion Aliases
 
 #region Post-Import Cleanup
 Write-ImportTime -Text "Loading Aliases"
