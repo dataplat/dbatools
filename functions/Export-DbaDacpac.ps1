@@ -99,7 +99,7 @@ Function Export-DbaDacpac {
 			
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance."
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
@@ -131,7 +131,7 @@ Function Export-DbaDacpac {
 				
 				try {
 					$startprocess = New-Object System.Diagnostics.ProcessStartInfo
-					$startprocess.FileName = "$script:PSModuleRoot\bin\dacfx\sqlpackage.exe"
+					$startprocess.FileName = "$script:PSModuleRoot\bin\smo\sqlpackage.exe"
 					$startprocess.Arguments = $sqlPackageArgs
 					$startprocess.RedirectStandardError = $true
 					$startprocess.RedirectStandardOutput = $true
