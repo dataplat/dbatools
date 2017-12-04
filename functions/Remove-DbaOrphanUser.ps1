@@ -330,7 +330,7 @@ function Remove-DbaOrphanUser {
 						$User = $null
 					}
 					catch {
-						Stop-Function -Message $_ -Target $db -Continue
+						Stop-Function -Message "Failure" -ErrorRecord $_ -Target $db -Continue
 					}
 				}
 			}
