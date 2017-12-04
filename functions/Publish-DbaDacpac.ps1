@@ -37,6 +37,9 @@ Function Publish-DbaDacpac {
         
 		.PARAMETER IncludeSqlCmdVars
             Optional. If there are SqlCmdVars in the publish.xml that need to have their values overwritten.
+	
+		.PARAMETER PipedPublishedProfile
+			Internal parameter to support piping from New-DbaPublishProfile
         
 		.PARAMETER EnableException
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -67,7 +70,6 @@ Function Publish-DbaDacpac {
     #>
 	[CmdletBinding()]
 	param (
-		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstance[]]$SqlInstance,
 		[Alias("Credential")]
@@ -82,11 +84,20 @@ Function Publish-DbaDacpac {
 		[switch]$GenerateDeploymentReport,
 		[Switch]$ScriptOnly,
 		[string]$OutputPath,
-		[Switch]$IncludeSqlCmdVars,
+		[switch]$IncludeSqlCmdVars,
+		[parameter(ValueFromPipeline)]
+		[object]$PipedPublishedProfile,
 		[switch]$EnableException
 	)
 	
+	begin {
+		if ((Test-Bound -Not -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName PipedPublishedProfile)) {
+			Stop-Function -Message "You must specify either SqlInstance or pipe results from New-DbaPublishProfile"
+		}
+	}
+	
 	process {
+		if (Test-FunctionInterrupt) { return }
 		
 		if (-not (Test-Path -Path $Path)) {
 			Stop-Function -Message "$Path not found!"
@@ -118,13 +129,13 @@ Function Publish-DbaDacpac {
 			
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance."
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$cleaninstance = $instance.ToString().Replace('\', '$')
+			$cleaninstance = $instance.ToString().Replace('\', '-')
 			
 			if ($OutputPath) {
 				$timeStamp = (Get-Date).ToString("yyMMdd_HHmmss_f")
@@ -141,7 +152,12 @@ Function Publish-DbaDacpac {
 				$connstring = "$connstring;Database=$dbname"
 			}
 			
-			$dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connstring
+			try {
+				$dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connstring
+			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
+			}
 			
 			$options = @{
 				GenerateDeploymentScript	 = $GenerateDeploymentScript
