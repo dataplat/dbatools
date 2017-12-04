@@ -202,12 +202,17 @@ function Install-DbaWhoIsActive {
 			}
 			
 			if ($PSCmdlet.ShouldProcess($instance, "Installing sp_WhoisActive")) {
-				$allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
-				$databases = $server.Databases | Where-Object Name -eq $Database
-				if ($databases.Count -eq 0) {
-					Stop-Function -Message "Failed to find database $Database on $instance." -ErrorRecord $_ -Continue -Target $instance
+				try {
+					$allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
+					$databases = $server.Databases | Where-Object Name -eq $Database
+					if ($databases.Count -eq 0) {
+						Stop-Function -Message "Failed to find database $Database on $instance." -ErrorRecord $_ -Continue -Target $instance
+					}
+					$allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 				}
-				$allprocedures = ($server.Query($allprocedures_query, $Database)).Name
+				catch {
+					Stop-Function -Message "Failed to install stored procedure." -ErrorRecord $_ -Continue -Target $instance
+				}
 				foreach ($batch in $batches) {
 					try {
 						$null = $server.databases[$Database].ExecuteNonQuery($batch)
