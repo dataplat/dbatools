@@ -439,14 +439,15 @@ function Backup-DbaDatabase {
 				
 				try {
 					if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbname to $backupfile")) {
-							$backup.SqlBackup($server)
+						$Filelist = @()
+						$FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
+						$FileList += $server.Databases[$dbname].LogFiles | Select-Object @{ Name = "FileType"; Expression = { "L" } }, @{ Name = "Type"; Expression = { "L" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
+						
+						$backup.SqlBackup($server)
 						$script = $backup.Script($server)
 						Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
 						$BackupComplete = $true
-						$Filelist = @()
 						$HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly | Sort-Object -Property End -Descending | Select-Object -First 1
-						$FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
-						$FileList += $server.Databases[$dbname].LogFiles | Select-Object @{ Name = "FileType"; Expression = { "L" } }, @{ Name = "Type"; Expression = { "L" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
 						$Verified = $false
 						if ($Verify) {
 							$verifiedresult = [PSCustomObject]@{
@@ -482,9 +483,14 @@ function Backup-DbaDatabase {
 					}
 				}
 				catch {
-					Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
-					Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -EnableException $EnableException -ErrorRecord $_
-					$BackupComplete = $false
+					if ($NoRecovery -and ($_.Exception.InnerException.InnerException.InnerException -like '*cannot be opened. It is in the middle of a restore.')){
+						Write-Message -Message "Exception thrown by db going into restoring mode due to recovery" -Leve Verbose
+					}
+					else{
+						Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
+						Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -EnableException $EnableException -ErrorRecord $_
+						$BackupComplete = $false
+					}
 				}
 			}
 			$OutputExclude = 'FullName', 'FileList', 'SoftwareVersionMajor'
