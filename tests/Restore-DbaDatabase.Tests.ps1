@@ -485,4 +485,78 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
            $output | Should be $null
         }
     }
+
+    Context "Page level restores"{
+        Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -confirm:$false
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName PageRestore -DestinationFilePrefix PageRestore
+        $sql = "alter database PageRestore set Recovery Full
+        
+        Create table testpage(
+            Filler char(8000)
+        )
+        
+        insert into testpage values (REPLICATE('a','8000'))
+        insert into testpage values (REPLICATE('b','8000'))
+        insert into testpage values (REPLICATE('c','8000'))
+        insert into testpage values (REPLICATE('d','8000'))
+        
+        Backup database PageRestore to disk='c:\temp\pagerestore.bak'
+        Create table #TmpIndex(
+        PageFiD int,
+        PagePid int,
+        IAMFID int,
+        IAMPid int,
+        ObjectID int,
+        IndexID int,
+        PartitionNumber bigint,
+        ParitionId bigint,
+        iam_chain_type varchar(50),
+        PageType int,
+        IndexLevel int,
+        NextPageFID int,
+        NextPagePID int,
+        prevPageFid int,
+        PrevPagePID int
+        ) 
+        
+        insert #TmpIndex exec ('dbcc ind(PageRestore,testpage,-1)')
+        dbcc ind(PageRestore,testpage,-1)
+        
+        declare @pageid int
+        select top 1 @pageid=PagePid from #TmpIndex where IAMFID is not null and IAmPID is not null
+        
+        --select * from #TmpIndex 
+        --pageid = 256
+        
+        alter database pagerestore set single_user with rollback immediate
+        
+        
+        dbcc writepage(pagerestore,1,@pageid,0,1,0x41,1)
+        dbcc writepage(pagerestore,1,@pageid,1,1,0x41,1)
+        dbcc writepage(pagerestore,1,@pageid,2,1,0x41,1)
+        
+        alter database pagerestore set multi_user 
+        
+        insert into testpage values (REPLICATE('e','8000'))
+        
+        Backup log PageRestore to disk='c:\temp\PageRestore.trn'
+        
+        insert into testpage values (REPLICATE('f','8000'))
+        use master"  
+        $sqlResults = Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $sql -Database Pagerestore
+        $sqlResults2 = Invoke-SqlCmd2 -ServerInstance $script:instance1 -Database Master -Query "select * from pagerestore.dbo.testpage where filler like 'a%'" -ErrorVariable errvar -ErrorAction SilentlyContinue
+        It "Should have warned about corruption"{
+            ($errvar -match "SQL Server detected a logical consistency-based I/O error: incorrect checksum \(expected") | Should be $True    
+            ($null -eq $sqlResults2) | SHould be $True
+        }
+        $null = Get-DbaBackupHistory -SqlInstance $script:instance1 -Database pagerestore -last  | Restore-DbaDatabase -SqlInstance $script:instance1 -PageRestore (Get-DbaSuspectPage -SqlInstance $script:instance1 -Database PageRestore) -TrustDbBackupHistory -AllowContinue -DatabaseName PageRestore -PageRestoreTailFolder c:\temp -ErrorAction SilentlyContinue
+        $sqlResults3 = Invoke-SqlCmd2 -ServerInstance $script:instance1 -Query "select * from pagerestore.dbo.testpage where filler like 'f%'" -ErrorVariable errvar3 -ErrorAction SilentlyContinue
+        It "Should work after page restore" {
+            #($null -eq $errvar3) | Should Be $True
+            ($null -eq $sqlResults3) | SHould be $False    
+        }
+
+
+        
+    }
 }

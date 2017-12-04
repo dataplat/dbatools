@@ -2012,6 +2012,16 @@
             A Central Management Server RegisteredServer SMO object was bound
             </summary>
         </member>
+        <member name="F:Sqlcollaborative.Dbatools.Parameter.DbaInstanceInputType.ConnectionString">
+            <summary>
+            An actual connection string was specified. Connection strings are directly reused for SMO connections
+            </summary>
+        </member>
+        <member name="F:Sqlcollaborative.Dbatools.Parameter.DbaInstanceInputType.ConnectionStringLocalDB">
+            <summary>
+            A connection string pointing at a local, file-based DB
+            </summary>
+        </member>
         <member name="T:Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter">
             <summary>
             Input converter for instance information
