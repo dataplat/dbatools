@@ -8,7 +8,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     $LogFolder = 'C:\temp\logfiles'
     New-Item -Type Directory $DataFolder -ErrorAction SilentlyContinue
     new-Item -Type Directory $LogFolder -ErrorAction SilentlyContinue
-<#    Context "Properly restores a database on the local drive using Path" {
+    Context "Properly restores a database on the local drive using Path" {
         $null = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak
         It "Should Return the proper backup file location" {
@@ -485,7 +485,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
            $output | Should be $null
         }
     }
-#>
+
     Context "Page level restores"{
         Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -confirm:$false
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName PageRestore -DestinationFilePrefix PageRestore
