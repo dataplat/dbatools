@@ -26,6 +26,9 @@ function Get-DbaDiskSpace {
 		
 		.PARAMETER Credential
 			The credentials to use to connect via CIM/WMI/PowerShell remoting
+
+		.PARAMETER Detailed
+		    Output all properties, will be deprecated in 1.0.0 release. Use Force Instead
 		
 		.PARAMETER Force
 			Enabling this switch will cause the command to include ALL drives.
@@ -82,9 +85,9 @@ function Get-DbaDiskSpace {
 			srv0007 C:\  System     0,07     0,01       11,92      4096
 		
 		.EXAMPLE
-			Get-DbaDiskSpace -ComputerName srv0042 -Detailed | Format-Table -AutoSize
+			Get-DbaDiskSpace -ComputerName srv0042 -Force | Format-Table -AutoSize
 			
-			Get detailed disk space information.
+			Get all disk and volume space information.
 			
 			Server  Name                                              Label    SizeInGB FreeInGB PercentFree BlockSize IsSqlDisk FileSystem DriveType
 			------  ----                                              -----    -------- -------- ----------- --------- --------- ---------- ---------
