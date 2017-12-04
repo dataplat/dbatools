@@ -23,6 +23,11 @@ Function Publish-DbaDacpac {
 		.PARAMETER Database
             Mandatory. The name of the database you are publishing.
         
+		.PARAMETER ConnectionString
+        The connection string to the database you are upgrading. 
+
+		Alternatively, you can provide a SqlInstance (and optionally SqlCredential) and the script will connect and generate the connectionstring.
+    
 		.PARAMETER GenerateDeploymentScript
             Determines whether or not to create publish script. 
         
@@ -56,7 +61,11 @@ Function Publish-DbaDacpac {
         .LINK
             https://dbatools.io/Publish-DbaDacpac
 
-        .EXAMPLE
+		.EXAMPLE
+			Publish-DbaDacpac -SqlInstance sql2017 -Database WideWorldImporters -Path C:\temp\sql2016-WideWorldImporters.dacpac -PublishXml C:\temp\sql2016-WideWorldImporters-publish.xml 
+	
+        
+		.EXAMPLE
             $svrConnstring = "SERVER=(localdb1)\MSSQLLocalDB;Integrated Security=True;Database=master"
             $output_NAME = "WideWorldImporters"
             $output = "C:\Users\Richie\Source\Repos\PoshSSDTBuildDeploy\tests\wwi-dw-ssdt"
@@ -66,6 +75,7 @@ Function Publish-DbaDacpac {
             $output_DACPAC = Join-Path $output "\bin\Debug\WideWorldImportersDW.dacpac"
             $output_PUB = Join-Path $output "\bin\Debug\WideWorldImportersDW.publish.xml"
         Publish-DbaDacpac -dacpac $output_DACPAC -PublishXml $output_PUB -connstring $svrConnstring -Database $output_NAME -GenerateDeploymentScript $true -GenerateDeployMentReport $true -OutputPath $output -Verbose -EnableException
+	
 
     #>
 	[CmdletBinding()]
@@ -80,6 +90,7 @@ Function Publish-DbaDacpac {
 		[string]$PublishXml,
 		[Parameter(Mandatory)]
 		[string]$Database,
+		[string[]]$ConnectionString,
 		[switch]$GenerateDeploymentScript,
 		[switch]$GenerateDeploymentReport,
 		[Switch]$ScriptOnly,
@@ -125,8 +136,7 @@ Function Publish-DbaDacpac {
 			Get-SqlCmdVars -SqlCommandVariableValues $dacProfile.DeployOptions.SqlCommandVariableValues
 		}
 		
-		foreach ($instance in $sqlinstance) {
-			
+		foreach ($instance in $sqlinstance) {	
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance."
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
