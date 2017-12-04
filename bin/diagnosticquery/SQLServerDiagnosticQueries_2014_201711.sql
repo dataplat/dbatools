@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: November 28, 2017
+-- Last Modified: December 1, 2017
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -207,6 +207,9 @@ DBCC TRACESTATUS (-1);
 -- TF 3226 - Supresses logging of successful database backup messages to the SQL Server Error Log
 --           https://www.sqlskills.com/blogs/paul/fed-up-with-backup-success-messages-bloating-your-error-logs/
 
+-- TF 3449 - Enables use of dirty page manager (SQL Server 2014 SP1 CU7 and later)
+--			 https://blogs.msdn.microsoft.com/psssql/2017/06/29/sql-server-large-ram-and-db-checkpointing/
+
 -- TF 6533 - Spatial performance improvements in SQL Server 2012 and 2014
 --           https://support.microsoft.com/en-us/kb/3107399
 
@@ -216,8 +219,8 @@ DBCC TRACESTATUS (-1);
 -- TF 8079 - Enables automatic soft-NUMA on systems with eight or more physical cores per NUMA node (with SQL Server 2014 SP2)
 --           https://blogs.msdn.microsoft.com/sqlreleaseservices/sql-2014-service-pack-2-is-now-available/
 
--- SQL Server query optimizer hotfix trace flag 4199 servicing model
--- https://support.microsoft.com/en-us/kb/974006
+-- DBCC TRACEON - Trace Flags (Transact-SQL)
+-- https://docs.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-traceon-trace-flags-transact-sql
 
 
 
