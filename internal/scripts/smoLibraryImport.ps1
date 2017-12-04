@@ -157,8 +157,8 @@ $names = @(
 		'Microsoft.Data.Tools.Contracts',
 		'Microsoft.SqlServer.Dac.Extensions',
 		'Microsoft.SqlServer.Dac'
-		#'Microsoft.Data.Tools.Schema.Sql',
-		#'Microsoft.Data.Tools.Schema.Utilities.Sql'
+		'Microsoft.Data.Tools.Schema.Sql',
+		'Microsoft.Data.Tools.Schema.Utilities.Sql'
 	)
 	#endregion Names
 	
