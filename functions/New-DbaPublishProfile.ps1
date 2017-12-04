@@ -103,7 +103,7 @@ Function New-DbaPublishProfile {
 				$instance = $builder['server']
 			}
 						
-			return $instance.ToString().Replace('\', '-').Replace('(','').Replace(')', '')
+			return $instance.ToString().Replace('\', '-')
 		}
 	}
 	process {
