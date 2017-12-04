@@ -384,7 +384,7 @@ function Remove-DbaDatabaseSafely {
 				}
 			}
 			catch {
-				Stop-Function -Message "Restore failed: $($_.Exception)."
+				Stop-Function -Message "Restore failed" -ErrorRecord $_ -Target $dbname
 				return $false
 			}
 		}
