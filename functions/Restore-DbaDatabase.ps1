@@ -275,10 +275,11 @@ function Restore-DbaDatabase {
     
     .EXAMPLE
         $SuspectPage = Get-DbaSuspectPage -SqlInstance server\instance1 -Database ProdFinance
-        Get-DbaBackupHistory - SqlInstance server\instance1 -Database -ProdFinance -Last | Restore-DbaDatabase -PageRestore $SuspectPage -PageRestoreTailFolder c:\temp -TrustDbBackupHistory
+        Get-DbaBackupHistory - SqlInstance server\instance1 -Database -ProdFinance -Last | Restore-DbaDatabase -PageRestore $SuspectPage -PageRestoreTailFolder c:\temp -TrustDbBackupHistory -AllowContinues
 
         Gets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date
         If server\instance1 is Enterprise edition this will be done online, if not it will be performed offline
+        AllowContinue is required to make sure we cope with existing files 
 
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
