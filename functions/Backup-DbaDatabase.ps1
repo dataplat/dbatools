@@ -79,6 +79,9 @@ function Backup-DbaDatabase {
 		.PARAMETER AzureCredential
 			The name of the credential on the SQL instance that can write to the AzureBaseUrl.
 
+		.PARAMETER NoRecovery
+			This is passed in to perform a tail log backup if needed
+
 		.PARAMETER EnableException
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -138,6 +141,7 @@ function Backup-DbaDatabase {
 		[int]$BufferCount,
 		[string]$AzureBaseUrl,
 		[string]$AzureCredential,
+		[switch]$NoRecovery,
 		[switch][Alias('Silent')]$EnableException
 	)
 	
@@ -277,12 +281,13 @@ function Backup-DbaDatabase {
 				$backup.Incremental = $true
 				$outputType = 'Differential'
 			}
-			
+			$Backup.NoRecovery = $False
 			if ($Type -eq "Log") {
 				Write-Message -Level VeryVerbose -Message "Creating log backup"
 				$Suffix = "trn"
 				$OutputType = 'Log'
 				$SMOBackupType = 'Log'
+				$Backup.NoRecovery = $NoRecovery
 			}
 			
 			if ($type -in 'Full', 'Database') {
@@ -296,7 +301,7 @@ function Backup-DbaDatabase {
 			if ('' -ne $AzureBaseUrl) {
 				$backup.CredentialName = $AzureCredential
 			}
-			
+
 			Write-Message -Level VeryVerbose -Message "Sorting Paths"
 			
 			#If a backupfilename has made it this far, use it
@@ -434,14 +439,15 @@ function Backup-DbaDatabase {
 				
 				try {
 					if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbname to $backupfile")) {
-							$backup.SqlBackup($server)
+						$Filelist = @()
+						$FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
+						$FileList += $server.Databases[$dbname].LogFiles | Select-Object @{ Name = "FileType"; Expression = { "L" } }, @{ Name = "Type"; Expression = { "L" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
+						
+						$backup.SqlBackup($server)
 						$script = $backup.Script($server)
 						Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
 						$BackupComplete = $true
-						$Filelist = @()
 						$HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly | Sort-Object -Property End -Descending | Select-Object -First 1
-						$FileList += $server.Databases[$dbname].FileGroups.Files | Select-Object @{ Name = "FileType"; Expression = { "D" } }, @{ Name = "Type"; Expression = { "D" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
-						$FileList += $server.Databases[$dbname].LogFiles | Select-Object @{ Name = "FileType"; Expression = { "L" } }, @{ Name = "Type"; Expression = { "L" } }, @{ Name = "LogicalName"; Expression = { $_.Name } }, @{ Name = "PhysicalName"; Expression = { $_.FileName } }
 						$Verified = $false
 						if ($Verify) {
 							$verifiedresult = [PSCustomObject]@{
@@ -477,9 +483,14 @@ function Backup-DbaDatabase {
 					}
 				}
 				catch {
-					Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
-					Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -EnableException $EnableException -ErrorRecord $_
-					$BackupComplete = $false
+					if ($NoRecovery -and ($_.Exception.InnerException.InnerException.InnerException -like '*cannot be opened. It is in the middle of a restore.')){
+						Write-Message -Message "Exception thrown by db going into restoring mode due to recovery" -Leve Verbose
+					}
+					else{
+						Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
+						Stop-Function -message "Backup Failed:  $($_.Exception.Message)" -EnableException $EnableException -ErrorRecord $_
+						$BackupComplete = $false
+					}
 				}
 			}
 			$OutputExclude = 'FullName', 'FileList', 'SoftwareVersionMajor'
