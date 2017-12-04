@@ -149,7 +149,9 @@ $names = @(
 		'Microsoft.SqlServer.XMLTask',
 		
 		'Microsoft.SqlServer.Dmf.Adapters',
-		'Microsoft.SqlServer.DmfSqlClrWrapper'
+		'Microsoft.SqlServer.DmfSqlClrWrapper',
+		
+		'Microsoft.SqlServer.Dac'
 	)
 	#endregion Names
 	
