@@ -11,18 +11,12 @@ Function Export-DbaDacpac {
 	For help with the extract action parameters and properties, refer to https://msdn.microsoft.com/en-us/library/hh550080(v=vs.103).aspx
 
 	.PARAMETER SqlInstance
-	SQL Server name or SMO object representing the SQL Server to connect to and export from.
+	SQL Server name or SMO object representing the SQL Server to connect to and publish to.
 
 	.PARAMETER SqlCredential
-	Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+	Allows you to login to servers using alternative logins instead Integrated, accepts Credential object created by Get-Credential
 
-	$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-	Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-	To connect as a different Windows user, run PowerShell as that user.
-
-	.PARAMETER Directory
+	.PARAMETER Path
 	The directory where the .dacpac files will be exported to. Defaults to documents.
 	
 	.PARAMETER Database
@@ -65,7 +59,7 @@ Function Export-DbaDacpac {
 
 	.EXAMPLE
 	$moreprops = "/p:VerifyExtraction=$true /p:CommandTimeOut=10"
-	Export-DbaDacpac -SqlInstance sql2016 -Database SharePoint_Config -Directory C:\temp -ExtendedProperties $moreprops
+	Export-DbaDacpac -SqlInstance sql2016 -Database SharePoint_Config -Path C:\temp -ExtendedProperties $moreprops
 
 	Sets the CommandTimeout to 10 then extracts the dacpac for SharePoint_Config on sql2016 to C:\temp\SharePoint_Config.dacpac then verifies extraction.
 
@@ -82,7 +76,7 @@ Function Export-DbaDacpac {
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[switch]$AllUserDatabases,
-		[string]$Directory = "$home\Documents",
+		[string]$Path = "$home\Documents",
 		[string]$ExtendedParameters,
 		[string]$ExtendedProperties,
 		[switch]$EnableException
@@ -93,8 +87,8 @@ Function Export-DbaDacpac {
 			Stop-Function -Message "You must specify databases to execute against using either -Database, -ExcludeDatabase or -AllUserDatabases" -Continue
 		}
 		
-		if (-not (Test-Path $Directory)) {
-			Stop-Function -Message "$Directory doesn't exist or access denied" -Continue
+		if (-not (Test-Path $Path)) {
+			Stop-Function -Message "$Path doesn't exist or access denied" -Continue
 		}
 		
 		foreach ($instance in $sqlinstance) {
@@ -124,11 +118,11 @@ Function Export-DbaDacpac {
 				if ($connstring -notmatch 'Database=') {
 					$connstring = "$connstring;Database=$dbname"
 				}
-				$path = "$Directory\$cleaninstance-$dbname.dacpac"
-				Write-Message -Level Verbose -Message "Exporting $path"
+				$filename = "$Path\$cleaninstance-$dbname.dacpac"
+				Write-Message -Level Verbose -Message "Exporting $filename"
 				Write-Message -Level Verbose -Message "Using connection string $connstring"
 				
-				$sqlPackageArgs = "/action:Extract /tf:""$path"" /SourceConnectionString:""$connstring"" $ExtendedParameters $ExtendedProperties"
+				$sqlPackageArgs = "/action:Extract /tf:""$filename"" /SourceConnectionString:""$connstring"" $ExtendedParameters $ExtendedProperties"
 				$resultstime = [diagnostics.stopwatch]::StartNew()
 				
 				try {
@@ -151,7 +145,7 @@ Function Export-DbaDacpac {
 						InstanceName	 = $server.ServiceName
 						SqlInstance	     = $server.DomainInstanceName
 						Database		 = $dbname
-						FileName	   = $path
+						FileName	   = $filename
 						Elapsed	       = [prettytimespan]($resultstime.Elapsed)
 					} | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
 				}

@@ -12,13 +12,7 @@ Function Publish-DbaDacpac {
 		SQL Server name or SMO object representing the SQL Server to connect to and publish to.
 
 		.PARAMETER SqlCredential
-		Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-		$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-		Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-		To connect as a different Windows user, run PowerShell as that user.
+		Allows you to login to servers using alternative logins instead Integrated, accepts Credential object created by Get-Credential
 		
 		.PARAMETER Path
             Mandatory. The path to the DACPAC.
