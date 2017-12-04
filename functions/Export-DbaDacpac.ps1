@@ -70,7 +70,7 @@ Function Export-DbaDacpac {
 	(
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[DbaInstance[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential]$SqlCredential,
 		[object[]]$Database,
@@ -84,11 +84,15 @@ Function Export-DbaDacpac {
 	
 	process {
 		if ((Test-Bound -Not -ParameterName Database) -and (Test-Bound -Not -ParameterName ExcludeDatabase) -and (Test-Bound -Not -ParameterName AllUserDatabases)) {
-			Stop-Function -Message "You must specify databases to execute against using either -Database, -ExcludeDatabase or -AllUserDatabases" -Continue
+			Stop-Function -Message "You must specify databases to execute against using either -Database, -ExcludeDatabase or -AllUserDatabases"
 		}
 		
 		if (-not (Test-Path $Path)) {
-			Stop-Function -Message "$Path doesn't exist or access denied" -Continue
+			Stop-Function -Message "$Path doesn't exist or access denied"
+		}
+		
+		if ((Get-Item $path) -isnot [System.IO.DirectoryInfo]) {
+			Stop-Function -Message "Path must be a directory"
 		}
 		
 		foreach ($instance in $sqlinstance) {
@@ -100,7 +104,7 @@ Function Export-DbaDacpac {
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-			$cleaninstance = $instance.ToString().Replace('\', '$')
+			$cleaninstance = $instance.ToString().Replace('\', '-')
 			
 			$dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible }
 			
