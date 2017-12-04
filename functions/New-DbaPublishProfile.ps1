@@ -44,15 +44,15 @@ Function New-DbaPublishProfile {
             https://dbatools.io/New-DbaPublishProfile
 
         .EXAMPLE
-        $PPP = "C:\Users\Richie\Documents\dbaToolsScripts"
-        $TDN = "WorldWideImporters"
-        $TCS = "SERVER=(localdb)\MSSQLLocalDB;Integrated Security=True;Database=master"
-        
-        This example will return filepath
-        $newProfilePath = New-DbaPublishProfile -Path $PPP -Database $TDN -ConnectionString $TCS
-
-        This example will return the xml
-        $newProfileXml = New-DbaPublishProfile -Database $TDN -ConnectionString $TCS
+        New-DbaPublishProfile -SqlInstance sql2017 -SqlCredential (Get-Credential) -Database WorldWideImporters -Path C:\temp
+		
+		In this example, a prompt will appear for alternative credentials, tghen a connection will be made to sql2017. Using that connection,
+		the ConnectionString will be extracted and used within the Publish Profile XML file which will be created at C:\temp\sql2017-WorldWideImporters-publish.xml
+	 	
+		.EXAMPLE
+        New-DbaPublishProfile -Database WorldWideImporters -Path C:\temp -ConnectionString "SERVER=(localdb)\MSSQLLocalDB;Integrated Security=True;Database=master"
+	 	
+		In this example, no connections are made, and a Publish Profile XML would be created at C:\temp\localdb-MSSQLLocalDB-WorldWideImporters-publish.xml
 
 
     #>
@@ -60,18 +60,27 @@ Function New-DbaPublishProfile {
 	param (
 		[parameter(ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[DbaInstance[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential]$SqlCredential,
 		[Parameter(Mandatory)]
 		[string[]]$Database,
-		[string[]]$ConnectionString,
+		[Parameter(Mandatory)]
 		[string]$Path,
+		[string[]]$ConnectionString,
 		[switch]$EnableException
 	)
 	begin {
 		if ((Test-Bound -Not -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName ConnectionString)) {
 			Stop-Function -Message "You must specify either SqlInstance or ConnectionString"
+		}
+		
+		if (-not (Test-Path $Path)) {
+			Stop-Function -Message "$Path doesn't exist or access denied"
+		}
+		
+		if ((Get-Item $path) -isnot [System.IO.DirectoryInfo]) {
+			Stop-Function -Message "Path must be a directory"
 		}
 		
 		function Get-Template ($db, $connstring) {
@@ -82,14 +91,19 @@ Function New-DbaPublishProfile {
 		        <TargetConnectionString>{1}</TargetConnectionString>
 		        <ProfileVersionNumber>1</ProfileVersionNumber>
 		      </PropertyGroup>
-		    </Project>" -f $db, $connstring
+		    </Project>" -f $db[0], $connstring
 		}
 		
 		function Get-ServerName ($connstring) {
 			$builder = New-Object System.Data.Common.DbConnectionStringBuilder
 			$builder.set_ConnectionString($connstring)
 			$instance = $builder['data source']
-			return $instance.ToString().Replace('\', '$')
+			
+			if (-not $instance) {
+				$instance = $builder['server']
+			}
+						
+			return $instance.ToString().Replace('\', '-').Replace('(','').Replace(')', '')
 		}
 	}
 	process {
@@ -104,28 +118,32 @@ Function New-DbaPublishProfile {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$ConnectionString += $server.ConnectionContext.ConnectionString.Replace(";Application Name=dbatools PowerShell module - dbatools.io", '')
+			$ConnectionString += $server.ConnectionContext.ConnectionString.Replace(';Application Name="dbatools PowerShell module - dbatools.io"', '')
 			
 		}
 		
 		foreach ($connstring in $ConnectionString) {
 			foreach ($db in $Database) {
 				$profileTemplate = Get-Template $db, $connstring
+				$instancename = Get-ServerName $connstring
 				
-				if (-not $Path) {
-					$profileTemplate
+				try {
+					$server = [DbaInstance]($instancename.ToString().Replace('-', '\'))
+					$PublishProfile = Join-Path $Path "$instancename-$db-publish.xml" -ErrorAction Stop
+					Write-Message -Level Verbose -Message "Writing to $PublishProfile"
+					$profileTemplate | Out-File $PublishProfile -ErrorAction Stop
+					[pscustomobject]@{
+						ComputerName  = $server.ComputerName
+						InstanceName = $server.InstanceName
+						SqlInstance = $server.FullName
+						Database = $db
+						FileName = $PublishProfile
+						ConnectionString = $connstring
+						ProfileTemplate = $profileTemplate
+					} | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, ProfileTemplate
 				}
-				else {
-					try {
-						$instancename = Get-ServerName $connstring
-						$PublishProfile = Join-Path $Path "$instancename.$db.publish.xml" -ErrorAction Stop
-						Write-Message -Level Verbose -Message "Writing to $PublishProfile"
-						$profileTemplate | Out-File $PublishProfile -ErrorAction Stop
-						$profileTemplate
-					}
-					catch {
-						Stop-Function -ErrorRecord $_ -Message "Failure" -Target $instancename -Continue
-					}
+				catch {
+					Stop-Function -ErrorRecord $_ -Message "Failure" -Target $instancename -Continue
 				}
 			}
 		}
