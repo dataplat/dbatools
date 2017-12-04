@@ -6,8 +6,6 @@ function Test-DbaPowerPlan {
 		.DESCRIPTION
 			Checks the Power Plan settings on a computer against best practices recommendations. If one server is checked, only $true or $false is returned. If multiple servers are checked, each server's name and an isBestPractice field are returned.
 
-			Specify -Detailed for details.
-
 			References:
 			https://support.microsoft.com/en-us/kb/2207548
 			http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/
@@ -22,7 +20,7 @@ function Test-DbaPowerPlan {
 			If your organization uses a custom power plan that's considered best practice, specify it here.
 
 		.PARAMETER Detailed
-			If this switch is enabled, a detailed list will be returned. This parameter will be removed in 1.0.
+   			 Output all properties, will be deprecated in 1.0.0 release.
 
 		.PARAMETER EnableException
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -49,11 +47,6 @@ function Test-DbaPowerPlan {
 			Test-DbaPowerPlan -ComputerName sqlserver2014a -CustomPowerPlan 'Maximum Performance'
 
 			Checks the Power Plan settings for sqlserver2014a and indicates whether or not it is set to the custom plan "Maximum Performance".
-
-		.EXAMPLE
-			Test-DbaPowerPlan -ComputerName sqlserver2014a -Detailed
-
-			Returns detailed information about the Power Plans on sqlserver2014a.
 	#>
 	param (
 		[parameter(ValueFromPipeline = $true)]
@@ -66,9 +59,7 @@ function Test-DbaPowerPlan {
 	)
 
 	begin {
-		if ($Detailed) {
-			Write-Message -Level Warning -Message "Detailed is deprecated and will be removed in dbatools 1.0"
-		}
+		Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
 
 		$bpPowerPlan = [PSCustomObject]@{
 			InstanceID  = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'

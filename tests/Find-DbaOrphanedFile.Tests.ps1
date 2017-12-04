@@ -1,16 +1,15 @@
-﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	Context "Orphaned files are correctly identified" {
 		BeforeAll {
+			$dbname = "dbatoolsci_orphanedfile"
 			$server = Connect-DbaInstance -SqlInstance $script:instance2
-			$dbname = "dbatoolsci_findme"
-			Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
-			$server.Query("CREATE DATABASE $dbname")
-			$result = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
-			if ($result.count -ne 0) {
+			$null = $server.Query("CREATE DATABASE $dbname")
+			$result = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname
+			if ($result.count -eq 0) {
 				it "has failed setup" {
 					Set-TestInconclusive -message "Setup failed"
 				}
@@ -42,6 +41,26 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		It "Finds zero files after cleaning up" {
 			$results.Count | Should Be 0
 		}
-		
+	}
+}
+
+Describe "$CommandName Unit Tests" -Tags 'UnitTests' {
+	Context "Validate parameters" {
+		<#
+			The $paramCount is adjusted based on the parameters your command will have.
+			The $defaultParamCount is adjusted based on what type of command you are writing the test for:
+				- Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
+				- Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
+		#>
+		$paramCount = 7
+		$defaultParamCount = 11
+		[object[]]$params = (Get-ChildItem function:\Find-DbaOrphanedFile).Parameters.Keys
+		$knownParameters = 'SqlInstance', 'SqlCredential', 'Path', 'FileType', 'LocalOnly', 'RemoteOnly', 'EnableException'
+		It "Should contain our specific parameters" {
+			((Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count) | Should Be $paramCount
+		}
+		It "Should only contain $paramCount parameters" {
+			$params.Count - $defaultParamCount | Should Be $paramCount
+		}
 	}
 }
