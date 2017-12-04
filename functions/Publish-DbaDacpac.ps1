@@ -69,7 +69,7 @@ Function Publish-DbaDacpac {
 	param (
 		[parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[DbaInstance[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential]$SqlCredential,
 		[Parameter(Mandatory)]
