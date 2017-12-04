@@ -165,12 +165,12 @@ Function Publish-DbaDacpac {
 					}
 					else {
 						Write-Message -Level Verbose -Message "Generating script..."
-						$result = $dacServices.script($dacPackage, $dbname, $options)
+						$result = $dacServices.Script($dacPackage, $dbname, $options)
 					}
 				}
 				else {
 					Write-Message -Level Verbose -Message "Executing Deployment..."
-					$result = $dacServices.publish($dacPackage, $dbname, $options)
+					$result = $dacServices.Publish($dacPackage, $dbname, $options)
 				}
 			}
 			catch [Microsoft.SqlServer.Dac.DacServicesException] {
