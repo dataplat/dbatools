@@ -5,16 +5,16 @@ function Remove-DbaOrphanUser {
 
 		.DESCRIPTION
 			An orphan user is defined by a user that does not have their matching login. (Login property = "").
-			
+
 			If user is the owner of the schema with the same name and if if the schema does not have any underlying objects the schema will be dropped.
-			
+
 			If user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be changed to 'dbo'. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.
-			
+
 			If exists a login to map the drop will not be performed unless you specify the -Force parameter (only when calling from Repair-DbaOrphanUser.
 
         .PARAMETER SqlInstance
             The SQL Server Instance to connect to.
-        
+
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
@@ -48,7 +48,7 @@ function Remove-DbaOrphanUser {
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
+
 		.NOTES
 			Tags: Orphan, Databases
 			Author: Claudio Silva (@ClaudioESSilva)
@@ -132,7 +132,7 @@ function Remove-DbaOrphanUser {
 					$databases = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible -eq $true -and ($Database -contains $_.Name) }
 				}
 			}
-			
+
 			if ($ExcludeDatabase) {
 				$databases = $server.Databases | Where-Object {$_.Name -notin $ExcludeDatabase -and $_.IsAccessible -eq $true -and $_.IsSystemObject -eq $false }
 			}
@@ -330,7 +330,7 @@ function Remove-DbaOrphanUser {
 						$User = $null
 					}
 					catch {
-						Write-Message -Level Error -Message $_
+						Stop-Function -Message "Failure" -ErrorRecord $_ -Target $db -Continue
 					}
 				}
 			}
