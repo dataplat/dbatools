@@ -11,14 +11,22 @@ Function New-DbaPublishProfile {
             Once you have loaded it in Visual Studio, clicking advanced shows you the list of options available to you.
             For a full list of options that you can add to the profile, google "sqlpackage.exe command line switches" or (https://msdn.microsoft.com/en-us/library/hh550080(v=vs.103).aspx)
 
+		.PARAMETER SqlInstance
+		SQL Server name or SMO object representing the SQL Server to connect to and publish to. Alternatively, you can provide a ConnectionString.
+
+		.PARAMETER SqlCredential
+		Allows you to login to servers using alternative logins instead Integrated, accepts Credential object created by Get-Credential
+	
         .PARAMETER Database
-            The database name you are targetting
+            The database name you are targeting
         
 		.PARAMETER ConnectionString
-            The connection string to the database you are upgrading.
+            The connection string to the database you are upgrading. 
+	
+			Alternatively, you can provide a SqlInstance (and optionally SqlCredential) and the script will connect and generate the connectionstring.
         
-		.PARAMETER Directory
-            The path you would like to save the profile xml file.
+		.PARAMETER Path
+            The directory where you would like to save the profile xml file(s).
 
         .PARAMETER EnableException
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -41,7 +49,7 @@ Function New-DbaPublishProfile {
         $TCS = "SERVER=(localdb)\MSSQLLocalDB;Integrated Security=True;Database=master"
         
         This example will return filepath
-        $newProfilePath = New-DbaPublishProfile -Directory $PPP -Database $TDN -ConnectionString $TCS
+        $newProfilePath = New-DbaPublishProfile -Path $PPP -Database $TDN -ConnectionString $TCS
 
         This example will return the xml
         $newProfileXml = New-DbaPublishProfile -Database $TDN -ConnectionString $TCS
@@ -58,7 +66,7 @@ Function New-DbaPublishProfile {
 		[Parameter(Mandatory)]
 		[string[]]$Database,
 		[string[]]$ConnectionString,
-		[string]$Directory,
+		[string]$Path,
 		[switch]$EnableException
 	)
 	begin {
@@ -104,15 +112,20 @@ Function New-DbaPublishProfile {
 			foreach ($db in $Database) {
 				$profileTemplate = Get-Template $db, $connstring
 				
-				if (-not $Directory) {
+				if (-not $Path) {
 					$profileTemplate
 				}
 				else {
-					$instancename = Get-ServerName $connstring
-					$PublishProfile = Join-Directory $Directory "$instancename.$db.publish.xml"
-					Write-Message -Level Verbose -Message "Writing to $PublishProfile"
-					$profileTemplate | Out-File $PublishProfile
-					$profileTemplate
+					try {
+						$instancename = Get-ServerName $connstring
+						$PublishProfile = Join-Path $Path "$instancename.$db.publish.xml" -ErrorAction Stop
+						Write-Message -Level Verbose -Message "Writing to $PublishProfile"
+						$profileTemplate | Out-File $PublishProfile -ErrorAction Stop
+						$profileTemplate
+					}
+					catch {
+						Stop-Function -ErrorRecord $_ -Message "Failure" -Target $instancename -Continue
+					}
 				}
 			}
 		}
