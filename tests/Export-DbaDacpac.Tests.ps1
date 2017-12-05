@@ -19,7 +19,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		if ($global:wtf) {
 			Remove-Item -Confirm:$false -Path $global:wtf -ErrorAction SilentlyContinue
 		}
-		Remove-Variable -Name wtf -Scope Global
+			Remove-Variable -Name wtf -Scope Global -ErrorAction SilentlyContinue
 	}
 	
 	
