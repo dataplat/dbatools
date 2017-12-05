@@ -119,7 +119,18 @@ Write-ImportTime -Text  "Validated defines"
 Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" -Recurse | Unblock-File -ErrorAction SilentlyContinue
 Write-ImportTime -Text  "Unblocking Files"
 
-if (-not ([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported)) {
+# Define folder in which to copy dll files before importing
+if ($script:strictSecurityMode) { $script:DllRoot = "$script:PSModuleRoot\bin" }
+else {
+	$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)"
+	while (Test-Path -Path $libraryTempPath) {
+		$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)"
+	}
+	$script:DllRoot = $libraryTempPath
+	$null = New-Item -Path $libraryTempPath -ItemType Directory
+}
+
+if (-not ([System.Management.Automation.PSTypeName]'Microsoft.SqlServer.Management.Smo.Server').Type) {
 	. Import-ModuleFile "$script:PSModuleRoot\internal\scripts\smoLibraryImport.ps1"
 	Write-ImportTime -Text "Starting import SMO libraries"
 }
@@ -197,6 +208,7 @@ Write-ImportTime -Text "Script: Asynchronous TEPP Cache"
 . Import-ModuleFile "$script:PSModuleRoot\internal\scripts\dbatools-maintenance.ps1"
 Write-ImportTime -Text "Script: Maintenance"
 
+#region Aliases
 # I renamed this function to be more accurate - 1ms
 @(
 @{"AliasName" = "Copy-SqlAgentCategory"
@@ -361,11 +373,12 @@ Write-ImportTime -Text "Script: Maintenance"
 ) | ForEach-Object {
 if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
 }
+#endregion Aliases
 
 #region Post-Import Cleanup
 Write-ImportTime -Text "Loading Aliases"
 
-$timeout = 10000
+$timeout = 20000
 $timeSpent = 0
 while (($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') -or ($script:dbatoolsConfigRunspace.Runspace.RunspaceAvailability -eq 'Busy'))
 {
@@ -412,8 +425,8 @@ Write-ImportTime -Text "Waiting for runspaces to finish"
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUXz3g0wtKw21mvwnBmTApIUBY
-# tviggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUVqky7/Wgj2LrXaihpBBVR8sY
+# 3A2ggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -544,22 +557,22 @@ Write-ImportTime -Text "Waiting for runspaces to finish"
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUWlQr0pRWs355b9fE2Mvq+BVYLX4wDQYJKoZIhvcNAQEBBQAE
-# ggEAWQaksMRPGoo/XngeoiK7ZlFpCz2Z+Ihh6rPd1l7l3M8vuLc77/uhfIJ5h2IU
-# lEjeb29mk4+njUN8SupE31iCVH52WgLfQRy5Fv3i8IbVXXkV3eCtWrmoRdt6cBIC
-# aJ8I7ACstoh0BZcIA/sZ8XpZydYGfIhLlJm6Ko3KDW+A4urY1+BscMsfzB9Rwt4u
-# ORD+wx8VYA0VDxTfPvwK1oxTKS9ZaycoWuKSfOkp8ZS0FQ4dYgsFOMYblu2l9WMg
-# KMasEOdHtGM/BFqb+QIGRKDrV1XaZ3WzFdPTO9BArdEn5xcAIMR30utsUwpzpljh
-# BDa4iAk1m9yD/dZYHrhI0P+1dqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQU4c+jrVWPC8n3oxOhUQZo1v1FnrkwDQYJKoZIhvcNAQEBBQAE
+# ggEAKW85iJoFCK3w0Gw3EZkCsrq7jt0+aG1gnyTT7UzxDrWXxkfGw1WddLNt5Ryy
+# 3fXGXt/RfqMXAtn3xzRIW/ouCkdcK229pwgUOHNjeu2LN1XzT2tM+q5l+iLLRhRr
+# m8tFViFp5z+7ye7SqxxPSej/9XaCqIqfcZPNG1B4jKh+xgYo5S1N69A0ou0EEZ4I
+# z3cAf3t5k7y0cASKb2fS9jBu7bHJuzsqKojGPVghz4rbjUhDxm2xHmtrBVo4tEHP
+# XgHFSPpciEoIq2q898lwELod8EVPXTvXOXpCACn4sdA2gTU4xxEidoqtIs/g7RC6
+# /0GdFLquum028znddKGg2ItkbqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMjAxMDAyNzI0WjAj
-# BgkqhkiG9w0BCQQxFgQUR0fdxgnmPoYVOKyRLLFqzxhalhwwDQYJKoZIhvcNAQEB
-# BQAEggEAbFmsyPMexKTTQs5lIymmlGJkPYQlbHLCVSM1Zvu7bodYnCMLQTiv7iMv
-# ZxhyNhzQWYmLL61qoBD0+nFrlei3bB2lxYwfGOsfwgGlYO2w/P4v0e+H9CP43DrF
-# PaZ9egru4iLo+Ri4K4qXhZV4rPbCg+rX51PxQuojwvNoRa+oy7L673Tqpln0O9vl
-# 3B9jyZ/vGIUa/Ggiz3jS06YYCUFQJ9IJjPPXFSik6Ld0k9hF1Eo4cYCBeSedRVPz
-# CJs9YB46jf/65su08BpOZXQJSYIx6MFLGmYGqziZIMQZdOOe7qvviHsGCqdVypgj
-# Aw8ukVS8wxhSO3uR01NiAlebkhYCww==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMjA1MDkxNzM5WjAj
+# BgkqhkiG9w0BCQQxFgQUx/PYV0agYhuUMGhN/3JPfDVe8eQwDQYJKoZIhvcNAQEB
+# BQAEggEAEvf2pP0EHmD2efI4xjR3qDPnVMyJRl2/SgXIHTEoY13b5eoYrBy7r93B
+# hAE83RGJ0rXw/Tk1Ffqb0Z0bjeD+Bwx4sZPaVKr7eIElqfwsAyAQ2U+SEtmRwwPM
+# TWl+cZe60B7Ya4al355l7HLlVbY3Ee4AqtL5O9cMIsyCTjTxeSbXjoHb+OqT1zIF
+# doOvbTQQkS6Ap29PZPiGr7jV3Jia19J7Nm05j6urzLKY5/lay6p18WQwkTqLl4aR
+# UhG5jIxOQPHt+ajjK+tEs50Kb9P7wlXjWfXpgYm8koyKPTYxbkYJir1AKBVkpGq9
+# LVtWdp0YQxnoHBQUIyZUkLNvzydQAQ==
 # SIG # End signature block

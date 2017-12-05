@@ -292,6 +292,9 @@ namespace Sqlcollaborative.Dbatools.Parameter
                     _Port = tempParam.Port;
                 }
                 _NetworkProtocol = tempParam.NetworkProtocol;
+                
+                if (UtilityHost.IsLike(tempString, @"(localdb)\*"))
+                    _NetworkProtocol = SqlConnectionProtocol.NP;
 
                 IsConnectionString = true;
 
@@ -317,6 +320,10 @@ namespace Sqlcollaborative.Dbatools.Parameter
                 throw;
             }
             catch { }
+
+            // Handle localfile dbs, both shared and unshared
+            if (UtilityHost.IsLike(tempString, @"(localdb)\*"))
+                tempString = Regex.Replace((Regex.Replace(tempString, @"^\(localdb\)\\\.", "localhost", RegexOptions.IgnoreCase)), @"^\(localdb\)", "localhost", RegexOptions.IgnoreCase);
 
             // Handle and clear protocols. Otherwise it'd make port detection unneccessarily messy
             if (Regex.IsMatch(tempString, "^TCP:", RegexOptions.IgnoreCase)) //TODO: Use case insinsitive String.BeginsWith()
