@@ -17,8 +17,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
 		Remove-Item -Confirm:$false -Path $script:results.Path -ErrorAction SilentlyContinue
 	}
-	It "exports a dacpac" {
-		$script:results = Export-DbaDacpac -SqlInstance $script:instance1 -Database $dbname
-		Test-Path -Path $script:results.Path | Should Be $true
+	
+	Context "Testing the command" {
+		It "exports a dacpac" {
+			$script:results = Export-DbaDacpac -SqlInstance $script:instance1 -Database $dbname
+			Test-Path -Path $script:results.Path | Should Be $true
+		}
 	}
 }
