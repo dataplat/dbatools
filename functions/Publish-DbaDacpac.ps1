@@ -102,6 +102,10 @@ Function Publish-DbaDacpac {
 			$defaultcolumns = 'ComputerName', 'InstanceName','SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result'
 		}
 		
+		if ((Test-Bound -ParameterName ScriptOnly) -and (Test-Bound -Not -ParameterName GenerateDeploymentScript) -and (Test-Bound -Not -ParameterName GenerateDeploymentScript)) {
+			Stop-Function -Message "You must at least one of GenerateDeploymentScript or GenerateDeploymentReport when using ScriptOnly"
+		}
+		
 		function Get-ServerName ($connstring) {
 			$builder = New-Object System.Data.Common.DbConnectionStringBuilder
 			$builder.set_ConnectionString($connstring)
@@ -197,13 +201,8 @@ Function Publish-DbaDacpac {
 					$global:output = @()
 					Register-ObjectEvent -InputObject $dacServices -EventName "Message" -SourceIdentifier "msg" -Action { $global:output += $EventArgs.Message.Message } | Out-Null
 					if ($ScriptOnly) {
-						if (($GenerateDeploymentScript -eq $false) -and ($GenerateDeploymentReport -eq $false)) {
-							$message = "Specify at least one of GenerateDeploymentScript or GenerateDeploymentReport to be true when using ScriptOnly!"
-						}
-						else {
 							Write-Message -Level Verbose -Message "Generating script..."
 							$result = $dacServices.Script($dacPackage, $dbname, $options)
-						}
 					}
 					else {
 						Write-Message -Level Verbose -Message "Executing Deployment..."
