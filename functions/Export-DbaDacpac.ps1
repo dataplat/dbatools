@@ -145,11 +145,11 @@ Function Export-DbaDacpac {
 					Write-Message -level Verbose -Message "StandardOutput: $stdout"
 					
 					[pscustomobject]@{
-						ComputerName	 = $server.NetName
-						InstanceName	 = $server.ServiceName
-						SqlInstance	     = $server.DomainInstanceName
-						Database		 = $dbname
-						FileName	   = $filename
+						ComputerName   = $server.NetName
+						InstanceName   = $server.ServiceName
+						SqlInstance    = $server.DomainInstanceName
+						Database	   = $dbname
+						Path	   = $filename
 						Elapsed	       = [prettytimespan]($resultstime.Elapsed)
 					} | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
 				}
