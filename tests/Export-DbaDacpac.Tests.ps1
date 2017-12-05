@@ -15,10 +15,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	AfterAll {
 		Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
-		Remove-Item -Confirm:$false -Path $results.Path -ErrorAction SilentlyContinue
+		Remove-Item -Confirm:$false -Path $script:results.Path -ErrorAction SilentlyContinue
 	}
 	It "exports a dacpac" {
-		$results = Export-DbaDacpac -SqlInstance $script:instance1 -Database $dbname
-		Test-Path -Path $results.Path | Should Be $true
+		$script:results = Export-DbaDacpac -SqlInstance $script:instance1 -Database $dbname
+		Test-Path -Path $script:results.Path | Should Be $true
 	}
 }
