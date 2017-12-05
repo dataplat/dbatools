@@ -100,7 +100,7 @@ Function New-DbaPublishProfile {
 				$instance = $builder['server']
 			}
 						
-			return $instance.ToString().Replace('\', '-')
+			return $instance.ToString().Replace('\', '--')
 		}
 	}
 	process {
@@ -125,8 +125,8 @@ Function New-DbaPublishProfile {
 				$instancename = Get-ServerName $connstring
 				
 				try {
-					$server = [DbaInstance]($instancename.ToString().Replace('-', '\'))
-					$PublishProfile = Join-Path $Path "$instancename-$db-publish.xml" -ErrorAction Stop
+					$server = [DbaInstance]($instancename.ToString().Replace('--', '\'))
+					$PublishProfile = Join-Path $Path "$($instancename.Replace('--','-'))-$db-publish.xml" -ErrorAction Stop
 					Write-Message -Level Verbose -Message "Writing to $PublishProfile"
 					$profileTemplate | Out-File $PublishProfile -ErrorAction Stop
 					[pscustomobject]@{
