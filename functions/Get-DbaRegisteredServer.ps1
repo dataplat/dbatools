@@ -18,9 +18,8 @@ function Get-DbaRegisteredServer {
 		.PARAMETER ExcludeGroup
 			Specifies one or more Central Management Server groups to exclude.
 
-		.PARAMETER ExcludeCmsServer
-			Filters out the CMS you are connected to. This does a full match of the value passed in to `-SqlInstance`
-			and the ServerName property of the CMS registration.
+		.PARAMETER IncludeSelf
+			Include the CMS server itself in the returned results, along with all other Registered Servers
 
 		.PARAMETER ResolveNetworkName
 			Also return the NetBIOS name and IP addresses(s) of each server.
@@ -45,6 +44,11 @@ function Get-DbaRegisteredServer {
 			Get-DbaRegisteredServer -SqlInstance sqlserver2014a
 
 			Gets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.
+	
+		.EXAMPLE
+			Get-DbaRegisteredServer -SqlInstance sqlserver2014a -IncludeSelf
+
+			Gets a list of servers from the CMS on sqlserver2014a and includes sqlserver2014a in the output results.
 
 		.EXAMPLE
 			Get-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName
@@ -70,7 +74,7 @@ function Get-DbaRegisteredServer {
 		[Alias("Groups")]
 		[object[]]$Group,
 		[object[]]$ExcludeGroup,
-		[switch]$ExcludeCmsServer,
+		[switch]$IncludeSelf,
 		[switch]$ResolveNetworkName,
 		[switch][Alias('Silent')]$EnableException
 	)
@@ -143,11 +147,7 @@ function Get-DbaRegisteredServer {
 				$cms = $cmsStore.DatabaseEngineServerGroup
 				$servers += ($cms.GetDescendantRegisteredServers())
 			}
-
-			if ($ExcludeCmsServer) {
-				$servers = ($servers | Where-Object { $_.ServerName -ne $instance})
-			}
-
+			
 			# Close the connection, otherwise using it with the ServersStore will keep it open
 			$cmsStore.ServerConnection.Disconnect()
 		}
@@ -173,8 +173,18 @@ function Get-DbaRegisteredServer {
 					} catch {}
 				}
 			}
+			
 			Add-Member -Force -InputObject $server -MemberType ScriptMethod -Name ToString -Value { $this.ServerName }
 			Select-DefaultView -InputObject $server -Property $defaults
+		}
+		
+		if ($IncludeSelf -and $servers) {
+			$self = $servers[0].PsObject.Copy()
+			$self | Add-Member -MemberType NoteProperty -Name Name -Value "CMS Instance" -Force
+			$self.ServerName = $instance
+			$self.Description = $null
+			$self.SecureConnectionString = $null
+			Select-DefaultView -InputObject $self -Property $defaults
 		}
 	}
 	end {
