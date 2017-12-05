@@ -12,23 +12,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			INSERT dbo.example
 			SELECT top 100 1 
 			FROM sys.objects")
-		
 	}
 	AfterAll {
 		Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
-		if ($global:wtf) {
-			Remove-Item -Confirm:$false -Path $global:wtf -ErrorAction SilentlyContinue
-			Remove-Variable -Name wtf -Scope Global -ErrorAction SilentlyContinue
-		}
 	}
-	
-	
 	Context "Testing the command" {
 		$results = Export-DbaDacpac -SqlInstance $script:instance1 -Database $dbname
 		It "exports a dacpac" {
 			Test-Path -Path $results.Path | Should Be $true
 		}
-		# Something is up with scoping
-		$global:wtf = $results.Path
+		Remove-Item -Confirm:$false -Path $results.Path -ErrorAction SilentlyContinue
 	}
 }
