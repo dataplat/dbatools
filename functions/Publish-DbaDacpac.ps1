@@ -126,10 +126,6 @@ Function Publish-DbaDacpac {
 			Stop-Function -Message "$PublishXml not found!"
 		}
 		
-		if ($PipedPublishedProfile.ConnectionString) {
-			$ConnectionString += $PipedPublishedProfile.ConnectionString
-		}
-		
 		foreach ($instance in $sqlinstance) {
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance."
