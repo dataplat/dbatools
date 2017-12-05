@@ -17,6 +17,9 @@ function Get-DbaRegisteredServer {
 
 		.PARAMETER ExcludeGroup
 			Specifies one or more Central Management Server groups to exclude.
+	
+		.PARAMETER ExcludeCmsServer
+			Deprecated, now follows MSFT standards of not including it by default. If you'd like to include the CMS Server, use -IncludeSelf
 
 		.PARAMETER IncludeSelf
 			Include the CMS server itself in the returned results, along with all other Registered Servers
@@ -75,6 +78,7 @@ function Get-DbaRegisteredServer {
 		[object[]]$Group,
 		[object[]]$ExcludeGroup,
 		[switch]$IncludeSelf,
+		[switch]$ExcludeCmsServer,
 		[switch]$ResolveNetworkName,
 		[switch][Alias('Silent')]$EnableException
 	)
@@ -188,6 +192,7 @@ function Get-DbaRegisteredServer {
 		}
 	}
 	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter ExcludeCmsServer
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServerName
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlRegisteredServerName
 	}
