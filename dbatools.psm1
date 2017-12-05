@@ -378,7 +378,7 @@ if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_
 #region Post-Import Cleanup
 Write-ImportTime -Text "Loading Aliases"
 
-$timeout = 10000
+$timeout = 20000
 $timeSpent = 0
 while (($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') -or ($script:dbatoolsConfigRunspace.Runspace.RunspaceAvailability -eq 'Busy'))
 {
