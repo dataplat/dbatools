@@ -20,7 +20,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	It "returns the right results" {
-		$publishprofile = New-DbaPublishProfile -SqlInstance $script:instance1 -Database $dbname -Path C:\temp
+		$publishprofile = New-DbaPublishProfile -SqlInstance $script:instance1 -Database $dbname
 		$publishprofile.FileName -match 'publish.xml' | Should Be $true
 	}
 }
