@@ -53,8 +53,6 @@ Function New-DbaPublishProfile {
         New-DbaPublishProfile -Database WorldWideImporters -Path C:\temp -ConnectionString "SERVER=(localdb)\MSSQLLocalDB;Integrated Security=True;Database=master"
 	 	
 		In this example, no connections are made, and a Publish Profile XML would be created at C:\temp\localdb-MSSQLLocalDB-WorldWideImporters-publish.xml
-
-
     #>
 	[CmdletBinding()]
 	param (
