@@ -141,12 +141,6 @@ Function Publish-DbaDacpac {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$db = $server.Databases | Where-Object Name -in $Database
-			
-			if (-not $db.name) {
-				Stop-Function -Message "Database $Database does not exist on $instance" -Target $instance -Continue
-			}
-			
 			$ConnectionString += $server.ConnectionContext.ConnectionString.Replace('"', "'")
 		}
 		
