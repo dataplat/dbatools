@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	BeforeAll {
 		$dbname = "dbatoolsci_publishdacpac"
-		$server = Connect-DbaInstance -SqlInstance $script:instance1
+		$server = Connect-DbaInstance -SqlInstance $script:instance2
 		# Need a clean empty database
 		$null = $server.Query("Create Database [$dbname]")
 		$db = Get-DbaDatabase -SqlInstance $server -Database $dbname
@@ -13,16 +13,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			INSERT dbo.example
 			SELECT top 100 1 
 			FROM sys.objects")
-		$publishprofile = New-DbaPublishProfile -SqlInstance $script:instance1 -Database $dbname
+		$publishprofile = New-DbaPublishProfile -SqlInstance $script:instance2 -Database $dbname
 	}
 	AfterAll {
-		Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
+		Remove-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
 		Remove-Item -Confirm:$false -Path $publishprofile.FileName -ErrorAction SilentlyContinue
 		Remove-Item -Confirm:$false -Path $results.Path -ErrorAction SilentlyContinue
 	}
 	
 	It "exports a dacpac" {
-		$results = Export-DbaDacpac -SqlInstance $script:instance1 -Database $dbname
+		$results = Export-DbaDacpac -SqlInstance $script:instance2 -Database $dbname
 		Test-Path -Path $results.Path | Should Be $true
 	}
 }
