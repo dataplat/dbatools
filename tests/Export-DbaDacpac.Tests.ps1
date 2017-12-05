@@ -13,15 +13,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			INSERT dbo.example
 			SELECT top 100 1 
 			FROM sys.objects")
-		$publishprofile = New-DbaPublishProfile -SqlInstance $script:instance1 -Database $dbname -Path $home
+		$publishprofile = New-DbaPublishProfile -SqlInstance $script:instance1 -Database $dbname
 	}
 	AfterAll {
 		Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
 		Remove-Item -Confirm:$false -Path $publishprofile.FileName -ErrorAction SilentlyContinue
-		Remove-Item -Confirm:$false -Path $dacpac.Path -ErrorAction SilentlyContinue
+		Remove-Item -Confirm:$false -Path $results.Path -ErrorAction SilentlyContinue
 	}
 	
-	It -Skip "exports a dacpac" {
+	It "exports a dacpac" {
 		$results = Export-DbaDacpac -SqlInstance $script:instance1 -Database $dbname
 		Test-Path -Path $results.Path | Should Be $true
 	}
