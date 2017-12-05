@@ -24,7 +24,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	Context "Testing pipability and that the command works" {
-		It "shows that the upate is complete" {
+		It -Skip "shows that the upate is complete" {
 			$results = $dacpac | Publish-DbaDacpac -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance $script:instance2
 			$results.Result -match 'Update complete.' | Should Be $true
 			Remove-Item -Confirm:$false -Path ($dacpac).Path -ErrorAction SilentlyContinue
