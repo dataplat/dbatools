@@ -42,10 +42,7 @@ Function Publish-DbaDacpac {
         
 		.PARAMETER IncludeSqlCmdVars
             Optional. If there are SqlCmdVars in the publish.xml that need to have their values overwritten.
-	
-		.PARAMETER PipedPublishedProfile
-			Internal parameter to support piping from New-DbaPublishProfile
-        
+	    
 		.PARAMETER EnableException
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -63,47 +60,58 @@ Function Publish-DbaDacpac {
 
 		.EXAMPLE
 			Publish-DbaDacpac -SqlInstance sql2017 -Database WideWorldImporters -Path C:\temp\sql2016-WideWorldImporters.dacpac -PublishXml C:\temp\sql2016-WideWorldImporters-publish.xml 
-	
+			
+			Updates WideWorldImporters on sql2017 from the sql2016-WideWorldImporters.dacpac using the sql2016-WideWorldImporters-publish.xml publish profile
         
 		.EXAMPLE
-            $svrConnstring = "SERVER=(localdb1)\MSSQLLocalDB;Integrated Security=True;Database=master"
-            $output_NAME = "WideWorldImporters"
-            $output = "C:\Users\Richie\Source\Repos\PoshSSDTBuildDeploy\tests\wwi-dw-ssdt"
-            $output_SLN = Join-Path $output "\WideWorldImportersDW.sqlproj"
-            $output_DAC = Join-Path $output "\Microsoft.Data.Tools.Msbuild\lib\net46"
-            $output_DACFX = Join-Path $output_DAC "\Microsoft.SqlServer.Dac.dll"
-            $output_DACPAC = Join-Path $output "\bin\Debug\WideWorldImportersDW.dacpac"
-            $output_PUB = Join-Path $output "\bin\Debug\WideWorldImportersDW.publish.xml"
-        Publish-DbaDacpac -dacpac $output_DACPAC -PublishXml $output_PUB -connstring $svrConnstring -Database $output_NAME -GenerateDeploymentScript $true -GenerateDeployMentReport $true -OutputPath $output -Verbose -EnableException
+       		Export-DbaDacpac -SqlInstance sql2016 -Database db2 | Publish-DbaDacpac -PublishXml C:\temp\sql2016-db2-publish.xml -Database db1, db2 -SqlInstance sql2017
+		
+			Exports the .dacpac to $home\Documents\sql2016-db2.dacpac then publishes it to the sql2017 server database db2
 	
-
-    #>
+  #>
 	[CmdletBinding()]
 	param (
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstance[]]$SqlInstance,
 		[Alias("Credential")]
 		[PSCredential]$SqlCredential,
-		[Parameter(Mandatory)]
+		[Parameter(Mandatory, ValueFromPipelineByPropertyName)]
 		[string]$Path,
 		[Parameter(Mandatory)]
 		[string]$PublishXml,
-		[Parameter(Mandatory)]
-		[string]$Database,
+		[Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+		[string[]]$Database,
 		[string[]]$ConnectionString,
 		[switch]$GenerateDeploymentScript,
 		[switch]$GenerateDeploymentReport,
 		[Switch]$ScriptOnly,
-		[string]$OutputPath,
+		[string]$OutputPath = "$home\Documents",
 		[switch]$IncludeSqlCmdVars,
-		[parameter(ValueFromPipeline)]
-		[object]$PipedPublishedProfile,
 		[switch]$EnableException
 	)
 	
 	begin {
-		if ((Test-Bound -Not -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName PipedPublishedProfile)) {
-			Stop-Function -Message "You must specify either SqlInstance or pipe results from New-DbaPublishProfile"
+		if ((Test-Bound -Not -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName ConnectionString)) {
+			Stop-Function -Message "You must specify either SqlInstance or ConnectionString"
+		}
+		
+		if ((Test-Bound -ParameterName GenerateDeploymentScript) -or (Test-Bound -ParameterName GenerateDeploymentReport)) {
+			$defaultcolumns = 'ComputerName','InstanceName','SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DatabaseScriptPath', 'MasterDbScriptPath', 'DeploymentReport', 'DeployOptions'
+		}
+		else {
+			$defaultcolumns = 'ComputerName', 'InstanceName','SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result'
+		}
+		
+		function Get-ServerName ($connstring) {
+			$builder = New-Object System.Data.Common.DbConnectionStringBuilder
+			$builder.set_ConnectionString($connstring)
+			$instance = $builder['data source']
+			
+			if (-not $instance) {
+				$instance = $builder['server']
+			}
+			
+			return $instance.ToString().Replace('\', '-')
 		}
 	}
 	
@@ -116,6 +124,28 @@ Function Publish-DbaDacpac {
 		
 		if (-not (Test-Path -Path $PublishXml)) {
 			Stop-Function -Message "$PublishXml not found!"
+		}
+		
+		if ($PipedPublishedProfile.ConnectionString) {
+			$ConnectionString += $PipedPublishedProfile.ConnectionString
+		}
+		
+		foreach ($instance in $sqlinstance) {
+			try {
+				Write-Message -Level Verbose -Message "Connecting to $instance."
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+			}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+			}
+			
+			$db = $server.Databases | Where-Object Name -in $Database
+			
+			if (-not $db.name) {
+				Stop-Function -Message "Database $Database does not exist on $instance" -Target $instance -Continue
+			}
+			
+			$ConnectionString += $server.ConnectionContext.ConnectionString.Replace('"', "'")
 		}
 		
 		try {
@@ -136,84 +166,88 @@ Function Publish-DbaDacpac {
 			Get-SqlCmdVars -SqlCommandVariableValues $dacProfile.DeployOptions.SqlCommandVariableValues
 		}
 		
-		foreach ($instance in $sqlinstance) {	
-			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance."
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
+		foreach ($connstring in $ConnectionString) {
+			$cleaninstance = Get-ServerName $connstring
+			$instance = $cleaninstance.ToString().Replace('-', '\')
 			
-			$cleaninstance = $instance.ToString().Replace('\', '-')
-			
-			if ($OutputPath) {
-				$timeStamp = (Get-Date).ToString("yyMMdd_HHmmss_f")
-				$dbnameScriptPath = Join-Path $OutputPath "$cleaninstance-$dbname_DeployScript_$timeStamp.sql"
-				$MasterDbScriptPath = Join-Path $OutputPath "$cleaninstance-$dbname_Master.DeployScript_$timeStamp.sql"
-				$DeploymentReport = Join-Path $OutputPath "$cleaninstance.$dbname.Result.DeploymentReport_$timeStamp.xml"
-			}
-			
-			$db = $server.Databases | Where-Object Name -eq $Database
-			$dbname = $db.name
-			
-			if (-not $dbname) {
-				Stop-Function -Message "Database $Database does not exist on $instance" -Target $instance -Continue
-			}
-			
-			$connstring = $server.ConnectionContext.ConnectionString.Replace('"', "'")
-			if ($connstring -notmatch 'Database=') {
-				$connstring = "$connstring;Database=$dbname"
-			}
-			
-			try {
-				$dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connstring
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
-			}
-			
-			$options = @{
-				GenerateDeploymentScript   = $GenerateDeploymentScript
-				GenerateDeploymentReport   = $GenerateDeploymentReport
-				DatabaseScriptPath		   = $dbnameScriptPath
-				MasterDbScriptPath		   = $MasterDbScriptPath
-				DeployOptions			   = $dacProfile.DeployOptions
-			}
-			
-			try {
-				Register-ObjectEvent -InputObject $dacServices -EventName "Message" -SourceIdentifier "msg" -Action { Write-Host $EventArgs.Message.Message } | Out-Null
-				if ($ScriptOnly) {
-					if (($GenerateDeploymentScript -eq $false) -and ($GenerateDeploymentReport -eq $false)) {
-						$message = "Specify at least one of GenerateDeploymentScript or GenerateDeploymentReport to be true when using ScriptOnly!"
+			foreach ($dbname in $database) {
+				if ($OutputPath) {
+					$timeStamp = (Get-Date).ToString("yyMMdd_HHmmss_f")
+					$DatabaseScriptPath = Join-Path $OutputPath "$cleaninstance-$dbname`_DeployScript_$timeStamp.sql"
+					$MasterDbScriptPath = Join-Path $OutputPath "$cleaninstance-$dbname`_Master.DeployScript_$timeStamp.sql"
+					$DeploymentReport = Join-Path $OutputPath "$cleaninstance-$dbname`_Result.DeploymentReport_$timeStamp.xml"
+				}
+				
+				if ($connstring -notmatch 'Database=') {
+					$connstring = "$connstring;Database=$dbname"
+				}
+				
+				try {
+					$dacServices = New-Object Microsoft.SqlServer.Dac.DacServices $connstring
+				}
+				catch {
+					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $server -Continue
+				}
+				
+				$options = @{
+					GenerateDeploymentScript    = $GenerateDeploymentScript
+					GenerateDeploymentReport    = $GenerateDeploymentReport
+					DatabaseScriptPath		    = $DatabaseScriptPath
+					MasterDbScriptPath		    = $MasterDbScriptPath
+					DeployOptions			    = $dacProfile.DeployOptions
+				}
+				
+				try {
+					$global:output = @()
+					Register-ObjectEvent -InputObject $dacServices -EventName "Message" -SourceIdentifier "msg" -Action { $global:output += $EventArgs.Message.Message } | Out-Null
+					if ($ScriptOnly) {
+						if (($GenerateDeploymentScript -eq $false) -and ($GenerateDeploymentReport -eq $false)) {
+							$message = "Specify at least one of GenerateDeploymentScript or GenerateDeploymentReport to be true when using ScriptOnly!"
+						}
+						else {
+							Write-Message -Level Verbose -Message "Generating script..."
+							$result = $dacServices.Script($dacPackage, $dbname, $options)
+						}
 					}
 					else {
-						Write-Message -Level Verbose -Message "Generating script..."
-						$result = $dacServices.Script($dacPackage, $dbname, $options)
+						Write-Message -Level Verbose -Message "Executing Deployment..."
+						$result = $dacServices.Publish($dacPackage, $dbname, $options)
 					}
 				}
-				else {
-					Write-Message -Level Verbose -Message "Executing Deployment..."
-					$result = $dacServices.Publish($dacPackage, $dbname, $options)
+				catch [Microsoft.SqlServer.Dac.DacServicesException] {
+					$message = ('Deployment failed: {0} `nReason: {1}' -f $_.Exception.Message, $_.Exception.InnerException.Message)
 				}
-			}
-			catch [Microsoft.SqlServer.Dac.DacServicesException] {
-				$message = ('Deployment failed: {0} `nReason: {1}' -f $_.Exception.Message, $_.Exception.InnerException.Message)
-			}
-			finally {
-				Unregister-Event -SourceIdentifier "msg"
-				if ($message) {
-					Stop-Function -Message $message
-				}
-				if ($GenerateDeploymentReport) {
-					$result.DeploymentReport | Out-File $DeploymentReport
-					Write-Message -Level Verbose -Message "Deployment Report - $DeploymentReport"
-				}
-				if ($GenerateDeploymentScript) {
-					Write-Message -Level Verbose -Message "Database change script - $dbnameScriptPath"
-					if ((Test-Path $MasterDbScriptPath)) {
-						Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)"
+				finally {
+					Unregister-Event -SourceIdentifier "msg"
+					if ($message) {
+						Stop-Function -Message $message
 					}
+					if ($GenerateDeploymentReport) {
+						$result.DeploymentReport | Out-File $DeploymentReport
+						Write-Message -Level Verbose -Message "Deployment Report - $DeploymentReport"
+					}
+					if ($GenerateDeploymentScript) {
+						Write-Message -Level Verbose -Message "Database change script - $DatabaseScriptPath"
+						if ((Test-Path $MasterDbScriptPath)) {
+							Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)"
+						}
+					}
+					$server = [dbainstance]$instance
+					
+					[pscustomobject]@{
+						ComputerName   = $server.ComputerName
+						InstanceName   = $server.InstanceName
+						SqlInstance    = $server.FullName
+						Database		  = $dbname
+						Result		      = ($global:output -join "`r`n" | Out-String).Trim()
+						Dacpac		      = $Path
+						PublishXml	      = $PublishXml
+						ConnectionString  = $connstring
+						DatabaseScriptPath = $DatabaseScriptPath
+						MasterDbScriptPath = $MasterDbScriptPath
+						DeploymentReport  = $DeploymentReport
+						DeployOptions	  = $dacProfile.DeployOptions
+					} | Select-DefaultView -Property $defaultcolumns
 				}
 			}
 		}
