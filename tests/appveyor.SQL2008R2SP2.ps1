@@ -1,6 +1,6 @@
 $indent = '...'
 Write-Host -Object "$indent Running $PSCommandpath" -ForegroundColor DarkGreen
-
+$dbatools_serialimport = $true
 Import-Module C:\github\dbatools\dbatools.psd1
 
 # This script spins up the 2008R2SP2 instance and the relative setup

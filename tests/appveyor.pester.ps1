@@ -44,7 +44,7 @@ param (
 Set-Location $ModuleBase
 # required to calculate coverage
 $global:dbatools_dotsourcemodule = $true
-
+$dbatools_serialimport = $true
 #removes previously imported dbatools, if any
 Remove-Module dbatools -ErrorAction Ignore
 #imports the psm1 to be able to use internal functions in tests
