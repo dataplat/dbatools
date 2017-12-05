@@ -63,8 +63,7 @@ Function New-DbaPublishProfile {
 		[PSCredential]$SqlCredential,
 		[Parameter(Mandatory)]
 		[string[]]$Database,
-		[Parameter(Mandatory)]
-		[string]$Path,
+		[string]$Path = "$home\Documents",
 		[string[]]$ConnectionString,
 		[switch]$EnableException
 	)

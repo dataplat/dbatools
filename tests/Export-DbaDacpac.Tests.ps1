@@ -13,7 +13,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			INSERT dbo.example
 			SELECT top 100 1 
 			FROM sys.objects")
-		$publishprofile = New-DbaPublishProfile -SqlInstance $script:instance1 -Database $dbname -Path C:\temp
+		$publishprofile = New-DbaPublishProfile -SqlInstance $script:instance1 -Database $dbname
 	}
 	AfterAll {
 		Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
