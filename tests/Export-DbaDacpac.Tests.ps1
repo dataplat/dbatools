@@ -18,8 +18,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
 		if ($global:wtf) {
 			Remove-Item -Confirm:$false -Path $global:wtf -ErrorAction SilentlyContinue
-		}
 			Remove-Variable -Name wtf -Scope Global -ErrorAction SilentlyContinue
+		}
 	}
 	
 	
