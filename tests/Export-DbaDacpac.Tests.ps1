@@ -1,4 +1,4 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -14,20 +14,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			SELECT top 100 1 
 			FROM sys.objects")
 		$publishprofile = New-DbaPublishProfile -SqlInstance $script:instance1 -Database $dbname -Path C:\temp
-		$server = Connect-DbaInstance -SqlInstance $script:instance2
-		$null = $server.Query("Create Database [$dbname]")
-		$dacpac = Export-DbaDacpac -SqlInstance $script:instance1 -Database $dbname
 	}
 	AfterAll {
-		Remove-DbaDatabase -SqlInstance $script:instance1, $script:instance2 -Database $dbname -Confirm:$false
+		Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
 		Remove-Item -Confirm:$false -Path $publishprofile.FileName -ErrorAction SilentlyContinue
 		Remove-Item -Confirm:$false -Path $dacpac.Path -ErrorAction SilentlyContinue
 	}
 	
-	Context "Testing pipability and that the command works" {
-		$results = $dacpac | Publish-DbaDacpac -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance $script:instance2
-		It "shows that the upate is complete" {
-			$results.Result -match 'Update complete.' | Should Be $true
-		}
+	It "exports a dacpac" {
+		$results = Export-DbaDacpac -SqlInstance $script:instance1 -Database $dbname
+		Test-Path -Path $results.Path | Should Be $true
 	}
 }
