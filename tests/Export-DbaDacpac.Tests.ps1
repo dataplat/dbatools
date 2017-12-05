@@ -21,7 +21,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		Remove-Item -Confirm:$false -Path $dacpac.Path -ErrorAction SilentlyContinue
 	}
 	
-	It "exports a dacpac" {
+	It -Skip "exports a dacpac" {
 		$results = Export-DbaDacpac -SqlInstance $script:instance1 -Database $dbname
 		Test-Path -Path $results.Path | Should Be $true
 	}
