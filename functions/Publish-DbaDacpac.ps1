@@ -64,9 +64,11 @@ Function Publish-DbaDacpac {
 			Updates WideWorldImporters on sql2017 from the sql2016-WideWorldImporters.dacpac using the sql2016-WideWorldImporters-publish.xml publish profile
         
 		.EXAMPLE
+			New-DbaPublishProfile -SqlInstance sql2016 -Database db2 -Path C:\temp
        		Export-DbaDacpac -SqlInstance sql2016 -Database db2 | Publish-DbaDacpac -PublishXml C:\temp\sql2016-db2-publish.xml -Database db1, db2 -SqlInstance sql2017
 		
-			Exports the .dacpac to $home\Documents\sql2016-db2.dacpac then publishes it to the sql2017 server database db2
+			Creats a publish profile at C:\temp\sql2016-db2-publish.xml, exports the .dacpac to $home\Documents\sql2016-db2.dacpac 
+			then publishes it to the sql2017 server database db2
 	
   #>
 	[CmdletBinding()]
@@ -171,7 +173,7 @@ Function Publish-DbaDacpac {
 			$instance = $cleaninstance.ToString().Replace('-', '\')
 			
 			foreach ($dbname in $database) {
-				if ($OutputPath) {
+				if ($GenerateDeploymentScript -or $GenerateDeploymentReport) {
 					$timeStamp = (Get-Date).ToString("yyMMdd_HHmmss_f")
 					$DatabaseScriptPath = Join-Path $OutputPath "$cleaninstance-$dbname`_DeployScript_$timeStamp.sql"
 					$MasterDbScriptPath = Join-Path $OutputPath "$cleaninstance-$dbname`_Master.DeployScript_$timeStamp.sql"
@@ -227,14 +229,19 @@ Function Publish-DbaDacpac {
 							Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)"
 						}
 					}
-					$server = [dbainstance]$instance
+					$resultoutput = ($global:output -join "`r`n" | Out-String).Trim()
 					
+					if ($resultoutput -match "Failed" -and ($GenerateDeploymentReport -or $GenerateDeploymentScript)) {
+						Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If that's the case, then the .sql files will not be created, sorry."
+					}
+					
+					$server = [dbainstance]$instance
 					[pscustomobject]@{
 						ComputerName   = $server.ComputerName
 						InstanceName   = $server.InstanceName
 						SqlInstance    = $server.FullName
 						Database		  = $dbname
-						Result		      = ($global:output -join "`r`n" | Out-String).Trim()
+						Result		      = $resultoutput
 						Dacpac		      = $Path
 						PublishXml	      = $PublishXml
 						ConnectionString  = $connstring
