@@ -21,13 +21,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	AfterAll {
 		Remove-DbaDatabase -SqlInstance $script:instance1, $script:instance2 -Database $dbname -Confirm:$false
 		Remove-Item -Confirm:$false -Path $publishprofile.FileName -ErrorAction SilentlyContinue
-		Remove-Item -Confirm:$false -Path $dacpac.Path -ErrorAction SilentlyContinue
 	}
 	
 	Context "Testing pipability and that the command works" {
-		$results = $dacpac | Publish-DbaDacpac -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance $script:instance2
 		It "shows that the upate is complete" {
+			$results = $dacpac | Publish-DbaDacpac -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance $script:instance2
 			$results.Result -match 'Update complete.' | Should Be $true
+			Remove-Item -Confirm:$false -Path ($dacpac).Path -ErrorAction SilentlyContinue
 		}
 	}
 }
