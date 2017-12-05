@@ -164,7 +164,7 @@ Function Publish-DbaDacpac {
 		
 		foreach ($connstring in $ConnectionString) {
 			$cleaninstance = Get-ServerName $connstring
-			$instance = $cleaninstance.ToString().Replace('-', '\')
+			$instance = $cleaninstance.ToString().Replace('--', '\')
 			
 			foreach ($dbname in $database) {
 				if ($GenerateDeploymentScript -or $GenerateDeploymentReport) {
@@ -206,7 +206,7 @@ Function Publish-DbaDacpac {
 					}
 				}
 				catch [Microsoft.SqlServer.Dac.DacServicesException] {
-					$message = ('Deployment failed: {0} `nReason: {1}' -f $_.Exception.Message, $_.Exception.InnerException.Message)
+					$message = ("Deployment failed: {0} `n Reason: {1}" -f $_.Exception.Message, $_.Exception.InnerException.Message)
 				}
 				finally {
 					Unregister-Event -SourceIdentifier "msg"
@@ -224,11 +224,9 @@ Function Publish-DbaDacpac {
 						}
 					}
 					$resultoutput = ($global:output -join "`r`n" | Out-String).Trim()
-					
 					if ($resultoutput -match "Failed" -and ($GenerateDeploymentReport -or $GenerateDeploymentScript)) {
-						Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If that's the case, then the .sql files will not be created, sorry."
+						Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If scripts have not generated load dacpac into Visual Studio to check SQL is valid."
 					}
-					
 					$server = [dbainstance]$instance
 					[pscustomobject]@{
 						ComputerName   = $server.ComputerName
