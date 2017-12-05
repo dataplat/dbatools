@@ -1,4 +1,4 @@
-function Copy-DbaTable {
+function Copy-DbaData {
 	<#
 		.SYNOPSIS
 			Copies data between SQL Server tables.
@@ -34,10 +34,19 @@ function Copy-DbaTable {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Database
-			The database to import the table from.
+			The database to copy the table from.
+
+		.PARAMETER DatabaseDest
+			The database to copy the table to. If not specified, it is assumed to be the same of Database
 
 		.PARAMETER Table
-			The table name to import data into. You can specify a one or two part table name
+			Define a specific table you would like to use as source. You can specify up to three-part name like db.sch.tbl.
+            If the object has special characters please wrap them in square brackets [ ].
+            This dbo.First.Table will try to find table named 'Table' on schema 'First' and database 'dbo'.
+			The correct way to find table named 'First.Table' on schema 'dbo' is passing dbo.[First.Table]
+
+		.PARAMETER TableDest
+			The table you want to use as destination. If not specified, it is assumed to be the same of Table
 
 		.PARAMETER Query
 			If you want to copy only a portion, specify the query (but please, select all the columns, or nasty things will happen)
@@ -78,9 +87,13 @@ function Copy-DbaTable {
 			Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.
 
 		.PARAMETER RegularUser
-			If this switch is enabled, the user connecting will be assumed to be a non-administrative user. By default, the underlying connection assumes that the user has administrative privileges.
+			If this switch is enabled, the user connecting to the source will be assumed to be a non-administrative user. By default, the underlying connection assumes that the user has administrative privileges.
 
 			This is particularly important when connecting to a SQL Azure Database.
+
+		.PARAMETER RegularUserDest
+			Same as RegularUser, but for the destination
+
 
 		.PARAMETER WhatIf
 			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -96,19 +109,38 @@ function Copy-DbaTable {
 		.NOTES
 			Tags: Migration
 			Author: niphlod (Simone Bizzotto)
-			Requires: sysadmin access on SQL Servers
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 		.LINK
-			https://dbatools.io/Copy-DbaTable
+			https://dbatools.io/Copy-DbaData
 
 		.EXAMPLE
-			Copy-DbaTable -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table -KeepIdentity -Truncate
+			Copy-DbaData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table
 
 			Copies all the data from sqlserver2014a to sqlserver2016a, using the database dbatools_from.
+
+		.EXAMPLE
+			Copy-DbaData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -DatabaseDest dbatools_dest -Table test_table
+
+			Copies all the data from sqlserver2014a to sqlserver2016a, using the database dbatools_from as source and dbatools_dest as destination
+
+		.EXAMPLE
+			Copy-DbaData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table
+
+			Copies all the data from sqlserver2014a to sqlserver2016a, using the database dbatools_from.
+
+		.EXAMPLE
+			Copy-DbaData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table -KeepIdentity -Truncate
+
+			Copies all the data from sqlserver2014a to sqlserver2016a, using the database dbatools_from, keeping identity columns and truncating the destination
+
+		.EXAMPLE
+			Copy-DbaData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table -KeepIdentity -Truncate
+
+			Copies all the data from sqlserver2014a to sqlserver2016a, using the database dbatools_from, keeping identity columns and truncating the destination
 
 	#>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
@@ -172,95 +204,68 @@ function Copy-DbaTable {
 			if ($optionValue -eq $true) {
 				$bulkCopyOptions += $([Data.SqlClient.SqlBulkCopyOptions]::$option).value__
 			}
-		}
-		if ($TableDest.Length -eq 0) {
+        }
+        if ($TableDest.Length -eq 0) {
 			$TableDest = $Table
 		}
 		if ($DatabaseDest.Length -eq 0) {
 			$DatabaseDest = $Database
 		}
-		$TableFromSplitted = $Table.Split('.')
-		$TableDestSplitted = $TableDest.Split('.')
-		if ($TableFromSplitted.Length -eq 2) {
-			$SchemaFrom, $TableFrom = $TableFromSplitted
-		} elseif ($TableFromSplitted.Length -eq 1) {
-			$SchemaFrom = 'dbo'
-			$TableFrom = $TableFromSplitted[0]
-		} else {
-			Stop-Function -Message "$Table can only contain one dot"
-			return
-		}
-		if ($TableDestSplitted.Length -eq 2) {
-			$SchemaDest, $TableDest = $TableDestSplitted
-		} elseif ($TableDestSplitted.Length -eq 1) {
-			$SchemaDest = 'dbo'
-			$TableDest = $TableDestSplitted[0]
-		} else {
-			Stop-Function -Message "$Table can only contain one dot"
-			return
-		}
-		$fqtnfrom = "$Database.$SchemaFrom.$TableFrom"
-		$fqtndest = "$DatabaseDest.$SchemaDest.$TableDest"
-
-		if (-not $Query) {
-			$Query = "SELECT * FROM $fqtnfrom"
-		}
 	}
 
-	process {
-		if (Test-FunctionInterrupt) { return }
-		if ($fqtnfrom -eq $fqtndest) {
-			Stop-Function -Message "source and dest are equal : $fqtnfrom"
+    process {
+        try {
+            $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -RegularUser:$RegularUser
+        } catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+            return
+        }
+        try {
+            $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential -RegularUser:$RegularUserDest
+        } catch {
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination
+            return
+		}
+
+		if ($Database -notin $sourceServer.Databases.Name) {
+			Stop-Function -Message "Database $Database doesn't exist on $sourceServer"
 			return
 		}
-		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -RegularUser:$RegularUser
-		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential -RegularUser:$RegularUserDest
+		if ($DatabaseDest -notin $destServer.Databases.Name) {
+			Stop-Function -Message "Database $DatabaseDest doesn't exist on $destServer"
+			return
+		}
+        try {
+            $sourcetable = Get-DbaTable -SqlInstance $sourceServer -Table $Table -Database $Database -EnableException -Verbose:$false | Select-Object -First 1
+        } catch {
+            Stop-Function -Message "Unable to determine source table : $Table"
+			return
+        }
+
+        try {
+            $desttable = Get-DbaTable -SqlInstance $destServer -Table $TableDest -Database $Database -EnableException -Verbose:$false | Select-Object -First 1
+        } catch {
+            Stop-Function -Message "Unable to determine destination table: $TableDest"
+			return
+        }
+
 		$connstring = $destServer.ConnectionContext.ConnectionString
 
-		if (-not $sourceServer.Databases[$Database]) {
-			Stop-Function -Message "$Database does not exist on source"
-			return
-		}
+        $fqtnfrom = "$($sourceServer.Databases[$Database]).$sourcetable"
+        $fqtndest = "$($destServer.Databases[$DatabaseDest]).$desttable"
 
-		if (-not $destServer.Databases[$DatabaseDest]) {
-			Stop-Function -Message "$DatabaseDest does not exist on destination"
-			return
-		}
-
-		$sourcetable = $sourceServer.Databases[$Database].Tables | Where-Object { $_.Name -eq $TableFrom -and $_.Schema -eq $SchemaFrom }
-		$desttable = $destServer.Databases[$DatabaseDest].Tables | Where-Object { $_.Name -eq $TableDest -and $_.Schema -eq $SchemaDest }
+        if (-not $Query) {
+            $Query = "SELECT * FROM $fqtnfrom"
+        }
 
 		if (-not $sourcetable) {
-			Stop-Function -Message "$fqtnfrom does not exist on source"
+			Stop-Function -Message "$Table does not exist on source"
 			return
-		}
-
-		$sourceschema = $destServer.Databases[$Database].Schemas[$SchemaFrom]
-		$destschema = $destServer.Databases[$DatabaseDest].Schemas[$SchemaDest]
-
-		if (-not $destschema) {
-			try {
-				if ($Pscmdlet.ShouldProcess($destServer, "Creating schema $destschema")) {
-					$destServer.Databases[$DatabaseDest].Query($sourceschema.Script())
-				}
-			}
-			catch {
-				Stop-Function -Message "Could not create schema $SchemaFrom on destination" -ErrorRecord $_ -Target $Destination
-				return
-			}
-		}
-
-		if (-not $desttable) {
-			try {
-				if ($Pscmdlet.ShouldProcess($destServer, "Creating table $fqtndest")) {
-					$destServer.Databases[$DatabaseDest].Query($sourcetable.Script())
-				}
-			}
-			catch {
-				Stop-Function -Message "Could not create $fqtndest on destination" -ErrorRecord $_ -Target $Destination
-				return
-			}
-		}
+        }
+        if (-not $desttable) {
+			Stop-Function -Message "$TableDest does not exist on destination"
+			return
+        }
 		if ($Truncate -eq $true) {
 			if ($Pscmdlet.ShouldProcess($destServer, "Truncating table $fqtndest")) {
 				$null = $destServer.Databases[$DatabaseDest].Query("TRUNCATE TABLE $fqtndest")
@@ -271,6 +276,7 @@ function Copy-DbaTable {
 		$sourceServer.ConnectionContext.SqlConnectionObject.Open()
 		$bulkCopy = New-Object Data.SqlClient.SqlBulkCopy("$connstring;Database=$DatabaseDest", $bulkCopyOptions)
 		$bulkCopy.DestinationTableName = $fqtndest
+		$bulkCopy.EnableStreaming = $true
 		$bulkCopy.BatchSize = $BatchSize
 		$bulkCopy.NotifyAfter = $NotifyAfter
 		$bulkCopy.BulkCopyTimeOut = $BulkCopyTimeOut
