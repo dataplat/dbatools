@@ -17,7 +17,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
 	}
 	Context "Testing the command" {
-		It "exports a dacpac" {
+		It -Skip "exports a dacpac" {
 			$results = Export-DbaDacpac -SqlInstance $script:instance1 -Database $dbname
 			$path = ($results).Path
 			Test-Path -Path $path | Should Be $true
