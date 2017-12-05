@@ -17,10 +17,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		Remove-DbaDatabase -SqlInstance $script:instance1 -Database $dbname -Confirm:$false
 	}
 	Context "Testing the command" {
-		$results = Export-DbaDacpac -SqlInstance $script:instance1 -Database $dbname
 		It "exports a dacpac" {
-			Test-Path -Path $results.Path | Should Be $true
+			$results = Export-DbaDacpac -SqlInstance $script:instance1 -Database $dbname
+			$path = ($results).Path
+			Test-Path -Path $path | Should Be $true
+			Remove-Item -Confirm:$false -Path $path -ErrorAction SilentlyContinue
 		}
-		Remove-Item -Confirm:$false -Path $results.Path -ErrorAction SilentlyContinue
 	}
 }
