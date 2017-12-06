@@ -107,12 +107,16 @@ function Restore-DbaFromDatabaseSnapshot {
 			}
 			elseif ($Database) {
 				# Restore only these databases from their latest snapshot
+				<#
+					Note, for some reason lookup of this property has to be done using $_.DatabaseSnapshotBaseName
+					Removing this will cause: Where-Object : A positional parameter cannot be found that accepts argument 'System.Object[]'
+				#>
 				Write-Message -Level Verbose -Message "Selected only databases"
-				$dbs = $allDbs | Where-Object $Database -contains DatabaseSnapshotBaseName
+				$dbs = $allDbs | Where-Object {$Database -contains $_.DatabaseSnapshotBaseName}
 			}
 			elseif ($ExcludeDatabase) {
 				Write-Message -Level Verbose -Message "Excluded only databases"
-				$dbs = $allDbs | Where-Object $ExcludeDatabase -NotContains $_.DatabaseSnapshotBaseName
+				$dbs = $allDbs | Where-Object {$ExcludeDatabase -NotContains $_.DatabaseSnapshotBaseName}
 			}
 			elseif ($Snapshot) {
 				# Restore databases from these snapshots
