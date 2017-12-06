@@ -8,7 +8,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		$server = Connect-DbaInstance -SqlInstance $script:instance1
 		# Need a clean empty database
 		$null = $server.Query("Create Database [$dbname]")
-		$db = Get-DbaDatabase -SqlInstance $server -Database $dbname
+		$db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
 		$null = $db.Query("CREATE TABLE dbo.example (id int); 
 			INSERT dbo.example
 			SELECT top 100 1 
@@ -24,7 +24,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	Context "Testing pipability and that the command works" {
-		It -Skip "shows that the upate is complete" {
+		It "shows that the upate is complete" {
 			$results = $dacpac | Publish-DbaDacpac -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance $script:instance2
 			$results.Result -match 'Update complete.' | Should Be $true
 			Remove-Item -Confirm:$false -Path ($dacpac).Path -ErrorAction SilentlyContinue
