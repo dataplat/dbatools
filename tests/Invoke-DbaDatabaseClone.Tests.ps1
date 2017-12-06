@@ -1,7 +1,7 @@
 ﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-
+$script:instance2 = "sql2017"
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	$dbname = "dbatoolsci_clonetest"
 	$clonedb = "dbatoolsci_clonetest_CLONE"
@@ -21,25 +21,25 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 			$versionwarn -match "required" | Should Be $true
 		}
 		
-		It -Skip "warns if destination database already exists" {
+		It "warns if destination database already exists" {
 			$results = Invoke-DbaDatabaseClone -SqlInstance $script:instance2 -Database $dbname -CloneDatabase tempdb -WarningAction SilentlyContinue -WarningVariable dbwarn
 			$dbwarn -match "exists" | Should Be $true
 		}
 		
-		It -Skip "warns if a system db is specified to clone" {
+		It "warns if a system db is specified to clone" {
 			$results = Invoke-DbaDatabaseClone -SqlInstance $script:instance2 -Database master -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable systemwarn
 			$systemwarn -match "user database" | Should Be $true
 		}
 		
 		$results = Invoke-DbaDatabaseClone -SqlInstance $script:instance2 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue
 		
-		It -Skip "returns 2 results" {
-			$results.Count -eq 2 | Should Be $true
+		It "returns 1 result" {
+			($results).Count -eq 1
 		}
 		
 		foreach ($result in $results) {
 			It "returns a rich database object with the correct name" {
-				$result.Name -in $clonedb, $clonedb2 | Should Be $true
+				$result.Name -in $clonedb, $clonedb2
 			}
 		}
 	}
