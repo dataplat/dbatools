@@ -7,7 +7,7 @@ function Get-DbaDatabaseEncryption {
 		Shows if a database has Transparent Data Encryption (TDE), any certificates, asymmetric keys or symmetric keys with details for each.
 
 	.PARAMETER SqlInstance
-		SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input.
+		SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input.
 
 	.PARAMETER SqlCredential
 		PSCredential object to connect as. If not specified, current Windows login will be used.
@@ -38,22 +38,22 @@ function Get-DbaDatabaseEncryption {
 	.EXAMPLE
 		Get-DbaDatabaseEncryption -SqlInstance DEV01
 
-		List all encrpytion found on the instance by database
+		List all encryption found on the instance by database
 
 	.EXAMPLE
 		Get-DbaDatabaseEncryption -SqlInstance DEV01 -Database MyDB
 
-		List all encrption found for the MyDB database.
+		List all encryption found for the MyDB database.
 
 	.EXAMPLE
 		Get-DbaDatabaseEncryption -SqlInstance DEV01 -ExcludeDatabase MyDB
 		
-		List all encrption found for all databases except MyDB. 
+		List all encryption found for all databases except MyDB. 
 
 	.EXAMPLE
 		Get-DbaDatabaseEncryption -SqlInstance DEV01 -IncludeSystemDBs
 		
-		List all encrption found for all databases including the system databases. 
+		List all encryption found for all databases including the system databases. 
 
 #>
 
