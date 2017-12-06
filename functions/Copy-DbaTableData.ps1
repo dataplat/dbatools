@@ -235,7 +235,8 @@ function Copy-DbaTableData {
 			Stop-Function -Message "Database $DatabaseDest doesn't exist on $destServer"
 			return
 		}
-        try {
+				
+		try {
             $sourcetable = Get-DbaTable -SqlInstance $sourceServer -Table $Table -Database $Database -EnableException -Verbose:$false | Select-Object -First 1
         } catch {
             Stop-Function -Message "Unable to determine source table : $Table"

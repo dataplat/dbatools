@@ -147,7 +147,7 @@ Returns information on the CommandLog table in the DBA database on both instance
 				$dbs = $server.Databases | Where-Object { $_.Status -eq 'Normal' }
 
 				#If IncludeSystemDBs is false, exclude systemdbs
-				if (!$IncludeSystemDBs) {
+				if (!$IncludeSystemDBs -and !$Database) {
 					$dbs = $dbs | Where-Object { !$_.IsSystemObject }
 				}
 
