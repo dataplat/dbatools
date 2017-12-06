@@ -4,24 +4,34 @@ param (
 	[switch]$Beta
 )
 
+function Write-LocalMessage {
+	[CmdletBinding()]
+	Param (
+		[string]$Message
+	)
+	
+	if (Test-Path function:Write-Message) { Write-Message -Level Output -Message $Message }
+	else { Write-Host $Message }
+}
+
 try {
 	Update-Module dbatools -Erroraction Stop
-	Write-Output "Updated using the PowerShell Gallery"
+	Write-LocalMessage -Message "Updated using the PowerShell Gallery"
 	return
 }
 catch {
-	Write-Output "dbatools was not installed by the PowerShell Gallery, continuing with web install."
+	Write-LocalMessage -Message "dbatools was not installed by the PowerShell Gallery, continuing with web install."
 }
 
+$dbatools_copydllmode = $true
 $module = Import-Module -Name dbatools -ErrorAction SilentlyContinue
 $localpath = $module.ModuleBase
-Remove-Module -Name dbatools -ErrorAction SilentlyContinue
 
 if ($null -eq $localpath) {
 	$localpath = "$HOME\Documents\WindowsPowerShell\Modules\dbatools"
 }
 else {
-	Write-Output "Updating current install"
+	Write-LocalMessage -Message "Updating current install"
 }
 
 try {
@@ -29,7 +39,7 @@ try {
 		if ($PSCommandPath.Length -gt 0) {
 			$path = Split-Path $PSCommandPath
 			if ($path -match "github") {
-				Write-Output "Looks like this installer is run from your GitHub Repo, defaulting to psmodulepath"
+				Write-LocalMessage -Message "Looks like this installer is run from your GitHub Repo, defaulting to psmodulepath"
 				$path = $localpath
 			}
 		}
@@ -46,7 +56,34 @@ if (-not $path -or (Test-Path -Path "$path\.git")) {
 	$path = $localpath
 }
 
-Write-Output "Installing module to $path"
+If ($lib = [appdomain]::CurrentDomain.GetAssemblies() | Where-Object FullName -like "dbatools, *") {
+	if ($lib.Location -like "$Path\*") {
+		Write-LocalMessage @"
+We have detected dbatools to be already imported from
+$path
+In a manner that prevents us from updating it, since dll files have been locked.
+In order to ensure a valid update, please:
+- Close all consoles that have dbatools imported (Remove-Module dbatools is NOT enough)
+- Start a new PowerShell console
+- Run '`$dbatools_copydllmode = `$true' (without the single-quotes)
+- Import dbatools and run Update-Dbatools
+If done in this order, the binaries will be copied to another location before import, allowing for a save update.
+"@
+		return
+	}
+}
+
+Write-LocalMessage -Message "Installing module to $path"
+
+if (!(Test-Path -Path $path)) {
+	try {
+		Write-LocalMessage -Message "Creating directory: $path"
+		New-Item -Path $path -ItemType Directory | Out-Null
+	}
+	catch {
+		throw "Can't create $Path. You may need to Run as Administrator: $_"
+	}
+}
 
 if ($beta) {
 	$url = 'https://dbatools.io/devzip'
@@ -60,56 +97,86 @@ else {
 $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 $zipfile = "$temp\dbatools.zip"
 
-if (!(Test-Path -Path $path)) {
-	try {
-		Write-Output "Creating directory: $path"
-		New-Item -Path $path -ItemType Directory | Out-Null
-	}
-	catch {
-		throw "Can't create $Path. You may need to Run as Administrator"
-	}
-}
-
-Write-Output "Downloading archive from github"
+Write-LocalMessage -Message "Downloading archive from github"
 try {
 	(New-Object System.Net.WebClient).DownloadFile($url, $zipfile)
 }
 catch {
 	#try with default proxy and usersettings
-	Write-Output "Probably using a proxy for internet access, trying default proxy settings"
+	Write-LocalMessage -Message "Probably using a proxy for internet access, trying default proxy settings"
 	$wc = (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
 	$wc.DownloadFile($url, $zipfile)
 }
 
-
 # Unblock if there's a block
 Unblock-File $zipfile -ErrorAction SilentlyContinue
 
-Write-Output "Unzipping"
+Write-LocalMessage -Message "Unzipping"
 
 # Keep it backwards compatible
 Remove-Item -ErrorAction SilentlyContinue "$temp\dbatools-$branch" -Recurse -Force
+Remove-Item -ErrorAction SilentlyContinue "$temp\dbatools-old" -Recurse -Force
+$null = New-Item "$temp\dbatools-old" -ItemType Directory
 $shell = New-Object -ComObject Shell.Application
 $zipPackage = $shell.NameSpace($zipfile)
 $destinationFolder = $shell.NameSpace($temp)
 $destinationFolder.CopyHere($zipPackage.Items())
 
-Write-Output "Cleaning up"
-Move-Item -Path "$temp\dbatools-$branch\*" $path -ErrorAction SilentlyContinue -Force
+Write-LocalMessage -Message "Applying Update"
+Write-LocalMessage -Message "1) Backing up previous installation"
+Copy-Item -Path "$Path\*" -Destination "$temp\dbatools-old" -ErrorAction Stop
+try {
+	Write-LocalMessage -Message "2) Cleaning up installation directory"
+	Remove-Item "$Path\*" -Recurse -Force -ErrorAction Stop
+}
+catch {
+	Write-LocalMessage -Message @"
+Failed to clean up installation directory, rolling back update.
+This usually has one of two causes:
+- Insufficient privileges (need to run as admin)
+- A file is locked - generally a dll file from having the module imported in some process.
+
+You can run the following line before importing dbatools to prevent file locking:
+`$dbatools_copydllmode = `$true
+But it increases the time needed to import the module, so we only recommend using it for updates.
+
+Exception:
+$_
+"@
+	Copy-Item -Path "$temp\branch-old\*" -Destination $path -ErrorAction Ignore -Recurse
+	Remove-Item "$temp\branch-old" -Recurse -Force
+	return
+}
+Write-LocalMessage -Message "3) Setting up current version"
+Move-Item -Path "$temp\dbatools-$branch\*" -Destination $path -ErrorAction SilentlyContinue -Force
 Remove-Item -Path "$temp\dbatools-$branch" -Recurse -Force
+Remove-Item "$temp\branch-old" -Recurse -Force
 Remove-Item -Path $zipfile -Recurse -Force
 
-Write-Output "Done! Please report any bugs to dbatools.io/issues or clemaire@gmail.com."
-if ((Get-Command -Module dbatools).count -eq 0) { Import-Module "$path\dbatools.psd1" -Force }
-Get-Command -Module dbatools
-Write-Output "`n`nIf you experience any function missing errors after update, please restart PowerShell or reload your profile."
+Write-LocalMessage -Message "Done! Please report any bugs to dbatools.io/issues or clemaire@gmail.com."
+if (Get-Module dbatools) {
+	Write-LocalMessage -Message @"
+
+Please restart PowerShell before working with dbatools.
+"@
+}
+else {
+	Import-Module "$path\dbatools.psd1" -Force
+	Write-LocalMessage @"
+
+dbatools v $((Get-Module dbatools).Version)
+# Commands available: $((Get-Command -Module dbatools -CommandType Function | Measure-Object).Count)
+
+"@
+}
+Write-LocalMessage -Message "`n`nIf you experience any function missing errors after update, please restart PowerShell or reload your profile."
 
 
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUJWfQalDeoHuBYlx9WeJoae/W
-# cKCggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUqAjskbQEzDY/Z93/y/eZ5fP6
+# qqCggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -240,22 +307,22 @@ Write-Output "`n`nIf you experience any function missing errors after update, pl
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUSDOt1BfG7iEjj7wIxycUFpuT2q8wDQYJKoZIhvcNAQEBBQAE
-# ggEALGcCIMdPhIykTZeVYy7CbRxrDXbjB0kpXAptjOUeUB0NRG6BjrjzO+sYra7J
-# 8eDoJF/sz8sZKsCmQ76G8/L54ast4MpbxudNcQS4/Ax6K/EJQg0dYComEfZyrPv7
-# 2+D5YrnHuK1NvXMDknMipz8WyPu2TemOmCVT2vhQYzXw3ZnHkBwzlube3CK6+S1v
-# d9a7DBCj9sP/1TBc8I8jcBJIe8DJqh4ehhwhg09p6yL0DOzYj0aZJURRtDi1BDzq
-# wP5RRn2tL22kTxFGWpYJxb1+pE55znutag6B23b66Rr614s5z7hH6MDBh7vo5XaT
-# AgdUDJQsJV6N5vuxZbiOvZHTPaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUKo9vhhIVQRZ+5dwW6roMAHu8Y6UwDQYJKoZIhvcNAQEBBQAE
+# ggEAT5BvoI+WrDZKXIccY4qRmZDXNfKoIUu24LthgEZWSCbSon6YzZd0m6la/+yW
+# 13lu1EmX+yxkaWj796O53gJCw4ARyozDSPxjRVr92/MH9FC+NZ38tobiqijv7AHM
+# ZHz2E7NaP/gKsdpBRo0CIcHKCr0YSizFIHW3UAUrzguaOQx5sDDeqBwyOqo+2eEv
+# yW7Sz/bzUMItUWocCNXb2gINdmRjhCn/UAXXy0nIVl6b/YDe/DGdHKc2t3SjmlvI
+# PE9CqzNueaB+D7cdpk1dI2anegk1Lj0I+i78r+qXRVVbd9SmfmkUTV/YZucl1zAv
+# cpzxUACFFkstnW+CSPld5WBTfqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMjA2MTI0NDU5WjAj
-# BgkqhkiG9w0BCQQxFgQUDx1FARAMx8uzTP96vZGmn52Z5icwDQYJKoZIhvcNAQEB
-# BQAEggEAHUFBJPpd60lPxc2RhGnVn/FNAEO6OZ5GzbNxoFqY68Z44qrc1Y/Ri+R7
-# y60qX1yQKp3JjjxNNGiOwj2vYEDDl+gl7UzJ/0dMIqho/fkEX38LrRsdDsh7jb4h
-# coXgclHnBtso8kTnTMPV55PCHDtrKbOUvRduFCqr9SicGWpCnkm8AvtTIjTHvWfa
-# 3nDRGHXUspHqpJdLPy5YS4naNU9OEARVIzw7CWnUDbHIOLRb3w2c+YPt4TuwwGkb
-# UICt1f+D18hev0sISdpMKAXinX0QO5irP/WKqgbibYTgrFii1zF49/kqhrWzYkHQ
-# ThHTF8OJ1mkIP5P21W1Ti5V1yiAvYg==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMjA2MTk1MTMyWjAj
+# BgkqhkiG9w0BCQQxFgQU/ITDbLUe5bjBMFiTICNLvMCZszUwDQYJKoZIhvcNAQEB
+# BQAEggEANLYmDcJNB/bgpN88siqSL2SRs/Q8Rm36+y7/619Z7sXn/M0TBNebmx4A
+# avpPn/PUKD6TlDIBWtkxl3C5HCdzb8eEcdxDn2Cfcdxrg17t3XnVw0SdUeF8bKFX
+# rmAN5w/NBBi/I+GNbAuctqLxoSVqEiaC3An4v5rqP+Vwp9nvZ6fOhiFdlUJ+OWyZ
+# 4dNMPi4HjI3e5/xfubFT50uEQgZgOJLrCSDvy+DkmeX9IWnP5+jPM9ie2l/1ybUJ
+# 7r6PO7q+MtR6tVxzPSizvejk98d8vYytQkbpsk3cyk2X8bt/tmxcxC25f55gzhLB
+# dJnsBkTQzhBovO0uXLC7fOCMS0BNkw==
 # SIG # End signature block
