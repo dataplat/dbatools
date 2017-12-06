@@ -93,12 +93,12 @@ if ($dbatoolsSystemSystemNode.DoDotSource) { $script:doDotSource = $true }
 if ($dbatoolsSystemUserNode.DoDotSource) { $script:doDotSource = $true }
 #endregion Dot Sourcing
 
-#region Strict Security Mode
+#region Copy DLL Mode
 $script:copyDllMode = $false
 if ($dbatools_copydllmode) { $script:copyDllMode = $true }
 if ($dbatoolsSystemSystemNode.CopyDllMode) { $script:copyDllMode = $true }
 if ($dbatoolsSystemUserNode.CopyDllMode) { $script:copyDllMode = $true }
-#endregion Strict Security Mode
+#endregion Copy DLL Mode
 
 #region Always Compile
 $script:alwaysBuildLibrary = $false
