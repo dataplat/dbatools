@@ -226,9 +226,12 @@ function Copy-DbaTableData {
 			}			
 		}
 		
-		$tablecollection = [Microsoft.SqlServer.Management.Smo.Table[]]$Table
-		
+		if (-not $tablecollection) {
+			$tablecollection = [Microsoft.SqlServer.Management.Smo.Table[]]$Table
+		}
+
 		foreach ($sqltable in $tablecollection) {
+			
 			$Database = $sqltable.Parent.Name
 			$server = $sqltable.Parent.Parent
 			
@@ -273,13 +276,13 @@ function Copy-DbaTableData {
 			
 			$connstring = $destServer.ConnectionContext.ConnectionString
 			
-			$fqtnfrom = "$($server.Databases[$Database]).$sourcetable"
+			$fqtnfrom = "$($server.Databases[$Database]).$sqltable"
 			$fqtndest = "$($destServer.Databases[$DestinationDatabase]).$desttable"
 			
 			if (-not $Query) {
 				$Query = "SELECT * FROM $fqtnfrom"
 			}
-			
+
 			if ($Truncate -eq $true) {
 				if ($Pscmdlet.ShouldProcess($destServer, "Truncating table $fqtndest")) {
 					$null = $destServer.Databases[$DestinationDatabase].Query("TRUNCATE TABLE $fqtndest")
@@ -314,6 +317,17 @@ function Copy-DbaTableData {
 			
 			$bulkCopy.Close()
 			$bulkCopy.Dispose()
+			
+			[pscustomobject]@{
+				SourceInstance	   = $server.Name
+				SourceDatabase	   = $Database
+				SourceTable	       = $sqltable.Name
+				DestinationInstance = $destServer.name
+				DestinationDatabase = $DestinationDatabase
+				DestinationTable   = $desttable.Name
+				RowsCopied		   = $rowstotal
+				Elapsed		       = [prettytimespan]$elapsed.Elapsed
+			}
 		}
 	}
 }

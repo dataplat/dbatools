@@ -17,9 +17,20 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	}
 	
 	It "copies the table data" {
-		$null = Copy-DbaTableData -Source $script:instance1 -Destination $script:instance1 -Database tempdb -Table dbatoolsci_example -TableDest dbatoolsci_example2
+		$null = Copy-DbaTableData -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example -DestinationTable dbatoolsci_example2
 		$table1count = $db.Query("select id from dbo.dbatoolsci_example")
 		$table2count = $db.Query("select id from dbo.dbatoolsci_example2")
 		$table1count.Count -eq $table2count.Count
+	}
+	
+	It "supports piping" {
+		$results = Get-DbaTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example | Copy-DbaTableData -DestinationTable dbatoolsci_example2
+		$table3count = $db.Query("select id from dbo.dbatoolsci_example2")
+		$table3count.Count -gt $table2count.Count
+	}
+	
+	It "supports piping more than one table" {
+		$results = Get-DbaTable -SqlInstance $script:instance1 -Database tempdb -Table dbatoolsci_example2, dbatoolsci_example | Copy-DbaTableData -DestinationTable dbatoolsci_example2
+		$results.Count -eq 2
 	}
 }
