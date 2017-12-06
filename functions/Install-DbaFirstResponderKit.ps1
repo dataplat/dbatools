@@ -1,78 +1,81 @@
-Function Install-DbaFirstResponderKit {
-<#
-.SYNOPSIS
-Installs or updates the First Responder Kit stored procedures.
+function Install-DbaFirstResponderKit {
+	<#
+		.SYNOPSIS
+			Installs or updates the First Responder Kit stored procedures.
 
-.DESCRIPTION
-Downloads, extracts and installs the First Responder Kit stored procedures: 
-sp_Blitz, sp_BlitzWho, sp_BlitzFirst, sp_BlitzIndex, sp_BlitzCache and sp_BlitzTrace. 
+		.DESCRIPTION
+			Downloads, extracts and installs the First Responder Kit stored procedures: 
+			sp_Blitz, sp_BlitzWho, sp_BlitzFirst, sp_BlitzIndex, sp_BlitzCache and sp_BlitzTrace. 
 
-First Responder Kit links:
-http://FirstResponderKit.org
-https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit
+			First Responder Kit links:
+			http://FirstResponderKit.org
+			https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit
 
-.PARAMETER SqlInstance
-SQL Server instance or collection of SQL Server instances
+		.PARAMETER SqlInstance
+			SQLServer name or SMO object representing the SQL Server to connect to.
 
-.PARAMETER Database
-Database to store the FRK stored procs, typically master and master by default
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER SqlCredential
-Use SqlCredential to connect to SqlInstance with SQL authentication. 
-If SqlCredential is not specified, Windows authentication will be used.
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.PARAMETER Branch
-Allows you to download other branches of the First Responder Kit instead of the master branch.
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
-.NOTES 
-Author: Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+			To connect as a different Windows user, run PowerShell as that user.
 
-.LINK
-https://dbatools.io/Install-DbaFirstResponderKit
+		.PARAMETER Database
+			Specifies the database to instal the First Responder Kit stored procedures into 
 
-.EXAMPLE
-Install-DbaFirstResponderKit -SqlInstance server1 -Database master
+		.PARAMETER Branch
+			Specifies an alternate branch of the First Responder Kit to install.
 
-Logs into server1 with Windows authentication and then installs the FRK in the master database.
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+				
+		.NOTES 
+			Author: Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.EXAMPLE
-Install-DbaFirstResponderKit -SqlInstance server1\instance1 -Database DBA
+		.LINK
+			https://dbatools.io/Install-DbaFirstResponderKit
 
-Logs into server1\instance1 with Windows authentication and then installs the FRK in the DBA database.
+		.EXAMPLE
+			Install-DbaFirstResponderKit -SqlInstance server1 -Database master
 
-.EXAMPLE
-Install-DbaFirstResponderKit -SqlInstance server1\instance1 -Database master -SqlCredential $cred
+			Logs into server1 with Windows authentication and then installs the FRK in the master database.
 
-Logs into server1\instance1 with SQL authentication and then installs the FRK in the master database.
+		.EXAMPLE
+			Install-DbaFirstResponderKit -SqlInstance server1\instance1 -Database DBA
 
-.EXAMPLE 
-Install-DbaFirstResponderKit -SqlInstance sql2016\standardrtm, sql2016\sqlexpress, sql2014
+			Logs into server1\instance1 with Windows authentication and then installs the FRK in the DBA database.
 
-Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.
+		.EXAMPLE
+			Install-DbaFirstResponderKit -SqlInstance server1\instance1 -Database master -SqlCredential $cred
 
-.EXAMPLE 
-$servers = "sql2016\standardrtm", "sql2016\sqlexpress", "sql2014"
-$servers | Install-DbaFirstResponderKit
+			Logs into server1\instance1 with SQL authentication and then installs the FRK in the master database.
 
-Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.
+		.EXAMPLE 
+			Install-DbaFirstResponderKit -SqlInstance sql2016\standardrtm, sql2016\sqlexpress, sql2014
 
-#>
+			Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.
+
+		.EXAMPLE 
+			$servers = "sql2016\standardrtm", "sql2016\sqlexpress", "sql2014"
+			$servers | Install-DbaFirstResponderKit
+
+			Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.
+	#>
 	
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory, ValueFromPipeline)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]
-		$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[string]$Branch = "master",
 		[object]$Database = "master",
 		[switch][Alias('Silent')]$EnableException
@@ -127,18 +130,20 @@ Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authe
 	}
 	
 	process {
-		if (Test-FunctionInterrupt) { return }
+		if (Test-FunctionInterrupt) {
+			return
+		}
 		
 		foreach ($instance in $SqlInstance) {
 			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance"
+				Write-Message -Level Verbose -Message "Connecting to $instance."
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+				Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			Write-Message -Level Output -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance"
+			Write-Message -Level Output -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance."
 			$allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
 			$allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 			# Install/Update each FRK stored procedure
@@ -158,7 +163,7 @@ Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authe
 								$null = $server.Query($query, $Database)
 							}
 							catch {
-								Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptname in $Database on $instance" -ErrorRecord $_
+								Write-Message -Level Warning -Message "Could not execute at least one portion of $scriptname in $Database on $instance." -ErrorRecord $_
 							}
 						}
 					}
@@ -170,14 +175,15 @@ Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authe
 					Database     = $Database
 					Name         = $scriptname.TrimEnd('.sql')
 				}
-				if($scriptname.TrimEnd('.sql') -in $allprocedures) {
+				if ($scriptname.TrimEnd('.sql') -in $allprocedures) {
 					$baseres['Status'] = 'Updated'
-				} else {
+				}
+				else {
 					$baseres['Status'] = 'Installed'
 				}
 				[PSCustomObject]$baseres
 			}
-			Write-Message -Level Output -Message "Finished installing/updating the First Responder Kit stored procedures in $database on $instance"
+			Write-Message -Level Output -Message "Finished installing/updating the First Responder Kit stored procedures in $database on $instance."
 		}
 	}
 }
