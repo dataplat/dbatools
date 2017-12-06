@@ -101,7 +101,7 @@ function Test-DbaLsnChain {
 		#Check T-log LSNs form a chain.
 		$TranLogBackups = $TestHistory | Where-Object {$_.$TypeName -in ('Transaction Log', 'Log') -and $_.DatabaseBackupLSN -eq $FullDBAnchor.CheckPointLSN} | Sort-Object -Property LastLSN, FirstLsn
 		for ($i = 0; $i -lt ($TranLogBackups.count)) {
-			Write-Message -Level Debug "looping t logs"
+			Write-Message -Level Debug -Message "looping t logs"
 			if ($i -eq 0) {
 				if ($TranLogBackups[$i].FirstLSN -gt $TlogAnchor.LastLSN) {
 					Write-Message -Level Warning -Message "Break in LSN Chain between $($TlogAnchor.FullName) and $($TranLogBackups[($i)].FullName) "
@@ -120,7 +120,7 @@ function Test-DbaLsnChain {
 			$i++
 
 		}
-		Write-Message -Level VeryVerbose "Passed LSN Chain checks"
+		Write-Message -Level VeryVerbose -Message "Passed LSN Chain checks"
 		return $true
 	}
 }
