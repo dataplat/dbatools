@@ -1,4 +1,4 @@
-function Copy-DbaData {
+function Copy-DbaTableData {
 	<#
 		.SYNOPSIS
 			Copies data between SQL Server tables.
@@ -115,30 +115,30 @@ function Copy-DbaData {
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 		.LINK
-			https://dbatools.io/Copy-DbaData
+			https://dbatools.io/Copy-DbaTableData
 
 		.EXAMPLE
-			Copy-DbaData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table
+			Copy-DbaTableData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table
 
 			Copies all the data from sqlserver2014a to sqlserver2016a, using the database dbatools_from.
 
 		.EXAMPLE
-			Copy-DbaData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -DatabaseDest dbatools_dest -Table test_table
+			Copy-DbaTableData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -DatabaseDest dbatools_dest -Table test_table
 
 			Copies all the data from sqlserver2014a to sqlserver2016a, using the database dbatools_from as source and dbatools_dest as destination
 
 		.EXAMPLE
-			Copy-DbaData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table
+			Copy-DbaTableData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table
 
 			Copies all the data from sqlserver2014a to sqlserver2016a, using the database dbatools_from.
 
 		.EXAMPLE
-			Copy-DbaData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table -KeepIdentity -Truncate
+			Copy-DbaTableData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table -KeepIdentity -Truncate
 
 			Copies all the data from sqlserver2014a to sqlserver2016a, using the database dbatools_from, keeping identity columns and truncating the destination
 
 		.EXAMPLE
-			Copy-DbaData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table -KeepIdentity -Truncate
+			Copy-DbaTableData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table -KeepIdentity -Truncate
 
 			Copies all the data from sqlserver2014a to sqlserver2016a, using the database dbatools_from, keeping identity columns and truncating the destination
 
