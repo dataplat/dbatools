@@ -174,7 +174,7 @@ function Copy-DbaTableData {
 		# Getting the total rows copied is a challenge. Use SqlBulkCopyExtension.
 		# http://stackoverflow.com/questions/1188384/sqlbulkcopy-row-count-when-complete
 
-		$SqlInstancecode = 'namespace System.Data.SqlClient {
+		$sourcecode = 'namespace System.Data.SqlClient {
 			using Reflection;
 
 			public static class SqlBulkCopyExtension
@@ -190,7 +190,7 @@ function Copy-DbaTableData {
 			}
 		}'
 
-		Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $SqlInstancecode -ErrorAction SilentlyContinue
+		Add-Type -ReferencedAssemblies System.Data.dll -TypeDefinition $sourcecode -ErrorAction SilentlyContinue
 		$bulkCopyOptions = 0
 		$options = "TableLock", "CheckConstraints", "FireTriggers", "KeepIdentity", "KeepNulls", "Default"
 
