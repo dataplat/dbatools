@@ -18,17 +18,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		
 		It "warns if SQL instance version is not supported" {
 			$results = Invoke-DbaDatabaseClone -SqlInstance $script:instance1 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable versionwarn
-			$versionwarn -match "required" | Should Be $true
+			$versionwarn = $versionwarn | Out-String
+			$versionwarn -match "required"
 		}
 		
 		It "warns if destination database already exists" {
 			$results = Invoke-DbaDatabaseClone -SqlInstance $script:instance2 -Database $dbname -CloneDatabase tempdb -WarningAction SilentlyContinue -WarningVariable dbwarn
-			$dbwarn -match "exists" | Should Be $true
+			$dbwarn = $dbwarn | Out-String
+			$dbwarn -match "exists"
 		}
 		
 		It "warns if a system db is specified to clone" {
 			$results = Invoke-DbaDatabaseClone -SqlInstance $script:instance2 -Database master -CloneDatabase $clonedb -WarningAction SilentlyContinue -WarningVariable systemwarn
-			$systemwarn -match "user database" | Should Be $true
+			$systemwarn = $systemwarn | Out-String
+			$systemwarn -match "user database"
 		}
 		
 		$results = Invoke-DbaDatabaseClone -SqlInstance $script:instance2 -Database $dbname -CloneDatabase $clonedb -WarningAction SilentlyContinue
