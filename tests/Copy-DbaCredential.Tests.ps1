@@ -5,20 +5,6 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 if (-not $env:appveyor) {
 	Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		BeforeAll {
-			if ($env:appveyor) {
-				try {
-					$connstring = "Server=ADMIN:$script:instance1;Trusted_Connection=True"
-					$server = New-Object Microsoft.SqlServer.Management.Smo.Server $script:instance1
-					$server.ConnectionContext.ConnectionString = $connstring
-					$server.ConnectionContext.Connect()
-					$server.ConnectionContext.Disconnect()
-				}
-				catch {
-					$bail = $true
-					Write-Host "DAC not working this round, likely due to Appveyor resources"
-				}
-			}
-			
 			$logins = "thor", "thorsmomma"
 			$plaintext = "BigOlPassword!"
 			$password = ConvertTo-SecureString $plaintext -AsPlainText -Force
