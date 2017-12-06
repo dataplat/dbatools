@@ -34,7 +34,7 @@ function Export-DbaSpConfigure {
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0	
 
 		.EXAMPLE
-			Export-DbaSpConfigure sourceserver -Path C:\temp\sp_configure.sql
+			Export-DbaSpConfigure -SqlInstance sourceserver -Path C:\temp\sp_configure.sql
 
 			Exports the SPConfigure settings on sourceserver to the file C:\temp\sp_configure.sql
 

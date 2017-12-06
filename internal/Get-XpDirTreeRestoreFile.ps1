@@ -1,32 +1,32 @@
 function Get-XpDirTreeRestoreFile {
 	<#
-    .SYNOPSIS
-        Internal Function to get SQL Server backfiles from a specified folder using xp_dirtree
+	.SYNOPSIS
+		Internal Function to get SQL Server backfiles from a specified folder using xp_dirtree
 
-    .DESCRIPTION
-        Takes path, checks for validity. Scans for usual backup file
+	.DESCRIPTION
+		Takes path, checks for validity. Scans for usual backup file
 
-    .PARAMETER Path
-        The path to retrieve the restore for.
+	.PARAMETER Path
+		The path to retrieve the restore for.
 
-    .PARAMETER SqlInstance
-        The SQL Server that you're connecting to.
+	.PARAMETER SqlInstance
+		The SQL Server that you're connecting to.
 
-    .PARAMETER SqlCredential
-        Credential object used to connect to the SQL Server as a different user
+	.PARAMETER SqlCredential
+		Credential object used to connect to the SQL Server as a different user
 
-    .PARAMETER EnableException
-        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+	.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-    .EXAMPLE
-        PS C:\> Get-XpDirTreeRestoreFile -Path '\\foo\bar\' -SqlInstance $SqlInstance
+	.EXAMPLE
+		PS C:\> Get-XpDirTreeRestoreFile -Path '\\foo\bar\' -SqlInstance $SqlInstance
 
-        Tests whether the instance $SqlInstance has access to the path \\foo\bar\
+		Tests whether the instance $SqlInstance has access to the path \\foo\bar\
 #>
 	[CmdletBinding()]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[string]$Path,
 		[parameter(Mandatory = $true)]
