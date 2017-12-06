@@ -1,75 +1,78 @@
 #ValidationTags#FlowControl#
 function Restore-DbaFromDatabaseSnapshot {
 	<#
-.SYNOPSIS
-Restores databases from snapshots
+		.SYNOPSIS
+			Restores databases from snapshots
 
-.DESCRIPTION
-Restores the database from the snapshot, discarding every modification made to the database
-NB: Restoring to a snapshot will result in every other snapshot of the same database to be dropped
-It also fixes some long-standing bugs in SQL Server when restoring from snapshots
+		.DESCRIPTION
+			Restores the database from the snapshot, discarding every modification made to the database
+			NB: Restoring to a snapshot will result in every other snapshot of the same database to be dropped
+			It also fixes some long-standing bugs in SQL Server when restoring from snapshots
 
-.PARAMETER SqlInstance
-The SQL Server that you're connecting to
+		.PARAMETER SqlInstance
+			The SQL Server that you're connecting to
 
-.PARAMETER SqlCredential
-Credential object used to connect to the SQL Server as a different user
+		.PARAMETER SqlCredential
+			Credential object used to connect to the SQL Server as a different user
 
-.PARAMETER Database
-Restores from the last snapshot databases with this names only. You can pass either Databases or Snapshots
+		.PARAMETER Database
+			Restores from the last snapshot databases with this names only. You can pass either Databases or Snapshots
 
-.PARAMETER ExcludeDatabase
-The database(s) to exclude - this list is auto-populated from the server
+		.PARAMETER ExcludeDatabase
+			The database(s) to exclude - this list is auto-populated from the server
 
-.PARAMETER Snapshot
-Restores databases from snapshots with this names only. You can pass either Databases or Snapshots
+		.PARAMETER Snapshot
+			Restores databases from snapshots with this names only. You can pass either Databases or Snapshots
 
-.PARAMETER Force
-If restoring from a snapshot involves dropping any other shapshot, you need to explicitly
-use -Force to let this command delete the ones not involved in the restore process.
-Also, -Force will forcibly kill all running queries that prevent the restore process.
+		.PARAMETER Force
+			If restoring from a snapshot involves dropping any other shapshot, you need to explicitly
+			use -Force to let this command delete the ones not involved in the restore process.
+			Also, -Force will forcibly kill all running queries that prevent the restore process.
 
-.PARAMETER WhatIf
-Shows what would happen if the command were to run
+		.PARAMETER WhatIf
+			Shows what would happen if the command were to run
 
-.PARAMETER Confirm
-Prompts for confirmation of every step.
+		.PARAMETER Confirm
+			Prompts for confirmation of every step.
 
-.PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
-.NOTES
-Tags: DisasterRecovery, Snapshot, Backup, Restore, Database
-Author: niphlod
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-Website: https://dbatools.io
-Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+		.NOTES
+			Tags: DisasterRecovery, Snapshot, Backup, Restore, Database
+			Author: niphlod
 
-.LINK
- https://dbatools.io/Restore-DbaFromDatabaseSnapshot
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.EXAMPLE
-Restore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
+		.LINK
+		 	https://dbatools.io/Restore-DbaFromDatabaseSnapshot
 
-Restores HR and Accounting databases using the latest snapshot available
+		.EXAMPLE
+			Restore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting
 
-.EXAMPLE
-Restore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, Accounting_snap_20161101
+			Restores HR and Accounting databases using the latest snapshot available
 
-Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_20161101
+		.EXAMPLE
+			Restore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR -Force
 
-#>
+			Restores HR database from latest snapshot and kills any active connections in the database on sqlserver2014a.
+
+		.EXAMPLE
+			Restore-DbaFromDatabaseSnapshot -SqlInstance sqlserver2014a -Snapshot HR_snap_20161201, Accounting_snap_20161101
+
+			Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_20161101
+	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
+		[DbaInstance[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential]
-		$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
@@ -92,7 +95,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
-			$alldbs = $server.Databases
+			$allDbs = $server.Databases
 
 			# vault to hold all programmed operations from --> to
 			$operations = @()
@@ -100,43 +103,47 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 			if (!$Snapshot -and !$Database -and !$ExcludeDatabase) {
 				# Restore all databases from the latest snapshot
 				Write-Message -Level Verbose -Message "Selected all databases"
-				$dbs = $alldbs | Where-Object IsDatabaseSnapshot -eq $true
+				$dbs = $allDbs | Where-Object IsDatabaseSnapshot -EQ $true
 			}
 			elseif ($Database) {
 				# Restore only these databases from their latest snapshot
+				<#
+					Note, for some reason lookup of this property has to be done using $_.DatabaseSnapshotBaseName
+					Removing this will cause: Where-Object : A positional parameter cannot be found that accepts argument 'System.Object[]'
+				#>
 				Write-Message -Level Verbose -Message "Selected only databases"
-				$dbs = $alldbs | Where-Object { $Database -contains $_.DatabaseSnapshotBaseName }
+				$dbs = $allDbs | Where-Object {$Database -contains $_.DatabaseSnapshotBaseName}
 			}
 			elseif ($ExcludeDatabase) {
 				Write-Message -Level Verbose -Message "Excluded only databases"
-				$dbs = $alldbs | Where-Object { $ExcludeDatabase -notcontains $_.DatabaseSnapshotBaseName }
+				$dbs = $allDbs | Where-Object {$ExcludeDatabase -NotContains $_.DatabaseSnapshotBaseName}
 			}
 			elseif ($Snapshot) {
 				# Restore databases from these snapshots
 				Write-Message -Level Verbose -Message "Selected only snapshots"
-				$dbs = $alldbs | Where-Object { $Snapshot -contains $_.Name }
-				$basedatabases = $dbs | Select-Object -ExpandProperty DatabaseSnapshotBaseName | Get-Unique
-				if ($basedatabases.count -ne $Snapshot.count -and $dbs.Count -ne 0) {
+				$dbs = $allDbs | Where-Object { $Snapshot -contains $_.Name }
+				$baseDatabases = $dbs | Select-Object -ExpandProperty DatabaseSnapshotBaseName | Get-Unique
+				if ($baseDatabases.Count -ne $Snapshot.Count -and $dbs.Count -ne 0) {
 					Write-Message -Level Warning -Message "Multiple snapshots selected for the same database, skipping"
 					continue
 				}
 			}
 
-			$opshash = @{ }
+			$opsHash = @{ }
 
 			foreach ($db in $dbs) {
-				if ($db.DatabaseSnapshotBaseName -notin $opshash.Keys) {
-					if ($snapshot.count -gt 0) {
+				if ($db.DatabaseSnapshotBaseName -notin $opsHash.Keys) {
+					if ($snapshot.Count -gt 0) {
 						# just in the need to drop every other snapshot
-						$todrop = $alldbs | Where-Object { $_.DatabaseSnapshotBaseName -eq $db.DatabaseSnapshotBaseName }
-						$todrop = $todrop | Select-Object Name
-						$opshash[$db.DatabaseSnapshotBaseName] = @{
+						$toDrop = $allDbs | Where-Object { $_.DatabaseSnapshotBaseName -eq $db.DatabaseSnapshotBaseName }
+						$toDrop = $todrop | Select-Object Name
+						$opsHash[$db.DatabaseSnapshotBaseName] = @{
 							'from' = $db | Select-Object Name, DatabaseSnapshotBaseName, CreateDate
-							'drop' = $todrop
+							'drop' = $toDrop
 						}
 					}
 					else {
-						$opshash[$db.DatabaseSnapshotBaseName] = @{
+						$opsHash[$db.DatabaseSnapshotBaseName] = @{
 							'from' = $db
 							'drop' = @()
 						}
@@ -144,28 +151,28 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 				}
 				else {
 					# store each older snapshot in the drop list while enumerating
-					if ($db.createDate -gt $opshash[$db.DatabaseSnapshotBaseName]['from'].CreateDate) {
-						$prev = $opshash[$db.DatabaseSnapshotBaseName]['from']
-						$opshash[$db.DatabaseSnapshotBaseName]['from'] = $db | Select-Object Name, DatabaseSnapshotBaseName, CreateDate
-						$opshash[$db.DatabaseSnapshotBaseName]['drop'] += $prev
+					if ($db.CreateDate -gt $opsHash[$db.DatabaseSnapshotBaseName]['from'].CreateDate) {
+						$prev = $opsHash[$db.DatabaseSnapshotBaseName]['from']
+						$opsHash[$db.DatabaseSnapshotBaseName]['from'] = $db | Select-Object Name, DatabaseSnapshotBaseName, CreateDate
+						$opsHash[$db.DatabaseSnapshotBaseName]['drop'] += $prev
 					}
 				}
 			}
-			foreach ($dbname in $opshash.Keys) {
+			foreach ($dbName in $opsHash.Keys) {
 				$drop = @()
-				foreach ($todrop in $opshash[$dbname]['drop']) {
-					$drop += $todrop.Name
+				foreach ($toDrop in $opsHash[$dbName]['drop']) {
+					$drop += $toDrop.Name
 				}
 				$operations += @{
-					'from' = $opshash[$dbname]['from'].Name
-					'to'   = $dbname
+					'from' = $opsHash[$dbName]['from'].Name
+					'to'   = $dbName
 					'drop' = $drop
 				}
 			}
 
 			foreach ($op in $operations) {
 				# Check if there are FS, because then a restore is not possible
-				$all_FS = $server.Databases[$op['to']].FileGroups | Where-Object FileGroupType -eq 'FileStreamDataFileGroup'
+				$all_FS = $server.Databases[$op['to']].FileGroups | Where-Object FileGroupType -EQ 'FileStreamDataFileGroup'
 				if ($all_FS.Count -gt 0) {
 					Write-Message -Level Warning -Message "Database $($op['to']) has FileStream group(s). You cannot restore from snapshots"
 					[PSCustomObject]@{
@@ -180,22 +187,22 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 					break
 				}
 				# Get log size and autogrowth
-				$orig_logproperties = $server.Databases[$op['to']].LogFiles | Select-Object id, size
+				$orig_logproperties = $server.Databases[$op['to']].LogFiles | Select-Object Id, Size
 				# Drop what needs to be dropped
-				$operror = $false
+				$opError = $false
 
-				if ($op['drop'].count -gt 1 -and $Force -eq $false) {
-					$warnmsg = @()
-					$warnmsg += "The restore process for $($op['to']) from $($op['from']) needs to drop the following:"
+				if ($op['drop'].Count -gt 1 -and $Force -eq $false) {
+					$warnMsg = @()
+					$warnMsg += "The restore process for $($op['to']) from $($op['from']) needs to drop the following:"
 					foreach ($db in $op['drop']) {
-						$warnmsg += $db
+						$warnMsg += $db
 					}
-					$warnmsg += "Use -Force if you really want to drop these snapshots."
-					Write-Message -Level Warning -Message ($warnmsg -join "`n")
+					$warnMsg += "Use -Force if you really want to drop these snapshots."
+					Write-Message -Level Warning -Message ($warnMsg -join "`n")
 					break
 				}
 				foreach ($drop in $op['drop']) {
-					If ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $drop")) {
+					if ($Pscmdlet.ShouldProcess($server.name, "Remove db snapshot $drop")) {
 						# skip it if it's the same name
 						if ($drop -ne $($op['from'])) {
 							try {
@@ -213,7 +220,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 						}
 					}
 				}
-				if ($operror) {
+				if ($opError) {
 					Write-Message -Level Warning -Message "Errors trying to restore $($op['to']) from $($op['from'])"
 					[PSCustomObject]@{
 						ComputerName = $server.NetName
@@ -240,7 +247,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 						$null = $server.Query($query)
 					}
 					catch {
-						$operror = $true
+						$opError = $true
 						$inner = $_.Exception.Message
 						Stop-Function -Message "Original exception: $inner, Query issued: $query, Error: $_.Exception.InnerException.InnerException.Message" -ErrorRecord $_
 					}
@@ -262,7 +269,7 @@ Restores databases from snapshots named HR_snap_20161201 and Accounting_snap_201
 				# changed
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 				foreach ($log in $server.Databases[$op['to']].LogFiles) {
-					$matching = $orig_logproperties | Where-Object ID -eq $log.ID
+					$matching = $orig_logproperties | Where-Object ID -EQ $log.ID
 					if ($matching.Size -ne $log.Size) {
 						Write-Message -Level Verbose -Message "Resizing log to the original value"
 						$log.Size = $matching.Size
