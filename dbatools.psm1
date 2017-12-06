@@ -93,12 +93,12 @@ if ($dbatoolsSystemSystemNode.DoDotSource) { $script:doDotSource = $true }
 if ($dbatoolsSystemUserNode.DoDotSource) { $script:doDotSource = $true }
 #endregion Dot Sourcing
 
-#region Strict Security Mode
-$script:strictSecurityMode = $false
-if ($dbatools_strictsecuritymode) { $script:strictSecurityMode = $true }
-if ($dbatoolsSystemSystemNode.StrictSecurityMode) { $script:strictSecurityMode = $true }
-if ($dbatoolsSystemUserNode.StrictSecurityMode) { $script:strictSecurityMode = $true }
-#endregion Strict Security Mode
+#region Copy DLL Mode
+$script:copyDllMode = $false
+if ($dbatools_copydllmode) { $script:copyDllMode = $true }
+if ($dbatoolsSystemSystemNode.CopyDllMode) { $script:copyDllMode = $true }
+if ($dbatoolsSystemUserNode.CopyDllMode) { $script:copyDllMode = $true }
+#endregion Copy DLL Mode
 
 #region Always Compile
 $script:alwaysBuildLibrary = $false
@@ -120,7 +120,7 @@ Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" -Recurse | Unblock-File -Er
 Write-ImportTime -Text  "Unblocking Files"
 
 # Define folder in which to copy dll files before importing
-if ($script:strictSecurityMode) { $script:DllRoot = "$script:PSModuleRoot\bin" }
+if (-not $script:copyDllMode) { $script:DllRoot = "$script:PSModuleRoot\bin" }
 else {
 	$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)"
 	while (Test-Path -Path $libraryTempPath) {
