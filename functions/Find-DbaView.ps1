@@ -7,7 +7,7 @@ Returns all views that contain a specific case-insensitive string or regex patte
 This function can either run against specific databases or all databases searching all user or user and system views.
 
 .PARAMETER SqlInstance
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
 
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, current Windows login will be used.

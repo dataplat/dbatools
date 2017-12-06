@@ -7,7 +7,7 @@ Function Publish-DbaDacpac {
             Deploying a dacpac uses the DacFx which historically needed to be installed on a machine prior to use. In 2016 the DacFx was supplied by Microsoft as a nuget package and this uses that nuget package.
         
 		.PARAMETER SqlInstance
-			SQLServer name or SMO object representing the SQL Server to connect to.
+			SQL Server name or SMO object representing the SQL Server to connect to.
 
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:

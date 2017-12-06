@@ -12,7 +12,7 @@ function Install-DbaFirstResponderKit {
 			https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit
 
 		.PARAMETER SqlInstance
-			SQLServer name or SMO object representing the SQL Server to connect to.
+			SQL Server name or SMO object representing the SQL Server to connect to.
 
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:

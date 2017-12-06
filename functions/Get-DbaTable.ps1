@@ -7,7 +7,7 @@ Returns a summary of information on the tables
 Shows table information around table row and data sizes and if it has any table type information.
 
 .PARAMETER SqlInstance
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a
 collection and receive pipeline input
 
 .PARAMETER SqlCredential

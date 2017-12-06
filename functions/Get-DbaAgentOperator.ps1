@@ -7,7 +7,7 @@ function Get-DbaAgentOperator {
 			This function returns SQL Agent operators.
 
 		.PARAMETER SqlInstance
-			SQLServer name or SMO object representing the SQL Server to connect to.
+			SQL Server name or SMO object representing the SQL Server to connect to.
 			This can be a collection and receive pipeline input.
 
 		.PARAMETER SqlCredential
