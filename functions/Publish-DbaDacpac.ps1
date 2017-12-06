@@ -1,47 +1,49 @@
 Function Publish-DbaDacpac {
-        <#
+	<#
         .SYNOPSIS
-        The Publish-Database command  takes a dacpac which is the output from an SSDT project and publishes it to a database. 
-        Changing the schema to match the dacpac and also to run any scripts in the dacpac (pre/post deploy scripts)
+        	The Publish-Database command takes a dacpac which is the output from an SSDT project and publishes it to a database. Changing the schema to match the dacpac and also to run any scripts in the dacpac (pre/post deploy scripts).
         
 		.DESCRIPTION
-               Deploying a dacpac uses the DacFx which historically needed to be installed on a machine prior to use. 
-               In 2016 the DacFx was supplied by Microsoft as a nuget package and this uses that nuget package.
+            Deploying a dacpac uses the DacFx which historically needed to be installed on a machine prior to use. In 2016 the DacFx was supplied by Microsoft as a nuget package and this uses that nuget package.
         
 		.PARAMETER SqlInstance
-		SQL Server name or SMO object representing the SQL Server to connect to and publish to.
+			SQLServer name or SMO object representing the SQL Server to connect to.
 
 		.PARAMETER SqlCredential
-		Allows you to login to servers using alternative logins instead Integrated, accepts Credential object created by Get-Credential
-		
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
+
 		.PARAMETER Path
-            Mandatory. The path to the DACPAC.
+			Specifies the filesystem path to the DACPAC
         
 		.PARAMETER PublishXml
-            Mandatory. Publish profile which will include options and sqlCmdVariables.
+            Specifies the publish profile which will include options and sqlCmdVariables.
         
 		.PARAMETER Database
-            Mandatory. The name of the database you are publishing.
+			Specifies the name of the database being published.
         
 		.PARAMETER ConnectionString
-        The connection string to the database you are upgrading. 
+			Specifies the connection string to the database you are upgrading. This is not required if SqlInstance is specified.
 
-		Alternatively, you can provide a SqlInstance (and optionally SqlCredential) and the script will connect and generate the connectionstring.
-    
 		.PARAMETER GenerateDeploymentScript
-            Determines whether or not to create publish script. 
+			If this switch is enabled, the publish script will be generated.
         
 		.PARAMETER GenerateDeploymentReport
-            Determines whether or not to create publish xml report.
+			If this switch is enabled, the publish XML report  will be generated.
         
 		.PARAMETER OutputPath
-            Output path for xyz
+			Specifies the filesystem path (directory) where output files will be generated.
         
 		.PARAMETER ScriptOnly
-            Optional. Specify this to create only the change scripts.
+			If this switch is enabled, only the change scripts will be generated.
         
 		.PARAMETER IncludeSqlCmdVars
-            Optional. If there are SqlCmdVars in the publish.xml that need to have their values overwritten.
+			If this switch is enabled, SqlCmdVars in publish.xml will have their values overwritten.
 	    
 		.PARAMETER EnableException
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -55,7 +57,8 @@ Function Publish-DbaDacpac {
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-        .LINK
+
+		.LINK
             https://dbatools.io/Publish-DbaDacpac
 
 		.EXAMPLE
@@ -67,7 +70,7 @@ Function Publish-DbaDacpac {
 			New-DbaPublishProfile -SqlInstance sql2016 -Database db2 -Path C:\temp
        		Export-DbaDacpac -SqlInstance sql2016 -Database db2 | Publish-DbaDacpac -PublishXml C:\temp\sql2016-db2-publish.xml -Database db1, db2 -SqlInstance sql2017
 		
-			Creats a publish profile at C:\temp\sql2016-db2-publish.xml, exports the .dacpac to $home\Documents\sql2016-db2.dacpac 
+			Creates a publish profile at C:\temp\sql2016-db2-publish.xml, exports the .dacpac to $home\Documents\sql2016-db2.dacpac 
 			then publishes it to the sql2017 server database db2
 	
   #>
@@ -94,14 +97,14 @@ Function Publish-DbaDacpac {
 	
 	begin {
 		if ((Test-Bound -Not -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName ConnectionString)) {
-			Stop-Function -Message "You must specify either SqlInstance or ConnectionString"
+			Stop-Function -Message "You must specify either SqlInstance or ConnectionString."
 		}
 		
 		if ((Test-Bound -ParameterName GenerateDeploymentScript) -or (Test-Bound -ParameterName GenerateDeploymentReport)) {
-			$defaultcolumns = 'ComputerName','InstanceName','SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DatabaseScriptPath', 'MasterDbScriptPath', 'DeploymentReport', 'DeployOptions'
+			$defaultcolumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DatabaseScriptPath', 'MasterDbScriptPath', 'DeploymentReport', 'DeployOptions'
 		}
 		else {
-			$defaultcolumns = 'ComputerName', 'InstanceName','SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result'
+			$defaultcolumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result'
 		}
 		
 		if ((Test-Bound -ParameterName ScriptOnly) -and (Test-Bound -Not -ParameterName GenerateDeploymentScript) -and (Test-Bound -Not -ParameterName GenerateDeploymentScript)) {
@@ -138,7 +141,7 @@ Function Publish-DbaDacpac {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+				Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			$ConnectionString += $server.ConnectionContext.ConnectionString.Replace('"', "'")
@@ -148,14 +151,14 @@ Function Publish-DbaDacpac {
 			$dacPackage = [Microsoft.SqlServer.Dac.DacPackage]::Load($Path)
 		}
 		catch {
-			Stop-Function -Message "Could not load package" -ErrorRecord $_
+			Stop-Function -Message "Could not load package." -ErrorRecord $_
 		}
 		
 		try {
 			$dacProfile = [Microsoft.SqlServer.Dac.DacProfile]::Load($PublishXml)
 		}
 		catch {
-			Stop-Function -Message "Could not load profile" -ErrorRecord $_
+			Stop-Function -Message "Could not load profile." -ErrorRecord $_
 		}
 		
 		if ($IncludeSqlCmdVars) {
@@ -186,22 +189,22 @@ Function Publish-DbaDacpac {
 				}
 				
 				$options = @{
-					GenerateDeploymentScript    = $GenerateDeploymentScript
-					GenerateDeploymentReport    = $GenerateDeploymentReport
-					DatabaseScriptPath		    = $DatabaseScriptPath
-					MasterDbScriptPath		    = $MasterDbScriptPath
-					DeployOptions			    = $dacProfile.DeployOptions
+					GenerateDeploymentScript = $GenerateDeploymentScript
+					GenerateDeploymentReport = $GenerateDeploymentReport
+					DatabaseScriptPath       = $DatabaseScriptPath
+					MasterDbScriptPath       = $MasterDbScriptPath
+					DeployOptions            = $dacProfile.DeployOptions
 				}
 				
 				try {
 					$global:output = @()
 					Register-ObjectEvent -InputObject $dacServices -EventName "Message" -SourceIdentifier "msg" -Action { $global:output += $EventArgs.Message.Message } | Out-Null
 					if ($ScriptOnly) {
-							Write-Message -Level Verbose -Message "Generating script..."
-							$result = $dacServices.Script($dacPackage, $dbname, $options)
+						Write-Message -Level Verbose -Message "Generating script."
+						$result = $dacServices.Script($dacPackage, $dbname, $options)
 					}
 					else {
-						Write-Message -Level Verbose -Message "Executing Deployment..."
+						Write-Message -Level Verbose -Message "Executing Deployment."
 						$result = $dacServices.Publish($dacPackage, $dbname, $options)
 					}
 				}
@@ -215,12 +218,12 @@ Function Publish-DbaDacpac {
 					}
 					if ($GenerateDeploymentReport) {
 						$result.DeploymentReport | Out-File $DeploymentReport
-						Write-Message -Level Verbose -Message "Deployment Report - $DeploymentReport"
+						Write-Message -Level Verbose -Message "Deployment Report - $DeploymentReport."
 					}
 					if ($GenerateDeploymentScript) {
-						Write-Message -Level Verbose -Message "Database change script - $DatabaseScriptPath"
+						Write-Message -Level Verbose -Message "Database change script - $DatabaseScriptPath."
 						if ((Test-Path $MasterDbScriptPath)) {
-							Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)"
+							Write-Message -Level Verbose -Message "Master database change script - $($result.MasterDbScript)."
 						}
 					}
 					$resultoutput = ($global:output -join "`r`n" | Out-String).Trim()
@@ -229,18 +232,18 @@ Function Publish-DbaDacpac {
 					}
 					$server = [dbainstance]$instance
 					[pscustomobject]@{
-						ComputerName   = $server.ComputerName
-						InstanceName   = $server.InstanceName
-						SqlInstance    = $server.FullName
-						Database		  = $dbname
-						Result		      = $resultoutput
-						Dacpac		      = $Path
-						PublishXml	      = $PublishXml
-						ConnectionString  = $connstring
+						ComputerName       = $server.ComputerName
+						InstanceName       = $server.InstanceName
+						SqlInstance        = $server.FullName
+						Database           = $dbname
+						Result             = $resultoutput
+						Dacpac             = $Path
+						PublishXml         = $PublishXml
+						ConnectionString   = $connstring
 						DatabaseScriptPath = $DatabaseScriptPath
 						MasterDbScriptPath = $MasterDbScriptPath
-						DeploymentReport  = $DeploymentReport
-						DeployOptions	  = $dacProfile.DeployOptions
+						DeploymentReport   = $DeploymentReport
+						DeployOptions      = $dacProfile.DeployOptions
 					} | Select-DefaultView -Property $defaultcolumns
 				}
 			}
