@@ -109,29 +109,41 @@ function Copy-DbaTableData {
 			https://dbatools.io/Copy-DbaTableData
 
 		.EXAMPLE
-			Copy-DbaTableData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table
+			Copy-DbaTableData -Source sql1 -Destination sql2 -Database dbatools_from -Table test_table
 
-			Copies all the data from sqlserver2014a to sqlserver2016a, using the database dbatools_from.
-
-		.EXAMPLE
-			Copy-DbaTableData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -DatabaseDest dbatools_dest -Table test_table
-
-			Copies all the data from sqlserver2014a to sqlserver2016a, using the database dbatools_from as source and dbatools_dest as destination
+			Copies all the data from sql1 to sql2, using the database dbatools_from.
 
 		.EXAMPLE
-			Copy-DbaTableData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table
+			Copy-DbaTableData -Source sql1 -Destination sql2 -Database dbatools_from -DatabaseDest dbatools_dest -Table test_table
 
-			Copies all the data from sqlserver2014a to sqlserver2016a, using the database dbatools_from.
+			Copies all the data from sql1 to sql2, using the database dbatools_from as source and dbatools_dest as destination
+	
+		.EXAMPLE
+			Get-DbaTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaTableData -DestinationTable tb3
+	
+			Copies all data from tables tb1 and tb2 in tempdb on sql1 to tb3 in tempdb onsql1
+	
+		.EXAMPLE
+			Get-DbaTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaTableData -Destination sql2
+	
+			Copies data from tbl1 in tempdb on sql1 to tbl1 in tempdb on sql2
+			then
+			Copies data from tbl2 in tempdb on sql1 to tbl2 in tempdb on sql2
 
 		.EXAMPLE
-			Copy-DbaTableData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table -KeepIdentity -Truncate
+			Copy-DbaTableData -Source sql1 -Destination sql2 -Database dbatools_from -Table test_table
 
-			Copies all the data from sqlserver2014a to sqlserver2016a, using the database dbatools_from, keeping identity columns and truncating the destination
+			Copies all the data from sql1 to sql2, using the database dbatools_from.
 
 		.EXAMPLE
-			Copy-DbaTableData -Source sqlserver2014a -Destination sqlserver2016a -Database dbatools_from -Table test_table -KeepIdentity -Truncate
+			Copy-DbaTableData -Source sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
 
-			Copies all the data from sqlserver2014a to sqlserver2016a, using the database dbatools_from, keeping identity columns and truncating the destination
+			Copies all the data from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination
+
+		.EXAMPLE
+			Copy-DbaTableData -Source sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
+
+			Copies all the data from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination
 
 	#>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
