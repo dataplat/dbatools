@@ -27,7 +27,7 @@ function Get-DbaHelpIndex {
 				- StatsLastUpdated: when the statistics were last rebuilt (not included in SQL Server 2005 unless ObjectName is specified)
 
 		.PARAMETER SqlInstance
-			SQLServer name or SMO object representing the SQL Server to connect to.
+			SQL Server name or SMO object representing the SQL Server to connect to.
 
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
