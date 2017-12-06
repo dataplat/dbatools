@@ -99,14 +99,12 @@ Function Publish-DbaDacpac {
 		if ((Test-Bound -Not -ParameterName SqlInstance) -and (Test-Bound -Not -ParameterName ConnectionString)) {
 			Stop-Function -Message "You must specify either SqlInstance or ConnectionString."
 		}
-		
 		if ((Test-Bound -ParameterName GenerateDeploymentScript) -or (Test-Bound -ParameterName GenerateDeploymentReport)) {
-			$defaultcolumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DatabaseScriptPath', 'MasterDbScriptPath', 'DeploymentReport', 'DeployOptions'
+			$defaultcolumns = 'ComputerName','InstanceName','SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DatabaseScriptPath', 'MasterDbScriptPath', 'DeploymentReport', 'DeployOptions', 'SqlCmdVariableValues'
 		}
 		else {
-			$defaultcolumns = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result'
+			$defaultcolumns = 'ComputerName', 'InstanceName','SqlInstance', 'Database', 'Dacpac', 'PublishXml', 'Result', 'DeployOptions', 'SqlCmdVariableValues'
 		}
-		
 		if ((Test-Bound -ParameterName ScriptOnly) -and (Test-Bound -Not -ParameterName GenerateDeploymentScript) -and (Test-Bound -Not -ParameterName GenerateDeploymentScript)) {
 			Stop-Function -Message "You must at least one of GenerateDeploymentScript or GenerateDeploymentReport when using ScriptOnly"
 		}
@@ -231,6 +229,7 @@ Function Publish-DbaDacpac {
 						Write-Message -Level Warning -Message "Seems like the attempt to publish/script may have failed. If scripts have not generated load dacpac into Visual Studio to check SQL is valid."
 					}
 					$server = [dbainstance]$instance
+					$deployOptions = $dacProfile.DeployOptions | Select-Object -Property * -ExcludeProperty "SqlCommandVariableValues"
 					[pscustomobject]@{
 						ComputerName       = $server.ComputerName
 						InstanceName       = $server.InstanceName
@@ -243,7 +242,9 @@ Function Publish-DbaDacpac {
 						DatabaseScriptPath = $DatabaseScriptPath
 						MasterDbScriptPath = $MasterDbScriptPath
 						DeploymentReport   = $DeploymentReport
-						DeployOptions      = $dacProfile.DeployOptions
+						DeployOptions	     = $deployOptions
+						SqlCmdVariableValues = $dacProfile.DeployOptions.SqlCommandVariableValues.Keys
+
 					} | Select-DefaultView -Property $defaultcolumns
 				}
 			}
