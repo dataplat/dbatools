@@ -143,8 +143,9 @@ function Get-DbaRestoreHistory {
 					bs.first_lsn,
 					bs.last_lsn,
 					bs.checkpoint_lsn,
-					bs.database_backup_lsn
-				  "
+					bs.database_backup_lsn,
+					bs.backup_finish_date
+					"
 				}
 				
 				$from = " FROM msdb.dbo.restorehistory rsh
