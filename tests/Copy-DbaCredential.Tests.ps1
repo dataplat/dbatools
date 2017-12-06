@@ -32,7 +32,7 @@ if (-not $env:appveyor) {
 		if ($bail) { return }
 		
 		Context "Create new credential" {
-			It -Skip "Should create new credentials with the proper properties" {
+			It "Should create new credentials with the proper properties" {
 				$results = New-DbaCredential -SqlInstance $script:instance1 -Name thorcred -CredentialIdentity thor -Password $password
 				$results.Name | Should Be "thorcred"
 				$results.Identity | Should Be "thor"
