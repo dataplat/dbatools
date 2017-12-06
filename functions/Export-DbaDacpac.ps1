@@ -110,9 +110,9 @@ Function Export-DbaDacpac {
 			
 			if ($Database) {
 				$dbs = $dbs | Where-Object Name -in $Database
-				if (-not $db.name) { 
+				if (-not $dbs.name) { 
 					Stop-Function -Message "Database $Database does not exist on $instance" -Target $instance -Continue 
-				  }
+				  } 
 			}
 			
 			if ($ExcludeDatabase) {
