@@ -7,10 +7,16 @@ function Get-DbaRegisteredServer {
 			Returns an array of servers found in the CMS.
 
 		.PARAMETER SqlInstance
-			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+			SQL Server name or SMO object representing the SQL Server to connect to.
 
 		.PARAMETER SqlCredential
-			SqlCredential object to connect as. If not specified, current Windows login will be used.
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Group
 			Specifies one or more groups to include from SQL Server Central Management Server.
@@ -19,17 +25,19 @@ function Get-DbaRegisteredServer {
 			Specifies one or more Central Management Server groups to exclude.
 	
 		.PARAMETER ExcludeCmsServer
-			Deprecated, now follows MSFT standards of not including it by default. If you'd like to include the CMS Server, use -IncludeSelf
+			Deprecated, now follows the Microsoft convention of not including it by default. If you'd like to include the CMS Server, use -IncludeSelf
 
 		.PARAMETER IncludeSelf
-			Include the CMS server itself in the returned results, along with all other Registered Servers
+			If this switch is enabled, the CMS server itself will be included in the results, along with all other Registered Servers.
 
 		.PARAMETER ResolveNetworkName
-			Also return the NetBIOS name and IP addresses(s) of each server.
+			If this switch is enabled, the NetBIOS name and IP address(es) of each server will be returned.
 	
 		.PARAMETER EnableException
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+
 			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 			
 		.NOTES
@@ -56,7 +64,7 @@ function Get-DbaRegisteredServer {
 		.EXAMPLE
 			Get-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName
 
-			Returns only the server names from the CMS on sqlserver2014a, using SQL Authentication
+			Returns only the server names from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.
 
 		.EXAMPLE
 			Get-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR, Accounting
@@ -66,7 +74,7 @@ function Get-DbaRegisteredServer {
 		.EXAMPLE
 			Get-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR\Development
 
-			Returns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a
+			Returns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.
 	#>
 	[CmdletBinding()]
 	param (
@@ -174,7 +182,8 @@ function Get-DbaRegisteredServer {
 						Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $lookup.ComputerName
 						Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $lookup.FQDN
 						Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $lookup.IPAddress
-					} catch {}
+					}
+					catch {}
 				}
 			}
 			

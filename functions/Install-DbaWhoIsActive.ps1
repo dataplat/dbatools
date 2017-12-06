@@ -77,7 +77,7 @@ function Install-DbaWhoIsActive {
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PsCredential]$SqlCredential,
 		[parameter(Mandatory = $false)]
-		[ValidateScript({ Test-Path -Path $_ -PathType Leaf })]
+		[ValidateScript( { Test-Path -Path $_ -PathType Leaf })]
 		[string]$LocalFile,
 		[object]$Database,
 		[switch][Alias('Silent')]
@@ -224,11 +224,11 @@ function Install-DbaWhoIsActive {
 					}
 				}
 				$baseres = @{
-					ComputerName  = $server.NetName
-					InstanceName  = $server.ServiceName
-					SqlInstance   = $server.DomainInstanceName
-					Database	  = $Database
-					Name		  = 'sp_WhoisActive'
+					ComputerName = $server.NetName
+					InstanceName = $server.ServiceName
+					SqlInstance  = $server.DomainInstanceName
+					Database     = $Database
+					Name         = 'sp_WhoisActive'
 				}
 				if ('sp_WhoisActive' -in $allprocedures) {
 					$status = 'Updated'
@@ -237,11 +237,11 @@ function Install-DbaWhoIsActive {
 					$status = 'Installed'
 				}
 				[PSCustomObject]@{
-					ComputerName  = $server.NetName
-					InstanceName  = $server.ServiceName
-					SqlInstance   = $server.DomainInstanceName
-					Database	  = $Database
-					Name		  = 'sp_WhoisActive'
+					ComputerName = $server.NetName
+					InstanceName = $server.ServiceName
+					SqlInstance  = $server.DomainInstanceName
+					Database     = $Database
+					Name         = 'sp_WhoisActive'
 					Status	      = $status
 				}
 			}
