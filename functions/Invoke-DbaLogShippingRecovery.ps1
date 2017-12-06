@@ -16,10 +16,10 @@ Function Invoke-DbaLogShippingRecovery {
         If the last restored file is not the same as the last file name found, the log shipping restore job will be executed.
         After the restore job check is performed the job is disabled to prevent the job to run
         
-        The last part is to set the databse online by restoring the databases with recovery
+        The last part is to set the database online by restoring the databases with recovery
     
     .PARAMETER SqlInstance
-        SQLServer name or SMO object representing the SQL Server to connect to
+        SQL Server name or SMO object representing the SQL Server to connect to
     
     .PARAMETER Database
         Database to perform the restore for. This value can also be piped enabling multiple databases to be recovered.
@@ -58,12 +58,12 @@ Function Invoke-DbaLogShippingRecovery {
     .EXAMPLE
         Invoke-DbaLogShippingRecovery -SqlServer server1
         
-        Recovers all the databases on the instance that are enabled for log shiping
+        Recovers all the databases on the instance that are enabled for log shipping
     
     .EXAMPLE
         Invoke-DbaLogShippingRecovery -SqlServer server1 -SqlCredential $cred -Verbose
         
-        Recovers all the databases on the instance that are enabled for log shiping using a credential
+        Recovers all the databases on the instance that are enabled for log shipping using a credential
     
     .EXAMPLE
         Invoke-DbaLogShippingRecovery -SqlServer server1 -database db_logship -Verbose
@@ -148,7 +148,7 @@ Function Invoke-DbaLogShippingRecovery {
 			$agentservice = Get-DbaSqlService -ComputerName $servername | Where-Object {($_.ComputerName -eq $servername) -and ($_.DisplayName -eq "SQL Server Agent ($instancename)")}
 		}
 		catch {
-			# Stop the funcion when the service was unable to start
+			# Stop the function when the service was unable to start
 			Stop-Function -Message "Unable to start SQL Server Agent Service" -ErrorRecord $_ -Target $sqlinstance
 			return
 		}
@@ -161,7 +161,7 @@ Function Invoke-DbaLogShippingRecovery {
 					Start-DbaSqlService -ComputerName $servername -InstanceName $instancename -Type Agent -Credential $SqlCredential
 				}
 				catch {
-					# Stop the funcion when the service was unable to start
+					# Stop the function when the service was unable to start
 					Stop-Function -Message "Unable to start SQL Server Agent Service" -ErrorRecord $_ -Target $sqlinstance
 					return
 				}
@@ -183,7 +183,7 @@ Function Invoke-DbaLogShippingRecovery {
 						Start-DbaSqlService -ComputerName $servername -InstanceName $instancename -Type Agent -Credential $SqlCredential
 					}
 					catch {
-						# Stop the funcion when the service was unable to start
+						# Stop the function when the service was unable to start
 						Stop-Function -Message "Unable to start SQL Server Agent Service" -ErrorRecord $_ -Target $sqlinstance
 						return
 					}
@@ -298,7 +298,7 @@ WHERE lsd.secondary_database = '$($db.Name)'"
 										}
 
 										Write-Message -Message "Copying of backup files finished" -Level Verbose
-									} # if shoud process
+									} # if should process
 								} # if latest file name
 							} # if backup directory test
 							else {
@@ -372,7 +372,7 @@ WHERE lsd.secondary_database = '$($db.Name)'"
 
 						# Check for the last time if everything is up-to-date
 						if ($latestBackupSource.Name -eq [string]($latestrestore.last_restored_file).Split('\')[-1]) {
-							# Check if the database needs to recovered to it's notmal state
+							# Check if the database needs to recovered to its normal state
 							if ($NoRecovery -eq $false) {
 								if ($PSCmdlet.ShouldProcess($secondarydb, "Restoring database with recovery")) {
 									Write-Message -Message "Restoring the database to it's normal state" -Level Verbose
