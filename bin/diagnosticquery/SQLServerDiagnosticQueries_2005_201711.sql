@@ -2,7 +2,7 @@
 -- SQL Server 2005 Diagnostic Information Queries
 -- Glenn Berry 
 -- CY 2017
--- Last Modified: October 5, 2017
+-- Last Modified: December 6, 2017
 -- https://www.sqlserverperformance.wordpress.com/
 -- https://www.sqlskills.com/blogs/glenn/
 -- Twitter: GlennAlanBerry
@@ -521,14 +521,15 @@ AS (SELECT wait_type, wait_time_ms/ 1000.0 AS [WaitS],
     AND waiting_tasks_count > 0)
 SELECT
     MAX (W1.wait_type) AS [WaitType],
+	CAST (MAX (W1.Percentage) AS DECIMAL (5,2)) AS [Wait Percentage],
+	CAST ((MAX (W1.WaitS) / MAX (W1.WaitCount)) AS DECIMAL (16,4)) AS [AvgWait_Sec],
+    CAST ((MAX (W1.ResourceS) / MAX (W1.WaitCount)) AS DECIMAL (16,4)) AS [AvgRes_Sec],
+    CAST ((MAX (W1.SignalS) / MAX (W1.WaitCount)) AS DECIMAL (16,4)) AS [AvgSig_Sec], 
     CAST (MAX (W1.WaitS) AS DECIMAL (16,2)) AS [Wait_Sec],
     CAST (MAX (W1.ResourceS) AS DECIMAL (16,2)) AS [Resource_Sec],
     CAST (MAX (W1.SignalS) AS DECIMAL (16,2)) AS [Signal_Sec],
     MAX (W1.WaitCount) AS [Wait Count],
-    CAST (MAX (W1.Percentage) AS DECIMAL (5,2)) AS [Wait Percentage],
-    CAST ((MAX (W1.WaitS) / MAX (W1.WaitCount)) AS DECIMAL (16,4)) AS [AvgWait_Sec],
-    CAST ((MAX (W1.ResourceS) / MAX (W1.WaitCount)) AS DECIMAL (16,4)) AS [AvgRes_Sec],
-    CAST ((MAX (W1.SignalS) / MAX (W1.WaitCount)) AS DECIMAL (16,4)) AS [AvgSig_Sec]
+	CAST (N'https://www.sqlskills.com/help/waits/' + W1.wait_type AS XML) AS [Help/Info URL]
 FROM Waits AS W1
 INNER JOIN Waits AS W2
 ON W2.RowNum <= W1.RowNum
