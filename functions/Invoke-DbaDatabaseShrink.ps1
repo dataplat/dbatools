@@ -70,6 +70,9 @@ Specifies the files types that will be shrunk
 .PARAMETER ExcludeIndexStats
 Exclude statistics about fragmentation
 	
+.PARAMETER SkipUpdateUsage
+Skips DBCC UPDATE USAGE for database
+	
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
 
@@ -132,6 +135,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 		[int]$StatementTimeout = 0,
 		[switch]$LogsOnly,
 		[switch]$ExcludeIndexStats,
+		[switch]$SkipUpdateUsage,
 		[switch][Alias('Silent')]$EnableException
 	)
 
@@ -242,7 +246,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 									$db.LogFiles.Shrink($PercentFreeSpace, $ShrinkMethod)
 									$db.Refresh()
 									Write-Message -Level Verbose -Message "Recalculating space usage"
-									$db.RecalculateSpaceUsage()
+									if ($True -eq $SkipUpdateUsage){$db.RecalculateSpaceUsage()}
 									$success = $true
 									$notes = $null
 								}
@@ -262,7 +266,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 									}
 									$db.Refresh()
 									Write-Message -Level Verbose -Message "Recalculating space usage"
-									$db.RecalculateSpaceUsage()
+									if ($True -eq $SkipUpdateUsage){$db.RecalculateSpaceUsage()}
 									$success = $true
 									$notes = $null
 								} catch {
@@ -276,7 +280,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 									$db.Shrink($PercentFreeSpace, $ShrinkMethod)
 									$db.Refresh()
 									Write-Message -Level Verbose -Message "Recalculating space usage"
-									$db.RecalculateSpaceUsage()
+									if ($True -eq $SkipUpdateUsage){$db.RecalculateSpaceUsage()}
 									$success = $true
 									$notes = $null
 								}
