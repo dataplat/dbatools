@@ -7,27 +7,37 @@ function Get-DbaRegisteredServer {
 			Returns an array of servers found in the CMS.
 
 		.PARAMETER SqlInstance
-			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+			SQL Server name or SMO object representing the SQL Server to connect to.
 
 		.PARAMETER SqlCredential
-			SqlCredential object to connect as. If not specified, current Windows login will be used.
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Group
 			Specifies one or more groups to include from SQL Server Central Management Server.
 
 		.PARAMETER ExcludeGroup
 			Specifies one or more Central Management Server groups to exclude.
-
+	
 		.PARAMETER ExcludeCmsServer
-			Filters out the CMS you are connected to. This does a full match of the value passed in to `-SqlInstance`
-			and the ServerName property of the CMS registration.
+			Deprecated, now follows the Microsoft convention of not including it by default. If you'd like to include the CMS Server, use -IncludeSelf
+
+		.PARAMETER IncludeSelf
+			If this switch is enabled, the CMS server itself will be included in the results, along with all other Registered Servers.
 
 		.PARAMETER ResolveNetworkName
-			Also return the NetBIOS name and IP addresses(s) of each server.
+			If this switch is enabled, the NetBIOS name and IP address(es) of each server will be returned.
 	
 		.PARAMETER EnableException
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+
 			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 			
 		.NOTES
@@ -45,11 +55,16 @@ function Get-DbaRegisteredServer {
 			Get-DbaRegisteredServer -SqlInstance sqlserver2014a
 
 			Gets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.
+	
+		.EXAMPLE
+			Get-DbaRegisteredServer -SqlInstance sqlserver2014a -IncludeSelf
+
+			Gets a list of servers from the CMS on sqlserver2014a and includes sqlserver2014a in the output results.
 
 		.EXAMPLE
 			Get-DbaRegisteredServer -SqlInstance sqlserver2014a -SqlCredential $credential | Select-Object -Unique -ExpandProperty ServerName
 
-			Returns only the server names from the CMS on sqlserver2014a, using SQL Authentication
+			Returns only the server names from the CMS on sqlserver2014a, using SQL Authentication to authenticate to the server.
 
 		.EXAMPLE
 			Get-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR, Accounting
@@ -59,7 +74,7 @@ function Get-DbaRegisteredServer {
 		.EXAMPLE
 			Get-DbaRegisteredServer -SqlInstance sqlserver2014a -Group HR\Development
 
-			Returns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a
+			Returns a list of servers in the HR and sub-group Development from the CMS on sqlserver2014a.
 	#>
 	[CmdletBinding()]
 	param (
@@ -70,6 +85,7 @@ function Get-DbaRegisteredServer {
 		[Alias("Groups")]
 		[object[]]$Group,
 		[object[]]$ExcludeGroup,
+		[switch]$IncludeSelf,
 		[switch]$ExcludeCmsServer,
 		[switch]$ResolveNetworkName,
 		[switch][Alias('Silent')]$EnableException
@@ -143,11 +159,7 @@ function Get-DbaRegisteredServer {
 				$cms = $cmsStore.DatabaseEngineServerGroup
 				$servers += ($cms.GetDescendantRegisteredServers())
 			}
-
-			if ($ExcludeCmsServer) {
-				$servers = ($servers | Where-Object { $_.ServerName -ne $instance})
-			}
-
+			
 			# Close the connection, otherwise using it with the ServersStore will keep it open
 			$cmsStore.ServerConnection.Disconnect()
 		}
@@ -170,14 +182,26 @@ function Get-DbaRegisteredServer {
 						Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $lookup.ComputerName
 						Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $lookup.FQDN
 						Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $lookup.IPAddress
-					} catch {}
+					}
+					catch {}
 				}
 			}
+			
 			Add-Member -Force -InputObject $server -MemberType ScriptMethod -Name ToString -Value { $this.ServerName }
 			Select-DefaultView -InputObject $server -Property $defaults
 		}
+		
+		if ($IncludeSelf -and $servers) {
+			$self = $servers[0].PsObject.Copy()
+			$self | Add-Member -MemberType NoteProperty -Name Name -Value "CMS Instance" -Force
+			$self.ServerName = $instance
+			$self.Description = $null
+			$self.SecureConnectionString = $null
+			Select-DefaultView -InputObject $self -Property $defaults
+		}
 	}
 	end {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter ExcludeCmsServer
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaRegisteredServerName
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlRegisteredServerName
 	}

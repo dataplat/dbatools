@@ -25,8 +25,8 @@ function Test-DbaServerName {
 			To connect as a different Windows user, run PowerShell as that user.
 
 		.PARAMETER Detailed
-			If this switch is enabled, additional details are returned including whether the server name is updatable. If the server name is not updatable, the reason why will be returned.
-
+			Output all properties, will be deprecated in 1.0.0 release.
+			
 		.PARAMETER ExcludeSsrs
 			If this switch is enabled, checking for SQL Server Reporting Services will be skipped.
 
@@ -61,7 +61,7 @@ function Test-DbaServerName {
 			Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016, but skips validating if SSRS is installed on both instances.
 
 		.EXAMPLE
-			Test-DbaServerName -SqlInstance sqlserver2014a, sql2016 -Detailed
+			Test-DbaServerName -SqlInstance sqlserver2014a, sql2016 | Select-Object *
 
 			Returns ServerInstanceName, SqlServerName, IsEqual and RenameRequired for sqlserver2014a and sql2016.
 
@@ -188,12 +188,7 @@ function Test-DbaServerName {
 				$serverInfo.Blockers = "N/A"
 			}
 
-			if ($detailed) {
-				$serverInfo
-			}
-			else {
-				Select-DefaultView -InputObject $serverInfo -ExcludeProperty Warnings, Blockers
-			}
+			$serverInfo | Select-DefaultView -InputObject $serverInfo -ExcludeProperty Warnings, Blockers
 		}
 	}
 }

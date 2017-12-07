@@ -8,7 +8,7 @@ function Get-DbaSpConfigure {
 			The data includes the default value for each configuration, for quick identification of values that may have been changed.
 
 		.PARAMETER SqlInstance
-			SQLServer name or SMO object representing the SQL Server to connect to. This can be a
+			SQL Server name or SMO object representing the SQL Server to connect to. This can be a
 			collection and receive pipeline input
 
 		.PARAMETER SqlCredential
@@ -16,9 +16,6 @@ function Get-DbaSpConfigure {
 
 		.PARAMETER ConfigName
 			Return only specific configurations -- auto-populated from source server
-
-		.PARAMETER Detailed
-			Returns more information about the configuration settings than standard
 
 		.NOTES
 			Author: Nic Cain, https://sirsql.net/
@@ -70,7 +67,7 @@ function Get-DbaSpConfigure {
 				continue
 			}
 			
-			#Get a list of the configuration property parents, and exlude the Parent, Properties values
+			#Get a list of the configuration property parents, and exclude the Parent, Properties values
 			$proplist = Get-Member -InputObject $server.Configuration -MemberType Property -Force | Select-Object Name | Where-Object { $_.Name -ne "Parent" -and $_.Name -ne "Properties" }
 			
 			if ($ConfigName) {

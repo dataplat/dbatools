@@ -10,7 +10,7 @@ function Remove-DbaDatabaseSafely {
 
 		.PARAMETER SqlInstance
 			The SQL Server instance holding the databases to be removed. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
-			
+
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
@@ -74,7 +74,7 @@ function Remove-DbaDatabaseSafely {
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
+
 		.NOTES
 			Tags: DisasterRecovery, Backup, Restore, Databases
 			Author: Rob Sewell @SQLDBAWithBeard, sqldbawithabeard.com
@@ -90,7 +90,7 @@ function Remove-DbaDatabaseSafely {
 			Remove-DbaDatabaseSafely -SqlInstance 'Fade2Black' -Database RideTheLightning -BackupFolder 'C:\MSSQL\Backup\Rationalised - DO NOT DELETE'
 
 			Performs a DBCC CHECKDB on database RideTheLightning on server Fade2Black. If there are no errors, the database is backup to the folder C:\MSSQL\Backup\Rationalised - DO NOT DELETE. Then, an Agent job to restore the database from that backup is created. The database is then dropped, the Agent job to restore it run, a DBCC CHECKDB run against the restored database, and then it is dropped again.
-			
+
 			Any DBCC errors will be written to your documents folder
 
 		.EXAMPLE
@@ -98,16 +98,16 @@ function Remove-DbaDatabaseSafely {
 			Remove-DbaDatabaseSafely -SqlInstance 'Fade2Black' -Database $Database -BackupFolder 'C:\MSSQL\Backup\Rationalised - DO NOT DELETE'
 
 			Performs a DBCC CHECKDB on two databases, 'DemoNCIndex' and 'RemoveTestDatabase' on server Fade2Black. Then, an Agent job to restore each database from those backups is created. The databases are then dropped, the Agent jobs to restore them run, a DBCC CHECKDB run against the restored databases, and then they are dropped again.
-			
+
 			Any DBCC errors will be written to your documents folder
-			
+
 		.EXAMPLE
 			Remove-DbaDatabaseSafely -SqlInstance 'Fade2Black' -DestinationServer JusticeForAll -Database RideTheLightning -BackupFolder '\\BACKUPSERVER\BACKUPSHARE\MSSQL\Rationalised - DO NOT DELETE'
 
 			Performs a DBCC CHECKDB on database RideTheLightning on server Fade2Black. If there are no errors, the database is backup to the folder \\BACKUPSERVER\BACKUPSHARE\MSSQL\Rationalised - DO NOT DELETE . Then, an Agent job is created on server JusticeForAll to restore the database from that backup is created. The database is then dropped on Fade2Black, the Agent job to restore it on JusticeForAll is run, a DBCC CHECKDB run against the restored database, and then it is dropped from JusticeForAll.
-			
+
 			Any DBCC errors will be written to your documents folder
-			
+
 		.EXAMPLE
 			Remove-DbaDatabaseSafely -SqlInstance IronMaiden -Database $Database -DestinationServer TheWildHearts -BackupFolder Z:\Backups -NoDbccCheckDb -UseDefaultFilePaths -JobOwner 'THEBEARD\Rob'
 
@@ -117,7 +117,7 @@ function Remove-DbaDatabaseSafely {
 			Remove-DbaDatabaseSafely -SqlInstance IronMaiden -Database $Database -DestinationServer TheWildHearts -BackupFolder Z:\Backups -UseDefaultFilePaths -ContinueAfterDbccError
 
 			The databases $Database on the server IronMaiden will be backed up the to the folder Z:\Backups. Then, an Agent job is created on server TheWildHearts with a Job Owner of THEBEARD\Rob to restore each database from that backup using the instance's default file paths. The database(s) is(are) then dropped on IronMaiden, the Agent job(s) run, a DBCC CHECKDB run on the restored database(s), and then the database(s) is(are) dropped.
-			
+
 			If there is a DBCC Error, the function  will continue to perform rest of the actions and will create an Agent job with 'DBCCERROR' in the name and a Backup file with 'DBCCError' in the name.
 	#>
 	[CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Default")]
@@ -249,7 +249,7 @@ function Remove-DbaDatabaseSafely {
 		function Start-DbccCheck {
 			<#
 			.SYNOPSIS
-			
+
 			#>
 
 			[CmdletBinding(SupportsShouldProcess = $true)]
@@ -284,7 +284,7 @@ function Remove-DbaDatabaseSafely {
 		function New-SqlAgentJobCategory {
 			<#
 				.SYNOPSIS
-		
+
 			#>
 			[CmdletBinding(SupportsShouldProcess = $true)]
 			param ([string]$categoryname,
@@ -384,7 +384,7 @@ function Remove-DbaDatabaseSafely {
 				}
 			}
 			catch {
-				Write-Message -Level Error -Message "Restore failed: $($_.Exception)."
+				Stop-Function -Message "Restore failed" -ErrorRecord $_ -Target $dbname
 				return $false
 			}
 		}
