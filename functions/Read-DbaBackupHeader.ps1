@@ -145,7 +145,6 @@ function Read-DbaBackupHeader {
 					else {
                         Stop-Function -Message "Unable to read $file, check credential $AzureCredential and network connectivity" -Target $file -ErrorRecord $_ -Excpetion $_.Exception -Continue
 					}
-					Return
 				}
 
 				$null = $dataTable.Columns.Add("FileList", [object])
@@ -196,7 +195,6 @@ function Read-DbaBackupHeader {
 			}
 			else {
 				Write-Message -Level Warning -Message "File $shortName does not exist or access denied. The SQL Server service account may not have access to the source directory."
-				return
 			}
 			if ($Simple) {
 				$dataTable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSizeMB, CompressedBackupSizeMB, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
