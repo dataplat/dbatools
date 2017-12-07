@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Update-Dbatools {
 	<#
 		.SYNOPSIS
@@ -8,6 +9,11 @@ function Update-Dbatools {
 
 		.PARAMETER Development
 			If this switch is enabled, the current development branch will be installed. By default, the latest official release is installed.
+	
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 		.PARAMETER WhatIf
 			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -38,18 +44,20 @@ function Update-Dbatools {
 	param(
 		[parameter(Mandatory=$false)]
 		[Alias("dev", "devbranch")]
-		[switch]$Development
+		[switch]$Development,
+		[Alias('Silent')]
+		[switch]$EnableException
 	)
-	$MyModuleBase = (Get-Module -name dbatools).ModuleBase;
+	$MyModuleBase = [SqlCollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase
 	$InstallScript = join-path -path $MyModuleBase -ChildPath "install.ps1";
 	if ($Development) {
-		Write-Verbose "Installing dev/beta channel via $Installscript.";
+		Write-Message -Level Verbose -Message "Installing dev/beta channel via $Installscript.";
 		if ($PSCmdlet.ShouldProcess("development branch", "Updating dbatools")) {
 			& $InstallScript -beta;
 		}
 	}
 	else {
-		Write-Verbose "Installing release version via $Installscript."
+		Write-Message -Level Verbose -Message "Installing release version via $Installscript."
 		if ($PSCmdlet.ShouldProcess("release branch", "Updating dbatools")) {
 			& $InstallScript;
 		}

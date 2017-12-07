@@ -9,7 +9,7 @@ function Set-DbaSpConfigure {
 			While it is possible to set below the min, or above the max this can cause serious problems with SQL Server (including startup failures), and so is not permitted.
 
 		.PARAMETER SqlInstance
-			SQLServer name or SMO object representing the SQL Server to connect to. This can be a
+			SQL Server name or SMO object representing the SQL Server to connect to. This can be a
 			collection and receive pipeline input
 
 		.PARAMETER SqlCredential
@@ -57,7 +57,7 @@ function Set-DbaSpConfigure {
 		.EXAMPLE
 			Set-DbaSpConfigure -SqlInstance localhost -ConfigName XPCmdShellEnabled -value 1
 
-			Adjusts the xp_cmdshell configuation value to 1.
+			Adjusts the xp_cmdshell configuration value to 1.
 
 		.EXAMPLE
 			Set-DbaSpConfigure -SqlInstance localhost -ConfigName XPCmdShellEnabled -value 1 -WhatIf

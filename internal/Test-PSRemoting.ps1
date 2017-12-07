@@ -1,22 +1,23 @@
 #requires -version 3.0
- 
+
 Function Test-PSRemoting {
-<#
-Jeff Hicks
-https://www.petri.com/test-network-connectivity-powershell-test-connection-cmdlet
+	<#
+	Jeff Hicks
+	https://www.petri.com/test-network-connectivity-powershell-test-connection-cmdlet
 #>
-	[cmdletbinding()]
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUsePSCredentialType", "")]
+	[Cmdletbinding()]
 	param(
-	[Parameter(Position=0,Mandatory,ValueFromPipeline)]
-	[DbaInstance]$ComputerName,
-	$Credential = [System.Management.Automation.PSCredential]::Empty,
-	[switch][Alias('Silent')]$EnableException
+		[Parameter(Position = 0, Mandatory, ValueFromPipeline)]
+		[DbaInstance]$ComputerName,
+		$Credential = [System.Management.Automation.PSCredential]::Empty,
+		[switch][Alias('Silent')]$EnableException
 	)
 
 	process {
 		Write-Message -Level VeryVerbose -Message "Testing $($ComputerName.Computername)"
 		try {
-			$r = Test-WSMan -ComputerName $ComputerName.ComputerName -Credential $Credential -Authentication Default -ErrorAction Stop
+			$null = Test-WSMan -ComputerName $ComputerName.ComputerName -Credential $Credential -Authentication Default -ErrorAction Stop
 			$true
 		}
 		catch {
@@ -24,6 +25,6 @@ https://www.petri.com/test-network-connectivity-powershell-test-connection-cmdle
 			$false
 		}
 
-	} #Process
+	} #process
 
 } #close function
