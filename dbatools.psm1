@@ -93,12 +93,12 @@ if ($dbatoolsSystemSystemNode.DoDotSource) { $script:doDotSource = $true }
 if ($dbatoolsSystemUserNode.DoDotSource) { $script:doDotSource = $true }
 #endregion Dot Sourcing
 
-#region Strict Security Mode
-$script:strictSecurityMode = $false
-if ($dbatools_strictsecuritymode) { $script:strictSecurityMode = $true }
-if ($dbatoolsSystemSystemNode.StrictSecurityMode) { $script:strictSecurityMode = $true }
-if ($dbatoolsSystemUserNode.StrictSecurityMode) { $script:strictSecurityMode = $true }
-#endregion Strict Security Mode
+#region Copy DLL Mode
+$script:copyDllMode = $false
+if ($dbatools_copydllmode) { $script:copyDllMode = $true }
+if ($dbatoolsSystemSystemNode.CopyDllMode) { $script:copyDllMode = $true }
+if ($dbatoolsSystemUserNode.CopyDllMode) { $script:copyDllMode = $true }
+#endregion Copy DLL Mode
 
 #region Always Compile
 $script:alwaysBuildLibrary = $false
@@ -120,7 +120,7 @@ Get-ChildItem -Path "$script:PSModuleRoot\bin\*.dll" -Recurse | Unblock-File -Er
 Write-ImportTime -Text  "Unblocking Files"
 
 # Define folder in which to copy dll files before importing
-if ($script:strictSecurityMode) { $script:DllRoot = "$script:PSModuleRoot\bin" }
+if (-not $script:copyDllMode) { $script:DllRoot = "$script:PSModuleRoot\bin" }
 else {
 	$libraryTempPath = "$($env:TEMP)\dbatools-$(Get-Random -Minimum 1000000 -Maximum 9999999)"
 	while (Test-Path -Path $libraryTempPath) {
@@ -425,8 +425,8 @@ Write-ImportTime -Text "Waiting for runspaces to finish"
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUWW0OEdyphxmffJl/WOWeeCN2
-# TWSggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUnnJJsT73eFKvgJJa8p6DgdRq
+# 01aggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -557,22 +557,22 @@ Write-ImportTime -Text "Waiting for runspaces to finish"
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUDRi1kZWpPtBHI/qohpA+esbY7/4wDQYJKoZIhvcNAQEBBQAE
-# ggEADmPsx69mAzHoBsSeXQYq/LpoiyYCrdksva+hlM0cN1Hy68YcLBZYd0jCV8hy
-# DK800Nl9xWUe/nRTv6s693yPzFH7N6i2PTxn2UXCfm0vHkeNSshc/vS2l9eGmAQm
-# 1IXY3ufk8L0qRuOHhPO7X9L1Y3ms5Sq8a+3nIuzifObxRp4BI/9CszhsfSRYdkEf
-# T7uLGD4Tdm+eDcQkbdM65xW4jHVbfHBmiorX53uMFR/Ph6yflzcEBaeRLkYmLORC
-# palHaHoHNkGm58p5HGXbNfmKWvykoafCEqBIP0olZ1DqGNgrOmxKmnQKirhe0PCQ
-# P5k5+BMriJkKPBYlBAtpsojpc6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUulU2B6DBjyUvh5XGAefUxSh5jtYwDQYJKoZIhvcNAQEBBQAE
+# ggEAICVafRG4nWmWL6TGKCz2xqXaoOvLb9d1SaX8P+hcXuyJPHCragSCTbKjf+yd
+# 6FIueNVHUk7xTdxsJ5BDkiW5uqfhPJwAdl/ptB9q1muMTTEvVkHact7YFqKeKLaz
+# /dFHwCRFUt+rY0siquyhBmGQeAt5dIfEJ1gZp4FQ8m92JBojgbpZPbV2rCkljCnm
+# D2x1FFQSsl5R6osVM1Mgkre3gkaLNEtwmdvMa9ZtStUGAkNbxm8qrKo+H1X7rH63
+# KOx0saGlYpQOH1r7Sb8cKN7usyXgvfB4NKXkkEblnxOHwPYcg/J8tGiKQoBkd6DJ
+# 8YPCs7+kMOfYuyBWqis9YTH8RKGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMjA2MDkwMTEzWjAj
-# BgkqhkiG9w0BCQQxFgQUqsMdzMUDFj3smsSgDcWOPjx124gwDQYJKoZIhvcNAQEB
-# BQAEggEAJYjOL9J3hPHimobhz4Fz6c7Eh7QcJcpDxjQUaHMwWMXpgFJvzXW5sEU2
-# 6XPlLlXEFFYTi3wdPVEx/hi986evW1gtAn6XSCuy+PcPU8Hyi0Haeqs0XCrWHnAE
-# AOanjO04lV5B47o37J7eSGhcGni41v6GlhIOS//i3nbYdNbj8vz0lcvd1KIg6CUQ
-# 3OQm8FPxA6DYI2iw9/7qo7ge2Pa38QSwUAuWfX6RN5ryd4+bCw9cb+KcmsGggpbF
-# OXPcINaodgn9VeVZxoGxaPa8GsS7C5jP3R6oqhkKrlgQggeeoI4Fn4r37rNqYFCn
-# 0afFzQ4/Z7WTEPio14xxuJqUPxhK/A==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMjA2MTk1MTMwWjAj
+# BgkqhkiG9w0BCQQxFgQUVjoIdJ7j7CajLA/6folz+KNTP1UwDQYJKoZIhvcNAQEB
+# BQAEggEAUaXjv/IqN6fpPh7TXjMEWmGurODvd2z9R2qdL0AsTCKGO0fW52FL+7dd
+# P5QBJvftMSK+yF8lm20FfUIzdkmn0qYI+CZl8NdKgQJiiJLREgi+8nhh7AFljsRt
+# gxgwP7llle+LbGkyVpr0aoriFjZaIzlrT2ebQ2UWUqJfanaY0NV7qAqNU8jhuh0/
+# KZVmSnE3ETnbFBNw2FHYuOK/bAjy9GN/BByiAZaqjJOiXO3Ks9liwtDNMdSbi+N+
+# oAIR8vC/C7MzI6re4pn2kb/Tv/xpSZg6K2oQN4+a00365SeY5csKbcVgaeI/ScXw
+# Ki5dJ9RgyJB6btrO7gRwk7l2LalKqg==
 # SIG # End signature block

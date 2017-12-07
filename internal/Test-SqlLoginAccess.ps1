@@ -1,8 +1,7 @@
-Function Test-SqlLoginAccess
-{
-<#
-.SYNOPSIS
-Internal function. Ensures login has access on SQL Server.
+function Test-SqlLoginAccess {
+	<#
+	.SYNOPSIS
+		Internal function. Ensures login has access on SQL Server.
 #>
 	[CmdletBinding()]
 	param (
@@ -14,28 +13,22 @@ Internal function. Ensures login has access on SQL Server.
 		[string]$Login
 		#[switch]$Detailed - can return if its a login or just has access
 	)
-	
-	if ($SqlInstance.GetType() -ne [Microsoft.SqlServer.Management.Smo.Server])
-	{
+
+	if ($SqlInstance.GetType() -ne [Microsoft.SqlServer.Management.Smo.Server]) {
 		$SqlInstance = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
-	
-	if (($SqlInstance.Logins.Name) -notcontains $Login)
-	{
-		try
-		{
+
+	if (($SqlInstance.Logins.Name) -notcontains $Login) {
+		try {
 			$rows = $SqlInstance.ConnectionContext.ExecuteScalar("EXEC xp_logininfo '$Login'")
-			
-			if (($rows | Measure-Object).Count -eq 0)
-			{
+
+			if (($rows | Measure-Object).Count -eq 0) {
 				return $false
 			}
 		}
-		catch
-		{
+		catch {
 			return $false
 		}
 	}
-	
 	return $true
 }
