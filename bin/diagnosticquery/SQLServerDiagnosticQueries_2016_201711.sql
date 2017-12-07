@@ -1,7 +1,7 @@
 
 -- SQL Server 2016 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: December 5, 2017
+-- Last Modified: December 7, 2017
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -1747,7 +1747,7 @@ ORDER BY total_worker_time DESC OPTION (RECOMPILE);
 
 
 -- Get Query Store Options for this database (Query 78) (QueryStore Options)
-SELECT actual_state_desc, desired_state_desc,
+SELECT actual_state_desc, desired_state_desc, [interval_length_minutes],
        current_storage_size_mb, [max_storage_size_mb], 
 	   query_capture_mode_desc, size_based_cleanup_mode_desc
 FROM sys.database_query_store_options WITH (NOLOCK) OPTION (RECOMPILE);
