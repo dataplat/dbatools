@@ -65,6 +65,9 @@ Function Invoke-DbaAdvancedRestore{
     .PARAMETER KeepCDC
         Indicates whether CDC information should be restored as part of the database
     
+    .PARAMETER PageRestore
+        The output from Get-DbaSuspect page containing the suspect pages to be restored.
+    
     .PARAMETER WhatIf
         Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
@@ -105,6 +108,7 @@ Function Invoke-DbaAdvancedRestore{
         [PSCredential]$AzureCredential,
         [switch]$WithReplace,
         [switch]$KeepCDC,
+        [object[]]$PageRestore,
         [switch]$EnableException
     )
     begin{
@@ -118,6 +122,16 @@ Function Invoke-DbaAdvancedRestore{
         if ($KeepCDC -and ($NoRecovery -or ('' -ne $StandbyDirectory))){
             Stop-Function -Category InvalidArgument -Message "KeepCDC cannot be specified with Norecovery or Standby as it needs recovery to work"
             return
+        }
+
+        If ($null -ne $PageRestore){
+            Write-Message -Message "Doing Page Recovery" -Level Verbose
+            $tmpPages = @()
+            ForEach ($Page in $PageRestore){
+                $tmppages += "$($Page.FileId):$($Page.PageID)"
+            }
+            $NoRecovery = $True
+            $Pages = $tmpPages -join ','
         }
         $ScriptOnly  = $false
         $InternalHistory = @()
@@ -175,6 +189,7 @@ Function Invoke-DbaAdvancedRestore{
                         $Restore.ToPointInTime = $RestoreTime
                     }
                 }
+
                 $Restore.Database = $database
                 $Restore.ReplaceDatabase = $WithReplace
                 if ($MaxTransferSize) {
@@ -186,7 +201,7 @@ Function Invoke-DbaAdvancedRestore{
                 if ($BlockSize) {
                     $Restore.Blocksize = $BlockSize
                 }
-                if ($true -ne $Continue){
+                if ($true -ne $Continue -and ($null -eq $Pages)){
                     ForEach ($file in $backup.FileList){
                         $MoveFile = New-Object Microsoft.SqlServer.Management.Smo.RelocateFile
                         $MoveFile.LogicalFileName = $File.LogicalName
@@ -201,6 +216,7 @@ Function Invoke-DbaAdvancedRestore{
                     'Transaction Log' {'Log'}
                     Default {'Database'}
                 }
+
                 Write-Message -Level Verbose -Message "restore action = $Action"
                 $Restore.Action = $Action
                 ForEach ($File in $backup.fullname){
@@ -235,6 +251,15 @@ Function Invoke-DbaAdvancedRestore{
                                 $null = $server.ConnectionContext.ExecuteNonQuery($script)
                                 Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                             }
+                        }
+                        elseif ($null -ne $Pages -and $Action -eq 'Database'){
+                            $script = $Restore.Script($server)
+                            $script = $script -replace "] FROM", "] PAGE='$pages' FROM"
+                            if ($true -ne $OutputScriptOnly){
+                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+                                $null = $server.ConnectionContext.ExecuteNonQuery($script)
+                                Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                            }    
                         }
                         elseif ($OutputScriptOnly) {
                             $script = $Restore.Script($server)

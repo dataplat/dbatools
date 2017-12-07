@@ -1,7 +1,7 @@
 function Install-DbaWatchUpdate {
 	<# 
 		.SYNOPSIS 
-			Adds the scheduled task to support Watch-DbaUpdate
+			Adds the scheduled task to support Watch-DbaUpdate.
 
 		.DESCRIPTION 
 			Adds the scheduled task to support Watch-DbaUpdate.
@@ -36,7 +36,7 @@ function Install-DbaWatchUpdate {
 				$task = Register-ScheduledTask -Principal $principal -TaskName 'dbatools version check' -Action $action -Trigger $trigger -Settings $settings -ErrorAction Stop
 			}
 			catch {
-				# keep movin
+				# keep moving
 			}
 		}
 		
@@ -53,7 +53,7 @@ function Install-DbaWatchUpdate {
 				
 				if ((Get-Location).Path -ne "$env:windir\system32") {
 					$module = Get-Module -Name dbatools
-					Write-Warning "Task created! A notication should appear momentarily. Here's something cute to look at in the interim."
+					Write-Warning "Task created! A notification should appear momentarily. Here's something cute to look at in the interim."
 					Show-Notification -Title "dbatools wants you" -Text "come hang out at dbatools.io/slack"
 				}
 			}
@@ -64,12 +64,11 @@ function Install-DbaWatchUpdate {
 			
 			# doublecheck
 			if ($null -eq (Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue)) {
-				Write-Warning "Couldn't create scheduled task :("
+				Write-Warning "Couldn't create scheduled task."
 			}
 		}
 		else {
-			Write-Output "Watch-DbaUpdate is already installed :)"
-			Write-Output "And by already installed, we mean it's a scheduled task called 'dbatools version check'"
+			Write-Output "Watch-DbaUpdate is already installed as a scheduled task called 'dbatools version check'"
 		}
 	}
 }

@@ -76,24 +76,25 @@ function Install-DbaWhoIsActive {
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[PsCredential]$SqlCredential,
-		[parameter(Mandatory=$false)]
-		[ValidateScript({Test-Path -Path $_ -PathType Leaf})]
+		[parameter(Mandatory = $false)]
+		[ValidateScript( { Test-Path -Path $_ -PathType Leaf })]
 		[string]$LocalFile,
 		[object]$Database,
-		[switch][Alias('Silent')]$EnableException,
+		[switch][Alias('Silent')]
+		$EnableException,
 		[switch]$Force
 	)
 	
 	begin {
-        $DbatoolsData = Get-DbaConfigValue -Name "Path.DbatoolsData"
+		$DbatoolsData = Get-DbaConfigValue -FullName "Path.DbatoolsData"
 		$temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
 		$zipfile = "$temp\spwhoisactive.zip"
-
+		
 		if ($LocalFile -eq $null -or $LocalFile.Length -eq 0) {
 			$baseUrl = "http://whoisactive.com/downloads"
-			$latest = ((Invoke-WebRequest -UseBasicParsing -uri http://whoisactive.com/downloads).Links | where-object {$PSItem.href -match "who_is_active"} | Select-Object href -First 1).href	
+			$latest = ((Invoke-WebRequest -UseBasicParsing -uri http://whoisactive.com/downloads).Links | where-object { $PSItem.href -match "who_is_active" } | Select-Object href -First 1).href
 			$LocalCachedCopy = Join-Path -Path $DbatoolsData -ChildPath $latest;
-
+			
 			if ((Test-Path -Path $LocalCachedCopy -PathType Leaf) -and (-not $Force)) {
 				Write-Message -Level Verbose -Message "Locally-cached copy exists, skipping download."
 				if ($PSCmdlet.ShouldProcess($env:computername, "Copying sp_WhoisActive from local cache for installation")) {
@@ -125,22 +126,23 @@ function Install-DbaWhoIsActive {
 		else {
 			# Look local
 			if ($PSCmdlet.ShouldProcess($env:computername, "Copying local file to temp directory")) {
-
-			    if ($LocalFile.EndsWith("zip")) {
-				    Copy-Item -Path $LocalFile -Destination $zipfile -Force
-			    } else {
-				    Copy-Item -Path $LocalFile -Destination (Join-Path -path $temp -childpath "whoisactivelocal.sql")
-			    }
-            }
+				
+				if ($LocalFile.EndsWith("zip")) {
+					Copy-Item -Path $LocalFile -Destination $zipfile -Force
+				}
+				else {
+					Copy-Item -Path $LocalFile -Destination (Join-Path -path $temp -childpath "whoisactivelocal.sql")
+				}
+			}
 		}
 		if ($LocalFile -eq $null -or $LocalFile.Length -eq 0 -or $LocalFile.EndsWith("zip")) {
 			# Unpack
 			# Unblock if there's a block
 			if ($PSCmdlet.ShouldProcess($env:computername, "Unpacking zipfile")) {
-
-			    Unblock-File $zipfile -ErrorAction SilentlyContinue
-					
-			    if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
+				
+				Unblock-File $zipfile -ErrorAction SilentlyContinue
+				
+				if (Get-Command -ErrorAction SilentlyContinue -Name "Expand-Archive") {
 					try {
 						Expand-Archive -Path $zipfile -DestinationPath $temp -Force
 					}
@@ -158,13 +160,13 @@ function Install-DbaWhoIsActive {
 					$destinationFolder.CopyHere($zipPackage.Items())
 				}
 				Remove-Item -Path $zipfile
-            }
+			}
 			$sqlfile = (Get-ChildItem "$temp\who*active*.sql" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
 		}
 		else {
 			$sqlfile = $LocalFile
 		}
-
+		
 		if ($PSCmdlet.ShouldProcess($env:computername, "Reading SQL file into memory")) {
 			Write-Message -Level Verbose -Message "Using $sqlfile."
 			
@@ -202,12 +204,17 @@ function Install-DbaWhoIsActive {
 			}
 			
 			if ($PSCmdlet.ShouldProcess($instance, "Installing sp_WhoisActive")) {
-				$allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
-				$databases = $server.Databases | Where-Object Name -eq $Database
-				if ($databases.Count -eq 0) {
-					Stop-Function -Message "Failed to find database $Database on $instance." -ErrorRecord $_ -Continue -Target $instance
+				try {
+					$allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
+					$databases = $server.Databases | Where-Object Name -eq $Database
+					if ($databases.Count -eq 0) {
+						Stop-Function -Message "Failed to find database $Database on $instance." -ErrorRecord $_ -Continue -Target $instance
+					}
+					$allprocedures = ($server.Query($allprocedures_query, $Database)).Name
 				}
-				$allprocedures = ($server.Query($allprocedures_query, $Database)).Name
+				catch {
+					Stop-Function -Message "Failed to install stored procedure." -ErrorRecord $_ -Continue -Target $instance
+				}
 				foreach ($batch in $batches) {
 					try {
 						$null = $server.databases[$Database].ExecuteNonQuery($batch)
@@ -219,9 +226,9 @@ function Install-DbaWhoIsActive {
 				$baseres = @{
 					ComputerName = $server.NetName
 					InstanceName = $server.ServiceName
-					SqlInstance = $server.DomainInstanceName
-					Database = $Database
-					Name = 'sp_WhoisActive'
+					SqlInstance  = $server.DomainInstanceName
+					Database     = $Database
+					Name         = 'sp_WhoisActive'
 				}
 				if ('sp_WhoisActive' -in $allprocedures) {
 					$status = 'Updated'
@@ -232,18 +239,18 @@ function Install-DbaWhoIsActive {
 				[PSCustomObject]@{
 					ComputerName = $server.NetName
 					InstanceName = $server.ServiceName
-					SqlInstance = $server.DomainInstanceName
-					Database = $Database
-					Name = 'sp_WhoisActive'
-					Status = $status
+					SqlInstance  = $server.DomainInstanceName
+					Database     = $Database
+					Name         = 'sp_WhoisActive'
+					Status	      = $status
 				}
 			}
 		}
 	}
 	end {
-        if ($PSCmdlet.ShouldProcess($env:computername, "Post-install cleanup")) {
-            Get-Item $sqlfile | Remove-Item
-        }
+		if ($PSCmdlet.ShouldProcess($env:computername, "Post-install cleanup")) {
+			Get-Item $sqlfile | Remove-Item
+		}
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Install-SqlWhoIsActive
 	}
 }

@@ -35,5 +35,5 @@ function Show-Notification {
 	$toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
 	$toast.Tag = "PowerShell"
 	$toast.Group = "dbatools"
-	$notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("dbatools").Show($toast)
+	$null = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("dbatools").Show($toast)
 }
