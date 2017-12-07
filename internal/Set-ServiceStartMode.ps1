@@ -1,45 +1,44 @@
-Function Set-ServiceStartMode {
-<#
+function Set-ServiceStartMode {
+	<#
 		.SYNOPSIS
 		Internal function. Implements the method that changes startup mode of the SQL Server service.
-		
+
 		.DESCRIPTION
 		Accepts objects from Get-DbaSqlService and performs a corresponding action.
-		
-		
+
 		.PARAMETER ServiceCollection
 		A collection of services from Get-DbaSqlService.
-		
+
 		.PARAMETER Mode
 		Startup mode of the service: Automatic, Manual or Disabled.
-		
+
 		.PARAMETER WhatIf
 		Shows what would happen if the cmdlet runs. The cmdlet is not run.
-		
+
 		.PARAMETER Confirm
 		Prompts you for confirmation before running the cmdlet.
-		
+
 		.NOTES
 		Author: Kirill Kravtsov ( @nvarscar )
-		
+
 		dbatools PowerShell module (https://dbatools.io)
 		Copyright (C) 2017 Chrissy LeMaire
 		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-		
+
 		.EXAMPLE
 		Get-DbaSqlService -ComputerName sql1 | Set-ServiceStartMode -Mode 'Manual'
-		
+
 		Sets all SQL services on sql1 to Manual startup.
-		
+
 		.EXAMPLE
-		$services = Get-DbaSqlService -ComputerName sql1 
+		$services = Get-DbaSqlService -ComputerName sql1
 		Set-ServiceStartMode -ServiceCollection $services -Mode 'Automatic'
-		
+
 		Sets all SQL services on sql1 to Automatic startup.
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[string]$Mode,
 		[parameter(ValueFromPipeline = $true, Mandatory = $true)]
 		[object[]]$ServiceCollection

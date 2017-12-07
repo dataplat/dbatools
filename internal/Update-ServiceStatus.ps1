@@ -1,57 +1,57 @@
-Function Update-ServiceStatus {
+function Update-ServiceStatus {
 	<#
 	.SYNOPSIS
-	Internal function. Sends start/stop request to a SQL Server service and wait for the result.
+		Internal function. Sends start/stop request to a SQL Server service and wait for the result.
 
 	.DESCRIPTION
-	Accepts objects from Get-DbaSqlService and performs a corresponding action.
+		Accepts objects from Get-DbaSqlService and performs a corresponding action.
 
 	.PARAMETER Credential
-	Credential object used to connect to the computer as a different user.
+		Credential object used to connect to the computer as a different user.
 
 	.PARAMETER Timeout
-	How long to wait for the start/stop request completion before moving on.
+		How long to wait for the start/stop request completion before moving on.
 
 	.PARAMETER ServiceCollection
-	A collection of services from Get-DbaSqlService
+		A collection of services from Get-DbaSqlService
 
 	.PARAMETER Action
-	Start or stop.
+		Start or stop.
 
 	.PARAMETER EnableException
-	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-	This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-	
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
 	.PARAMETER WhatIf
-	Shows what would happen if the cmdlet runs. The cmdlet is not run.
+		Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
 	.PARAMETER Confirm
-	Prompts you for confirmation before running the cmdlet.
+		Prompts you for confirmation before running the cmdlet.
 
 	.NOTES
-	Author: Kirill Kravtsov ( @nvarscar )
-	Tags: 
-	dbatools PowerShell module (https://dbatools.io)
-	Copyright (C) 2016 Chrissy LeMaire
-	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+		Author: Kirill Kravtsov ( @nvarscar )
+		Tags:
+		dbatools PowerShell module (https://dbatools.io)
+		Copyright (C) 2016 Chrissy LeMaire
+		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 	.EXAMPLE
-	$serviceCollection = Get-DbaSqlService -ComputerName sql1
-	Update-ServiceStatus -ServiceCollection $serviceCollection -Action 'stop' -Timeout 30
-	Update-ServiceStatus -ServiceCollection $serviceCollection -Action 'start' -Timeout 30
+		$serviceCollection = Get-DbaSqlService -ComputerName sql1
+		Update-ServiceStatus -ServiceCollection $serviceCollection -Action 'stop' -Timeout 30
+		Update-ServiceStatus -ServiceCollection $serviceCollection -Action 'start' -Timeout 30
 
-	Restarts SQL services on sql1
+		Restarts SQL services on sql1
 
 	.EXAMPLE
-	$serviceCollection = Get-DbaSqlService -ComputerName sql1
-	$credential = Get-Credential
-	Update-ServiceStatus -ServiceCollection $serviceCollection -Action 'stop' -Timeout 0 -Credential $credential
+		$serviceCollection = Get-DbaSqlService -ComputerName sql1
+		$credential = Get-Credential
+		Update-ServiceStatus -ServiceCollection $serviceCollection -Action 'stop' -Timeout 0 -Credential $credential
 
-	Stops SQL services on sql1 and waits indefinitely for them to stop. Uses $credential to authorize on the server.
+		Stops SQL services on sql1 and waits indefinitely for them to stop. Uses $credential to authorize on the server.
 #>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param(
+	param(
 		[parameter(ValueFromPipeline = $true, Mandatory = $true)]
 		[object[]]$ServiceCollection,
 		[parameter(Mandatory = $true)]
@@ -68,24 +68,24 @@ Function Update-ServiceStatus {
 		else {
 			$callerName = $callStack[0].Command
 		}
-		
 		#Prepare the service control script block
 		$svcControlBlock = {
-			Param (
+			param (
 				$server,
 				$service,
 				$action,
 				$timeout,
+				[System.Management.Automation.PSCredential]
 				$credential
 			)
-			
+
 			#Perform $action
-			if ($action -in 'start', 'restart') { 
+			if ($action -in 'start', 'restart') {
 				$methodName = 'StartService'
 				$desiredState = 'Running'
 				$undesiredState = 'Stopped'
 			}
-			elseif ($action -eq 'stop') { 
+			elseif ($action -eq 'stop') {
 				$methodName = 'StopService'
 				$desiredState = 'Stopped'
 				$undesiredState = 'Running'
@@ -103,7 +103,7 @@ Function Update-ServiceStatus {
 
 			$result = [psobject](@{} | Select-Object ExitCode, ServiceState)
 			#If command was not accepted
-			if ($x.ReturnValue -ne 0) { 
+			if ($x.ReturnValue -ne 0) {
 				$result.ExitCode = $x.ReturnValue
 				$result.ServiceState = $svc.State
 			}
@@ -133,7 +133,7 @@ Function Update-ServiceStatus {
 			$result
 		}
 
-		$actionText = switch ($action) { stop { 'stopped' }; start { 'started' }; restart { 'restarted' } } 
+		$actionText = switch ($action) { stop { 'stopped' }; start { 'started' }; restart { 'restarted' } }
 		#Setup initial session state
 		$InitialSessionState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
 		$InitialSessionState.ImportPSModule((get-module dbatools).modulebase + '\dbatools.psd1')
@@ -141,7 +141,7 @@ Function Update-ServiceStatus {
 		$runspacePool = [runspacefactory]::CreateRunspacePool(1, 50, $InitialSessionState, $Host)
 		$runspacePool.Open()
 	}
-	
+
 	process {
 		$threads = @()
 
@@ -163,7 +163,7 @@ Function Update-ServiceStatus {
 					else {
 						if ($Pscmdlet.ShouldProcess("Sending $action request to service $($service.ServiceName) on $($service.ComputerName)")) {
 							#Create parameters hashtable
-							$argsRunPool = @{ 
+							$argsRunPool = @{
 								server     = $service.computerName
 								service    = $service.ServiceName
 								action     = $action
@@ -209,7 +209,7 @@ Function Update-ServiceStatus {
 								Write-Message -Level Verbose -Message ("Could not return data from the runspace thread: " + $_.Exception.Message)
 							}
 							$thread.isRetrieved = $true
-							if ($thread.thread.HadErrors) { 
+							if ($thread.thread.HadErrors) {
 								if (!$jobError) { $jobError = $thread.thread.Streams.Error }
 								Stop-Function -EnableException $EnableException -FunctionName $callerName -Message ("The attempt to $action the service $($thread.ServiceName) on $($thread.ComputerName) returned the following error: " + ($jobError.Exception.Message -join ' ')) -Category ConnectionError -ErrorRecord $thread.thread.Streams.Error -Target $thread -Continue
 							}
