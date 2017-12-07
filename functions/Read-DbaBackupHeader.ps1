@@ -84,7 +84,7 @@ function Read-DbaBackupHeader {
 
             Gets the backup header information from the SQL Server backup file stored at https://dbatoolsaz.blob.core.windows.net/azbackups/restoretime/restoretime_201705131850.bak on Azure
     #>
-	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword")]
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword",'')]
     <# AzureCredential is utilized in this command is not a formal Credential object. #>
 	[CmdletBinding()]
 	param (
@@ -139,11 +139,11 @@ function Read-DbaBackupHeader {
 				catch {
 					# Write-Exception $_
 					if ($deviceType -eq 'FILE') {
-						Stop-Function -Message "Problem found with $file" -Target $file -ErrorRecord $_ -Exception $_.Exception -Continue
+						Stop-Function -Message "Problem found with $file" -Target $file -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException -Continue
 
 					}
 					else {
-                        Stop-Function -Message "Unable to read $file, check credential $AzureCredential and network connectivity" -Target $file -ErrorRecord $_ -Excpetion $_.Exception -Continue
+                        Stop-Function -Message "Unable to read $file, check credential $AzureCredential and network connectivity" -Target $file -ErrorRecord $_ -Excpetion $_.Exception.InnerException.InnerException -Continue
 					}
 				}
 
@@ -183,10 +183,10 @@ function Read-DbaBackupHeader {
 					catch {
 						$shortName = Split-Path $file -Leaf
 						if (!(Test-DbaSqlPath -SqlInstance $server -Path $file)) {
-							Stop-Function -Message "File $shortName does not exist or access denied. The SQL Server service account may not have access to the source directory." -Target $file -ErrorRecord $_ -Exception $_.Exception -Continue
+							Stop-Function -Message "File $shortName does not exist or access denied. The SQL Server service account may not have access to the source directory." -Target $file -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException -Continue
 						}
 						else {
-                            Stop-Function -Message "File list for $shortName could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory." -Target $file -ErrorRecord $_ -Exception $_.Exception -Continue
+                            Stop-Function -Message "File list for $shortName could not be determined. This is likely due to the file not existing, the backup version being incompatible or unsupported, connectivity issues or tiemouts with the SQL Server, or the SQL Server service account does not have access to the source directory." -Target $file -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException -Continue
 						}
 					}
                     $row.FileList = $allFiles
