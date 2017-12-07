@@ -16,7 +16,7 @@ function Repair-DbaOrphanUser {
 
         .PARAMETER SqlInstance
             The SQL Server Instance to connect to.
-        
+
 		.PARAMETER SqlCredential
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
@@ -45,7 +45,7 @@ function Repair-DbaOrphanUser {
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
+
 		.EXAMPLE
 			Repair-DbaOrphanUser -SqlInstance sql2005
 
@@ -103,7 +103,7 @@ function Repair-DbaOrphanUser {
 	process {
 		$start = [System.Diagnostics.Stopwatch]::StartNew()
 		foreach ($instance in $SqlInstance) {
-			
+
 			try {
 				Write-Message -Level Verbose -Message "Connecting to $instance."
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -142,23 +142,23 @@ function Repair-DbaOrphanUser {
 
 						if ($Users.Count -eq 0) {
 							#the third validation will remove from list sql users without login. The rule here is Sid with length higher than 16
-							$Users = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false }
+							$UsersToWork = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false }
 						}
 						else {
 							if ($pipedatabase.Length -gt 0) {
 								$Source = $pipedatabase[3].parent.name
-								$Users = $pipedatabase.name
+								$UsersToWork = $pipedatabase.name
 							}
 							else {
 								#the fourth validation will remove from list sql users without login. The rule here is Sid with length higher than 16
-								$Users = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($Users -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
+								$UsersToWork = $db.Users | Where-Object { $_.Login -eq "" -and ($_.ID -gt 4) -and ($Users -contains $_.Name) -and (($_.Sid.Length -gt 16 -and $_.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin) -eq $false) }
 							}
 						}
 
-						if ($Users.Count -gt 0) {
+						if ($UsersToWork.Count -gt 0) {
 							Write-Message -Level Verbose -Message "Orphan users found"
 							$UsersToRemove = @()
-							foreach ($User in $Users) {
+							foreach ($User in $UsersToWork) {
 								$ExistLogin = $server.logins | Where-Object {
 									$_.Isdisabled -eq $False -and
 									$_.IsSystemObject -eq $False -and
@@ -215,7 +215,7 @@ function Repair-DbaOrphanUser {
 							Write-Message -Level Verbose -Message "No orphan users found on database '$db'."
 						}
 						#reset collection
-						$Users = $null
+						$UsersToWork = $null
 					}
 					catch {
 						Stop-Function -Message $_ -Continue
@@ -229,6 +229,7 @@ function Repair-DbaOrphanUser {
 	}
 	end {
 		$totaltime = ($start.Elapsed)
+		$start.Stop()
 		Write-Message -Level Verbose -Message "Total Elapsed time: $totaltime."
 
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Repair-SqlOrphanUser
