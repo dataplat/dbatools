@@ -13,6 +13,8 @@ function Update-SqlPermissions {
 		.PARAMETER EnableException
 			Use this switch to disable any kind of verbose messages
 	#>
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseSingularNouns", "")]
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
 		[Parameter(Mandatory = $true)]
@@ -39,7 +41,7 @@ function Update-SqlPermissions {
 		$roleName = $role.Name
 		$destRole = $DestServer.Roles[$roleName]
 
-		if ($destRole -ne $null) {
+		if ($null -ne $destRole) {
 			try {
 				$destRoleMembers = $destRole.EnumMemberNames()
 			}
@@ -56,7 +58,7 @@ function Update-SqlPermissions {
 		}
 
 		if ($roleMembers -contains $userName) {
-			if ($destRole -ne $null) {
+			if ($null -ne $destRole) {
 				if ($Pscmdlet.ShouldProcess($destination, "Adding $userName to $roleName server role.")) {
 					try {
 						$destRole.AddMember($userName)
@@ -70,7 +72,7 @@ function Update-SqlPermissions {
 		}
 
 		# Remove for Syncs
-		if ($roleMembers -notcontains $userName -and $destRoleMembers -contains $userName -and $destRole -ne $null) {
+		if ($roleMembers -notcontains $userName -and $destRoleMembers -contains $userName -and $null -ne $destRole) {
 			if ($Pscmdlet.ShouldProcess($destination, "Adding $userName to $roleName server role.")) {
 				try {
 					$destRole.DropMember($userName)
@@ -85,7 +87,7 @@ function Update-SqlPermissions {
 
 	$ownedJobs = $SourceServer.JobServer.Jobs | Where-Object OwnerLoginName -eq $userName
 	foreach ($ownedJob in $ownedJobs) {
-		if ($DestServer.JobServer.Jobs[$ownedJob.Name] -ne $null) {
+		if ($null -ne $DestServer.JobServer.Jobs[$ownedJob.Name]) {
 			if ($Pscmdlet.ShouldProcess($destination, "Changing of job owner to $userName for $($ownedJob.Name).")) {
 				try {
 					$destOwnedJob = $DestServer.JobServer.Jobs | Where-Object { $_.Name -eq $ownedJobs.Name }
@@ -134,11 +136,11 @@ function Update-SqlPermissions {
 				$permState = $perm.PermissionState
 				$sourcePerm = $perms | Where-Object { $_.PermissionType -eq $perm.PermissionType -and $_.PermissionState -eq $permState }
 
-				if ($sourcePerm -eq $null) {
+				if ($null -eq $sourcePerm) {
 					if ($Pscmdlet.ShouldProcess($destination, "Revoking $($perm.PermissionType) for $userName.")) {
 						try {
 							$permSet = New-Object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.PermissionType)
-							
+
 							if ($permState -eq "GrantWithGrant") {
 								$grantWithGrant = $true;
 								$permState = "grant"
@@ -146,7 +148,7 @@ function Update-SqlPermissions {
 							else {
 								$grantWithGrant = $false
 							}
-							
+
 							$DestServer.PSObject.Methods["Revoke"].Invoke($permSet, $userName, $false, $grantWithGrant)
 							Write-Message -Level Verbose -Message "Revoking $($perm.PermissionType) for $userName on $destination successfully performed."
 						}
@@ -161,7 +163,7 @@ function Update-SqlPermissions {
 		# Credential mapping. Credential removal not currently supported for Syncs.
 		$loginCredentials = $SourceServer.Credentials | Where-Object { $_.Identity -eq $SourceLogin.Name }
 		foreach ($credential in $loginCredentials) {
-			if ($DestServer.Credentials[$credential.Name] -eq $null) {
+			if ($null -eq $DestServer.Credentials[$credential.Name]) {
 				if ($Pscmdlet.ShouldProcess($destination, "Creating credential $($credential.Name) for $userName.")) {
 					try {
 						$newCred = New-Object Microsoft.SqlServer.Management.Smo.Credential($DestServer, $credential.Name)
@@ -190,12 +192,12 @@ function Update-SqlPermissions {
 		$dbUsername = $db.Username;
 		$dbLogin = $db.LoginName
 
-		if ($sourceDb -ne $null) {
+		if ($null -ne $sourceDb) {
 			if (!$sourceDb.IsAccessible) {
 				Write-Message -Level Verbose -Message "Database [$($sourceDb.Name)] is not accessible on $source. Skipping."
 				continue
 			}
-			if ($sourceDb.Users[$dbUsername] -eq $null -and $destDb.Users[$dbUsername] -ne $null) {
+			if ($null -eq $sourceDb.Users[$dbUsername] -and $null -eq $destDb.Users[$dbUsername]) {
 				if ($Pscmdlet.ShouldProcess($destination, "Dropping user $dbUsername from $dbName.")) {
 					try {
 						$destDb.Users[$dbUsername].Drop()
@@ -213,7 +215,7 @@ function Update-SqlPermissions {
 			foreach ($destRole in $destDb.Roles) {
 				$destRoleName = $destRole.Name
 				$sourceRole = $sourceDb.Roles[$destRoleName]
-				if ($sourceRole -ne $null) {
+				if ($null -eq $sourceRole) {
 					if ($sourceRole.EnumMembers() -notcontains $dbUsername -and $destRole.EnumMembers() -contains $dbUsername) {
 						if ($dbUsername -ne "dbo") {
 							if ($Pscmdlet.ShouldProcess($destination, "Dropping user $userName from $destRoleName database role in $dbName.")) {
@@ -238,11 +240,11 @@ function Update-SqlPermissions {
 			foreach ($perm in $destPerms) {
 				$permState = $perm.PermissionState
 				$sourcePerm = $perms | Where-Object { $_.PermissionType -eq $perm.PermissionType -and $_.PermissionState -eq $permState }
-				if ($sourcePerm -eq $null) {
+				if ($null -eq $sourcePerm) {
 					if ($Pscmdlet.ShouldProcess($destination, "Revoking $($perm.PermissionType) from $userName in $dbName.")) {
 						try {
 							$permSet = New-Object Microsoft.SqlServer.Management.Smo.DatabasePermissionSet($perm.PermissionType)
-							
+
 							if ($permState -eq "GrantWithGrant") {
 								$grantWithGrant = $true;
 								$permState = "grant"
@@ -250,7 +252,7 @@ function Update-SqlPermissions {
 							else {
 								$grantWithGrant = $false
 							}
-							
+
 							$destDb.PSObject.Methods["Revoke"].Invoke($permSet, $userName, $false, $grantWithGrant)
 							Write-Message -Level Verbose -Message "Revoking $($perm.PermissionType) from $userName in $dbName on $destination successfully performed."
 						}
@@ -271,12 +273,12 @@ function Update-SqlPermissions {
 		$dbUsername = $db.Username;
 		$dbLogin = $db.LoginName
 
-		if ($destDb -ne $null) {
+		if ($null -eq $destDb) {
 			if (!$destDb.IsAccessible) {
 				Write-Message -Level Verbose -Message "Database [$($destDb.Name)] is not accessible. Skipping."
 				continue
 			}
-			if ($destDb.Users[$dbUsername] -eq $null) {
+			if ($null -eq $destDb.Users[$dbUsername]) {
 				if ($Pscmdlet.ShouldProcess($destination, "Adding $dbUsername to $dbName.")) {
 					$sql = $SourceServer.Databases[$dbName].Users[$dbUsername].Script() | Out-String
 					try {
@@ -313,7 +315,7 @@ function Update-SqlPermissions {
 					$roleName = $role.Name
 					$destDbRole = $destDb.Roles[$roleName]
 
-					if ($destDbRole -ne $null -and $dbUsername -ne "dbo" -and $destDbRole.EnumMembers() -notcontains $userName) {
+					if ($null -ne $destDbRole -and $dbUsername -ne "dbo" -and $destDbRole.EnumMembers() -notcontains $userName) {
 						if ($Pscmdlet.ShouldProcess($destination, "Adding $userName to $roleName database role in $dbName.")) {
 							try {
 								$destDbRole.AddMember($userName)
@@ -339,7 +341,6 @@ function Update-SqlPermissions {
 				else {
 					$grantWithGrant = $false
 				}
-				
 				$permSet = New-Object Microsoft.SqlServer.Management.Smo.DatabasePermissionSet($perm.PermissionType)
 
 				if ($Pscmdlet.ShouldProcess($destination, "$permState on $($perm.PermissionType) for $userName on $dbName")) {

@@ -7,7 +7,7 @@ Returns a summary of information on the tables
 Shows table information around table row and data sizes and if it has any table type information.
 
 .PARAMETER SqlInstance
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a
 collection and receive pipeline input
 
 .PARAMETER SqlCredential
@@ -70,27 +70,25 @@ Returns information on the CommandLog table in the DBA database on both instance
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter[]]$SqlInstance,
 		[Alias("Credential")]
-		[PSCredential]
-		$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[switch]$IncludeSystemDBs,
 		[string[]]$Table,
-		[switch][Alias('Silent')]$EnableException
+		[switch][Alias('Silent')]
+		$EnableException
 	)
-
+	
 	begin {
-		$fqtns = @()
-
 		if ($Table) {
+			$fqtns = @()
 			foreach ($t in $Table) {
 				$splitName = [regex]::Matches($t, "(\[.+?\])|([^\.]+)").Value
 				$dotcount = $splitName.Count
-
-				$splitDb = $NULL
-				$Schema = $NULL
-
+				
+				$splitDb = $Schema = $null
+				
 				switch ($dotcount) {
 					1 {
 						$tbl = $t
@@ -109,29 +107,28 @@ Returns information on the CommandLog table in the DBA database on both instance
 						Continue
 					}
 				}
-
+				
 				if ($splitDb -like "[[]*[]]") {
 					$splitDb = $splitDb.Substring(1, ($splitDb.Length - 2))
 				}
-
+				
 				if ($schema -like "[[]*[]]") {
 					$schema = $schema.Substring(1, ($schema.Length - 2))
 				}
-
+				
 				if ($tbl -like "[[]*[]]") {
 					$tbl = $tbl.Substring(1, ($tbl.Length - 2))
 				}
-
-				$fqtn = [PSCustomObject] @{
-					Database = $splitDb
-					Schema   = $Schema
-					Table    = $tbl
+				
+				$fqtns += [PSCustomObject] @{
+					Database   = $splitDb
+					Schema	   = $Schema
+					Table	   = $tbl
 				}
-				$fqtns += $fqtn
 			}
 		}
 	}
-
+	
 	process {
 		foreach ($instance in $sqlinstance) {
 			try {
@@ -141,75 +138,63 @@ Returns information on the CommandLog table in the DBA database on both instance
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-
+			
 			try {
 				#only look at online databases (Status equal normal)
-				$dbs = $server.Databases | Where-Object { $_.Status -eq 'Normal' }
-
+				$dbs = $server.Databases | Where-Object IsAccessible
+				
 				#If IncludeSystemDBs is false, exclude systemdbs
-				if (!$IncludeSystemDBs) {
+				if (!$IncludeSystemDBs -and !$Database) {
 					$dbs = $dbs | Where-Object { !$_.IsSystemObject }
 				}
-
+				
 				if ($Database) {
 					$dbs = $dbs | Where-Object { $Database -contains $_.Name }
 				}
-
+				
 				if ($ExcludeDatabase) {
 					$dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.Name }
 				}
 			}
 			catch {
-				Stop-Function -Message "Unable to gather dbs for $instance" -Target $instance -Continue -InnerErrorRecord $_
+				Stop-Function -Message "Unable to gather dbs for $instance" -Target $instance -Continue -ErrorRecord $_
 			}
-
+			
 			foreach ($db in $dbs) {
 				Write-Message -Level Verbose -Message "Processing $db"
-				$skipped = $false
-
-				if ($fqtns.Count -gt 0) {
+				
+				if ($fqtns) {
+					$tables = @()
 					foreach ($fqtn in $fqtns) {
 						# If the user specified a database in a three-part name, and it's not the
 						# database currently being processed, skip this table.
 						if ($fqtn.Database) {
 							if ($fqtn.Database -ne $db.Name) {
-								$skipped = $true
 								continue
 							}
-							else {
-								$skipped = $false
-							}
 						}
-
-						$tables = $db.tables | Where-Object {$fqtn.Table -eq $_.name -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null)}
-						if ($tables.Count -eq 0) {
-							$outSchema = ""
-							if ($fqtn.Schema) {
-								$outSchema = ", schema: $($fqtn.Schema)"
-							}
-
-							$outDatabase = ""
-							if ($fqtn.Database) {
-								$outDatabase = ", database: $($fqtn.Database)"
-							}
-
-							Write-Message -Level Verbose -Message "Could not find table. Instance: $($server.DomainInstanceName)$outDatabase$outSchema, name: $($fqtn.Table)"
+						
+						$tbl = $db.tables | Where-Object { $_.Name -in $fqtn.Table -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null) }
+						
+						if (-not $tbl) {
+							Write-Message -Level Verbose -Message "Could not find table $($fqtn.Table) in $db on $server"
 						}
+						$tables += $tbl
 					}
 				}
 				else {
 					$tables = $db.Tables
 				}
-
-				if (!$skipped) {
-					$tables | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.NetName
-					$tables | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-					$tables | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-					$tables | Add-Member -Force -MemberType NoteProperty -Name Database -Value $db.Name
-
+				
+				foreach ($sqltable in $tables) {
+					$sqltable | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.NetName
+					$sqltable | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+					$sqltable | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+					$sqltable | Add-Member -Force -MemberType NoteProperty -Name Database -Value $db.Name
+					
 					$defaultprops = "ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
-
-					Select-DefaultView -InputObject $tables -Property $defaultprops
+					
+					Select-DefaultView -InputObject $sqltable -Property $defaultprops
 				}
 			}
 		}

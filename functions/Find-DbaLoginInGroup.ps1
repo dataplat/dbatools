@@ -16,7 +16,7 @@ Copyright (C) 2016 Chrissy LeMaire
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .PARAMETER SqlInstance 
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a
 collection and receive pipeline input.
 
 .PARAMETER SqlCredential

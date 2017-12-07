@@ -169,6 +169,14 @@ function Restore-DbaDatabase {
     .PARAMETER KeepCDC
         Indicates whether CDC information should be restored as part of the database
     
+    .PARAMETER PageRestore
+        Passes in an object from Get-DbaSuspectPages containing suspect pages from a single database.
+        Setting this Parameter will cause an Online Page restore if the target Instance is Enterprise Edition, or offline if not.
+        This will involve taking a tail log backup, so you must check your restore chain once it has completed
+    
+    .PARAMETER PageRestoreTailFolder
+        This parameter passes in a location for the tail log backup required for page level restore
+    
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -266,6 +274,12 @@ function Restore-DbaDatabase {
         Restore-DbaDatabase -SqlInstance server\instance1 -Recover -DatabaseName example1
     
     .EXAMPLE
+        $SuspectPage = Get-DbaSuspectPage -SqlInstance server\instance1 -Database ProdFinance
+        Get-DbaBackupHistory - SqlInstance server\instance1 -Database -ProdFinance -Last | Restore-DbaDatabase -PageRestore $SuspectPage -PageRestoreTailFolder c:\temp -TrustDbBackupHistory -AllowContinues
+
+        Gets a list of Suspect Pages using Get-DbaSuspectPage. The uses Get-DbaBackupHistory and Restore-DbaDatabase to perform a restore of the suspect pages and bring them up to date
+        If server\instance1 is Enterprise edition this will be done online, if not it will be performed offline
+        AllowContinue is required to make sure we cope with existing files 
 
     .NOTES
         Tags: DisasterRecovery, Backup, Restore
@@ -278,6 +292,7 @@ function Restore-DbaDatabase {
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName="Restore")]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName="Restore")]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName="RestorePage")]
         [object[]]$Path,
         [parameter(Mandatory = $true)]
         [Alias("ServerInstance", "SqlServer")]
@@ -316,12 +331,16 @@ function Restore-DbaDatabase {
         [parameter(ParameterSetName="Restore")]
         [string]$RestoredDatababaseNamePrefix,
         [parameter(ParameterSetName="Restore")]
+        [parameter(ParameterSetName="RestorePage")]
         [switch]$TrustDbBackupHistory,
         [parameter(ParameterSetName="Restore")]
+        [parameter(ParameterSetName="RestorePage")]
         [int]$MaxTransferSize,
         [parameter(ParameterSetName="Restore")]
+        [parameter(ParameterSetName="RestorePage")]
         [int]$BlockSize,
         [parameter(ParameterSetName="Restore")]
+        [parameter(ParameterSetName="RestorePage")]
         [int]$BufferCount,
         [parameter(ParameterSetName="Restore")]
         [switch]$DirectoryRecurse,     
@@ -348,6 +367,10 @@ function Restore-DbaDatabase {
         [switch]$StopAfterFormatBackupInformation,
         [string]$TestBackupInformation,
         [switch]$StopAfterTestBackupInformation,
+        [parameter(Mandatory = $true,ParameterSetName="RestorePage")]
+        [object]$PageRestore,
+        [parameter(Mandatory = $true,ParameterSetName="RestorePage")]
+        [string]$PageRestoreTailFolder,
         [int]$StatementTimeout = 0
 
     )
@@ -455,7 +478,7 @@ function Restore-DbaDatabase {
     }
     process{
         if (Test-FunctionInterrupt) { return }
-        if ($PSCmdlet.ParameterSetName -eq "Restore") {
+        if ($PSCmdlet.ParameterSetName -like "Restore*") {
             if ($PipeDatabaseName -eq $true){$DatabaseName  = ''}
             Write-Message -message "ParameterSet  = Restore" -Level Verbose
             foreach ($f in $path) {
@@ -496,7 +519,13 @@ function Restore-DbaDatabase {
                     $BackupHistory += $f | Get-DbaBackupInformation -SqlInstance $RestoreInstance -DirectoryRecurse:$DirectoryRecurse -MaintenanceSolution:$MaintenanceSolutionBackup -IgnoreLogBackup:$IgnoreLogBackup
                 }
             }
-            
+            if ($PSCmdlet.ParameterSetName -eq "RestorePage"){
+                if (-not (Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $PageRestoreTailFolder)){
+                    Stop-Function -Message "Instance $RestoreInstance cannot read $PageRestoreTailFolder, cannot proceed" -Target $PageRestoreTailFolder
+                    return
+                }
+                $WithReplace  = $true
+            }
         }elseif ($PSCmdlet.ParameterSetName -eq "Recovery") {
             Write-Message -Message "$($Database.count) databases to recover" -level Verbose
             ForEach ($DataBase in $DatabaseName){
@@ -547,7 +576,7 @@ function Restore-DbaDatabase {
     }
     end {
         if (Test-FunctionInterrupt) { return }
-        if ($PSCmdlet.ParameterSetName -eq "Restore") {
+        if ($PSCmdlet.ParameterSetName -like "Restore*") {
             Write-Message -message "Processing DatabaseName - $DatabaseName" -Level Verbose
             $FilteredBackupHistory =@()
             if (Test-Bound -ParameterName GetBackupInformation) {
@@ -600,8 +629,31 @@ function Restore-DbaDatabase {
                }
             }
             
+            If ($PSCmdlet.ParameterSetName -eq "RestorePage"){
+                if (($FilteredBackupHistory.Database | select-Object -unique | Measure-Object).count -ne 1){
+                    Stop-Function -Message "Must only 1 database passed in for Page Restore. Sorry"
+                    return
+                }
+                else{
+                    $WithReplace = $false
+                    $PageDb = ($FilteredBackupHistory.Database | select-Object -unique).Database
+                }
+            }
             Write-Message -Message "Passing in to restore" -Level Verbose
-            $FilteredBackupHistory | Where-Object {$_.IsVerified -eq $true} | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly
+            if ($PSCmdlet.ParameterSetName -eq "RestorePage" -and $RestoreInstance.Edition -notlike '*Enterprise*'){
+                Write-Message -Message "Taking Tail log backup for page restore for non-Enterprise" -Level Verbose              
+                $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly    
+            }
+            $FilteredBackupHistory | Where-Object {$_.IsVerified -eq $true} | Invoke-DbaAdvancedRestore -SqlInstance $RestoreInstance -WithReplace:$WithReplace -RestoreTime $RestoreTime -StandbyDirectory $StandbyDirectory -NoRecovery:$NoRecovery -Continue:$Continue -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -KeepCDC:$KeepCDC -VerifyOnly:$VerifyOnly -PageRestore $PageRestore
+            if ($PSCmdlet.ParameterSetName -eq "RestorePage" ){
+                if ($RestoreInstace.Edition -like '*Enterprise*'){
+                    Write-Message -Message "Taking Tail log backup for page restore for Enterprise" -Level Verbose
+                    $TailBackup = Backup-DbaDatabase -SqlInstance $RestoreInstance -Database $DatabaseName -Type Log -BackupDirectory $PageRestoreTailFolder -Norecovery -CopyOnly
+                }
+                Write-Message -Message "Restoring Tail log backup for page restore" -Level Verbose
+                $TailBackup | Restore-DbaDatabase -SqlInstance $RestoreInstance -TrustDbBackupHistory -NoRecovery -OutputScriptOnly:$OutputScriptOnly -BlockSize $BlockSize -MaxTransferSize $MaxTransferSize -Buffercount $Buffercount -Continue
+                Restore-DbaDatabase -SqlInstance $RestoreInstance -Recover -Database $DatabaseName -OutputScriptOnly:$OutputScriptOnly 
+            }
         
         }
     }

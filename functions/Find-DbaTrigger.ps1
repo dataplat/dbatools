@@ -8,7 +8,7 @@ This function search on Instance, Database and Object level.
 If you specify one or more databases, search on Server level will not be preformed.
 
 .PARAMETER SqlInstance
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
 
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, current Windows login will be used.
