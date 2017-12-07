@@ -143,14 +143,14 @@ But it increases the time needed to import the module, so we only recommend usin
 Exception:
 $_
 "@
-	Copy-Item -Path "$temp\branch-old\*" -Destination $path -ErrorAction Ignore -Recurse
-	Remove-Item "$temp\branch-old" -Recurse -Force
+	Copy-Item -Path "$temp\dbatools-old\*" -Destination $path -ErrorAction Ignore -Recurse
+	Remove-Item "$temp\dbatools-old" -Recurse -Force
 	return
 }
 Write-LocalMessage -Message "3) Setting up current version"
 Move-Item -Path "$temp\dbatools-$branch\*" -Destination $path -ErrorAction SilentlyContinue -Force
 Remove-Item -Path "$temp\dbatools-$branch" -Recurse -Force
-Remove-Item "$temp\branch-old" -Recurse -Force
+Remove-Item "$temp\dbatools-old" -Recurse -Force
 Remove-Item -Path $zipfile -Recurse -Force
 
 Write-LocalMessage -Message "Done! Please report any bugs to dbatools.io/issues or clemaire@gmail.com."
