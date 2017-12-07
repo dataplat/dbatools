@@ -137,7 +137,6 @@ function Read-DbaBackupHeader {
 					$dataTable = $restore.ReadBackupHeader($server)
 				}
 				catch {
-					# Write-Exception $_
 					if ($deviceType -eq 'FILE') {
 						Stop-Function -Message "Problem found with $file" -Target $file -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException -Continue
 
