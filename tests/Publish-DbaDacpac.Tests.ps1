@@ -24,6 +24,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	It "shows that the update is complete" {
 		$results = $dacpac | Publish-DbaDacpac -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance $script:instance2
 		$results.Result -match 'Update complete.' | Should Be $true
-		Remove-Item -Confirm:$false -Path ($dacpac).Path -ErrorAction SilentlyContinue
+		if (($dacpac).Path) {
+			Remove-Item -Confirm:$false -Path ($dacpac).Path -ErrorAction SilentlyContinue
+		}
 	}
 }

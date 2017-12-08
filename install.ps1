@@ -143,14 +143,14 @@ But it increases the time needed to import the module, so we only recommend usin
 Exception:
 $_
 "@
-	Copy-Item -Path "$temp\branch-old\*" -Destination $path -ErrorAction Ignore -Recurse
-	Remove-Item "$temp\branch-old" -Recurse -Force
+	Copy-Item -Path "$temp\dbatools-old\*" -Destination $path -ErrorAction Ignore -Recurse
+	Remove-Item "$temp\dbatools-old" -Recurse -Force
 	return
 }
 Write-LocalMessage -Message "3) Setting up current version"
 Move-Item -Path "$temp\dbatools-$branch\*" -Destination $path -ErrorAction SilentlyContinue -Force
 Remove-Item -Path "$temp\dbatools-$branch" -Recurse -Force
-Remove-Item "$temp\branch-old" -Recurse -Force
+Remove-Item "$temp\dbatools-old" -Recurse -Force
 Remove-Item -Path $zipfile -Recurse -Force
 
 Write-LocalMessage -Message "Done! Please report any bugs to dbatools.io/issues or clemaire@gmail.com."
@@ -175,8 +175,8 @@ Write-LocalMessage -Message "`n`nIf you experience any function missing errors a
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUqAjskbQEzDY/Z93/y/eZ5fP6
-# qqCggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUDvSM4++PAhWFLtxlMIKW1xyD
+# 7TKggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -307,22 +307,22 @@ Write-LocalMessage -Message "`n`nIf you experience any function missing errors a
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQUKo9vhhIVQRZ+5dwW6roMAHu8Y6UwDQYJKoZIhvcNAQEBBQAE
-# ggEAT5BvoI+WrDZKXIccY4qRmZDXNfKoIUu24LthgEZWSCbSon6YzZd0m6la/+yW
-# 13lu1EmX+yxkaWj796O53gJCw4ARyozDSPxjRVr92/MH9FC+NZ38tobiqijv7AHM
-# ZHz2E7NaP/gKsdpBRo0CIcHKCr0YSizFIHW3UAUrzguaOQx5sDDeqBwyOqo+2eEv
-# yW7Sz/bzUMItUWocCNXb2gINdmRjhCn/UAXXy0nIVl6b/YDe/DGdHKc2t3SjmlvI
-# PE9CqzNueaB+D7cdpk1dI2anegk1Lj0I+i78r+qXRVVbd9SmfmkUTV/YZucl1zAv
-# cpzxUACFFkstnW+CSPld5WBTfqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUjHycBnz25hIn3oiZ8CR9hAaLJsgwDQYJKoZIhvcNAQEBBQAE
+# ggEAZMngc/IAeL0dD8YmuLZJPfiGsBVQnjCH70tvQimPqHk2m8IR3/NOkNmkkdWq
+# K2JlednBaSC776pAadn4l2wzKoYGlyy44n90NldyRWaCeF1c7g/+Jt6B5JJgvGhl
+# +GBR60gSEAXP24urhIJnKyZnW7z7/f+k2ep3LlCned6gU5QNVmHyO8DG5kgKgSzT
+# 0/iguKqPbcvCXuiVQKQtTE5rpoL+oxeyKTWXTinLg2KZjmM09PhflmQ7D686gU9r
+# eQKHRtFlIZKyzzjEcBs2j4F5o85wpvZVnZKELi8/osw+oFrzTyZSr83lq25fSDB6
+# x1hZ9fqwvTX57lJ4nyedFp5E2KGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMjA2MTk1MTMyWjAj
-# BgkqhkiG9w0BCQQxFgQU/ITDbLUe5bjBMFiTICNLvMCZszUwDQYJKoZIhvcNAQEB
-# BQAEggEANLYmDcJNB/bgpN88siqSL2SRs/Q8Rm36+y7/619Z7sXn/M0TBNebmx4A
-# avpPn/PUKD6TlDIBWtkxl3C5HCdzb8eEcdxDn2Cfcdxrg17t3XnVw0SdUeF8bKFX
-# rmAN5w/NBBi/I+GNbAuctqLxoSVqEiaC3An4v5rqP+Vwp9nvZ6fOhiFdlUJ+OWyZ
-# 4dNMPi4HjI3e5/xfubFT50uEQgZgOJLrCSDvy+DkmeX9IWnP5+jPM9ie2l/1ybUJ
-# 7r6PO7q+MtR6tVxzPSizvejk98d8vYytQkbpsk3cyk2X8bt/tmxcxC25f55gzhLB
-# dJnsBkTQzhBovO0uXLC7fOCMS0BNkw==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcxMjA3MjEyNTAwWjAj
+# BgkqhkiG9w0BCQQxFgQUlKYKKk0w22/BC5MBdvm604fU0s4wDQYJKoZIhvcNAQEB
+# BQAEggEAnTC++PCf+ifIrplo23S177ZI1CwnHYqQRD72fkgv2/W3ITj35SwXxl6t
+# fGjwzZf65DPl/fBvWOwNv2N3SGjtnFT45q+wjfXEpxifCBk9m0qugZgodq4bmC5j
+# ruSO9LvtoGiPbIYEDJMvCuuN8if6LxET36rkezTa2pWgg2j+3R1YYsiNqWAQMwWs
+# Kq9/aS0uVI5NT6N8nWvnBVYGgoWm4TlxJJdBUhk2x7CfWxoO6TNS5aj2rgOfZWu6
+# C+cCHEhwzf8tuYY7dxMzBmRVWlbZIM9D4RLOac4sdG1VrupJEetcO0ZtNdH3WtoK
+# G86UcH2B9LjR7dDIcmVnz+SYH8LrxA==
 # SIG # End signature block
