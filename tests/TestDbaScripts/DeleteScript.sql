@@ -1,0 +1,1 @@
+DELETE FROM Person.Person WHERE ModifiedDate > GETDATE()s
