@@ -14,16 +14,10 @@ function Get-DbaBackupHistory {
 			Reference: http://www.sqlhub.com/2011/07/find-your-backup-history-in-sql-server.html
 	
  		.PARAMETER SqlInstance
-			The SQL Server instance to connect to.
+	        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-        .PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
-
-			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
-
-			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-
-			To connect as a different Windows user, run PowerShell as that user.
+	    .PARAMETER Credential
+	        Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 	
 		.PARAMETER Database
 			Specifies one or more database(s) to process. If unspecified, all databases will be processed.
