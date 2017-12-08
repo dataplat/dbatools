@@ -71,7 +71,7 @@ Specifies the files types that will be shrunk
 Exclude statistics about fragmentation
 	
 .PARAMETER ExcludeUpdateUsage
-Skips DBCC UPDATE USAGE for database
+Exclude DBCC UPDATE USAGE for database
 	
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
