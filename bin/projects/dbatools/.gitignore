@@ -1,0 +1,5 @@
+.vs
+obj/
+vstest.*/
+/*.pdb/
+*.user

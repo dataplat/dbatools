@@ -1,93 +1,88 @@
-Function Invoke-ManagedComputerCommand
-{
-<#
-.SYNOPSIS
-Internal command
-	
-#>	
+Function Invoke-ManagedComputerCommand {
+	<#
+		.SYNOPSIS
+			Runs wmi commands against a target system.
+
+		.DESCRIPTION
+			Runs wmi commands against a target system.
+			Either directly or over PowerShell remoting.
+
+		.PARAMETER ComputerName
+			The target to run against. Must be resolvable.
+
+		.PARAMETER Credential
+			Credentials to use when using PowerShell remoting.
+
+		.PARAMETER ScriptBlock
+			The scriptblock to execute.
+			Use $wmi to access the smo wmi object.
+			Must not include a param block!
+
+		.PARAMETER ArgumentList
+			The arguments to pass to your scriptblock.
+			Access them within the scriptblock using the automatic variable $args
+
+		.PARAMETER EnableException
+			Left in for legacy reasons. This command will throw no matter what
+	#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
-		[Alias("ComputerName")]
-		[object]$Server,
-		[System.Management.Automation.PSCredential]$Credential,
+		[Alias("Server")]
+		[dbainstanceparameter]
+		$ComputerName,
+
+		[PSCredential]
+
+		$Credential,
+
 		[Parameter(Mandatory = $true)]
-		[scriptblock]$ScriptBlock,
-		[string[]]$ArgumentList
+		[scriptblock]
+		$ScriptBlock,
+
+		[string[]]
+		$ArgumentList,
+
+		[switch]
+		[Alias('Silent')]$EnableException # Left in for legacy but this command needs to throw
 	)
-	
-	if ($Server.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server])
-	{
-		$server = $server.ComputerNamePhysicalNetBIOS
-	}
-	
-	# Remove instance name if it as passed
-	$server = ($Server.Split("\"))[0]
-	
-	if ($Server -eq $env:COMPUTERNAME -or $Server -eq 'localhost' -or $Server -eq '.')
-	{
-		$Server = 'localhost'
-		if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
-		{
-			throw "This command must be run with elevated privileges for the local host."
-		}
-	}
-	
-	$ipaddr = (Test-Connection $server -Count 1 -ErrorAction Stop).Ipv4Address
+
+	$computer = $ComputerName.ComputerName
+
+	$null = Test-ElevationRequirement -ComputerName $computer -EnableException $true
+
+	$resolved = Resolve-DbaNetworkName -ComputerName $computer
+	$ipaddr = $resolved.IpAddress
 	$ArgumentList += $ipaddr
-		
+
 	[scriptblock]$setupScriptBlock = {
 		$ipaddr = $args[$args.GetUpperBound(0)]
-		
+
 		# Just in case we go remote, ensure the assembly is loaded
 		[void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
-		
 		$wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer $ipaddr
 		$null = $wmi.Initialize()
 	}
-	
+
 	$prescriptblock = $setupScriptBlock.ToString()
 	$postscriptblock = $ScriptBlock.ToString()
-	
+
 	$scriptblock = [ScriptBlock]::Create("$prescriptblock  $postscriptblock")
-		
-	try
-	{
-		if ($credential.username -ne $null)
-		{
-			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential
-		}
-		else
-		{
-			$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList
-		}
-		
-		Write-Verbose "Local connection for $server succeeded"
+
+	try {
+		Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ErrorAction Stop
 	}
-	catch
-	{
-		try
-		{
-			Write-Verbose "Local connection attempt to $Server failed. Connecting remotely."
-			
-			# For surely resolve stuff
-			$hostname = [System.Net.Dns]::gethostentry($ipaddr)
-			$hostname = $hostname.HostName
-			
-			if ($credential.username -ne $null)
-			{
-				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -Credential $Credential -ComputerName $hostname
-			}
-			else
-			{
-				$result = Invoke-Command -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname
-			}
+	catch {
+		try {
+			Write-Message -Level Verbose -Message "Local connection attempt to $computer failed. Connecting remotely."
+
+			# For surely resolve stuff, and going by default with kerberos, this needs to match FullComputerName
+			$hostname = $resolved.FullComputerName
+
+			Invoke-Command2 -ScriptBlock $ScriptBlock -ArgumentList $ArgumentList -ComputerName $hostname -ErrorAction Stop
 		}
-		catch
-		{
-			throw $_
+		catch {
+			throw "SqlWmi connection failed: $_"
 		}
 	}
-	
-	$result | Select-Object * -ExcludeProperty PSComputerName, RunSpaceID, PSShowComputerName
 }

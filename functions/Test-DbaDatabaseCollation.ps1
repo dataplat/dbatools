@@ -1,152 +1,115 @@
-﻿Function Test-DbaDatabaseCollation
-{
-<#
-.SYNOPSIS
-Compares Database Collations to Server Collation
+function Test-DbaDatabaseCollation {
+	<#
+		.SYNOPSIS
+			Compares Database Collations to Server Collation
+
+		.DESCRIPTION
+			Compares Database Collations to Server Collation
+
+        .PARAMETER SqlInstance
+            The target SQL Server instance or instances.
+
+        .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+
+            To connect as a different Windows user, run PowerShell as that user.
 	
-.DESCRIPTION
-Compares Database Collations to Server Collation
+		.PARAMETER Database
+			Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+		
+		.PARAMETER ExcludeDatabase
+			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
+		
+		.PARAMETER Detailed
+    		Output all properties, will be deprecated in 1.0.0 release.
+
+	    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 	
-.PARAMETER SqlServer
-The SQL Server that you're connecting to.
+		.NOTES
+			Tags: Database, Collation
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.PARAMETER Credential
-Credential object used to connect to the SQL Server as a different user
+		.LINK
+			https://dbatools.io/Test-DbaDatabaseCollation
 
-.PARAMETER Databases
-Return information for only specific databases
+		.EXAMPLE
+			Test-DbaDatabaseCollation -SqlInstance sqlserver2014a
 
-.PARAMETER Exclude
-Return information for all but these specific databases
+			Returns server name, database name and true/false if the collations match for all databases on sqlserver2014a.
 
-.PARAMETER Detailed
-Shows detailed information about the server and database collations
+		.EXAMPLE
+			Test-DbaDatabaseCollation -SqlInstance sqlserver2014a -Database db1, db2
 
-.NOTES 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+			Returns inforamtion for the db1 and db2 databases on sqlserver2014a.
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		.EXAMPLE
+			Test-DbaDatabaseCollation -SqlInstance sqlserver2014a, sql2016 -Exclude db1 
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+			Returns information for database and server collations for all databases except db1 on sqlserver2014a and sql2016.
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.EXAMPLE
+			Get-DbaRegisteredServer -SqlInstance sql2016 | Test-DbaDatabaseCollation
 
-.LINK
-https://dbatools.io/Test-DbaDatabaseCollation
-
-.EXAMPLE
-Test-DbaDatabaseCollation -SqlServer sqlserver2014a
-
-Returns server name, databse name and true/false if the collations match for all databases on sqlserver2014a
-
-.EXAMPLE   
-Test-DbaDatabaseCollation -SqlServer sqlserver2014a -Databases db1, db2
-
-Returns server name, databse name and true/false if the collations match for the db1 and db2 databases on sqlserver2014a
-	
-.EXAMPLE   
-Test-DbaDatabaseCollation -SqlServer sqlserver2014a, sql2016 -Detailed -Exclude db1
-
-Lots of detailed information for database and server collations for all databases except db1 on sqlserver2014a and sql2016
-
-.EXAMPLE   
-Get-SqlRegisteredServerName -SqlServer sql2016 | Test-DbaDatabaseCollation
-
-Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016
-	
-#>
+			Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016.
+	#>
 	[CmdletBinding()]
-	[OutputType("System.Collections.ArrayList")]
 	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[string[]]$SqlServer,
-		[System.Management.Automation.PSCredential]$Credential,
-		[switch]$Detailed
+		[parameter(Mandatory, ValueFromPipeline)]
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[Alias("Credential")]
+		[PSCredential]$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
+		[switch]$Detailed,
+		[switch]$EnableException
 	)
-	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $Credential } }
-	
-	BEGIN
-	{
-		# Convert from RuntimeDefinedParameter object to regular array
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-		
-		$collection = New-Object System.Collections.ArrayList
-		
+	begin {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Detailed"
 	}
-	
-	PROCESS
-	{
-		foreach ($servername in $SqlServer)
-		{
-			try
-			{
-				$server = Connect-SqlServer -SqlServer $servername -SqlCredential $Credential
+	process {
+		foreach ($instance in $sqlinstance) {
+			# Try connecting to the instance
+			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
-			catch
-			{
-				if ($SqlServer.count -eq 1)
-				{
-					throw $_
-				}
-				else
-				{
-					Write-Warning "Can't connect to $servername. Moving on."
-					Continue
-				}
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
 			$dbs = $server.Databases
 			
-			if ($databases.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
+			if ($Database) {
+				$dbs = $dbs | Where-Object { $Database -contains $_.Name }
 			}
 			
-			if ($exclude.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
 			
-			
-			foreach ($db in $dbs)
-			{
-				Write-Verbose "Processing $($db.name) on $servername"
-				$null = $collection.Add([PSCustomObject]@{
-					Server = $server.name
-					ServerCollation = $server.collation
-					Database = $db.name
+			foreach ($db in $dbs) {
+				Write-Message -Level Verbose -Message "Processing $($db.name) on $servername."
+				[PSCustomObject]@{
+					ComputerName	 = $server.NetName
+					InstanceName	 = $server.ServiceName
+					SqlInstance	     = $server.DomainInstanceName
+					Database		 = $db.name
+					ServerCollation  = $server.collation
 					DatabaseCollation = $db.collation
-					IsEqual = $db.collation -eq $server.collation
-				})
+					IsEqual		     = $db.collation -eq $server.collation
+				}
 			}
-		}
-	}
-	
-	END
-	{
-		if ($detailed)
-		{
-			return $collection
-		}
-		
-		if ($databases.count -eq 1)
-		{
-			if ($sqlserver.count -eq 1)
-			{
-				return $collection.IsEqual
-			}
-			else
-			{
-				return ($collection | Select-Object Server, isEqual)
-			}
-		}
-		else
-		{
-			return ($collection | Select-Object Server, Database, IsEqual)
 		}
 	}
 }

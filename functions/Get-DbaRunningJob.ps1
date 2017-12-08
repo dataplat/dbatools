@@ -1,108 +1,93 @@
-﻿FUNCTION Get-DbaRunningJob
-{
-<#
-.SYNOPSIS
-Returns all non idle agent jobs running on the server.
+function Get-DbaRunningJob {
+	<#
+		.SYNOPSIS
+			Returns all non-idle Agent jobs running on the server.
 
-.DESCRIPTION
-This function returns agent jobs that active on the SQL Server intance when calling the command. The information is gathered the SMO JobServer.jobs and be returned either in detailed or standard format
+		.DESCRIPTION
+			This function returns agent jobs that active on the SQL Server instance when calling the command. The information is gathered the SMO JobServer.jobs and be returned either in detailed or standard format.
 
-.PARAMETER SqlServer
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-collection and recieve pipeline input
+ 		.PARAMETER SqlInstance
+			The SQL Server instance to connect to.
 
-.PARAMETER SqlCredential
-PSCredential object to connect as. If not specified, currend Windows login will be used.
+        .PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER Detailed
-Returns more information about the running jobs than standard
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.NOTES 
-Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.	
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.LINK
-https://dbatools.io/Get-DbaRunningJob
+			To connect as a different Windows user, run PowerShell as that user.
 
-.EXAMPLE
-Get-DbaRunningJob -SqlServer localhost
-Returns any active jobs on the localhost
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
+		.NOTES 
+			Tags:
+			Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.EXAMPLE
-Get-DbaRunningJob -SqlServer localhost -Detailed
-Returns a detailed output of any active jobs on the localhost
+		.LINK
+			https://dbatools.io/Get-DbaRunningJob
 
-.EXAMPLE
-'localhost','localhost\namedinstance' | Get-DbaRunningJob
-Returns all active jobs on multiple instances piped into the function
+		.EXAMPLE
+			Get-DbaRunningJob -SqlInstance localhost
 
-#>
+			Returns any active jobs on localhost.
+
+		.EXAMPLE
+			Get-DbaRunningJob -SqlInstance localhost -Detailed
+
+			Returns a detailed output of any active jobs on localhost.
+
+		.EXAMPLE
+			'localhost','localhost\namedinstance' | Get-DbaRunningJob
+
+			Returns all active jobs on multiple instances piped into the function.
+	#>
 	[CmdletBinding()]
 	Param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlInstance", "SqlServers")]
-		[string[]]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential,
-		[switch]$Detailed
+		[Alias("ServerInstance", "SqlServer", "SqlServers")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[Alias("Credential")]
+		[PSCredential]$SqlCredential,
+		[switch][Alias('Silent')]$EnableException
 	)
-	BEGIN
-	{
-		$output = @()
-	}
-	PROCESS
-	{
-		FOREACH ($Server in $SqlServer)
-		{
-			TRY
-			{
-				$server = Connect-SqlServer -SqlServer $server -SqlCredential $sqlcredential
+	process {
+		foreach ($instance in $SqlInstance) {
+			try {
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
-			CATCH
-			{
-				Write-Verbose "Failed to connect to: $Server"
-				continue
+			catch {
+				Stop-Function -Message "Failed to connect to: $Server." -Target $server -ErrorRecord $_ -Continue
 			}
 			
 			$jobs = $server.JobServer.jobs | Where-Object { $_.CurrentRunStatus -ne 'Idle' }
 			
-			IF (!$jobs)
-			{
-				Write-Verbose "No Jobs are currently running on: $Server"
+			if (!$jobs) {
+				Write-Message -Level Verbose -Message "No Jobs are currently running on: $Server."
 			}
-			ELSE
-			{
-				foreach ($job in $jobs)
-				{
-					$output += [pscustomobject]@{
-						ServerName = $Server.Name
-						Name = $job.name
-						Category = $job.Category
+			else {
+				foreach ($job in $jobs) {
+					[pscustomobject]@{
+						ComputerName     = $server.NetName
+						InstanceName     = $server.ServiceName
+						SqlInstance      = $server.DomainInstanceName
+						Name             = $job.name
+						Category         = $job.Category
 						CurrentRunStatus = $job.CurrentRunStatus
-						CurrentRunStep = $job.CurrentRunStep
-						HasSchedule = $job.HasSchedule
-						LastRunDate = $job.LastRunDate
-						LastRunOutcome = $job.LastRunOutcome
-						JobStep = $job.JobSteps
+						CurrentRunStep   = $job.CurrentRunStep
+						HasSchedule      = $job.HasSchedule
+						LastRunDate      = $job.LastRunDate
+						LastRunOutcome   = $job.LastRunOutcome
+						JobStep          = $job.JobSteps
 					}
 				}
 			}
-		}
-	}
-	END
-	{
-		IF ($Detailed -eq $true)
-		{
-			return $output | Sort-Object ServerName
-		}
-		ELSE
-		{
-			return ($output | Sort-Object ServerName | Select-Object ServerName, Name, Category, CurrentRunStatus, CurrentRunStep)
 		}
 	}
 }

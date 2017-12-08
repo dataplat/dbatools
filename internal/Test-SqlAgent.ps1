@@ -1,24 +1,22 @@
-Function Test-SqlAgent
-{
-<#
-.SYNOPSIS
-Internal function. Checks to see if SQL Server Agent is running on a server.  
+function Test-SqlAgent {
+	<#
+	.SYNOPSIS
+		Internal function. Checks to see if SQL Server Agent is running on a server.
 #>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
+		[PSCredential]$SqlCredential
 	)
-	
-	if ($SqlServer.GetType() -ne [Microsoft.SqlServer.Management.Smo.Server])
-	{
-		$SqlServer = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+
+	if ($SqlInstance.GetType() -ne [Microsoft.SqlServer.Management.Smo.Server]) {
+		$SqlInstance = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
-	
-	if ($SqlServer.JobServer -eq $null) { return $false }
-	try { $null = $SqlServer.JobServer.script(); return $true }
+
+	if ($null -eq $SqlInstance.JobServer) { return $false }
+	try { $null = $SqlInstance.JobServer.script(); return $true }
 	catch { return $false }
 }

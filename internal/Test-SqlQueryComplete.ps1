@@ -1,7 +1,7 @@
-﻿Function Test-SqlQueryComplete
+Function Test-SqlQueryComplete
 {
 	param (
-		[Alias("SqlServer")]
+		[Alias("SqlInstance","SqlServer")]
 		[object]$server,
 		[string]$sql,
 		[switch]$checkpid

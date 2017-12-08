@@ -1,176 +1,135 @@
-﻿function Test-DbaVirtualLogFile
-{
-<#
-.SYNOPSIS
-Returns database virtual log file information for database files on a SQL instance.
+function Test-DbaVirtualLogFile {
+	<#
+		.SYNOPSIS
+			Returns calculations on the database virtual log files for database on a SQL instance.
 
-.DESCRIPTION
-As you may already know, having a TLog file with too many VLFs can hurt database performance.
+		.DESCRIPTION
+			Having a transaction log file with too many virtual log files (VLFs) can hurt database performance.
 
-Too many virtual log files can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance.
+			Too many VLFs can cause transaction log backups to slow down and can also slow down database recovery and, in extreme cases, even affect insert/update/delete performance.
 
-	References:
-	http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/
-	http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx
+			References:
+				http://www.sqlskills.com/blogs/kimberly/transaction-log-vlfs-too-many-or-too-few/
+				http://blogs.msdn.com/b/saponsqlserver/archive/2012/02/22/too-many-virtual-log-files-vlfs-can-cause-slow-database-recovery.aspx
 
-If you've got a high number of VLFs, you can use Expand-SqlTLogResponsibly to reduce the number.
+			If you've got a high number of VLFs, you can use Expand-SqlTLogResponsibly to reduce the number.
 
-.PARAMETER SqlServer
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and recieve pipeline input.
+		.PARAMETER SqlInstance
+			Specifies the SQL Server instance(s) to scan.
 
-.PARAMETER SqlCredential
-PSCredential object to connect under. If not specified, current Windows login will be used.
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER IncludeSystemDBs
-Switch parameter that when used will display system database information
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.PARAMETER Databases
-Specify one or more databases to process.
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.PARAMETER Exclude
-Specify one or more databases to exclude.
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Detailed
-Returns all information provided by DBCC LOGINFO plus the server name and database name
+		.PARAMETER Database
+			Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-.NOTES
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+		.PARAMETER ExcludeDatabase
+			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		.PARAMETER IncludeSystemDBs
+			If this switch is enabled, system database information will be displayed.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
+		.NOTES
+			Tags: VLF, Database
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.LINK
-https://dbatools.io/Test-DbaVirtualLogFile
+		.LINK
+			https://dbatools.io/Test-DbaVirtualLogFile
 
-.EXAMPLE
-Test-DbaVirtualLogFile -SqlServer sqlcluster
+		.EXAMPLE
+			Test-DbaVirtualLogFile -SqlInstance sqlcluster
 
-Returns all user database virtual log file counts for the sqlcluster instance
+			Returns all user database virtual log file counts for the sqlcluster instance.
 
-.EXAMPLE
-Test-DbaVirtualLogFile -SqlServer sqlserver | Where-Object {$_.Count -ge 50}
+		.EXAMPLE
+			Test-DbaVirtualLogFile -SqlInstance sqlserver | Where-Object {$_.Count -ge 50}
 
-Returns user databases that have more than or equal to 50 VLFs
+			Returns user databases that have 50 or more VLFs.
 
-.EXAMPLE
-@('sqlserver','sqlcluster') | Test-DbaVirtualLogFile
+		.EXAMPLE
+			@('sqlserver','sqlcluster') | Test-DbaVirtualLogFile
 
-Returns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.
+			Returns all VLF information for the sqlserver and sqlcluster SQL Server instances. Processes data via the pipeline.
 
-.EXAMPLE
-Test-DbaVirtualLogFile -SqlServer sqlcluster -Databases db1, db2
+		.EXAMPLE
+			Test-DbaVirtualLogFile -SqlInstance sqlcluster -Database db1, db2
 
-Returns VLF counts for the db1 and db2 databases on sqlcluster.
-#>
+			Returns VLF counts for the db1 and db2 databases on sqlcluster.
+	#>
 	[CmdletBinding()]
 	[OutputType([System.Collections.ArrayList])]
 	param ([parameter(ValueFromPipeline, Mandatory = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential,
+		[Alias("Databases")]
+		[object[]]$Database,
+		[object[]]$ExcludeDatabase,
 		[switch]$IncludeSystemDBs,
-		[switch]$Detailed
+		[switch][Alias('Silent')]$EnableException
 	)
 
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlDatabases -SqlServer $SqlServer[0] -SqlCredential $SqlCredential } }
-
-	BEGIN
-	{
-		$databases = $psboundparameters.Databases
-		$exclude = $psboundparameters.Exclude
-		$collection = New-Object System.Collections.ArrayList
-	}
-
-	PROCESS
-	{
-		foreach ($servername in $SqlServer)
-		{
-			#For each SQL Server in collection, connect and get SMO object
-			Write-Verbose "Connecting to $servername"
+	process {
+		foreach ($instance in $SqlInstance) {
 			try {
-				$server = Connect-SqlServer $servername -SqlCredential $SqlCredential
+				Write-Message -Level Verbose -Message "Connecting to $instance."
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
-			catch
-			{
-				Write-Warning "Can't connect to $instance, skipping..."
-				Continue
+			catch {
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			$dbs = $server.Databases
-			#If IncludeSystemDBs is true, include systemdbs
-			#only look at online databases (Status equal normal)
-
-			if ($databases.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $databases -contains $_.Name }
+			if ($Database) {
+				$dbs = $dbs | Where-Object Name -in $Database
 			}
-			if ($exclude.count -gt 0)
-			{
-				$dbs = $dbs | Where-Object { $exclude -notcontains $_.Name }
+			if ($ExcludeDatabase) {
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
 
-			if ($IncludeSystemDBs)
-			{
-				$dbs = $dbs | Where-Object { $_.status -eq 'Normal' }
-			}
-			else
-			{
-				$dbs = $dbs | Where-Object { $_.status -eq 'Normal' -and $_.IsSystemObject -eq 0 }
+			if (!$IncludeSystemDBs) {
+				$dbs = $dbs | Where-Object IsSystemObject -eq $false
 			}
 
-			foreach ($db in $dbs)
-			{
-				try
-				{
-					Write-Verbose "Querying $($db.name) on $servername."
-					#Execute query against individual database and add to output
+			foreach ($db in $dbs) {
+				try {
+					$data = Get-DbaDbVirtualLogFile -SqlInstance $server -Database $db.Name
+					$logFile = Get-DbaDatabaseFile -SqlInstance $server -Database $db.Name | Where-Object Type -eq 1
 
-					if ($Detailed -eq $true)
-					{
-						$table = New-Object System.Data.Datatable
-						$servercolumn = $table.Columns.Add("Server")
-						$servercolumn.DefaultValue = $server.name
-						$dbcolumn = $table.Columns.Add("Database")
-						$dbcolumn.DefaultValue = $db.name
+					$active = $data | Where-Object Status -EQ 2
+					$inactive = $data | Where-Object Status -EQ 0
 
-						$temptable = $db.ExecuteWithResults("DBCC LOGINFO").Tables
-
-						foreach ($column in $temptable.Columns)
-						{
-							$null = $table.Columns.Add($column.ColumnName)
-						}
-
-						foreach ($row in $temptable.rows)
-						{
-							$table.ImportRow($row)
-						}
-
-						$null = $collection.Add($table)
-					}
-					else
-					{
-						$null = $collection.Add([PSCustomObject]@{
-								Server = $server.name
-								Database = $db.name
-								Count = $db.ExecuteWithResults("DBCC LOGINFO").Tables.Rows.Count
-							})
-					}
+					[PSCustomObject]@{
+						ComputerName   = $server.NetName
+						InstanceName   = $server.ServiceName
+						SqlInstance    = $server.DomainInstanceName
+						Database       = $db.name
+						Total   = $data.Count
+						Inactive = if ($inactive -and $inactive.Count -eq $null) {1} else {$inactive.Count}
+						Active            = if ($active -and $active.Count -eq $null) {1} else {$active.Count}
+						LogFileName = $logFile.LogicalName -join ","
+						LogFileGrowth = $logFile.Growth -join ","
+						LogFileGrowthType = $logFile.GrowthType -join ","
+					} | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, TotalCount
 				}
-				catch
-				{
-					Write-Exception $_
-					Write-Warning "Unable to query $($db.name) on $servername"
-					continue
+				catch {
+					Stop-Function -Message "Unable to query $($db.name) on $instance." -ErrorRecord $_ -Target $db -Continue
 				}
 			}
 		}
-	}
-	END
-	{
-		return $collection
 	}
 }

@@ -1,4 +1,4 @@
-Function Get-OfflineSqlFileStructure
+function Get-OfflineSqlFileStructure
 {
 <#
 .SYNOPSIS
@@ -9,30 +9,30 @@ Internal function. Returns dictionary object that contains file structures for S
 	param (
 		[Parameter(Mandatory = $true, Position = 0)]
 		[ValidateNotNullOrEmpty()]
-		[object]$SqlServer,
+		[object]$SqlInstance,
 		[Parameter(Mandatory = $true, Position = 1)]
 		[string]$dbname,
 		[Parameter(Mandatory = $true, Position = 2)]
 		[object]$filelist,
 		[Parameter(Mandatory = $false, Position = 3)]
 		[bool]$ReuseSourceFolderStructure,
-		[System.Management.Automation.PSCredential]$SqlCredential
+		[PSCredential]$SqlCredential
 	)
-	
-	$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-	
+
+	$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+
 	$destinationfiles = @{ };
 	$logfiles = $filelist | Where-Object { $_.Type -eq "L" }
 	$datafiles = $filelist | Where-Object { $_.Type -ne "L" }
 	$filestream = $filelist | Where-Object { $_.Type -eq "S" }
-	
+
 	if ($filestream)
 	{
 		$sql = "select coalesce(SERVERPROPERTY('FilestreamConfiguredLevel'),0) as fs"
 		$fscheck = $server.databases['master'].ExecuteWithResults($sql)
 		if ($fscheck.tables.fs -eq 0) { return $false }
 	}
-	
+
 	# Data Files
 	foreach ($file in $datafiles)
 	{
@@ -48,11 +48,11 @@ Internal function. Returns dictionary object that contains file structures for S
 			$filename = Split-Path $($file.PhysicalName) -leaf
 			$d.physical = "$directory\$filename"
 		}
-		
+
 		$d.logical = $file.LogicalName
 		$destinationfiles.add($file.LogicalName, $d)
 	}
-	
+
 	# Log Files
 	foreach ($file in $logfiles)
 	{
@@ -67,10 +67,10 @@ Internal function. Returns dictionary object that contains file structures for S
 			$filename = Split-Path $($file.PhysicalName) -leaf
 			$d.physical = "$directory\$filename"
 		}
-		
+
 		$d.logical = $file.LogicalName
 		$destinationfiles.add($file.LogicalName, $d)
 	}
-	
+
 	return $destinationfiles
 }

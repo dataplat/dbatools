@@ -1,32 +1,51 @@
 Function Connect-AsServer
 {
-<# 
-.SYNOPSIS 
-Internal function that creates SMO server object. Input can be text or SMO.Server.
-#>	
+<#
+.SYNOPSIS
+Internal function that creates SMO server object.
+
+.DESCRIPTION
+Internal function that creates SMO server object.
+
+.PARAMETER AsServer
+Analysis Server
+
+.PARAMETER ParameterConnection
+Shorten the timeout
+
+.NOTES
+Website: https://dbatools.io
+Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+
+.EXAMPLE
+Connect-AsServer -AsServer localhost
+Connects to SSAS on the local server
+
+#>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
 		[object]$AsServer,
 		[switch]$ParameterConnection
 	)
-	
+
 	if ($AsServer.GetType() -eq [Microsoft.AnalysisServices.Server])
 	{
-		
+
 		if ($ParameterConnection)
 		{
 			$paramserver = New-Object Microsoft.AnalysisServices.Server
 			$paramserver.Connect("Data Source=$($AsServer.Name);Connect Timeout=2")
 			return $paramserver
 		}
-		
+
 		if ($AsServer.Connected -eq $false) { $AsServer.Connect("Data Source=$($AsServer.Name);Connect Timeout=3") }
 		return $AsServer
 	}
-	
+
 	$server = New-Object Microsoft.AnalysisServices.Server
-	
+
 	try
 	{
 		if ($ParameterConnection)
@@ -44,6 +63,6 @@ Internal function that creates SMO server object. Input can be text or SMO.Serve
 		$message = ($message -Split 'at System.Data.ProviderBase')[0]
 		throw "Can't connect to $asserver`: $message "
 	}
-	
+
 	return $server
 }

@@ -1,15 +1,15 @@
-Function Update-SqlDbReadOnly
-{
-<#
-.SYNOPSIS
-Internal function. Updates specified database to read-only or read-write. Necessary because SMO doesn't appear to support NO_WAIT.
+function Update-SqlDbReadOnly {
+	<#
+	.SYNOPSIS
+		Internal function. Updates specified database to read-only or read-write. Necessary because SMO doesn't appear to support NO_WAIT.
 #>
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
 		[string]$dbname,
@@ -17,26 +17,23 @@ Internal function. Updates specified database to read-only or read-write. Necess
 		[ValidateNotNullOrEmpty()]
 		[bool]$readonly
 	)
-	
-	if ($readonly)
-	{
+
+	if ($readonly) {
+		Stop-DbaProcess -SqlInstance $SqlInstance -Database $dbname
 		$sql = "ALTER DATABASE [$dbname] SET READ_ONLY WITH NO_WAIT"
 	}
-	else
-	{
+	else {
 		$sql = "ALTER DATABASE [$dbname] SET READ_WRITE WITH NO_WAIT"
 	}
-	
-	try
-	{
-		$server = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
-		$null = $server.ConnectionContext.ExecuteNonQuery($sql)
-		Write-Output "Changed ReadOnly status to $readonly for $dbname on $($server.name)"
+
+	try {
+		$server = Connect-SqlInstance -SqlInstance $SqlInstance
+		$null = $server.Query($sql)
+		Write-Message -Level Verbose -Message "Changed ReadOnly status to $readonly for $dbname on $($server.name)"
 		return $true
 	}
-	catch
-	{
-		Write-Error "Could not change readonly status for $dbname on $($server.name)"
+	catch {
+		Write-Message -Level Warning "Could not change readonly status for $dbname on $($server.name)"
 		return $false
 	}
 }

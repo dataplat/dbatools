@@ -1,181 +1,149 @@
-﻿function Set-DbaJobOwner
-{
-<#
-.SYNOPSIS
-Sets SQL Agent job owners with a desired login if jobs do not match that owner.
+function Set-DbaJobOwner {
+	<#
+		.SYNOPSIS
+			Sets SQL Agent job owners with a desired login if jobs do not match that owner.
 
-.DESCRIPTION
-This function will alter SQL Agent Job ownership to match a specified login if their
-current owner does not match the target login. By default, the target login will
-be 'sa', but the fuction will allow the user to specify a different login for 
-ownership. The user can also apply this to all jobs or only to a select list
-of jobs (passed as either a comma separated list or a string array).
-	
-Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
-	
-.NOTES 
-Original Author: Michael Fal (@Mike_Fal), http://mikefal.net
+		.DESCRIPTION
+			This function alters SQL Agent Job ownership to match a specified login if their current owner does not match the target login. By default, the target login will be 'sa', but the the user may specify a different login for ownership. This be applied to all jobs or only to a select collection of jobs.
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
+			Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+		.NOTES
+			Tags: Agent, Job
+			Author: Michael Fal (@Mike_Fal), http://mikefal.net
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+			Website: https://dbatools.io
+			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+		.PARAMETER SqlInstance 
+			Specifies the SQL Server instance(s) to scan.
+			
+		.PARAMETER SqlCredential
+			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.PARAMETER SqlServer
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-collection and recieve pipeline input
+			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.PARAMETER SqlCredential
-PSCredential object to connect under. If not specified, currend Windows login will be used.
+			To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Jobs
-Auto-populated list of Jobs to apply changes to. Will accept a comma separated list or a string array.
+		.PARAMETER Job 
+			Specifies the job(s) to process. Options for this list are auto-populated from the server. If unspecified, all jobs will be processed.
+		
+		.PARAMETER ExcludeJob
+			Specifies the job(s) to exclude from processing. Options for this list are auto-populated from the server.
+		
+		.PARAMETER Login
+			Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
 
-.PARAMETER Exclude
-Jobs to exclude
-	
-.PARAMETER TargetLogin
-Specific login that you wish to check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed.
+		.PARAMETER WhatIf
+			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+		.PARAMETER Confirm
+			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+		.PARAMETER EnableException
+			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+			
+		.LINK
+			https://dbatools.io/Set-DbaJobOwner
 
-.LINK
-https://dbatools.io/Set-DbaJobOwner
+		.EXAMPLE
+			Set-DbaJobOwner -SqlInstance localhost
 
-.EXAMPLE
-Set-DbaJobOwner -SqlServer localhost
+			Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa.
 
-Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa.
+		.EXAMPLE
+			Set-DbaJobOwner -SqlInstance localhost -Login DOMAIN\account
 
-.EXAMPLE
-Set-DbaJobOwner -SqlServer localhost -TargetLogin DOMAIN\account
+			Sets SQL Agent Job owner to sa on all jobs where the owner does not match 'DOMAIN\account'. Note
+			that Login must be a valid security principal that exists on the target server.
 
-Sets SQL Agent Job owner to sa on all jobs where the owner does not match 'DOMAIN\account'. Note
-that TargetLogin must be a valid security principal that exists on the target server.
+		.EXAMPLE
+			Set-DbaJobOwner -SqlInstance localhost -Job job1, job2
 
-.EXAMPLE
-Set-DbaJobOwner -SqlServer localhost -Job job1, job2
+			Sets SQL Agent Job owner to 'sa' on the job1 and job2 jobs if their current owner does not match 'sa'.
 
-Sets SQL Agent Job owner to 'sa' on the job1 and job2 jobs if their current owner does not match 'sa'.
+		.EXAMPLE
+			'sqlserver','sql2016' | Set-DbaJobOwner
 
-.EXAMPLE
-'sqlserver','sql2016' | Set-DbaJobOwner 
-
-Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa on both sqlserver and sql2016.
-	
-#>
+			Sets SQL Agent Job owner to sa on all jobs where the owner does not match sa on both sqlserver and sql2016.
+	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
+	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object[]]$SqlServer,
-		[object]$SqlCredential,
-		[string]$TargetLogin
+		[Alias("ServerInstance", "SqlServer")]
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential,
+		[Alias("Jobs")]
+		[object[]]$Job,
+		[object[]]$ExcludeJob,
+		[Alias("TargetLogin")]
+		[string]$Login,
+		[switch][Alias('Silent')]$EnableException
 	)
-	
-	DynamicParam { if ($SqlServer) { return Get-ParamSqlJobs -SqlServer $SqlServer[0] -SqlCredential $SourceSqlCredential } }
-	
-	BEGIN
-	{
-		$jobs = $psboundparameters.Jobs
-		$exclude = $psboundparameters.Exclude
-	}
-	
-	PROCESS
-	{
-		foreach ($servername in $sqlserver)
-		{
+
+	process {
+		foreach ($servername in $SqlInstance) {
 			#connect to the instance
-			Write-Verbose "Connecting to $servername"
-			$server = Connect-SqlServer $servername -SqlCredential $SqlCredential
-			
+			Write-Message -Level Verbose -Message "Connecting to $servername."
+			$server = Connect-SqlInstance $servername -SqlCredential $SqlCredential
+
 			# dynamic sa name for orgs who have changed their sa name
-			if ($psboundparameters.TargetLogin.length -eq 0)
-			{
-				$TargetLogin = ($server.logins | Where-Object { $_.id -eq 1 }).Name
+			if (!$Login) {
+				$Login = ($server.logins | Where-Object { $_.id -eq 1 }).Name
 			}
-			
+
 			#Validate login
-			if (($server.Logins.Name) -notcontains $TargetLogin)
-			{
-				if ($sqlserver.count -eq 1)
-				{
-					throw "Invalid login: $TargetLogin"
+			if (($server.Logins.Name) -notcontains $Login) {
+				if ($SqlInstance.count -eq 1) {
+					throw -Message "Invalid login: $Login."
 				}
-				else
-				{
-					Write-Warning "$TargetLogin is not a valid login on $servername. Moving on."
+				else {
+					Write-Message -Level Warning -Message "$Login is not a valid login on $servername. Moving on."
 					Continue
 				}
 			}
-			
-			if ($server.logins[$TargetLogin].LoginType -eq 'WindowsGroup')
-			{
-				throw "$TargetLogin is a Windows Group and can not be a job owner."
+
+			if ($server.logins[$Login].LoginType -eq 'WindowsGroup') {
+				throw "$Login is a Windows Group and can not be a job owner."
 			}
-			
-			#Get database list. If value for -Jobs is passed, massage to make it a string array.
+
+			#Get database list. If value for -Job is passed, massage to make it a string array.
 			#Otherwise, use all jobs on the instance where owner not equal to -TargetLogin
-			Write-Verbose "Gathering jobs to update"
-			
-			if ($Jobs.Length -gt 0)
-			{
-				$jobcollection = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $TargetLogin -and $jobs -contains $_.Name }
+			Write-Message -Level Verbose -Message "Gathering jobs to update."
+
+			if ($Job) {
+				$jobcollection = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $Login -and $Job -contains $_.Name }
 			}
-			else
-			{
-				$jobcollection = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $TargetLogin }
+			else {
+				$jobcollection = $server.JobServer.Jobs | Where-Object { $_.OwnerLoginName -ne $Login }
 			}
-			
-			if ($Exclude.Length -gt 0)
-			{
-				$jobcollection = $jobcollection | Where-Object { $Exclude -notcontains $_.Name }
+
+			if ($ExcludeJob) {
+				$jobcollection = $jobcollection | Where-Object { $ExcludeJob -notcontains $_.Name }
 			}
-			
-			Write-Verbose "Updating $($jobcollection.Count) job(s)."
-			foreach ($j in $jobcollection)
-			{
+
+			Write-Message -Level Verbose -Message "Updating $($jobcollection.Count) job(s)."
+			foreach ($j in $jobcollection) {
 				$jobname = $j.name
-				
-				If ($PSCmdlet.ShouldProcess($servername, "Setting job owner for $jobname to $TargetLogin"))
-				{
-					try
-					{
-						Write-Output "Setting job owner for $jobname to $TargetLogin on $servername"
+
+				if ($PSCmdlet.ShouldProcess($servername, "Setting job owner for $jobname to $Login")) {
+					try {
+						Write-Message -Level Verbose -Message "Setting job owner for $jobname to $Login on $servername."
 						#Set job owner to $TargetLogin (default 'sa')
-						$j.OwnerLoginName = $TargetLogin
+						$j.OwnerLoginName = $Login
 						$j.Alter()
 					}
-					catch
-					{
+					catch {
 						# write-exception writes the full exception to file
-						Write-Exception $_
-						throw $_
+						Stop-Function -Message "Issue setting job owner on $jobName." -Target $jobName -InnerErrorRecord $_ -Category InvalidOperation
 					}
 				}
 			}
 		}
-	}
-	
-	END
-	{
-		if ($jobcollection.count -eq 0)
-		{
-			Write-Output "Lookin' good! Nothing to do."
-		}
-		
-		Write-Verbose "Closing connection"
-		$server.ConnectionContext.Disconnect()
 	}
 }

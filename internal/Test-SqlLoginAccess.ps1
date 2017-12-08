@@ -1,41 +1,34 @@
-Function Test-SqlLoginAccess
-{
-<#
-.SYNOPSIS
-Internal function. Ensures login has access on SQL Server.
+function Test-SqlLoginAccess {
+	<#
+	.SYNOPSIS
+		Internal function. Ensures login has access on SQL Server.
 #>
 	[CmdletBinding()]
 	param (
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[Alias("ServerInstance", "SqlInstance")]
-		[object]$SqlServer,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[Alias("ServerInstance", "SqlServer")]
+		[object]$SqlInstance,
+		[PSCredential]$SqlCredential,
 		[string]$Login
 		#[switch]$Detailed - can return if its a login or just has access
 	)
-	
-	if ($SqlServer.GetType() -ne [Microsoft.SqlServer.Management.Smo.Server])
-	{
-		$SqlServer = Connect-SqlServer -SqlServer $SqlServer -SqlCredential $SqlCredential
+
+	if ($SqlInstance.GetType() -ne [Microsoft.SqlServer.Management.Smo.Server]) {
+		$SqlInstance = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 	}
-	
-	if (($SqlServer.Logins.Name) -notcontains $Login)
-	{
-		try
-		{
-			$rows = $SqlServer.ConnectionContext.ExecuteScalar("EXEC xp_logininfo '$Login'")
-			
-			if (($rows | Measure-Object).Count -eq 0)
-			{
+
+	if (($SqlInstance.Logins.Name) -notcontains $Login) {
+		try {
+			$rows = $SqlInstance.ConnectionContext.ExecuteScalar("EXEC xp_logininfo '$Login'")
+
+			if (($rows | Measure-Object).Count -eq 0) {
 				return $false
 			}
 		}
-		catch
-		{
+		catch {
 			return $false
 		}
 	}
-	
 	return $true
 }

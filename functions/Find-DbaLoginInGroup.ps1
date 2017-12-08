@@ -1,4 +1,4 @@
-﻿function Find-DbaLoginInGroup
+function Find-DbaLoginInGroup
 {
 <#
 .SYNOPSIS
@@ -8,27 +8,19 @@ Finds Logins in Active Directory groups that have logins on the SQL Instance.
 Outputs all the active directory groups members for a server, or limits it to find a specific AD user in the groups
 	
 .NOTES 
-Original Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
-Original Author: Simone Bizzotto, @niphlod
+Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
+Author: Simone Bizzotto, @niphlod
 
 dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .PARAMETER SqlInstance 
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a
-collection and recieve pipeline input.
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a
+collection and receive pipeline input.
 
 .PARAMETER SqlCredential
-PSCredential object to connect under. If not specified, currend Windows login will be used.
+PSCredential object to connect under. If not specified, current Windows login will be used.
 
 .PARAMETER Login
 Find all AD Groups used on the instance that an individual login is a member of.
@@ -56,8 +48,8 @@ Returns all active directory users within all windows AD groups that have logins
 	Param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[string[]]$SqlInstance,
-		[System.Management.Automation.PSCredential]$SqlCredential,
+		[DbaInstanceParameter[]]$SqlInstance,
+		[PSCredential]$SqlCredential,
 		[string[]]$Login
 	)
 	begin
@@ -115,6 +107,7 @@ Returns all active directory users within all windows AD groups that have logins
 								InstanceName = $server.ServiceName
 								ComputerName = $server.NetName
 								Login = $memberDomain + "\" + $member.SamAccountName
+								DisplayName = $member.DisplayName
 								MemberOf = $AdGroup
 							}
 						}
@@ -142,14 +135,14 @@ Returns all active directory users within all windows AD groups that have logins
 		}
 	}
 	
-	PROCESS
+	process
 	{
 		foreach ($Instance in $SqlInstance)
 		{
 			try
 			{
 				Write-Verbose "Connecting to $Instance"
-				$server = Connect-SqlServer -SqlServer $Instance -SqlCredential $sqlcredential
+				$server = Connect-SqlInstance -SqlInstance $Instance -SqlCredential $sqlcredential
 			}
 			catch
 			{
@@ -178,7 +171,7 @@ Returns all active directory users within all windows AD groups that have logins
 					continue
 				}
 			}
-			Select-DefaultField -InputObject $res -Property SqlInstance, Login, MemberOf
+			Select-DefaultView -InputObject $res -Property SqlInstance, Login, MemberOf
 		}
 	}
 }

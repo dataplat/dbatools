@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{7A0D426F-2E98-4851-8AF8-C1B2B17C052D}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Sqlcollaborative.Dbatools</RootNamespace>
+    <AssemblyName>dbatools</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\..\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>..\..\..\dbatools.xml</DocumentationFile>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ps3|AnyCPU'">
+    <OutputPath>..\..\..\</OutputPath>
+    <DefineConstants>TRACE;NORUNSPACENAME</DefineConstants>
+    <DocumentationFile>..\..\..\dbatools.xml</DocumentationFile>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ps4|AnyCPU'">
+    <OutputPath>..\..\..\</OutputPath>
+    <DefineConstants>TRACE;NORUNSPACENAME</DefineConstants>
+    <DocumentationFile>..\..\..\dbatools.xml</DocumentationFile>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.Management.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.Management.Infrastructure\v4.0_1.0.0.0__31bf3856ad364e35\Microsoft.Management.Infrastructure.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Management.Automation.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Computer\DiskSpace.cs" />
+    <Compile Include="Computer\DriveType.cs" />
+    <Compile Include="Configuration\ConfigScope.cs" />
+    <Compile Include="Configuration\ConfigurationHost.cs" />
+    <Compile Include="Database\BackupHistory.cs" />
+    <Compile Include="Configuration\Config.cs" />
+    <Compile Include="Connection\ConnectionHost.cs" />
+    <Compile Include="Database\Dependency.cs" />
+    <Compile Include="dbaSystem\StartTimeEntry.cs" />
+    <Compile Include="dbaSystem\StartTimeResult.cs" />
+    <Compile Include="dbaSystem\SystemHost.cs" />
+    <Compile Include="Exceptions\BloodyHellGiveMeSomethingToWorkWithException.cs" />
+    <Compile Include="Maintenance\MaintenanceHost.cs" />
+    <Compile Include="Maintenance\MaintenancePriority.cs" />
+    <Compile Include="Maintenance\MaintenanceTask.cs" />
+    <Compile Include="Parameter\DbaCredentialParameter.cs" />
+    <Compile Include="Runspace\DbaRunspaceState.cs" />
+    <Compile Include="Runspace\RunspaceContainer.cs" />
+    <Compile Include="Runspace\RunspaceHost.cs" />
+    <Compile Include="TabExpansion\TabCompletionSet.cs" />
+    <Compile Include="TypeConversion\DbaCredentialParameterConverter.cs" />
+    <Compile Include="Utility\CredentialPrompt.cs" />
+    <Compile Include="Validation\LinkedServerResult.cs" />
+    <Compile Include="Utility\DateTimeExtension.cs" />
+    <Compile Include="Utility\DbaDate.cs" />
+    <Compile Include="Utility\DbaDateTime.cs" />
+    <Compile Include="Utility\DbaDateTimeBase.cs" />
+    <Compile Include="Utility\DbaTime.cs" />
+    <Compile Include="Utility\DbaTimeSpan.cs" />
+    <Compile Include="Utility\DbaTimeSpanPretty.cs" />
+    <Compile Include="Utility\RegexHelper.cs" />
+    <Compile Include="Utility\Size.cs" />
+    <Compile Include="TabExpansion\InstanceAccess.cs" />
+    <Compile Include="Parameter\DbaCmConnectionParameter.cs" />
+    <Compile Include="Parameter\DbaInstanceInputType.cs" />
+    <Compile Include="Parameter\DbaInstanceParameter.cs" />
+    <Compile Include="dbaSystem\DbaErrorRecord.cs" />
+    <Compile Include="dbaSystem\DbatoolsException.cs" />
+    <Compile Include="dbaSystem\DbatoolsExceptionRecord.cs" />
+    <Compile Include="dbaSystem\DebugHost.cs" />
+    <Compile Include="General\ExecutionMode.cs" />
+    <Compile Include="Connection\ManagementConnection.cs" />
+    <Compile Include="Connection\ManagementConnectionProtocolState.cs" />
+    <Compile Include="Connection\ManagementConnectionType.cs" />
+    <Compile Include="dbaSystem\LogEntry.cs" />
+    <Compile Include="dbaSystem\LogEntryType.cs" />
+    <Compile Include="dbaSystem\MessageHost.cs" />
+    <Compile Include="dbaSystem\MessageLevel.cs" />
+    <Compile Include="Parameter\ParameterContractAttribute.cs" />
+    <Compile Include="Parameter\ParameterContractBehavior.cs" />
+    <Compile Include="Parameter\ParameterContractType.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Connection\SqlConnectionProtocol.cs" />
+    <Compile Include="TabExpansion\ScriptContainer.cs" />
+    <Compile Include="TabExpansion\TabExpansionHost.cs" />
+    <Compile Include="Utility\UtilityHost.cs" />
+    <Compile Include="Utility\Validation.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
