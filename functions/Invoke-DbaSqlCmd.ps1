@@ -1,4 +1,5 @@
-﻿function Invoke-DbaSqlCmd {
+﻿#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function Invoke-DbaSqlCmd {
 <#
 	.SYNOPSIS
 		A command to run explicit T-SQL commands or files.
