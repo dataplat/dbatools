@@ -2,7 +2,7 @@ function Invoke-DbaScriptAnalyzer {
 <#
 .SYNOPSIS
 Scans a (list of) T-SQL script files(s) and returns information about the operations being performed by them.
-
+  
 .DESCRIPTION
 This function utilizes the SQL Server ScriptDom Parser object to parse and return information about each batch and statements within each batch
 of T-SQL commands they contain. It will return an object that contains high-level information, as well as a batches object which in turn contains 
