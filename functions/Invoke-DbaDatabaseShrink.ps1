@@ -145,6 +145,8 @@ Shrinks all databases on SQL2012 (not ideal for production)
 			$FileType = 'Log'
 		}
 
+		$StatementTimeoutSeconds = $StatementTimeout * 60
+
 		$sql = "SELECT
 				indexstats.avg_fragmentation_in_percent
 				FROM sys.dm_db_index_physical_stats (DB_ID(), NULL, NULL, NULL, NULL) AS indexstats
@@ -188,7 +190,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 			else {
 				Write-Message -Level Verbose -Message "Changing statement timeout to $StatementTimeout minutes"
 			}
-			$server.ConnectionContext.StatementTimeout = $StatementTimeout
+			$server.ConnectionContext.StatementTimeout = $StatementTimeoutSeconds
 
 			$dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
 
