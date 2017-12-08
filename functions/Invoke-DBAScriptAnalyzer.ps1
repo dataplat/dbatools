@@ -40,7 +40,7 @@ Tags: T-SQL, Parser
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-
+   
 .LINK
 
 .EXAMPLE
