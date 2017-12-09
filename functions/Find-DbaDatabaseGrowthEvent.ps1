@@ -88,11 +88,14 @@ function Find-DbaDatabaseGrowthEvent {
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstance[]]$SqlInstance,
-		[PSCredential]
-		$SqlCredential,
+		[PSCredential]$SqlCredential,
 		[Alias("Databases")]
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
+		[ValidateSet('Growth', 'Shrink')]
+		[string]$EventType,
+		[ValidateSet('Data','Log')]
+		[string]$FileType,
 		[switch][Alias('Silent')]$EnableException
 	)
 
