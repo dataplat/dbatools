@@ -101,7 +101,7 @@ function Find-DbaDatabaseGrowthEvent {
 
 	begin {
 		$eventClass = New-Object System.Collections.ArrayList
-		92..95 | ForEach-Object { $eventClass.Add($_) }
+		92..95 | ForEach-Object { $null = $eventClass.Add($_) }
 
 		if (Test-Bound 'EventType', 'FileType') {
 			switch ($FileType) {
@@ -222,11 +222,10 @@ function Find-DbaDatabaseGrowthEvent {
 
 			#Create dblist name in 'bd1', 'db2' format
 			$dbsList = "'$($($dbs | ForEach-Object {$_.Name}) -join "','")'"
-			Write-Message -Level Debug -Message "Executing SQL Statement:`n $sql"
 			Write-Message -Level Verbose -Message "Executing query against $dbsList on $instance"
 
 			$sql = $sql -replace '_DatabaseList_', $dbsList
-			Write-Message -Level Debug -Message $sql
+			Write-Message -Level Debug -Message "Executing SQL Statement:`n $sql"
 
 			$props = 'ComputerName', 'InstanceName', 'SqlInstance', 'EventClass', 'DatabaseName', 'Filename', 'Duration', 'StartTime', 'EndTime', 'ChangeInSize'
 
