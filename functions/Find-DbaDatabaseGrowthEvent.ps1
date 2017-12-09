@@ -1,4 +1,4 @@
-#ValidationTags#CodeStyle#
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Find-DbaDatabaseGrowthEvent {
 	<#
 		.SYNOPSIS
@@ -201,23 +201,22 @@ function Find-DbaDatabaseGrowthEvent {
 	}
 	process {
 		foreach ($instance in $SqlInstance) {
-			Write-Message -Level Verbose -Message "Connecting to $instance"
+			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Write-Message -Level Warning -Message "Can't connect to $instance. Moving on."
-				continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			$dbs = $server.Databases
 
 			if ($Database) {
-				$dbs = $dbs | Where-Object Name -in $Database
+				$dbs = $dbs | Where-Object Name -In $Database
 			}
 
 			if ($ExcludeDatabase) {
-				$dbs = $dbs | Where-Object Name -notin $ExcludeDatabase
+				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
 
 			#Create dblist name in 'bd1', 'db2' format
@@ -227,9 +226,9 @@ function Find-DbaDatabaseGrowthEvent {
 			$sql = $sql -replace '_DatabaseList_', $dbsList
 			Write-Message -Level Debug -Message "Executing SQL Statement:`n $sql"
 
-			$props = 'ComputerName', 'InstanceName', 'SqlInstance', 'EventClass', 'DatabaseName', 'Filename', 'Duration', 'StartTime', 'EndTime', 'ChangeInSize'
+			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'EventClass', 'DatabaseName', 'Filename', 'Duration', 'StartTime', 'EndTime', 'ChangeInSize'
 
-			Select-DefaultView -InputObject $server.Query($sql) -Property $props
+			Select-DefaultView -InputObject $server.Query($sql) -Property $defaults
 		}
 	}
 }
