@@ -94,12 +94,44 @@ function Find-DbaDatabaseGrowthEvent {
 		[object[]]$ExcludeDatabase,
 		[ValidateSet('Growth', 'Shrink')]
 		[string]$EventType,
-		[ValidateSet('Data','Log')]
+		[ValidateSet('Data', 'Log')]
 		[string]$FileType,
 		[switch][Alias('Silent')]$EnableException
 	)
 
 	begin {
+		$eventClass = New-Object System.Collections.ArrayList
+		92..95 | ForEach-Object { $eventClass.Add($_) }
+
+		if (Test-Bound 'EventType', 'FileType') {
+			switch ($FileType) {
+				'Data' {
+					<# should only contain events for data: 92 (grow), 94 (shrink) #>
+					$eventClass.Remove(93)
+					$eventClass.Remove(95)
+				}
+				'Log' {
+					<# should only contain events for log: 93 (grow), 95 (shrink) #>
+					$eventClass.Remove(92)
+					$eventClass.Remove(94)
+				}
+			}
+			switch ($EventType) {
+				'Growth' {
+					<# should only contain events for growth: 92 (data), 93 (log) #>
+					$eventClass.Remove(94)
+					$eventClass.Remove(95)
+				}
+				'Shrink' {
+					<# should only contain events for shrink: 94 (data), 95 (log) #>
+					$eventClass.Remove(92)
+					$eventClass.Remove(93)
+				}
+			}
+		}
+
+		$eventClassFilter = $eventClass -join ","
+
 		$sql = "
 			BEGIN TRY
 				IF (SELECT CONVERT(INT,[value_in_use]) FROM sys.configurations WHERE [name] = 'default trace enabled' ) = 1
@@ -131,8 +163,7 @@ function Find-DbaDatabaseGrowthEvent {
 							([IntegerData]*8.0/1024) AS ChangeInSize
 						FROM::fn_trace_gettable( @base_tracefilename, DEFAULT )
 						WHERE
-							[EventClass] >= 92
-							AND [EventClass] <= 95
+							[EventClass] IN ($eventClassFilter)
 							AND [ServerName] = @@SERVERNAME
 							AND [DatabaseName] IN (_DatabaseList_)
 						ORDER BY [StartTime] DESC;
@@ -191,6 +222,7 @@ function Find-DbaDatabaseGrowthEvent {
 
 			#Create dblist name in 'bd1', 'db2' format
 			$dbsList = "'$($($dbs | ForEach-Object {$_.Name}) -join "','")'"
+			Write-Message -Level Debug -Message "Executing SQL Statement:`n $sql"
 			Write-Message -Level Verbose -Message "Executing query against $dbsList on $instance"
 
 			$sql = $sql -replace '_DatabaseList_', $dbsList
