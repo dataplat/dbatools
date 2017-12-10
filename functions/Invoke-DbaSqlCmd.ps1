@@ -11,7 +11,7 @@ function Invoke-DbaSqlCmd {
 	.PARAMETER SqlInstance
 		SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-    .PARAMETER Credential
+    .PARAMETER SqlCredential
         Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 	
 	.PARAMETER Query
