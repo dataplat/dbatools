@@ -1,5 +1,5 @@
 function Test-DbaVirtualLogFile {
-	<#
+    <#
 		.SYNOPSIS
 			Returns calculations on the database virtual log files for database on a SQL instance.
 
@@ -39,7 +39,7 @@ function Test-DbaVirtualLogFile {
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
+
 		.NOTES
 			Tags: VLF, Database
 
@@ -70,66 +70,66 @@ function Test-DbaVirtualLogFile {
 
 			Returns VLF counts for the db1 and db2 databases on sqlcluster.
 	#>
-	[CmdletBinding()]
-	[OutputType([System.Collections.ArrayList])]
-	param ([parameter(ValueFromPipeline, Mandatory = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[Alias("Databases")]
-		[object[]]$Database,
-		[object[]]$ExcludeDatabase,
-		[switch]$IncludeSystemDBs,
-		[switch][Alias('Silent')]$EnableException
-	)
+    [CmdletBinding()]
+    [OutputType([System.Collections.ArrayList])]
+    param ([parameter(ValueFromPipeline, Mandatory = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [Alias("Databases")]
+        [object[]]$Database,
+        [object[]]$ExcludeDatabase,
+        [switch]$IncludeSystemDBs,
+        [switch][Alias('Silent')]$EnableException
+    )
 
-	process {
-		foreach ($instance in $SqlInstance) {
-			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance."
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
+    process {
+        foreach ($instance in $SqlInstance) {
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $instance."
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-			$dbs = $server.Databases
-			if ($Database) {
-				$dbs = $dbs | Where-Object Name -in $Database
-			}
-			if ($ExcludeDatabase) {
-				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
-			}
+            $dbs = $server.Databases
+            if ($Database) {
+                $dbs = $dbs | Where-Object Name -in $Database
+            }
+            if ($ExcludeDatabase) {
+                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
+            }
 
-			if (!$IncludeSystemDBs) {
-				$dbs = $dbs | Where-Object IsSystemObject -eq $false
-			}
+            if (!$IncludeSystemDBs) {
+                $dbs = $dbs | Where-Object IsSystemObject -eq $false
+            }
 
-			foreach ($db in $dbs) {
-				try {
-					$data = Get-DbaDbVirtualLogFile -SqlInstance $server -Database $db.Name
-					$logFile = Get-DbaDatabaseFile -SqlInstance $server -Database $db.Name | Where-Object Type -eq 1
+            foreach ($db in $dbs) {
+                try {
+                    $data = Get-DbaDbVirtualLogFile -SqlInstance $server -Database $db.Name
+                    $logFile = Get-DbaDatabaseFile -SqlInstance $server -Database $db.Name | Where-Object Type -eq 1
 
-					$active = $data | Where-Object Status -EQ 2
-					$inactive = $data | Where-Object Status -EQ 0
+                    $active = $data | Where-Object Status -EQ 2
+                    $inactive = $data | Where-Object Status -EQ 0
 
-					[PSCustomObject]@{
-						ComputerName   = $server.NetName
-						InstanceName   = $server.ServiceName
-						SqlInstance    = $server.DomainInstanceName
-						Database       = $db.name
-						Total   = $data.Count
-						Inactive = if ($inactive -and $inactive.Count -eq $null) {1} else {$inactive.Count}
-						Active            = if ($active -and $active.Count -eq $null) {1} else {$active.Count}
-						LogFileName = $logFile.LogicalName -join ","
-						LogFileGrowth = $logFile.Growth -join ","
-						LogFileGrowthType = $logFile.GrowthType -join ","
-					} | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, TotalCount
-				}
-				catch {
-					Stop-Function -Message "Unable to query $($db.name) on $instance." -ErrorRecord $_ -Target $db -Continue
-				}
-			}
-		}
-	}
+                    [PSCustomObject]@{
+                        ComputerName      = $server.NetName
+                        InstanceName      = $server.ServiceName
+                        SqlInstance       = $server.DomainInstanceName
+                        Database          = $db.name
+                        Total             = $data.Count
+                        Inactive          = if ($inactive -and $inactive.Count -eq $null) {1} else {$inactive.Count}
+                        Active            = if ($active -and $active.Count -eq $null) {1} else {$active.Count}
+                        LogFileName       = $logFile.LogicalName -join ","
+                        LogFileGrowth     = $logFile.Growth -join ","
+                        LogFileGrowthType = $logFile.GrowthType -join ","
+                    } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, Count
+                }
+                catch {
+                    Stop-Function -Message "Unable to query $($db.name) on $instance." -ErrorRecord $_ -Target $db -Continue
+                }
+            }
+        }
+    }
 }
