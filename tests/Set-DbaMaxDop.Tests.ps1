@@ -54,24 +54,13 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Set-DbaMaxDop {
 	Context "Input validation" {
 		BeforeAll {
 			Mock Stop-Function { } -ModuleName dbatools
-			Mock Test-FunctionInterrupt { } -ModuleName dbatools
 		}
-		It "Should Call Stop-Function if instance lower than 2016 and try to apply configuration at database level" {
-			Set-DbaMaxDop -SqlInstance $script:instance1 -MaxDop 12 -Database $singledb | Should Be
+		It "Should Call Stop-Function. -Database, -AllDatabases and -ExcludeDatabase are mutually exclusive." {
+			Set-DbaMaxDop -SqlInstance $script:instance1 -MaxDop 12 -Database $singledb -AllDatabases -ExcludeDatabase "master" | Should Be
 		}
 		It "Validates that Stop Function Mock has been called" {
-			## Nope I have no idea why it's two either - RMS
 			$assertMockParams = @{
 				'CommandName'  = 'Stop-Function'
-				'Times'	       = 2
-				'Exactly'	   = $true
-				'Module'	   = 'dbatools'
-			}
-			Assert-MockCalled @assertMockParams
-		}
-		It "Validates that Test-FunctionInterrupt Mock has been called" {
-			$assertMockParams = @{
-				'CommandName'  = 'Test-FunctionInterrupt'
 				'Times'	       = 1
 				'Exactly'	   = $true
 				'Module'	   = 'dbatools'
