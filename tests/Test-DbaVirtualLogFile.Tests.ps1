@@ -49,10 +49,10 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 			Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1
 		}
 	}
-	
+
 	Context "Command actually works" {
 		$results = Test-DbaVirtualLogFile -SqlInstance $script:instance2 -Database $db1
-		
+
 		It "Should have correct properties" {
 			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,Total,Inactive,Active,LogFileName,LogFileGrowth,LogFileGrowthType'.Split(',')
 			($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
@@ -61,6 +61,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		It "Should have database name of $db1" {
 			foreach ($result in $results) {
 				$result.Database | Should Be $db1
+			}
+		}
+
+		It "Should have values for Total property" {
+			foreach ($result in $results) {
+				$result.Total | Should Not BeNullOrEmpty
+				$result.Total | Should BeGreaterThan 0
 			}
 		}
 	}
