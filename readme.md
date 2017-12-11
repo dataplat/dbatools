@@ -1,4 +1,4 @@
-# dbatools
+﻿# dbatools
 
 dbatools is sort of like a command-line SQL Server Management Studio. The project initially started out as Start-SqlMigration.ps1, but has now grown into a collection of [over 300 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
 
@@ -18,6 +18,8 @@ Or if you don't have a version of PowerShell that supports the Gallery, you can 
 ```powershell
 Invoke-Expression (Invoke-WebRequest https://dbatools.io/in)
 ```
+
+Note: please only use `Invoke-Expression (Invoke-WebRequest..)` from sources you trust, like us 👍
 
 ## Usage scenarios
 
