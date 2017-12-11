@@ -82,6 +82,11 @@ Overrides the default behaviour and replaces any existing trace flags. If not tr
 Pass in a previously saved SQL Instance startUpconfig
 using this parameter will set TraceFlagsOverride to true, so existing Trace Flags will be overridden
 
+.PARAMETER Offline
+Setting this switch will try perform the requested actions without conntect to the SQL Server Instance, this will speed things up if you know the Instance is offline.
+
+Note, that with this switch Paths will be ignored unless you also speficy TrustPath
+
 .PARAMETER TrustPath
 This skips testing the paths passed in. This is useful if you are working with an offline SQL Server instance
 
@@ -132,6 +137,11 @@ Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -TraceFlags 8
 This will set Trace Flags 8032 and 8048 to the startup parameters, removing any existing Trace Flags
 
 .EXAMPLE
+Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride -Offline
+
+This will remove all trace flags and set SinguleUser to false from an offline instance
+
+.EXAMPLE
 
 $StartupConfig = Get-DbaStartupParameter -SqlInstance server1\instance1
 Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -NoLoggingToWinEvents
@@ -168,20 +178,28 @@ After the work has been completed, we can push the original startup parameters b
 		[switch]$IncreasedExtents,
 		[switch]$TraceFlagsOverride,
         [object]$StartUpConfig,
+        [switch]$Offline,
         [switch]$TrustPath,
 		[switch][Alias('Silent')]$EnableException        
     )
     process {
-        try {
-            Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance" -Target $SqlInstance
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+
+        if (-not $Offline){
+            try {
+                Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance" -Target $SqlInstance
+                $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            }
+            catch {
+                Write-Message -Level Warning -Message "Failed to connect to $SqlInstance, will try to work with just WMI. Path options will be ignored unless TrustPath was indicated"
+                $Server = $SqlInstance
+                $Offline = $true
+            }
         }
-        catch {
-            Write-Message -Level Warning -Message "Failed to connect to $SqlInstance, will try to work with just WMI. Some options will be ignored"
+        else{
+            Write-Message -Level Verbose -Message "Offline switch set, proceeding with just WMI"
             $Server = $SqlInstance
-            $offline = $true
         }
-        
+
         #Get Current parameters:
         $currentstartup = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential
         $originalparamstring = $currentstartup.ParameterString
