@@ -13,7 +13,7 @@ For full details of what each parameter does, please refer to this MSDN article 
 .PARAMETER SqlInstance
 The SQL Server instance to be modified
 
-If the Sql Instance is offline path parameters will be ignored as we cannot test the instance's access to the path. If you want to force this to work then please see the TrustPath switch
+If the Sql Instance is offline path parameters will be ignored as we cannot test the instance's access to the path. If you want to force this to work then please see the Force switch
 
 .PARAMETER SqlCredential
 Windows or Sql Login Credential with permission to log into the SQL instance
@@ -85,9 +85,9 @@ using this parameter will set TraceFlagsOverride to true, so existing Trace Flag
 .PARAMETER Offline
 Setting this switch will try perform the requested actions without conntect to the SQL Server Instance, this will speed things up if you know the Instance is offline.
 
-Note, that with this switch Paths will be ignored unless you also speficy TrustPath
+Note, that with this switch Paths will be ignored unless you also speficy Force
 
-.PARAMETER TrustPath
+.PARAMETER Force
 This skips testing the paths passed in. This is useful if you are working with an offline SQL Server instance
 
 .PARAMETER WhatIf 
@@ -179,7 +179,7 @@ After the work has been completed, we can push the original startup parameters b
 		[switch]$TraceFlagsOverride,
         [object]$StartUpConfig,
         [switch]$Offline,
-        [switch]$TrustPath,
+        [switch]$Force,
 		[switch][Alias('Silent')]$EnableException        
     )
     process {
@@ -190,7 +190,7 @@ After the work has been completed, we can push the original startup parameters b
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
             }
             catch {
-                Write-Message -Level Warning -Message "Failed to connect to $SqlInstance, will try to work with just WMI. Path options will be ignored unless TrustPath was indicated"
+                Write-Message -Level Warning -Message "Failed to connect to $SqlInstance, will try to work with just WMI. Path options will be ignored unless Force was indicated"
                 $Server = $SqlInstance
                 $Offline = $true
             }
@@ -224,13 +224,13 @@ After the work has been completed, we can push the original startup parameters b
         if (!($currentstartup.SingleUser)) {
             
             if ($newstartup.Masterdata.length -gt 0) {
-                if ($Offline -and -not $TrustPath) {
+                if ($Offline -and -not $Force) {
                     Write-Message -Level Warning -Message "Working offline, skipping untested MasterData path"
                     $ParameterString += "-d$($CurrentStartup.MasterData);"
                     
                 }
                 else {
-                    if ($TrustPath){
+                    if ($Force){
                         $ParameterString += "-d$($newstartup.MasterData);"
                     } elseif (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterData -Parent)) {
                         $ParameterString += "-d$($newstartup.MasterData);"
@@ -247,12 +247,12 @@ After the work has been completed, we can push the original startup parameters b
             }
             
             if ($newstartup.ErrorLog.length -gt 0) {
-                if ($Offline -and -not $TrustPath){
+                if ($Offline -and -not $Force){
                     Write-Message -Level Warning -Message "Working offline, skipping untested ErrorLog path"                    
                     $ParameterString += "-e$($CurrentStartup.ErrorLog);"                                           
                 }
                 else {
-                    if ($TrustPath){
+                    if ($Force){
                         $ParameterString += "-e$($newstartup.ErrorLog);"                       
                     }
                     elseif (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
@@ -270,12 +270,12 @@ After the work has been completed, we can push the original startup parameters b
             }
             
             if ($newstartup.MasterLog.Length -gt 0) {
-                if ($offline -and -not $TrustPath){
+                if ($offline -and -not $Force){
                     Write-Message -Level Warning -Message "Working offline, skipping untested MasterLog path"                                        
                     $ParameterString += "-l$($CurrentStartup.MasterLog);"                       
                 }
                 else{
-                    if ($TrustPath){
+                    if ($Force){
                         $ParameterString += "-l$($newstartup.MasterLog);"                       
                     }
                     elseif (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterLog -Parent)) {
