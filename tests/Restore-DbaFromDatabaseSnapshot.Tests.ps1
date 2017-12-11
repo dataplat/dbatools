@@ -82,7 +82,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 				$result.SnapshotOf | Should Be $db1
 				$result.Database | Should Be $db1_snap2
 				# the query doesn't retrn records inserted before the restore
-				$result = Invoke-DbaSqlCmd -ServerInstance $script:instance2 -Query "SELECT * FROM [$db1].[dbo].[Example]" -QueryTimeout 1 -ConnectionTimeout 1
+				$result = Invoke-SqlCmd2 -ServerInstance $script:instance2 -Query "SELECT * FROM [$db1].[dbo].[Example]" -QueryTimeout 1 -ConnectionTimeout 1
 				$result.id | Should Be 1
 			}
 			It "Honors the Snapshot parameter" {
