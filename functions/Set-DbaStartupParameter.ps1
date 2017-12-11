@@ -13,7 +13,7 @@ For full details of what each parameter does, please refer to this MSDN article 
 .PARAMETER SqlInstance
 The SQL Server instance to be modified
 
-If the Sql Instance is offline path parameters will be ignored as we cannot test the instance's access to the path. If you want to force this to work then please see the Force switch
+If the Sql Instance is offline path parameters will be ignored as we cannot test the instance's access to the path. If you want to force this to work then please use the Force switch
 
 .PARAMETER SqlCredential
 Windows or Sql Login Credential with permission to log into the SQL instance
@@ -24,11 +24,17 @@ Windows Credential with permission to log on to the server running the SQL insta
 .PARAMETER MasterData
 Path to the data file for the Master database
 
+Will be ignored if SqlInstance is offline or the Offline switch is set. To override this behaviour use the Force switch. This is to ensure you understand the risk as we cannot validate the path if the instance is offline
+
 .PARAMETER MasterLog
 Path to the log file for the Master database
 
+Will be ignored if SqlInstance is offline or the Offline switch is set. To override this behaviour use the Force switch. This is to ensure you understand the risk as we cannot validate the path if the instance is offline
+
 .PARAMETER ErrorLog
 path to the SQL Server error log file 
+
+Will be ignored if SqlInstance is offline or the Offline switch is set. To override this behaviour use the Force switch. This is to ensure you understand the risk as we cannot validate the path if the instance is offline
 
 .PARAMETER TraceFlags
 A comma separated list of TraceFlags to be applied at SQL Server startup
@@ -85,10 +91,10 @@ using this parameter will set TraceFlagsOverride to true, so existing Trace Flag
 .PARAMETER Offline
 Setting this switch will try perform the requested actions without conntect to the SQL Server Instance, this will speed things up if you know the Instance is offline.
 
-Note, that with this switch Paths will be ignored unless you also speficy Force
+When working offline, path inputs (MasterData, MasterLog and ErrorLog) will be ignored, unless Force is specifiec
 
 .PARAMETER Force
-This skips testing the paths passed in. This is useful if you are working with an offline SQL Server instance
+By default we test the values passed in via MasterData, MasterLog, ErrorLog
 
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
@@ -140,6 +146,13 @@ This will set Trace Flags 8032 and 8048 to the startup parameters, removing any 
 Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride -Offline
 
 This will remove all trace flags and set SinguleUser to false from an offline instance
+
+.EXAMPLE
+Set-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\Sql\ -Offline
+
+This will attempt to change the ErrorLog path to c:\sql\. However, with the offline switch this will not happen. To force it, use the -Force switch like so:
+
+Set-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\Sql\ -Offline -Force
 
 .EXAMPLE
 
