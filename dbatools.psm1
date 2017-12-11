@@ -293,8 +293,6 @@ Write-ImportTime -Text "Script: Maintenance"
 "Definition" = "Import-DbaSpConfigure" },
 @{"AliasName" = "Install-SqlWhoIsActive"
 "Definition" = "Install-DbaWhoIsActive" },
-@{"AliasName" = "Invoke-DbaSqlcmd"
-"Definition" = "Invoke-Sqlcmd2" },
 @{"AliasName" = "Remove-SqlDatabaseSafely"
 "Definition" = "Remove-DbaDatabaseSafely" },
 @{"AliasName" = "Remove-SqlOrphanUser"
