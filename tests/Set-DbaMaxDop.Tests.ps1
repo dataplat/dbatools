@@ -78,4 +78,5 @@ Describe "$commandname Unit Tests" -Tags "UnitTests", Set-DbaMaxDop {
 			}
 			Assert-MockCalled @assertMockParams
 		}
+	}
 }
