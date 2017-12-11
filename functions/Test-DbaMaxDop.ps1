@@ -211,7 +211,9 @@ function Test-DbaMaxDop {
 					}
 				}
 			}
-			Select-DefaultView -InputObject $collection -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
 		}
 	}
+    end {
+        Select-DefaultView -InputObject $collection -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
+    }
 }
