@@ -65,6 +65,7 @@ function Test-DbaMaxDop {
 			Get Max DOP setting for servers sql2016 with the recommended value. As the -Detailed switch was used will also show the 'NUMANodes' and 'NumberOfCores' of each instance. Because it is an 2016 instance will be shown 'InstanceVersion', 'Database' and 'DatabaseMaxDop' columns.
 	#>
 	[CmdletBinding()]
+	[OutputType([System.Collections.ArrayList])]
 	param (
 		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
 		[Alias("ServerInstance", "SqlServer", "SqlServers")]
@@ -166,7 +167,8 @@ function Test-DbaMaxDop {
 				}
 			}
 
-			$collection += [pscustomobject]@{
+			#$collection +=
+            [pscustomobject]@{
 				ComputerName          = $server.NetName
 				InstanceName          = $server.ServiceName
 				SqlInstance           = $server.DomainInstanceName
@@ -178,7 +180,7 @@ function Test-DbaMaxDop {
 				NUMANodes             = $numaNodes
 				NumberOfCores         = $numberOfCores
 				Notes                 = $notes
-			}
+			} | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
 
 			# On SQL Server 2016 and higher, MaxDop can be set on a per-database level
 			if ($server.VersionMajor -ge 13) {
@@ -196,7 +198,8 @@ function Test-DbaMaxDop {
 
 					$dbmaxdop = $database.MaxDop
 
-					$collection += [pscustomobject]@{
+					#$collection +=
+                    [pscustomobject]@{
 						ComputerName          = $server.NetName
 						InstanceName          = $server.ServiceName
 						SqlInstance           = $server.DomainInstanceName
@@ -208,10 +211,9 @@ function Test-DbaMaxDop {
 						NUMANodes             = $numaNodes
 						NumberOfCores         = $numberOfCores
 						Notes                 = if ($dbmaxdop -eq 0) { "Will use CurrentInstanceMaxDop value" } else { "$notes" }
-					}
+					}  | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
 				}
 			}
-			Select-DefaultView -InputObject $collection -Property ComputerName, InstanceName, SqlInstance, Database, DatabaseMaxDop, CurrentInstanceMaxDop, RecommendedMaxDop, Notes
 		}
 	}
 }
