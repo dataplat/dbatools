@@ -36,7 +36,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
 		It "Should have correct properties" {
 			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,DatabaseMaxDop,CurrentInstanceMaxDop,RecommendedMaxDop,Notes'.Split(',')
-            ($results.PSStandardMembers.DefaultDIsplayPropertySet.ReferencedPropertyNames | Select -Unique) | Sort-Object | Should Be ($ExpectedProps | Sort-Object)
+			foreach ($result in $results) {
+				($result.PSStandardMembers.DefaultDIsplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+			}
 		}
 
 		It "Should have only one result for database name of $db1" {
