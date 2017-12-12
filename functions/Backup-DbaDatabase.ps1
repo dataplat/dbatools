@@ -497,18 +497,7 @@ function Backup-DbaDatabase {
 			if ($failures.count -eq 0) {
 				$OutputExclude += ('Notes', 'FirstLsn','DatabaseBackupLsn','CheckpointLsn','LastLsn','BackupSetId','LastRecoveryForkGuid')
 			}
-
-			$HeaderInfo | Add-Member -Type NoteProperty -Name BackupComplete -Value $BackupComplete
-			$HeaderInfo | Add-Member -Type NoteProperty -Name BackupFile -Value (Split-Path $FinalBackupPath -leaf)
-			$HeaderInfo | Add-Member -Type NoteProperty -Name BackupFilesCount -Value $FinalBackupPath.count
-			$HeaderInfo | Add-Member -Type NoteProperty -Name BackupFolder -Value (Split-Path $FinalBackupPath | Sort-Object -Unique)
-			$HeaderInfo | Add-Member -Type NoteProperty -Name BackupPath -Value ($FinalBackupPath | Sort-Object -Unique)
-			$HeaderInfo | Add-Member -Type NoteProperty -Name DatabaseName -Value $dbname
-			$HeaderInfo | Add-Member -Type NoteProperty -Name Notes -Value ($failures -join (','))
-			$HeaderInfo | Add-Member -Type NoteProperty -Name Script -Value $script
-			$HeaderInfo | Add-Member -Type NoteProperty -Name Verified -Value $Verified
-			
-			$null = [PSCustomObject]@{
+			[PSCustomObject]@{
 				SqlInstance = $server.name
 				DatabaseName = $dbname
 				BackupComplete = $BackupComplete
@@ -529,8 +518,7 @@ function Backup-DbaDatabase {
 				LastLsn = $HeaderInfo.LastLsn
 				BackupSetId = $HeaderInfo.BackupSetId
 				LastRecoveryForkGUID = $HeaderInfo.LastRecoveryForkGUID
-			} 
-			$headerinfo | Select-DefaultView -ExcludeProperty $OutputExclude
+			} | Select-DefaultView -ExcludeProperty $OutputExclude
 			$BackupFileName = $null
 		}
 	}
