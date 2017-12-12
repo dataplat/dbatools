@@ -190,9 +190,12 @@ foreach($f in $AllTestsWithinScenario) {
 		'Show'     = $show
 	}
 	#opt-in
+	$HeadFunctionPath = $f.FullName
+
 	if ($Coverage) {
 		$CoverFiles = Get-CoverageIndications -Path $f -ModuleBase $ModuleBase
 		$HeadFunctionPath = $CoverFiles | Select-Object -First 1
+
 		if ($DependencyCoverage) {
 			$CoverFilesPester = $CoverFiles
 		} else {
