@@ -71,7 +71,7 @@ Specifies the files types that will be shrunk
 Exclude statistics about fragmentation
 	
 .PARAMETER ExcludeUpdateUsage
-Skips DBCC UPDATE USAGE for database
+Exclude DBCC UPDATE USAGE for database
 	
 .PARAMETER WhatIf
 Shows what would happen if the command were to run
@@ -145,7 +145,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 			$FileType = 'Log'
 		}
 
-		$StatementTimeoutMinutes = $StatementTimeout * 60
+		$StatementTimeoutSeconds = $StatementTimeout * 60
 
 		$sql = "SELECT
 				indexstats.avg_fragmentation_in_percent
@@ -190,7 +190,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 			else {
 				Write-Message -Level Verbose -Message "Changing statement timeout to $StatementTimeout minutes"
 			}
-			$server.ConnectionContext.StatementTimeout = $StatementTimeout
+			$server.ConnectionContext.StatementTimeout = $StatementTimeoutSeconds
 
 			$dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
 
@@ -246,7 +246,6 @@ Shrinks all databases on SQL2012 (not ideal for production)
 									$db.LogFiles.Shrink($PercentFreeSpace, $ShrinkMethod)
 									$db.Refresh()
 									Write-Message -Level Verbose -Message "Recalculating space usage"
-									if ($False -eq $ExcludeUpdateUsage){$db.RecalculateSpaceUsage()}
 									$success = $true
 									$notes = $null
 								}
@@ -266,7 +265,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 									}
 									$db.Refresh()
 									Write-Message -Level Verbose -Message "Recalculating space usage"
-									if ($False -eq $ExcludeUpdateUsage){$db.RecalculateSpaceUsage()}
+									if (-not $ExcludeUpdateUsage) { $db.RecalculateSpaceUsage() }
 									$success = $true
 									$notes = $null
 								} catch {
@@ -280,7 +279,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 									$db.Shrink($PercentFreeSpace, $ShrinkMethod)
 									$db.Refresh()
 									Write-Message -Level Verbose -Message "Recalculating space usage"
-									if ($False -eq $ExcludeUpdateUsage){$db.RecalculateSpaceUsage()}
+									if (-not $ExcludeUpdateUsage) { $db.RecalculateSpaceUsage() }
 									$success = $true
 									$notes = $null
 								}

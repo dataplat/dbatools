@@ -139,6 +139,7 @@ Function Export-DbaDacpac {
 					$startprocess.RedirectStandardError = $true
 					$startprocess.RedirectStandardOutput = $true
 					$startprocess.UseShellExecute = $false
+					$startprocess.CreateNoWindow = $true
 					$process = New-Object System.Diagnostics.Process
 					$process.StartInfo = $startprocess
 					$process.Start() | Out-Null

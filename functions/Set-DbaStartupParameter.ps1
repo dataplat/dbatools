@@ -13,6 +13,8 @@ For full details of what each parameter does, please refer to this MSDN article 
 .PARAMETER SqlInstance
 The SQL Server instance to be modified
 
+If the Sql Instance is offline path parameters will be ignored as we cannot test the instance's access to the path. If you want to force this to work then please use the Force switch
+
 .PARAMETER SqlCredential
 Windows or Sql Login Credential with permission to log into the SQL instance
 
@@ -22,11 +24,17 @@ Windows Credential with permission to log on to the server running the SQL insta
 .PARAMETER MasterData
 Path to the data file for the Master database
 
+Will be ignored if SqlInstance is offline or the Offline switch is set. To override this behaviour use the Force switch. This is to ensure you understand the risk as we cannot validate the path if the instance is offline
+
 .PARAMETER MasterLog
 Path to the log file for the Master database
 
+Will be ignored if SqlInstance is offline or the Offline switch is set. To override this behaviour use the Force switch. This is to ensure you understand the risk as we cannot validate the path if the instance is offline
+
 .PARAMETER ErrorLog
 path to the SQL Server error log file 
+
+Will be ignored if SqlInstance is offline or the Offline switch is set. To override this behaviour use the Force switch. This is to ensure you understand the risk as we cannot validate the path if the instance is offline
 
 .PARAMETER TraceFlags
 A comma separated list of TraceFlags to be applied at SQL Server startup
@@ -80,6 +88,14 @@ Overrides the default behaviour and replaces any existing trace flags. If not tr
 Pass in a previously saved SQL Instance startUpconfig
 using this parameter will set TraceFlagsOverride to true, so existing Trace Flags will be overridden
 
+.PARAMETER Offline
+Setting this switch will try perform the requested actions without conntect to the SQL Server Instance, this will speed things up if you know the Instance is offline.
+
+When working offline, path inputs (MasterData, MasterLog and ErrorLog) will be ignored, unless Force is specifiec
+
+.PARAMETER Force
+By default we test the values passed in via MasterData, MasterLog, ErrorLog
+
 .PARAMETER WhatIf 
 Shows what would happen if the command were to run. No actions are actually performed. 
 
@@ -127,6 +143,18 @@ Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -TraceFlags 8
 This will set Trace Flags 8032 and 8048 to the startup parameters, removing any existing Trace Flags
 
 .EXAMPLE
+Set-DbaStartupParameter -SqlInstance sql2016 -SingleUser:$false -TraceFlagsOverride -Offline
+
+This will remove all trace flags and set SinguleUser to false from an offline instance
+
+.EXAMPLE
+Set-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\Sql\ -Offline
+
+This will attempt to change the ErrorLog path to c:\sql\. However, with the offline switch this will not happen. To force it, use the -Force switch like so:
+
+Set-DbaStartupParameter -SqlInstance sql2016 -ErrorLog c:\Sql\ -Offline -Force
+
+.EXAMPLE
 
 $StartupConfig = Get-DbaStartupParameter -SqlInstance server1\instance1
 Set-DbaStartupParameter -SqlInstance server1\instance1 -SingleUser -NoLoggingToWinEvents
@@ -162,19 +190,29 @@ After the work has been completed, we can push the original startup parameters b
 		[switch]$DisableMonitoring,
 		[switch]$IncreasedExtents,
 		[switch]$TraceFlagsOverride,
-		[object]$StartUpConfig,
+        [object]$StartUpConfig,
+        [switch]$Offline,
+        [switch]$Force,
 		[switch][Alias('Silent')]$EnableException        
     )
     process {
-        try {
-            Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance" -Target $SqlInstance
-            $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+
+        if (-not $Offline){
+            try {
+                Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance" -Target $SqlInstance
+                $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            }
+            catch {
+                Write-Message -Level Warning -Message "Failed to connect to $SqlInstance, will try to work with just WMI. Path options will be ignored unless Force was indicated"
+                $Server = $SqlInstance
+                $Offline = $true
+            }
         }
-        catch {
-            Stop-Function -Message "Failed to process Instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
-            return
+        else{
+            Write-Message -Level Verbose -Message "Offline switch set, proceeding with just WMI"
+            $Server = $SqlInstance
         }
-        
+
         #Get Current parameters:
         $currentstartup = Get-DbaStartupParameter -SqlInstance $server -Credential $Credential
         $originalparamstring = $currentstartup.ParameterString
@@ -199,12 +237,21 @@ After the work has been completed, we can push the original startup parameters b
         if (!($currentstartup.SingleUser)) {
             
             if ($newstartup.Masterdata.length -gt 0) {
-                if (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterData -Parent)) {
-                    $ParameterString += "-d$($newstartup.MasterData);"
+                if ($Offline -and -not $Force) {
+                    Write-Message -Level Warning -Message "Working offline, skipping untested MasterData path"
+                    $ParameterString += "-d$($CurrentStartup.MasterData);"
+                    
                 }
                 else {
-                    Stop-Function -Message "Specified folder for Master Data file is not reachable by instance $SqlInstance"
-                    return
+                    if ($Force){
+                        $ParameterString += "-d$($newstartup.MasterData);"
+                    } elseif (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterData -Parent)) {
+                        $ParameterString += "-d$($newstartup.MasterData);"
+                    }
+                    else {
+                        Stop-Function -Message "Specified folder for Master Data file is not reachable by instance $SqlInstance"
+                        return
+                    }
                 }
             }
             else {
@@ -213,12 +260,21 @@ After the work has been completed, we can push the original startup parameters b
             }
             
             if ($newstartup.ErrorLog.length -gt 0) {
-                if (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
-                    $ParameterString += "-e$($newstartup.ErrorLog);"
+                if ($Offline -and -not $Force){
+                    Write-Message -Level Warning -Message "Working offline, skipping untested ErrorLog path"                    
+                    $ParameterString += "-e$($CurrentStartup.ErrorLog);"                                           
                 }
                 else {
-                    Stop-Function -Message "Specified folder for ErrorLog  file is not reachable by $SqlInstance"
-                    return
+                    if ($Force){
+                        $ParameterString += "-e$($newstartup.ErrorLog);"                       
+                    }
+                    elseif (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.ErrorLog -Parent)) {
+                        $ParameterString += "-e$($newstartup.ErrorLog);"
+                    }
+                    else {
+                        Stop-Function -Message "Specified folder for ErrorLog  file is not reachable by $SqlInstance"
+                        return
+                    }
                 }
             }
             else {
@@ -227,12 +283,21 @@ After the work has been completed, we can push the original startup parameters b
             }
             
             if ($newstartup.MasterLog.Length -gt 0) {
-                if (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterLog -Parent)) {
-                    $ParameterString += "-l$($newstartup.MasterLog);"
+                if ($offline -and -not $Force){
+                    Write-Message -Level Warning -Message "Working offline, skipping untested MasterLog path"                                        
+                    $ParameterString += "-l$($CurrentStartup.MasterLog);"                       
                 }
-                else {
-                    Stop-Function -Message "Specified folder for Master Log  file is not reachable by $SqlInstance"
-                    return
+                else{
+                    if ($Force){
+                        $ParameterString += "-l$($newstartup.MasterLog);"                       
+                    }
+                    elseif (Test-DbaSqlPath -SqlInstance $server -SqlCredential $SqlCredential -Path (Split-Path $newstartup.MasterLog -Parent)) {
+                        $ParameterString += "-l$($newstartup.MasterLog);"
+                    }
+                    else {
+                        Stop-Function -Message "Specified folder for Master Log  file is not reachable by $SqlInstance"
+                        return
+                    }
                 }
             }
             else {
