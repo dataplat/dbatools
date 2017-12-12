@@ -493,7 +493,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     # Execute 
                     if ($PSCmdlet.ShouldProcess($SqlInstance, "Changing the job $j")) {
                         try {
-                            Write-Message -Message ("Changing the job") -Level Verbose
+                            Write-Message -Message "Changing the job" -Level Verbose
 							
                             # Change the job
                             $currentjob.Alter()

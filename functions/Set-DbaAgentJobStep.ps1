@@ -336,7 +336,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 								$JobStep.Alter()
 							}
 							catch {
-								Stop-Function -Message "Something went wrong changing the job step.)" -ErrorRecord $_ -Target $instance -Continue
+								Stop-Function -Message "Something went wrong changing the job step" -ErrorRecord $_ -Target $instance -Continue
 							}
 						}
 					}
