@@ -292,7 +292,7 @@ function Expand-DbaTLogResponsibly {
                         $result = $host.ui.PromptForChoice($title, $message, $options, 0)
                         #no
                         if ($result -eq 1) {
-                            Write-Warning "You have cancelled the execution"
+                            Write-Message -Level Warning -Message "You have cancelled the execution"
                             return
                         }
                     }
@@ -345,7 +345,7 @@ function Expand-DbaTLogResponsibly {
                             $ShrinkSizeMB = $ShrinkSize/1024
                             if ($ShrinkLogFile -eq $true) {
                                 if ($server.Databases[$db].RecoveryModel -eq [Microsoft.SqlServer.Management.Smo.RecoveryModel]::Simple) {
-                                    Write-Warning "Database '$db' is in Simple RecoveryModel which does not allow log backups. Do not specify -ShrinkLogFile and -ShrinkSizeMB parameters."
+                                    Write-Message -Level Warning -Message "Database '$db' is in Simple RecoveryModel which does not allow log backups. Do not specify -ShrinkLogFile and -ShrinkSizeMB parameters."
                                     Continue
                                 }
 
@@ -354,7 +354,7 @@ function Expand-DbaTLogResponsibly {
                                     $sqlResult = $server.ConnectionContext.ExecuteWithResults($sql);
 
                                     if ($sqlResult.Tables[0].Rows[0]["last_log_backup_lsn"] -is [System.DBNull]) {
-                                        Write-Warning  "First, you need to make a full backup before you can do Tlog backup on database '$db' (last_log_backup_lsn is null)."
+                                        Write-Message -Level Warning -Message "First, you need to make a full backup before you can do Tlog backup on database '$db' (last_log_backup_lsn is null)."
                                         Continue
                                     }
                                 }
@@ -401,7 +401,7 @@ function Expand-DbaTLogResponsibly {
                                             }
                                             catch {
                                                 Write-Progress -id 1 -activity "Backup" -status "Failed" -completed
-                                                Write-Error "Backup failed for database '$db' with the following exception: $_"
+                                                Stop-Function -Message "Backup failed for database" -ErrorRecord $_ -Target $db -Continue
                                                 Continue
                                             }
 
