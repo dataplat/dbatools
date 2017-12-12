@@ -13,8 +13,6 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			SELECT top 100 1 
 			FROM sys.objects")
 		$publishprofile = New-DbaPublishProfile -SqlInstance $script:instance1 -Database $dbname -Path C:\temp
-		$server = Connect-DbaInstance -SqlInstance $script:instance2
-		$null = $server.Query("Create Database [$dbname]")
 		$dacpac = Export-DbaDacpac -SqlInstance $script:instance1 -Database $dbname
 	}
 	AfterAll {
