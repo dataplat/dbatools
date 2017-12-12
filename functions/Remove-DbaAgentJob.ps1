@@ -73,7 +73,7 @@ Removes the job from multiple servers using pipe line
     param(
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [object[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
 
         [Parameter(Mandatory = $false)]
         [PSCredential]$SqlCredential,

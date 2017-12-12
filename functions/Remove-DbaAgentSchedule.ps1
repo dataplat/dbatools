@@ -71,7 +71,7 @@ Remove the schedule on multiple servers using pipe line
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 
 		[System.Management.Automation.PSCredential]
 		$SqlCredential,
@@ -94,7 +94,7 @@ Remove the schedule on multiple servers using pipe line
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -InnerErrorRecord $_ -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			foreach ($s in $Schedule) {
