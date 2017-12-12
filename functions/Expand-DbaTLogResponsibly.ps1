@@ -380,14 +380,14 @@ function Expand-DbaTLogResponsibly {
                                                 $backup.Database = $db
                                                 $backup.MediaDescription = "Disk"
                                                 $dt = get-date -format yyyyMMddHHmmssms
-                                                $dir = $backup.Devices.AddDevice($backupdirectory + "\" + $db + "_db_" + $dt + ".trn", 'File')
+                                                $null = $backup.Devices.AddDevice($backupdirectory + "\" + $db + "_db_" + $dt + ".trn", 'File')
                                                 if ($DefaultCompression = $true) {
                                                     $backup.CompressionOption = 1
                                                 }
                                                 else {
                                                     $backup.CompressionOption = 0
                                                 }
-                                                $percnt = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
+                                                $null = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
                                                     Write-Progress -id 2 -ParentId 1 -activity "Backing up $db to $server" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
                                                 }
                                                 $backup.add_PercentComplete($percent)
