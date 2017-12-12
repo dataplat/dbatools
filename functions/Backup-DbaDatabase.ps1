@@ -508,28 +508,6 @@ function Backup-DbaDatabase {
 				$HeaderInfo | Add-Member -Type NoteProperty -Name Script -Value $script
 				$HeaderInfo | Add-Member -Type NoteProperty -Name Verified -Value $Verified
 				
-				$null = [PSCustomObject]@{
-					SqlInstance = $server.name
-					DatabaseName = $dbname
-					BackupComplete = $BackupComplete
-					BackupFilesCount = $FinalBackupPath.count
-					BackupFile = (Split-Path $FinalBackupPath -leaf)
-					BackupFolder = (Split-Path $FinalBackupPath | Sort-Object -Unique)
-					BackupPath = ($FinalBackupPath | Sort-Object -Unique)
-					Script = $script
-					Notes = $failures -join (',')
-					FullName = ($FinalBackupPath | Sort-Object -Unique)
-					FileList = $FileList
-					SoftwareVersionMajor = $server.VersionMajor
-					Verified = $Verified
-					Type = $outputType
-					FirstLsn = $HeaderInfo.FirstLsn
-					DatabaseBackupLsn = $HeaderInfo.DatabaseBackupLsn
-					CheckPointLsn = $HeaderInfo.CheckPointLsn
-					LastLsn = $HeaderInfo.LastLsn
-					BackupSetId = $HeaderInfo.BackupSetId
-					LastRecoveryForkGUID = $HeaderInfo.LastRecoveryForkGUID
-				} 
 				$headerinfo | Select-DefaultView -ExcludeProperty $OutputExclude
 				$BackupFileName = $null
 			}
