@@ -124,7 +124,7 @@ function Test-DbaVirtualLogFile {
                         LogFileName       = $logFile.LogicalName -join ","
                         LogFileGrowth     = $logFile.Growth -join ","
                         LogFileGrowthType = $logFile.GrowthType -join ","
-                    } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, Count
+                    } | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, Database, Total
                 }
                 catch {
                     Stop-Function -Message "Unable to query $($db.name) on $instance." -ErrorRecord $_ -Target $db -Continue
