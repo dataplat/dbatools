@@ -227,7 +227,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 						$JobStep.Parent = $currentjob
 					}
 					catch {
-						Stop-Function -Message "Something went wrong creating the job step. `n$($_.Exception.Message)" -Target $instance -Continue
+						Stop-Function -Message "Something went wrong creating the job step" -Target $instance -ErrorRecord $_ -Continue 
 					}
 					
 					#region job step options
@@ -375,7 +375,7 @@ Create a step in "Job1" with the name Step1 where the database will the "msdb" f
 							$currentjob.Alter()
 						}
 						catch {
-							Stop-Function -Message "Something went wrong creating the job step. `n$($_.Exception.Message)" -Target $instance -Continue
+							Stop-Function -Message "Something went wrong creating the job step" -Target $instance -ErrorRecord $_ -Continue
 						}
 					}
 					
