@@ -242,7 +242,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 						Remove-DbaAgentJob -SqlInstance $instance -Job $Job -EnableException
 					}
 					catch {
-						Stop-Function -Message "Couldn't remove job $Job from $instance" -Target $instance -Continue -InnerErrorRecord $_
+						Stop-Function -Message "Couldn't remove job $Job from $instance" -Target $instance -Continue -ErrorRecord $_
 					}
 				}
 				
@@ -253,7 +253,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 				$currentjob = New-Object Microsoft.SqlServer.Management.Smo.Agent.Job($server.JobServer, $Job)
 			}
 			catch {
-				Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Target $Job -Continue -InnerErrorRecord $_
+				Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Target $Job -Continue -ErrorRecord $_
 			}
 			
 			#region job options
@@ -390,7 +390,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 					}
 				}
 				catch {
-					Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Continue -InnerErrorRecord $_
+					Stop-Function -Message "Something went wrong creating the job" -Target $currentjob -ErrorRecord $_ -Continue
 				}
 			}
 			

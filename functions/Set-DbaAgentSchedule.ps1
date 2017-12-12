@@ -431,7 +431,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
                         
                             }
                             catch {
-                                Stop-Function -Message "Something went wrong changing the schedule. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
+                                Stop-Function -Message "Something went wrong changing the schedule" -Target $instance -ErrorRecord $_ -Continue
                                 return 
                             }
                         }
