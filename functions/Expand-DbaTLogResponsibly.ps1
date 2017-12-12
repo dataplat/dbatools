@@ -496,8 +496,8 @@ function Expand-DbaTLogResponsibly {
                                     NumberOfLogFiles = $numLogfiles
  									InitialSize = "$currentSizeMB MB"
                                     CurrentSize = "$TargetLogSizeMB MB"
-                                    InitialVLFCount = $initialVLFCount.Count
-                                    CurrentVLFCount = $currentVLFCount.Count
+                                    InitialVLFCount = $initialVLFCount.Total
+                                    CurrentVLFCount = $currentVLFCount.Total
  								}
             } #foreach database
         }
