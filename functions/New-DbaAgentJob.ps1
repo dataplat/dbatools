@@ -400,6 +400,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 	}
 	
 	end {
+		if (Test-FunctionInterrupt) { return }
 		Write-Message -Message "Finished creating job(s)." -Level Verbose
 	}
 	

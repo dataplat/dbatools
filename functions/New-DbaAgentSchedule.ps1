@@ -129,7 +129,7 @@ function New-DbaAgentSchedule {
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]
 		$SqlCredential,
 		[object[]]$Job,
@@ -419,7 +419,7 @@ function New-DbaAgentSchedule {
 
 		foreach ($instance in $sqlinstance) {
 			# Try connecting to the instance
-			Write-Message -Message "Attempting to connect to $instance" -Level Output
+			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
@@ -638,6 +638,7 @@ function New-DbaAgentSchedule {
 	} #process
 
 	end {
+		if (Test-FunctionInterrupt) { return }
 		Write-Message -Message "Finished creating job schedule(s)." -Level Output
 	}
 }

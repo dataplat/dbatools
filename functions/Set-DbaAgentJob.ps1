@@ -509,6 +509,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
     } # Process
 	
     end {
+        if (Test-FunctionInterrupt) { return }
 		Write-Message -Message "Finished changing job(s)" -Level Verbose
     }
 }
