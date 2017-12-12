@@ -119,10 +119,24 @@ Function Publish-DbaDacpac {
             }
 			
             return $instance.ToString().Replace('\', '-')
-        }
-    }
+		}
+		
+		$dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
+		if ((Test-Path $dacfxPath) -eq $false) {
+			Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException
+		}
+		else {
+			try {
+				Add-Type -Path $dacfxPath
+				Write-Message -Level Verbose -Message "Dac Fx loaded."
+			}
+			catch {
+				Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException -ErrorRecord $_
+			}
+		}
+	}
 	
-    process {
+	process {
         if (Test-FunctionInterrupt) { return }
 		
         if (-not (Test-Path -Path $Path)) {
@@ -131,20 +145,6 @@ Function Publish-DbaDacpac {
 		
         if (-not (Test-Path -Path $PublishXml)) {
             Stop-Function -Message "$PublishXml not found!"
-        }
-
-        $dacfxPath = "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.Dac.dll"
-        if ((Test-Path $dacfxPath) -eq $false) {
-            Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException
-        }
-        else {
-            try {
-                Add-Type -Path $dacfxPath
-				Write-Message -Level Verbose -Message "Dac Fx loaded."
-            }
-            catch {
-                Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException  -ErrorRecord $_
-            }
         }
 		
         foreach ($instance in $sqlinstance) {
