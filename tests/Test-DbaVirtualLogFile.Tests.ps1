@@ -54,7 +54,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		$results = Test-DbaVirtualLogFile -SqlInstance $script:instance2 -Database $db1
 
 		It "Should have correct properties" {
-			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,Total,Inactive,Active,LogFileName,LogFileGrowth,LogFileGrowthType'.Split(',')
+			$ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,Total,TotalCount,Inactive,Active,LogFileName,LogFileGrowth,LogFileGrowthType'.Split(',')
 			($results.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
 		}
 
