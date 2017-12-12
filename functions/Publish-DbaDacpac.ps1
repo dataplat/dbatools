@@ -140,7 +140,7 @@ Function Publish-DbaDacpac {
         else {
             try {
                 Add-Type -Path $dacfxPath
-                Write-Host "Dac Fx loaded."
+				Write-Message -Level Verbose -Message "Dac Fx loaded."
             }
             catch {
                 Stop-Function -Message 'No usable version of Dac Fx found.' -EnableException $EnableException  -ErrorRecord $_
