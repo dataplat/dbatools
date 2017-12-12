@@ -285,7 +285,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                         $currentjob.Refresh()
                     }
                     catch {
-                        Stop-Function -Message "Something went wrong retrieving the job. `n$($_.Exception.Message)" -Target $j -InnerErrorRecord $_ -Continue
+                        Stop-Function -Message "Something went wrong retrieving the job" -Target $j -ErrorRecord $_ -Continue
                     }
 					
                     #region job options
@@ -493,13 +493,13 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
                     # Execute 
                     if ($PSCmdlet.ShouldProcess($SqlInstance, "Changing the job $j")) {
                         try {
-                            Write-Message -Message ("Changing the job") -Level Verbose
+                            Write-Message -Message "Changing the job" -Level Verbose
 							
                             # Change the job
                             $currentjob.Alter()
                         }
                         catch {
-                            Stop-Function -Message "Something went wrong changing the job. `n$($_.Exception.Message)" -Target $instance -Continue
+                            Stop-Function -Message "Something went wrong changing the job" -ErrorRecord $_ -Target $instance -Continue
                         }
                         Get-DbaAgentJob -SqlInstance $server | Where-Object Name -eq $currentjob.name
                     }
@@ -509,6 +509,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
     } # Process
 	
     end {
+        if (Test-FunctionInterrupt) { return }
 		Write-Message -Message "Finished changing job(s)" -Level Verbose
     }
 }

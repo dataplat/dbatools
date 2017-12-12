@@ -129,7 +129,7 @@ function New-DbaAgentSchedule {
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[System.Management.Automation.PSCredential]
 		$SqlCredential,
 		[object[]]$Job,
@@ -419,7 +419,7 @@ function New-DbaAgentSchedule {
 
 		foreach ($instance in $sqlinstance) {
 			# Try connecting to the instance
-			Write-Message -Message "Attempting to connect to $instance" -Level Output
+			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
 			try {
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
@@ -532,14 +532,14 @@ function New-DbaAgentSchedule {
 						# Create the schedule
 						if ($PSCmdlet.ShouldProcess($SqlInstance, "Adding the schedule $Schedule to job $j on $instance")) {
 							try {
-								Write-Message -Message "Adding the schedule $Schedule to job $j" -Level Output
+								Write-Message -Message "Adding the schedule $Schedule to job $j" -Level Verbose
 								#$JobSchedule
 								$JobSchedule.Create()
 
 								Write-Message -Message "Job schedule created with UID $($JobSchedule.ScheduleUid)" -Level Verbose
 							}
 							catch {
-								Stop-Function -Message "Something went wrong adding the schedule." -Target $instance -ErrorRecord $_ #-Continue
+								Stop-Function -Message "Something went wrong adding the schedule" -Target $instance -ErrorRecord $_ -Continue
 
 							}
 
@@ -620,7 +620,7 @@ function New-DbaAgentSchedule {
 				# Create the schedule
 				if ($PSCmdlet.ShouldProcess($SqlInstance, "Adding the schedule $schedule on $instance")) {
 					try {
-						Write-Message -Message "Adding the schedule $JobSchedule on instance $instance" -Level Output
+						Write-Message -Message "Adding the schedule $JobSchedule on instance $instance" -Level Verbose
 
 						$JobSchedule.Create()
 
@@ -638,6 +638,7 @@ function New-DbaAgentSchedule {
 	} #process
 
 	end {
-		Write-Message -Message "Finished creating job schedule(s)." -Level Output
+		if (Test-FunctionInterrupt) { return }
+		Write-Message -Message "Finished creating job schedule(s)." -Level Verbose
 	}
 }
