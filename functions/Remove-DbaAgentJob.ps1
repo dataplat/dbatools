@@ -73,7 +73,7 @@ Removes the job from multiple servers using pipe line
     param(
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
-        [object[]]$SqlInstance,
+        [DbaInstanceParameter[]]$SqlInstance,
 
         [Parameter(Mandatory = $false)]
         [PSCredential]$SqlCredential,
@@ -117,7 +117,7 @@ Removes the job from multiple servers using pipe line
                         $currentjob = $Server.JobServer.Jobs[$j] 
                     }
                     catch {
-                        Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Target $instance -Continue
+                        Stop-Function -Message "Something went wrong creating the job" -Target $instance -ErrorRecord $_ -Continue
                     }
 
                     # Delete the history
@@ -129,7 +129,7 @@ Removes the job from multiple servers using pipe line
                     # Execute 
                     if ($PSCmdlet.ShouldProcess($instance, "Removing the job on $instance")) {
                         try {
-                            Write-Message -Message "Removing the job" -Level Output
+                            Write-Message -Message "Removing the job" -Level Verbose
 
                             if ($KeepUnusedSchedule) {
                                 # Drop the job keeping the unused schedules
@@ -144,7 +144,7 @@ Removes the job from multiple servers using pipe line
                     
                         }
                         catch {
-                            Stop-Function -Message  "Something went wrong removing the job. `n$($_.Exception.Message)" -Target $instance -Continue
+                            Stop-Function -Message  "Something went wrong removing the job" -Target $instance -ErrorRecord $_ -Continue
                         }
                     } 
                 }

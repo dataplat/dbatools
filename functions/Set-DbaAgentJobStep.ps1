@@ -336,7 +336,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 								$JobStep.Alter()
 							}
 							catch {
-								Stop-Function -Message "Something went wrong changing the job step. `n$_.Exception.Message)" -Target $instance -Continue -InnerErrorRecord $_
+								Stop-Function -Message "Something went wrong changing the job step" -ErrorRecord $_ -Target $instance -Continue
 							}
 						}
 					}
@@ -347,6 +347,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
 	} # process
 	
 	end {
-		Write-Message -Message "Finished changing job step(s)" -Level Output
+		if (Test-FunctionInterrupt) { return }
+		Write-Message -Message "Finished changing job step(s)" -Level Verbose
 	}
 }
