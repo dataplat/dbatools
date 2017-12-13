@@ -136,7 +136,7 @@ function Test-DbaMigrationConstraint {
 			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination -Continue
 		}
 
-		if ($Database -eq 0) {
+		if (-Not $Database) {
 			$Database = $sourceServer.Databases | Where-Object IsSystemObject -eq 0 | Select-Object Name, Status
 		}
 
@@ -144,8 +144,8 @@ function Test-DbaMigrationConstraint {
 			$Database = $sourceServer.Databases | Where-Object Name -NotIn $ExcludeDatabase
 		}
 
-		if ($Database -gt 0) {
-			if ($Database -contains "master" -or $Database -contains "msdb" -or $Database -contains "tempdb") {
+		if ($Database.Count -gt 0) {
+			if ($Database -in @("master", "msdb", "tempdb")) {
 				Stop-Function -Message "Migrating system databases is not currently supported."
 				return
 			}
