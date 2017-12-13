@@ -223,6 +223,7 @@ function Test-DbaMigrationConstraint {
 									DestinationVersion  = $destVersion
 									Database            = $dbName
 									FeaturesInUse       = $dbFeatures
+									IsMigratable 		= $false
 									Notes               = "$notesCannotMigrate. Destination server edition is EXPRESS which does not support 'ChangeCapture' feature that is in use."
 								}
 							}
@@ -234,6 +235,7 @@ function Test-DbaMigrationConstraint {
 									DestinationVersion  = $destVersion
 									Database            = $dbName
 									FeaturesInUse       = $dbFeatures
+									IsMigratable 		= $true
 									Notes               = $notesCanMigrate
 								}
 							}
@@ -252,6 +254,7 @@ function Test-DbaMigrationConstraint {
 									DestinationVersion  = $destVersion
 									Database            = $dbName
 									FeaturesInUse       = $dbFeatures
+									IsMigratable 		= $false
 									Notes               = "$notesCannotMigrate There are features in use not available on destination instance."
 								}
 							}
@@ -264,6 +267,7 @@ function Test-DbaMigrationConstraint {
 									DestinationVersion  = $destVersion
 									Database            = $dbName
 									FeaturesInUse       = $dbFeatures
+									IsMigratable 		= $true
 									Notes               = $notesCanMigrate
 								}
 							}
