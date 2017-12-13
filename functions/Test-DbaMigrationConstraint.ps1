@@ -197,7 +197,7 @@ function Test-DbaMigrationConstraint {
 
 							Write-Message -Level Verbose -Message "Checking features in use..."
 
-							if ($skuFeatures.Count -gt 0) {
+							if (@($skuFeatures).Count -gt 0) {
 								foreach ($row in $skuFeatures) {
 									$dbFeatures += ",$($row["feature_name"])"
 								}
