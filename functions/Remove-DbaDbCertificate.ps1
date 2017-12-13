@@ -74,31 +74,26 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
 			$cert = $smocert.Name
 			$db = $smocert.Parent.Name
 			
-			if ($Pscmdlet.ShouldProcess($instance, "Dropping the certificate named $cert for database '$db' on $instance")) {
+			$output = [pscustomobject]@{
+				ComputerName  = $server.NetName
+				InstanceName  = $server.ServiceName
+				SqlInstance   = $instance
+				Database	  = $db
+				Certificate   = $cert
+				Status	      = $null
+			}
+			
+			if ($Pscmdlet.ShouldProcess($instance, "Dropping the certificate named $cert for database '$db' on $server")) {
 				try {
 					$smocert.Drop()
-					Write-Message -Level Verbose -Message "Successfully removed certificate named $cert from the $db database on $instance"
-					
-					[pscustomobject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $instance
-						Database = $db
-						Certificate = $cert
-						Status = "Success"
-					}
+					Write-Message -Level Verbose -Message "Successfully removed certificate named $cert from the $db database on $server"
+					$output.status = "Success"
 				}
 				catch {
-					[pscustomobject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $instance
-						Database = $db
-						Certificate = $cert
-						Status = "Failure"
-					}
-					Stop-Function -Message "Failed to drop certificate named $cert from $db on $instance." -Target $smocert -InnerErrorRecord $_ -Continue
+					$output.Status = "Failure"
+					Stop-Function -Message "Failed to drop certificate named $cert from $db on $server." -Target $smocert -InnerErrorRecord $_ -Continue
 				}
+				$output
 			}
 		}
 	}
@@ -117,14 +112,14 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
 				$smodb = $server.Databases[$db]
 				
 				if ($null -eq $smodb) {
-					Stop-Function -Message "Database '$db' does not exist on $instance" -Target $smodb -Continue
+					Stop-Function -Message "Database '$db' does not exist on $server" -Target $smodb -Continue
 				}
 				
 				foreach ($cert in $certificate) {
 					$smocert = $smodb.Certificates[$cert]
 					
 					if ($null -eq $smocert) {
-						Stop-Function -Message "No certificate named $cert exists in the $db database on $instance" -Target $smodb.Certificates -Continue
+						Stop-Function -Message "No certificate named $cert exists in the $db database on $server" -Target $smodb.Certificates -Continue
 					}
 					
 					Drop-Cert -smocert $smocert
