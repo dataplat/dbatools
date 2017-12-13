@@ -20,10 +20,7 @@ LONG DESCRIPTION
 	#-------------------------------------------------------------------------#
 
 	- Getting Help
-	- Unattended Execution
 	- Import Options
-	- Configuration System
-	- Logging System
 	
 	
 	#-------------------------------------------------------------------------#
@@ -34,6 +31,19 @@ LONG DESCRIPTION
 	together a guide to help you through our process:
 	
 	  Get-Help about_dbatools_support
+	
+	
+	#-------------------------------------------------------------------------#
+	#                             Import Options                              #
+	#-------------------------------------------------------------------------#
+	
+	When designing the way the module is imported, we had to make several trade-
+	offs. Not every decision we made is always the right way for everybody
+	however, so we set up some options that let you decide, which way you
+	prefer. Basically, we had to balance import time vs. security policies and
+	resource cost. This guide explains what the settings do and how to set them:
+	
+	  Get-Help about_dbatools_importoptions
 	
 	
 KEYWORDS
