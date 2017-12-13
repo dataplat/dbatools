@@ -1,4 +1,4 @@
-function Restore-DbaDatabaseCertificate {
+function Restore-DbaDbCertificate {
 	<#
 .SYNOPSIS
 Imports certificates from .cer files using SMO.
@@ -45,7 +45,7 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-Restore-DbaDatabaseCertificate -SqlInstance Server1 -Path \\Server1\Certificates -password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+Restore-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -password (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
 Imports all the certificates in the specified path.
 
 #>
@@ -64,7 +64,8 @@ Imports all the certificates in the specified path.
 	)
 
 	begin {
-
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Retore-DbaDatabaseCertificate
+		
 		function new-smocert ($directory, $certname) {
 			if ($Pscmdlet.ShouldProcess("$cert on $SqlInstance", "Importing Certificate")) {
 				$smocert = New-Object Microsoft.SqlServer.Management.Smo.Certificate
