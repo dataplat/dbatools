@@ -5,27 +5,30 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Can create a database certificate" {
 		BeforeAll {
-			$masterKey = New-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database Master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
-			$null = New-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database TempDb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
-            $certificateName1 = "Cert_$(Get-random)"
-            $certificateName2 = "Cert_$(Get-random)"
+			if (-not (Get-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database master)) {
+				$masterkey = New-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+			}
+			
+			$tempdbmasterkey = New-DbaDatabasemasterKey -SqlInstance $script:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+			$certificateName1 = "Cert_$(Get-random)"
+			$certificateName2 = "Cert_$(Get-random)"
 		}
 		AfterAll {
-            $null = Remove-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $certificateName1 -database Master -Confirm:$false
-            $null = Remove-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $certificateName2 -database TempDb -Confirm:$false
-            if($masterKey) { $null = Remove-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database Master }
-            $null = Remove-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database TempDb
-        }
-        		
-        $results = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName1
-        
+			if ($tempdbmasterkey) { $tempdbmasterkey | Remove-DbaDatabaseMasterKey -Confirm:$false }
+			if ($masterKey) { $masterkey | Remove-DbaDatabasemasterKey -Confirm:$false }
+		}
+		
+		$cert1 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName1
 		It "Successfully creates a new database certificate in default, master database" {
-            "$($results.name)" -match $certificateName1 | Should Be $true
-        }
-                
-        $results = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName2 -Database TempDb
-		It "Successfully creates a new database certificate in the TempDb database" {
-		    "$($results.Database)" -match "TempDb"  | Should Be $true
-        }
+			"$($cert1.name)" -match $certificateName1 | Should Be $true
+		}
+		
+		$cert2 = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName2 -Database tempdb
+		It "Successfully creates a new database certificate in the tempdb database" {
+			"$($cert2.Database)" -match "tempdb" | Should Be $true
+		}
+		
+		$null = $cert1 | Remove-DbaDbCertificate -Confirm:$false
+		$null = $cert2 | Remove-DbaDbCertificate -Confirm:$false
 	}
 }

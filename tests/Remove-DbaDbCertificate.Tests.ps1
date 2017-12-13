@@ -5,16 +5,16 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	Context "Can remove a database certificate" {
 		BeforeAll {
-			$masterKey = New-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database Master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
-			
-			$certificateName1 = "Cert_$(Get-random)"
-			$null = New-DbaDbCertificate -SqlInstance $script:instance1 -Name $certificateName1
+			if (-not (Get-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database master)) {
+				$masterkey = New-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+			}
 		}
 		AfterAll {
-			if($masterKey) { $null = Remove-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database Master }
+			if ($masterKey) { $masterkey | Remove-DbaDatabasemasterKey -Confirm:$false }
 		}
 		
-		$results = Remove-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $certificateName1 -database Master -Confirm:$false
+		$results = New-DbaDbCertificate -SqlInstance $script:instance1 | Remove-DbaDbCertificate -Confirm:$false
+		
 		It "Successfully removes database certificate in master" {
 			"$($results.Status)" -match 'Success' | Should Be $true
 		}
