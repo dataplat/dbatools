@@ -1,4 +1,4 @@
-function Get-DbaDatabaseCertificate {
+function Get-DbaDbCertificate {
 	<#
 .SYNOPSIS
 Gets database certificates
@@ -33,17 +33,17 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-Get-DbaDatabaseCertificate -SqlInstance sql2016
+Get-DbaDbCertificate -SqlInstance sql2016
 
 Gets all certificates
 
 .EXAMPLE
-Get-DbaDatabaseCertificate -SqlInstance Server1 -Database db1
+Get-DbaDbCertificate -SqlInstance Server1 -Database db1
 
 Gets the certificate for the db1 database
 
 .EXAMPLE
-Get-DbaDatabaseCertificate -SqlInstance Server1 -Database db1 -Certificate cert1
+Get-DbaDbCertificate -SqlInstance Server1 -Database db1 -Certificate cert1
 
 Gets the cert1 certificate within the db1 database
 	
@@ -59,7 +59,9 @@ Gets the cert1 certificate within the db1 database
 		[object[]]$Certificate,
 		[switch][Alias('Silent')]$EnableException
 	)
-	
+	begin {
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaDatabaseCertificate
+	}
 	process {
 		foreach ($instance in $SqlInstance) {
 			try {

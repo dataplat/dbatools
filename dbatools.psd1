@@ -260,8 +260,8 @@
 		'New-DbaAgentSchedule',
 		'Set-DbaAgentSchedule',
 		'Remove-DbaAgentSchedule',
-		'Backup-DbaDatabaseCertificate',
-		'Get-DbaDatabaseCertificate',
+		'Backup-DbaDbCertificate',
+		'Get-DbaDbCertificate',
 		'Get-DbaCmConnection',
 		'Get-DbaCmObject',
 		'Get-DbaEndpoint',
@@ -271,13 +271,13 @@
 		'Get-DbaServerAuditSpecification',
 		'Get-DbaSqlProductKey',
 		'Get-DbatoolsLog',
-		'Restore-DbaDatabaseCertificate',
-		'New-DbaDatabaseCertificate',
+		'Restore-DbaDbCertificate',
+		'New-DbaDbCertificate',
 		'New-DbaCmConnection',
 		'New-DbaDatabaseMasterKey',
 		'New-DbaServiceMasterKey',
 		'New-DbatoolsSupportPackage',
-		'Remove-DbaDatabaseCertificate',
+		'Remove-DbaDbCertificate',
 		'Remove-DbaCmConnection',
 		'Remove-DbaDatabaseMasterKey',
 		'Set-DbaCmConnection',
@@ -487,7 +487,11 @@
 	'Get-DbaXEventSession',
 	'Get-DbaXEventSessionTarget',
 	'Read-DbaXEventFile',
-	'Watch-DbaXEventSession'
+	'Watch-DbaXEventSession',
+	'Get-DbaDatabaseCertificate',
+	'New-DbaDatabaseCertificate',
+	'Remove-DbaDatabaseCertificate',
+	'Restore-DbaDatabaseCertificate'
 	
 	# List of all modules packaged with this module
 	ModuleList			    = @()
