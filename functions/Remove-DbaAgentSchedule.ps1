@@ -71,7 +71,7 @@ Remove the schedule on multiple servers using pipe line
 	param (
 		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
 		[Alias("ServerInstance", "SqlServer")]
-		[object[]]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 
 		[System.Management.Automation.PSCredential]
 		$SqlCredential,
@@ -94,7 +94,7 @@ Remove the schedule on multiple servers using pipe line
 				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
 			}
 			catch {
-				Stop-Function -Message "Could not connect to Sql Server instance $instance" -Target $instance -InnerErrorRecord $_ -Continue
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
 			foreach ($s in $Schedule) {
@@ -111,14 +111,14 @@ Remove the schedule on multiple servers using pipe line
 					# Remove the job schedule
 					if ($PSCmdlet.ShouldProcess($instance, "Removing schedule $s on $instance")) {
 						# Loop through each of the schedules and drop them
-						Write-Message -Message "Removing schedule $s on $instance" -Level Output
+						Write-Message -Message "Removing schedule $s on $instance" -Level Verbose
 
 						#Check if jobs use the schedule
 						if ($jobCount -ge 1) {
 							# Get the job object
 							$smoSchedules = $server.JobServer.SharedSchedules | Where-Object {($_.Name -eq $s)}
                             
-							Write-Message -Message "Schedule $sched is used in one or more jobs. Removing it for each job." -Level Output
+							Write-Message -Message "Schedule $sched is used in one or more jobs. Removing it for each job." -Level Verbose
 
 							# Loop through each if the schedules
 							foreach ($smoSchedule in $smoSchedules) {
@@ -138,12 +138,12 @@ Remove the schedule on multiple servers using pipe line
                                         
 										foreach ($jobSchedule in $jobSchedules) {
 											try {
-												Write-Message -Message "Removing the schedule $jobSchedule for job $smoJob" -Level Output
+												Write-Message -Message "Removing the schedule $jobSchedule for job $smoJob" -Level Verbose
 
 												$jobSchedule.Drop()
 											}
 											catch {
-												Stop-Function -Message  "Something went wrong removing the job schedule. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
+												Stop-Function -Message  "Something went wrong removing the job schedule" -Target $instance -ErrorRecord $_ -Continue
 											}
 										}
 									} # foreach guid
@@ -152,7 +152,7 @@ Remove the schedule on multiple servers using pipe line
 							} # foreach smoschedule	
 						} # if jobcount ge 1
 
-						Write-Message -Message "Removing schedules that are not being used by other jobs." -Level Output
+						Write-Message -Message "Removing schedules that are not being used by other jobs." -Level Verbose
 
 						# Get the schedules
 						$smoSchedules = $server.JobServer.SharedSchedules | Where-Object {($_.Name -eq $s) -and ($_.JobCount -eq 0)}
@@ -163,7 +163,7 @@ Remove the schedule on multiple servers using pipe line
 								$smoSchedule.Drop()
 							}
 							catch {
-								Stop-Function -Message  "Something went wrong removing the schedule. `n$($_.Exception.Message)" -Target $instance -InnerErrorRecord $_ -Continue
+								Stop-Function -Message  "Something went wrong removing the schedule" -Target $instance -ErrorRecord $_ -Continue
 							}
 						} # foreach schedule
 					} # should process
@@ -176,6 +176,6 @@ Remove the schedule on multiple servers using pipe line
 	} # process
 
 	end {
-		Write-Message -Message "Finished removing jobs schedule(s)." -Level Output
+		Write-Message -Message "Finished removing jobs schedule(s)." -Level Verbose
 	}
 }

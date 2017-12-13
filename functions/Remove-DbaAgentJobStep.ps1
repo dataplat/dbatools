@@ -115,18 +115,18 @@ Remove the job step from the job on multiple servers using pipeline
 							$JobStep = $Server.JobServer.Jobs[$j].JobSteps[$StepName]
 						}
 						catch {
-							Stop-Function -Message "Something went wrong creating the job step. `n$($_.Exception.Message)" -Target $JobStep -Continue -InnerErrorRecord $_
+							Stop-Function -Message "Something went wrong creating the job step" -Target $JobStep -Continue -ErrorRecord $_
 						}
 						
 						# Execute 
 						if ($PSCmdlet.ShouldProcess($instance, "Removing the job step $StepName for job $j")) {
 							try {
-								Write-Message -Message "Removing the job step $StepName for job $j" -Level Output
+								Write-Message -Message "Removing the job step $StepName for job $j" -Level Verbose
 								
 								$JobStep.Drop()
 							}
 							catch {
-								Stop-Function -Message "Something went wrong removing the job step. `n$($_.Exception.Message)" -Target $JobStep -Continue -InnerErrorRecord $_
+								Stop-Function -Message "Something went wrong removing the job step" -Target $JobStep -Continue -ErrorRecord $_
 							}
 						}
 					}
