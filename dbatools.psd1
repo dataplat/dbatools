@@ -398,7 +398,8 @@
 		'New-DbaPublishProfile',
 		'Publish-DbaDacpac',
 		'Export-DbaDacpac',
-		'Copy-DbaTableData'
+		'Copy-DbaTableData',
+		'Invoke-DbaSqlCmd'
 	)
 	
 	# Cmdlets to export from this module
