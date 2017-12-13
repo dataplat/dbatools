@@ -72,7 +72,7 @@ LONG DESCRIPTION
 	
 	Literally the code you executed. Make it as simple as possible and still
 	produce the error. Make sure to replace sensitive data before posting it.
-	If you can reduce it to a single lione, that's great! (But don't sweat it if
+	If you can reduce it to a single line, that's great! (But don't sweat it if
 	it's still more)
 	
 	# Output / Error / Warning received #
@@ -100,7 +100,7 @@ LONG DESCRIPTION
 	# Execution Log #
 	#---------------#
 	
-	Dbatools logs a ot of information about how a function processes its logic.
+	Dbatools logs a lot of information about how a function processes its logic.
 	You can access that information by running Get-DbatoolsLog. In order to 
 	send in this information, start a new process and produce the error, then
 	execute the following line:
