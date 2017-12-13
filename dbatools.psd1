@@ -478,7 +478,6 @@
 	'Test-SqlTempDbConfiguration',
 	'Watch-SqlDbLogin',
 	'Get-DbaDatabaseFreeSpace',
-	'Invoke-DbaSqlcmd',
 	'Get-DbaQueryStoreConfig',
 	'Set-DbaQueryStoreConfig',
 	'Get-DbaRegisteredServerName',
