@@ -156,9 +156,9 @@ function Get-DbaStartupParameter {
 							ComputerName         = $computerName
 							InstanceName         = $instanceName
 							SqlInstance          = $ogInstance
-							MasterData           = $masterdata.TrimStart('-d')
-							MasterLog            = $masterlog.TrimStart('-l')
-							ErrorLog             = $errorlog.TrimStart('-e')
+							MasterData           = $masterdata -replace '^-[dD]',''
+							MasterLog            = $masterlog -replace '^-[lL]',''
+							ErrorLog             = $errorlog -replace '^-[eE]',''
 							TraceFlags           = $traceflags -join ','
 							CommandPromptStart   = $commandprompt
 							MinimalStart         = $minimalstart
