@@ -214,7 +214,9 @@ function Write-Message {
 		}
 	}
 	if ($ErrorRecord) {
-		[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteErrorEntry($ErrorRecord, $FunctionName, $timestamp, $baseMessage, $Host.InstanceId)
+		if($PSCmdlet.ShouldProcess("Error: $ErrorRecord", 'WriteErrorEntry')){
+			[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteErrorEntry($ErrorRecord, $FunctionName, $timestamp, $baseMessage, $Host.InstanceId)
+		}
 	}
 	#endregion Handle Errors
 
@@ -228,7 +230,9 @@ function Write-Message {
 
 				if (-not (Get-DbaConfigValue -Name $OnceName)) {
 					Write-Warning $newMessage
-					Set-DbaConfig -Name $OnceName -Value $True -Hidden -EnableException -ErrorAction Ignore
+					if($PSCmdlet.ShouldProcess('Set-DbaConfig')){
+						Set-DbaConfig -Name $OnceName -Value $True -Hidden -EnableException -ErrorAction Ignore
+					}
 				}
 			}
 			else {
@@ -253,7 +257,9 @@ function Write-Message {
 
 				if (-not (Get-DbaConfigValue -Name $OnceName)) {
 					Write-HostColor -String $newColoredMessage -DefaultColor $info_color -ErrorAction Ignore
-					Set-DbaConfig -Name $OnceName -Value $True -Hidden -EnableException -ErrorAction Ignore
+					if($PSCmdlet.ShouldProcess('Set-DbaConfig')){
+						Set-DbaConfig -Name $OnceName -Value $True -Hidden -EnableException -ErrorAction Ignore
+					}
 				}
 			}
 			else {
