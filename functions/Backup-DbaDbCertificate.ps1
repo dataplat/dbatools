@@ -187,12 +187,14 @@ function Backup-DbaDbCertificate {
 						SqlInstance	    = $server.DomainInstanceName
 						Database	    = $db.Name
 						Certificate	    = $certName
-						ExportPath	    = $exportPathCert
-						ExportKey	    = $exportPathKey
-						exportPathCert  = $exportPathCert
-						exportPathKey   = $exportPathKey
-						Status		    = "Success"
-					} | Select-DefaultView -ExcludeProperty exportPathCert, exportPathKey
+						Path			 = $exportPathCert
+						Key			     = $exportPathKey
+						ExportPath	     = $exportPathCert
+						ExportKey	     = $exportPathKey
+						exportPathCert   = $exportPathCert
+						exportPathKey    = $exportPathKey
+						Status		     = "Success"
+					} | Select-DefaultView -ExcludeProperty exportPathCert, exportPathKey, ExportPath, ExportKey
 				}
 				catch {
 					
@@ -204,17 +206,19 @@ function Backup-DbaDbCertificate {
 						$exception = $_.Exception
 					}
 					[pscustomobject]@{
-						ComputerName   = $server.NetName
-						InstanceName   = $server.ServiceName
-						SqlInstance    = $server.DomainInstanceName
-						Database	   = $db.Name
-						Certificate    = $certName
-						ExportPath	   = $exportPathCert
-						ExportKey	   = $exportPathKey
-						exportPathCert = $exportPathCert
-						exportPathKey  = $exportPathKey
-						Status		   = "Failure: $exception"
-					} | Select-DefaultView -ExcludeProperty exportPathCert, exportPathKey
+						ComputerName    = $server.NetName
+						InstanceName    = $server.ServiceName
+						SqlInstance	    = $server.DomainInstanceName
+						Database	    = $db.Name
+						Certificate	    = $certName
+						Path		    = $exportPathCert
+						Key			    = $exportPathKey
+						ExportPath	    = $exportPathCert
+						ExportKey	    = $exportPathKey
+						exportPathCert  = $exportPathCert
+						exportPathKey   = $exportPathKey
+						Status		    = "Failure: $exception"
+					} | Select-DefaultView -ExcludeProperty exportPathCert, exportPathKey, ExportPath, ExportKey
 					Stop-Function -Message "$certName from $db on $instance cannot be exported." -Continue -Target $cert -ErrorRecord $_
 				}
 			}
