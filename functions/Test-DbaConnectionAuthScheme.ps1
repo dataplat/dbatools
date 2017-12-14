@@ -20,7 +20,7 @@ function Test-DbaConnectionAuthScheme {
 			If this switch is enabled, checks will be made for NTLM authentication.
 			
 		.PARAMETER Detailed
-			If this switch is enabled, a detailed list of authentication schemes and transport methods in use will be returned.
+    		Output all properties, will be deprecated in 1.0.0 release.
 
 		.PARAMETER SqlCredential 
 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
@@ -56,7 +56,7 @@ function Test-DbaConnectionAuthScheme {
 			Returns $true or $false depending on if the connection is Kerberos or not.
 			
 		.EXAMPLE   
-			Test-DbaConnectionAuthScheme -SqlInstance sqlserver2014a -Detailed
+			Test-DbaConnectionAuthScheme -SqlInstance sqlserver2014a | Select-Object *
 
 			Returns the results of "SELECT * from sys.dm_exec_connections WHERE session_id = @@SPID"
 		
@@ -75,6 +75,8 @@ function Test-DbaConnectionAuthScheme {
 	)
 	
 	begin {
+		Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter Detailed
+
 		$sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
         					ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
         					SERVERPROPERTY('ServerName') AS SqlInstance,
@@ -122,12 +124,7 @@ function Test-DbaConnectionAuthScheme {
 				} | Select-DefaultView -Property SqlInstance, Result
 			}
 			else {
-				if ($detailed) {
-					$results
-				}
-				else {
 					Select-DefaultView -InputObject $results -Property ComputerName, InstanceName, SqlInstance, Transport, AuthScheme
-				}
 			}
 		}
 	}
