@@ -32,7 +32,7 @@ In addition to the simple things you can do in SSMS (like starting a job), we've
 
 ## Usage examples
 
-As previously mentioned, dbatools now offers [over 300 commands](https://dbatools.io/commands)! [Here are some of the ones we highlight at conferences](https://gist.github.com/potatoqualitee/e8932b64aeb6ef404e252d656b6318a2).
+As previously mentioned, dbatools now offers [over 300 commands](https://dbatools.io/commands)! [Here are some of the ones we highlight at conferences](https://gist.github.com/potatoqualitee/e8932b64aeb6ef404e252d656b6318a2) - PowerShell v3 and above required.
 
 ```powershell
 # Set some vars
@@ -196,6 +196,7 @@ Get-DbaDbVirtualLogFile -SqlInstance $new -Database db1 | Measure-Object
 
 dbatools aims to support as many configurations as possible, including
 
+* PowerShell v3 and above
 * SQL Server 2000 - 2017
 * Express - Datacenter Edition
 * Clustered and stand-alone instances
