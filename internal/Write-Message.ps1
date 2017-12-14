@@ -107,7 +107,7 @@ function Write-Message {
 	#>
 	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingWriteHost", "")]
 	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidDefaultValueForMandatoryParameter", "")]
-	[CmdletBinding(DefaultParameterSetName = 'Level')]
+	[CmdletBinding(DefaultParameterSetName = 'Level', SupportsShouldProcess = $true)]
 	param (
 		[Parameter(Mandatory = $true)]
 		[string]
