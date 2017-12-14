@@ -1,4 +1,4 @@
-﻿# dbatools
+# dbatools
 
 dbatools is sort of like a command-line SQL Server Management Studio. The project initially started out as Start-SqlMigration.ps1, but has now grown into a collection of [over 300 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
 
@@ -40,13 +40,13 @@ $new = "localhost\sql2016"
 $old = $instance = "localhost"
 $allservers = $old, $new
 
-# Alternatively, use Registerd Servers? 
+# Alternatively, use Registered Servers 
 $allservers = Get-DbaRegisteredServer -SqlInstance $instance
 
 # Need to restore a database? It can be as simple as this:
 Restore-DbaDatabase -SqlInstance $instance -Path "C:\temp\AdventureWorks2012-Full Database Backup.bak"
 
-# Use Ola Hallengren's backup script? We can restore an *ENTIRE INSTNACE* with just one line
+# Use Ola Hallengren's backup script? We can restore an *ENTIRE INSTANCE* with just one line
 Get-ChildItem -Directory \\workstation\backups\sql2012 | Restore-DbaDatabase -SqlInstance $new
 
 # What about if you need to make a backup? And you are logging in with alternative credentials?
