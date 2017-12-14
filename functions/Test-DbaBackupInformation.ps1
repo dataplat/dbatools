@@ -76,6 +76,7 @@ Function Test-DbaBackupInformation {
 		[PSCredential]$SqlCredential,
 		[switch]$Withreplace,
 		[switch]$Continue,
+		[switch]$VerifyOnly,
 		[switch]$EnableException
 	)
 
@@ -108,13 +109,15 @@ Function Test-DbaBackupInformation {
 			}
 			#Test Db Existance on destination
 			$DbCheck = Get-DbaDatabase -SqlInstance $RestoreInstance -Database $Database
+			# Only do file and db tests if we're not verifing
+			Write-Message -Level Verbose -Message "VerifyOnly = $VerifyOnly"
+			If($VerifyOnly -ne $true){
+				if ($null -ne $DbCheck -and ($WithReplace -ne $true -and $Continue -ne $true)) {
+					Write-Message -Message "Database $Database exists and WithReplace not specified, stopping" -Level Warning
+					$VerificationErrors++
+				}
 
-			if ($null -ne $DbCheck -and ($WithReplace -ne $true -and $Continue -ne $true)) {
-				Write-Message -Message "Database $Database exists and WithReplace not specified, stopping" -Level Warning
-				$VerificationErrors++
-			}
 
-			If(-not $VerifyOnly){
 				#Test no destinations exist
 				$DbFileCheck = (Get-DbaDatabaseFile -SqlInstance $RestoreInstance -Database $Database -WarningAction SilentlyContinue).PhysicalName
 				$OtherFileCheck = (Get-DbaDatabaseFile -SqlInstance $RestoreInstance -ExcludeDatabase $Database -WarningAction SilentlyContinue).PhysicalName
@@ -146,7 +149,7 @@ Function Test-DbaBackupInformation {
 					}
 				}
 			}
-			
+
 			#Test all backups readable
 			$allpaths = $DbHistory | Select-Object -ExpandProperty FullName
 			$allpaths_validity = Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $allpaths
