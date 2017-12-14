@@ -8,10 +8,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			$random = Get-Random
             $cert = "dbatoolsci_getcert$random"
             $password = ConvertTo-SecureString -String Get-Random -AsPlainText -Force
-            New-DbaDatabaseCertificate -SqlInstance $script:instance1 -Name $cert -password $password
+            New-DbaDbCertificate -SqlInstance $script:instance1 -Name $cert -password $password
 		}
 		AfterAll {
-            Get-DbaDatabaseCertificate -SqlInstance $script:instance1 -Certificate $cert | Remove-DbaDatabaseCertificate -confirm:$false
+            Get-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $cert | Remove-DbaDbCertificate -confirm:$false
 		}
         $results = Get-DbaDatabaseEncryption -SqlInstance $script:instance1 
         It "Should find a certificate named $cert" {
