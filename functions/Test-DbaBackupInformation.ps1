@@ -35,11 +35,14 @@ Function Test-DbaBackupInformation {
 		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
+	.PARAMETER VerifyOnly
+		This switch indicates that you only wish to verify a restore, so runs a smaller number of tests as you won't be writing anything to the restore servere
+
 	.PARAMETER Whatif
-	Shows what would happen if the cmdlet runs. The cmdlet is not run.
+		Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
 	.PARAMETER Confirm
-	Prompts you for confirmation before running the cmdlet.
+		Prompts you for confirmation before running the cmdlet.
 
 	.EXAMPLE
 
@@ -111,37 +114,39 @@ Function Test-DbaBackupInformation {
 				$VerificationErrors++
 			}
 
-			#Test no destinations exist
-			$DbFileCheck = (Get-DbaDatabaseFile -SqlInstance $RestoreInstance -Database $Database -WarningAction SilentlyContinue).PhysicalName
-			$OtherFileCheck = (Get-DbaDatabaseFile -SqlInstance $RestoreInstance -ExcludeDatabase $Database -WarningAction SilentlyContinue).PhysicalName
-			foreach ($path in ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object PhysicalName -Unique).PhysicalName) {
-				if (Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $path) {
-					if (($path -in $DBFileCheck) -and ($WithReplace -ne $True -and $Continue -ne $True)) {
-						Write-Message -Message "File $Path already exists on $SqlInstance and WithReplace not specified, cannot restore" -Level Warning
-						$VerificationErrors++
+			If(-not $VerifyOnly){
+				#Test no destinations exist
+				$DbFileCheck = (Get-DbaDatabaseFile -SqlInstance $RestoreInstance -Database $Database -WarningAction SilentlyContinue).PhysicalName
+				$OtherFileCheck = (Get-DbaDatabaseFile -SqlInstance $RestoreInstance -ExcludeDatabase $Database -WarningAction SilentlyContinue).PhysicalName
+				foreach ($path in ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object PhysicalName -Unique).PhysicalName) {
+					if (Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $path) {
+						if (($path -in $DBFileCheck) -and ($WithReplace -ne $True -and $Continue -ne $True)) {
+							Write-Message -Message "File $Path already exists on $SqlInstance and WithReplace not specified, cannot restore" -Level Warning
+							$VerificationErrors++
+						}
+						elseif ($path -in $OtherFileCheck) {
+							Write-Message -Message "File $Path already exists on $SqlInstance and owned by another database, cannot restore" -Level Warning
+							$VerificationErrors++
+						}
 					}
-					elseif ($path -in $OtherFileCheck) {
-						Write-Message -Message "File $Path already exists on $SqlInstance and owned by another database, cannot restore" -Level Warning
-						$VerificationErrors++
-					}
-				}
-				else {
-					$ParentPath = Split-Path $path -Parent
-					if (!(Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $ParentPath) ) {
-						$ConfirmMessage = "`n Creating Folder $ParentPath on $SqlInstance `n"
-						if ($Pscmdlet.ShouldProcess("$Path on $SqlInstance `n `n", $ConfirmMessage)) {
-							if (New-DbaSqlDirectory -SqlInstance $RestoreInstance -Path $ParentPath) {
-								Write-Message -Message "Created Folder $ParentPath on $SqlInstance" -Level Verbose
-							}
-							else {
-								Write-Message -Message "Failed to create $ParentPath on $SqlInstance" -Level Warning
-								$VerificationErrors++
+					else {
+						$ParentPath = Split-Path $path -Parent
+						if (!(Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $ParentPath) ) {
+							$ConfirmMessage = "`n Creating Folder $ParentPath on $SqlInstance `n"
+							if ($Pscmdlet.ShouldProcess("$Path on $SqlInstance `n `n", $ConfirmMessage)) {
+								if (New-DbaSqlDirectory -SqlInstance $RestoreInstance -Path $ParentPath) {
+									Write-Message -Message "Created Folder $ParentPath on $SqlInstance" -Level Verbose
+								}
+								else {
+									Write-Message -Message "Failed to create $ParentPath on $SqlInstance" -Level Warning
+									$VerificationErrors++
+								}
 							}
 						}
 					}
 				}
 			}
-
+			
 			#Test all backups readable
 			$allpaths = $DbHistory | Select-Object -ExpandProperty FullName
 			$allpaths_validity = Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $allpaths
