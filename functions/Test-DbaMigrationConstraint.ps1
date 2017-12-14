@@ -185,10 +185,33 @@ function Test-DbaMigrationConstraint {
 					Write-Message -Level Verbose -Message "Checking database '$dbName'."
 
 					if ($dbstatus.Contains("Offline") -eq $false -or $db.IsAccessible -eq $true) {
+
 						[long]$destVersionNumber = $($destServer.VersionString).Replace(".", "")
 						[string]$sourceVersion = "$($sourceServer.Edition) $($sourceServer.ProductLevel) ($($sourceServer.Version))"
 						[string]$destVersion = "$($destServer.Edition) $($destServer.ProductLevel) ($($destServer.Version))"
 						[string]$dbFeatures = ""
+
+						#Check if database has any FILESTREAM filegroup
+						Write-Message -Level Verbose -Message "Checking if FileStream is in use for database '$dbName'."
+						if ($sourceServer.Databases[$dbName].FileGroups | Where-Object FileGroupType -eq 'FileStreamDataFileGroup') {
+							Write-Message -Level Verbose -Message "Found FileStream filegroup and files."
+							$fileStreamSource = Get-DbaSpConfigure -SqlInstance $sourceServer -ConfigName FilestreamAccessLevel
+							$fileStreamDestination = Get-DbaSpConfigure -SqlInstance $destServer -ConfigName FilestreamAccessLevel
+
+							if ($fileStreamSource.RunningValue -ne $fileStreamDestination.RunningValue) {
+								[pscustomobject]@{
+									SourceInstance      = $sourceServer.Name
+									DestinationInstance = $destServer.Name
+									SourceVersion       = $sourceVersion
+									DestinationVersion  = $destVersion
+									Database            = $dbName
+									FeaturesInUse       = $dbFeatures
+									IsMigratable 		= $false
+									Notes               = "$notesCannotMigrate. Destination server dones not have the 'FilestreamAccessLevel' configuration (RunningValue: $($fileStreamDestination.RunningValue)) equal to source server (RunningValue: $($fileStreamSource.RunningValue))."
+								}
+								Continue
+							}
+						}
 
 						try {
 							$sql = "SELECT feature_name FROM sys.dm_db_persisted_sku_features"
