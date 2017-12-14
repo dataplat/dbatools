@@ -28,13 +28,13 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
         It 'Both databases are migratable' {
             $results = Test-DbaMigrationConstraint -Source $script:instance1 -Destination $script:instance2
             foreach ($result in $results) {
-                $result.IsMigratable | Should Be
+                $result.IsMigratable | Should Be $true
             }
         }
     }
     Context "Validate single database" {
         It 'Databases are migratable' {
-            (Test-DbaMigrationConstraint -Source $script:instance1 -Destination $script:instance2 -Database $db1).IsMigratable | Should Be
+            (Test-DbaMigrationConstraint -Source $script:instance1 -Destination $script:instance2 -Database $db1).IsMigratable | Should Be $true
         }
     }
 }
