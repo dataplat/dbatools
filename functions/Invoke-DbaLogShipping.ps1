@@ -805,11 +805,13 @@ The script will show a message that the copy destination has not been supplied a
 
 		# Check the database parameter
 		if ($Database) {
-			if ($Database -notin $SourceServer.Databases.Name) {
-				Stop-Function -Message "One or more databases cannot be found on instance on instance $SourceSqlInstance" -Target $SourceSqlInstance -Continue
-			}
+			foreach ($db in $Database) {
+				if ($db -notin $SourceServer.Databases.Name) {
+					Stop-Function -Message "Database $db cannot be found on instance $SourceSqlInstance" -Target $SourceSqlInstance
+				}
 
-			$DatabaseCollection = $SourceServer.Databases | Where-Object { $_.Name -in $Database }
+				$DatabaseCollection = $SourceServer.Databases | Where-Object { $_.Name -in $Database }
+			}
 		}
 		else {
 			Stop-Function -Message "Please supply a database to set up log shipping for" -Target $SourceSqlInstance -Continue
@@ -1118,7 +1120,7 @@ The script will show a message that the copy destination has not been supplied a
 			# Check the stand-by directory
 			if ($StandbyDirectory) {
 				# Check if the path is reachable for the destination server
-				if ((Test-DbaSqlPath -Path $StandbyDirectory -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true){
+				if ((Test-DbaSqlPath -Path $StandbyDirectory -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
 					Stop-Function -Message "The directory $StandbyDirectory cannot be reached by the destination instance. Please check the permission and credentials." -Target $DestinationSqlInstance
 					return
 				}
