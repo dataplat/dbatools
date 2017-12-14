@@ -279,9 +279,13 @@ function Write-Message {
 
 	$channel_Result = $channels -join ", "
 	if ($channel_Result) {
-		[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteLogEntry($Message, $channel_Result, $timestamp, $FunctionName, $Level, $Host.InstanceId, $targetToAdd)
+		if($PSCmdlet.ShouldProcess($Message,'WriteLogEntry')){
+			[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteLogEntry($Message, $channel_Result, $timestamp, $FunctionName, $Level, $Host.InstanceId, $targetToAdd)
+		}
 	}
 	else {
-		[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteLogEntry($Message, "None", $timestamp, $FunctionName, $Level, $Host.InstanceId, $targetToAdd)
+		if($PSCmdlet.ShouldProcess($Message,'WriteLogEntry')){
+			[Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::WriteLogEntry($Message, "None", $timestamp, $FunctionName, $Level, $Host.InstanceId, $targetToAdd)
+		}
 	}
 }
