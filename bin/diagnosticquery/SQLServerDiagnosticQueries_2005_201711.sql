@@ -2,7 +2,7 @@
 -- SQL Server 2005 Diagnostic Information Queries
 -- Glenn Berry 
 -- CY 2017
--- Last Modified: December 6, 2017
+-- Last Modified: December 13, 2017
 -- https://www.sqlserverperformance.wordpress.com/
 -- https://www.sqlskills.com/blogs/glenn/
 -- Twitter: GlennAlanBerry
@@ -904,20 +904,19 @@ ORDER BY [Avg IO] DESC OPTION (RECOMPILE);
 
 
 -- Possible Bad NC Indexes (writes > reads)  (Query 40) (Bad NC Indexes)
-SELECT OBJECT_NAME(s.[object_id]) AS [Table Name], i.name AS [Index Name], 
-o.[type_desc], o.create_date, i.index_id, i.is_disabled,
+SELECT OBJECT_NAME(s.[object_id]) AS [Table Name], i.name AS [Index Name], i.index_id, 
+i.is_disabled, i.is_hypothetical, i.has_filter, i.fill_factor,
 user_updates AS [Total Writes], user_seeks + user_scans + user_lookups AS [Total Reads],
 user_updates - (user_seeks + user_scans + user_lookups) AS [Difference]
 FROM sys.dm_db_index_usage_stats AS s WITH (NOLOCK)
 INNER JOIN sys.indexes AS i WITH (NOLOCK)
 ON s.[object_id] = i.[object_id]
 AND i.index_id = s.index_id
-INNER JOIN sys.objects AS o WITH (NOLOCK) 
-ON i.[object_id] = o.[object_id]
 WHERE OBJECTPROPERTY(s.[object_id],'IsUserTable') = 1
 AND s.database_id = DB_ID()
-AND user_updates > (user_seeks + user_scans + user_lookups)
-AND i.index_id > 1
+AND s.user_updates > (s.user_seeks + s.user_scans + s.user_lookups)
+AND i.index_id > 1 AND i.[type_desc] = N'NONCLUSTERED'
+AND i.is_primary_key = 0 AND i.is_unique_constraint = 0
 ORDER BY [Difference] DESC, [Total Writes] DESC, [Total Reads] ASC OPTION (RECOMPILE);
 ------
 
