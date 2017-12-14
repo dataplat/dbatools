@@ -606,8 +606,8 @@ function Restore-DbaDatabase {
             if ($StopAfterFormatBackupInformation){
                 return
             }
-            
-            $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $RestoreInstance  -WithReplace:$WithReplace -Continue:$Continue
+            Write-Message -Level Verbose -Message "VerifyOnly = $VerifyOnly"
+            $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $RestoreInstance  -WithReplace:$WithReplace -Continue:$Continue -VerifyOnly:$VerifyOnly
             
             if ( Test-Bound -ParameterName TestBackupInformation){
                 Set-Variable -Name $TestBackupInformation -Value $FilteredBackupHistory -Scope Global

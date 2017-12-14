@@ -46,7 +46,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should return successful restore" {
             $results.RestoreComplete | Should Be $true
         }
-	}
+    }
+    
+    Context "Test VerifyOnly works with db in existance" {
+        $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1  -VerifyOnly
+        It "Should have verified Successfully" {
+            $results[0] | Should Be "Verify successful"
+        }
+    }
 	
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again after gci tests" {
