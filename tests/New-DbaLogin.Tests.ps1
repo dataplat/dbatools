@@ -61,7 +61,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 	if ($crt = $server1.Databases['master'].Certificates[$certificateName]) {
 		$crt.Drop()
 	}
-	$null = New-DbaDatabaseCertificate $server1 -Name $certificateName -Password $null
+	$null = New-DbaDbCertificate $server1 -Name $certificateName -Password $null
 
 	Context "Create new logins" {
 		It "Should be created successfully - Hashed password" {

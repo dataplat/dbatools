@@ -559,4 +559,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 
         
     }
+
+    Context "Testing Backup to Restore piping" {
+        Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName PipeTest -DestinationFilePrefix PipeTest
+        $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database Pipetest -BackupDirectory c:\temp -CopyOnly -WarningAction SilentlyContinue -WarningVariable bwarnvar -ErrorAction SilentlyContinue -ErrorVariable berrvar | Restore-DbaDatabase -SqlInstance $script:instance1 -DatabaseName restored -ReplaceDbNameInFile -WarningAction SilentlyContinue -WarningVariable rwarnvar -ErrorAction SilentlyContinue -ErrorVariable rerrvar
+        It "Should backup and restore cleanly"  {
+            $results.RestoreComplete | Should Be $True
+        }
+    }
 }
