@@ -117,6 +117,9 @@ function Connect-DbaInstance {
 
     .PARAMETER WorkstationId	
         Sets the name of the workstation connecting to SQL Server.
+	
+	.PARAMETER SqlConnectionOnly
+		Instead of returning a rich SMO server object, this command will only return a SqlConnection object when setting this switch.
         
     .NOTES
         dbatools PowerShell module (https://dbatools.io)
@@ -196,23 +199,47 @@ function Connect-DbaInstance {
 		[int]$StatementTimeout,
 		[switch]$TrustServerCertificate,
 		[string]$WorkstationId,
-		[string]$AppendConnectionString
+		[string]$AppendConnectionString,
+		[switch]$SqlConnectionOnly
 	)
 	begin {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Connect-DbaSqlServer
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaInstance
+		
+		$loadedSmoVersion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
+		
+		if ($loadedSmoVersion) {
+			$loadedSmoVersion = $loadedSmoVersion | ForEach-Object {
+				if ($_.Location -match "__") {
+					((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0]
+				}
+				else {
+					((Get-ChildItem -Path $_.Location).VersionInfo.ProductVersion)
+				}
+			}
+		}
 	}
 	process	{
 		foreach ($instance in $SqlInstance) {
-			if ($instance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
-				
-				if ($instance.ConnectionContext.IsOpen -eq $false) {
-					$instance.ConnectionContext.Connect()
+			if ($instance.Type -like "Server") {
+				if ($instance.InputObject.ConnectionContext.IsOpen -eq $false) {
+					$instance.InputObject.ConnectionContext.Connect()
 				}
-				return $instance
+				if ($SqlConnectionOnly) { return $instance.InputObject.ConnectionContext.SqlConnectionObject }
+				else { return $instance.InputObject }
+			}
+			if ($instance.Type -like "SqlConnection") {
+				$server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject)
+				
+				if ($server.ConnectionContext.IsOpen -eq $false) {
+					$server.ConnectionContext.Connect()
+				}
+				if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
+				else { return $server }
 			}
 			
-			$server = New-Object Microsoft.SqlServer.Management.Smo.Server $instance
+			if ($instance.IsConnectionString) { $server = New-Object Microsoft.SqlServer.Management.Smo.Server($instance.InputObject) }
+			else { $server = New-Object Microsoft.SqlServer.Management.Smo.Server $instance.FullSmoName }
 			
 			if ($AppendConnectionString) {
 				$connstring = $server.ConnectionContext.ConnectionString
@@ -284,18 +311,7 @@ function Connect-DbaInstance {
 				
 			}
 			
-			$loadedSmoVersion = [AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" }
 			
-			if ($loadedSmoVersion) {
-				$loadedSmoVersion = $loadedSmoVersion | ForEach-Object {
-					if ($_.Location -match "__") {
-						((Split-Path (Split-Path $_.Location) -Leaf) -split "__")[0]
-					}
-					else {
-						((Get-ChildItem -Path $_.Location).VersionInfo.ProductVersion)
-					}
-				}
-			}
 			
 			if ($loadedSmoVersion -ge 11) {
 				if ($server.VersionMajor -eq 8) {
@@ -316,7 +332,9 @@ function Connect-DbaInstance {
 					$server.SetDefaultInitFields([Microsoft.SqlServer.Management.Smo.Login], 'AsymmetricKey', 'Certificate', 'CreateDate', 'Credential', 'DateLastModified', 'DefaultDatabase', 'DenyWindowsLogin', 'ID', 'IsDisabled', 'IsLocked', 'IsPasswordExpired', 'IsSystemObject', 'Language', 'LanguageAlias', 'LoginType', 'MustChangePassword', 'Name', 'PasswordExpirationEnabled', 'PasswordHashAlgorithm', 'PasswordPolicyEnforced', 'Sid', 'WindowsLoginAccessType')
 				}
 			}
-			return $server
+			
+			if ($SqlConnectionOnly) { return $server.ConnectionContext.SqlConnectionObject }
+			else { return $server }
 		}
 	}
 }
