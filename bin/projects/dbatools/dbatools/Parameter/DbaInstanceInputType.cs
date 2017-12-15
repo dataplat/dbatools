@@ -33,6 +33,11 @@
         /// <summary>
         /// A connection string pointing at a local, file-based DB
         /// </summary>
-        ConnectionStringLocalDB
+        ConnectionStringLocalDB,
+
+        /// <summary>
+        /// An already established sql connection to was created outside of SMO
+        /// </summary>
+        SqlConnection
     }
 }
