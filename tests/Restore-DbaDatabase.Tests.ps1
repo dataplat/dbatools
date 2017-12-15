@@ -575,4 +575,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.RestoreComplete | Should Be $True
         }
     }
+
+    Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
+    Context "Database is properly removed again pre stripe tests" {
+        $results = Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database singlerestore
+        It "Should say the status was dropped" {
+            $results.Status | Should Be "Dropped"
+        }
+
+    }
+
+    Context "Check we restore striped database" {
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\sql2008-backups\RestoreTimeStripe -DatabaseName StripeTest -DestinationFilePrefix StripeTest
+        It "Should backup and restore cleanly"  {
+            ($results | Where-Object {$_.RestoreComplete -eq $True}).count | Should Be $Results.count
+        }
+    }
 }
