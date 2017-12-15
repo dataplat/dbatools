@@ -10,17 +10,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 			}
 		}
 		AfterAll {
-			(Get-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb) | Remove-DbaDbCertificate -Confirm:$false
 			(Get-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database tempdb) | Remove-DbaDatabaseMasterKey -Confirm:$false
 		}
 		
-		$cert = New-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb
-		$results = Backup-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $cert.Name -Database tempdb
+		$results = Backup-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force)
 		$null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
 		
 		It "backs up the db cert" {
-			$results.Certificate -match $certificateName1
-			$results.Status -match "Success"
+			$results.Database -eq 'tempdb'
+			$results.Status -eq "Success"
 		}
 	}
 }
