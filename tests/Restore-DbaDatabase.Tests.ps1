@@ -575,4 +575,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results.RestoreComplete | Should Be $True
         }
     }
+
+    Context "Check we restore striped database" {
+        Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\sql2008-backups\RestoreTimeStripe -DatabaseName StripeTest -DestinationFilePrefix StripeTest
+        It "Should backup and restore cleanly"  {
+            ($results | Where-Object {$_.RestoreComplete -eq $True}).count | Should Be $Results.count
+        }
+    }
 }
