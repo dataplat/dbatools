@@ -950,14 +950,12 @@ function Copy-DbaDatabase {
 				
 				if ($ReuseSourceFolderStructure) {
 					$fgRows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and FileType = 'ROWS'")[0]
-					$remotePath = Split-Path $fgRows
-					$remotePath = Join-AdminUNC $destNetBios $remotePath
+					$remotePath = Split-Path $fgRows.Filename
 					
-					if (!(Test-Path $remotePath)) {
-						Stop-Function -Message "Cannot resolve $remotePath. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script."
-						
+					if (!(Test-DbaSqlPath -SqlInstance $destServer -Path $remotePath)) {
+						# Stop-Function -Message "Cannot resolve $remotePath on $source. `n`nYou have specified ReuseSourceFolderStructure and exact folder structure does not exist. Halting script."
 						$copyDatabaseStatus.Status = "Failed"
-						$copyDatabaseStatus.Notes = "Can't resolve $remotePath"
+						$copyDatabaseStatus.Notes = "$remotePath does not exist on $destination and ReuseSourceFolderStructure was specified" #"Can't resolve $remotePath"
 						$copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
 						return
 					}
