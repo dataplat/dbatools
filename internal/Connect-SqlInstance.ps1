@@ -98,10 +98,13 @@ function Connect-SqlInstance {
     #>
 	if ($SqlInstance.GetType() -eq [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]) {
 		[DbaInstanceParameter]$ConvertedSqlInstance = $SqlInstance
+		if ($ConvertedSqlInstance.Type -like "SqlConnection") {
+			[DbaInstanceParameter]$ConvertedSqlInstance = New-Object Microsoft.SqlServer.Management.Smo.Server($ConvertedSqlInstance.InputObject)
+		}
 	}
 	else {
 		[DbaInstanceParameter]$ConvertedSqlInstance = [DbaInstanceParameter]($SqlInstance | Select-Object -First 1)
-
+		
 		if ($SqlInstance.Count -gt 1) {
 			Write-Message -Level Warning -EnableException $true -Message "More than on server was specified when calling Connect-SqlInstance from $((Get-PSCallStack)[1].Command)"
 		}
