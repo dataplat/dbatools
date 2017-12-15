@@ -202,9 +202,11 @@ function Get-DbaBackupInformation {
             if ($NoXpDirTree -ne $true){
                 ForEach ($f in $path) {
                     if ($f -match '\.\w{3}\Z') {
-                        Write-Message -Message "Testing a single file $f " -Level Verbose
-                        if ((Test-DbaSqlPath -Path $f -SqlInstance $server) -and $p -notlike 'http*') {
+                        if ("Fullname" -notin $f.PSobject.Properties.name){
                             $f = $f | Select-Object *, @{ Name = "FullName"; Expression = { $f } }
+                        }
+                        Write-Message -Message "Testing a single file $f " -Level Verbose
+                        if ((Test-DbaSqlPath -Path $f.fullname -SqlInstance $server)) {
                             $files += $f
                         }
                     }
