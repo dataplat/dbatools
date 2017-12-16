@@ -18,9 +18,6 @@ The Login(s) to process - this list is auto-populated from the server. If unspec
 .PARAMETER LoginCollection
 A collection of Logins (such as returned by Get-DbaLogin), to be removed.
 
-.PARAMETER IncludeSystemDb
-Use this switch to disable any kind of verbose messages
-
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -75,9 +72,7 @@ removes mylogin on SQL Server server\instance
 		[object[]]$Login,
 		[Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "Logins")]
 		[Microsoft.SqlServer.Management.Smo.Login[]]$LoginCollection,
-		[switch]$IncludeSystemDb,
-		[switch][Alias('Silent')]
-		$EnableException
+		[switch]$EnableException
 	)
 	
 	process {
