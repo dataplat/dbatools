@@ -69,7 +69,7 @@ WhatIf Example
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
 		[parameter(Mandatory = $true)]
-		[DbaInstanceParameter]$SqlInstance,
+		[DbaInstanceParameter[]]$SqlInstance,
 		[PSCredential]$SqlCredential,
 		[parameter(Mandatory = $true)]
 		[string]$Login,
@@ -79,79 +79,81 @@ WhatIf Example
 	)
 	
 	process {
-		try {
-			$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-		}
-		catch {
-			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-		}
-		
-		$Databases = $server.Databases | Where-Object IsAccessible
-		$currentLogin = $server.Logins[$Login]
-		
-		if ($Pscmdlet.ShouldProcess($SqlInstance, "Changing Login name from  [$Login] to [$NewLogin]")) {
+		foreach ($instance in $SqlInstance) {
 			try {
-				$dbenums = $currentLogin.EnumDatabaseMappings()
-				$currentLogin.rename($NewLogin)
-				[pscustomobject]@{
-					ComputerName    = $server.NetName
-					InstanceName    = $server.ServiceName
-					SqlInstance	    = $server.DomainInstanceName
-					Database	    = "N/A"
-					OldLogin	    = $Login
-					NewLogin	    = $NewLogin
-					Notes		    = "Successfully renamed login"
-				}
+				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
 			}
 			catch {
-				$dbenums = $null
-				[pscustomobject]@{
-					ComputerName    = $server.NetName
-					InstanceName    = $server.ServiceName
-					SqlInstance	    = $server.DomainInstanceName
-					Database	    = $null
-					OldLogin	    = $Login
-					NewLogin	    = $NewLogin
-					Notes		    = "Failure to rename login"
-				}
-				Stop-Function -Message "Failure" -ErrorRecord $_ -Target $login
+				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-		}
-		
-		foreach ($db in $dbenums) {
-			$db = $databases[$db.DBName]
-			$user = $db.Users[$Login]
-			Write-Message -Level Verbose -Message "Starting update for $db"
 			
-			if ($Pscmdlet.ShouldProcess($SqlInstance, "Changing database $db user $user from [$Login] to [$NewLogin]")) {
+			$Databases = $server.Databases | Where-Object IsAccessible
+			$currentLogin = $server.Logins[$Login]
+			
+			if ($Pscmdlet.ShouldProcess($SqlInstance, "Changing Login name from  [$Login] to [$NewLogin]")) {
 				try {
-					$oldname = $user.name
-					$user.Rename($NewLogin)
+					$dbenums = $currentLogin.EnumDatabaseMappings()
+					$currentLogin.rename($NewLogin)
 					[pscustomobject]@{
-						ComputerName    = $server.NetName
-						InstanceName    = $server.ServiceName
-						SqlInstance	    = $server.DomainInstanceName
-						Database	    = $db.name
-						OldUser		    = $oldname
-						NewUser		    = $NewLogin
-						Notes		    = "Successfully renamed database user"
+						ComputerName   = $server.NetName
+						InstanceName   = $server.ServiceName
+						SqlInstance    = $server.DomainInstanceName
+						Database	   = $null
+						OldLogin	   = $Login
+						NewLogin	   = $NewLogin
+						Status		   = "Successful"
 					}
-					
 				}
 				catch {
-					Write-Message -Level Warning -Message  "Rolling back update to login: $Login"
-					$currentLogin.rename($Login)
-					
+					$dbenums = $null
 					[pscustomobject]@{
 						ComputerName    = $server.NetName
 						InstanceName    = $server.ServiceName
 						SqlInstance	    = $server.DomainInstanceName
-						Database	    = $db.name
-						OldUser		    = $NewLogin
-						NewUser		    = $oldname
-						Notes		    = "Failure to rename. Rolled back change."
+						Database	    = $null
+						OldLogin	    = $Login
+						NewLogin	    = $NewLogin
+						Status		    = "Failure"
 					}
-					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $NewLogin
+					Stop-Function -Message "Failure" -ErrorRecord $_ -Target $login
+				}
+			}
+			
+			foreach ($db in $dbenums) {
+				$db = $databases[$db.DBName]
+				$user = $db.Users[$Login]
+				Write-Message -Level Verbose -Message "Starting update for $db"
+				
+				if ($Pscmdlet.ShouldProcess($SqlInstance, "Changing database $db user $user from [$Login] to [$NewLogin]")) {
+					try {
+						$oldname = $user.name
+						$user.Rename($NewLogin)
+						[pscustomobject]@{
+							ComputerName   = $server.NetName
+							InstanceName   = $server.ServiceName
+							SqlInstance    = $server.DomainInstanceName
+							Database	   = $db.name
+							OldUser	       = $oldname
+							NewUser	       = $NewLogin
+							Status		   = "Successful"
+						}
+						
+					}
+					catch {
+						Write-Message -Level Warning -Message "Rolling back update to login: $Login"
+						$currentLogin.rename($Login)
+						
+						[pscustomobject]@{
+							ComputerName   = $server.NetName
+							InstanceName   = $server.ServiceName
+							SqlInstance    = $server.DomainInstanceName
+							Database	   = $db.name
+							OldUser	       = $NewLogin
+							NewUser	       = $oldname
+							Status		   = "Failure to rename. Rolled back change."
+						}
+						Stop-Function -Message "Failure" -ErrorRecord $_ -Target $NewLogin
+					}
 				}
 			}
 		}
