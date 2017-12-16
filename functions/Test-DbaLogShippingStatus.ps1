@@ -96,6 +96,10 @@ function Test-DbaLogShippingStatus {
 	)
 	
 	begin {
+
+		# Create array list to hold the results
+		$collection = New-Object System.Collections.ArrayList
+
 		# Setup the query
 		[string[]]$query = "IF ( OBJECT_ID('tempdb..#logshippingstatus') ) IS NOT NULL
 				BEGIN
@@ -236,50 +240,51 @@ function Test-DbaLogShippingStatus {
 					$lastBackup = "N/A"
 				}
 				else {
-					$lastBackup = (Get-Date).AddMinutes(- $result.TimeSinceLastBackup)
+					$lastBackup = (Get-Date).AddMinutes( - $result.TimeSinceLastBackup)
 				}
 				
 				if ($result.TimeSinceLastCopy -eq [DBNull]::Value) {
 					$lastCopy = "N/A"
 				}
 				else {
-					$lastCopy = (Get-Date).AddMinutes(- $result.TimeSinceLastCopy)
+					$lastCopy = (Get-Date).AddMinutes( - $result.TimeSinceLastCopy)
 				}
 				
 				if ($result.TimeSinceLastRestore -eq [DBNull]::Value) {
 					$lastRestore = "N/A"
 				}
 				else {
-					$lastRestore = (Get-Date).AddMinutes(- $result.TimeSinceLastRestore)
+					$lastRestore = (Get-Date).AddMinutes( - $result.TimeSinceLastRestore)
 				}
 				
 				# Set up the custom object
-				$object = [pscustomobject]@{
-					ComputerName    = $server.NetName
-					InstanceName    = $server.ServiceName
-					SqlInstance	    = $server.DomainInstanceName
-					Database	    = $result.DatabaseName
-					InstanceType    = switch ($result.IsPrimary) { $true { "Primary Instance" } $false { "Secondary Instance" } }
-					TimeSinceLastBackup = $lastBackup
-					LastBackupFile  = $result.LastBackupFile
-					BackupThresshold = $result.BackupThresshold
-					IsBackupAlertEnabled = $result.IsBackupAlertEnabled
-					TimeSinceLastCopy = $lastCopy
-					LastCopiedFile  = $result.LastCopiedFile
-					TimeSinceLastRestore = $lastRestore
-					LastRestoredFile = $result.LastRestoredFile
-					LastRestoredLatency = $result.LastRestoredLatency
-					RestoreThresshold = $result.RestoreThresshold
-					IsRestoreAlertEnabled = $result.IsRestoreAlertEnabled
-					Status		    = $statusDetails -join ","
-				}
+				$null = $collection.Add([PSCustomObject]@{
+						ComputerName          = $server.NetName
+						InstanceName          = $server.ServiceName
+						SqlInstance           = $server.DomainInstanceName
+						Database              = $result.DatabaseName
+						InstanceType          = switch ($result.IsPrimary) { $true { "Primary Instance" } $false { "Secondary Instance" } }
+						TimeSinceLastBackup   = $lastBackup
+						LastBackupFile        = $result.LastBackupFile
+						BackupThresshold      = $result.BackupThresshold
+						IsBackupAlertEnabled  = $result.IsBackupAlertEnabled
+						TimeSinceLastCopy     = $lastCopy
+						LastCopiedFile        = $result.LastCopiedFile
+						TimeSinceLastRestore  = $lastRestore
+						LastRestoredFile      = $result.LastRestoredFile
+						LastRestoredLatency   = $result.LastRestoredLatency
+						RestoreThresshold     = $result.RestoreThresshold
+						IsRestoreAlertEnabled = $result.IsRestoreAlertEnabled
+						Status                = $statusDetails -join ","
+					})
+
 			}
 			
 			if ($Simple) {
-				Select-DefaultView -InputObject $object -Properties 'SqlInstance', 'Database', 'InstanceType', 'Status'
+				return $collection | Select-Object SqlInstance, Database, InstanceType, Status
 			}
 			else {
-				$object
+				return $collection
 			}
 		}
 	}
