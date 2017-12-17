@@ -56,7 +56,7 @@ function Set-DbaFileStream{
             catch{
                 Stop-Function -Message "Failure connecting to $computer" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $FileStreamState = $server.Configuration.FilestreamAccessLevel
+            $FileStreamState = [int]$server.Configuration.FilestreamAccessLevel.ConfigValue
             $OutputLookup = @{
                 0='FileStream Disabled';
                 1='FileStream Enabled for T-Sql Access';
@@ -69,14 +69,14 @@ function Set-DbaFileStream{
             }
                 
             if ($force -or $PSCmdlet.ShouldProcess($instance, "Need to restart Sql Service for change to take effect, continue?")) {
-                Restart-DbaSqlService -ComputerName $server.ComputerNamePhysicalNetBIOS -InstanceName $server.InstanceName -Type Engine   
+                $RestartOutput = Restart-DbaSqlService -ComputerName $server.ComputerNamePhysicalNetBIOS -InstanceName $server.InstanceName -Type Engine   
             }
 
             [PsCustomObject]@{
                 SqlInstance = $server
-                OriginalValue = $OutputText
-                FileSteamStatID = $FileStreamState.RunValue
-                FileStreamConfig = $FileStreamState
+                OriginalValue = $OutputLookup[$FileStreamState]
+                NewValue = $OutputLookup[$NewFs]
+                RestartStatus = $RestartOutput.Status
             } | Select-DefaultView -Exclude FileStreamConfig
         }
     }
