@@ -67,6 +67,7 @@
 	
 	# Functions to export from this module
 	FunctionsToExport	    = @(
+		'Set-DbaFileStream',
 		'Get-DbaFileStream',
 		'Start-DbaMigration',
 		'Copy-DbaDatabase',
