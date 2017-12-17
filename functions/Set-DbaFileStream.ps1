@@ -32,6 +32,7 @@ function Set-DbaFileStream{
         [PSCredential]$SqlCredential,
         [ValidateSet("0","1","2","3","Disable","T-Sql Only","T-Sql and Win-32 Access", "Remote T-Sql and Win-32 Access")]
         [Object]$FileStreamLevel,
+        [switch]$force,
 		[switch][Alias('Silent')]$EnableException
     )
     BEGIN {
@@ -42,6 +43,9 @@ function Set-DbaFileStream{
                 "T-Sql and Win-32 Access" {2}
                 "Remote T-Sql and Win-32 Access" {3}
             } 
+        }
+        else {
+            $NewFs = $FileStreamLevel
         }
     }
     PROCESS {
@@ -60,18 +64,17 @@ function Set-DbaFileStream{
                 3='FileStream Enabled for T-Sql, Win32 and remote Access'
             }
 
-            if ($PSCmdlet.ShouldProcess($instance, "Changing from `"$($OutputLookup[$FileStreamState])`" to `"$($NewFs[$FileStreamState])`" on $instance, continue?")) {
-                $server.Configuration.FilestreamAccessLevel = 
+            if ($force -or $PSCmdlet.ShouldProcess($instance, "Changing from `"$($OutputLookup[$FileStreamState.ConfigValue])`" to `"$($OutputLookup[$NewFs])`"")) {
+                $server.Configuration.FilestreamAccessLevel.ConfigValue = $NewFs
             }
                 
-            if ($PSCmdlet.ShouldProcess($instance, "Need to restart $instance for change to take effect, continue?")) {
-                Restart-DbaSqlService -SqlInstance $server.ComputerNamePhysicalNetBIOS -Service $server.Instance Name -Type Engine   
+            if ($force -or $PSCmdlet.ShouldProcess($instance, "Need to restart Sql Service for change to take effect, continue?")) {
+                Restart-DbaSqlService -ComputerName $server.ComputerNamePhysicalNetBIOS -InstanceName $server.InstanceName -Type Engine   
             }
 
             [PsCustomObject]@{
                 SqlInstance = $server
                 OriginalValue = $OutputText
-                NewValue = 
                 FileSteamStatID = $FileStreamState.RunValue
                 FileStreamConfig = $FileStreamState
             } | Select-DefaultView -Exclude FileStreamConfig
