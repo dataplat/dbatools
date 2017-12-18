@@ -400,7 +400,9 @@
 		'Export-DbaDacpac',
 		'Copy-DbaTableData',
 		'Invoke-DbaSqlCmd',
-		'Remove-DbaLogin'
+		'Remove-DbaLogin',
+		'Get-DbaFileStream',
+		'Set-DbaFileStream'
 	)
 	
 	# Cmdlets to export from this module
