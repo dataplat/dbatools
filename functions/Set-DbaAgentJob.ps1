@@ -171,8 +171,8 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 		[string]$NetsendOperator,
 		[string]$PageOperator,
 		[ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
-        [object]$DeleteLevel,
-        [switch]$Force,
+		[object]$DeleteLevel,
+		[switch]$Force,
 		[switch][Alias('Silent')]$EnableException
 	)
 	
@@ -331,30 +331,32 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 						}
 						
 					}
-                    
-					# Check if the job category exists
-					if ($Category -notin $server.JobServer.JobCategories.Name) {
-						if ($Force) {
-							if ($PSCmdlet.ShouldProcess($instance, "Creating job category on $instance")) {
-								try {
-									# Create the category
-                                    New-DbaAgentJobCategory -SqlInstance $instance -Category $Category
+					
+					if ($Category) {
+						# Check if the job category exists
+						if ($Category -notin $server.JobServer.JobCategories.Name) {
+							if ($Force) {
+								if ($PSCmdlet.ShouldProcess($instance, "Creating job category on $instance")) {
+									try {
+										# Create the category
+										New-DbaAgentJobCategory -SqlInstance $instance -Category $Category
                                     
-                                    Write-Message -Message "Setting job category to $Category" -Level Verbose
-                                    $currentjob.Category = $Category
+										Write-Message -Message "Setting job category to $Category" -Level Verbose
+										$currentjob.Category = $Category
+									}
+									catch {
+										Stop-Function -Message "Couldn't create job category $Category from $instance" -Target $instance -Continue -ErrorRecord $_
+									}
 								}
-								catch {
-									Stop-Function -Message "Couldn't create job category $Category from $instance" -Target $instance -Continue -ErrorRecord $_
-								}
+							}
+							else {
+								Stop-Function -Message "Job category $Category doesn't exist on $instance. Use -Force to create it." -Target $instance -Continue
 							}
 						}
 						else {
-							Stop-Function -Message "Job category $Category doesn't exist on $instance. Use -Force to create it." -Target $instance -Continue
+							Write-Message -Message "Setting job category to $Category" -Level Verbose
+							$currentjob.Category = $Category
 						}
-					}
-					else {
-						Write-Message -Message "Setting job category to $Category" -Level Verbose
-						$currentjob.Category = $Category
 					}
 
 					if ($OwnerLogin) {
