@@ -48,12 +48,12 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 https://dbatools.io/New-DbaAgentJobCategory
 
 .EXAMPLE   
-New-DbaAgentJobCategory -SqlInstance sstad-pc -Category 'Category 1'
+New-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 1'
 
 Creates a new job category with the name 'Category 1'
 
 .EXAMPLE
-New-DbaAgentJobCategory -SqlInstance sstad-pc -Category 'Category 2' -CategoryType MultiServerJob
+New-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 2' -CategoryType MultiServerJob
 
 Creates a new job category with the name 'Category 2' and assign the category type for a multi server job
 
