@@ -20,9 +20,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		It "Should actually for sure exist" {
 			$newresults = Get-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1, CategoryTest2
 			$newresults[0].Name | Should Be "CategoryTest1"
-			$results[0].CategoryType | Should Be "LocalJob"
+			$newresults[0].CategoryType | Should Be "LocalJob"
 			$newresults[1].Name | Should Be "CategoryTest2"
-			$results[1].CategoryType | Should Be "MultiServerJob"
+			$newresults[1].CategoryType | Should Be "MultiServerJob"
 		}
 
 		It "Should not write over existing job categories" {
