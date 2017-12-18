@@ -298,7 +298,8 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 						}
 					}
 					else {
-						Stop-Function -Message "Job category $Category doesn't exist on $instance. Use -Force to create it." -Target $instance -Continue
+						Stop-Function -Message "Job category $Category doesn't exist on $instance. Use -Force to create it." -Target $instance 
+						return
 					}
 				}
 				else {
