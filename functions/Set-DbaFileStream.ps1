@@ -57,22 +57,21 @@ function Set-DbaFileStream{
 		[Alias("ServerInstance", "SqlServer")]
         [object[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [ValidateSet("0","1","2","3","Disabled","T-Sql Only","T-Sql and Win-32 Access", "Remote T-Sql and Win-32 Access")]
+        [ValidateSet("0","1","2","Disabled","T-Sql Only","T-Sql and Win-32 Access")]
         [Object]$FileStreamLevel,
         [switch]$force,
 		[switch][Alias('Silent')]$EnableException
     )
     BEGIN {
-        if ($FileStreamLevel -notin ('0','1','2','3')){
-            $NewFs = switch ($FileStreamLevel){
+        if ($FileStreamLevel -notin ('0','1','2')){
+            $NewFileStream = switch ($FileStreamLevel){
                 "Disabled" {0}
                 "T-Sql Only" {1}
                 "T-Sql and Win-32 Access" {2}
-                "Remote T-Sql and Win-32 Access" {3}
             } 
         }
         else {
-            $NewFs = $FileStreamLevel
+            $NewFileStream = $FileStreamLevel
         }
     }
     PROCESS {
@@ -91,23 +90,29 @@ function Set-DbaFileStream{
                 0='FileStream Disabled';
                 1='FileStream Enabled for T-Sql Access';
                 2='FileStream Enabled for T-Sql and Win-32 Access';
-                3='FileStream Enabled for T-Sql, Win32 and remote Access'
             }
 
-            if ($force -or $PSCmdlet.ShouldProcess($instance, "Changing from `"$($OutputLookup[$FileStreamState])`" to `"$($OutputLookup[$NewFs])`"")) {
-                $server.Configuration.FilestreamAccessLevel.ConfigValue = $NewFs
+            if ($FileStreamState -ne $NewFileStream) {
+                if ($force -or $PSCmdlet.ShouldProcess($instance, "Changing from `"$($OutputLookup[$FileStreamState])`" to `"$($OutputLookup[$NewFileStream])`"")) {
+                    $server.Configuration.FilestreamAccessLevel.ConfigValue = $NewFileStream
+                    $server.alter()
+                }
+                    
+                if ($force -or $PSCmdlet.ShouldProcess($instance, "Need to restart Sql Service for change to take effect, continue?")) {
+                    $RestartOutput = Restart-DbaSqlService -ComputerName $server.ComputerNamePhysicalNetBIOS -InstanceName $server.InstanceName -Type Engine   
+                }
             }
-                
-            if ($force -or $PSCmdlet.ShouldProcess($instance, "Need to restart Sql Service for change to take effect, continue?")) {
-                $RestartOutput = Restart-DbaSqlService -ComputerName $server.ComputerNamePhysicalNetBIOS -InstanceName $server.InstanceName -Type Engine   
+            else {
+                Write-Message -Level Verbose -Message "Skipping restart as old and new FileStream values are the same"
+                $RestartOutput = [PSCustomObject]@{Status = 'No restart, as no change in values'}
             }
-
             [PsCustomObject]@{
                 SqlInstance = $server
                 OriginalValue = $OutputLookup[$FileStreamState]
-                NewValue = $OutputLookup[$NewFs]
+                NewValue = $OutputLookup[$NewFileStream]
                 RestartStatus = $RestartOutput.Status
             } 
+
         }
     }
     END {}
