@@ -45,7 +45,19 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 https://dbatools.io/Remove-DbaAgentJobCategory
 
 .EXAMPLE   
+Remove-DbaAgentJobCategory -SqlInstance sql1 -Category Category1
 
+Remove the job category Category1 from the instance
+
+.EXAMPLE   
+Remove-DbaAgentJobCategory -SqlInstance sql1 -Category Category1, Category2, Category3
+
+Remove multiple job categories from the instance
+
+.EXAMPLE   
+Remove-DbaAgentJobCategory -SqlInstance sql1, sql2, sql3 -Category Category1, Category2, Category3
+
+Remove multiple job categories from the multiple instances
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
