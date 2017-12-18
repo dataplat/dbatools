@@ -136,7 +136,7 @@ function Test-DbaMigrationConstraint {
 			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Destination -Continue
 		}
 
-		if ($Database -eq 0) {
+		if (-Not $Database) {
 			$Database = $sourceServer.Databases | Where-Object IsSystemObject -eq 0 | Select-Object Name, Status
 		}
 
@@ -144,8 +144,8 @@ function Test-DbaMigrationConstraint {
 			$Database = $sourceServer.Databases | Where-Object Name -NotIn $ExcludeDatabase
 		}
 
-		if ($Database -gt 0) {
-			if ($Database -contains "master" -or $Database -contains "msdb" -or $Database -contains "tempdb") {
+		if ($Database.Count -gt 0) {
+			if ($Database -in @("master", "msdb", "tempdb")) {
 				Stop-Function -Message "Migrating system databases is not currently supported."
 				return
 			}
@@ -185,10 +185,33 @@ function Test-DbaMigrationConstraint {
 					Write-Message -Level Verbose -Message "Checking database '$dbName'."
 
 					if ($dbstatus.Contains("Offline") -eq $false -or $db.IsAccessible -eq $true) {
+
 						[long]$destVersionNumber = $($destServer.VersionString).Replace(".", "")
 						[string]$sourceVersion = "$($sourceServer.Edition) $($sourceServer.ProductLevel) ($($sourceServer.Version))"
 						[string]$destVersion = "$($destServer.Edition) $($destServer.ProductLevel) ($($destServer.Version))"
 						[string]$dbFeatures = ""
+
+						#Check if database has any FILESTREAM filegroup
+						Write-Message -Level Verbose -Message "Checking if FileStream is in use for database '$dbName'."
+						if ($sourceServer.Databases[$dbName].FileGroups | Where-Object FileGroupType -eq 'FileStreamDataFileGroup') {
+							Write-Message -Level Verbose -Message "Found FileStream filegroup and files."
+							$fileStreamSource = Get-DbaSpConfigure -SqlInstance $sourceServer -ConfigName FilestreamAccessLevel
+							$fileStreamDestination = Get-DbaSpConfigure -SqlInstance $destServer -ConfigName FilestreamAccessLevel
+
+							if ($fileStreamSource.RunningValue -ne $fileStreamDestination.RunningValue) {
+								[pscustomobject]@{
+									SourceInstance      = $sourceServer.Name
+									DestinationInstance = $destServer.Name
+									SourceVersion       = $sourceVersion
+									DestinationVersion  = $destVersion
+									Database            = $dbName
+									FeaturesInUse       = $dbFeatures
+									IsMigratable 		= $false
+									Notes               = "$notesCannotMigrate. Destination server dones not have the 'FilestreamAccessLevel' configuration (RunningValue: $($fileStreamDestination.RunningValue)) equal to source server (RunningValue: $($fileStreamSource.RunningValue))."
+								}
+								Continue
+							}
+						}
 
 						try {
 							$sql = "SELECT feature_name FROM sys.dm_db_persisted_sku_features"
@@ -197,7 +220,7 @@ function Test-DbaMigrationConstraint {
 
 							Write-Message -Level Verbose -Message "Checking features in use..."
 
-							if ($skuFeatures.Count -gt 0) {
+							if (@($skuFeatures).Count -gt 0) {
 								foreach ($row in $skuFeatures) {
 									$dbFeatures += ",$($row["feature_name"])"
 								}
@@ -223,6 +246,7 @@ function Test-DbaMigrationConstraint {
 									DestinationVersion  = $destVersion
 									Database            = $dbName
 									FeaturesInUse       = $dbFeatures
+									IsMigratable 		= $false
 									Notes               = "$notesCannotMigrate. Destination server edition is EXPRESS which does not support 'ChangeCapture' feature that is in use."
 								}
 							}
@@ -234,6 +258,7 @@ function Test-DbaMigrationConstraint {
 									DestinationVersion  = $destVersion
 									Database            = $dbName
 									FeaturesInUse       = $dbFeatures
+									IsMigratable 		= $true
 									Notes               = $notesCanMigrate
 								}
 							}
@@ -252,6 +277,7 @@ function Test-DbaMigrationConstraint {
 									DestinationVersion  = $destVersion
 									Database            = $dbName
 									FeaturesInUse       = $dbFeatures
+									IsMigratable 		= $false
 									Notes               = "$notesCannotMigrate There are features in use not available on destination instance."
 								}
 							}
@@ -264,6 +290,7 @@ function Test-DbaMigrationConstraint {
 									DestinationVersion  = $destVersion
 									Database            = $dbName
 									FeaturesInUse       = $dbFeatures
+									IsMigratable 		= $true
 									Notes               = $notesCanMigrate
 								}
 							}

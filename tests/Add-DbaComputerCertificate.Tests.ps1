@@ -12,6 +12,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 		
 		It "Should be in LocalMachine\My Cert Store" {
 			$results.PSParentPath | Should Be "Microsoft.PowerShell.Security\Certificate::LocalMachine\My"
-        }
-    }
+		}
+		
+		Remove-DbaComputerCertificate -Thumbprint 29C469578D6C6211076A09CEE5C5797EEA0C2713 -Confirm:$false
+	}
 }

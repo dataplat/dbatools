@@ -6,7 +6,7 @@ SHORT DESCRIPTION
 	
 LONG DESCRIPTION
 	Welcome to the dbatools help central.
-	This guide tries to show you, how to best get help.
+	This guide tries to show you how to best get help.
 	
 	Over the project's lifetime, dbatools has grown explosively and many
 	features were added to cope with the sheer scale of this project. Thus,
