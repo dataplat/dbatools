@@ -48,9 +48,12 @@ function Export-DbaUser {
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-		.PARAMETER ScriptingOptions
+		.PARAMETER ScriptingOptionsObject
 			A Microsoft.SqlServer.Management.Smo.ScriptingOptions object with the options that you want to use to generate the t-sql script.
 			You can use the NEw-DbaScriptingOption to generate it.
+
+		.PARAMETER ExcludeGoBatchSeparator
+			If specified, will NOT script the 'GO' batch separator.
 
 		.NOTES
 			Tags: User, Export
@@ -98,6 +101,11 @@ function Export-DbaUser {
 			Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file.
 			It will not script drops but will script dependencies.
 
+		.EXAMPLE
+			Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\temp\users.sql -ExcludeGoBatchSeparator
+
+			Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file without the 'GO' batch separator.
+
 	#>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	[OutputType([String])]
@@ -120,7 +128,8 @@ function Export-DbaUser {
 		[switch]$NoClobber,
 		[switch]$Append,
 		[switch][Alias('Silent')]$EnableException,
-		[Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject = $null
+		[Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject = $null,
+		[switch]$ExcludeGoBatchSeparator
 	)
 
 	begin {
@@ -230,6 +239,8 @@ function Export-DbaUser {
 				$roles = @()
 				if ($users.Count -gt 0) {
 					foreach ($dbuser in $users) {
+						Write-Message -Level Output -Message "Generating script for user $dbuser"
+
 						#setting database
 						$outsql += "USE [" + $db.Name + "]"
 
@@ -269,7 +280,6 @@ function Export-DbaUser {
 
 								$outsql += "$($grantDatabasePermission) $($databasePermission.PermissionType) TO [$($databasePermission.Grantee)]$withGrant AS [$($databasePermission.Grantor)];"
 							}
-
 
 							#Database Object Permissions
 							# NB: This is a bit of a mess for a couple of reasons
@@ -449,9 +459,14 @@ function Export-DbaUser {
 	end {
 		if (Test-FunctionInterrupt) { return }
 
-		$sql = $outsql -join "`r`nGO`r`n"
-		#add the final GO
-		$sql += "`r`nGO"
+		if ($ExcludeGoBatchSeparator) {
+			$sql = $outsql
+		}
+		else{
+			$sql = $outsql -join "`r`nGO`r`n"
+			#add the final GO
+			$sql += "`r`nGO"
+		}
 
 		if ($FilePath) {
 			$sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
