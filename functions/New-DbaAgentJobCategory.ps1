@@ -81,8 +81,6 @@ Creates a new job category with the name 'Category 2' and assign the category ty
 			Write-Message -Message "Setting the category type to 'LocalJob'" -Level Verbose
 			$CategoryType = "LocalJob"
 		}
-
-
 	}
 
 	process {
@@ -109,6 +107,8 @@ Creates a new job category with the name 'Category 2' and assign the category ty
 							$jobcategory.CategoryType = $CategoryType
 
 							$jobcategory.Create()
+
+							$server.JobServer.Refresh()
 						}
 						catch {
 							Stop-Function -Message "Something went wrong creating the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
@@ -116,9 +116,10 @@ Creates a new job category with the name 'Category 2' and assign the category ty
 
 					} # if should process
 
-					return $jobcategory
-
 				} # end else category exists
+
+				# Return the job category
+				Get-DbaAgentJobCategory -SqlInstance $instance -Category $cat
 
 			} # for each category
 
