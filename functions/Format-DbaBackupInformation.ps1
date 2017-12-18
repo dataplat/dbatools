@@ -25,7 +25,7 @@ Function Format-DbaBackupInformation{
     .PARAMETER LogFileDirectory
         This will move all log files to this location, overriding DataFileDirectory 
     
-    .PARAMETER FileStreamDirectory
+    .PARAMETER DestinationFileStreamDirectory
         This move the FileStream folder and contents to the new location, overriding DataFileDirectory 
     
     .PARAMETER FileNamePrefix
@@ -100,7 +100,7 @@ Function Format-DbaBackupInformation{
         [switch]$ReplaceDbNameInFile,
         [string]$DataFileDirectory,
         [string]$LogFileDirectory,
-        [string]$FileStreamDirectory,
+        [string]$DestinationFileStreamDirectory,
         [string]$DatabaseNamePrefix,
         [string]$DatabaseFilePrefix,
         [string]$DatabaseFileSuffix,
@@ -127,8 +127,8 @@ Function Format-DbaBackupInformation{
         if ((Test-Bound -Parameter DataFileDirectory) -and $DataFileDirectory[-1] -eq '\' ){
             $DataFileDirectory = $DataFileDirectory.substring(0,$DataFileDirectory.length-1)
         }
-        if ((Test-Bound -Parameter FileStreamDirectory) -and $FileStreamDirectory[-1] -eq '\' ){
-            $FileStreamDirectory = $FileStreamDirectory.substring(0,$FileStreamDirectory.length-1)
+        if ((Test-Bound -Parameter DestinationFileStreamDirectory) -and $DestinationFileStreamDirectory[-1] -eq '\' ){
+            $DestinationFileStreamDirectory = $DestinationFileStreamDirectory.substring(0,$DestinationFileStreamDirectory.length-1)
         }
         if ((Test-Bound -Parameter LogFileDirectory) -and $LogFileDirectory[-1] -eq '\' ){
             $LogFileDirectory = $LogFileDirectory.substring(0,$LogFileDirectory.length-1)
@@ -203,8 +203,8 @@ Function Format-DbaBackupInformation{
                             }
                         }
                         elseif ($_.Type -eq 'S' -or $_.FileType -eq 'S'){
-                            if ('' -ne $FileStreamDirectory){
-                                $RestoreDir = $FileStreamDirectory
+                            if ('' -ne $DestinationFileStreamDirectory){
+                                $RestoreDir = $DestinationFileStreamDirectory
                             }
                             elseif ('' -ne $DataFileDirectory){
                                 $RestoreDir = $DataFileDirectory
