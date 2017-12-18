@@ -148,6 +148,25 @@ Function Test-DbaBackupInformation {
 						}
 					}
 				}
+				#Easier to do FileStream checks out of the loop:
+				if ('s' -in ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object Type -Unique).Type) {
+					if ((Get-DbaSpConfigure -SqlInstance $RestoreInstance -ConfigName FilestreamAccessLevel).RunningValue -eq 0){
+						Write-Message -Level Warning -Message "Database $Database contains FileStream data, and FileStream is not enable on the destination server"
+						$VerificationErrors++
+					}
+					$ExistingFS = ((Get-DbaDatabase -SqlInstance $RestoreInstance).FileGroups | ?{$_.FileGroupType -eq 'FileStreamDataFileGroup'}).Files.FileName
+					Foreach ($FileStreamFolder in ($DbHistory | Select-Object -ExpandProperty filelist | Where-Object {$_.Type -eq 's'} | Select-Object PhysicalName -unique).PhysicalName){
+						If ((Get-ChildItem $FileStreamFolder).count -gt 0){
+							Write-Message -Level Warning -Message "Folder $FileStreamFolder already exists and contains data. Cannot use to restore $Database on $RestoreInstance"
+							$VerificationErrors++
+						}
+						if ($FileStreamFolder -in $ExistingFS){
+							Write-Message -Level Warning -Message "Folder $FileStreamFolder already in use for Filestream data on $RestoreInstance"
+							$VerificationErrors++					
+						}
+					}
+				}
+
 			}
 
 			#Test all backups readable
