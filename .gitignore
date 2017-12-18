@@ -8,6 +8,9 @@ dbatools-exceptions.txt
 *.psproj
 dbatools.psprojs
 
+# ignore the settings folder and files for Visual Studio
+.vs/*
+
 # VIM backup files
 *~
 
@@ -16,3 +19,4 @@ msbuild.log
 
 # Local constant file
 tests/constants.local.ps1
+
