@@ -112,7 +112,7 @@ function Export-DbaUser {
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[object[]]$User,
-		[ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016')]
+		[ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
 		[string]$DestinationVersion,
 		[Alias("OutFile", "Path", "FileName")]
 		[string]$FilePath,
@@ -146,6 +146,7 @@ function Export-DbaUser {
 			'SQLServer2012'        = 'Version110'
 			'SQLServer2014'        = 'Version120'
 			'SQLServer2016'        = 'Version130'
+			'SQLServer2017'        = 'Version140'
 		}
 
 		$versionName = @{
@@ -155,6 +156,7 @@ function Export-DbaUser {
 			'Version110' = 'SQLServer2012'
 			'Version120' = 'SQLServer2014'
 			'Version130' = 'SQLServer2016'
+			'Version140' = 'SQLServer2017'
 		}
 
 	}
