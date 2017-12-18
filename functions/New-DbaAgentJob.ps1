@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function New-DbaAgentJob {
-    <#
+	<#
 .SYNOPSIS 
 New-DbaAgentJob creates a new job
 
@@ -36,9 +36,6 @@ The identification number of the first step to execute for the job.
 
 .PARAMETER Category
 The category of the job.
-
-.PARAMETER CategoryId
-A language-independent mechanism for specifying a job category.
 
 .PARAMETER OwnerLogin
 The name of the login that owns the job.
@@ -146,7 +143,6 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 		[string]$Description,
 		[int]$StartStepId,
 		[string]$Category,
-		[int]$CategoryId,
 		[string]$OwnerLogin,
 		[ValidateSet(0, "Never", 1, "OnSuccess", 2, "OnFailure", 3, "Always")]
 		[object]$EventLogLevel,
@@ -169,32 +165,42 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 		
 		# Check of the event log level is of type string and set the integer value
 		if ($EventLogLevel -notin 1, 2, 3) {
-			$EventLogLevel = switch ($EventLogLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 }
-				default { 0 } }
+			$EventLogLevel = switch ($EventLogLevel) {
+				"Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 }
+				default { 0 } 
+   }
 		}
 		
 		# Check of the email level is of type string and set the integer value
 		if ($EmailLevel -notin 1, 2, 3) {
-			$EmailLevel = switch ($EmailLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 }
-				default { 0 } }
+			$EmailLevel = switch ($EmailLevel) {
+				"Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 }
+				default { 0 } 
+   }
 		}
 		
 		# Check of the net send level is of type string and set the integer value
 		if ($NetsendLevel -notin 1, 2, 3) {
-			$NetsendLevel = switch ($NetsendLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 }
-				default { 0 } }
+			$NetsendLevel = switch ($NetsendLevel) {
+				"Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 }
+				default { 0 } 
+   }
 		}
 		
 		# Check of the page level is of type string and set the integer value
 		if ($PageLevel -notin 1, 2, 3) {
-			$PageLevel = switch ($PageLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 }
-				default { 0 } }
+			$PageLevel = switch ($PageLevel) {
+				"Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 }
+				default { 0 } 
+   }
 		}
 		
 		# Check of the delete level is of type string and set the integer value
 		if ($DeleteLevel -notin 1, 2, 3) {
-			$DeleteLevel = switch ($DeleteLevel) { "Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 }
-				default { 0 } }
+			$DeleteLevel = switch ($DeleteLevel) {
+				"Never" { 0 } "OnSuccess" { 1 } "OnFailure" { 2 } "Always" { 3 }
+				default { 0 } 
+   }
 		}
 		
 		# Check the e-mail operator name
@@ -229,7 +235,7 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-			
+
 			# Check if the job already exists
 			if (-not $Force -and ($server.JobServer.Jobs.Name -contains $Job)) {
 				Stop-Function -Message "Job $Job already exists on $instance" -Target $instance -Continue
@@ -247,13 +253,13 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 				}
 				
 			}
-			
+
 			# Create the job object
 			try {
 				$currentjob = New-Object Microsoft.SqlServer.Management.Smo.Agent.Job($server.JobServer, $Job)
 			}
 			catch {
-				Stop-Function -Message "Something went wrong creating the job. `n$($_.Exception.Message)" -Target $Job -Continue -ErrorRecord $_
+				Stop-Function -Message "Something went wrong creating the job. `n" -Target $Job -Continue -ErrorRecord $_
 			}
 			
 			#region job options
@@ -278,13 +284,27 @@ Creates a job with the name "Job One" on multiple servers using the pipe line
 			}
 			
 			if ($Category.Length -ge 1) {
-				Write-Message -Message "Setting job category" -Level Verbose
-				$currentjob.Category = $Category
-			}
-			
-			if ($CategoryId -ge 1) {
-				Write-Message -Message "Setting job category id" -Level Verbose
-				$currentjob.CategoryID = $CategoryId
+				# Check if the job category exists
+				if ($Category -notin $server.JobServer.JobCategories.Name) {
+					if ($Force) {
+						if ($PSCmdlet.ShouldProcess($instance, "Creating job category on $instance")) {
+							try {
+								# Create the category
+								New-DbaAgentJobCategory -SqlInstance $instance -Category $Category
+							}
+							catch {
+								Stop-Function -Message "Couldn't create job category $Category from $instance" -Target $instance -Continue -ErrorRecord $_
+							}
+						}
+					}
+					else {
+						Stop-Function -Message "Job category $Category doesn't exist on $instance. Use -Force to create it." -Target $instance -Continue
+					}
+				}
+				else {
+					Write-Message -Message "Setting job category" -Level Verbose
+					$currentjob.Category = $Category
+				}
 			}
 			
 			if ($OwnerLogin.Length -ge 1) {
