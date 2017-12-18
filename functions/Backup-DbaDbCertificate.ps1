@@ -1,4 +1,4 @@
-function Backup-DbaDatabaseCertificate {
+function Backup-DbaDbCertificate {
 	<#
 		.SYNOPSIS
 			Exports database certificates from SQL Server using SMO.
@@ -56,47 +56,47 @@ function Backup-DbaDatabaseCertificate {
 			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 		.EXAMPLE
-			Backup-DbaDatabaseCertificate -SqlInstance Server1
+			Backup-DbaDbCertificate -SqlInstance Server1
 			Exports all the certificates on the specified SQL Server to the default data path for the instance.
 
 		.EXAMPLE
 			$cred = Get-Credential sqladmin
-			Backup-DbaDatabaseCertificate -SqlInstance Server1 -SqlCredential $cred
+			Backup-DbaDbCertificate -SqlInstance Server1 -SqlCredential $cred
 
 			Connects using sqladmin credential and exports all the certificates on the specified SQL Server to the default data path for the instance.
 
 		.EXAMPLE
-			Backup-DbaDatabaseCertificate -SqlInstance Server1 -Certificate Certificate1
+			Backup-DbaDbCertificate -SqlInstance Server1 -Certificate Certificate1
 			Exports only the certificate named Certificate1 on the specified SQL Server to the default data path for the instance.
 
 		.EXAMPLE
-			Backup-DbaDatabaseCertificate -SqlInstance Server1 -Database AdventureWorks
+			Backup-DbaDbCertificate -SqlInstance Server1 -Database AdventureWorks
 			Exports only the certificates for AdventureWorks on the specified SQL Server to the default data path for the instance.
 
 		.EXAMPLE
-			Backup-DbaDatabaseCertificate -SqlInstance Server1 -ExcludeDatabase AdventureWorks
+			Backup-DbaDbCertificate -SqlInstance Server1 -ExcludeDatabase AdventureWorks
 			Exports all certificates except those for AdventureWorks on the specified SQL Server to the default data path for the instance.
 
 		.EXAMPLE
-			Backup-DbaDatabaseCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+			Backup-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
 			Exports all the certificates and private keys on the specified SQL Server.
 
 		.EXAMPLE
 			$EncryptionPassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
 			$DecryptionPassword = ConvertTo-SecureString -AsPlainText "Password4567!!" -force
-			Backup-DbaDatabaseCertificate -SqlInstance Server1 -EncryptionPassword $EncryptionPassword -DecryptionPassword $DecryptionPassword
+			Backup-DbaDbCertificate -SqlInstance Server1 -EncryptionPassword $EncryptionPassword -DecryptionPassword $DecryptionPassword
 			Exports all the certificates on the specified SQL Server using the supplied DecryptionPassword, since an EncryptionPassword is specified private keys are also exported.
 
 		.EXAMPLE
-			Backup-DbaDatabaseCertificate -SqlInstance Server1 -Path \\Server1\Certificates
+			Backup-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates
 			Exports all certificates on the specified SQL Server to the specified path.
 
 		.EXAMPLE
-			Backup-DbaDatabaseCertificate -SqlInstance Server1 -Suffix DbaTools
+			Backup-DbaDbCertificate -SqlInstance Server1 -Suffix DbaTools
 			Exports all certificates on the specified SQL Server to the specified path, appends DbaTools to the end of the filenames.
 
 		.EXAMPLE
-			Get-DbaDatabaseCertificate -SqlInstance sql2016 | Backup-DbaDatabaseCertificate
+			Get-DbaDbCertificate -SqlInstance sql2016 | Backup-DbaDbCertificate
 			Exports all certificates found on sql2016 to the default data directory.
 	#>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
@@ -127,6 +127,8 @@ function Backup-DbaDatabaseCertificate {
 		if ($EncryptionPassword.Length -eq 0 -and $DecryptionPassword.Length -gt 0) {
 			Stop-Function -Message "If you specify an decryption password, you must also specify an encryption password" -Target $DecryptionPassword
 		}
+		
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Backup-DbaDatabaseCertificate
 		
 		function export-cert ($cert) {
 			$certName = $cert.Name
@@ -180,15 +182,19 @@ function Backup-DbaDatabaseCertificate {
 					}
 					
 					[pscustomobject]@{
-						ComputerName   = $server.NetName
-						InstanceName   = $server.ServiceName
-						SqlInstance    = $server.DomainInstanceName
-						Database       = $db.Name
-						Certificate    = $certName
-						exportPathCert = $exportPathCert
-						exportPathKey  = $exportPathKey
-						Status         = "Success"
-					}
+						ComputerName    = $server.NetName
+						InstanceName    = $server.ServiceName
+						SqlInstance	    = $server.DomainInstanceName
+						Database	    = $db.Name
+						Certificate	    = $certName
+						Path			 = $exportPathCert
+						Key			     = $exportPathKey
+						ExportPath	     = $exportPathCert
+						ExportKey	     = $exportPathKey
+						exportPathCert   = $exportPathCert
+						exportPathKey    = $exportPathKey
+						Status		     = "Success"
+					} | Select-DefaultView -ExcludeProperty exportPathCert, exportPathKey, ExportPath, ExportKey
 				}
 				catch {
 					
@@ -200,16 +206,20 @@ function Backup-DbaDatabaseCertificate {
 						$exception = $_.Exception
 					}
 					[pscustomobject]@{
-						ComputerName   = $server.NetName
-						InstanceName   = $server.ServiceName
-						SqlInstance    = $server.DomainInstanceName
-						Database       = $db.Name
-						Certificate    = $certName
-						exportPathCert = $exportPathCert
-						exportPathKey  = $exportPathKey
-						Status         = "Failure: $exception"
-					}
-					Stop-Function -Message "$certName from $db on $instance cannot be exported." -Continue -Target $cert -InnerErrorRecord $_
+						ComputerName    = $server.NetName
+						InstanceName    = $server.ServiceName
+						SqlInstance	    = $server.DomainInstanceName
+						Database	    = $db.Name
+						Certificate	    = $certName
+						Path		    = $exportPathCert
+						Key			    = $exportPathKey
+						ExportPath	    = $exportPathCert
+						ExportKey	    = $exportPathKey
+						exportPathCert  = $exportPathCert
+						exportPathKey   = $exportPathKey
+						Status		    = "Failure: $exception"
+					} | Select-DefaultView -ExcludeProperty exportPathCert, exportPathKey, ExportPath, ExportKey
+					Stop-Function -Message "$certName from $db on $instance cannot be exported." -Continue -Target $cert -ErrorRecord $_
 				}
 			}
 		}
@@ -234,7 +244,7 @@ function Backup-DbaDatabaseCertificate {
 				$databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
 			}
 			foreach ($db in $databases.Name) {
-                $DBCertificateCollection = Get-DbaDatabaseCertificate -SqlInstance $server -Database $db
+                $DBCertificateCollection = Get-DbaDbCertificate -SqlInstance $server -Database $db
                 if ($Certificate) {
 					$CertificateCollection += $DBCertificateCollection | Where-Object Name -In $Certificate
                 }

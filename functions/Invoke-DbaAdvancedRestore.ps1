@@ -146,7 +146,7 @@ Function Invoke-DbaAdvancedRestore{
         $Databases  = $InternalHistory.Database | select-Object -unique
         ForEach ($Database in $Databases){
             If ($Database -in $Server.databases.name) {
-                if (($ScriptOnly -eq $true) -or ($verifyonly -ne $true)) {
+                if (($ScriptOnly -ne $true) -or ($verifyonly -ne $true)) {
                     if ($Pscmdlet.ShouldProcess("Killing processes in $Database on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
                         try {
                             Write-Message -Level Verbose -Message "Set $Database single_user to kill processes"
