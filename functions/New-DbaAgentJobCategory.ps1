@@ -67,7 +67,7 @@ Creates a new job category with the name 'Category 2' and assign the category ty
 		[PSCredential]$SqlCredential,
 		[Parameter(Mandatory = $true)]
 		[ValidateNotNullOrEmpty()]
-		[string]$Category,
+		[string[]]$Category,
 		[ValidateSet("LocalJob", "MultiServerJob", "None")]
 		[string]$CategoryType,
 		[switch]$Force,
@@ -81,6 +81,8 @@ Creates a new job category with the name 'Category 2' and assign the category ty
 			Write-Message -Message "Setting the category type to 'LocalJob'" -Level Verbose
 			$CategoryType = "LocalJob"
 		}
+
+
 	}
 
 	process {
@@ -95,24 +97,32 @@ Creates a new job category with the name 'Category 2' and assign the category ty
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			# Check if the category already exists
-			if ($Category -in $server.JobServer.JobCategories.Name) {
-				Stop-Function -Message "Job category $Category already exists on $instance" -Target $instance -Continue
-			}
-			else {
-				if ($PSCmdlet.ShouldProcess($instance, "Adding the job category $Category")) {
-					try {
-						$jobcategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory($server.JobServer, $Category)
-						$jobcategory.CategoryType = $CategoryType
-
-						$jobcategory.Create()
-					}
-					catch {
-						Stop-Function -Message "Something went wrong creating the job category" -Target $Job -Continue -ErrorRecord $_
-					}
+			foreach ($cat in $Category) {
+				# Check if the category already exists
+				if ($cat -in $server.JobServer.JobCategories.Name) {
+					Stop-Function -Message "Job category $cat already exists on $instance" -Target $instance -Continue
 				}
-			}
-		}
+				else {
+					if ($PSCmdlet.ShouldProcess($instance, "Adding the job category $cat")) {
+						try {
+							$jobcategory = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobCategory($server.JobServer, $cat)
+							$jobcategory.CategoryType = $CategoryType
+
+							$jobcategory.Create()
+						}
+						catch {
+							Stop-Function -Message "Something went wrong creating the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
+						}
+
+					} # if should process
+
+					return $jobcategory
+
+				} # end else category exists
+
+			} # for each category
+
+		} # for each instance
 	}
 
 	end {
