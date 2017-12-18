@@ -151,7 +151,7 @@ Logs into sql2016 with Windows credentials then backs up db1's keys to the \\nas
 				Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Filename -value $filename
 				Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Status -value $status
 				
-				Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, Filename, Status
+				Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, 'Filename as Path', Status
 			}
 		}
 	}

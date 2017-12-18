@@ -587,7 +587,7 @@ function Restore-DbaDatabase {
                 return
             }
 
-            $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints
+            $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation -RestoreTime $RestoreTime -IgnoreLogs:$IgnoreLogBackups -ContinuePoints $ContinuePoints 
             
             if ( Test-Bound -ParameterName SelectBackupInformation){
                 Write-Message -Message "Setting $SelectBackupInformation to FilteredBackupHistory" -Level Verbose
@@ -606,8 +606,8 @@ function Restore-DbaDatabase {
             if ($StopAfterFormatBackupInformation){
                 return
             }
-            
-            $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $RestoreInstance  -WithReplace:$WithReplace -Continue:$Continue
+            Write-Message -Level Verbose -Message "VerifyOnly = $VerifyOnly"
+            $null = $FilteredBackupHistory | Test-DbaBackupInformation -SqlInstance $RestoreInstance  -WithReplace:$WithReplace -Continue:$Continue -VerifyOnly:$VerifyOnly
             
             if ( Test-Bound -ParameterName TestBackupInformation){
                 Set-Variable -Name $TestBackupInformation -Value $FilteredBackupHistory -Scope Global

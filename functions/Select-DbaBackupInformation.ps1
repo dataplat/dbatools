@@ -129,11 +129,17 @@ function Select-DbaBackupInformation{
             $dbHistory = @()
             #Find the Last Full Backup before RestoreTime
             if ($true -ne $IgnoreFull){
-                $dbHistory += $Full =  $DatabaseHistory | Where-Object {$_.Type -in ('Full','Database') -and $_.Start -le $RestoreTime} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
+                $Full =  $DatabaseHistory | Where-Object {$_.Type -in ('Full','Database') -and $_.Start -le $RestoreTime} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
+                $full.Fullname = ($DatabaseHistory | Where-Object {$_.Type -in ('Full','Database') -and $_.BackupSetID -eq $Full.BackupSetID}).Fullname
+                $dbHistory += $full
             }    
             #Find the Last diff between Full and RestoreTime
             if ($true -ne $IgnoreDiffs){
-                $dbHistory += $DatabaseHistory | Where-Object {$_.Type -in ('Differential','Database Differential')  -and $_.Start -le $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
+                $Diff = $DatabaseHistory | Where-Object {$_.Type -in ('Differential','Database Differential')  -and $_.Start -le $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
+                if ($null -ne $Diff){
+                    $Diff.FullName = ($DatabaseHistory | Where-Object {$_.Type -in ('Differential','Database Differential')  -and $_.BackupSetID -eq $diff.BackupSetID}).Fullname
+                    $dbhistory += $Diff
+                }
             }
             #Get All t-logs up to restore time
             if($IgnoreFull -eq $true){
@@ -151,13 +157,16 @@ function Select-DbaBackupInformation{
                 $FilteredLogs = $DatabaseHistory | Where-Object {$_.Type -in ('Log','Transaction Log') -and $_.Start -le $RestoreTime  -and $_.LastLSN.ToString() -ge $LogBaseLsn  -and $_.FirstLSN -ne $_.LastLSN}  | Sort-Object -Property LastLsn, FirstLsn
                 $GroupedLogs = $FilteredLogs | Group-Object -Property LastLSN, FirstLSN
                 ForEach ($Group in $GroupedLogs){
-                    $dbhistory += $DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID}
+                    $Log = $DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID} | select-object -First 1
+                    $Log.FullName = ($DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID}).Fullname
+                    $dbhistory += $Log
+                    #$dbhistory += $DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID}
                 }
                 # Get Last T-log
                 $dbHistory += $DatabaseHistory | Where-Object {$_.Type -in ('Log','Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn  | Select-Object -First 1
             }
 
-            $dbHistory | Sort-Object -Property BackupSetId -Unique
+            $dbHistory  #| Group-Object -Property BackupSetId # -Unique
         }    
     }
 }
