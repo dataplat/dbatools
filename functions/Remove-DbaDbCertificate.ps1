@@ -1,4 +1,4 @@
-function Remove-DbaDatabaseCertificate {
+function Remove-DbaDbCertificate {
 <#
 .SYNOPSIS
 Deletes specified database certificate
@@ -39,12 +39,12 @@ Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
 .EXAMPLE
-Remove-DbaDatabaseCertificate -SqlInstance Server1
+Remove-DbaDbCertificate -SqlInstance Server1
 
 The certificate in the master database on server1 will be removed if it exists.
 
 .EXAMPLE
-Remove-DbaDatabaseCertificate -SqlInstance Server1 -Database db1 -Confirm:$false
+Remove-DbaDbCertificate -SqlInstance Server1 -Database db1 -Confirm:$false
 
 Suppresses all prompts to remove the certificate in the 'db1' database and drops the key.
 
@@ -66,37 +66,34 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
 	)
 	begin {
 		
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaDatabaseCertificate
+		
 		function drop-cert ($smocert) {
 			$server = $smocert.Parent.Parent
 			$instance = $server.DomainInstanceName
 			$cert = $smocert.Name
 			$db = $smocert.Parent.Name
 			
-			if ($Pscmdlet.ShouldProcess($instance, "Dropping the certificate named $cert for database '$db' on $instance")) {
+			$output = [pscustomobject]@{
+				ComputerName  = $server.NetName
+				InstanceName  = $server.ServiceName
+				SqlInstance   = $instance
+				Database	  = $db
+				Certificate   = $cert
+				Status	      = $null
+			}
+			
+			if ($Pscmdlet.ShouldProcess($instance, "Dropping the certificate named $cert for database '$db' on $server")) {
 				try {
 					$smocert.Drop()
-					Write-Message -Level Verbose -Message "Successfully removed certificate named $cert from the $db database on $instance"
-					
-					[pscustomobject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $instance
-						Database = $db
-						Certificate = $cert
-						Status = "Success"
-					}
+					Write-Message -Level Verbose -Message "Successfully removed certificate named $cert from the $db database on $server"
+					$output.status = "Success"
 				}
 				catch {
-					[pscustomobject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $instance
-						Database = $db
-						Certificate = $cert
-						Status = "Failure"
-					}
-					Stop-Function -Message "Failed to drop certificate named $cert from $db on $instance." -Target $smocert -InnerErrorRecord $_ -Continue
+					$output.Status = "Failure"
+					Stop-Function -Message "Failed to drop certificate named $cert from $db on $server." -Target $smocert -InnerErrorRecord $_ -Continue
 				}
+				$output
 			}
 		}
 	}
@@ -115,14 +112,14 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
 				$smodb = $server.Databases[$db]
 				
 				if ($null -eq $smodb) {
-					Stop-Function -Message "Database '$db' does not exist on $instance" -Target $smodb -Continue
+					Stop-Function -Message "Database '$db' does not exist on $server" -Target $smodb -Continue
 				}
 				
 				foreach ($cert in $certificate) {
 					$smocert = $smodb.Certificates[$cert]
 					
 					if ($null -eq $smocert) {
-						Stop-Function -Message "No certificate named $cert exists in the $db database on $instance" -Target $smodb.Certificates -Continue
+						Stop-Function -Message "No certificate named $cert exists in the $db database on $server" -Target $smodb.Certificates -Continue
 					}
 					
 					Drop-Cert -smocert $smocert

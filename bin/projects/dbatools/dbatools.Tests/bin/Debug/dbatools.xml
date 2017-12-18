@@ -2022,6 +2022,11 @@
             A connection string pointing at a local, file-based DB
             </summary>
         </member>
+        <member name="F:Sqlcollaborative.Dbatools.Parameter.DbaInstanceInputType.SqlConnection">
+            <summary>
+            An already established sql connection to was created outside of SMO
+            </summary>
+        </member>
         <member name="T:Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter">
             <summary>
             Input converter for instance information
@@ -2131,6 +2136,12 @@
             Creates a DBA Instance Parameter from the result of a dns resolution
             </summary>
             <param name="Entry">The result of a dns resolution, to be used for targetting the default instance</param>
+        </member>
+        <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter.#ctor(System.Data.SqlClient.SqlConnection)">
+            <summary>
+            Creates a DBA Instance Parameter from an established SQL Connection
+            </summary>
+            <param name="Connection">The connection to reuse</param>
         </member>
         <member name="M:Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter.#ctor(System.Object)">
             <summary>

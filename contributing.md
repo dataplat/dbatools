@@ -36,10 +36,10 @@ Want to join the team or just come hang out? You can find us here:
 <br><br>This will be available on the Wiki shortly. Until then, please look inside the .ps1 files or the [dbatools-templates](https://github.com/sqlcollaborative/dbatools-templates) repository.
 
 * **This is how you send your pull request**
-<br><br>This information will is available on the Wiki as as [step-by-step](https://dbatools.io/firstpull). We even have a [video](https://dbatools.io/firstpullvideo). The most important thing to note is that all pull requests must be made into the **development** branch. We only push to the master branch once a month.
+<br><br>This information is available on the Wiki as a [step-by-step](https://dbatools.io/firstpull) guide. We even have a [video](https://dbatools.io/firstpullvideo). The most important thing to note is that all pull requests must be made into the **development** branch. We only push to the master branch once a month.
 
 * **You should include the following documentation**
-<br><br>Please look at the available [dbatools-templates](https://github.com/sqlcollaborative/dbatools-templates) to see the kind of documentation we're looking for (basically everything that PowerShell allows - SYNOPSIS, DESCRIPTION, PARAMETERS, NOTES, EXAMPLES and so on.
+<br><br>Please look at the available [dbatools-templates](https://github.com/sqlcollaborative/dbatools-templates) to see the kind of documentation we're looking for (basically everything that PowerShell allows - SYNOPSIS, DESCRIPTION, PARAMETERS, NOTES, EXAMPLES, and so on.
         
 * **You should include the following tests**
 <br><br>Please include at least 3 Examples in your command's documentation section. We use these to perform our tests. You can also look at [this awesome Pull Request comment](https://github.com/sqlcollaborative/dbatools/pull/254#issuecomment-253355070) that has step-by-step tests and expected outcomes for our QA team.
@@ -59,7 +59,7 @@ This sections explains how bug triaging is done for our project.
 
 # Beta testing
 
-Early releases require heavy testing and how they can help with specially across different versions, editions and environments.
+Early releases require heavy testing and how they can help with specially across different versions, editions, and environments.
 
 # Translations
 

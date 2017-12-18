@@ -46,7 +46,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Should return successful restore" {
             $results.RestoreComplete | Should Be $true
         }
-	}
+    }
+    
+    Context "Test VerifyOnly works with db in existance" {
+        $results = Get-ChildItem $script:appveyorlabrepo\singlerestore\singlerestore.bak | Restore-DbaDatabase -SqlInstance $script:instance1  -VerifyOnly
+        It "Should have verified Successfully" {
+            $results[0] | Should Be "Verify successful"
+        }
+    }
 	
 	Get-DbaProcess $script:instance1 -NoSystemSpid | Stop-DbaProcess -WarningVariable warn -WarningAction SilentlyContinue
     Context "Database is properly removed again after gci tests" {
@@ -190,8 +197,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 	
     Context "Properly restores an instance using ola-style backups" {
         $results = Get-ChildItem $script:appveyorlabrepo\sql2008-backups | Restore-DbaDatabase -SqlInstance $script:instance1
-        It "Restored files count should be 28" {
-            $results.DatabaseName.Count | Should Be 22
+        It "Restored files count should be the right number" {
+            $results.DatabaseName.Count | Should Be 26
         }
         It "Should return successful restore" {
             ($results.RestoreComplete -contains $false) | Should Be $false
@@ -566,6 +573,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -Database Pipetest -BackupDirectory c:\temp -CopyOnly -WarningAction SilentlyContinue -WarningVariable bwarnvar -ErrorAction SilentlyContinue -ErrorVariable berrvar | Restore-DbaDatabase -SqlInstance $script:instance1 -DatabaseName restored -ReplaceDbNameInFile -WarningAction SilentlyContinue -WarningVariable rwarnvar -ErrorAction SilentlyContinue -ErrorVariable rerrvar
         It "Should backup and restore cleanly"  {
             $results.RestoreComplete | Should Be $True
+        }
+    }
+
+    Context "Check we restore striped database" {
+        Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllSystemDb | Remove-DbaDatabase -Confirm:$false
+        $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\sql2008-backups\RestoreTimeStripe -DatabaseName StripeTest -DestinationFilePrefix StripeTest
+        It "Should backup and restore cleanly"  {
+            ($results | Where-Object {$_.RestoreComplete -eq $True}).count | Should Be $Results.count
         }
     }
 }

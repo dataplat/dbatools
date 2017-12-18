@@ -81,7 +81,12 @@ function Enable-DbaForceNetworkEncryption {
 			
 			$regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
 			$vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
-			$instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '')
+			try {
+				$instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
+			}
+			catch {
+				# Probably because the instance name has been aliased or does not exist or samthin	
+			}
 			$serviceaccount = $sqlwmi.ServiceAccount
 			
 			if ([System.String]::IsNullOrEmpty($regroot)) {

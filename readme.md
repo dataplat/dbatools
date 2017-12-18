@@ -1,4 +1,4 @@
-﻿# dbatools
+# dbatools
 
 dbatools is sort of like a command-line SQL Server Management Studio. The project initially started out as Start-SqlMigration.ps1, but has now grown into a collection of [over 300 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
 
@@ -32,7 +32,7 @@ In addition to the simple things you can do in SSMS (like starting a job), we've
 
 ## Usage examples
 
-As previously mentioned, dbatools now offers [over 300 commands](https://dbatools.io/commands)! [Here are some of the ones we highlight at conferences](https://gist.github.com/potatoqualitee/e8932b64aeb6ef404e252d656b6318a2).
+As previously mentioned, dbatools now offers [over 300 commands](https://dbatools.io/commands)! [Here are some of the ones we highlight at conferences](https://gist.github.com/potatoqualitee/e8932b64aeb6ef404e252d656b6318a2) - PowerShell v3 and above required.
 
 ```powershell
 # Set some vars
@@ -40,13 +40,13 @@ $new = "localhost\sql2016"
 $old = $instance = "localhost"
 $allservers = $old, $new
 
-# Alternatively, use Registerd Servers? 
+# Alternatively, use Registered Servers 
 $allservers = Get-DbaRegisteredServer -SqlInstance $instance
 
 # Need to restore a database? It can be as simple as this:
 Restore-DbaDatabase -SqlInstance $instance -Path "C:\temp\AdventureWorks2012-Full Database Backup.bak"
 
-# Use Ola Hallengren's backup script? We can restore an *ENTIRE INSTNACE* with just one line
+# Use Ola Hallengren's backup script? We can restore an *ENTIRE INSTANCE* with just one line
 Get-ChildItem -Directory \\workstation\backups\sql2012 | Restore-DbaDatabase -SqlInstance $new
 
 # What about if you need to make a backup? And you are logging in with alternative credentials?
@@ -196,6 +196,7 @@ Get-DbaDbVirtualLogFile -SqlInstance $new -Database db1 | Measure-Object
 
 dbatools aims to support as many configurations as possible, including
 
+* PowerShell v3 and above
 * SQL Server 2000 - 2017
 * Express - Datacenter Edition
 * Clustered and stand-alone instances

@@ -109,12 +109,12 @@ function Copy-DbaTableData {
 			https://dbatools.io/Copy-DbaTableData
 
 		.EXAMPLE
-			Copy-DbaTableData -Source sql1 -Destination sql2 -Database dbatools_from -Table test_table
+			Copy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table
 
 			Copies all the data from sql1 to sql2, using the database dbatools_from.
 
 		.EXAMPLE
-			Copy-DbaTableData -Source sql1 -Destination sql2 -Database dbatools_from -DatabaseDest dbatools_dest -Table test_table
+			Copy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DatabaseDest dbatools_dest -Table test_table
 
 			Copies all the data from sql1 to sql2, using the database dbatools_from as source and dbatools_dest as destination
 	
@@ -131,23 +131,24 @@ function Copy-DbaTableData {
 			Copies data from tbl2 in tempdb on sql1 to tbl2 in tempdb on sql2
 
 		.EXAMPLE
-			Copy-DbaTableData -Source sql1 -Destination sql2 -Database dbatools_from -Table test_table
+			Copy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table
 
 			Copies all the data from sql1 to sql2, using the database dbatools_from.
 
 		.EXAMPLE
-			Copy-DbaTableData -Source sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
+			Copy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
 
 			Copies all the data from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination
 
 		.EXAMPLE
-			Copy-DbaTableData -Source sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
+			Copy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity -Truncate
 
 			Copies all the data from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the destination
 
 	#>
 	[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 	param (
+		[Alias("ServerInstance", "SqlServer", "Source")]
 		[DbaInstanceParameter]$SqlInstance,
 		[PSCredential]$SqlCredential,
 		[DbaInstanceParameter]$Destination,
