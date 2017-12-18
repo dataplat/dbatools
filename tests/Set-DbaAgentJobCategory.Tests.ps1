@@ -18,11 +18,11 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		}
 
 		It "Change the name of the job category" {
-			$results = Set-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1 -NewName -CategoryTest2 
-			$results.Name | Should Be "CategoryTest2"
+			$results = Set-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1 -NewName CategoryTest2 
+			$results.NewCategoryName | Should Be "CategoryTest2"
 		}
 
 		# Cleanup and ignore all output
-		Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1 *> $null
+		Remove-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest2 *> $null
 	}
 }
