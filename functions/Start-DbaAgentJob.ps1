@@ -111,7 +111,7 @@ FUNCTION Start-DbaAgentJob {
 				Start-Sleep -Milliseconds 300
 				$currentjob.Refresh()
 				
-				while ($currentjob.CurrentRunStatus -eq 'Idle') {
+				while ($currentjob.CurrentRunStatus -eq 'Idle' -and $i++ -lt 60) {
 					Start-Sleep -Milliseconds 100
 					$currentjob.Refresh()
 				}
