@@ -255,6 +255,7 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 					}
 					
 					#region job options
+
 					# Settings the options for the job
 					if ($NewName) {
 						Write-Message -Message "Setting job name to $NewName" -Level Verbose
@@ -310,6 +311,34 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 						$currentjob.Description = $Description
 					}
 					
+					if ($Category) {
+						# Check if the job category exists
+						if ($Category -notin $server.JobServer.JobCategories.Name) {
+							if ($Force) {
+								if ($PSCmdlet.ShouldProcess($instance, "Creating job category on $instance")) {
+									try {
+										# Create the category
+										New-DbaAgentJobCategory -SqlInstance $instance -Category $Category
+                                    
+										Write-Message -Message "Setting job category to $Category" -Level Verbose
+										$currentjob.Category = $Category
+									}
+									catch {
+										Stop-Function -Message "Couldn't create job category $Category from $instance" -Target $instance -ErrorRecord $_
+									}
+								}
+							}
+							else {
+								Stop-Function -Message "Job category $Category doesn't exist on $instance. Use -Force to create it." -Target $instance 
+								return
+							}
+						}
+						else {
+							Write-Message -Message "Setting job category to $Category" -Level Verbose
+							$currentjob.Category = $Category
+						}
+					}
+
 					if ($StartStepId) {
 						# Get the job steps
 						$currentjobSteps = $currentjob.JobSteps
@@ -330,33 +359,6 @@ Changes a job with the name "Job1" on multiple servers to have another descripti
 							Stop-Function -Message "There are no job steps present for job $j on instance $instance" -Target $instance -Continue
 						}
 						
-					}
-					
-					if ($Category) {
-						# Check if the job category exists
-						if ($Category -notin $server.JobServer.JobCategories.Name) {
-							if ($Force) {
-								if ($PSCmdlet.ShouldProcess($instance, "Creating job category on $instance")) {
-									try {
-										# Create the category
-										New-DbaAgentJobCategory -SqlInstance $instance -Category $Category
-                                    
-										Write-Message -Message "Setting job category to $Category" -Level Verbose
-										$currentjob.Category = $Category
-									}
-									catch {
-										Stop-Function -Message "Couldn't create job category $Category from $instance" -Target $instance -Continue -ErrorRecord $_
-									}
-								}
-							}
-							else {
-								Stop-Function -Message "Job category $Category doesn't exist on $instance. Use -Force to create it." -Target $instance -Continue
-							}
-						}
-						else {
-							Write-Message -Message "Setting job category to $Category" -Level Verbose
-							$currentjob.Category = $Category
-						}
 					}
 
 					if ($OwnerLogin) {
