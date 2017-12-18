@@ -23,7 +23,10 @@ Function Format-DbaBackupInformation{
         This will move ALL restored files to this location during the restore
 
     .PARAMETER LogFileDirectory
-        This will move all log files to this location. 
+        This will move all log files to this location, overriding DataFileDirectory 
+    
+    .PARAMETER FileStreamDirectory
+        This move the FileStream folder and contents to the new location, overriding DataFileDirectory 
     
     .PARAMETER FileNamePrefix
         This string will  be prefixed to all restored files (Data and Log)
@@ -97,6 +100,7 @@ Function Format-DbaBackupInformation{
         [switch]$ReplaceDbNameInFile,
         [string]$DataFileDirectory,
         [string]$LogFileDirectory,
+        [string]$FileStreamDirectory,
         [string]$DatabaseNamePrefix,
         [string]$DatabaseFilePrefix,
         [string]$DatabaseFileSuffix,
@@ -122,6 +126,9 @@ Function Format-DbaBackupInformation{
         }
         if ((Test-Bound -Parameter DataFileDirectory) -and $DataFileDirectory[-1] -eq '\' ){
             $DataFileDirectory = $DataFileDirectory.substring(0,$DataFileDirectory.length-1)
+        }
+        if ((Test-Bound -Parameter FileStreamDirectory) -and $FileStreamDirectory[-1] -eq '\' ){
+            $FileStreamDirectory = $FileStreamDirectory.substring(0,$FileStreamDirectory.length-1)
         }
         if ((Test-Bound -Parameter LogFileDirectory) -and $LogFileDirectory[-1] -eq '\' ){
             $LogFileDirectory = $LogFileDirectory.substring(0,$LogFileDirectory.length-1)
@@ -186,9 +193,18 @@ Function Format-DbaBackupInformation{
                             if ('' -ne $DataFileDirectory){
                                 $RestoreDir = $DataFileDirectory
                             }
-                        }elseif ($_.Type -eq 'L' -or $_.FileType -eq 'L'){
+                        }
+                        elseif ($_.Type -eq 'L' -or $_.FileType -eq 'L'){
                             if ('' -ne $LogFileDirectory){
                                 $RestoreDir = $LogFileDirectory
+                            }
+                            elseif ('' -ne $DataFileDirectory){
+                                $RestoreDir = $DataFileDirectory
+                            }
+                        }
+                        elseif ($_.Type -eq 'S' -or $_.FileType -eq 'S'){
+                            if ('' -ne $FileStreamDirectory){
+                                $RestoreDir = $FileStreamDirectory
                             }
                             elseif ('' -ne $DataFileDirectory){
                                 $RestoreDir = $DataFileDirectory
