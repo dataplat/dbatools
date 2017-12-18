@@ -12,10 +12,15 @@ function Get-DbaFileStream{
     .PARAMETER SqlCredential
         A sql credential to be used to connect to SqlInstance. If not specified the windows credentials of the calling session will be used
 
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+	
     .EXAMPLE
         Get-DbaFileStream -SqlInstance server1\instance2 
 
-        Will return wether FileStream is enabled on the server1\instance2 instance
+        Will return the status of FileStream from server1\instance2
 
     .NOTES
         Tags:
@@ -50,7 +55,7 @@ function Get-DbaFileStream{
             [PsCustomObject]@{
                 SqlInstance = $server
                 FileStreamState = $OutputText
-                FileSteamStatID = $FileStreamState.RunValue
+                FileStreamStateID = $FileStreamState.RunValue
                 FileStreamConfig = $FileStreamState
             } | Select-DefaultView -Exclude FileStreamConfig
         }

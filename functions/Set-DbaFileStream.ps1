@@ -1,21 +1,47 @@
 function Set-DbaFileStream{
     <#
     .SYNOPSIS
-        Stes the status of FileStream on specified SQL Server instances
+        Sets the status of FileStream on specified SQL Server instances
 
     .DESCRIPTION
         Connects to the specified SQL Server instances, and sets the status of the FileStream feature to the required value
 
+        To perform the action, the SQL Server instance must be restarted. By default we will prompt for confirmation for this action, this can be overridden with the -Force switch
+    
     .PARAMETER SqlInstance
-        The Sqlinstance to query. This may be an array of instances, or passed in from the pipeline. And array of dbatools connections may also be passed in
+        The Sqlinstance to change. This may be an array of instances, or passed in from the pipeline. An array of dbatools connections may also be passed in
 
     .PARAMETER SqlCredential
         A sql credential to be used to connect to SqlInstance. If not specified the windows credentials of the calling session will be used
 
-    .EXAMPLE
-        Get-DbaFileStream -SqlInstance server1\instance2 
+    .PARAMETER FileStreamLevel
+        The level to of FileStream to be enabled:
+        0 - FileStream disabled
+        1 - T-Sql Access Only
+        2 - T-Sql and Win32 access enabled
+        3 - T-Sql, Win32 and Remote access enabled
 
-        Will return wether FileStream is enabled on the server1\instance2 instance
+	.PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+	
+	.PARAMETER WhatIf
+    	Shows what would happen if the cmdlet runs. The cmdlet is not run.
+
+	.PARAMETER Confirm
+	    Prompts you for confirmation before running the cmdlet.
+
+    .EXAMPLE
+        Set-DbaFileStream -SqlInstance server1\instance2 -FileStreamLevel T-Sql Only
+        Set-DbaFileStream -SqlInstance server1\instance2 -FileStreamLevel 1
+        
+        These commands are functionally equivalent, both will set Filestream level on server1\instance2 to T-Sql Only
+    
+    .EXAMPLE
+        Get-DbaFileStream -SqlInstance server1\instance2, server5\instance5 , prod\hr | Where-Object {$_.FileSteamStateID -gt 0} | Set-DbaFileStream -FileStreamLevel 0 -Force
+
+        Using this pipeline you can scan a range of SQL instances and disable filestream on only those on which it's enabled
 
     .NOTES
         Tags:
@@ -27,10 +53,11 @@ function Set-DbaFileStream{
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     param(
-        [parameter(ValueFromPipeline = $true, Position = 1)]
-        [DbaInstanceParameter[]]$SqlInstance,
+		[Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName='piped')]
+		[Alias("ServerInstance", "SqlServer")]
+        [object[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [ValidateSet("0","1","2","3","Disable","T-Sql Only","T-Sql and Win-32 Access", "Remote T-Sql and Win-32 Access")]
+        [ValidateSet("0","1","2","3","Disabled","T-Sql Only","T-Sql and Win-32 Access", "Remote T-Sql and Win-32 Access")]
         [Object]$FileStreamLevel,
         [switch]$force,
 		[switch][Alias('Silent')]$EnableException
@@ -38,7 +65,7 @@ function Set-DbaFileStream{
     BEGIN {
         if ($FileStreamLevel -notin ('0','1','2','3')){
             $NewFs = switch ($FileStreamLevel){
-                "Disable" {0}
+                "Disabled" {0}
                 "T-Sql Only" {1}
                 "T-Sql and Win-32 Access" {2}
                 "Remote T-Sql and Win-32 Access" {3}
@@ -50,6 +77,9 @@ function Set-DbaFileStream{
     }
     PROCESS {
         forEach ($instance in $SqlInstance) {
+            if ($instance -isnot [string]){
+                $instance = $instance.SqlInstance
+            }
             try{
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
@@ -64,7 +94,7 @@ function Set-DbaFileStream{
                 3='FileStream Enabled for T-Sql, Win32 and remote Access'
             }
 
-            if ($force -or $PSCmdlet.ShouldProcess($instance, "Changing from `"$($OutputLookup[$FileStreamState.ConfigValue])`" to `"$($OutputLookup[$NewFs])`"")) {
+            if ($force -or $PSCmdlet.ShouldProcess($instance, "Changing from `"$($OutputLookup[$FileStreamState])`" to `"$($OutputLookup[$NewFs])`"")) {
                 $server.Configuration.FilestreamAccessLevel.ConfigValue = $NewFs
             }
                 
@@ -77,7 +107,7 @@ function Set-DbaFileStream{
                 OriginalValue = $OutputLookup[$FileStreamState]
                 NewValue = $OutputLookup[$NewFs]
                 RestartStatus = $RestartOutput.Status
-            } | Select-DefaultView -Exclude FileStreamConfig
+            } 
         }
     }
     END {}
