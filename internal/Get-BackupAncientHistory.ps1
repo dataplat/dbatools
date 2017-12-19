@@ -41,10 +41,14 @@ function Get-BackupAncientHistory {
         catch {
             Stop-Function -Message "Failed to process Instance $SqlInstance." -InnerErrorRecord $_ -Target $SqlInstance -Continue
         }
+        if ($server.SoftwareVersionMajor -gt 8){
+            Write-Message -Level Warning -Message "This is not the function you're looking for. This is for SQL 2000 only, please use Get-DbaBackupHistory instead. It's much nicer"
+        }
     }
 
     PROCESS {
         foreach ($db in $Database){
+            Write-Message -Level Verbose -Message "Processing database $db"
             $sql = "      
             SELECT
             a.Server,
@@ -120,6 +124,7 @@ function Get-BackupAncientHistory {
             AND (type = 'D' OR type = 'P')
                     ) AS a
             where  a.backupsetid in (Select max(backup_set_id) from msdb..backupset where database_name='$db')"
+            Write-Message -Level Debug -Message $sql
             $results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty BackupSetRank, RowError, Rowstate, table, itemarray, haserrors
             Write-Message -Level SomewhatVerbose -Message "Processing as grouped output."
             $GroupedResults = $results | Group-Object -Property backupsetid
