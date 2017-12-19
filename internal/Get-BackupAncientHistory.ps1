@@ -7,11 +7,14 @@ function Get-BackupAncientHistory {
             Backup History command to pull limited history from a SQL 2000 instance. If not using SQL 2000, please use Get-DbaBackupHistory which pulls more infomation, and has more options. This is just here to cope with 2k and copy-DbaDatabase issues
     
         .PARAMETER SqlInstance
+	        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
         .PARAMETER Credential
+	        Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
         .PARAMETER Database
-
+            Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+            
         .NOTES
         Author: Stuart Moore (@napalmgram), stuart-moore.com
         
@@ -22,7 +25,7 @@ function Get-BackupAncientHistory {
     #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
+		[parameter(Mandatory = $true)]
 		[Alias("ServerInstance", "SqlServer")]
 		[DbaInstanceParameter]$SqlInstance,
         [Alias("Credential")]
@@ -43,6 +46,16 @@ function Get-BackupAncientHistory {
         }
         if ($server.SoftwareVersionMajor -gt 8){
             Write-Message -Level Warning -Message "This is not the function you're looking for. This is for SQL 2000 only, please use Get-DbaBackupHistory instead. It's much nicer"
+        }
+
+        $databases = @()
+        if ($null -ne $Database) {
+            ForEach ($db in $Database) {
+                $databases += [PScustomObject]@{name = $db}
+            }
+        }
+        else {
+            $databases = $server.Databases	
         }
     }
 
