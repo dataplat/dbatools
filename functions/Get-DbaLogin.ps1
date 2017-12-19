@@ -24,8 +24,8 @@ function Get-DbaLogin {
 		.PARAMETER ExcludeFilter
 			A list of logins to exclude - accepts wildcard patterns
 		
-		.PARAMETER System
-			A Switch to return System Logins.
+		.PARAMETER NoSystem
+			A Switch to remove System Logins from the output.
 		
 		.PARAMETER SQLLogins
 			A Switch to return Logins of type SQLLogin only.
@@ -106,9 +106,9 @@ function Get-DbaLogin {
 			Get all user objects from server sql2016 that are SQLLogins  and have Rob in the name
 
 		.EXAMPLE
-			Get-DbaLogin -SqlInstance sql2016 -System
+			Get-DbaLogin -SqlInstance sql2016 -NoSystem
 
-			Get all system user objects from server sql2016 
+			Get all user objects from server sql2016 that are not system objects
 
 		.EXAMPLE
 			Get-DbaLogin -SqlInstance sql2016 -ExcludeFilter '##*','NT *'
@@ -141,7 +141,7 @@ function Get-DbaLogin {
 		[object[]]$IncludeFilter,
 		[object[]]$ExcludeLogin,
 		[object[]]$ExcludeFilter,
-		[switch]$System,
+		[switch]$NoSystem,
 		[switch]$SQLLogins,
 		[switch]$WindowsLogins,
 		[switch]$HasAccess,
@@ -166,8 +166,8 @@ function Get-DbaLogin {
 				$serverLogins = $serverLogins | Where-Object Name -in $Login
 			}
 
-			if ($System) {
-				$serverLogins = $serverLogins | Where-Object IsSystemObject -eq $True
+			if ($NoSystem) {
+				$serverLogins = $serverLogins | Where-Object IsSystemObject -eq $false
 			}
 
 			if ($SQLLogins) {
