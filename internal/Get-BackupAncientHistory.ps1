@@ -134,7 +134,6 @@ function Get-BackupAncientHistory {
             JOIN msdb..backupset AS backupset
               ON backupset.media_set_id = mediaset.media_set_id
             WHERE backupset.database_name = '$db'
-            AND (type = 'D' OR type = 'P')
                     ) AS a
             where  a.backupsetid in (Select max(backup_set_id) from msdb..backupset where database_name='$db')"
             Write-Message -Level Debug -Message $sql
