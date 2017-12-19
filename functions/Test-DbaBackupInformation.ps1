@@ -154,15 +154,24 @@ Function Test-DbaBackupInformation {
 						Write-Message -Level Warning -Message "Database $Database contains FileStream data, and FileStream is not enable on the destination server"
 						$VerificationErrors++
 					}
-					$ExistingFS = ((Get-DbaDatabase -SqlInstance $RestoreInstance).FileGroups | ?{$_.FileGroupType -eq 'FileStreamDataFileGroup'}).Files.FileName
+
+					$ExistingFS = Get-DbaFileStreamFolder -SqlInstance $RestoreInstance
+					#$ExistingFS = ((Get-DbaDatabase -SqlInstance $RestoreInstance).FileGroups | ?{$_.FileGroupType -eq 'FileStreamDataFileGroup'}).Files.FileName
 					Foreach ($FileStreamFolder in ($DbHistory | Select-Object -ExpandProperty filelist | Where-Object {$_.Type -eq 's'} | Select-Object PhysicalName -unique).PhysicalName){
-						If ((Get-ChildItem $FileStreamFolder).count -gt 0){
+						If ((Get-ChildItem $FileStreamFolder -ErrorAction SilentlyContinue).count -gt 0){
 							Write-Message -Level Warning -Message "Folder $FileStreamFolder already exists and contains data. Cannot use to restore $Database on $RestoreInstance"
 							$VerificationErrors++
 						}
-						if ($FileStreamFolder -in $ExistingFS){
-							Write-Message -Level Warning -Message "Folder $FileStreamFolder already in use for Filestream data on $RestoreInstance"
-							$VerificationErrors++					
+						if ($null -ne $ExistingFS){
+							if ($null -ne ($ExistingFs | Where-Object {$_.Database -eq $Database}) -and $Withreplace -ne $True){
+								Write-Message -Level Warning -Message "Folder $FileStreamFolder already in use for Filestream data on $RestoreInstance and WithReplace not specified, cannot restore"	
+								$VerificationErrors++
+							}
+							$OtherOwners = $ExistingFs | Where-Object {$_.FileStreamFolder -eq $FileStreamFolder}
+							if ($null -ne $OtherOwners){
+								Write-Message -Level Warning -Message "Folder $FileStreamFolder already in use for Filestream data by $($OtherOwners.Database) on $RestoreInstance, cannot restore"
+								$VerificationErrors++	
+							}				
 						}
 					}
 				}
