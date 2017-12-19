@@ -26,8 +26,8 @@ Describe "$CommandName Unit Tests" -Tag UnitTests, Get-DbaLogin {
         It "Should have a parameter ExcludeFilter" {
             $Params['ExcludeFilter'].Count | Should Be 1
         }
-        It "Should have a parameter System" {
-            $Params['System'].Count | Should Be 1
+        It "Should have a parameter NoSystem" {
+            $Params['NoSystem'].Count | Should Be 1
         }
         It "Should have a parameter SQLLogins" {
             $Params['SQLLogins'].Count | Should Be 1
