@@ -167,7 +167,7 @@ Function Test-DbaBackupInformation {
 								Write-Message -Level Warning -Message "Folder $FileStreamFolder already in use for Filestream data on $RestoreInstance and WithReplace not specified, cannot restore"	
 								$VerificationErrors++
 							}
-							$OtherOwners = $ExistingFs | Where-Object {$_.FileStreamFolder -eq $FileStreamFolder}
+							$OtherOwners = $ExistingFs | Where-Object {$_.FileStreamFolder -eq $FileStreamFolder -and $_.Database -ne $Database}
 							if ($null -ne $OtherOwners){
 								Write-Message -Level Warning -Message "Folder $FileStreamFolder already in use for Filestream data by $($OtherOwners.Database) on $RestoreInstance, cannot restore"
 								$VerificationErrors++	
