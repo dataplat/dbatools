@@ -157,19 +157,19 @@ Function Test-DbaBackupInformation {
 
 					$ExistingFS = Get-DbaFileStreamFolder -SqlInstance $RestoreInstance
 					#$ExistingFS = ((Get-DbaDatabase -SqlInstance $RestoreInstance).FileGroups | ?{$_.FileGroupType -eq 'FileStreamDataFileGroup'}).Files.FileName
-					Foreach ($FileStreamFolder in ($DbHistory | Select-Object -ExpandProperty filelist | Where-Object {$_.Type -eq 's'} | Select-Object PhysicalName -unique).PhysicalName){
+					Foreach ($FileStreamFolder in ($DbHistory | Select-Object -ExpandProperty filelist | Where-Object {$_.FileType -eq 's'} | Select-Object PhysicalName -unique).PhysicalName){
 						If ((Get-ChildItem $FileStreamFolder -ErrorAction SilentlyContinue).count -gt 0){
-							Write-Message -Level Warning -Message "Folder $FileStreamFolder already exists and contains data. Cannot use to restore $Database on $RestoreInstance"
+							Write-Message -Level Warning -Message "Folder $FileStreamFolder already exists and contains data. Cannot use to restore $Database on $SqlInstance"
 							$VerificationErrors++
 						}
 						if ($null -ne $ExistingFS){
 							if ($null -ne ($ExistingFs | Where-Object {$_.Database -eq $Database}) -and $Withreplace -ne $True){
-								Write-Message -Level Warning -Message "Folder $FileStreamFolder already in use for Filestream data on $RestoreInstance and WithReplace not specified, cannot restore"	
+								Write-Message -Level Warning -Message "Folder $FileStreamFolder already in use for Filestream data on $SqlInstance and WithReplace not specified, cannot restore"	
 								$VerificationErrors++
 							}
 							$OtherOwners = $ExistingFs | Where-Object {$_.FileStreamFolder -eq $FileStreamFolder -and $_.Database -ne $Database}
 							if ($null -ne $OtherOwners){
-								Write-Message -Level Warning -Message "Folder $FileStreamFolder already in use for Filestream data by $($OtherOwners.Database) on $RestoreInstance, cannot restore"
+								Write-Message -Level Warning -Message "Folder $FileStreamFolder already in use for Filestream data by $($OtherOwners.Database) on $SqlInstance, cannot restore"
 								$VerificationErrors++	
 							}				
 						}
