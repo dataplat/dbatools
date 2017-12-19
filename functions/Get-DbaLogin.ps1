@@ -131,6 +131,18 @@ function Get-DbaLogin {
 				$serverLogins = $serverLogins | Where-Object Name -in $Login
 			}
 
+			if ($System) {
+				$serverLogins = $serverLogins | Where-Object IsSystemObject -eq $True
+			}
+
+			if ($SQLLogins) {
+				$serverLogins = $serverLogins | Where-Object LoginType -eq 'SqlLogin'
+			}
+
+			if ($WindowsLogins) {
+				$serverLogins = $serverLogins | Where-Object LoginType -eq 'WindowsUser'
+			}
+
 			if ($IncludeFilter) {
 				$serverLogins = $serverLogins | Where-Object {
 					ForEach ($filter in $IncludeFilter) {
