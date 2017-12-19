@@ -206,8 +206,17 @@ function Install-DbaWhoIsActive {
 			if ($PSCmdlet.ShouldProcess($instance, "Installing sp_WhoisActive")) {
 				try {
 					$allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
-					$databases = $server.Databases | Where-Object Name -eq $Database
-					if ($databases.Count -eq 0) {
+					#Commenting out to avoid enumerating through all databases
+                    #$databases = $server.Databases | Where-Object Name -eq $Database
+					#I am not sure why I need to create a new SMO object?? Otherwise '$server.Databases[$Database]' does not work
+                    $server = new-object ("Microsoft.SqlServer.Management.Smo.Server") $sqlinstance
+                    IF ($server.Databases[$Database]) {
+                     }
+                     ELSE {
+                        Stop-Function -Message "Failed to find database $Database on $instance or $Database is not writeable." -ErrorRecord $_ -Continue -Target $instance
+                     }
+
+                if ($databases.Count -eq 0) {
 						Stop-Function -Message "Failed to find database $Database on $instance." -ErrorRecord $_ -Continue -Target $instance
 					}
 					$allprocedures = ($server.Query($allprocedures_query, $Database)).Name
