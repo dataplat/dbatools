@@ -447,7 +447,13 @@ function Backup-DbaDatabase {
 							$script = $backup.Script($server)
 							Write-Progress -id 1 -activity "Backing up database $dbname to $backupfile" -status "Complete" -Completed
 							$BackupComplete = $true
-							$HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly | Sort-Object -Property End -Descending | Select-Object -First 1
+							if ($server.VersionMajor -eq '8'){
+								$HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbname 
+							}
+							else 
+							{
+								$HeaderInfo = Get-DbaBackupHistory -SqlInstance $server -Database $dbname -Last -IncludeCopyOnly | Sort-Object -Property End -Descending | Select-Object -First 1
+							}
 							$Verified = $false
 							if ($Verify) {
 								$verifiedresult = [PSCustomObject]@{
