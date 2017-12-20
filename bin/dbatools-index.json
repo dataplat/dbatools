@@ -1294,6 +1294,19 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbRecoveryModel -SqlInstance sql2014 -RecoveryModel BulkLogged -Verbose\r\n\r\nGets all databases on SQL Server instance sql2014 having RecoveryModel set to BulkLogged\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbRecoveryModel -SqlInstance sql2014 -Database TestDB\r\n\r\nGets recovery model information for TestDB. If TestDB does not exist on the instance we don\u0027t return anythig.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaDbRole",
+        "Description":  "Get database roles on a Sql instance.\n\nDefault output includes columns SQLServer, Database, Role.",
+        "Tags":  [
+                     "Roles",
+                     "Databases"
+                 ],
+        "Author":  "Klaas Vandenberghe ( @PowerDBAKlaas )",
+        "Synopsis":  "Get database roles on a Sql instance.",
+        "Name":  "Get-DbaDbRole",
+        "Links":  "https://dbatools.io/Get-DbaDbRole",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbRole -SqlInstance ServerA\r\n\r\nReturns a custom object displaying SQLServer, Database, Role for all DatabaseRoles on sql instance ServerA.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbRole -SqlInstance ServerA | Out-Gridview\r\n\r\nReturns a gridview displaying SQLServer, Database, Role for all DatabaseRoles on sql instance ServerA.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbRole -SqlInstance ServerB\\sql16 -ExcludeDatabase DBADB,TestDB\r\n\r\nReturns SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\\sql16, except those in databases DBADB and \r\nTestDB.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e\u0027ServerB\\sql16\u0027,\u0027ServerA\u0027 | Get-DbaDbRole\r\n\r\nReturns SQLServer, Database, Role for DatabaseRoles on sql instances ServerA and ServerB\\sql16.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbRole -SqlInstance ServerB\\sql16 -Database AccountingDB\r\n\r\nReturns SQLServer, Database, Role for DatabaseRoles in database AccountingDB on sql instance ServerB\\sql16.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaDbRole -SqlInstance ServerB\\sql16 -ExcludeFixedRoles\r\n\r\nReturns SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\\sql16, but not the fixed roles.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaDbStoredProcedure",
         "Description":  "Gets database Stored Procedures",
         "Tags":  "Databases",
@@ -1748,6 +1761,18 @@
         "Name":  "Get-DbaServerProtocol",
         "Links":  "https://dbatools.io/Get-DbaServerProtocol",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaServerProtocol -ComputerName sqlserver2014a\r\n\r\nGets the SQL Server related server protocols on computer sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027 | Get-DbaServerProtocol\r\n\r\nGets the SQL Server related server protocols on computers sql1, sql2 and sql3.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaServerProtocol -ComputerName sql1,sql2 | Out-Gridview\r\n\r\nGets the SQL Server related server protocols on computers sql1 and sql2, and shows them in a grid view.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e(Get-DbaServerProtocol -ComputerName sql1 | Where { $_.DisplayName = \u0027via\u0027 }).Disable()\r\n\r\nDisables the VIA ServerNetworkProtocol on computer sql1.\r\nIf successful, returncode 0 is shown.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaServerRole",
+        "Description":  "Gets the list of server-level roles for SQL Server instance.",
+        "Tags":  [
+                     "ServerRole",
+                     "Security"
+                 ],
+        "Synopsis":  "Gets the list of server-level roles with the logins that are members of that role.",
+        "Name":  "Get-DbaServerRole",
+        "Links":  "https://dbatools.io/Get-DbaServerRole",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaServerRole -SqlInstance sql2016a\r\n\r\nOutputs list of server-level roles and logins that are members for sql2016a instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaServerRole -SqlInstance sql2016a -Role sysadmin\r\n\r\nOutputs members of sysadmin server-level role on sql2016a instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaServerRole -SqlInstance sql2017a -ExcludeFixedRole\r\n\r\nOutputs the server-level role(s) that are not fixed roles on sql2017a instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaServerRole -SqlInstance sql2016a -Login Bob\r\n\r\nOutputs the server-level role(s) that the login Bob is a member of on sql2016a instance.\r\n\r\nIf Bob is not a member of any role, no output is returned.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaServerRole -SqlInstance sql2016a -Role sysadmin -Login Bob\r\n\r\nOutputs the server-level role sysadmin with the login Bob as a member on sql2016a instance.\r\n\r\nIf Bob is not a member of that role, no output is returned.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaSpConfigure",
