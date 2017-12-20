@@ -408,8 +408,8 @@
 		'Remove-DbaAgentJobCategory',
 		'Set-DbaAgentJobCategory',
 		'Get-DbaDbRole',
-		'Get-DbaServerRole',
-		'Invoke-DbaRestore'		
+		'Get-DbaServerRole'
+		
 	)
 	
 	# Cmdlets to export from this module
