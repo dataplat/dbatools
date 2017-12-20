@@ -1,11 +1,11 @@
 function New-DbaAgentJobCategory {
 	<#
 .SYNOPSIS 
-New-DbaAgentJobCategory creates a new job categorie
+New-DbaAgentJobCategory creates a new job category.
 
 .DESCRIPTION
-New-DbaAgentJobCategory makes is possible to create a job category that can be used with jobs.
-It returns an array of the job(s) created  
+New-DbaAgentJobCategory makes it possible to create a job category that can be used with jobs.
+It returns an array of the job(s) created .
 
 .PARAMETER SqlInstance
 SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -50,12 +50,12 @@ https://dbatools.io/New-DbaAgentJobCategory
 .EXAMPLE   
 New-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 1'
 
-Creates a new job category with the name 'Category 1'
+Creates a new job category with the name 'Category 1'.
 
 .EXAMPLE
 New-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 2' -CategoryType MultiServerJob
 
-Creates a new job category with the name 'Category 2' and assign the category type for a multi server job
+Creates a new job category with the name 'Category 2' and assign the category type for a multi server job.
 
 #>
 
