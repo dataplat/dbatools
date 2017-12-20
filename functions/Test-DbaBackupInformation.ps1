@@ -155,7 +155,7 @@ Function Test-DbaBackupInformation {
 						$VerificationErrors++
 					}
 
-					$ExistingFS = Get-DbaFileStreamFolder -SqlInstance $RestoreInstance
+					$ExistingFS = Get-DbaFileStreamFolder -SqlInstance $SqlInstance
 					#$ExistingFS = ((Get-DbaDatabase -SqlInstance $RestoreInstance).FileGroups | ?{$_.FileGroupType -eq 'FileStreamDataFileGroup'}).Files.FileName
 					Foreach ($FileStreamFolder in ($DbHistory | Select-Object -ExpandProperty filelist | Where-Object {$_.FileType -eq 's'} | Select-Object PhysicalName -unique).PhysicalName){
 						If ((Get-ChildItem $FileStreamFolder -ErrorAction SilentlyContinue).count -gt 0){
