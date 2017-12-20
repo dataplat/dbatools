@@ -149,7 +149,7 @@ Function Test-DbaBackupInformation {
 					}
 				}
 				#Easier to do FileStream checks out of the loop:
-				if ('s' -in ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object Type -Unique).Type) {
+				if ('s' -in ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object FileType -Unique).FileType) {
 					if ((Get-DbaSpConfigure -SqlInstance $RestoreInstance -ConfigName FilestreamAccessLevel).RunningValue -eq 0){
 						Write-Message -Level Warning -Message "Database $Database contains FileStream data, and FileStream is not enable on the destination server"
 						$VerificationErrors++
