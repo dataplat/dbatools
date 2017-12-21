@@ -3,7 +3,7 @@
 <!-- Please fill in the appropriate information below -->
 ### General Troubleshooting steps
 
-- [ ] Verified running latest release of dbatools?
+- [ ] Verified running the latest release of dbatools?
 - [ ] Verified errors are not related to permissions?
 - [ ] Can duplicate in new/fresh PowerShell.exe session?
 
