@@ -24,14 +24,23 @@ function Get-DbaLogin {
 		.PARAMETER ExcludeFilter
 			A list of logins to exclude - accepts wildcard patterns
 		
+		.PARAMETER NoSystem
+			A Switch to remove System Logins from the output.
+		
+		.PARAMETER SQLLogins
+			A Switch to return Logins of type SQLLogin only.
+		
+		.PARAMETER WindowsLogins
+			A Switch to return Logins of type Windows only.
+		
 		.PARAMETER Locked
-			Filters on the SMO property to return locked Logins.
+			A Switch to return locked Logins.
 
 		.PARAMETER Disabled
-			Filters on the SMO property to return disabled Logins.
+			A Switch to return disabled Logins.
 
 		.PARAMETER HasAccess
-			Filters on the SMO property to return Logins that has access to the instance of SQL Server.
+			A Switch to return Logins that have access to the instance of SQL Server.
 
 		.PARAMETER EnableException
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -42,6 +51,7 @@ function Get-DbaLogin {
 			Author: Mitchell Hamann (@SirCaptainMitch)
 			Author: Klaas Vandenberghe (@powerdbaklaas)
 			Author: Robert Corrigan (@rjcorrig)
+			Author: Rob Sewell (@SQLDBaWithBeard)
 
 			Website: https://dbatools.io
 			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -76,6 +86,31 @@ function Get-DbaLogin {
 			Get all user objects from server sql2016 except the login dbatoolsuser, returned as SMO login objects.
 
 		.EXAMPLE
+			Get-DbaLogin -SqlInstance sql2016 -WindowsLogins
+
+			Get all user objects from server sql2016 that are Windows Logins
+
+		.EXAMPLE
+			Get-DbaLogin -SqlInstance sql2016 -WindowsLogins -IncludeFilter *Rob*
+
+			Get all user objects from server sql2016 that are Windows Logins and have Rob in the name
+
+		.EXAMPLE
+			Get-DbaLogin -SqlInstance sql2016 -SQLLogins
+
+			Get all user objects from server sql2016 that are SQLLogins
+
+		.EXAMPLE
+			Get-DbaLogin -SqlInstance sql2016 -SQLLogins -IncludeFilter *Rob* 
+
+			Get all user objects from server sql2016 that are SQLLogins  and have Rob in the name
+
+		.EXAMPLE
+			Get-DbaLogin -SqlInstance sql2016 -NoSystem
+
+			Get all user objects from server sql2016 that are not system objects
+
+		.EXAMPLE
 			Get-DbaLogin -SqlInstance sql2016 -ExcludeFilter '##*','NT *'
 
 			Get all user objects from server sql2016 except any beginning with '##' or 'NT ', returned as SMO login objects.
@@ -106,6 +141,9 @@ function Get-DbaLogin {
 		[object[]]$IncludeFilter,
 		[object[]]$ExcludeLogin,
 		[object[]]$ExcludeFilter,
+		[switch]$NoSystem,
+		[switch]$SQLLogins,
+		[switch]$WindowsLogins,
 		[switch]$HasAccess,
 		[switch]$Locked,
 		[switch]$Disabled,
@@ -126,6 +164,18 @@ function Get-DbaLogin {
 
 			if ($Login) {
 				$serverLogins = $serverLogins | Where-Object Name -in $Login
+			}
+
+			if ($NoSystem) {
+				$serverLogins = $serverLogins | Where-Object IsSystemObject -eq $false
+			}
+
+			if ($SQLLogins) {
+				$serverLogins = $serverLogins | Where-Object LoginType -eq 'SqlLogin'
+			}
+
+			if ($WindowsLogins) {
+				$serverLogins = $serverLogins | Where-Object LoginType -eq 'WindowsUser'
 			}
 
 			if ($IncludeFilter) {
