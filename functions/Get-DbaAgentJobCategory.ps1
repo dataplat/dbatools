@@ -1,10 +1,10 @@
 function Get-DbaAgentJobCategory {
 	<#
 .SYNOPSIS 
-Get-DbaAgentJobCategory retrieves the job categories
+Get-DbaAgentJobCategory retrieves the job categories.
 
 .DESCRIPTION
-Get-DbaAgentJobCategory makes is possible to retrieve the job categories.
+Get-DbaAgentJobCategory makes it possible to retrieve the job categories.
 
 .PARAMETER SqlInstance
 SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -49,17 +49,17 @@ https://dbatools.io/Get-DbaAgentJobCategory
 .EXAMPLE   
 Get-DbaAgentJobCategory -SqlInstance sql1
 
-Return all the job categories
+Return all the job categories.
 
 .EXAMPLE
 Get-DbaAgentJobCategory -SqlInstance sql1 -Category 'Log Shipping'
 
-Return all the job categories that have the name 'Log Shipping'
+Return all the job categories that have the name 'Log Shipping'.
 
 .EXAMPLE
 Get-DbaAgentJobCategory -SqlInstance sstad-pc -CategoryType MultiServerJob
 
-Return all the job categories that have a type MultiServerJob
+Return all the job categories that have a type MultiServerJob.
 
 #>
 	[CmdletBinding(DefaultParameterSetName = "Default")]

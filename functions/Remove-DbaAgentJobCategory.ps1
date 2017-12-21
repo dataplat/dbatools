@@ -2,10 +2,10 @@ function Remove-DbaAgentJobCategory {
 
 	<#
 .SYNOPSIS 
-Remove-DbaAgentJobCategory removes a job category
+Remove-DbaAgentJobCategory removes a job category.
 
 .DESCRIPTION
-Remove-DbaAgentJobCategory makes is possible to remove a job category.
+Remove-DbaAgentJobCategory makes it possible to remove a job category.
 Be assured that the category you want to remove is not used with other jobs. If another job uses this category it will be get the category [Uncategorized (Local)].
 
 .PARAMETER SqlInstance
@@ -45,19 +45,19 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 https://dbatools.io/Remove-DbaAgentJobCategory
 
 .EXAMPLE   
-Remove-DbaAgentJobCategory -SqlInstance sql1 -Category Category1
+Remove-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 1'
 
-Remove the job category Category1 from the instance
+Remove the job category Category 1 from the instance.
 
 .EXAMPLE   
 Remove-DbaAgentJobCategory -SqlInstance sql1 -Category Category1, Category2, Category3
 
-Remove multiple job categories from the instance
+Remove multiple job categories from the instance.
 
 .EXAMPLE   
 Remove-DbaAgentJobCategory -SqlInstance sql1, sql2, sql3 -Category Category1, Category2, Category3
 
-Remove multiple job categories from the multiple instances
+Remove multiple job categories from the multiple instances.
 
 #>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
