@@ -47,7 +47,14 @@ function Export-DbaUser {
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
+
+		.PARAMETER ScriptingOptionsObject
+			A Microsoft.SqlServer.Management.Smo.ScriptingOptions object with the options that you want to use to generate the t-sql script.
+			You can use the NEw-DbaScriptingOption to generate it.
+
+		.PARAMETER ExcludeGoBatchSeparator
+			If specified, will NOT script the 'GO' batch separator.
+
 		.NOTES
 			Tags: User, Export
 			Author: Claudio Silva (@ClaudioESSilva)
@@ -77,12 +84,28 @@ function Export-DbaUser {
 		.EXAMPLE
 			Export-DbaUser -SqlInstance sqlserver2008 -User User1 -FilePath C:\temp\users.sql -DestinationVersion SQLServer2016
 
-			Exports user User1 fron sqlsever2008 to the file  C:\temp\users.sql with sintax to run on SQL Server 2016
+			Exports user User1 fron sqlsever2008 to the file C:\temp\users.sql with sintax to run on SQL Server 2016
 
 		.EXAMPLE
 			Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\temp\users.sql
 
-			Expors ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file.
+			Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file.
+
+		.EXAMPLE
+			$options = New-DbaScriptingOption
+			$options.ScriptDrops = $false
+			$options.WithDependencies = $true
+
+			Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\temp\users.sql -ScriptingOptionsObject $options
+
+			Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file.
+			It will not script drops but will script dependencies.
+
+		.EXAMPLE
+			Export-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\temp\users.sql -ExcludeGoBatchSeparator
+
+			Exports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\temp\users.sql file without the 'GO' batch separator.
+
 	#>
 	[CmdletBinding(DefaultParameterSetName = "Default")]
 	[OutputType([String])]
@@ -97,14 +120,16 @@ function Export-DbaUser {
 		[object[]]$Database,
 		[object[]]$ExcludeDatabase,
 		[object[]]$User,
-		[ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016')]
+		[ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
 		[string]$DestinationVersion,
 		[Alias("OutFile", "Path", "FileName")]
 		[string]$FilePath,
 		[Alias("NoOverwrite")]
 		[switch]$NoClobber,
 		[switch]$Append,
-		[switch][Alias('Silent')]$EnableException
+		[switch][Alias('Silent')]$EnableException,
+		[Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject = $null,
+		[switch]$ExcludeGoBatchSeparator
 	)
 
 	begin {
@@ -130,6 +155,7 @@ function Export-DbaUser {
 			'SQLServer2012'        = 'Version110'
 			'SQLServer2014'        = 'Version120'
 			'SQLServer2016'        = 'Version130'
+			'SQLServer2017'        = 'Version140'
 		}
 
 		$versionName = @{
@@ -139,6 +165,7 @@ function Export-DbaUser {
 			'Version110' = 'SQLServer2012'
 			'Version120' = 'SQLServer2014'
 			'Version130' = 'SQLServer2016'
+			'Version140' = 'SQLServer2017'
 		}
 
 	}
@@ -183,13 +210,16 @@ function Export-DbaUser {
 				}
 				$versionNameDesc = $versionName[$scriptVersion.ToString()]
 
-				#Options
-				$scriptingOptions = New-DbaScriptingOption
-				$scriptingOptions.TargetServerVersion = [Microsoft.SqlServer.Management.Smo.SqlServerVersion]::$scriptVersion
-				$scriptingOptions.AllowSystemObjects = $false
-				$scriptingOptions.IncludeDatabaseRoleMemberships = $true
-				$scriptingOptions.ContinueScriptingOnError = $false
-				$scriptingOptions.IncludeDatabaseContext = $false
+				#If not passed create new ScriptingOption. Otherwise use the one that was passed
+				if ($null -eq $ScriptingOptionsObject) {
+					$ScriptingOptionsObject = New-DbaScriptingOption
+					$ScriptingOptionsObject.TargetServerVersion = [Microsoft.SqlServer.Management.Smo.SqlServerVersion]::$scriptVersion
+					$ScriptingOptionsObject.AllowSystemObjects = $false
+					$ScriptingOptionsObject.IncludeDatabaseRoleMemberships = $true
+					$ScriptingOptionsObject.ContinueScriptingOnError = $false
+					$ScriptingOptionsObject.IncludeDatabaseContext = $false
+					$ScriptingOptionsObject.IncludeIfNotExists = $true
+				}
 
 				Write-Message -Level Output -Message "Validating users on database $db"
 
@@ -209,14 +239,15 @@ function Export-DbaUser {
 				$roles = @()
 				if ($users.Count -gt 0) {
 					foreach ($dbuser in $users) {
+						Write-Message -Level Output -Message "Generating script for user $dbuser"
+
 						#setting database
 						$outsql += "USE [" + $db.Name + "]"
 
 						try {
 							#Fixed Roles #Dependency Issue. Create Role, before add to role.
 							foreach ($rolePermission in ($db.Roles | Where-Object { $_.IsFixedRole -eq $false })) {
-								foreach ($rolePermissionScript in $rolePermission.Script($scriptingOptions)) {
-									#$roleScript = $rolePermission.Script($scriptingOptions)
+								foreach ($rolePermissionScript in $rolePermission.Script($ScriptingOptionsObject)) {
 									if ($rolePermission.ToString() -notin $roles) {
 										$roles += , $rolePermission.ToString()
 										$outsql += "$($rolePermissionScript.ToString())"
@@ -226,7 +257,7 @@ function Export-DbaUser {
 							}
 
 							#Database Create User(s) and add to Role(s)
-							foreach ($dbUserPermissionScript in $dbuser.Script($scriptingOptions)) {
+							foreach ($dbUserPermissionScript in $dbuser.Script($ScriptingOptionsObject)) {
 								if ($dbuserPermissionScript.Contains("sp_addrolemember")) {
 									$execute = "EXEC "
 								}
@@ -249,7 +280,6 @@ function Export-DbaUser {
 
 								$outsql += "$($grantDatabasePermission) $($databasePermission.PermissionType) TO [$($databasePermission.Grantee)]$withGrant AS [$($databasePermission.Grantor)];"
 							}
-
 
 							#Database Object Permissions
 							# NB: This is a bit of a mess for a couple of reasons
@@ -429,9 +459,14 @@ function Export-DbaUser {
 	end {
 		if (Test-FunctionInterrupt) { return }
 
-		$sql = $outsql -join "`r`nGO`r`n"
-		#add the final GO
-		$sql += "`r`nGO"
+		if ($ExcludeGoBatchSeparator) {
+			$sql = $outsql
+		}
+		else{
+			$sql = $outsql -join "`r`nGO`r`n"
+			#add the final GO
+			$sql += "`r`nGO"
+		}
 
 		if ($FilePath) {
 			$sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
@@ -442,4 +477,3 @@ function Export-DbaUser {
 		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlUser
 	}
 }
-

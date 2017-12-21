@@ -25,10 +25,10 @@ Note: please only use `Invoke-Expression (Invoke-WebRequest..)` from sources you
 
 In addition to the simple things you can do in SSMS (like starting a job), we've also read a whole bunch of docs and came up with commands that do nifty things quickly.
 
-* Lost sysadmin access and need to regain entry to your SQL Server? Use [Reset-DbaAdmin](/Reset-DbaAdmin).
-* Need to easily test your backups? Use [Test-DbaLastBackup](/Test-DbaLastBackup).
-* SPN management got you down? Use [our suite of SPN commands](/schwifty) to find which SPNs are missing and easily add them.
-* Got so many databases you can't keep track? Congrats on your big ol' environment! Use [Find-DbaDatabase](/Find-DbaDatabase) to easily find your database.
+* Lost sysadmin access and need to regain entry to your SQL Server? Use [Reset-DbaAdmin](http://dbatools.io/Reset-DbaAdmin).
+* Need to easily test your backups? Use [Test-DbaLastBackup](http://dbatools.io/Test-DbaLastBackup).
+* SPN management got you down? Use [our suite of SPN commands](http://dbatools.io/schwifty) to find which SPNs are missing and easily add them.
+* Got so many databases you can't keep track? Congrats on your big ol' environment! Use [Find-DbaDatabase](http://dbatools.io/Find-DbaDatabase) to easily find your database.
 
 ## Usage examples
 
