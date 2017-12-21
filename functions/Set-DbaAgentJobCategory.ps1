@@ -1,10 +1,10 @@
 function Set-DbaAgentJobCategory {
 	<#
 .SYNOPSIS 
-Set-DbaAgentJobCategory changes a job category
+Set-DbaAgentJobCategory changes a job category.
 
 .DESCRIPTION
-Set-DbaAgentJobCategory makes is possible to change a job category.
+Set-DbaAgentJobCategory makes it possible to change a job category.
 
 .PARAMETER SqlInstance
 SQL Server instance. You must have sysadmin access and server version must be SQL Server version 2000 or greater.
@@ -48,12 +48,12 @@ https://dbatools.io/Set-DbaAgentJobCategory
 .EXAMPLE   
 New-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 1' -NewName 'Category 2'
 
-Change the name of the category from 'Category 1' to 'Category 2'
+Change the name of the category from 'Category 1' to 'Category 2'.
 
 .EXAMPLE 
 Set-DbaAgentJobCategory -SqlInstance sql1, sql2 -Category Category1, Category2 -NewName cat1, cat2
 
-Rename multiple jobs in one go on multiple servers
+Rename multiple jobs in one go on multiple servers.
 
 #>
 
