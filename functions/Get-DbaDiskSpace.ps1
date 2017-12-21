@@ -27,6 +27,9 @@ function Get-DbaDiskSpace {
 		.PARAMETER Credential
 			The credentials to use to connect via CIM/WMI/PowerShell remoting
 
+		.PARAMETER ExcludeDrive
+			Filter out drives - format is C:\
+	
 		.PARAMETER Detailed
 		    Output all properties, will be deprecated in 1.0.0 release. Use Force Instead
 		
@@ -97,6 +100,15 @@ function Get-DbaDiskSpace {
 			srv0042 \\?\Volume{7a31be94-b842-42f5-af71-e0464a1a9803}\ Recovery     0,44     0,13       30,01      4096     False NTFS       Local Disk
 			srv0042 D:\                                                               0        0           0               False            Compact Disk
 		
+		.EXAMPLE
+			Get-DbaDiskSpace -ComputerName srv0042 -ExcludeDrive 'C:\'  | Format-Table -AutoSize
+			Get all disk and volume space information.
+			
+			Server  Name                                              Label    SizeInGB FreeInGB PercentFree BlockSize IsSqlDisk FileSystem DriveType
+			------  ----                                              -----    -------- -------- ----------- --------- --------- ---------- ---------
+			srv0042 E:\                                               Data1       97,62    96,33       98,67      4096     False ReFS       Local Disk
+			srv0042 F:\                                               DATA2        29,2     29,2         100     16384     False FAT32      Local Disk
+	
 		.NOTES
 			Tags: Storage
 			Author: Chrissy LeMaire (clemaire@gmail.com) & Jakob Bindslet (jakob@bindslet.dk)
@@ -110,14 +122,20 @@ function Get-DbaDiskSpace {
 	#>
 	[CmdletBinding()]
 	Param (
-		[Parameter(ValueFromPipeline = $true)][Alias('ServerInstance', 'SqlInstance', 'SqlServer')][DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
-		[ValidateSet('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')][String]$Unit = 'GB',
+		[Parameter(ValueFromPipeline = $true)]
+		[Alias('ServerInstance', 'SqlInstance', 'SqlServer')]
+		[DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
+		[ValidateSet('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')]
+		[String]$Unit = 'GB',
 		[Switch]$CheckForSql,
 		[PSCredential]$SqlCredential,
 		[PSCredential]$Credential,
-		[Alias('Detailed', 'AllDrives')][Switch]$Force,
+		[string[]]$ExcludeDrive,
+		[Alias('Detailed', 'AllDrives')]
+		[Switch]$Force,
 		[Switch]$CheckFragmentation,
-		[Switch][Alias('Silent')]$EnableException
+		[Switch][Alias('Silent')]
+		$EnableException
 	)
 	
 	begin {
@@ -157,6 +175,7 @@ function Get-DbaDiskSpace {
 			}
 			
 			foreach ($disk in $disks) {
+				if ($disk.Name -in $ExcludeDrive) { continue }
 				if ($disk.Name.StartsWith('\\') -and (-not $Force)) {
 					Write-Message -Level Verbose -Message "Skipping disk: $($disk.Name)" -Target $computer.ComputerName
 					continue
