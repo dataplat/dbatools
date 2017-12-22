@@ -5,7 +5,7 @@
 
 - [ ] Verified running the latest release of dbatools?
 - [ ] Verified errors are not related to permissions?
-- [ ] Can duplicate in new/fresh PowerShell.exe session?
+- [ ] Can duplicate in new/clean PowerShell session (clean = `powershell -NoProfile`)?
 
 ### Version Information
  - Operating System (Name|Version): <!-- enter name and version -->
