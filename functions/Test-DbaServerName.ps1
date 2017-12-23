@@ -188,7 +188,7 @@ function Test-DbaServerName {
 				$serverInfo.Blockers = "N/A"
 			}
 
-			$serverInfo | Select-DefaultView -InputObject $serverInfo -ExcludeProperty Warnings, Blockers
+			$serverInfo | Select-DefaultView -ExcludeProperty Warnings, Blockers
 		}
 	}
 }
