@@ -70,7 +70,7 @@ Describe "$Name Tests"{
                 } #mock connect-sqlserver
                 
                 $Result = Test-DbaDatabaseOwner -SqlInstance 'SQLServerName'
-                $Result.Server | Should Be 'SQLServerName'
+                $Result.SqlInstance | Should Be 'SQLServerName'
                 $Result.Database | Should Be 'db1';
                 $Result.DBState | Should Be 'Normal';
                 $Result.CurrentOwner | Should Be 'WrongOWner';
@@ -98,7 +98,7 @@ Describe "$Name Tests"{
                 } #mock connect-sqlserver
                 
                 $Result = Test-DbaDatabaseOwner -SqlInstance 'SQLServerName' -Detailed
-                $Result.Server | Should Be 'SQLServerName'
+                $Result.SqlInstance | Should Be 'SQLServerName'
                 $Result.Database | Should Be 'db1';
                 $Result.DBState | Should Be 'Normal';
                 $Result.CurrentOwner | Should Be 'sa';
@@ -131,7 +131,7 @@ Describe "$Name Tests"{
                 } #mock connect-sqlserver
                 
                 $Result = Test-DbaDatabaseOwner -SqlInstance 'SQLServerName'
-                $Result.Server | Should Be 'SQLServerName'
+                $Result.SqlInstance | Should Be 'SQLServerName'
                 $Result.Database | Should Be 'db1';
                 $Result.DBState | Should Be 'Normal';
                 $Result.CurrentOwner | Should Be 'WrongOWner';
@@ -164,8 +164,8 @@ Describe "$Name Tests"{
                 } #mock connect-sqlserver
                 
                 $Result = Test-DbaDatabaseOwner -SqlInstance 'SQLServerName'
-                $Result[0].Server | Should Be 'SQLServerName'
-                $Result[1].Server | Should Be 'SQLServerName'
+                $Result[0].SqlInstance | Should Be 'SQLServerName'
+                $Result[1].SqlInstance | Should Be 'SQLServerName'
                 $Result[0].Database | Should Be 'db1';
                 $Result[1].Database | Should Be 'db2';
                 $Result[0].DBState | Should Be 'Normal';
@@ -230,8 +230,8 @@ Describe "$Name Tests"{
                 } #mock connect-sqlserver
                 
                 $Result = Test-DbaDatabaseOwner -SqlInstance 'SQLServerName' -Detailed
-                $Result[0].Server | Should Be 'SQLServerName'
-                $Result[1].Server | Should Be 'SQLServerName'
+                $Result[0].SqlInstance | Should Be 'SQLServerName'
+                $Result[1].SqlInstance | Should Be 'SQLServerName'
                 $Result[0].Database | Should Be 'db1'
                 $Result[1].Database | Should Be 'db2'
                 $Result[0].DBState | Should Be 'Normal'
