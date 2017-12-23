@@ -382,7 +382,6 @@ function Write-DbaDataTable {
 
 				# Get SQL datatypes by best guess on first data row
 				$sqlDataTypes = @();
-				$index = -1
 				$columns = $InputObject.Columns
 
 				if ($columns -eq $null) {
