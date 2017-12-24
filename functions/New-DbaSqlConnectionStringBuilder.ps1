@@ -1,64 +1,65 @@
-Function New-DbaSqlConnectionStringBuilder {
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
+function New-DbaSqlConnectionStringBuilder {
 	<#
-.SYNOPSIS
-Returns a System.Data.SqlClient.SqlConnectionStringBuilder with the string specified
+		.SYNOPSIS
+			Returns a System.Data.SqlClient.SqlConnectionStringBuilder with the string specified
 
-.DESCRIPTION
-Creates a System.Data.SqlClient.SqlConnectionStringBuilder from a connection string.
+		.DESCRIPTION
+			Creates a System.Data.SqlClient.SqlConnectionStringBuilder from a connection string.
 
-.PARAMETER ConnectionString
-A Connection String
+		.PARAMETER ConnectionString
+			A Connection String
 
-.PARAMETER ApplicationName
-The application name to tell SQL Server the connection is associated with.
+		.PARAMETER ApplicationName
+			The application name to tell SQL Server the connection is associated with.
 
-.PARAMETER DataSource
-The Sql Server to connect to.
+		.PARAMETER DataSource
+			The Sql Server to connect to.
 
-.PARAMETER InitialCatalog
-The initial database on the server to connect to.
+		.PARAMETER InitialCatalog
+			The initial database on the server to connect to.
 
-.PARAMETER IntegratedSecurity
-Set to true to use windows authentication.
+		.PARAMETER IntegratedSecurity
+			Set to true to use windows authentication.
 
-.PARAMETER UserName
-Sql User Name to connect with.
+		.PARAMETER UserName
+			Sql User Name to connect with.
 
-.PARAMETER Password
-Password to use to connect with.
+		.PARAMETER Password
+			Password to use to connect with.
 
-.PARAMETER MultipleActiveResultSets
-Enable Multiple Active Result Sets.
+		.PARAMETER MultipleActiveResultSets
+			Enable Multiple Active Result Sets.
 
-.PARAMETER ColumnEncryptionSetting
-Enable Always Encrypted.
+		.PARAMETER ColumnEncryptionSetting
+			Enable Always Encrypted.
 
-.PARAMETER WorkstationID
-Set the Workstation Id that is associated with the connection.
+		.PARAMETER WorkstationID
+			Set the Workstation Id that is associated with the connection.
 
-.NOTES
-Author: zippy1981
-Tags: SqlBuild
+		.NOTES
+			Author: zippy1981
+			Tags: SqlBuild, ConnectionString, Connection
 
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2017 Chrissy LeMaire
-License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+			Copyright (C) 2017 Chrissy LeMaire
+			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.LINK
-https://dbatools.io/New-DbaSqlConnectionStringBuilder
+		.LINK
+			https://dbatools.io/New-DbaSqlConnectionStringBuilder
 
-.EXAMPLE
-New-DbaSqlConnectionStringBuilder
+		.EXAMPLE
+			New-DbaSqlConnectionStringBuilder
 
-Returns an empty ConnectionStringBuilder
+			Returns an empty ConnectionStringBuilder
 
-.EXAMPLE
-"Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Application Name=Always Encrypted Sample MVC App;Column Encryption Setting=enabled" | New-DbaSqlConnectionStringBuilder 
+		.EXAMPLE
+			"Data Source=localhost,1433;Initial Catalog=AlwaysEncryptedSample;UID=sa;PWD=alwaysB3Encrypt1ng;Application Name=Always Encrypted Sample MVC App;Column Encryption Setting=enabled" | New-DbaSqlConnectionStringBuilder
 
-Returns a connection string builder that can be used to connect to the local sql server instance on the default port.
-
-#>
+			Returns a connection string builder that can be used to connect to the local sql server instance on the default port.
+	#>
 	[CmdletBinding()]
+	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
 	param (
 		[Parameter(Mandatory = $false, ValueFromPipeline = $true)]
 		[string[]]$ConnectionString = "",
@@ -80,7 +81,7 @@ Returns a connection string builder that can be used to connect to the local sql
 		[switch]$MultipleActiveResultSets,
 		[Alias('AlwaysEncrypted')]
 		[Parameter(Mandatory = $false)]
-		[Data.SqlClient.SqlConnectionColumnEncryptionSetting]$ColumnEncryptionSetting = 
+		[Data.SqlClient.SqlConnectionColumnEncryptionSetting]$ColumnEncryptionSetting =
 		[Data.SqlClient.SqlConnectionColumnEncryptionSetting]::Enabled,
 		[Parameter(Mandatory = $false)]
 		[string]$WorkstationId = $env:COMPUTERNAME

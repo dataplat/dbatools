@@ -2498,7 +2498,11 @@
     {
         "CommandName":  "New-DbaSqlConnectionStringBuilder",
         "Description":  "Creates a System.Data.SqlClient.SqlConnectionStringBuilder from a connection string.",
-        "Tags":  "SqlBuild",
+        "Tags":  [
+                     "SqlBuild",
+                     "ConnectionString",
+                     "Connection"
+                 ],
         "Author":  "zippy1981",
         "Synopsis":  "Returns a System.Data.SqlClient.SqlConnectionStringBuilder with the string specified",
         "Name":  "New-DbaSqlConnectionStringBuilder",
