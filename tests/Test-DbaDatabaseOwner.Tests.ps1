@@ -204,7 +204,7 @@ Describe "$Name Tests"{
                 } #mock connect-sqlserver
                 Mock Stop-Function {}
 
-                $null = Test-DbaDatabaseOwner -SqlInstance 'SQLServerName' -TargetLogin 'WrongLogin' -EnableException
+                $null = Test-DbaDatabaseOwner -SqlInstance 'SQLServerName' -TargetLogin 'WrongLogin'
                 $assertMockParams = @{
                     'CommandName' = 'Stop-Function'
                     'Times' = 1
