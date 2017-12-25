@@ -230,9 +230,6 @@ function New-DbaComputerCertificate {
 		foreach ($computer in $ComputerName) {
 
 			if (!$secondaryNode) {
-				if (!$computer.IsLocalHost -and !$Password) {
-					$Password = ((65 .. 90) + (97 .. 122) | Get-Random -Count 29 | ForEach-Object { [char]$_ }) -join "" | ConvertTo-SecureString -AsPlainText -Force
-				}
 
 				if ($ClusterInstanceName) {
 					if ($ClusterInstanceName -notmatch "\.") {
