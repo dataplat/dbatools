@@ -1,10 +1,10 @@
 function Backup-DbaDatabase {
 	<#
 			.SYNOPSIS
-				Backup one or more SQL Sever databases from a SQL Server SqlInstance.
+				Backup one or more SQL Sever databases from a single SQL Server SqlInstance.
 	
 			.DESCRIPTION
-				Performs a backup of a specified type of 1 or more databases on a SQL Server Instance. These backups may be Full, Differential or Transaction log backups.
+				Performs a backup of a specified type of 1 or more databases on a single SQL Server Instance. These backups may be Full, Differential or Transaction log backups.
 	
 			.PARAMETER SqlInstance
 				The SQL Server instance hosting the databases to be backed up.
@@ -119,7 +119,7 @@ function Backup-DbaDatabase {
 		[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 		param (
 			[parameter(ParameterSetName = "Pipe", Mandatory = $true)]
-			[DbaInstanceParameter[]]$SqlInstance,
+			[DbaInstanceParameter$SqlInstance,
 			[PSCredential]$SqlCredential,
 			[Alias("Databases")]
 			[object[]]$Database,
