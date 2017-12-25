@@ -136,10 +136,6 @@ function Add-DbaComputerCertificate {
 
 			foreach ($computer in $ComputerName) {
 
-				if ((-not $computer.IsLocalhost) -and (-not $Password)) {
-					$Password = ((65 .. 90) + (97 .. 122) | Get-Random -Count 29 | ForEach-Object { [char]$_ }) -join "" | ConvertTo-SecureString -AsPlainText -Force
-				}
-
 				if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import cert")) {
 					try {
 						Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
