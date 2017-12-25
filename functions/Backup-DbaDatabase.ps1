@@ -119,7 +119,7 @@ function Backup-DbaDatabase {
 		[CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
 		param (
 			[parameter(ParameterSetName = "Pipe", Mandatory = $true)]
-			[DbaInstanceParameter$SqlInstance,
+			[DbaInstanceParameter]$SqlInstance,
 			[PSCredential]$SqlCredential,
 			[Alias("Databases")]
 			[object[]]$Database,
