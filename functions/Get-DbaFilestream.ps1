@@ -107,7 +107,15 @@ function Get-DbaFilestream {
 
 			$pendingRestart = $instanceFS.ConfiguredValue -ne $instanceFS.RunningValue
 
-			$isConfigured = ($serviceFS.AccessLevel -ne 0) -and ($instanceFS.RuningValue -ne 0)
+			$isConfigured = $false
+			if ( ($serviceFS.AccessLevel -ne 0) -and ($instanceFS.RunningValue -ne 0) ) {
+				if ( $serviceFS.AccessLevel -eq 3 -and $instanceFS.RunningValue -eq 2 ) {
+					$isConfigured = $true
+				}
+				elseif ( ($serviceFS.AccessLevel -lt 3) -and ($serviceFS.AccessLevel -eq $instanceFS.RuningValue) ) {
+					$isConfigured = $true
+				}
+			}
 
 			[PsCustomObject]@{
 				ComputerName            = $server.NetName
