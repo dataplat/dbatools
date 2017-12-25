@@ -39,7 +39,10 @@ function Find-DbaUnusedIndex {
 		.PARAMETER Append
 			If this switch is enabled, content will be appended to the output file.
 
-		.PARAMETER WhatIf
+		.PARAMETER IgnoreUptime
+			Less than 7 days uptime can mean that analysis of unused indexes is unreliable, and normally no results will be returned. By setting this option results will be returned even if the Instance has been running for less that 7 days.		
+
+			.PARAMETER WhatIf
 			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
 		.PARAMETER Confirm
@@ -85,6 +88,13 @@ function Find-DbaUnusedIndex {
 			Find-DbaUnusedIndex -SqlInstance sqlserver2016
 
 			Generates the SQL statements to drop selected indexes on all user databases.
+
+		.EXAMPLE
+			Fine-DbaUnusedIndex -SqlInstance sqlserver2016 -IgnoreUptime
+			
+			Generates the SQL statements to drop selected indexes on all user databases even if the instance has been online for less than 7 days.
+			Note that results may not have enough detail for all indexes, so care should be taken when using them or the generated scripts. Best practice is to allow a full week to capture the mmajority of index use cases
+
 	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
@@ -100,6 +110,7 @@ function Find-DbaUnusedIndex {
 		[string]$FilePath,
 		[switch]$NoClobber,
 		[switch]$Append,
+		[switch]$IgnoreUptime,
 		[switch][Alias('Silent')]$EnableException
 	)
 
@@ -152,8 +163,13 @@ function Find-DbaUnusedIndex {
 		$diffDays = (New-TimeSpan -Start $endDate -End (Get-Date)).Days
 
 		if ($diffDays -le 6) {
+			if ($IgnoreUptime -ne $true ){
 			Stop-Function -Message "The SQL Service was restarted on $lastRestart, which is not long enough for a solid evaluation."
 			return
+			}
+			else {
+				Write-Message -Level Warning -Message "The SQL Service was restarted on $lastRestart, which is not long enough for a solid evaluation."
+			}
 		}
 
 		<#
