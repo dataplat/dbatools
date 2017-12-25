@@ -88,6 +88,13 @@ function Find-DbaUnusedIndex {
 			Find-DbaUnusedIndex -SqlInstance sqlserver2016
 
 			Generates the SQL statements to drop selected indexes on all user databases.
+
+		.EXAMPLE
+			Fine-DbaUnusedIndex -SqlInstance sqlserver2016 -IgnoreUptime
+			
+			Generates the SQL statements to drop selected indexes on all user databases even if the instance has been online for less than 7 days.
+			Note that results may not have enough detail for all indexes, so care should be taken when using them or the generated scripts. Best practice is to allow a full week to capture the mmajority of index use cases
+
 	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	Param (
