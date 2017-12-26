@@ -1,29 +1,51 @@
+<#
+	The below statement stays in for every test you build.
+#>
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\internal\Connect-SqlInstance.ps1"
 
-Describe "$commandname Unit Tests" -Tag 'UnitTests'{
+<#
+	Unit test is required for any command added
+#>
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 	InModuleScope dbatools {
 		#mock Connect-SqlInstance { $true }
         mock Test-DbaSqlPath { $true }
-        
+
+        Context "Validate parameters" {
+			<#
+			The $paramCount is adjusted based on the parameters your command will have.
+
+			The $defaultParamCount is adjusted based on what type of command you are writing the test for:
+				- Commands that *do not* include SupportShouldProcess, set defaultParamCount    = 11
+				- Commands that *do* include SupportShouldProcess, set defaultParamCount        = 13
+		#>
+			$paramCount = 4
+			$defaultParamCount = 11
+			[object[]]$params = (Get-ChildItem function:\Get-DbaFilestream).Parameters.Keys
+			$knownParameters = 'SqlInstance', 'SqlCredential', 'Credential', 'EnableException'
+			It "Should contain our specific parameters" {
+				( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $paramCount
+			}
+			It "Should only contain $paramCount parameters" {
+				$params.Count - $defaultParamCount | Should Be $paramCount
+			}
+        }
+
         Context "Test Connection" {
             Mock Connect-SqlInstance -MockWith { throw }
             It "Should throw on a bad connection" {
-                { Get-DbaFileStream -SqlInstance test -EnableException $true } | Should Throw
+                { Get-DbaFileStream -SqlInstance (Get-Random) -EnableException $true } | Should Throw
             }
         }
-		
+
 		Context "Test Output" {
 			Mock Connect-SqlInstance -MockWith {
 				$obj = [PSCustomObject]@{
-					Name                 = 'BASEName'
-					NetName              = 'BASENetName'
-					InstanceName         = 'BASEInstanceName'
-					DomainInstanceName   = 'BASEDomainInstanceName'
-					InstallDataDirectory = 'BASEInstallDataDirectory'
-					ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
+					NetName              = 'SQLServer'
+					InstanceName         = 'MSSQLSERVER'
+					DomainInstanceName   = 'SQLServer'
 					ServiceName          = 'BASEServiceName'
 					VersionMajor         = 9
 					Configuration    = [PSCustomObject]@{
@@ -45,13 +67,18 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests'{
 				$obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
 				return $obj
             }
-            $results = Get-DbaFileStream -SqlInstance istance\tests -verbose
-            It "Should return 2" {
-                $results.FileStreamStateId | should Be 2
+            Mock Get-DbaSpConfigure -MockWith {
+                $obj = [PSCustomObject]@{
+
+                }
+            }
+            $results = Get-DbaFileStream -SqlInstance 'SQLServer'
+            It "Instance level access should return 2" {
+                $results.InstanceAccessLevel | should Be 2
             }
             It "Should return 'FileStream Enabled for T-Sql and Win-32 Access'" {
-                $results.FileStreamState | Should be "FileStream Enabled for T-Sql and Win-32 Access"
+                $results.InstanceAccessLevelDesc | Should Be "Full access enabled"
             }
         }
-    }
+	}
 }
