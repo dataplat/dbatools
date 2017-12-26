@@ -385,13 +385,14 @@ IF OBJECT_ID('tempdb..##tmpEstimatePage', 'U') IS NOT NULL
 			#If IncludeSystemDBs is true, include systemdbs
 			#look at all databases, online/offline/accessible/inaccessible and tell user if a db can't be queried.
 			try {
-				$dbs = $server.Databases
+				$dbs = $server.Databases | Where-Object IsAccessible
+				
 				if ($Database) {
-					$dbs = $dbs | Where-Object { $Database -contains $_.Name -and $_.IsAccessible -and $_.IsSystemObject -EQ 0 }
+					$dbs = $dbs | Where-Object { $Database -contains $_.Name -and $_.IsSystemObject -eq 0 }
 				}
 				
 				else {
-					$dbs = $dbs | Where-Object { $_.IsAccessible -and $_.IsSystemObject -EQ 0 }
+					$dbs = $dbs | Where-Object { $_.IsSystemObject -eq 0 }
 				}
 				
 				if (Test-Bound "ExcludeDatabase") {
