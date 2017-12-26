@@ -41,6 +41,10 @@ function Restore-DbaDatabase {
     .PARAMETER DestinationLogDirectory
         Path to restore the database log files to.
         This parameter can only be specified alongside DestinationDataDirectory.
+
+    .PARAMETER DestinationFileStreamDirectory
+        Path to restore FileStream data to
+        This parameter can only be specified alongside DestinationDataDirectory
     
     .PARAMETER RestoreTime
         Specify a DateTime object to which you want the database restored to. Default is to the latest point  available in the specified backups
@@ -306,6 +310,8 @@ function Restore-DbaDatabase {
         [parameter(ParameterSetName="Restore")]
         [String]$DestinationLogDirectory,
         [parameter(ParameterSetName="Restore")]
+        [String]$DestinationFileStreamDirectory,
+        [parameter(ParameterSetName="Restore")]
         [DateTime]$RestoreTime = (Get-Date).AddYears(1),
         [parameter(ParameterSetName="Restore")]
         [switch]$NoRecovery,
@@ -417,6 +423,14 @@ function Restore-DbaDatabase {
             }
             if ((Test-Bound "DestinationLogDirectory") -and -not (Test-Bound "DestinationDataDirectory")) {
                 Stop-Function -Category InvalidArgument -Message "The parameter DestinationLogDirectory can only be specified together with DestinationDataDirectory"
+                return
+            }
+            if ((Test-Bound "DestinationFileStreamDirectory") -and (Test-Bound "ReuseSourceFolderStructure")) {
+                Stop-Function -Category InvalidArgument -Message "The parameters DestinationFileStreamDirectory and UseDestinationDefaultDirectories are mutually exclusive"
+                return
+            }
+            if ((Test-Bound "DestinationFileStreamDirectory") -and -not (Test-Bound "DestinationDataDirectory")) {
+                Stop-Function -Category InvalidArgument -Message "The parameter DestinationFileStreamDirectory can only be specified together with DestinationDataDirectory"
                 return
             }
             if (($null -ne $FileMapping) -or $ReuseSourceFolderStructure -or ($DestinationDataDirectory -ne '')) {
@@ -598,7 +612,7 @@ function Restore-DbaDatabase {
                 return
             }
             
-            $null = $FilteredBackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatababaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping
+            $null = $FilteredBackupHistory | Format-DbaBackupInformation -DataFileDirectory $DestinationDataDirectory -LogFileDirectory $DestinationLogDirectory -DestinationFileStreamDirectory $DestinationFileStreamDirectory -DatabaseFileSuffix $DestinationFileSuffix -DatabaseFilePrefix $DestinationFilePrefix -DatabaseNamePrefix $RestoredDatababaseNamePrefix -ReplaceDatabaseName $DatabaseName -Continue:$Continue -ReplaceDbNameInFile:$ReplaceDbNameInFile -FileMapping $FileMapping
             
             if ( Test-Bound -ParameterName FormatBackupInformation){
                 Set-Variable -Name $FormatBackupInformation -Value $FilteredBackupHistory -Scope Global

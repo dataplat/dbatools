@@ -1,3 +1,4 @@
+#ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Write-DbaDataTable {
 	<#
 		.SYNOPSIS
@@ -46,7 +47,7 @@ function Write-DbaDataTable {
 
 		.PARAMETER CheckConstraints
 			If this switch is enabled, the SqlBulkCopy option to process check constraints will be enabled.
-			
+
 			Per Microsoft "Check constraints while data is being inserted. By default, constraints are not checked."
 
 		.PARAMETER FireTriggers
@@ -66,7 +67,7 @@ function Write-DbaDataTable {
 
 		.PARAMETER Truncate
 			If this switch is enabled, the destination table will be truncated after prompting for confirmation.
-			
+
 		.PARAMETER BulkCopyTimeOut
 			Value in seconds for the BulkCopy operations timeout. The default is 30 seconds.
 
@@ -85,7 +86,7 @@ function Write-DbaDataTable {
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
+
 		.NOTES
 			Tags: DataTable, Insert
 			Website: https://dbatools.io
@@ -106,7 +107,7 @@ function Write-DbaDataTable {
 			$DataTable | Write-DbaDataTable -SqlInstance sql2014 -Table mydb.dbo.customers
 
 			Performs a row by row insert of the data in customers.csv. This is significantly slower than a bulk insert and will not show a progress bar.
-			
+
 			This method is not recommended. Use -InputObject instead.
 
 		.EXAMPLE
@@ -119,7 +120,7 @@ function Write-DbaDataTable {
 			$DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
 			Write-DbaDataTable -SqlInstance sql2014 -InputObject $DataTable -Table mydb.dbo.customers -Truncate
 
-			Performs a bulk insert of all the data in customers.csv. Prior to importing into mydb.dbo.customers, the user is informed that the table will be truncated and asks for confirmation. The user is prompted again to perform the import. 
+			Performs a bulk insert of all the data in customers.csv. Prior to importing into mydb.dbo.customers, the user is informed that the table will be truncated and asks for confirmation. The user is prompted again to perform the import.
 
 		.EXAMPLE
 			$DataTable = Import-Csv C:\temp\customers.csv | Out-DbaDataTable
@@ -238,12 +239,12 @@ function Write-DbaDataTable {
 
 		$fqtn = "[$Database].[$Schema].[$table]"
 
+		Write-Message -Message "Attempting to connect to $SqlInstance." -Level Verbose -Target $SqlInstance
 		try {
-			Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance." -Target $SqlInstance
 			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -RegularUser:$RegularUser
 		}
 		catch {
-			Stop-Function -Message "Failed to process Instance $SqlInstance." -ErrorRecord $_ -Target $SqlInstance
+			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
 			return
 		}
 
@@ -381,7 +382,6 @@ function Write-DbaDataTable {
 
 				# Get SQL datatypes by best guess on first data row
 				$sqlDataTypes = @();
-				$index = -1
 				$columns = $InputObject.Columns
 
 				if ($columns -eq $null) {
