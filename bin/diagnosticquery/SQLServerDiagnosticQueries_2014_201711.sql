@@ -1,7 +1,7 @@
 
 -- SQL Server 2014 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: December 13, 2017
+-- Last Modified: December 19, 2017
 -- https://www.sqlskills.com/blogs/glenn/
 -- http://sqlserverperformance.wordpress.com/
 -- Twitter: GlennAlanBerry
@@ -79,7 +79,7 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 --															12.0.4522		SP1	CU13		7/17/2017				12.0.5552		SP2 CU6			7/17/2017
 --																													12.0.5556		SP2 CU7			8/28/2017
 --																													12.0.5557		SP2 CU8			10/16/2017
-
+--																													12.0.5563		SP2 CU9			12/18/2017
 
 
 

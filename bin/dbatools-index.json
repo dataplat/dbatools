@@ -10,14 +10,14 @@
     },
     {
         "CommandName":  "Backup-DbaDatabase",
-        "Description":  "Performs a backup of a specified type of 1 or more databases on a SQL Server Instance. These backups may be Full, Differential or Transaction log backups.",
+        "Description":  "Performs a backup of a specified type of 1 or more databases on a single SQL Server Instance. These backups may be Full, Differential or Transaction log backups.",
         "Tags":  [
                      "DisasterRecovery",
                      "Backup",
                      "Restore"
                  ],
         "Author":  "Stuart Moore (@napalmgram), stuart-moore.com",
-        "Synopsis":  "Backup one or more SQL Sever databases from a SQL Server SqlInstance.",
+        "Synopsis":  "Backup one or more SQL Sever databases from a single SQL Server SqlInstance.",
         "Name":  "Backup-DbaDatabase",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance Server1 -Database HR, Finance\r\n\r\nThis will perform a full database backup on the databases HR and Finance on SQL Server Instance Server1 to Server1\u0027s \r\ndefault backup directory.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -BackupDirectory C:\\temp -Database AdventureWorks2014 -Type Full\r\n\r\nBacks up AdventureWorks2014 to sql2016\u0027s C:\\temp folder.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eBackup-DbaDatabase -SqlInstance sql2016 -AzureBaseUrl https://dbatoolsaz.blob.core.windows.net/azbackups/ \r\n-AzureCredential dbatoolscred -Type Full -CreateFolder\r\n\r\nPerforms a full backup of all databases on the sql2016 instance to their own containers under the \r\nhttps://dbatoolsaz.blob.core.windows.net/azbackups/ container on Azure blog storage using the sql credential \r\n\"dbatoolscred\" registered on the sql2016 instance.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
@@ -741,7 +741,7 @@
         "Synopsis":  "Find Unused indexes",
         "Name":  "Find-DbaUnusedIndex",
         "Links":  "https://dbatools.io/Find-DbaUnusedIndex",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sql2005 -FilePath C:\\temp\\sql2005-UnusedIndexes.sql\r\n\r\nGenerates the SQL statements to drop the selected unused indexes on server \"sql2005\". The statements are written to the \r\nfile \"C:\\temp\\sql2005-UnusedIndexes.sql\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sql2005 -FilePath C:\\temp\\sql2005-UnusedIndexes.sql -Append\r\n\r\nGenerates the SQL statements to drop the selected unused indexes on server \"sql2005\". The statements are written to the \r\nfile \"C:\\temp\\sql2005-UnusedIndexes.sql\", appending if the file already exists.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sqlserver2016 -SqlCredential $cred\r\n\r\nGenerates the SQL statements to drop the selected unused indexes on server \"sqlserver2016\", using SQL Authentication to \r\nconnect to the database.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sqlserver2016 -Database db1, db2\r\n\r\nGenerates the SQL Statement to to drop selected indexes in databases db1 \u0026 db2 on server \"sqlserver2016\".\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sqlserver2016\r\n\r\nGenerates the SQL statements to drop selected indexes on all user databases.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sql2005 -FilePath C:\\temp\\sql2005-UnusedIndexes.sql\r\n\r\nGenerates the SQL statements to drop the selected unused indexes on server \"sql2005\". The statements are written to the \r\nfile \"C:\\temp\\sql2005-UnusedIndexes.sql\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sql2005 -FilePath C:\\temp\\sql2005-UnusedIndexes.sql -Append\r\n\r\nGenerates the SQL statements to drop the selected unused indexes on server \"sql2005\". The statements are written to the \r\nfile \"C:\\temp\\sql2005-UnusedIndexes.sql\", appending if the file already exists.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sqlserver2016 -SqlCredential $cred\r\n\r\nGenerates the SQL statements to drop the selected unused indexes on server \"sqlserver2016\", using SQL Authentication to \r\nconnect to the database.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sqlserver2016 -Database db1, db2\r\n\r\nGenerates the SQL Statement to to drop selected indexes in databases db1 \u0026 db2 on server \"sqlserver2016\".\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaUnusedIndex -SqlInstance sqlserver2016\r\n\r\nGenerates the SQL statements to drop selected indexes on all user databases.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eFine-DbaUnusedIndex -SqlInstance sqlserver2016 -IgnoreUptime\r\n\r\nGenerates the SQL statements to drop selected indexes on all user databases even if the instance has been online for \r\nless than 7 days.\r\nNote that results may not have enough detail for all indexes, so care should be taken when using them or the generated \r\nscripts. Best practice is to allow a full week to capture the mmajority of index use cases\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Find-DbaUserObject",
@@ -813,17 +813,17 @@
     },
     {
         "CommandName":  "Get-DbaAgentJobCategory",
-        "Description":  "Get-DbaAgentJobCategory makes is possible to retrieve the job categories.",
+        "Description":  "Get-DbaAgentJobCategory makes it possible to retrieve the job categories.",
         "Tags":  [
                      "Agent",
                      "Job",
                      "Job Category"
                  ],
         "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
-        "Synopsis":  "Get-DbaAgentJobCategory retrieves the job categories",
+        "Synopsis":  "Get-DbaAgentJobCategory retrieves the job categories.",
         "Name":  "Get-DbaAgentJobCategory",
         "Links":  "https://dbatools.io/Get-DbaAgentJobCategory",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobCategory -SqlInstance sql1\r\n\r\nReturn all the job categories\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobCategory -SqlInstance sql1 -Category \u0027Log Shipping\u0027\r\n\r\nReturn all the job categories that have the name \u0027Log Shipping\u0027\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobCategory -SqlInstance sstad-pc -CategoryType MultiServerJob\r\n\r\nReturn all the job categories that have a type MultiServerJob\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobCategory -SqlInstance sql1\r\n\r\nReturn all the job categories.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobCategory -SqlInstance sql1 -Category \u0027Log Shipping\u0027\r\n\r\nReturn all the job categories that have the name \u0027Log Shipping\u0027.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentJobCategory -SqlInstance sstad-pc -CategoryType MultiServerJob\r\n\r\nReturn all the job categories that have a type MultiServerJob.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaAgentJobHistory",
@@ -2323,17 +2323,17 @@
     },
     {
         "CommandName":  "New-DbaAgentJobCategory",
-        "Description":  "New-DbaAgentJobCategory makes is possible to create a job category that can be used with jobs.\nIt returns an array of the job(s) created",
+        "Description":  "New-DbaAgentJobCategory makes it possible to create a job category that can be used with jobs.\nIt returns an array of the job(s) created .",
         "Tags":  [
                      "Agent",
                      "Job",
                      "Job Category"
                  ],
         "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
-        "Synopsis":  "New-DbaAgentJobCategory creates a new job categorie",
+        "Synopsis":  "New-DbaAgentJobCategory creates a new job category.",
         "Name":  "New-DbaAgentJobCategory",
         "Links":  "https://dbatools.io/New-DbaAgentJobCategory",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJobCategory -SqlInstance sql1 -Category \u0027Category 1\u0027\r\n\r\nCreates a new job category with the name \u0027Category 1\u0027\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJobCategory -SqlInstance sql1 -Category \u0027Category 2\u0027 -CategoryType MultiServerJob\r\n\r\nCreates a new job category with the name \u0027Category 2\u0027 and assign the category type for a multi server job\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJobCategory -SqlInstance sql1 -Category \u0027Category 1\u0027\r\n\r\nCreates a new job category with the name \u0027Category 1\u0027.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJobCategory -SqlInstance sql1 -Category \u0027Category 2\u0027 -CategoryType MultiServerJob\r\n\r\nCreates a new job category with the name \u0027Category 2\u0027 and assign the category type for a multi server job.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "New-DbaAgentJobStep",
@@ -2498,7 +2498,11 @@
     {
         "CommandName":  "New-DbaSqlConnectionStringBuilder",
         "Description":  "Creates a System.Data.SqlClient.SqlConnectionStringBuilder from a connection string.",
-        "Tags":  "SqlBuild",
+        "Tags":  [
+                     "SqlBuild",
+                     "ConnectionString",
+                     "Connection"
+                 ],
         "Author":  "zippy1981",
         "Synopsis":  "Returns a System.Data.SqlClient.SqlConnectionStringBuilder with the string specified",
         "Name":  "New-DbaSqlConnectionStringBuilder",
@@ -2628,17 +2632,17 @@
     },
     {
         "CommandName":  "Remove-DbaAgentJobCategory",
-        "Description":  "Remove-DbaAgentJobCategory makes is possible to remove a job category.\nBe assured that the category you want to remove is not used with other jobs. If another job uses this category it will be get the category [Uncategorized (Local)].",
+        "Description":  "Remove-DbaAgentJobCategory makes it possible to remove a job category.\nBe assured that the category you want to remove is not used with other jobs. If another job uses this category it will be get the category [Uncategorized (Local)].",
         "Tags":  [
                      "Agent",
                      "Job",
                      "Job Category"
                  ],
         "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
-        "Synopsis":  "Remove-DbaAgentJobCategory removes a job category",
+        "Synopsis":  "Remove-DbaAgentJobCategory removes a job category.",
         "Name":  "Remove-DbaAgentJobCategory",
         "Links":  "https://dbatools.io/Remove-DbaAgentJobCategory",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJobCategory -SqlInstance sql1 -Category Category1\r\n\r\nRemove the job category Category1 from the instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJobCategory -SqlInstance sql1 -Category Category1, Category2, Category3\r\n\r\nRemove multiple job categories from the instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJobCategory -SqlInstance sql1, sql2, sql3 -Category Category1, Category2, Category3\r\n\r\nRemove multiple job categories from the multiple instances\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJobCategory -SqlInstance sql1 -Category \u0027Category 1\u0027\r\n\r\nRemove the job category Category 1 from the instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJobCategory -SqlInstance sql1 -Category Category1, Category2, Category3\r\n\r\nRemove multiple job categories from the instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentJobCategory -SqlInstance sql1, sql2, sql3 -Category Category1, Category2, Category3\r\n\r\nRemove multiple job categories from the multiple instances.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Remove-DbaAgentJobStep",
@@ -2990,17 +2994,17 @@
     },
     {
         "CommandName":  "Set-DbaAgentJobCategory",
-        "Description":  "Set-DbaAgentJobCategory makes is possible to change a job category.",
+        "Description":  "Set-DbaAgentJobCategory makes it possible to change a job category.",
         "Tags":  [
                      "Agent",
                      "Job",
                      "Job Category"
                  ],
         "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
-        "Synopsis":  "Set-DbaAgentJobCategory changes a job category",
+        "Synopsis":  "Set-DbaAgentJobCategory changes a job category.",
         "Name":  "Set-DbaAgentJobCategory",
         "Links":  "https://dbatools.io/Set-DbaAgentJobCategory",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJobCategory -SqlInstance sql1 -Category \u0027Category 1\u0027 -NewName \u0027Category 2\u0027\r\n\r\nChange the name of the category from \u0027Category 1\u0027 to \u0027Category 2\u0027\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJobCategory -SqlInstance sql1, sql2 -Category Category1, Category2 -NewName cat1, cat2\r\n\r\nRename multiple jobs in one go on multiple servers\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaAgentJobCategory -SqlInstance sql1 -Category \u0027Category 1\u0027 -NewName \u0027Category 2\u0027\r\n\r\nChange the name of the category from \u0027Category 1\u0027 to \u0027Category 2\u0027.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaAgentJobCategory -SqlInstance sql1, sql2 -Category Category1, Category2 -NewName cat1, cat2\r\n\r\nRename multiple jobs in one go on multiple servers.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-DbaAgentJobOutputFile",
