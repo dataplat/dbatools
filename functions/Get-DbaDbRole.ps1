@@ -101,7 +101,7 @@ Returns SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\sql1
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 						
-			$dbs = $server.Databases
+			$dbs = $server.Databases | Where-Object IsAccessible
 			
 			if ($Database) {
 				Write-Message -Level Verbose -Message "Databases to check: $Database"
