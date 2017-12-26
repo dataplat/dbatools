@@ -109,11 +109,18 @@ function Get-DbaFilestream {
 
 			$isConfigured = $false
 			if ( ($serviceFS.AccessLevel -ne 0) -and ($instanceFS.RunningValue -ne 0) ) {
-				if ( $serviceFS.AccessLevel -eq 3 -and $instanceFS.RunningValue -eq 2 ) {
+				if ( ($serviceFS.AccessLevel -eq 3 -and $instanceFS.RunningValue -eq 2) -and (-not $pendingRestart) ) {
 					$isConfigured = $true
 				}
-				elseif ( ($serviceFS.AccessLevel -lt 3) -and ($serviceFS.AccessLevel -eq $instanceFS.RuningValue) ) {
+				elseif ( ($serviceFS.AccessLevel -eq $instanceFS.RunningValue) -and (-and $pendingRestart) ) {
 					$isConfigured = $true
+				}
+
+				if ( ($serviceFS.AccessLevel -eq $instanceFS.RunningValue) -and ($pendingRestart) ) {
+					$notesMsg = "A restart of the instance is pending before Filestream is configured."
+				}
+				else {
+					$notesMsg = "The serivce Access Level [$($serviceFS.AccessLevel)] does not match the instance Access Level [$($instanceFS.RunningValue)]."
 				}
 			}
 
@@ -128,6 +135,7 @@ function Get-DbaFilestream {
 				InstanceAccessLevelDesc = $idInstanceFS[[int]$instanceFS.RunningValue]
 				IsConfigured            = $isConfigured
 				PendingRestart          = $pendingRestart
+				Notes 					= $notesMsg
 			} | Select-DefaultView -Exclude ServiceAccessLevel, InstanceAccessLevel
 		}
 	}
