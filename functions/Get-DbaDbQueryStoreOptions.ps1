@@ -92,18 +92,11 @@ Returns Query Store configuration settings for every database on the ServerA\sql
 			}
 
 			# We have to exclude all the system databases since they cannot have the Query Store feature enabled
-			$dbs = Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -ExcludeDatabase $ExcludeDatabase |
-                Where-Object { ($_.Name -in $Database -or !$Database) }
+			$dbs = Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -ExcludeDatabase $ExcludeDatabase -Database $Database | Where-Object IsAccessible
 
 			foreach ($db in $dbs)
 			{
 				Write-Message -Level Verbose -Message "Processing $($db.Name) on $instance"
-
-				if ($db.IsAccessible -eq $false)
-				{
-					Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database."
-					Continue
-				}
                 $QSO = $db.QueryStoreOptions
 
 				Add-Member -Force -InputObject $QSO -MemberType NoteProperty -Name ComputerName -value $server.NetName
