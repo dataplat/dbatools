@@ -72,7 +72,8 @@ Gets the cert1 certificate within the db1 database
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$databases = Get-DbaDatabase -SqlInstance $server
+			$databases = Get-DbaDatabase -SqlInstance $server | Where-Object IsAccessible
+			
 			if ($Database) { 
 				$databases = $databases | Where-Object Name -In $Database
 			}
