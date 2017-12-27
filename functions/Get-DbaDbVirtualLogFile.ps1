@@ -92,8 +92,9 @@ function Get-DbaDbVirtualLogFile {
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-
-			$dbs = $server.Databases
+			
+			$dbs = $server.Databases | Where-Object IsAccessible
+			
 			if ($Database) {
 				$dbs = $dbs | Where-Object Name -in $Database
 			}

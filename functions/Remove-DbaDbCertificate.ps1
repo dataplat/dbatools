@@ -109,17 +109,21 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
 			}
 			
 			foreach ($db in $Database) {
-				$smodb = $server.Databases[$db]
+				$currentdb = $server.Databases[$db]
 				
-				if ($null -eq $smodb) {
-					Stop-Function -Message "Database '$db' does not exist on $server" -Target $smodb -Continue
+				if ($null -eq $currentdb) {
+					Stop-Function -Message "Database '$db' does not exist on $server" -Target $currentdb -Continue
+				}
+				
+				if (-not $currentdb.IsAccessible) {
+					Stop-Function -Message "Database '$db' is not accessible" -Target $currentdb -Continue
 				}
 				
 				foreach ($cert in $certificate) {
-					$smocert = $smodb.Certificates[$cert]
+					$smocert = $currentdb.Certificates[$cert]
 					
 					if ($null -eq $smocert) {
-						Stop-Function -Message "No certificate named $cert exists in the $db database on $server" -Target $smodb.Certificates -Continue
+						Stop-Function -Message "No certificate named $cert exists in the $db database on $server" -Target $currentdb.Certificates -Continue
 					}
 					
 					Drop-Cert -smocert $smocert
