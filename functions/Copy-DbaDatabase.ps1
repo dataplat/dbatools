@@ -857,7 +857,7 @@ function Copy-DbaDatabase {
 		Write-Message -Level Verbose -Message "Building database list."
 		$databaseList = New-Object System.Collections.ArrayList
 		$SupportDBs = "ReportServer", "ReportServerTempDB", "distribution"
-		foreach ($currentdb in $sourceServer.Databases) {
+		foreach ($currentdb in ($sourceServer.Databases | Where-Object IsAccessible)) {
 			$dbName = $currentdb.Name
 			$dbOwner = $currentdb.Owner
 			
