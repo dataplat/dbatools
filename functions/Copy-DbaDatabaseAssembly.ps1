@@ -111,7 +111,7 @@ function Copy-DbaDatabaseAssembly {
 	process {
 
 		$sourceAssemblies = @()
-		foreach ($database in $sourceServer.Databases) {
+		foreach ($database in ($sourceServer.Databases | Where-Object IsAccessible)) {
 			try {
 				# a bug here requires a try/catch
 				$userAssemblies = $database.Assemblies | Where-Object IsSystemObject -eq $false
