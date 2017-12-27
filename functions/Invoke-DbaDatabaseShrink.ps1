@@ -192,7 +192,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 			}
 			$server.ConnectionContext.StatementTimeout = $StatementTimeoutSeconds
 
-			$dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
+			$dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible }
 
 			if ($Database) {
 				$dbs = $dbs | Where-Object Name -In $Database

@@ -162,7 +162,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 			}
 			
 			if ($AllDatabases) {
-				$dbs = $server.Databases
+				$dbs = $server.Databases | Where-Object IsAccessible
 			}
 			
 			if ($Database) {
@@ -170,7 +170,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
 			}
 			
 			if ($ExcludeDatabase) {
-				$dbs = $server.Databases | Where-Object { $ExcludeDatabase -notcontains $_.Name }
+				$dbs = $server.Databases | Where-Object { $ExcludeDatabase -notcontains $_.Name -and $_.IsAccessible }
 			}
 			
 			$sourcedbs = @()

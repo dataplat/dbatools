@@ -27,6 +27,11 @@ function Get-DbaDetachedDatabaseInfo {
 		.PARAMETER Path 
 			Specifies the path to the MDF file to be read. This path must be readable by the SQL Server service account. Ideally, the MDF will be located on the SQL Server itself, or on a network share to which the SQL Server service account has access. 
 
+		.PARAMETER EnableException
+		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+		
 		.NOTES
 			Tags: DisasterRecovery
 			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -51,7 +56,8 @@ function Get-DbaDetachedDatabaseInfo {
 		[parameter(Mandatory = $true)]
 		[Alias("Mdf")]
 		[string]$Path,
-		[PSCredential]$SqlCredential
+		[PSCredential]$SqlCredential,
+		[switch]$EnableException
 	)
 	
 	begin {
@@ -65,7 +71,7 @@ function Get-DbaDetachedDatabaseInfo {
 			$exists = Test-DbaSqlPath $server $Path
 			
 			if ($exists -eq $false) {
-				throw "$servername cannot access the file $path. Does the file exist and does the service account ($serviceaccount) have access to the path?"
+				Stop-Function -Message "$servername cannot access the file $path. Does the file exist and does the service account ($serviceaccount) have access to the path?" -target $path
 			}
 			
 			try {
@@ -75,7 +81,7 @@ function Get-DbaDetachedDatabaseInfo {
 				$collationid = ($detachedDatabaseInfo | Where-Object { $_.Property -eq "Collation" }).Value
 			}
 			catch {
-				throw "$servername cannot read the file $path. Is the database detached?"
+				Stop-Function -Message "$servername cannot read the file $path. Is the database detached?" -Target $path
 			}
 			
 			switch ($exactdbversion) {
@@ -117,7 +123,7 @@ function Get-DbaDetachedDatabaseInfo {
 				}
 			}
 			catch {
-				throw "$servername unable to enumerate database or log structure information for $path"
+				Stop-Function -Message "$servername unable to enumerate database or log structure information for $path"
 			}
 			
 			$mdfinfo = [pscustomobject]@{
@@ -135,13 +141,15 @@ function Get-DbaDetachedDatabaseInfo {
 	
 	process {
 		
-		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-		$mdfinfo = Get-MdfFileInfo $server $path
+		try {
+			Write-Message -Level Verbose -Message "Connecting to $SqlInstance"
+			$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
+		}
+		catch {
+			Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance -Continue
+		}
 		
-	}
-	
-	end {
-		$server.ConnectionContext.Disconnect()
-		return $mdfinfo
+		Get-MdfFileInfo $server $path
+		
 	}
 }
