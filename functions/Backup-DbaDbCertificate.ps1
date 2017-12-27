@@ -236,7 +236,8 @@ function Backup-DbaDbCertificate {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				return
 			}
-			$databases = Get-DbaDatabase -SqlInstance $server
+			$databases = Get-DbaDatabase -SqlInstance $server | Where-Object IsAccessible
+			
 			if ($Database) {
 				$databases = $databases | Where-Object Name -in $Database
 			}
