@@ -10,7 +10,7 @@ Backs up specified database master key.
 The target SQL Server instance.
 
 .PARAMETER SqlCredential
-Allows you to login to SQL Server using alternative credentials.
+Allows you to login to SQL Server using alternative credentials. 
 
 .PARAMETER Database
 Backup master key from specific database(s).
