@@ -98,7 +98,7 @@ function Dismount-DbaDatabase {
 				$DatabaseCollection += $server.Databases | Where-Object Name -in $Database
 			}
 			else {
-				$DatabaseCollection += $server.Databases
+				$DatabaseCollection += $server.Databases | Where-Object IsAccessible
 			}
 			
 			if ($ExcludeDatabase) {

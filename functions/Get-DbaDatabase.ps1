@@ -65,6 +65,9 @@ function Get-DbaDatabase {
 		.PARAMETER IncludeLastUsed
 			If this switch is enabled, the last used read & write times for each database will be returned. This data is retrieved from sys.dm_db_index_usage_stats which is reset when SQL Server is restarted.
 
+		.PARAMETER ExcludeInaccessible
+			By default, all Databases that are marked IsAccessible will be returned. To see only accessible databases, use ExcludeInaccessible.
+
 		.PARAMETER WhatIf
 			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
@@ -170,8 +173,10 @@ function Get-DbaDatabase {
 		[datetime]$NoFullBackupSince,
 		[switch]$NoLogBackup,
 		[datetime]$NoLogBackupSince,
-		[switch][Alias('Silent')]$EnableException,
-		[switch]$IncludeLastUsed
+		[switch]$IncludeLastUsed,
+		[switch]$ExcludeInaccessible,
+		[switch][Alias('Silent')]$EnableException
+		
 	)
 	
 	begin {
@@ -251,7 +256,13 @@ function Get-DbaDatabase {
 			$Encrypt = switch (Test-Bound $Encrypted) { $true { @($true) }
 				default { @($true, $false, $null) } }
 			
-			$inputobject = $server.Databases |
+			if ($ExcludeInaccessible) {
+				$inputobject = $server.Databases | Where-Object IsAccessible
+			}
+			else {
+				$inputobject = $server.Databases
+			}
+			$inputobject = $inputobject |
 			Where-Object {
 				($_.Name -in $Database -or !$Database) -and
 				($_.Name -notin $ExcludeDatabase -or !$ExcludeDatabase) -and

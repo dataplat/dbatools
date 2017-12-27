@@ -68,7 +68,7 @@ Gets the master key for the db1 database
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$databases = $server.Databases
+			$databases = $server.Databases | Where-Object IsAccessible
 			
 			if ($Database) {
 				$databases = $databases | Where-Object Name -In $Database

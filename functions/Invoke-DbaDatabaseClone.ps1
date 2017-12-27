@@ -145,7 +145,7 @@ function Invoke-DbaDatabaseClone {
 			}
 			
 			if (-not $Database.Name) {
-				[Microsoft.SqlServer.Management.Smo.Database]$database = $server.Databases[$database]
+				[Microsoft.SqlServer.Management.Smo.Database]$database = $server.Databases[$database] | Where-Object IsAccessible
 			}
 			
 			if ($Database.IsSystemObject) {

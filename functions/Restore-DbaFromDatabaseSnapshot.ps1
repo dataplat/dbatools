@@ -95,7 +95,7 @@ function Restore-DbaFromDatabaseSnapshot {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 
-			$allDbs = $server.Databases
+			$allDbs = $server.Databases | Where-Object IsAccessible
 
 			# vault to hold all programmed operations from --> to
 			$operations = @()
