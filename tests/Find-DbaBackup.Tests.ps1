@@ -88,11 +88,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		for ($i=1; $i -le 5; $i++) {
 			$filepath = Join-Path $testPath "dbatoolsci_$($i)_backup_notarchive.bak"
 			Set-Content $filepath -value "."
+			(Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-5)
 			(Get-ChildItem $filepath).Attributes = "Normal"
 		}
 		for ($i=1; $i -le 5; $i++) {
 			$filepath = Join-Path $testPath "dbatoolsci_$($i)_backup_archive.bak"
 			Set-Content $filepath -value "."
+			(Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-5)
 			(Get-ChildItem $filepath).Attributes = "Archive"
 		}
 		It "Should find all files with retention 0d" {
@@ -110,10 +112,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		for ($i=1; $i -le 5; $i++) {
 			$filepath = Join-Path $testPath "dbatoolsci_$($i)_backup.trn"
 			Set-Content $filepath -value "."
+			(Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-5)
 		}
 		for ($i=1; $i -le 5; $i++) {
 			$filepath = Join-Path $testPath "dbatoolsci_$($i)_backup.bak"
 			Set-Content $filepath -value "."
+			(Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-5)
 		}
 		It "Should find 5 files with extension trn" {
 			$results = Find-DbaBackup -Path $testPath -BackupFileExtension 'trn' -RetentionPeriod '0d'
