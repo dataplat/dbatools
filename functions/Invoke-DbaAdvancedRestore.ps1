@@ -133,7 +133,7 @@ Function Invoke-DbaAdvancedRestore{
             $NoRecovery = $True
             $Pages = $tmpPages -join ','
         }
-        $ScriptOnly  = $false
+        #$OutputScriptOnly  = $false
         $InternalHistory = @()
     }
     Process{
@@ -146,7 +146,7 @@ Function Invoke-DbaAdvancedRestore{
         $Databases  = $InternalHistory.Database | select-Object -unique
         ForEach ($Database in $Databases){
             If ($Database -in $Server.databases.name) {
-                if (($ScriptOnly -ne $true) -or ($verifyonly -ne $true)) {
+                if (($OutputScriptOnly -ne $true) -or ($verifyonly -ne $true)) {
                     if ($Pscmdlet.ShouldProcess("Killing processes in $Database on $SqlInstance as it exists and WithReplace specified  `n", "Cannot proceed if processes exist, ", "Database Exists and WithReplace specified, need to kill processes to restore")) {
                         try {
                             Write-Message -Level Verbose -Message "Set $Database single_user to kill processes"
@@ -305,14 +305,14 @@ Function Invoke-DbaAdvancedRestore{
                                 RestoreComplete        = $RestoreComplete
                                 BackupFilesCount       = $backup.FullName.Count
                                 RestoredFilesCount     = $backup.Filelist.PhysicalName.count
-                                BackupSizeMB           = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [Math]::Round(($backup | Measure-Object -Property TotalSize -Sum).Sum/1mb,2) } else { $null }
-                                CompressedBackupSizeMB = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { [Math]::Round(($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum/1mb,2) } else { $null }
+                                BackupSizeMB           = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { [Math]::Round(($backup.TotalSize | Measure-Object -Property Byte -Sum).Sum/1mb,2) } else { $null }
+                                CompressedBackupSizeMB = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { [Math]::Round(($backup.CompressedBackupSize | Measure-Object -Property Byte -Sum).Sum/1mb,2) } else { $null }
                                 BackupFile             = $backup.FullName -Join ','
                                 RestoredFile           = $((Split-Path $backup.FileList.PhysicalName -Leaf) | Sort-Object -Unique) -Join ','
                                 RestoredFileFull       = ($backup.Filelist.PhysicalName -Join ',')
                                 RestoreDirectory       = ((Split-Path $backup.FileList.PhysicalName) | Sort-Object -Unique) -Join ','
-                                BackupSize             = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { ($backup | Measure-Object -Property TotalSize -Sum).Sum } else { $null }
-                                CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { ($backup | Measure-Object -Property CompressedBackupSize -Sum).Sum } else { $null }
+                                BackupSize             = if ([bool]($backup.psobject.Properties.Name -contains 'TotalSize')) { ($backup.TotalSize | Measure-Object -Property Byte -Sum).Sum } else { $null }
+                                CompressedBackupSize   = if ([bool]($backup.psobject.Properties.Name -contains 'CompressedBackupSize')) { ($backup.CompressedBackupSize | Measure-Object -Property Byte -Sum).Sum } else { $null }
                                 Script                 = $script
                                 BackupFileRaw          = ($backups.Fullname)
                                 ExitError              = $ExitError

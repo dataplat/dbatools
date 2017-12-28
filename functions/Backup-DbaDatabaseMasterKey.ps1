@@ -10,7 +10,7 @@ Backs up specified database master key.
 The target SQL Server instance.
 
 .PARAMETER SqlCredential
-Allows you to login to SQL Server using alternative credentials.
+Allows you to login to SQL Server using alternative credentials. 
 
 .PARAMETER Database
 Backup master key from specific database(s).
@@ -84,7 +84,7 @@ Logs into sql2016 with Windows credentials then backs up db1's keys to the \\nas
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$databases = $server.Databases
+			$databases = $server.Databases | Where-Object IsAccessible
 			
 			if ($Database) {
 				$databases = $databases | Where-Object Name -In $Database
