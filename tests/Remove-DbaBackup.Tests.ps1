@@ -43,6 +43,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		for ($i = 1; $i -le 5; $i++) {
 			$filepath = Join-Path $testPath "dbatoolsci_$($i)_backup.bak"
 			Set-Content $filepath -value "."
+			(Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-5)
 		}
 		It "Should remove all files with retention 0d" {
 			$null = Remove-DbaBackup -Path $testPath -BackupFileExtension 'bak' -RetentionPeriod '0d'
@@ -53,10 +54,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		for ($i = 1; $i -le 5; $i++) {
 			$filepath = Join-Path $testPath "dbatoolsci_$($i)_backup.bak"
 			Set-Content $filepath -value "."
+			(Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-5)
 		}
 		for ($i = 1; $i -le 5; $i++) {
 			$filepath = Join-Path $testPath "dbatoolsci_$($i)_backup.trn"
 			Set-Content $filepath -value "."
+			(Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-5)
 		}
 		It "Should remove all files but not the trn ones" {
 			$null = Remove-DbaBackup -Path $testPath -BackupFileExtension 'bak' -RetentionPeriod '0d'
@@ -76,10 +79,12 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		for ($i = 1; $i -le 5; $i++) {
 			$filepath = Join-Path $testPath "dbatoolsci_$($i)_backup.bak"
 			Set-Content $filepath -value "."
+			(Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-5)
 		}
 		for ($i = 1; $i -le 5; $i++) {
 			$filepath = Join-Path $testPathinner "dbatoolsci_$($i)_backup.bak"
 			Set-Content $filepath -value "."
+			(Get-ChildItem $filepath).LastWriteTime = (Get-Date).AddDays(-5)
 		}
 		It "Removes files but leaves empty dirs" {
 			Remove-DbaBackup -Path $testPath -BackupFileExtension 'bak' -RetentionPeriod '0d'
