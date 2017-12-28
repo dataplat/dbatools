@@ -447,7 +447,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName | Remove-DbaDatabase -Confirm:$false
 		$server = Connect-DbaInstance $script:instance1
 		$server.Query("CREATE DATABASE $DatabaseName")
-		$results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly
+		$results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $DatabaseName -OutputScriptOnly -WithReplace
 		$db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $DatabaseName
 		It "Should only output a script" {
 			$results -match 'RESTORE DATABASE' | Should be $True
