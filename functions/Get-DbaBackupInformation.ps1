@@ -265,6 +265,7 @@ function Get-DbaBackupInformation {
                 $historyObject.Path = [string[]]$Group.Group.BackupPath
                 $historyObject.FileList = ($group.Group.FileList | select-object type, logicalname, physicalname)
                 $historyObject.TotalSize = ($Group.Group.BackupSize | Measure-Object -sum).sum
+                $HistoryObject.CompressedBackupSize = ($Group.Group.CompressedBackupSize | Measure-Object -sum).sum
                 $historyObject.Type = $group.Group[0].BackupTypeDescription
                 $historyObject.BackupSetId = $group.group[0].BackupSetGUID
                 $historyObject.DeviceType = 'Disk'

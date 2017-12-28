@@ -213,7 +213,7 @@ function Remove-DbaDbUser {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
                 
-                $databases = $server.Databases | Where-Object Status -EQ "normal"
+                $databases = $server.Databases | Where-Object IsAccessible
                 
                 if ($Database) {
                     $databases = $databases | Where-Object Name -In $Database
