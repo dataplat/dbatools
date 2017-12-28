@@ -86,14 +86,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
 
     Context "Check the export/import of backup history" {
-		# This one causes all sorts of red
+		# This one used to cause all sorts of red
 		$results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -DatabaseName $dbname2 -ExportPath "$DestBackupDir\history.xml"
 		
 		# the command below returns just a warning
-		Get-DbaBackupInformation -Import -Path "$DestBackupDir\history.xml" | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationFilePrefix hist -RestoredDatababaseNamePrefix hist -TrustDbBackupHistory
+		# Get-DbaBackupInformation -Import -Path "$DestBackupDir\history.xml" | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationFilePrefix hist -RestoredDatababaseNamePrefix hist -TrustDbBackupHistory
 		
 		It "Should restore cleanly" {
-			# This test does nothing? No failure and $results is not set
             ($results | Where-Object {$_.RestoreComplete -eq $false}).count | Should be 0
         }
 	}
