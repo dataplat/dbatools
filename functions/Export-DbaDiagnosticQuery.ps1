@@ -126,11 +126,11 @@ function Export-DbaDiagnosticQuery {
 			$csvdbfilename = "$Path\$SqlInstance-$dbname-DQ-$number-$queryname-$Suffix.csv"
 			$csvfilename = "$Path\$SqlInstance-DQ-$number-$queryname-$Suffix.csv"
 
-            $columnnameoptions = "Query Plan", "QueryPlan", "Query_Plan"
+            $columnnameoptions = "Query Plan", "QueryPlan", "Query_Plan", "query_plan_xml"
             if (($result | Get-Member | Where-Object Name -in $columnnameoptions).Count -gt 0) {
                 $plannr = 0
                 $columnname = ($result | Get-Member | Where-Object Name -In $columnnameoptions).Name
-                   foreach ($plan in $result."$columname") {
+                   foreach ($plan in $result."$columnname") {
                     $plannr += 1
                     if ($row.DatabaseSpecific) {
                         $planfilename = "$Path\$SqlInstance-$dbname-DQ-$number-$queryname-$plannr-$Suffix.sqlplan"
@@ -142,14 +142,14 @@ function Export-DbaDiagnosticQuery {
                     if (!$NoPlanExport)
                     {
 					    Write-Message -Level Output -Message "Exporting $planfilename"
-                        $plan | Out-File -FilePath $planfilename
+                        if ($plan) {$plan | Out-File -FilePath $planfilename}
                     }
                 }
 
                 $result = $result | Select-Object * -ExcludeProperty "$columnname"
             }
 
-            $columnnameoptions = "Complete Query Text", "QueryText", "Query Text", "Query_Text"
+            $columnnameoptions = "Complete Query Text", "QueryText", "Query Text", "Query_Text", "query_sql_text"
             if (($result | Get-Member | Where-Object Name -In $columnnameoptions ).Count -gt 0) {
                 $sqlnr = 0
                 $columnname = ($result | Get-Member | Where-Object Name -In $columnnameoptions).Name
@@ -165,7 +165,7 @@ function Export-DbaDiagnosticQuery {
                     if (!$NoQueryExport)
                     {
 					    Write-Message -Level Output -Message "Exporting $sqlfilename"
-                        $sql | Out-File -FilePath $sqlfilename
+                        if ($sql) {$sql | Out-File -FilePath $sqlfilename}
                     }
                 }
 

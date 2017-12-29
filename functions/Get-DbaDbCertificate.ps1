@@ -72,7 +72,8 @@ Gets the cert1 certificate within the db1 database
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$databases = Get-DbaDatabase -SqlInstance $server
+			$databases = Get-DbaDatabase -SqlInstance $server | Where-Object IsAccessible
+			
 			if ($Database) { 
 				$databases = $databases | Where-Object Name -In $Database
 			}
@@ -86,19 +87,19 @@ Gets the cert1 certificate within the db1 database
 					continue
 				}
 				$dbName = $db.Name
-				$smodb = $server.Databases[$dbName]
+				$currentdb = $server.Databases[$dbName]
 				
-				if ($null -eq $smodb) {
-					Write-Message -Message "Database '$db' does not exist on $instance" -Target $smodb -Level Verbose
+				if ($null -eq $currentdb) {
+					Write-Message -Message "Database '$db' does not exist on $instance" -Target $currentdb -Level Verbose
 					continue
 				}
 				
-				if ($null -eq $smodb.Certificates) {
-					Write-Message -Message "No certificate exists in the $db database on $instance" -Target $smodb -Level Verbose
+				if ($null -eq $currentdb.Certificates) {
+					Write-Message -Message "No certificate exists in the $db database on $instance" -Target $currentdb -Level Verbose
 					continue
 				}
 				
-				$certs = $smodb.Certificates
+				$certs = $currentdb.Certificates
 				if ($Certificate) {
 					$certs = $certs | Where-Object Name -in $Certificate
 				}
@@ -108,7 +109,7 @@ Gets the cert1 certificate within the db1 database
 					Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name ComputerName -value $server.NetName
 					Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
 					Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-					Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name Database -value $smodb.Name
+					Add-Member -Force -InputObject $cert -MemberType NoteProperty -Name Database -value $currentdb.Name
 					
 					Select-DefaultView -InputObject $cert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
 				}
