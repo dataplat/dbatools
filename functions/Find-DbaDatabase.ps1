@@ -85,11 +85,11 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
 			}
 			
 			if ($exact -eq $true) {
-				$dbs = $server.Databases | Where-Object { $_.$property -eq $pattern }
+				$dbs = $server.Databases | Where-Object IsAccessible | Where-Object { $_.$property -eq $pattern }
 			}
 			else {
 				try {
-					$dbs = $server.Databases | Where-Object { $_.$property.ToString() -match $pattern }
+					$dbs = $server.Databases | Where-Object IsAccessible | Where-Object { $_.$property.ToString() -match $pattern }
 				}
 				catch {
 					# they probably put asterisks thinking it's a like

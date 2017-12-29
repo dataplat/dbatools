@@ -84,7 +84,7 @@ function Get-DbaDbRecoveryModel {
 		}
 		
 		if ($RecoveryModel) {
-			Get-DbaDatabase @params | Where-Object RecoveryModel -in $RecoveryModel | Select-DefaultView -Property $defaults
+			Get-DbaDatabase @params | Where-Object RecoveryModel -in $RecoveryModel | Where-Object IsAccessible | Select-DefaultView -Property $defaults
 		}
 		else {
 			Get-DbaDatabase @params | Select-DefaultView -Property $defaults
