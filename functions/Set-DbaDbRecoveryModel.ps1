@@ -120,7 +120,7 @@ function Set-DbaDbRecoveryModel {
 			
 			# We need to be able to change the RecoveryModel for model database
 			$systemdbs = @("master", "msdb", "tempdb", "SSIS", "distribution")
-			$databases = $server.Databases | Where-Object { $systemdbs -notcontains $_.Name }
+			$databases = $server.Databases | Where-Object { $systemdbs -notcontains $_.Name -and $_.IsAccessible }
 			
 			# filter collection based on -Database/-Exclude parameters
 			if ($Database) {

@@ -91,9 +91,9 @@ Suppresses all prompts to install but prompts to securely enter your password an
 			
 			foreach ($db in $Database) {
 
-				$smodb = $server.Databases[$db]
+				$currentdb = $server.Databases[$db] | Where-Object IsAccessible
 				
-				if ($null -eq $smodb) {
+				if ($null -eq $currentdb) {
 					Stop-Function -Message "Database '$db' does not exist on $instance" -Target $server -Continue
 				}
 				
@@ -107,13 +107,13 @@ Suppresses all prompts to install but prompts to securely enter your password an
 				}
 
 				foreach ($cert in $name) {
-					if ($null -ne $smodb.Certificates[$cert]) {
-						Stop-Function -Message "Certificate '$cert' already exists in the $db database on $instance" -Target $smodb -Continue
+					if ($null -ne $currentdb.Certificates[$cert]) {
+						Stop-Function -Message "Certificate '$cert' already exists in the $db database on $instance" -Target $currentdb -Continue
 					}
 					
 					if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating certificate for database '$db' on $instance")) {
 						try {
-							$smocert = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Certificate $smodb, $cert
+							$smocert = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Certificate $currentdb, $cert
 							
 							$smocert.StartDate = $StartDate
 							$smocert.Subject = $Subject
@@ -130,7 +130,7 @@ Suppresses all prompts to install but prompts to securely enter your password an
 							Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name ComputerName -value $server.NetName
 							Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
 							Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-							Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name Database -value $smodb.Name
+							Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name Database -value $currentdb.Name
 							
 							Select-DefaultView -InputObject $smocert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
 						}
