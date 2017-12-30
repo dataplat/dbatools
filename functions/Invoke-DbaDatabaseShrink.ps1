@@ -192,7 +192,7 @@ Shrinks all databases on SQL2012 (not ideal for production)
 			}
 			$server.ConnectionContext.StatementTimeout = $StatementTimeoutSeconds
 
-			$dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq $false }
+			$dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible }
 
 			if ($Database) {
 				$dbs = $dbs | Where-Object Name -In $Database
@@ -204,10 +204,6 @@ Shrinks all databases on SQL2012 (not ideal for production)
 
 			foreach ($db in $dbs) {
 				Write-Message -Level Verbose -Message "Processing $db on $instance"
-
-				if ($db.IsAccessible -eq $false) {
-					Stop-Function -Message "The database $db on server $instance is not accessible. Skipping database." -Continue
-				}
 				
 				if ($db.IsDatabaseSnapshot) {
 					Write-Message -Level Warning -Message "The database $db on server $instance is a snapshot and cannot be shrunk. Skipping database."

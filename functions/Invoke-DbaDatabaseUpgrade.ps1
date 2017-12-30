@@ -130,7 +130,7 @@ Function Invoke-DbaDatabaseUpgrade {
 			catch {
 				Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
 			}
-			$DatabaseCollection += $server.Databases
+			$DatabaseCollection += $server.Databases | Where-Object IsAccessible
 		}
 		
 		$DatabaseCollection =  $DatabaseCollection | Where-Object { $_.IsSystemObject -eq $false }
