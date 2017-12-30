@@ -89,10 +89,10 @@ function Get-DbaDatabaseEncryption {
                     $dbs = $server.Databases | Where-Object Name -In $Database
                 }
                 elseif ($IncludeSystemDBs) {
-                    $dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' }
+                    $dbs = $server.Databases | Where-Object IsAccessible
                 }
                 else {
-                    $dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' -and $_.IsSystemObject -eq 0 }
+                    $dbs = $server.Databases | Where-Object { $_.IsAccessible -and $_.IsSystemObject -eq 0 }
                 }
 				
                 if ($ExcludeDatabase) {
