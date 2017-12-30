@@ -56,7 +56,7 @@ Returns all Database Assembly for the local and sql2016 SQL Server instances
 			
 			
 			
-			foreach ($database in $Server.Databases) {
+			foreach ($database in ($server.Databases | Where-Object IsAccessible)) {
 				try {
 					foreach ($assembly in $database.assemblies) {
 						
