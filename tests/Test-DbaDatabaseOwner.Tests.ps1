@@ -237,7 +237,7 @@ Describe "$Name Tests"{
                     } #object
                 } #mock connect-sqlserver
 
-                $Result = Test-DbaDatabaseOwner -SqlInstance 'SQLServerName' -Detailed
+                $Result = Test-DbaDatabaseOwner -SqlInstance 'SQLServerName'
                 $Result[0].SqlInstance | Should Be 'SQLServerName'
                 $Result[1].SqlInstance | Should Be 'SQLServerName'
                 $Result[0].Database | Should Be 'db1'
