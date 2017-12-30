@@ -82,7 +82,7 @@ Gets the users for the databases on Sql1 and Sql2/sqlexpress
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
 			
-			$databases = $server.Databases
+			$databases = $server.Databases | Where-Object IsAccessible
 			
 			if ($Database) {
 				$databases = $databases | Where-Object Name -In $Database
@@ -92,10 +92,6 @@ Gets the users for the databases on Sql1 and Sql2/sqlexpress
 			}
 
 			foreach ($db in $databases) {
-				if (!$db.IsAccessible) {
-					Write-Message -Level Warning -Message "Database $db is not accessible. Skipping."
-					continue
-				}
 
 				$users = $db.users
 
