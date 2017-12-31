@@ -157,7 +157,7 @@ function Get-DbaDatabaseFile {
 				}
 				Write-Message -Level Verbose -Message "Querying database $db"
 
-				$version = Test-DbaDatabaseCompatibility -SqlInstance $server -Database $db.Name -Detailed | select DatabaseCompatibility
+				$version = Test-DbaDatabaseCompatibility -SqlInstance $server -Database $db.Name | select DatabaseCompatibility
 				$version = +($version.DatabaseCompatibility.ToString().replace("Version","")) / 10
 
 				if ($version -ge 11) {

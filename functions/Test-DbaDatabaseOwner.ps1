@@ -100,7 +100,7 @@ function Test-DbaDatabaseOwner {
 			}
 		}
 		#use online/available dbs
-		$dbs = $server.Databases
+		$dbs = $server.Databases | Where-Object IsAccessible
 
 		#filter database collection based on parameters
 		if ($Database) {
