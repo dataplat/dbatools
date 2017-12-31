@@ -409,8 +409,8 @@
 		'Set-DbaAgentJobCategory',
 		'Get-DbaDbRole',
 		'Get-DbaServerRole',
-		'Find-DbaBackup'
-		
+		'Find-DbaBackup',
+		'Get-DbaCpuUsage'
 	)
 	
 	# Cmdlets to export from this module
