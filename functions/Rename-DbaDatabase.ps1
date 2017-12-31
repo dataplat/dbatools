@@ -269,7 +269,7 @@ Function Rename-DbaDatabase {
 				catch {
 					Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 				}
-				$all_dbs = $server.Databases
+				$all_dbs = $server.Databases | Where-Object IsAccessible
 				$dbs += $all_dbs | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
 				if ($Database) {
 					$dbs = $dbs | Where-Object { $Database -contains $_.Name }
