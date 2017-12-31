@@ -18,10 +18,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		$allSessions = Get-DbaXESession -SqlInstance $server
 	}
 	BeforeEach {
+		<#
 		$systemhealth.Refresh()
 		if ($systemhealth.IsRunning) {
 			$systemhealth.Stop()
 		}
+		#>
+		$systemhealth | Stop-DbaXESession #-ErrorAction SilentlyContinue
 	}
 	AfterAll {
 		# Set the Status of all session back to what they were before the test
@@ -54,14 +57,14 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 			if (-Not $systemhealth.IsRunning) {
 				$systemhealth.Start()
 			}
-			$systemhealth | Start-DbaXESession
+			$systemhealth | Start-DbaXESession -WarningAction SilentlyContinue
 			$systemhealth.Refresh()
 			$systemhealth.IsRunning | Should Be $true
 		}
 
 		It "starts the other XE Sessions when one has an error" {
 			# Start system_health and the invalid session
-			Start-DbaXESession $server -Session $systemhealth.Name,$dbatoolsciInvalid.Name
+			Start-DbaXESession $server -Session $systemhealth.Name, $dbatoolsciInvalid.Name -WarningAction SilentlyContinue
 			$systemhealth.Refresh()
 			$dbatoolsciInvalid.Refresh()
 			$systemhealth.IsRunning | Should Be $true
@@ -69,7 +72,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 		}
 
 		It "starts all XE Sessions except the system ones if -AllSessions is used" {
-			Start-DbaXESession $server -AllSessions
+			Start-DbaXESession $server -AllSessions -WarningAction SilentlyContinue
 			$systemhealth.Refresh()
 			$dbatoolsciValid.Refresh()
 			$systemhealth.IsRunning | Should Be $false
