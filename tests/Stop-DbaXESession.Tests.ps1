@@ -51,13 +51,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
 			if ($systemhealth.IsRunning) {
 				$systemhealth.Stop()
 			}
-			Stop-DbaXESession $server -Session $systemhealth.Name
+			Stop-DbaXESession $server -Session $systemhealth.Name -WarningAction SilentlyContinue
 			$systemhealth.Refresh()
 			$systemhealth.IsRunning | Should Be $false
 		}
 
 		It "stops all XE Sessions except the system ones if -AllSessions is used" {
-			Stop-DbaXESession $server -AllSessions
+			Stop-DbaXESession $server -AllSessions -WarningAction SilentlyContinue
 			$systemhealth.Refresh()
 			$dbatoolsciValid.Refresh()
 			$systemhealth.IsRunning | Should Be $true
