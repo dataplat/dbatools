@@ -86,7 +86,7 @@ function Test-DbaBackupInformation {
 			param(
 			# Parameter help description
 			[Parameter(Mandatory=$true)]
-			[Microsoft.SqlServer.Management.Smo.SqlSmoObject]$smoserver
+			$smoserver
 			)
 
 			if ($smoserver.versionMajor -le 8) {
@@ -142,9 +142,10 @@ function Test-DbaBackupInformation {
 				$DBFileCheck = ($RegisteredFileCheck | Where-Object Name -eq $Database).PhysicalName
 				$OtherFileCheck = ($RegisteredFileCheck | Where-Object Name -ne $Database).PhysicalName
 				$DBHistoryPhysicalPaths = ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object PhysicalName -Unique).PhysicalName
-				$DBHistoryPhysicalPathsExists = (Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $DBHistoryPhysicalPaths | Where-Object FileExists -eq $True).FilePath
+				$DBHistoryPhysicalPathsTest = Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $DBHistoryPhysicalPaths
+				$DBHistoryPhysicalPathsExists = ($DBHistoryPhysicalPathsTest | Where-Object FileExists -eq $True).FilePath
 				foreach ($path in $DBHistoryPhysicalPaths) {
-					if (Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $path) {
+					if (($DBHistoryPhysicalPathsTest | Where-Object FilePath -eq $path).FileExists) {
 						if (($path -in $DBFileCheck) -and ($WithReplace -ne $True -and $Continue -ne $True)) {
 							Write-Message -Message "File $path already exists on $SqlInstance and WithReplace not specified, cannot restore" -Level Warning
 							$VerificationErrors++
