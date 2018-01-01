@@ -111,7 +111,7 @@ function Set-DbaDatabaseOwner {
 			#Otherwise, use all databases on the instance where owner not equal to -TargetLogin
 			#use where owner and target login do not match
 			#exclude system dbs
-			$dbs = $server.Databases | Where-Object {$_.Owner -ne $TargetLogin -and @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name}
+			$dbs = $server.Databases | Where-Object { $_.IsAccessible -and $_.Owner -ne $TargetLogin -and @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name}
 
 			#filter collection based on -Databases/-Exclude parameters
 			if ($Database) {

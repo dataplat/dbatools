@@ -52,7 +52,10 @@ function Export-DbaLogin {
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
+
+		.PARAMETER ExcludeGoBatchSeparator
+			If specified, will NOT script the 'GO' batch separator.
+
 		.NOTES
 			Tags: Export, Login
 			Author: Chrissy LeMaire (@cl), netnerds.net
@@ -82,6 +85,11 @@ function Export-DbaLogin {
 			Export-DbaLogin -SqlInstance sqlserver2014a -Login realcajun, netnerds -Database HR, Accounting
 
 			Exports ONLY logins netnerds and realcajun FROM sqlserver2014a with the permissions on databases HR and Accounting
+
+		.EXAMPLE
+			Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -FilePath C:\temp\login.sql -ExcludeGoBatchSeparator
+
+			Exports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\login.sql file without the 'GO' batch separator.
 	#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	param (
@@ -102,7 +110,8 @@ function Export-DbaLogin {
 		[switch]$Append,
 		[switch]$NoDatabases,
 		[switch]$NoJobs,
-		[switch][Alias('Silent')]$EnableException
+		[switch][Alias('Silent')]$EnableException,
+		[switch]$ExcludeGoBatchSeparator
 	)
 
 	begin {
@@ -128,7 +137,7 @@ function Export-DbaLogin {
 
 		Write-Message -Level Verbose -Message "Connecting to $sqlinstance."
 		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
-		
+
 		if ($NoDatabases -eq $false) {
 			# if we got a database or a list of databases passed
 			# and we need to enumerate mappings, login.enumdatabasemappings() takes forever
@@ -138,7 +147,7 @@ function Export-DbaLogin {
 			$DbMapping = @()
 			$DbsToMap = $server.Databases
 			if ($Database) {
-				$DbsToMap = $DbsToMap | Where-Object Name -in $Database 
+				$DbsToMap = $DbsToMap | Where-Object Name -in $Database
 			}
 			foreach ($db in $DbsToMap) {
 				if ($db.IsAccessible -eq $false) {
@@ -154,7 +163,7 @@ function Export-DbaLogin {
 				}
 			}
 		}
-		
+
 		foreach ($sourceLogin in $server.Logins) {
 			$userName = $sourceLogin.name
 
@@ -181,7 +190,7 @@ function Export-DbaLogin {
 				if ($FilePath) {
 					Write-Message -Level Output -Message "Exporting $userName."
 				}
-				
+
 				$outsql += "`r`nUSE master`n"
 				# Getting some attributes
 				$defaultDb = $sourceLogin.DefaultDatabase
@@ -370,7 +379,14 @@ function Export-DbaLogin {
 	end {
 		$sql = $sql | Where-Object { $_ -notlike "CREATE USER [dbo] FOR LOGIN * WITH DEFAULT_SCHEMA=[dbo]" }
 
-		$sql = $outsql -join "`r`nGO`r`n"
+		if ($ExcludeGoBatchSeparator) {
+			$sql = $outsql
+		}
+		else{
+			$sql = $outsql -join "`r`nGO`r`n"
+			#add the final GO
+			$sql += "`r`nGO"
+		}
 
 		if ($FilePath) {
 			$sql | Out-File -Encoding UTF8 -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
