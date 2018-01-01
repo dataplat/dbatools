@@ -25,8 +25,8 @@ function Test-DbaDatabaseCompatibility {
 			Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 		
 		.PARAMETER Detailed
-			If this switch is enabled, full details about database & server compatibility levels and whether they match is returned.
-
+    		Will be deprecated in 1.0.0 release.
+	
 		.PARAMETER EnableException
 			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
 			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -49,10 +49,10 @@ function Test-DbaDatabaseCompatibility {
 		.EXAMPLE
 			Test-DbaDatabaseCompatibility -SqlInstance sqlserver2014a -Database db1, db2
 
-			Returns server name, database name and true/false if the compatibility level match for the db1 and db2 databases on sqlserver2014a.
+			Returns detailed information for database and server compatibility level for the db1 and db2 databases on sqlserver2014a.
 
 		.EXAMPLE
-			Test-DbaDatabaseCompatibility -SqlInstance sqlserver2014a, sql2016 -Detailed -Exclude db1
+			Test-DbaDatabaseCompatibility -SqlInstance sqlserver2014a, sql2016 -Exclude db1
 
 			Returns detailed information for database and server compatibility level for all databases except db1 on sqlserver2014a and sql2016.
 
@@ -75,11 +75,10 @@ function Test-DbaDatabaseCompatibility {
 		[Alias('Silent')]
 		[switch]$EnableException
 	)
-
 	begin {
-		$collection = New-Object System.Collections.ArrayList
+		Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Detailed"
 	}
-
+	
 	process {
 		foreach ($instance in $SqlInstance) {
 			Write-Message -Level Verbose -Message "Connecting to $instance."
@@ -89,46 +88,30 @@ function Test-DbaDatabaseCompatibility {
 			catch {
 				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
 			}
-
+			
 			$serverversion = "Version$($server.VersionMajor)0"
-			$dbs = $server.Databases
-
+			$dbs = $server.Databases | Where-Object IsAccessible
+			
 			if ($Database) {
 				$dbs = $dbs | Where-Object { $Database -contains $_.Name }
 			}
-
+			
 			if ($ExcludeDatabase) {
 				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
 			}
-
+			
 			foreach ($db in $dbs) {
 				Write-Message -Level Verbose -Message "Processing $($db.name) on $instance."
-				$null = $collection.Add([PSCustomObject]@{
-						Server                = $server.name
-						ServerLevel           = $serverversion
-						Database              = $db.name
-						DatabaseCompatibility = $db.CompatibilityLevel
-						IsEqual               = $db.CompatibilityLevel -eq $serverversion
-					})
+				[PSCustomObject]@{
+					ComputerName    = $server.NetName
+					InstanceName    = $server.ServiceName
+					SqlInstance	    = $server.DomainInstanceName
+					ServerLevel	    = $serverversion
+					Database	    = $db.name
+					DatabaseCompatibility = $db.CompatibilityLevel
+					IsEqual		    = $db.CompatibilityLevel -eq $serverversion
+				}
 			}
-		}
-	}
-
-	end {
-		if ($Detailed -eq $true) {
-			return $collection
-		}
-
-		if ($Database.count -eq 1) {
-			if ($SqlInstance.count -eq 1) {
-				return $collection.IsEqual
-			}
-			else {
-				return ($collection | Select-Object Server, isEqual)
-			}
-		}
-		else {
-			return ($collection | Select-Object Server, Database, IsEqual)
 		}
 	}
 }
