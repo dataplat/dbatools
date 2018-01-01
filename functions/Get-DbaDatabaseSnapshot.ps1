@@ -84,7 +84,7 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $dbs = $server.Databases
+            $dbs = $server.Databases | Where-Object IsAccessible
 
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.DatabaseSnapshotBaseName }
