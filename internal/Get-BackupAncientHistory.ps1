@@ -1,40 +1,40 @@
 function Get-BackupAncientHistory {
     <#
         .SYNOPSIS
-			Returns details of the last full backup of a SQL Server 2000 database
-		
-		.DESCRIPTION
+            Returns details of the last full backup of a SQL Server 2000 database
+
+        .DESCRIPTION
             Backup History command to pull limited history from a SQL 2000 instance. If not using SQL 2000, please use Get-DbaBackupHistory which pulls more infomation, and has more options. This is just here to cope with 2k and copy-DbaDatabase issues
-    
+
         .PARAMETER SqlInstance
-	        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
         .PARAMETER Credential
-	        Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
+            Credential object used to connect to the SQL Server Instance as a different user. This can be a Windows or SQL Server account. Windows users are determined by the existence of a backslash, so if you are intending to use an alternative Windows connection instead of a SQL login, ensure it contains a backslash.
 
         .PARAMETER Database
             Specifies one or more database(s) to process. If unspecified, all databases will be processed.
-            
+
         .NOTES
         Author: Stuart Moore (@napalmgram), stuart-moore.com
-        
+
         dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
         Copyright (C) 2016 Chrissy LeMaire
-        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0 
+        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
     #>
-	[CmdletBinding(DefaultParameterSetName = "Default")]
-	Param (
-		[parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter]$SqlInstance,
+    [CmdletBinding(DefaultParameterSetName = "Default")]
+    Param (
+        [parameter(Mandatory = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter]$SqlInstance,
         [Alias("Credential")]
         [PsCredential]$SqlCredential,
-		[Alias("Databases")]
-		[object[]]$Database,
+        [Alias("Databases")]
+        [object[]]$Database,
         [string]$FileNameStub,
-		[Alias('Silent')]
-		[switch]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
     BEGIN {
         try {
@@ -44,7 +44,7 @@ function Get-BackupAncientHistory {
         catch {
             Stop-Function -Message "Failed to process Instance $SqlInstance." -InnerErrorRecord $_ -Target $SqlInstance -Continue
         }
-        if ($server.SoftwareVersionMajor -gt 8){
+        if ($server.SoftwareVersionMajor -gt 8) {
             Write-Message -Level Warning -Message "This is not the function you're looking for. This is for SQL 2000 only, please use Get-DbaBackupHistory instead. It's much nicer"
         }
 
@@ -55,14 +55,14 @@ function Get-BackupAncientHistory {
             }
         }
         else {
-            $databases = $server.Databases	
+            $databases = $server.Databases
         }
     }
 
     PROCESS {
-        foreach ($db in $Database){
+        foreach ($db in $Database) {
             Write-Message -Level Verbose -Message "Processing database $db"
-            $sql = "      
+            $sql = "
             SELECT
             a.Server,
              a.[Database],
@@ -143,10 +143,10 @@ function Get-BackupAncientHistory {
             Write-Message -Level SomewhatVerbose -Message "$($GroupedResults.Count) result-groups found."
             $groupResults = @()
             foreach ($group in $GroupedResults) {
-                
+
                 $fileSql = "select file_type as FileType, logical_name as LogicalName, physical_name as PhysicalName
                             from msdb.dbo.backupfile where backup_set_id='$($Group.group[0].BackupSetID)'"
-                
+
                 Write-Message -Level Debug -Message "FileSQL: $fileSql"
 
                 $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory

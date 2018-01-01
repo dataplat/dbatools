@@ -1,5 +1,5 @@
 ﻿function Register-DbaTeppScriptblock {
-	<#
+    <#
         .SYNOPSIS
             Registers a scriptblock under name, to later be available for TabExpansion.
 
@@ -17,19 +17,19 @@
 
             Stores the scriptblock stored in $scriptBlock under the name "MyFirstTeppScriptBlock"
     #>
-	[CmdletBinding()]
-	param (
-		[System.Management.Automation.ScriptBlock]
-		$ScriptBlock,
+    [CmdletBinding()]
+    param (
+        [System.Management.Automation.ScriptBlock]
+        $ScriptBlock,
 
-		[string]
-		$Name
-	)
+        [string]
+        $Name
+    )
 
-	$scp = New-Object Sqlcollaborative.Dbatools.TabExpansion.ScriptContainer
-	$scp.Name = $Name.ToLower()
-	$scp.ScriptBlock = $ScriptBlock
-	$scp.LastDuration = New-TimeSpan -Seconds -1
+    $scp = New-Object Sqlcollaborative.Dbatools.TabExpansion.ScriptContainer
+    $scp.Name = $Name.ToLower()
+    $scp.ScriptBlock = $ScriptBlock
+    $scp.LastDuration = New-TimeSpan -Seconds -1
 
-	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts[$Name.ToLower()] = $scp
+    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Scripts[$Name.ToLower()] = $scp
 }

@@ -1,8 +1,7 @@
 
 -- SQL Server 2008 Diagnostic Information Queries
 -- Glenn Berry 
--- CY 2017
--- Last Modified: December 14, 2017
+-- Last Modified: January 1, 2018
 -- https://sqlserverperformance.wordpress.com/
 -- https://www.sqlskills.com/blogs/glenn/
 -- Twitter: GlennAlanBerry
@@ -16,7 +15,7 @@
 -- Please make sure you are using the correct version of these diagnostic queries for your version of SQL Server
 
 --******************************************************************************
---*   Copyright (C) 2017 Glenn Berry, SQLskills.com
+--*   Copyright (C) 2018 Glenn Berry, SQLskills.com
 --*   All rights reserved. 
 --*
 --*   For more scripts and sample code, check out 

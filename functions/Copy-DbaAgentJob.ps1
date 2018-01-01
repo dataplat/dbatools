@@ -1,276 +1,276 @@
 function Copy-DbaAgentJob {
-	<#
-		.SYNOPSIS
-			Copy-DbaAgentJob migrates jobs from one SQL Server to another.
+    <#
+        .SYNOPSIS
+            Copy-DbaAgentJob migrates jobs from one SQL Server to another.
 
-		.DESCRIPTION
-			By default, all jobs are copied. The -Job parameter is auto-populated for command-line completion and can be used to copy only specific jobs.
+        .DESCRIPTION
+            By default, all jobs are copied. The -Job parameter is auto-populated for command-line completion and can be used to copy only specific jobs.
 
-			If the job already exists on the destination, it will be skipped unless -Force is used.
+            If the job already exists on the destination, it will be skipped unless -Force is used.
 
-		.PARAMETER Source
-			Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        .PARAMETER Source
+            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
-		.PARAMETER SourceSqlCredential
-			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+        .PARAMETER SourceSqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-			$scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
+            $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-			Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+            Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-			To connect as a different Windows user, run PowerShell as that user.
+            To connect as a different Windows user, run PowerShell as that user.
 
-		.PARAMETER Destination
-			Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        .PARAMETER Destination
+            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2000 or higher.
 
-		.PARAMETER DestinationSqlCredential
-			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+        .PARAMETER DestinationSqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-			$dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
+            $dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+            Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-			To connect as a different Windows user, run PowerShell as that user.
+            To connect as a different Windows user, run PowerShell as that user.
 
-		.PARAMETER Job
-			The job(s) to process. This list is auto-populated from the server. If unspecified, all jobs will be processed.
+        .PARAMETER Job
+            The job(s) to process. This list is auto-populated from the server. If unspecified, all jobs will be processed.
 
-		.PARAMETER ExcludeJob
-			The job(s) to exclude. This list is auto-populated from the server.
+        .PARAMETER ExcludeJob
+            The job(s) to exclude. This list is auto-populated from the server.
 
-		.PARAMETER DisableOnSource
-			If this switch is enabled, the job will be disabled on the source server.
+        .PARAMETER DisableOnSource
+            If this switch is enabled, the job will be disabled on the source server.
 
-		.PARAMETER DisableOnDestination
-			If this switch is enabled, the newly migrated job will be disabled on the destination server.
+        .PARAMETER DisableOnDestination
+            If this switch is enabled, the newly migrated job will be disabled on the destination server.
 
-		.PARAMETER WhatIf
-			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        .PARAMETER WhatIf
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-		.PARAMETER Confirm
-			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        .PARAMETER Confirm
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Force
-			If this switch is enabled, the Job will be dropped and recreated on Destination.
+        .PARAMETER Force
+            If this switch is enabled, the Job will be dropped and recreated on Destination.
 
-		.PARAMETER EnableException
-			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
-		.NOTES
-			Tags: Migration, Agent, Job
-			Author: Chrissy LeMaire (@cl), netnerds.net
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-			Website: https://dbatools.io
-			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .NOTES
+            Tags: Migration, Agent, Job
+            Author: Chrissy LeMaire (@cl), netnerds.net
 
-		.LINK
-			https://dbatools.io/Copy-DbaAgentJob
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-		.EXAMPLE
-			Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster
+        .LINK
+            https://dbatools.io/Copy-DbaAgentJob
 
-			Copies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.
+        .EXAMPLE
+            Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster
 
-		.EXAMPLE
-			Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force
+            Copies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.
 
-			Copies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+        .EXAMPLE
+            Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force
 
-		.EXAMPLE
-			Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+            Copies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
 
-			Shows what would happen if the command were executed using force.
-	#>
-	[cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
-	param (
-		[parameter(Mandatory = $true)]
-		[DbaInstanceParameter]$Source,
-		[PSCredential]
-		$SourceSqlCredential,
-		[parameter(Mandatory = $true)]
-		[DbaInstanceParameter]$Destination,
-		[PSCredential]
-		$DestinationSqlCredential,
-		[object[]]$Job,
-		[object[]]$ExcludeJob,
-		[switch]$DisableOnSource,
-		[switch]$DisableOnDestination,
-		[switch]$Force,
-		[switch][Alias('Silent')]$EnableException
-	)
+        .EXAMPLE
+            Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
-	begin {
+            Shows what would happen if the command were executed using force.
+    #>
+    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
+    param (
+        [parameter(Mandatory = $true)]
+        [DbaInstanceParameter]$Source,
+        [PSCredential]
+        $SourceSqlCredential,
+        [parameter(Mandatory = $true)]
+        [DbaInstanceParameter]$Destination,
+        [PSCredential]
+        $DestinationSqlCredential,
+        [object[]]$Job,
+        [object[]]$ExcludeJob,
+        [switch]$DisableOnSource,
+        [switch]$DisableOnDestination,
+        [switch]$Force,
+        [switch][Alias('Silent')]$EnableException
+    )
 
-		$sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-		$destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
+    begin {
 
-		$source = $sourceServer.DomainInstanceName
-		$destination = $destServer.DomainInstanceName
+        $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+        $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
 
-	}
-	process {
+        $source = $sourceServer.DomainInstanceName
+        $destination = $destServer.DomainInstanceName
 
-		if (Test-FunctionInterrupt) { return }
+    }
+    process {
 
-		$serverJobs = $sourceServer.JobServer.Jobs
-		$destJobs = $destServer.JobServer.Jobs
+        if (Test-FunctionInterrupt) { return }
 
-		foreach ($serverJob in $serverJobs) {
-			$jobName = $serverJob.name
-			$jobId = $serverJob.JobId
-			
-			$copyJobStatus = [pscustomobject]@{
-				SourceServer	   = $sourceServer.Name
-				DestinationServer  = $destServer.Name
-				Name			   = $jobName
-				Type			   = "Agent Job"
-				Status			   = $null
-				Notes			   = $null
-				DateTime		   = [DbaDateTime](Get-Date)
-			}
-			
-			if ($Job -and $jobName -notin $Job -or $jobName -in $ExcludeJob) { 
-				Write-Message -Level Verbose -Message "Job [$jobName] filtered. Skipping."
-				continue
-			}
-			Write-Message -Message "Working on job: $jobName" -Level Verbose
-			$sql = "
-				SELECT sp.[name] AS MaintenancePlanName
-				FROM msdb.dbo.sysmaintplan_plans AS sp
-				INNER JOIN msdb.dbo.sysmaintplan_subplans AS sps
-					ON sps.plan_id = sp.id
-				WHERE job_id = '$($jobId)'"
-			Write-Message -Message $sql -Level Debug
+        $serverJobs = $sourceServer.JobServer.Jobs
+        $destJobs = $destServer.JobServer.Jobs
 
-			$MaintenancePlanName = $sourceServer.Query($sql).MaintenancePlanName
+        foreach ($serverJob in $serverJobs) {
+            $jobName = $serverJob.name
+            $jobId = $serverJob.JobId
 
-			if ($MaintenancePlanName) {
-				$copyJobStatus.Status = "Skipped"
-				$copyJobStatus.Notes = "Job is associated with maintenance plan"
-				$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-				Write-Message -Level Verbose -Message "Job [$jobName] is associated with Maintenance Plan: $MaintenancePlanName"
-				continue
-			}
+            $copyJobStatus = [pscustomobject]@{
+                SourceServer      = $sourceServer.Name
+                DestinationServer = $destServer.Name
+                Name              = $jobName
+                Type              = "Agent Job"
+                Status            = $null
+                Notes             = $null
+                DateTime          = [DbaDateTime](Get-Date)
+            }
 
-			$dbNames = $serverJob.JobSteps.DatabaseName | Where-Object { $_.Length -gt 0 }
-			$missingDb = $dbNames | Where-Object { $destServer.Databases.Name -notcontains $_ }
+            if ($Job -and $jobName -notin $Job -or $jobName -in $ExcludeJob) {
+                Write-Message -Level Verbose -Message "Job [$jobName] filtered. Skipping."
+                continue
+            }
+            Write-Message -Message "Working on job: $jobName" -Level Verbose
+            $sql = "
+                SELECT sp.[name] AS MaintenancePlanName
+                FROM msdb.dbo.sysmaintplan_plans AS sp
+                INNER JOIN msdb.dbo.sysmaintplan_subplans AS sps
+                    ON sps.plan_id = sp.id
+                WHERE job_id = '$($jobId)'"
+            Write-Message -Message $sql -Level Debug
 
-			if ($missingDb.Count -gt 0 -and $dbNames.Count -gt 0) {
-				$missingDb = ($missingDb | Sort-Object | Get-Unique) -join ", "
-				$copyJobStatus.Status = "Skipped"
-				$copyJobStatus.Notes = "Job is dependent on database: $missingDb"
-				$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-				Write-Message -Level Verbose -Message "Database(s) $missingDb doesn't exist on destination. Skipping job [$jobName]."
-				continue
-			}
+            $MaintenancePlanName = $sourceServer.Query($sql).MaintenancePlanName
 
-			$missingLogin = $serverJob.OwnerLoginName | Where-Object { $destServer.Logins.Name -notcontains $_ }
+            if ($MaintenancePlanName) {
+                $copyJobStatus.Status = "Skipped"
+                $copyJobStatus.Notes = "Job is associated with maintenance plan"
+                $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                Write-Message -Level Verbose -Message "Job [$jobName] is associated with Maintenance Plan: $MaintenancePlanName"
+                continue
+            }
 
-			if ($missingLogin.Count -gt 0) {
-				if ($force -eq $false) {
-					$missingLogin = ($missingLogin | Sort-Object | Get-Unique) -join ", "
-					$copyJobStatus.Status = "Skipped"
-					$copyJobStatus.Notes = "Job is dependent on login $missingLogin"
-					$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-					Write-Message -Level Verbose -Message "Login(s) $missingLogin doesn't exist on destination. Use -Force to set owner to [sa]. Skipping job [$jobName]."
-					continue
-				}
-			}
+            $dbNames = $serverJob.JobSteps.DatabaseName | Where-Object { $_.Length -gt 0 }
+            $missingDb = $dbNames | Where-Object { $destServer.Databases.Name -notcontains $_ }
 
-			$proxyNames = $serverJob.JobSteps.ProxyName | Where-Object { $_.Length -gt 0 }
-			$missingProxy = $proxyNames | Where-Object { $destServer.JobServer.ProxyAccounts.Name -notcontains $_ }
+            if ($missingDb.Count -gt 0 -and $dbNames.Count -gt 0) {
+                $missingDb = ($missingDb | Sort-Object | Get-Unique) -join ", "
+                $copyJobStatus.Status = "Skipped"
+                $copyJobStatus.Notes = "Job is dependent on database: $missingDb"
+                $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                Write-Message -Level Verbose -Message "Database(s) $missingDb doesn't exist on destination. Skipping job [$jobName]."
+                continue
+            }
 
-			if ($missingProxy.Count -gt 0 -and $proxyNames.Count -gt 0) {
-				$missingProxy = ($missingProxy | Sort-Object | Get-Unique) -join ", "
-				$copyJobStatus.Status = "Skipped"
-				$copyJobStatus.Notes = "Job is dependent on proxy $($proxyNames[0])"
-				$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-				Write-Message -Level Verbose -Message "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobName]."
-				continue
-			}
+            $missingLogin = $serverJob.OwnerLoginName | Where-Object { $destServer.Logins.Name -notcontains $_ }
 
-			$operators = $serverJob.OperatorToEmail, $serverJob.OperatorToNetSend, $serverJob.OperatorToPage | Where-Object { $_.Length -gt 0 }
-			$missingOperators = $operators | Where-Object {$destServer.JobServer.Operators.Name -notcontains $_}
+            if ($missingLogin.Count -gt 0) {
+                if ($force -eq $false) {
+                    $missingLogin = ($missingLogin | Sort-Object | Get-Unique) -join ", "
+                    $copyJobStatus.Status = "Skipped"
+                    $copyJobStatus.Notes = "Job is dependent on login $missingLogin"
+                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    Write-Message -Level Verbose -Message "Login(s) $missingLogin doesn't exist on destination. Use -Force to set owner to [sa]. Skipping job [$jobName]."
+                    continue
+                }
+            }
 
-			if ($missingOperators.Count -gt 0 -and $operators.Count -gt 0) {
-				$missingOperator = ($operators | Sort-Object | Get-Unique) -join ", "
-				$copyJobStatus.Status = "Skipped"
-				$copyJobStatus.Notes = "Job is dependent on operator $missingOperator"
-				$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-				Write-Message -Level Verbose -Message "Operator(s) $($missingOperator) doesn't exist on destination. Skipping job [$jobName]"
-				continue
-			}
+            $proxyNames = $serverJob.JobSteps.ProxyName | Where-Object { $_.Length -gt 0 }
+            $missingProxy = $proxyNames | Where-Object { $destServer.JobServer.ProxyAccounts.Name -notcontains $_ }
 
-			if ($destJobs.name -contains $serverJob.name) {
-				if ($force -eq $false) {
-					$copyJobStatus.Status = "Skipped"
-					$copyJobStatus.Notes = "Job already exists on destination"
-					$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-					Write-Message -Level Verbose -Message "Job $jobName exists at destination. Use -Force to drop and migrate."
-					continue
-				}
-				else {
-					if ($Pscmdlet.ShouldProcess($destination, "Dropping job $jobName and recreating")) {
-						try {
-							Write-Message -Message "Dropping Job $jobName" -Level Verbose
-							$destServer.JobServer.Jobs[$jobName].Drop()
-						}
-						catch {
-							$copyJobStatus.Status = "Failed"
-							$copyJobStatus.Notes = $_.Exception.Message
-							$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-							Stop-Function -Message "Issue dropping job" -Target $jobName -ErrorRecord $_ -Continue
-						}
-					}
-				}
-			}
+            if ($missingProxy.Count -gt 0 -and $proxyNames.Count -gt 0) {
+                $missingProxy = ($missingProxy | Sort-Object | Get-Unique) -join ", "
+                $copyJobStatus.Status = "Skipped"
+                $copyJobStatus.Notes = "Job is dependent on proxy $($proxyNames[0])"
+                $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                Write-Message -Level Verbose -Message "Proxy Account(s) $($proxyNames[0]) doesn't exist on destination. Skipping job [$jobName]."
+                continue
+            }
 
-			if ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobName")) {
-				try {
-					Write-Message -Message "Copying Job $jobName" -Level Verbose
-					$sql = $serverJob.Script() | Out-String
+            $operators = $serverJob.OperatorToEmail, $serverJob.OperatorToNetSend, $serverJob.OperatorToPage | Where-Object { $_.Length -gt 0 }
+            $missingOperators = $operators | Where-Object {$destServer.JobServer.Operators.Name -notcontains $_}
 
-					if ($missingLogin.Count -gt 0 -and $force) {
-						$saLogin = Get-SqlSaLogin -SqlInstance $destServer
-						$sql = $sql -replace [Regex]::Escape("@owner_login_name=N'$missingLogin'"), [Regex]::Escape("@owner_login_name=N'$saLogin'")
-					}
+            if ($missingOperators.Count -gt 0 -and $operators.Count -gt 0) {
+                $missingOperator = ($operators | Sort-Object | Get-Unique) -join ", "
+                $copyJobStatus.Status = "Skipped"
+                $copyJobStatus.Notes = "Job is dependent on operator $missingOperator"
+                $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                Write-Message -Level Verbose -Message "Operator(s) $($missingOperator) doesn't exist on destination. Skipping job [$jobName]"
+                continue
+            }
 
-					Write-Message -Message $sql -Level Debug
-					$destServer.Query($sql)
+            if ($destJobs.name -contains $serverJob.name) {
+                if ($force -eq $false) {
+                    $copyJobStatus.Status = "Skipped"
+                    $copyJobStatus.Notes = "Job already exists on destination"
+                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    Write-Message -Level Verbose -Message "Job $jobName exists at destination. Use -Force to drop and migrate."
+                    continue
+                }
+                else {
+                    if ($Pscmdlet.ShouldProcess($destination, "Dropping job $jobName and recreating")) {
+                        try {
+                            Write-Message -Message "Dropping Job $jobName" -Level Verbose
+                            $destServer.JobServer.Jobs[$jobName].Drop()
+                        }
+                        catch {
+                            $copyJobStatus.Status = "Failed"
+                            $copyJobStatus.Notes = $_.Exception.Message
+                            $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            Stop-Function -Message "Issue dropping job" -Target $jobName -ErrorRecord $_ -Continue
+                        }
+                    }
+                }
+            }
 
-					$destServer.JobServer.Jobs.Refresh()
-				}
-				catch {
-					$copyJobStatus.Status = "Failed"
-					$copyJobStatus.Notes = (($_.Exception.InnerException.InnerException.Innerexception.InnerException).ToString().Split("`n"))[0]
-					$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-					Stop-Function -Message "Issue copying job" -Target $jobName -ErrorRecord $_ -Continue
-				}
-			}
+            if ($Pscmdlet.ShouldProcess($destination, "Creating Job $jobName")) {
+                try {
+                    Write-Message -Message "Copying Job $jobName" -Level Verbose
+                    $sql = $serverJob.Script() | Out-String
 
-			if ($DisableOnDestination) {
-				if ($Pscmdlet.ShouldProcess($destination, "Disabling $jobName")) {
-					Write-Message -Message "Disabling $jobName on $destination" -Level Verbose
-					$destServer.JobServer.Jobs[$serverJob.name].IsEnabled = $False
-					$destServer.JobServer.Jobs[$serverJob.name].Alter()
-				}
-			}
+                    if ($missingLogin.Count -gt 0 -and $force) {
+                        $saLogin = Get-SqlSaLogin -SqlInstance $destServer
+                        $sql = $sql -replace [Regex]::Escape("@owner_login_name=N'$missingLogin'"), [Regex]::Escape("@owner_login_name=N'$saLogin'")
+                    }
 
-			if ($DisableOnSource) {
-				if ($Pscmdlet.ShouldProcess($source, "Disabling $jobName")) {
-					Write-Message -Message "Disabling $jobName on $source" -Level Verbose
-					$serverJob.IsEnabled = $false
-					$serverJob.Alter()
-				}
-			}
-			$copyJobStatus.Status = "Successful"
-			$copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-		}
-	}
-	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlJob
-	}
+                    Write-Message -Message $sql -Level Debug
+                    $destServer.Query($sql)
+
+                    $destServer.JobServer.Jobs.Refresh()
+                }
+                catch {
+                    $copyJobStatus.Status = "Failed"
+                    $copyJobStatus.Notes = (($_.Exception.InnerException.InnerException.Innerexception.InnerException).ToString().Split("`n"))[0]
+                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    Stop-Function -Message "Issue copying job" -Target $jobName -ErrorRecord $_ -Continue
+                }
+            }
+
+            if ($DisableOnDestination) {
+                if ($Pscmdlet.ShouldProcess($destination, "Disabling $jobName")) {
+                    Write-Message -Message "Disabling $jobName on $destination" -Level Verbose
+                    $destServer.JobServer.Jobs[$serverJob.name].IsEnabled = $False
+                    $destServer.JobServer.Jobs[$serverJob.name].Alter()
+                }
+            }
+
+            if ($DisableOnSource) {
+                if ($Pscmdlet.ShouldProcess($source, "Disabling $jobName")) {
+                    Write-Message -Message "Disabling $jobName on $source" -Level Verbose
+                    $serverJob.IsEnabled = $false
+                    $serverJob.Alter()
+                }
+            }
+            $copyJobStatus.Status = "Successful"
+            $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+        }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlJob
+    }
 }
