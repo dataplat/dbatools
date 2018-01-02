@@ -1,5 +1,5 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-<#    
+<#
     .NOTES
         ===========================================================================
         Created with:    SAPIEN Technologies, Inc., PowerShell Studio 2016 v5.2.119
@@ -24,10 +24,10 @@ $commands = Get-Command -Module (Get-Module dbatools) -CommandType Cmdlet, Funct
 
 foreach ($command in $commands) {
     $commandName = $command.Name
-    
+
     # Skip all functions that are on the exclusions list
     if ($global:FunctionHelpTestExceptions -contains $commandName) { continue }
-    
+
     # The module-qualified command fails on Microsoft.PowerShell.Archive cmdlets
     $Help = Get-Help $commandName -ErrorAction SilentlyContinue
     $testhelperrors = 0
@@ -79,10 +79,10 @@ foreach ($command in $commands) {
         $testparamsall = 0
         $testparamserrors = 0
         Context "Test parameter help for $commandName" {
-            
+
             $Common = 'Debug', 'ErrorAction', 'ErrorVariable', 'InformationAction', 'InformationVariable', 'OutBuffer', 'OutVariable',
             'PipelineVariable', 'Verbose', 'WarningAction', 'WarningVariable'
-            
+
             $parameters = $command.ParameterSets.Parameters | Sort-Object -Property Name -Unique | Where-Object Name -notin $common
             $parameterNames = $parameters.Name
             $HelpParameterNames = $Help.Parameters.Parameter.Name | Sort-Object -Unique
@@ -90,7 +90,7 @@ foreach ($command in $commands) {
                 $parameterName = $parameter.Name
                 $parameterHelp = $Help.parameters.parameter | Where-Object Name -EQ $parameterName
 
-                $testparamsall += 1 
+                $testparamsall += 1
                 if ([String]::IsNullOrEmpty($parameterHelp.Description.Text)) {
                     # Should be a description for every parameter
                     It "gets help for parameter: $parameterName : in $commandName" {
@@ -112,7 +112,7 @@ foreach ($command in $commands) {
                 if ($HelpTestSkipParameterType[$commandName] -contains $parameterName) { continue }
 
                 $codeType = $parameter.ParameterType.Name
-                
+
                 $testparamsall += 1
                 if ($parameter.ParameterType.IsEnum) {
                     # Enumerations often have issues with the typename not being reliably available

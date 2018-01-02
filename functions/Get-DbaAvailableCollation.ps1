@@ -17,7 +17,7 @@ function Get-DbaAvailableCollation {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Author: Bryan Hamby (@galador)
 
@@ -31,7 +31,7 @@ function Get-DbaAvailableCollation {
         .EXAMPLE
             Get-DbaAvailableCollation -SqlInstance sql2016
 
-            Gets all the collations from server sql2016 using NT authentication 
+            Gets all the collations from server sql2016 using NT authentication
 
     #>
     [CmdletBinding()]
@@ -104,8 +104,8 @@ function Get-DbaAvailableCollation {
                 Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name CodePageName -Value (Get-CodePageDescription $collation.CodePage)
                 Add-Member -Force -InputObject $collation -MemberType NoteProperty -Name LocaleName -Value (Get-LocaleDescription $collation.LocaleID)
             }
-            
+
             Select-DefaultView -InputObject $availableCollations -Property ComputerName, InstanceName, SqlInstance, Name, CodePage, CodePageName, LocaleID, LocaleName, Description
-        } 
-    } 
+        }
+    }
 }

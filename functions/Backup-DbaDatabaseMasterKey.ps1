@@ -1,4 +1,4 @@
-Function Backup-DbaDatabaseMasterKey {
+function Backup-DbaDatabaseMasterKey {
     <#
 .SYNOPSIS
 Backs up specified database master key.
@@ -10,7 +10,7 @@ Backs up specified database master key.
 The target SQL Server instance.
 
 .PARAMETER SqlCredential
-Allows you to login to SQL Server using alternative credentials. 
+Allows you to login to SQL Server using alternative credentials.
 
 .PARAMETER Database
 Backup master key from specific database(s).
@@ -20,7 +20,7 @@ The database(s) to exclude - this list is auto-populated from the server.
 
 .PARAMETER Path
 The directory to export the key. If no path is specified, the default backup directory for the instance will be used.
-	
+
 .PARAMETER Password
 The password to encrypt the exported key. This must be a SecureString.
 
@@ -31,10 +31,10 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command.
 
 .PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
 .NOTES
 Tags: Certificate, Databases
 
@@ -46,7 +46,7 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 Backup-DbaDatabaseMasterKey -SqlInstance server1\sql2016
 
 Prompts for export password, then logs into server1\sql2016 with Windows credentials then backs up all database keys to the default backup directory.
-	
+
 ComputerName : SERVER1
 InstanceName : SQL2016
 SqlInstance  : SERVER1\SQL2016

@@ -49,7 +49,7 @@ function Copy-DbaServerTrigger {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Migration
             Author: Chrissy LeMaire (@cl), netnerds.net
@@ -138,7 +138,7 @@ function Copy-DbaServerTrigger {
             if ($destTriggers.Name -contains $triggerName) {
                 if ($force -eq $false) {
                     Write-Message -Level Verbose -Message "Server trigger $triggerName exists at destination. Use -Force to drop and migrate."
-                    
+
                     $copyTriggerStatus.Status = "Skipped"
                     $copyTriggerStatus.Status = "Already exists"
                     $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -168,11 +168,11 @@ function Copy-DbaServerTrigger {
                     $sql = $sql -replace "CREATE TRIGGER", "`nGO`nCREATE TRIGGER"
                     $sql = $sql -replace "ENABLE TRIGGER", "`nGO`nENABLE TRIGGER"
                     Write-Message -Level Debug -Message $sql
-                    
+
                     foreach ($query in ($sql -split '\nGO\b')) {
                         $destServer.Query($query) | Out-Null
                     }
-                    
+
                     $copyTriggerStatus.Status = "Successful"
                     $copyTriggerStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }

@@ -21,7 +21,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
         $null = Detach-DbaDatabase -SqlInstance $script:instance2 -Database $dbname -Force
         $results = Find-DbaOrphanedFile -SqlInstance $script:instance2
-        
+
         It "Has the correct default properties" {
             $ExpectedStdProps = 'ComputerName,InstanceName,SqlInstance,Filename,RemoteFilename'.Split(',')
             ($results[0].PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedStdProps | Sort-Object)
@@ -30,13 +30,13 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Filename,RemoteFilename,Server'.Split(',')
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
-        
+
         It "Finds two files" {
             $results.Count | Should Be 2
         }
-        
+
         $results.FileName | Remove-Item
-        
+
         $results = Find-DbaOrphanedFile -SqlInstance $script:instance2
         It "Finds zero files after cleaning up" {
             $results.Count | Should Be 0

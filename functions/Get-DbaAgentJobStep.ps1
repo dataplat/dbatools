@@ -1,4 +1,4 @@
-﻿FUNCTION Get-DbaAgentJobStep {
+﻿function Get-DbaAgentJobStep {
     <#
         .SYNOPSIS
             Gets SQL Agent Job Step information for each instance(s) of SQL Server.
@@ -25,7 +25,7 @@
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Job, Agent
             Author: Klaas Vandenberghe (@PowerDbaKlaas), http://powerdba.eu
@@ -56,15 +56,15 @@
             Get-DbaAgentJobStep -SqlInstance localhost -ExcludeJob BackupDiff
 
             Returns all SQl Agent Job Steps for the local SQL Server instances, except for the BackupDiff Job.
-            
+
         .EXAMPLE
             Get-DbaAgentJobStep -SqlInstance localhost -NoDisabledJobs
 
             Returns all SQl Agent Job Steps for the local SQL Server instances, excluding the disabled jobs.
-    
+
         .EXAMPLE
             $servers | Get-DbaAgentJobStep
-    
+
             Find all of your Job Steps from servers in the $server collection
     #>
     [CmdletBinding()]
@@ -83,7 +83,7 @@
     process {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-            
+
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
@@ -92,7 +92,7 @@
             }
             Write-Message -Level Verbose -Message "Collecting jobs on $instance"
             $jobs = $server.JobServer.Jobs
-            
+
             if ($Job) {
                 $jobs = $jobs | Where-Object Name -In $Job
             }
@@ -108,7 +108,7 @@
                 Add-Member -Force -InputObject $agentJobStep -MemberType NoteProperty -Name InstanceName -value $agentJobStep.Parent.Parent.Parent.ServiceName
                 Add-Member -Force -InputObject $agentJobStep -MemberType NoteProperty -Name SqlInstance -value $agentJobStep.Parent.Parent.Parent.DomainInstanceName
                 Add-Member -Force -InputObject $agentJobStep -MemberType NoteProperty -Name AgentJob -value $agentJobStep.Parent.Name
-                
+
                 Select-DefaultView -InputObject $agentJobStep -Property ComputerName, InstanceName, SqlInstance, AgentJob, Name, SubSystem, LastRunDate, LastRunOutcome, State
             }
         }

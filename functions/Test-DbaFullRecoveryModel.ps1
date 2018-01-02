@@ -83,17 +83,17 @@ function Test-DbaFullRecoveryModel {
                 }
 
                 $sqlRecoveryModel = "SELECT '$($server.Name)' AS 'Server'
-						, d.[name] AS [Database]
-						, d.recovery_model AS RecoveryModel
-						, d.recovery_model_desc AS RecoveryModelDesc
-						, CASE
-							WHEN d.recovery_model = 1 AND drs.last_log_backup_lsn IS NOT NULL THEN 1
-							ELSE 0
-						   END AS IsReallyInFullRecoveryModel
-				  FROM sys.databases AS D
-					INNER JOIN sys.database_recovery_status AS drs
-					   ON D.database_id = drs.database_id
-				  WHERE d.recovery_model = 1"
+                        , d.[name] AS [Database]
+                        , d.recovery_model AS RecoveryModel
+                        , d.recovery_model_desc AS RecoveryModelDesc
+                        , CASE
+                            WHEN d.recovery_model = 1 AND drs.last_log_backup_lsn IS NOT NULL THEN 1
+                            ELSE 0
+                           END AS IsReallyInFullRecoveryModel
+                  FROM sys.databases AS D
+                    INNER JOIN sys.database_recovery_status AS drs
+                       ON D.database_id = drs.database_id
+                  WHERE d.recovery_model = 1"
 
                 if ($Database) {
                     $dblist = $Database -join "','"

@@ -46,7 +46,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $conn.ExecuteNonQuery("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_invalid') DROP EVENT SESSION [dbatoolsci_session_invalid] ON SERVER;")
         $conn.ExecuteNonQuery("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_valid') DROP EVENT SESSION [dbatoolsci_session_valid] ON SERVER;")
     }
-    
+
     Context "Verifying command works" {
         It "starts the system_health session" {
             $systemhealth | Start-DbaXESession
@@ -79,6 +79,6 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $systemhealth.IsRunning | Should Be $false
             $dbatoolsciValid.IsRunning | Should Be $true
         }
-        
+
     }
 }

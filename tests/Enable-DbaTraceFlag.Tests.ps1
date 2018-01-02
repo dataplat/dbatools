@@ -8,7 +8,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $server = Connect-DbaInstance -SqlInstance $script:instance2
             $startingtfs = Get-DbaTraceFlag -SqlInstance $script:instance2
             $safetraceflag = 3226
-            
+
             if ($startingtfs.TraceFlag -contains $safetraceflag) {
                 $server.Query("DBCC TRACEOFF($safetraceflag,-1)")
             }
@@ -18,9 +18,9 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
                 $server.Query("DBCC TRACEOFF($safetraceflag,-1)")
             }
         }
-        
+
         $results = Enable-DbaTraceFlag -SqlInstance $server -TraceFlag $safetraceflag
-        
+
         It "Return $safetraceflag as enabled" {
             $results.TraceFlag -contains $safetraceflag | Should Be $true
         }

@@ -21,9 +21,9 @@ $TypeAliasTable = @{
 
 # Add all type aliases
 foreach ($TypeAlias in $TypeAliasTable.Keys) {
-    try { 
-        $TAType::Add($TypeAlias, $TypeAliasTable[$TypeAlias]) 
+    try {
+        $TAType::Add($TypeAlias, $TypeAliasTable[$TypeAlias])
     }
-    catch { 
+    catch {
     }
 }

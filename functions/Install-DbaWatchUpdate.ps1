@@ -1,9 +1,9 @@
 function Install-DbaWatchUpdate {
-    <# 
-        .SYNOPSIS 
+    <#
+        .SYNOPSIS
             Adds the scheduled task to support Watch-DbaUpdate.
 
-        .DESCRIPTION 
+        .DESCRIPTION
             Adds the scheduled task to support Watch-DbaUpdate.
 
         .NOTES
@@ -12,10 +12,10 @@ function Install-DbaWatchUpdate {
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-        .LINK 
+        .LINK
             https://dbatools.io/Install-DbaWatchUpdate
 
-        .EXAMPLE   
+        .EXAMPLE
             Install-DbaWatchUpdate
 
             Adds the scheduled task needed by Watch-DbaUpdate
@@ -25,7 +25,7 @@ function Install-DbaWatchUpdate {
             Write-Warning "This command only supports Windows 10 and above"
             return
         }
-        
+
         $script = {
             try {
                 # create a task, check every 3 hours
@@ -39,7 +39,7 @@ function Install-DbaWatchUpdate {
                 # keep moving
             }
         }
-        
+
         if ($null -eq (Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue)) {
             # Needs admin creds to setup the kind of PowerShell window that doesn't appear for a millisecond
             # which is a millisecond too long
@@ -47,10 +47,10 @@ function Install-DbaWatchUpdate {
                 Write-Warning "Watch-DbaUpdate runs as a Scheduled Task which must be created. This will only happen once."
                 Start-Process powershell -Verb runAs -ArgumentList Install-DbaWatchUpdate -Wait
             }
-            
+
             try {
                 Invoke-Command -ScriptBlock $script -ErrorAction Stop
-                
+
                 if ((Get-Location).Path -ne "$env:windir\system32") {
                     $module = Get-Module -Name dbatools
                     Write-Warning "Task created! A notification should appear momentarily. Here's something cute to look at in the interim."
@@ -61,7 +61,7 @@ function Install-DbaWatchUpdate {
                 Write-Warning "Couldn't create scheduled task :("
                 return
             }
-            
+
             # doublecheck
             if ($null -eq (Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue)) {
                 Write-Warning "Couldn't create scheduled task."

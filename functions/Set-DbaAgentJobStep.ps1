@@ -1,7 +1,7 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentJobStep {
     <#
-.SYNOPSIS 
+.SYNOPSIS
 Set-DbaAgentJobStep updates a job step.
 
 .DESCRIPTION
@@ -12,7 +12,7 @@ SQL Server instance. You must have sysadmin access and server version must be SQ
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER Job
@@ -31,29 +31,29 @@ Allowed values 'ActiveScripting','AnalysisCommand','AnalysisQuery','CmdExec','Di
 .PARAMETER Command
 The commands to be executed by SQLServerAgent service through subsystem.
 
-.PARAMETER CmdExecSuccessCode 
+.PARAMETER CmdExecSuccessCode
 The value returned by a CmdExec subsystem command to indicate that command executed successfully.
 
-.PARAMETER OnSuccessAction 
+.PARAMETER OnSuccessAction
 The action to perform if the step succeeds.
 Allowed values  "QuitWithSuccess" (default), "QuitWithFailure", "GoToNextStep", "GoToStep".
 The text value van either be lowercase, uppercase or something in between as long as the text is correct.
 
-.PARAMETER OnSuccessStepId 
+.PARAMETER OnSuccessStepId
 The ID of the step in this job to execute if the step succeeds and OnSuccessAction is "GoToNextStep".
 
-.PARAMETER OnFailAction 
+.PARAMETER OnFailAction
 The action to perform if the step fails.
 Allowed values  "QuitWithSuccess" (default), "QuitWithFailure", "GoToNextStep", "GoToStep".
 The text value van either be lowercase, uppercase or something in between as long as the text is correct.
 
-.PARAMETER OnFailStepId 
+.PARAMETER OnFailStepId
 The ID of the step in this job to execute if the step fails and OnFailAction is "GoToNextStep".
 
 .PARAMETER Database
 The name of the database in which to execute a Transact-SQL step. The default is 'master'.
 
-.PARAMETER DatabaseUser 
+.PARAMETER DatabaseUser
 The name of the user account to use when executing a Transact-SQL step. The default is 'sa'.
 
 .PARAMETER RetryAttempts
@@ -91,11 +91,11 @@ Prompts you for confirmation before executing any changing operations within the
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
 
-.NOTES 
+.NOTES
 Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Step
 
@@ -106,27 +106,27 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 .LINK
 https://dbatools.io/Set-DbaAgentJobStep
 
-.EXAMPLE   
+.EXAMPLE
 Set-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -NewName Step2
 Changes the name of the step in "Job1" with the name Step1 to Step2
 
-.EXAMPLE   
+.EXAMPLE
 Set-DbaAgentJobStep -SqlInstance sql1 -Job Job1 -StepName Step1 -Database msdb
 Changes the database of the step in "Job1" with the name Step1 to msdb
 
-.EXAMPLE   
+.EXAMPLE
 Set-DbaAgentJobStep -SqlInstance sql1 -Job Job1, Job2 -StepName Step1 -Database msdb
 Changes job steps in multiple jobs with the name Step1 to msdb
 
-.EXAMPLE   
+.EXAMPLE
 Set-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1, Job2 -StepName Step1 -Database msdb
 Changes job steps in multiple jobs on multiple servers with the name Step1 to msdb
 
-.EXAMPLE   
+.EXAMPLE
 Set-DbaAgentJobStep -SqlInstance sql1, sql2, sql3 -Job Job1 -StepName Step1 -Database msdb
 Changes the database of the step in "Job1" with the name Step1 to msdb for multiple servers
 
-.EXAMPLE   
+.EXAMPLE
 sql1, sql2, sql3 | Set-DbaAgentJobStep -Job Job1 -StepName Step1 -Database msdb
 Changes the database of the step in "Job1" with the name Step1 to msdb for multiple servers using pipeline
 
@@ -183,27 +183,27 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
         [Parameter(Mandatory = $false)]
         [switch]$Force
     )
-    
+
     begin {
         # Check the parameter on success step id
         if (($OnSuccessAction -ne 'GoToStep') -and ($OnSuccessStepId -ge 1)) {
             Stop-Function -Message "Parameter OnSuccessStepId can only be used with OnSuccessAction 'GoToStep'." -Target $SqlInstance
             return
         }
-        
+
         # Check the parameter on success step id
         if (($OnFailAction -ne 'GoToStep') -and ($OnFailStepId -ge 1)) {
             Stop-Function -Message "Parameter OnFailStepId can only be used with OnFailAction 'GoToStep'." -Target $SqlInstance
             return
         }
     }
-    
+
     process {
-        
+
         if (Test-FunctionInterrupt) { return }
-        
+
         foreach ($instance in $sqlinstance) {
-            
+
             # Try connecting to the instance
             Write-Message -Message "Attempting to connect to $instance" -Level Verbose
             try {
@@ -212,9 +212,9 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             foreach ($j in $Job) {
-                
+
                 # Check if the job exists
                 if ($Server.JobServer.Jobs.Name -notcontains $j) {
                     Stop-Function -Message "Job $j doesn't exists on $instance" -Target $instance -Continue
@@ -225,54 +225,54 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
                         Stop-Function -Message "Step $StepName doesn't exists for job $j" -Target $instance -Continue
                     }
                     else {
-                        
+
                         # Get the job step
                         $JobStep = $Server.JobServer.Jobs[$j].JobSteps[$StepName]
-                        
+
                         Write-Message -Message "Modifying job $j on $instance" -Level Verbose
-                        
+
                         #region job step options
                         # Setting the options for the job step
                         if ($NewName) {
                             Write-Message -Message "Setting job step name to $NewName" -Level Verbose
                             $JobStep.Rename($NewName)
                         }
-                        
+
                         if ($Subsystem) {
                             Write-Message -Message "Setting job step subsystem to $Subsystem" -Level Verbose
                             $JobStep.Subsystem = $Subsystem
                         }
-                        
+
                         if ($Command) {
                             Write-Message -Message "Setting job step command to $Command" -Level Verbose
                             $JobStep.Command = $Command
                         }
-                        
+
                         if ($CmdExecSuccessCode) {
                             Write-Message -Message "Setting job step command exec success code to $CmdExecSuccessCode" -Level Verbose
                             $JobStep.CommandExecutionSuccessCode = $CmdExecSuccessCode
                         }
-                        
+
                         if ($OnSuccessAction) {
                             Write-Message -Message "Setting job step success action to $OnSuccessAction" -Level Verbose
                             $JobStep.OnSuccessAction = $OnSuccessAction
                         }
-                        
+
                         if ($OnSuccessStepId) {
                             Write-Message -Message "Setting job step success step id to $OnSuccessStepId" -Level Verbose
                             $JobStep.OnSuccessStep = $OnSuccessStepId
                         }
-                        
+
                         if ($OnFailAction) {
                             Write-Message -Message "Setting job step fail action to $OnFailAction" -Level Verbose
                             $JobStep.OnFailAction = $OnFailAction
                         }
-                        
+
                         if ($OnFailStepId) {
                             Write-Message -Message "Setting job step fail step id to $OnFailStepId" -Level Verbose
                             $JobStep.OnFailStep = $OnFailStepId
                         }
-                        
+
                         if ($Database) {
                             # Check if the database is present on the server
                             if ($Server.Databases.Name -contains $Database) {
@@ -283,7 +283,7 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
                                 Stop-Function -Message "The database is not present on instance $instance." -Target $instance -Continue
                             }
                         }
-                        
+
                         if (($DatabaseUser) -and ($Database)) {
                             # Check if the username is present in the database
                             if ($Server.Databases[$Database].Users.Name -contains $DatabaseUser) {
@@ -294,22 +294,22 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
                                 Stop-Function -Message "The database user is not present in the database $Database on instance $instance." -Target $instance -Continue
                             }
                         }
-                        
+
                         if ($RetryAttempts) {
                             Write-Message -Message "Setting job step retry attempts to $RetryAttempts" -Level Verbose
                             $JobStep.RetryAttempts = $RetryAttempts
                         }
-                        
+
                         if ($RetryInterval) {
                             Write-Message -Message "Setting job step retry interval to $RetryInterval" -Level Verbose
                             $JobStep.RetryInterval = $RetryInterval
                         }
-                        
+
                         if ($OutputFileName) {
                             Write-Message -Message "Setting job step output file name to $OutputFileName" -Level Verbose
                             $JobStep.OutputFileName = $OutputFileName
                         }
-                        
+
                         if ($ProxyName) {
                             # Check if the proxy exists
                             if ($Server.JobServer.ProxyAccounts.Name -contains $ProxyName) {
@@ -320,18 +320,18 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
                                 Stop-Function -Message "The proxy name $ProxyName doesn't exist on instance $instance." -Target $instance -Continue
                             }
                         }
-                        
+
                         if ($Flag.Count -ge 1) {
                             Write-Message -Message "Setting job step flag(s) to $($Flags -join ',')" -Level Verbose
                             $JobStep.JobStepFlags = $Flag
                         }
                         #region job step options
-                        
-                        # Execute 
+
+                        # Execute
                         if ($PSCmdlet.ShouldProcess($instance, "Changing the job step $StepName for job $j")) {
                             try {
                                 Write-Message -Message "Changing the job step $StepName for job $j" -Level Verbose
-                                
+
                                 # Change the job step
                                 $JobStep.Alter()
                             }
@@ -341,11 +341,11 @@ Changes the database of the step in "Job1" with the name Step1 to msdb for multi
                         }
                     }
                 }
-                
+
             } # foreach object job
         } # foreach object intance
     } # process
-    
+
     end {
         if (Test-FunctionInterrupt) { return }
         Write-Message -Message "Finished changing job step(s)" -Level Verbose

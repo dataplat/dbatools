@@ -18,17 +18,17 @@ The database where the master key will be created. Defaults to master.
 .PARAMETER Password
 Secure string used to create the key.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+.PARAMETER WhatIf
+Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+.PARAMETER Confirm
+Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER EnableException 
+.PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Tags: Certificate
 
@@ -59,7 +59,7 @@ Suppresses all prompts to install but prompts to securely enter your password an
         [Security.SecureString]$Password = (Read-Host "Password" -AsSecureString),
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -69,28 +69,28 @@ Suppresses all prompts to install but prompts to securely enter your password an
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             foreach ($db in $Database) {
                 $smodb = $server.Databases[$db]
-                
+
                 if ($null -eq $smodb) {
                     Stop-Function -Message "Database '$db' does not exist on $instance" -Target $smodb -Continue
                 }
-                
+
                 if ($null -ne $smodb.MasterKey) {
                     Stop-Function -Message "Master key already exists in the $db database on $instance" -Target $smodb -Continue
                 }
-                
+
                 if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating master key for database '$db' on $instance")) {
                     try {
                         $masterkey = New-Object Microsoft.SqlServer.Management.Smo.MasterKey $smodb
                         $masterkey.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
-                        
+
                         Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name ComputerName -value $server.NetName
                         Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                         Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                         Add-Member -Force -InputObject $masterkey -MemberType NoteProperty -Name Database -value $smodb
-                        
+
                         Select-DefaultView -InputObject $masterkey -Property ComputerName, InstanceName, SqlInstance, Database, CreateDate, DateLastModified, IsEncryptedByServer
                     }
                     catch {

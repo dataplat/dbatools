@@ -1,4 +1,4 @@
-Function Get-DbaNetworkActivity {
+function Get-DbaNetworkActivity {
     <#
       .SYNOPSIS
       Gets the Current traffic on every Network Interface on a computer.
@@ -19,7 +19,7 @@ Function Get-DbaNetworkActivity {
       By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
       This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
       Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-      
+
       .NOTES
       Author: Klaas Vandenberghe ( @PowerDBAKlaas )
       Tags: Network
@@ -32,12 +32,12 @@ Function Get-DbaNetworkActivity {
 
       .EXAMPLE
       Get-DbaNetworkActivity -ComputerName sqlserver2014a
-      
+
       Gets the Current traffic on every Network Interface on computer sqlserver2014a.
 
-      .EXAMPLE   
+      .EXAMPLE
       'sql1','sql2','sql3' | Get-DbaNetworkActivity
-      
+
       Gets the Current traffic on every Network Interface on computers sql1, sql2 and sql3.
 
       .EXAMPLE

@@ -26,7 +26,7 @@ The database(s) to exclude - this list is auto-populated from the server
 Shows what would happen if the command were to run
 
 .PARAMETER Confirm
-Prompts for confirmation of every step. 
+Prompts for confirmation of every step.
 
 .PARAMETER Name
 The specific snapshot name you want to create. Works only if you target a single database. If you need to create multiple snapshot,
@@ -50,7 +50,7 @@ For details, check https://msdn.microsoft.com/en-us/library/bb895334.aspx
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Tags: DisasterRecovery, Snapshot, Restore, Databases
 Author: niphlod
@@ -83,7 +83,7 @@ New-DbaDatabaseSnapshot -SqlInstance sqlserver2014a -Database HR, Accounting -Pa
 Creates snapshots for HR and Accounting databases, storing files under the F:\snapshotpath\ dir
 
 #>
-    
+
     [CmdletBinding(SupportsShouldProcess = $true)]
     Param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -102,9 +102,9 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
         [switch]$Force,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     begin {
-        
+
         $NoSupportForSnap = @('model', 'master', 'tempdb')
         # Evaluate the default suffix here for naming consistency
         $DefaultSuffix = (Get-Date -Format "yyyyMMdd_HHmmss")
@@ -117,7 +117,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
                 Stop-Function -Message "NameSuffix parameter must be a template only containing one parameter {0}" -ErrorRecord $_
             }
         }
-        
+
         function Resolve-SnapshotError($server) {
             $errhelp = ''
             $CurrentEdition = $server.Edition.toLower()
@@ -145,7 +145,7 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
             Stop-Function -Message "You must specify a -AllDatabases or -Database to continue" -EnableException $EnableException
             return
         }
-        
+
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Connecting to $instance"
             try {
@@ -160,21 +160,21 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
                     Stop-Function -Message "$instance cannot access the directory $Path" -ErrorRecord $_ -Target $instance -Continue -EnableException $EnableException
                 }
             }
-            
+
             if ($AllDatabases) {
                 $dbs = $server.Databases
             }
-            
+
             if ($Database) {
                 $dbs = $server.Databases | Where-Object { $Database -contains $_.Name }
             }
-            
+
             if ($ExcludeDatabase) {
                 $dbs = $server.Databases | Where-Object { $ExcludeDatabase -notcontains $_.Name }
             }
-            
+
             $sourcedbs = @()
-            
+
             ## double check for gotchas
             foreach ($db in $dbs) {
                 if ($db.IsDatabaseSnapshot) {
@@ -260,15 +260,15 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
                             $SnapDB.FileGroups[$fg].Files.Add($SnapFile)
                         }
                     }
-                    
+
                     # we're ready to issue a Create, but SMO is a little uncooperative here
                     # there are cases we can manage and others we can't, and we need all the
                     # info we can get both from testers and from users
-                    
+
                     $sql = $SnapDB.Script()
                     try {
                         $SnapDB.Create()
-                        
+
                         [PSCustomObject]@{
                             ComputerName    = $server.NetName
                             InstanceName    = $server.ServiceName
@@ -307,13 +307,13 @@ Creates snapshots for HR and Accounting databases, storing files under the F:\sn
                                 $Notes += 'Filestream groups are not viable for snapshot'
                             }
                             $Notes = $Notes -Join ';'
-                            
+
                             $hints = @("Executing these commands led to a partial failure")
                             foreach ($stmt in $sql) {
                                 $hints += $stmt
                             }
                             Write-Message -Level Debug -Message ($hints -Join "`n")
-                            
+
                             [PSCustomObject]@{
                                 ComputerName    = $server.NetName
                                 InstanceName    = $server.ServiceName

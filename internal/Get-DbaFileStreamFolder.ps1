@@ -1,4 +1,4 @@
-Function Get-DbaFileStreamFolder {
+function Get-DbaFileStreamFolder {
     <#
 
     .SYNOPSIS
@@ -23,14 +23,14 @@ Function Get-DbaFileStreamFolder {
 
     .EXAMPLE
         Get-DbaFileStreamFolder -SqlInstance server1\instance2
-        
+
         Returns all FileStream folders from server1\instance2
 
     .EXAMPLE
         Get-DbaFileStreamFolder -SqlInstance server1\instance2 -Database Archive
-        
+
         Returns any FileStream folders from the Archive database on server1\instance2
-    
+
     .NOTES
     Author:Stuart Moore (@napalmgram stuart-moore.com )
 
@@ -46,7 +46,7 @@ Function Get-DbaFileStreamFolder {
         [string[]]$Database,
         [switch]$EnableException
     )
-    
+
     BEGIN {
         try {
             Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance." -Target $SqlInstance
@@ -58,7 +58,7 @@ Function Get-DbaFileStreamFolder {
     }
 
     PROCESS {
-        $sql = "select d.name as 'dbname', mf.Physical_Name from sys.master_files mf inner join sys.databases d on mf.database_id = d.database_id 
+        $sql = "select d.name as 'dbname', mf.Physical_Name from sys.master_files mf inner join sys.databases d on mf.database_id = d.database_id
         where mf.type=2"
         $databases = @()
         if ($null -ne $Database) {
@@ -77,7 +77,7 @@ Function Get-DbaFileStreamFolder {
             }
         }
 
-        
+
     }
 
     END {}

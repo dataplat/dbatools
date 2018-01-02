@@ -14,7 +14,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Stop-DbaProcess -SqlInstance $script:instance1 -Login $renamed
         (Get-Dbalogin -SqlInstance $script:instance1 -Login $renamed).Drop()
     }
-    
+
     It "renames the login" {
         $results = Rename-DbaLogin -SqlInstance $script:instance1 -Login $login -NewLogin $renamed
         $results.Status -eq "Successful"

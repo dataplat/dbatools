@@ -19,7 +19,7 @@ function Get-DbaTraceFile {
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
         .NOTES
         Tags: Security, Trace
 
@@ -30,15 +30,15 @@ function Get-DbaTraceFile {
         License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
         .EXAMPLE
-        Get-DbaTraceFile -SqlInstance sql2016 
+        Get-DbaTraceFile -SqlInstance sql2016
 
         Lists all the tracefiles on the sql2016 SQL Server.
-            
+
         .EXAMPLE
         Get-DbaTraceFile -SqlInstance sql2016 -Default
 
-        Lists the default trace information on the sql2016 SQL Server. 
-            
+        Lists the default trace information on the sql2016 SQL Server.
+
 #>
     [CmdletBinding()]
     Param (
@@ -49,9 +49,9 @@ function Get-DbaTraceFile {
         [switch]$Default,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     process {
-        
+
         foreach ($instance in $SqlInstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
@@ -60,7 +60,7 @@ function Get-DbaTraceFile {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 return
             }
-            
+
             $sql = "SELECT id, status, path, max_size, stop_time, max_files, is_rowset, is_rollover, is_shutdown, is_default, buffer_count, buffer_size, file_position, reader_spid, start_time, last_event_time, event_count, dropped_event_count FROM sys.traces"
 
             try {
@@ -69,7 +69,7 @@ function Get-DbaTraceFile {
             catch {
                 Stop-Function -Message "Issue collecting trace data on $server" -Target $server -ErrorRecord $_
             }
-            
+
             if ($Default) {
                 $results = $results | Where-Object { $_.is_default }
             }
@@ -98,7 +98,7 @@ function Get-DbaTraceFile {
                 LastEventTime     = $row.last_event_time
                 EventCount        = $row.event_count
                 DroppedEventCount = $row.dropped_event_count
-            } 
+            }
         }
     }
 }

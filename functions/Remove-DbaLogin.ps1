@@ -2,7 +2,7 @@
     <#
 .SYNOPSIS
 Drops a Login
-    
+
 .DESCRIPTION
 Tries a bunch of different ways to remove a Login or two or more.
 
@@ -28,7 +28,7 @@ Prompts you for confirmation before executing any changing operations within the
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Tags: Delete, Logins
 
@@ -74,9 +74,9 @@ removes mylogin on SQL Server server\instance
         [Microsoft.SqlServer.Management.Smo.Login[]]$LoginCollection,
         [switch]$EnableException
     )
-    
+
     process {
-        
+
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -87,13 +87,13 @@ removes mylogin on SQL Server server\instance
             }
             $Logincollection += $server.Logins | Where-Object { $_.Name -in $Login }
         }
-        
+
         foreach ($currentlogin in $Logincollection) {
             try {
                 $server = $currentlogin.Parent
                 if ($Pscmdlet.ShouldProcess("$currentlogin on $server", "KillLogin")) {
                     $currentlogin.Drop()
-                    
+
                     [pscustomobject]@{
                         ComputerName = $server.NetName
                         InstanceName = $server.ServiceName

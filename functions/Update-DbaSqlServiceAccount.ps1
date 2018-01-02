@@ -11,7 +11,7 @@ function Update-DbaSqlServiceAccount {
 
     .PARAMETER Credential
     Windows Credential with permission to log on to the server running the SQL instance
-    
+
     .PARAMETER ServiceCollection
     A collection of services. Basically, any object that has ComputerName and ServiceName properties. Can be piped from Get-DbaSqlService.
 
@@ -36,25 +36,25 @@ function Update-DbaSqlServiceAccount {
     NETWORKSERVICE
     LOCALSYSTEM
 
-    .PARAMETER WhatIf 
-    Shows what would happen if the command were to run. No actions are actually performed. 
+    .PARAMETER WhatIf
+    Shows what would happen if the command were to run. No actions are actually performed.
 
-    .PARAMETER Confirm 
-    Prompts you for confirmation before executing any changing operations within the command. 
+    .PARAMETER Confirm
+    Prompts you for confirmation before executing any changing operations within the command.
 
-    .PARAMETER EnableException 
+    .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
     .NOTES
     Author: Kirill Kravtsov (@nvarscar)
-    Tags: 
+    Tags:
     dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
     Copyright (C) 2017 Chrissy LeMaire
     License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-    .EXAMPLE 
+    .EXAMPLE
     $NewPassword = ConvertTo-SecureString 'Qwerty1234' -AsPlainText -Force
     Update-DbaSqlServiceAccount -ComputerName sql1 -ServiceName 'MSSQL$MYINSTANCE' -Password $NewPassword
 
@@ -65,17 +65,17 @@ function Update-DbaSqlServiceAccount {
     Get-DbaSqlService sql1 -Type Engine,Agent -Instance MYINSTANCE | Update-DbaSqlServiceAccount -ServiceCredential $cred
 
     Requests credentials from the user and configures them as a service account for the SQL Server engine and agent services of the instance sql1\MYINSTANCE
-    
+
     .EXAMPLE
     Update-DbaSqlServiceAccount -ComputerName sql1,sql2 -ServiceName 'MSSQLSERVER','SQLSERVERAGENT' -Username NETWORKSERVICE
 
     Configures SQL Server engine and agent services on the machines sql1 and sql2 to run under Network Service system user.
-    
+
     .EXAMPLE
     Get-DbaSqlService sql1 -Type Engine -Instance MSSQLSERVER | Update-DbaSqlServiceAccount -Username 'MyDomain\sqluser1'
 
     Configures SQL Server engine service on the machine sql1 to run under 'MyDomain\sqluser1'. Will request user to input the account password.
-    
+
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "ServiceName" )]
     param (
@@ -113,7 +113,7 @@ function Update-DbaSqlServiceAccount {
             $actionType = 'Account'
             if ($ServiceCredential) {
                 Stop-Function -EnableException $EnableException -Message "You cannot specify both -UserName and -ServiceCredential parameters" -Category InvalidArgument
-                return 
+                return
             }
             #System logins should not have a domain name, whitespaces or passwords
             $trimmedUsername = (Split-Path $Username -Leaf).Trim().Replace(' ', '')
@@ -123,7 +123,7 @@ function Update-DbaSqlServiceAccount {
                 $NewPassword2 = Read-Host -Prompt "Repeat password" -AsSecureString
                 if ((New-Object System.Management.Automation.PSCredential ("user", $NewPassword)).GetNetworkCredential().Password -ne `
                     (New-Object System.Management.Automation.PSCredential ("user", $NewPassword2)).GetNetworkCredential().Password) {
-                    Stop-Function -Message "Passwords do not match" -Category InvalidArgument -EnableException $EnableException 
+                    Stop-Function -Message "Passwords do not match" -Category InvalidArgument -EnableException $EnableException
                     return
                 }
             }
@@ -225,7 +225,7 @@ function Update-DbaSqlServiceAccount {
                     #Restart SQL Agent after SQL Engine has been restarted
                     if ($PsCmdlet.ShouldProcess($serviceObject, "Starting SQL Agent after Engine account change on $($svc.ComputerName)")) {
                         $res = Start-DbaSqlService -ComputerName $svc.ComputerName -Type Agent -InstanceName $serviceObject.InstanceName
-                        if ($res.Status -ne 'Successful') { 
+                        if ($res.Status -ne 'Successful') {
                             Write-Message -Level Warning -Message "Failed to restart SQL Agent after changing credentials. $($res.Message)"
                         }
                     }

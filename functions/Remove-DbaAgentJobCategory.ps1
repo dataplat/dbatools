@@ -1,7 +1,7 @@
 function Remove-DbaAgentJobCategory {
 
     <#
-.SYNOPSIS 
+.SYNOPSIS
 Remove-DbaAgentJobCategory removes a job category.
 
 .DESCRIPTION
@@ -13,7 +13,7 @@ SQL Server instance. You must have sysadmin access and server version must be SQ
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER Category
@@ -22,18 +22,18 @@ The name of the category
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+.PARAMETER WhatIf
+Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+.PARAMETER Confirm
+Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER EnableException 
+.PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
-.NOTES 
+
+.NOTES
 Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Category
 
@@ -44,17 +44,17 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 .LINK
 https://dbatools.io/Remove-DbaAgentJobCategory
 
-.EXAMPLE   
+.EXAMPLE
 Remove-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 1'
 
 Remove the job category Category 1 from the instance.
 
-.EXAMPLE   
+.EXAMPLE
 Remove-DbaAgentJobCategory -SqlInstance sql1 -Category Category1, Category2, Category3
 
 Remove multiple job categories from the instance.
 
-.EXAMPLE   
+.EXAMPLE
 Remove-DbaAgentJobCategory -SqlInstance sql1, sql2, sql3 -Category Category1, Category2, Category3
 
 Remove multiple job categories from the multiple instances.

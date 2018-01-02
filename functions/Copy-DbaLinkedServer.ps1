@@ -36,7 +36,7 @@ function Copy-DbaLinkedServer {
 
         .PARAMETER ExcludeLinkedServer
             The linked server(s) to exclude - this list is auto-populated from the server
-    
+
         .PARAMETER UpgradeSqlClient
             Upgrade any SqlClient Linked Server to the current Version
 
@@ -53,7 +53,7 @@ function Copy-DbaLinkedServer {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: WSMan, Migration, LinkedServer
             Author: Chrissy LeMaire (@cl), netnerds.net
@@ -157,8 +157,8 @@ function Copy-DbaLinkedServer {
             if (($serviceKey.Length -ne 16) -and ($serviceKey.Length -ne 32)) {
                 Write-Message -Level Verbose -Message "ServiceKey found: $serviceKey.Length"
                 Stop-Function -Message "Unknown key size. Cannot continue." -Target $source
-                return 
-                
+                return
+
             }
 
             if ($serviceKey.Length -eq 16) {
@@ -194,15 +194,15 @@ function Copy-DbaLinkedServer {
 
             <# NOTE: This query is accessing syslnklgns table. Can only be done via the DAC connection #>
             $sql = "
-				SELECT sysservers.srvname,
-					syslnklgns.Name,
-					substring(syslnklgns.pwdhash,5,$ivlen) iv,
-					substring(syslnklgns.pwdhash,$($ivlen + 5),
-					len(syslnklgns.pwdhash)-$($ivlen + 4)) pass
-				FROM master.sys.syslnklgns
-					inner join master.sys.sysservers
-					on syslnklgns.srvid=sysservers.srvid
-				WHERE len(pwdhash) > 0"
+                SELECT sysservers.srvname,
+                    syslnklgns.Name,
+                    substring(syslnklgns.pwdhash,5,$ivlen) iv,
+                    substring(syslnklgns.pwdhash,$($ivlen + 5),
+                    len(syslnklgns.pwdhash)-$($ivlen + 4)) pass
+                FROM master.sys.syslnklgns
+                    inner join master.sys.sysservers
+                    on syslnklgns.srvid=sysservers.srvid
+                WHERE len(pwdhash) > 0"
 
             # Get entropy from the registry
             try {
@@ -290,7 +290,7 @@ function Copy-DbaLinkedServer {
                 catch { }
 
                 $linkedServerName = $currentLinkedServer.Name
-                
+
                 $copyLinkedServer = [pscustomobject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -300,7 +300,7 @@ function Copy-DbaLinkedServer {
                     Notes             = $provider
                     DateTime          = [DbaDateTime](Get-Date)
                 }
-                
+
                 # This does a check to warn of missing OleDbProviderSettings but should only be checked on SQL on Windows
                 if ($destServer.Settings.OleDbProviderSettings.Name.Length -ne 0) {
                     if (!$destServer.Settings.OleDbProviderSettings.Name -contains $provider -and !$provider.StartsWith("SQLN")) {
@@ -339,13 +339,13 @@ function Copy-DbaLinkedServer {
                     try {
                         $sql = $currentLinkedServer.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
-                        
+
                         if ($UpgradeSqlClient -and $sql -match "sqlncli") {
                             $newstring = "sqlncli$($destServer.VersionMajor)"
                             Write-Message -Level Verbose -Message "Changing sqlncli to $newstring"
                             $sql = $sql -replace ("sqlncli[0-9]+", $newstring)
                         }
-                        
+
                         $destServer.Query($sql)
                         $destServer.LinkedServers.Refresh()
                         Write-Message -Level Verbose -Message "$linkedServerName successfully copied."

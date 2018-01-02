@@ -12,11 +12,11 @@ The target computer. This is not a SQL Server service, though if you pass a name
 .PARAMETER Credential
 Allows you to login to $ComputerName using alternative Windows credentials
 
-.PARAMETER EnableException 
+.PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Tags: Configuration, Registry
 
@@ -41,7 +41,7 @@ Gets the registry root for all instances on server1
         [PSCredential]$Credential,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     process {
         foreach ($computer in $computername) {
             Write-Message -Level Verbose -Message "Connecting to SQL WMI on $($computer.ComputerName)"
@@ -51,17 +51,17 @@ Gets the registry root for all instances on server1
             catch {
                 Stop-Function -Message $_ -Target $sqlwmi -Continue
             }
-            
+
             foreach ($sqlwmi in $sqlwmis) {
-                
+
                 $regroot = ($sqlwmi.AdvancedProperties | Where-Object Name -eq REGROOT).Value
                 $vsname = ($sqlwmi.AdvancedProperties | Where-Object Name -eq VSNAME).Value
                 $instancename = $sqlwmi.DisplayName.Replace('SQL Server (', '').Replace(')', '') # Don't clown, I don't know regex :(
-                
+
                 if ([System.String]::IsNullOrEmpty($regroot)) {
                     $regroot = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'REGROOT' }
                     $vsname = $sqlwmi.AdvancedProperties | Where-Object { $_ -match 'VSNAME' }
-                    
+
                     if (![System.String]::IsNullOrEmpty($regroot)) {
                         $regroot = ($regroot -Split 'Value\=')[1]
                         $vsname = ($vsname -Split 'Value\=')[1]
@@ -71,7 +71,7 @@ Gets the registry root for all instances on server1
                         return
                     }
                 }
-                
+
                 # vsname takes care of clusters
                 if ([System.String]::IsNullOrEmpty($vsname)) {
                     $vsname = $computer
@@ -79,11 +79,11 @@ Gets the registry root for all instances on server1
                         $vsname = "$computer\$instancename"
                     }
                 }
-                
+
                 Write-Message -Level Verbose -Message "Regroot: $regroot"
                 Write-Message -Level Verbose -Message "InstanceName: $instancename"
                 Write-Message -Level Verbose -Message "VSNAME: $vsname"
-                
+
                 [pscustomobject]@{
                     ComputerName = $computer.ComputerName
                     InstanceName = $instancename

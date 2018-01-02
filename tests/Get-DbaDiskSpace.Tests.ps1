@@ -8,7 +8,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "returns at least the system drive" {
             $results.Name -contains "$env:SystemDrive\" | Should Be $true
         }
-        
+
         $results = Get-DbaDiskSpace -ComputerName $env:COMPUTERNAME | Where-Object Name -eq "$env:SystemDrive\"
         It "has some valid properties" {
             $results.BlockSize -gt 0 | Should Be $true

@@ -1,7 +1,7 @@
-Function Get-DbaLocaleSetting {
+function Get-DbaLocaleSetting {
     <#
       .SYNOPSIS
-      Gets the Locale settings on a computer. 
+      Gets the Locale settings on a computer.
 
       .DESCRIPTION
       Gets the Locale settings on one or more computers.
@@ -18,7 +18,7 @@ Function Get-DbaLocaleSetting {
       By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
       This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
       Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-      
+
       .NOTES
       Author: Klaas Vandenberghe ( @PowerDBAKlaas )
       Tags: OS
@@ -34,7 +34,7 @@ Function Get-DbaLocaleSetting {
 
       Gets the Locale settings on computer sqlserver2014a.
 
-      .EXAMPLE   
+      .EXAMPLE
       'sql1','sql2','sql3' | Get-DbaLocaleSetting
 
       Gets the Locale settings on computers sql1, sql2 and sql3.

@@ -11,15 +11,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterAll {
             Remove-DbaComputerCertificate -Thumbprint $thumbprint -Confirm:$false
         }
-        
+
         $cert = Get-DbaComputerCertificate -Thumbprint $thumbprint
-        
+
         It "returns a single certificate with a specific thumbprint" {
             $cert.Thumbprint | Should Be $thumbprint
         }
-        
+
         $cert = Get-DbaComputerCertificate
-        
+
         It "returns all certificates and at least one has the specified thumbprint" {
             "$($cert.Thumbprint)" -match $thumbprint | Should Be $true
         }

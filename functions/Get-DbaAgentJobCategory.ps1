@@ -1,6 +1,6 @@
 function Get-DbaAgentJobCategory {
     <#
-.SYNOPSIS 
+.SYNOPSIS
 Get-DbaAgentJobCategory retrieves the job categories.
 
 .DESCRIPTION
@@ -11,7 +11,7 @@ SQL Server instance. You must have sysadmin access and server version must be SQ
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER Category
@@ -24,18 +24,18 @@ If no category is used all catgories types will be returned.
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+.PARAMETER WhatIf
+Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+.PARAMETER Confirm
+Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER EnableException 
+.PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
-.NOTES 
+
+.NOTES
 Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Category
 
@@ -46,7 +46,7 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 .LINK
 https://dbatools.io/Get-DbaAgentJobCategory
 
-.EXAMPLE   
+.EXAMPLE
 Get-DbaAgentJobCategory -SqlInstance sql1
 
 Return all the job categories.
@@ -95,7 +95,7 @@ Return all the job categories that have a type MultiServerJob.
                 ($_.CategoryType -in $CategoryType -or !$CategoryType)
             }
 
-            # Set the default output 
+            # Set the default output
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'ID', 'CategoryType', 'JobCount'
 
             # Loop through each of the categories
@@ -114,7 +114,7 @@ Return all the job categories that have a type MultiServerJob.
                     # Show the result
                     Select-DefaultView -InputObject $cat -Property $defaults
                 }
-            } 
+            }
             catch {
                 Stop-Function -ErrorRecord $_ -Target $instance -Message "Failure. Collection may have been modified" -Continue
             }

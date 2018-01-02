@@ -25,7 +25,7 @@ function Test-DbaConnection {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .EXAMPLE
             Test-DbaConnection SQL2016
 
@@ -79,7 +79,7 @@ function Test-DbaConnection {
                 DomainUser = $env:computername -ne $env:USERDOMAIN
                 RunAsAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
             }
-            
+
             try {
                 <# gather following properties #>
                 <#
@@ -98,7 +98,7 @@ function Test-DbaConnection {
             catch {
                 Stop-Function -Message "Unable to resolve server information" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
             }
-            
+
             # Test for WinRM #Test-WinRM neh
             Write-Message -Level Verbose -Message "Checking remote acccess"
             try {
@@ -108,11 +108,11 @@ function Test-DbaConnection {
             catch {
                 $remoting = $_
             }
-            
+
             # Test Connection first using Test-Connection which requires ICMP access then failback to tcp if pings are blocked
             Write-Message -Level Verbose -Message "Testing ping to $($instance.ComputerName)"
             $pingable = Test-Connection -ComputerName $instance.ComputerName -Count 1 -Quiet
-            
+
             # SQL Server connection
             if ($instance.InstanceName -ne "MSSQLSERVER") {
                 $sqlport = "N/A"
@@ -130,7 +130,7 @@ function Test-DbaConnection {
                     $sqlport = $false
                 }
             }
-            
+
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance.FullSmoName -SqlCredential $SqlCredential
                 $connectSuccess = $true
@@ -139,7 +139,7 @@ function Test-DbaConnection {
                 $connectSuccess = $false
                 Stop-Function -Message "Issue connection to SQL Server on $instance" -Category ConnectionError -Target $instance -ErrorRecord $_ -Continue
             }
-            
+
             $username = $server.ConnectionContext.TrueLogin
             if ($username -like "*\*") {
                 $authType = "Windows Authentication"
@@ -147,7 +147,7 @@ function Test-DbaConnection {
             else {
                 $authType = "SQL Authentication"
             }
-            
+
             # TCP Port
             try {
                 $tcpport = (Get-DbaTcpPort -SqlInstance $server -EnableException).Port
@@ -155,7 +155,7 @@ function Test-DbaConnection {
             catch {
                 $tcpport = $_
             }
-            
+
             # Auth Scheme
             try {
                 $authscheme = (Test-DbaConnectionAuthScheme -SqlInstance $server -WarningVariable authwarning -WarningAction SilentlyContinue).AuthScheme
@@ -163,11 +163,11 @@ function Test-DbaConnection {
             catch {
                 $authscheme = $_
             }
-            
+
             if ($authwarning) {
                 $authscheme = "N/A"
             }
-            
+
             [pscustomobject]@{
                 ComputerName         = $resolved.ComputerName
                 InstanceName         = $instance.InstanceName

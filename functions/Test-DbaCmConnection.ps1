@@ -28,7 +28,7 @@ function Test-DbaCmConnection {
         Note that this function will ignore global configurations limiting the types of connections available and test all connections specified here instead.
 
         Available connection protocol types: "CimRM", "CimDCOM", "Wmi", "PowerShellRemoting"
-    
+
     .PARAMETER Force
         If this switch is enabled, the Alert will be dropped and recreated on Destination.
 
@@ -36,7 +36,7 @@ function Test-DbaCmConnection {
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
         Author: Fred Winmann (@FredWeinmann)
         Tags: ComputerManagement

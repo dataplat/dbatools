@@ -39,7 +39,7 @@ function Get-DbaDbVirtualLogFile {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: VLF, Database, LogFile
 
@@ -92,9 +92,9 @@ function Get-DbaDbVirtualLogFile {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $dbs = $server.Databases | Where-Object IsAccessible
-            
+
             if ($Database) {
                 $dbs = $dbs | Where-Object Name -in $Database
             }

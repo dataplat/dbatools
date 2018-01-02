@@ -6,15 +6,15 @@ function Test-DbaJobOwner {
         .DESCRIPTION
             This function checks all SQL Agent Jobs on an instance against a SQL login to validate if that login owns those SQL Agent Jobs or not.
 
-            By default, the function checks against 'sa' for ownership, but the user can pass a specific login if they use something else. 
-            
+            By default, the function checks against 'sa' for ownership, but the user can pass a specific login if they use something else.
+
             Only SQL Agent Jobs that do not match this ownership will be displayed, but if the -Detailed switch is set all SQL Agent Jobs will be returned.
 
             Best practice reference: http://sqlmag.com/blog/sql-server-tip-assign-ownership-jobs-sysadmin-account
 
-        .PARAMETER SqlInstance 
+        .PARAMETER SqlInstance
             Specifies the SQL Server instance(s) to scan.
-            
+
         .PARAMETER SqlCredential
             Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
@@ -26,10 +26,10 @@ function Test-DbaJobOwner {
 
         .PARAMETER Job
             Specifies the job(s) to process. Options for this list are auto-populated from the server. If unspecified, all jobs will be processed.
-        
+
         .PARAMETER ExcludeJob
             Specifies the job(s) to exclude from processing. Options for this list are auto-populated from the server.
-        
+
         .PARAMETER Login
             Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
 
@@ -40,7 +40,7 @@ function Test-DbaJobOwner {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Agent, Job, Owner
             Author: Michael Fal (@Mike_Fal), http://mikefal.net

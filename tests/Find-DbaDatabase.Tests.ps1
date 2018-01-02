@@ -36,8 +36,8 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Name,SizeMB,Owner,CreateDate,ServiceBrokerGuid,Tables,StoredProcedures,Views,ExtendedProperties,Database'.Split(',')
             ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
         }
-        
-        
+
+
         $results = Find-DbaDatabase -SqlInstance $script:instance2 -Pattern Master
         It "Should return true if Database Master is Found" {
             ($results | Where-Object Name -match 'Master' ) | Should Be $true

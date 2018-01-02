@@ -20,13 +20,13 @@ function Get-DbaDatabaseEncryption {
 
     .PARAMETER IncludeSystemDBs
         Switch parameter that when used will display system database information.
-        
-    .PARAMETER EnableException 
+
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
-    .NOTES 
+
+    .NOTES
         Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -47,13 +47,13 @@ function Get-DbaDatabaseEncryption {
 
     .EXAMPLE
         Get-DbaDatabaseEncryption -SqlInstance DEV01 -ExcludeDatabase MyDB
-        
-        List all encryption found for all databases except MyDB. 
+
+        List all encryption found for all databases except MyDB.
 
     .EXAMPLE
         Get-DbaDatabaseEncryption -SqlInstance DEV01 -IncludeSystemDBs
-        
-        List all encryption found for all databases including the system databases. 
+
+        List all encryption found for all databases including the system databases.
 
 #>
 
@@ -68,12 +68,12 @@ function Get-DbaDatabaseEncryption {
         [switch]$IncludeSystemDBs,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             #For each SQL Server in collection, connect and get SMO object
             Write-Message -Level Verbose -Message "Connecting to $instance"
-            
+
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -81,7 +81,7 @@ function Get-DbaDatabaseEncryption {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             #If IncludeSystemDBs is true, include systemdbs
             #only look at online databases (Status equal normal)
             try {
@@ -94,7 +94,7 @@ function Get-DbaDatabaseEncryption {
                 else {
                     $dbs = $server.Databases | Where-Object { $_.IsAccessible -and $_.IsSystemObject -eq 0 }
                 }
-                
+
                 if ($ExcludeDatabase) {
                     $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
                 }
@@ -102,10 +102,10 @@ function Get-DbaDatabaseEncryption {
             catch {
                 Stop-Function -Message "Unable to gather dbs for $instance" -Target $instance -Continue
             }
-            
+
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $db"
-                
+
                 if ($db.EncryptionEnabled -eq $true) {
                     [PSCustomObject]@{
                         ComputerName             = $server.NetName
@@ -121,9 +121,9 @@ function Get-DbaDatabaseEncryption {
                         Owner                    = $null
                         Object                   = $null
                     }
-                    
+
                 }
-                
+
                 foreach ($cert in $db.Certificates) {
                     [PSCustomObject]@{
                         ComputerName             = $server.NetName
@@ -139,9 +139,9 @@ function Get-DbaDatabaseEncryption {
                         Owner                    = $cert.Owner
                         Object                   = $cert
                     }
-                    
+
                 }
-                
+
                 foreach ($ak in $db.AsymmetricKeys) {
                     [PSCustomObject]@{
                         ComputerName             = $server.NetName
@@ -157,7 +157,7 @@ function Get-DbaDatabaseEncryption {
                         Owner                    = $ak.Owner
                         Object                   = $ak
                     }
-                    
+
                 }
                 foreach ($sk in $db.SymmetricKeys) {
                     [PSCustomObject]@{

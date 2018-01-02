@@ -98,14 +98,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $comparison = Compare-Object -ReferenceObject ($results.DatabaseName) -DifferenceObject (@($db1, $db2, $db3, $db4, $db5, $db6, $db7, $db8))
                 $comparison.Count | Should Be 0
             }
-            
+
             It "Sets a database as online" {
                 $null = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Emergency -Force
                 $result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1 -Online -Force
                 $result.DatabaseName | Should Be $db1
                 $result.Status | Should Be "ONLINE"
             }
-            
+
             if (-not $env:appveyor) {
                 It "Sets a database as offline" {
                     $result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db2 -Offline -Force
@@ -113,7 +113,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                     $result.Status | Should Be "OFFLINE"
                 }
             }
-            
+
             It "Sets a database as emergency" {
                 $result = Set-DbaDatabaseState -SqlInstance $script:instance2 -Database $db3 -Emergency -Force
                 $result.DatabaseName | Should Be $db3
@@ -165,7 +165,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,DatabaseName,RW,Status,Access,Notes,Database'.Split(',')
                 ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
             }
-            
+
             It "Has the correct default properties" {
                 $ExpectedPropsDefault = 'ComputerName,InstanceName,SqlInstance,DatabaseName,RW,Status,Access,Notes'.Split(',')
                 ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)
