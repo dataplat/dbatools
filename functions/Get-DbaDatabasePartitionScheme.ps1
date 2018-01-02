@@ -1,4 +1,4 @@
-Function Get-DbaDatabasePartitionScheme {
+function Get-DbaDatabasePartitionScheme {
     <#
 .SYNOPSIS
 Gets database Partition Schemes

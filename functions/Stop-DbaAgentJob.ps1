@@ -1,4 +1,4 @@
-FUNCTION Stop-DbaAgentJob {
+function Stop-DbaAgentJob {
     <#
         .SYNOPSIS
             Stops a running SQL Server Agent Job.

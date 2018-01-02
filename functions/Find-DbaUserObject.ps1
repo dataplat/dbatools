@@ -1,4 +1,4 @@
-Function Find-DbaUserObject {
+function Find-DbaUserObject {
     <#
 .SYNOPSIS
 Searches SQL Server to find user-owned objects (ie. not dbo or sa) or for any object owned by a specific user specified by the Pattern parameter.

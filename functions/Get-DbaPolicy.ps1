@@ -1,4 +1,4 @@
-Function Get-DbaPolicy {
+function Get-DbaPolicy {
     <#
     .SYNOPSIS
     Returns polices from policy based management from an instance.

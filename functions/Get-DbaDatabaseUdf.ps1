@@ -1,4 +1,4 @@
-Function Get-DbaDatabaseUdf {
+function Get-DbaDatabaseUdf {
     <#
 .SYNOPSIS
 Gets database User Defined Functions

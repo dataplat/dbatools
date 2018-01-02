@@ -1,4 +1,4 @@
-Function Get-DbaFileStreamFolder {
+function Get-DbaFileStreamFolder {
     <#
 
     .SYNOPSIS

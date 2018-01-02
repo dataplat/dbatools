@@ -1,4 +1,4 @@
-Function Get-DbaMsdtc {
+function Get-DbaMsdtc {
     <#
 .SYNOPSIS
 Displays information about the Distributed Transaction Coordinator (MSDTC) on a server

@@ -1,4 +1,4 @@
-FUNCTION Get-DbaDatabaseAssembly {
+function Get-DbaDatabaseAssembly {
     <#
 .SYNOPSIS
 Gets SQL Database Assembly information for each instance(s) of SQL Server.

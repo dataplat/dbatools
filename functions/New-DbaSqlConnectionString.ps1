@@ -1,4 +1,4 @@
-﻿Function New-DbaSqlConnectionString {
+﻿function New-DbaSqlConnectionString {
     <#
 .SYNOPSIS
 Builds or extracts a SQL Server Connection String

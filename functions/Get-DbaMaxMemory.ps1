@@ -1,4 +1,4 @@
-Function Get-DbaMaxMemory {
+function Get-DbaMaxMemory {
     <#
 .SYNOPSIS
 Gets the 'Max Server Memory' configuration setting and the memory of the server.  Works on SQL Server 2000-2014.

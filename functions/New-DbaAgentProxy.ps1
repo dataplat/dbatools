@@ -1,4 +1,4 @@
-Function New-DbaAgentProxy {
+function New-DbaAgentProxy {
     <#
         .SYNOPSIS
         Adds one or more proxies to SQL Server Agent

@@ -1,5 +1,5 @@
 #ValidationTags#FlowControl,Pipeline#
-Function Set-DbaSpn {
+function Set-DbaSpn {
     <#
 .SYNOPSIS
 Sets an SPN for a given service account in active directory (and also enables delegation to the same SPN by default)

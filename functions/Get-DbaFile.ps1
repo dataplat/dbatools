@@ -1,4 +1,4 @@
-Function Get-DbaFile {
+function Get-DbaFile {
     <#
 .SYNOPSIS
 Get-DbaFile finds files in any directory specified on a remote SQL Server

@@ -1,4 +1,4 @@
-FUNCTION Get-DbaServerAuditSpecification {
+function Get-DbaServerAuditSpecification {
     <#
 .SYNOPSIS
 Gets SQL Security Audit Specification information for each instance(s) of SQL Server.

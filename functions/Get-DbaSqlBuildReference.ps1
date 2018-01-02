@@ -1,4 +1,4 @@
-Function Get-DbaSqlBuildReference {
+function Get-DbaSqlBuildReference {
     <#
     .SYNOPSIS
         Returns SQL Server Build infos on a SQL instance

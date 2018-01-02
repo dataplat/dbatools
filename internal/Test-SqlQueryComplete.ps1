@@ -1,4 +1,4 @@
-Function Test-SqlQueryComplete {
+function Test-SqlQueryComplete {
     param (
         [Alias("SqlInstance", "SqlServer")]
         [object]$server,

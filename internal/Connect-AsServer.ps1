@@ -1,4 +1,4 @@
-Function Connect-AsServer {
+function Connect-AsServer {
     <#
 .SYNOPSIS
 Internal function that creates SMO server object.

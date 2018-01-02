@@ -1,4 +1,4 @@
-Function Get-DbaServerProtocol {
+function Get-DbaServerProtocol {
     <#
     .SYNOPSIS
     Gets the SQL Server related server protocols on a computer.

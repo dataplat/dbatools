@@ -1,4 +1,4 @@
-Function Get-DbaDatabaseMasterKey {
+function Get-DbaDatabaseMasterKey {
     <#
 .SYNOPSIS
 Gets specified database master key

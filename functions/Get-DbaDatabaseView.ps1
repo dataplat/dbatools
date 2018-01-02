@@ -1,4 +1,4 @@
-Function Get-DbaDatabaseView {
+function Get-DbaDatabaseView {
     <#
 .SYNOPSIS
 Gets database views
