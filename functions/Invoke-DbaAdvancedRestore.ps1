@@ -331,9 +331,8 @@ function Invoke-DbaAdvancedRestore {
 						else {
 							$script
 						}
-						while ($Restore.Devices.count -gt 0) {
-							$Device = $Restore.Devices[0]
-							$null = $Restore.Devices.Remove($Device)
+						if ($Restore.Devices.Count -gt 0) {
+							$Restore.Devices.Clear()
 						}
 						Write-Message -Level Verbose -Message "Succeeded, Closing Server connection"
 						$server.ConnectionContext.Disconnect()
