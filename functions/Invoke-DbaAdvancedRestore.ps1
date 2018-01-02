@@ -280,10 +280,20 @@ function Invoke-DbaAdvancedRestore {
 							}
 						}
 						else {
-							Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
+							$outerProgress = $BackupCnt/$Backups.Count*100
+							if ($BackupCnt -eq 1) {
+								Write-Progress -id 2 -Activity "Restoring $Database to $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -percentcomplete 0
+							}
+							Write-Progress -id 3 -ParentId 2 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete 0
 							$script = $Restore.Script($Server)
+							$percentcomplete = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
+								Write-Progress -id 3 -ParentId 2 -Activity "Restore $($backup.FullName -Join ',')" -percentcomplete $_.Percent -status ([System.String]::Format("Progress: {0} %", $_.Percent))
+							}
+							$Restore.add_PercentComplete($percentcomplete)
+							$Restore.PercentCompleteNotification = 1
 							$Restore.sqlrestore($Server)
-							Write-Progress -id 2 -activity "Restoring $Database to $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+							Write-Progress -id 3 -ParentId 2 -Activity "Restore $($backup.FullName -Join ',')" -Completed
+							Write-Progress -id 2 -ParentId 1 -Activity "Restoring $Database to $sqlinstance `n Backup $BackupCnt of $($Backups.count)" -percentcomplete $outerProgress -status ([System.String]::Format("Progress: {0:N2} %", $outerProgress))
 						}
 					}
 					catch {
