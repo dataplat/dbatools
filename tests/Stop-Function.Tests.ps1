@@ -1,18 +1,16 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 . $PSScriptRoot\..\internal\Stop-Function.ps1
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
-	Context "Testing non-EnableException: Explicit call" {
-        try
-        {
+    Context "Testing non-EnableException: Explicit call" {
+        try {
             $warning = Stop-Function -Message "Nonsilent Foo" -EnableException $false -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
             $record = $Error[0]
             $failed = $false
         }
-        catch
-        {
+        catch {
             $record = $null
             $failed = $true
         }
@@ -41,23 +39,19 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             $record.FullyQualifiedErrorId | Should Be "dbatools_Invoke-Pester,Stop-Function"
         }
     }
-	
-	Context "Testing non-EnableException: In try/catch" {
-        try
-        {
-            try
-            {
+    
+    Context "Testing non-EnableException: In try/catch" {
+        try {
+            try {
                 $null.GetType()
             }
-            catch
-            {
+            catch {
                 $warning = Stop-Function -Message "Nonsilent Foo" -EnableException $false -InnerErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop 3>&1
                 $record = $Error[0]
                 $failed = $false
             }
         }
-        catch
-        {
+        catch {
             $record = $null
             $failed = $true
         }
@@ -87,62 +81,53 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         }
         
         It "Should have created an error record with the an inner NULL-invocation exception" {
-            try
-            {
+            try {
                 $ExceptionName = $record.Exception.InnerException.GetType().FullName
             }
-            catch
-            {
+            catch {
                 $ExceptionName = "Meeep!"
             }
             
             $ExceptionName | Should Be "System.Management.Automation.RuntimeException"
         }
     }
-	
-	Context "Testing non-EnableException: Continue & ContinueLabel" {
+    
+    Context "Testing non-EnableException: Continue & ContinueLabel" {
         Mock -CommandName "Write-Warning" -MockWith { Param ($Message) }
         
         #region Run Tests
-        try
-        {
+        try {
             $failed = $false
             $a = 0
             $b = 0
-            foreach ($number in (1 .. 3))
-            {
+            foreach ($number in (1 .. 3)) {
                 $a++
-				Stop-Function -Message "Nonsilent Foo" -EnableException $false -Category InvalidOperation -Continue -ErrorAction Stop 3>&1
+                Stop-Function -Message "Nonsilent Foo" -EnableException $false -Category InvalidOperation -Continue -ErrorAction Stop 3>&1
                 $b++
             }
         }
-        catch
-        {
+        catch {
             $failed = $true
         }
         
-        try
-        {
+        try {
             $failed2 = $false
             $c = 0
             $d = 0
             $e = 0
             $f = 0
             
-            :main foreach ($number in (1 .. 3))
-            {
+            :main foreach ($number in (1 .. 3)) {
                 $c++
-                foreach ($Counter in (1 .. 3))
-                {
+                foreach ($Counter in (1 .. 3)) {
                     $d++
-					Stop-Function -Message "Nonsilent Foo" -EnableException $false -Category InvalidOperation -Continue -ContinueLabel "main" -ErrorAction Stop 3>&1
+                    Stop-Function -Message "Nonsilent Foo" -EnableException $false -Category InvalidOperation -Continue -ContinueLabel "main" -ErrorAction Stop 3>&1
                     $e++
                 }
                 $f++
             }
         }
-        catch
-        {
+        catch {
             $failed2 = $true
         }
         #endregion Run Tests
@@ -173,14 +158,12 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     }
     
     Context "Testing silent: Explicit call" {
-        try
-        {
+        try {
             Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidResult -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
             $record = $null
             $failed = $false
         }
-        catch
-        {
+        catch {
             $record = $_
             $failed = $true
         }
@@ -207,21 +190,17 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     }
     
     Context "Testing silent: In try/catch" {
-        try
-        {
-            try
-            {
+        try {
+            try {
                 $null.GetType()
             }
-            catch
-            {
+            catch {
                 Stop-Function -Message "Nonsilent Foo" -EnableException $true -InnerErrorRecord $_ -FunctionName "Invoke-Pester" -Target "Bar" -ErrorAction Stop
                 $record = $null
                 $failed = $false
             }
         }
-        catch
-        {
+        catch {
             $record = $_
             $failed = $true
         }
@@ -251,36 +230,30 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         Mock -CommandName "Write-Error" -MockWith { Param ($Message) }
         
         #region Run Tests
-        try
-        {
+        try {
             $failed = $false
             $a = 0
             $b = 0
-            foreach ($number in (1 .. 3))
-            {
+            foreach ($number in (1 .. 3)) {
                 $a++
                 Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidOperation -SilentlyContinue -ErrorAction Stop
                 $b++
             }
         }
-        catch
-        {
+        catch {
             $failed = $true
         }
         
-        try
-        {
+        try {
             $failed2 = $false
             $c = 0
             $d = 0
             $e = 0
             $f = 0
             
-            :main foreach ($number in (1 .. 3))
-            {
+            :main foreach ($number in (1 .. 3)) {
                 $c++
-                foreach ($Counter in (1 .. 3))
-                {
+                foreach ($Counter in (1 .. 3)) {
                     $d++
                     Stop-Function -Message "Nonsilent Foo" -EnableException $true -Category InvalidOperation -SilentlyContinue -ContinueLabel "main" -ErrorAction Stop
                     $e++
@@ -288,8 +261,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $f++
             }
         }
-        catch
-        {
+        catch {
             $failed2 = $true
         }
         #endregion Run Tests

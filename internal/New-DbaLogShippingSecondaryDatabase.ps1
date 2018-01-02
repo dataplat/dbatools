@@ -1,5 +1,5 @@
 function New-DbaLogShippingSecondaryDatabase {
-	<#
+    <#
 .SYNOPSIS
 New-DbaLogShippingSecondaryDatabase sets up a secondary databases for log shipping.
 
@@ -73,9 +73,9 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command.
 
 .PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
@@ -94,128 +94,128 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
 
 #>
 
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 
-	param (
-		[parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+    param (
+        [parameter(Mandatory = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [object]$SqlInstance,
 
-		[System.Management.Automation.PSCredential]
-		$SqlCredential,
+        [System.Management.Automation.PSCredential]
+        $SqlCredential,
 
-		[int]$BufferCount = -1,
+        [int]$BufferCount = -1,
 
-		[int]$BlockSize = -1,
+        [int]$BlockSize = -1,
 
-		[switch]$DisconnectUsers,
+        [switch]$DisconnectUsers,
 
-		[int]$HistoryRetention = 14420,
+        [int]$HistoryRetention = 14420,
 
-		[int]$MaxTransferSize,
+        [int]$MaxTransferSize,
 
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$PrimaryServer,
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [object]$PrimaryServer,
 
-		[System.Management.Automation.PSCredential]
-		$PrimarySqlCredential,
+        [System.Management.Automation.PSCredential]
+        $PrimarySqlCredential,
 
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$PrimaryDatabase,
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [object]$PrimaryDatabase,
 
-		[int]$RestoreAll = 1,
+        [int]$RestoreAll = 1,
 
-		[int]$RestoreDelay = 0,
+        [int]$RestoreDelay = 0,
 
-		[ValidateSet(0, 'NoRecovery', 1, 'Standby')]
-		[object]$RestoreMode = 0,
+        [ValidateSet(0, 'NoRecovery', 1, 'Standby')]
+        [object]$RestoreMode = 0,
 
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[int]$RestoreThreshold,
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [int]$RestoreThreshold,
 
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$SecondaryDatabase,
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [object]$SecondaryDatabase,
 
-		[int]$ThresholdAlert = 14420,
+        [int]$ThresholdAlert = 14420,
 
-		[switch]$ThresholdAlertEnabled,
+        [switch]$ThresholdAlertEnabled,
 
-		[switch][Alias('Silent')]$EnableException,
+        [switch][Alias('Silent')]$EnableException,
 
-		[switch]$Force
-	)
+        [switch]$Force
+    )
 
-	# Try connecting to the instance
-	Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
-	try {
-		$ServerSecondary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-	}
-	catch {
-		Stop-Function -Message "Could not connect to Sql Server instance $SqlInstance.`n$_" -Target $SqlInstance -Continue
-	}
+    # Try connecting to the instance
+    Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
+    try {
+        $ServerSecondary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+    }
+    catch {
+        Stop-Function -Message "Could not connect to Sql Server instance $SqlInstance.`n$_" -Target $SqlInstance -Continue
+    }
 
-	# Try connecting to the instance
-	Write-Message -Message "Attempting to connect to $PrimaryServer" -Level Verbose
-	try {
-		$ServerPrimary = Connect-SqlInstance -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
-	}
-	catch {
-		Stop-Function -Message "Could not connect to Sql Server instance $PrimaryServer.`n$_" -Target $PrimaryServer -Continue
-	}
+    # Try connecting to the instance
+    Write-Message -Message "Attempting to connect to $PrimaryServer" -Level Verbose
+    try {
+        $ServerPrimary = Connect-SqlInstance -SqlInstance $PrimaryServer -SqlCredential $PrimarySqlCredential
+    }
+    catch {
+        Stop-Function -Message "Could not connect to Sql Server instance $PrimaryServer.`n$_" -Target $PrimaryServer -Continue
+    }
 
-	# Check if the database is present on the primary sql server
-	if ($ServerPrimary.Databases.Name -notcontains $PrimaryDatabase) {
-		Stop-Function -Message "Database $PrimaryDatabase is not available on instance $PrimaryServer" -Target $PrimaryServer -Continue
-	}
+    # Check if the database is present on the primary sql server
+    if ($ServerPrimary.Databases.Name -notcontains $PrimaryDatabase) {
+        Stop-Function -Message "Database $PrimaryDatabase is not available on instance $PrimaryServer" -Target $PrimaryServer -Continue
+    }
 
-	# Check if the database is present on the primary sql server
-	if ($ServerSecondary.Databases.Name -notcontains $SecondaryDatabase) {
-		Stop-Function -Message "Database $SecondaryDatabase is not available on instance $ServerSecondary" -Target $SqlInstance -Continue
-	}
+    # Check if the database is present on the primary sql server
+    if ($ServerSecondary.Databases.Name -notcontains $SecondaryDatabase) {
+        Stop-Function -Message "Database $SecondaryDatabase is not available on instance $ServerSecondary" -Target $SqlInstance -Continue
+    }
 
-	# Check the restore mode
-	if ($RestoreMode -notin 0, 1) {
-		$RestoreMode = switch ($RestoreMode) { "NoRecovery" { 0}  "Standby" { 1 } }
-		Write-Message -Message "Setting restore mode to $RestoreMode." -Level Verbose
-	}
+    # Check the restore mode
+    if ($RestoreMode -notin 0, 1) {
+        $RestoreMode = switch ($RestoreMode) { "NoRecovery" { 0}  "Standby" { 1 } }
+        Write-Message -Message "Setting restore mode to $RestoreMode." -Level Verbose
+    }
 
-	# Check the if Threshold alert needs to be enabled
-	if ($ThresholdAlertEnabled) {
-		[int]$ThresholdAlertEnabled = 1
-		Write-Message -Message "Setting Threshold alert to $ThresholdAlertEnabled." -Level Verbose
-	}
-	else {
-		[int]$ThresholdAlertEnabled = 0
-		Write-Message -Message "Setting Threshold alert to $ThresholdAlertEnabled." -Level Verbose
-	}
+    # Check the if Threshold alert needs to be enabled
+    if ($ThresholdAlertEnabled) {
+        [int]$ThresholdAlertEnabled = 1
+        Write-Message -Message "Setting Threshold alert to $ThresholdAlertEnabled." -Level Verbose
+    }
+    else {
+        [int]$ThresholdAlertEnabled = 0
+        Write-Message -Message "Setting Threshold alert to $ThresholdAlertEnabled." -Level Verbose
+    }
 
-	# Checking the option to disconnect users
-	if ($DisconnectUsers) {
-		[int]$DisconnectUsers = 1
-		Write-Message -Message "Setting disconnect users to $DisconnectUsers." -Level Verbose
-	}
-	else {
-		[int]$DisconnectUsers = 0
-		Write-Message -Message "Setting disconnect users to $DisconnectUsers." -Level Verbose
-	}
+    # Checking the option to disconnect users
+    if ($DisconnectUsers) {
+        [int]$DisconnectUsers = 1
+        Write-Message -Message "Setting disconnect users to $DisconnectUsers." -Level Verbose
+    }
+    else {
+        [int]$DisconnectUsers = 0
+        Write-Message -Message "Setting disconnect users to $DisconnectUsers." -Level Verbose
+    }
 
-	# Check hte combination of the restore mode with the option to disconnect users
-	if ($RestoreMode -eq 0 -and $DisconnectUsers -ne 0) {
-		if ($Force) {
-			[int]$DisconnectUsers = 0
-			Write-Message -Message "Illegal combination of database restore mode $RestoreMode and disconnect users $DisconnectUsers. Setting it to $DisconnectUsers." -Level Warning
-		}
-		else {
-			Stop-Function -Message "Illegal combination of database restore mode $RestoreMode and disconnect users $DisconnectUsers." -Target $SqlInstance -Continue
-		}
-	}
+    # Check hte combination of the restore mode with the option to disconnect users
+    if ($RestoreMode -eq 0 -and $DisconnectUsers -ne 0) {
+        if ($Force) {
+            [int]$DisconnectUsers = 0
+            Write-Message -Message "Illegal combination of database restore mode $RestoreMode and disconnect users $DisconnectUsers. Setting it to $DisconnectUsers." -Level Warning
+        }
+        else {
+            Stop-Function -Message "Illegal combination of database restore mode $RestoreMode and disconnect users $DisconnectUsers." -Target $SqlInstance -Continue
+        }
+    }
 
-	# Set up the query
-	$Query = "EXEC master.sys.sp_add_log_shipping_secondary_database
+    # Set up the query
+    $Query = "EXEC master.sys.sp_add_log_shipping_secondary_database
         @secondary_database = '$SecondaryDatabase'
         ,@primary_server = '$PrimaryServer'
         ,@primary_database = '$PrimaryDatabase'
@@ -228,39 +228,39 @@ New-DbaLogShippingSecondaryDatabase -SqlInstance sql2 -SecondaryDatabase DB1_DR 
         ,@threshold_alert_enabled = $ThresholdAlertEnabled
         ,@history_retention_period = $HistoryRetention "
 
-	# Addinf extra options to the query when needed
-	if ($BlockSize -ne -1) {
-		$Query += ",@block_size = $BlockSize"
-	}
+    # Addinf extra options to the query when needed
+    if ($BlockSize -ne -1) {
+        $Query += ",@block_size = $BlockSize"
+    }
 
-	if ($BufferCount -ne -1) {
-		$Query += ",@buffer_count = $BufferCount"
-	}
+    if ($BufferCount -ne -1) {
+        $Query += ",@buffer_count = $BufferCount"
+    }
 
-	if ($MaxTransferSize -ge 1) {
-		$Query += ",@max_transfer_size = $MaxTransferSize"
-	}
+    if ($MaxTransferSize -ge 1) {
+        $Query += ",@max_transfer_size = $MaxTransferSize"
+    }
 
-	if ($ServerSecondary.Version.Major -gt 9) {
-		$Query += ",@overwrite = 1;"
-	}
-	else {
-		$Query += ";"
-	}
+    if ($ServerSecondary.Version.Major -gt 9) {
+        $Query += ",@overwrite = 1;"
+    }
+    else {
+        $Query += ";"
+    }
 
-	# Execute the query to add the log shipping primary
-	if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance"))) {
-		try {
-			Write-Message -Message "Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance." -Level Output
-			Write-Message -Message "Executing query:`n$Query" -Level Verbose
-			$ServerSecondary.Query($Query)
-		}
-		catch {
-			Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
-			Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query"  -ErrorRecord $_ -Target $SqlInstance -Continue
-		}
-	}
+    # Execute the query to add the log shipping primary
+    if ($PSCmdlet.ShouldProcess($SqlServer, ("Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance"))) {
+        try {
+            Write-Message -Message "Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance." -Level Output
+            Write-Message -Message "Executing query:`n$Query" -Level Verbose
+            $ServerSecondary.Query($Query)
+        }
+        catch {
+            Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
+            Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query"  -ErrorRecord $_ -Target $SqlInstance -Continue
+        }
+    }
 
-	Write-Message -Message "Finished adding the secondary database $SecondaryDatabase to log shipping." -Level Output
+    Write-Message -Message "Finished adding the secondary database $SecondaryDatabase to log shipping." -Level Output
 
 }

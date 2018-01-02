@@ -1,5 +1,5 @@
 function Get-DbaAgentJobCategory {
-	<#
+    <#
 .SYNOPSIS 
 Get-DbaAgentJobCategory retrieves the job categories.
 
@@ -31,14 +31,14 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .PARAMETER EnableException 
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
 .NOTES 
 Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Category
-	
+
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -62,71 +62,71 @@ Get-DbaAgentJobCategory -SqlInstance sstad-pc -CategoryType MultiServerJob
 Return all the job categories that have a type MultiServerJob.
 
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default")]
-	param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[Parameter(Mandatory = $false)]
-		[ValidateNotNullOrEmpty()]
-		[string[]]$Category,
-		[ValidateSet("LocalJob", "MultiServerJob", "None")]
-		[string]$CategoryType,
-		[switch]$Force,
-		[switch][Alias('Silent')]$EnableException
-	)
+    [CmdletBinding(DefaultParameterSetName = "Default")]
+    param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$Category,
+        [ValidateSet("LocalJob", "MultiServerJob", "None")]
+        [string]$CategoryType,
+        [switch]$Force,
+        [switch][Alias('Silent')]$EnableException
+    )
 
-	process {
+    process {
 
-		foreach ($instance in $SqlInstance) {
-			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance."
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
+        foreach ($instance in $SqlInstance) {
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $instance."
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-			# get all the job categories
-			$jobCategories = $server.JobServer.JobCategories |
-				Where-Object {
-				($_.Name -in $Category -or !$Category) -and
-				($_.CategoryType -in $CategoryType -or !$CategoryType)
-			}
+            # get all the job categories
+            $jobCategories = $server.JobServer.JobCategories |
+                Where-Object {
+                ($_.Name -in $Category -or !$Category) -and
+                ($_.CategoryType -in $CategoryType -or !$CategoryType)
+            }
 
-			# Set the default output 
-			$defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'ID', 'CategoryType', 'JobCount'
+            # Set the default output 
+            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'ID', 'CategoryType', 'JobCount'
 
-			# Loop through each of the categories
-			try {
-				foreach ($cat in $jobCategories) {
+            # Loop through each of the categories
+            try {
+                foreach ($cat in $jobCategories) {
 
-					# Get the jobs associated with the category
-					$jobCount = ($server.JobServer.Jobs | Where-Object {$_.CategoryID -eq $cat.ID}).Count
+                    # Get the jobs associated with the category
+                    $jobCount = ($server.JobServer.Jobs | Where-Object {$_.CategoryID -eq $cat.ID}).Count
 
-					# Add new properties to the category object
-					Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name ComputerName -value $server.NetName
-					Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
-					Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-					Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name JobCount -Value $jobCount
+                    # Add new properties to the category object
+                    Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name ComputerName -value $server.NetName
+                    Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
+                    Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
+                    Add-Member -Force -InputObject $cat -MemberType NoteProperty -Name JobCount -Value $jobCount
 
-					# Show the result
-					Select-DefaultView -InputObject $cat -Property $defaults
-				}
-			} 
-			catch {
-				Stop-Function -ErrorRecord $_ -Target $instance -Message "Failure. Collection may have been modified" -Continue
-			}
+                    # Show the result
+                    Select-DefaultView -InputObject $cat -Property $defaults
+                }
+            } 
+            catch {
+                Stop-Function -ErrorRecord $_ -Target $instance -Message "Failure. Collection may have been modified" -Continue
+            }
 
-		} # for each instance
+        } # for each instance
 
-	} # end process
+    } # end process
 
-	end {
-		if (Test-FunctionInterrupt) { return }
-		Write-Message -Message "Finished retrieving job category." -Level Verbose
-	}
+    end {
+        if (Test-FunctionInterrupt) { return }
+        Write-Message -Message "Finished retrieving job category." -Level Verbose
+    }
 
 
 }

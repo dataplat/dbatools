@@ -1,5 +1,4 @@
-function Get-DbaDependency
-{
+function Get-DbaDependency {
     <#
         .SYNOPSIS
             Finds object dependencies and their relevant creation scripts.
@@ -62,11 +61,9 @@ function Get-DbaDependency
         [Alias('Silent')]$EnableException
     )
     
-    Begin
-    {
+    Begin {
         #region Utility functions
-        function Get-DependencyTree
-        {
+        function Get-DependencyTree {
             [CmdletBinding()]
             Param (
                 $Object,
@@ -109,8 +106,7 @@ function Get-DbaDependency
             return $scripter.DiscoverDependencies($urnCollection, $EnumParents)
         }
         
-        function Read-DependencyTree
-        {
+        function Read-DependencyTree {
             [CmdletBinding()]
             Param (
                 [System.Object]
@@ -134,8 +130,7 @@ function Get-DbaDependency
             if ($InputObject.NextSibling) { Read-DependencyTree -InputObject $InputObject.NextSibling -Tier $Tier -Parent $Parent -EnumParents $EnumParents }
         }
         
-        function Get-DependencyTreeNodeDetail
-        {
+        function Get-DependencyTreeNodeDetail {
             [CmdletBinding()]
             Param (
                 [Parameter(ValueFromPipeline = $true)]
@@ -149,8 +144,7 @@ function Get-DbaDependency
                 $AllowSystemObjects
             )
             
-            Begin
-            {
+            Begin {
                 $scripter = New-Object Microsoft.SqlServer.Management.Smo.Scripter
                 $options = New-Object Microsoft.SqlServer.Management.Smo.ScriptingOptions
                 $options.DriAll = $true
@@ -160,10 +154,8 @@ function Get-DbaDependency
                 $scripter.Server = $Server
             }
             
-            process
-            {
-                foreach ($Item in $SmoObject)
-                {
+            process {
+                foreach ($Item in $SmoObject) {
                     $richobject = $Server.GetSmoObject($Item.urn)
                     $parent = $Server.GetSmoObject($Item.Parent.Urn)
                     
@@ -194,40 +186,32 @@ function Get-DbaDependency
             }
         }
         
-        function Select-DependencyPrecedence
-        {
+        function Select-DependencyPrecedence {
             [CmdletBinding()]
             Param (
                 [Parameter(ValueFromPipeline = $true)]
                 $Dependency
             )
             
-            Begin
-            {
+            Begin {
                 $list = @()
             }
-            Process
-            {
-                foreach ($dep in $Dependency)
-                {
+            Process {
+                foreach ($dep in $Dependency) {
                     # Killing the pipeline is generally a bad idea, but since we have to group and sort things, we have not really a choice
                     $list += $dep
                 }
             }
-            End
-            {
+            End {
                 $list | Group-Object -Property Object | ForEach-Object { $_.Group | Sort-Object -Property Tier -Descending | Select-Object -First 1 } | Sort-Object Tier
             }
         }
         #endregion Utility functions
     }
-    Process
-    {
-        foreach ($Item in $InputObject)
-        {
+    Process {
+        foreach ($Item in $InputObject) {
             Write-Message -EnableException $EnableException -Level 5 -Message "Processing: $Item"
-            if ($null -eq $Item.urn)
-            {
+            if ($null -eq $Item.urn) {
                 Stop-Function -Message "$Item is not a valid SMO object" -EnableException $EnableException -Category InvalidData -Continue -Target $Item
             }
             
@@ -237,8 +221,7 @@ function Get-DbaDependency
             do { $parent = $parent.parent }
             until (($parent.urn.type -eq "Server") -or (-not $parent))
             
-            if (-not $parent)
-            {
+            if (-not $parent) {
                 Stop-Function -Message "Failed to find valid server object in input: $Item" -EnableException $EnableException -Category InvalidData -Continue -Target $Item
             }
             
@@ -247,8 +230,7 @@ function Get-DbaDependency
             $tree = Get-DependencyTree -Object $Item -AllowSystemObjects $false -Server $server -FunctionName (Get-PSCallStack)[0].COmmand -EnableException $EnableException -EnumParents $Parents
             $limitCount = 2
             if ($IncludeSelf) { $limitCount = 1 }
-            if ($tree.Count -lt $limitCount)
-            {
+            if ($tree.Count -lt $limitCount) {
                 Write-Message -Message "No dependencies detected for $($Item)" -Level 2 -EnableException $EnableException
                 continue
             }

@@ -1,5 +1,5 @@
 function Clear-DbaWaitStatistics {
-	<# 
+    <# 
 	.SYNOPSIS 
 		Clears wait statistics
 
@@ -43,41 +43,41 @@ function Clear-DbaWaitStatistics {
 		Clear-DbaWaitStatistics -SqlInstance sql2008, sqlserver2012 -Confirm:$false
 		Clears wait stats on servers sql2008 and sqlserver2012, without prompting
 	#>
-	[CmdletBinding(ConfirmImpact = 'High', SupportsShouldProcess)]
-	param (
-		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlServer", "SqlServers")]
-		[DbaInstance[]]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[switch][Alias('Silent')]$EnableException
-	)
-	process {
-		foreach ($instance in $SqlInstance) {
-			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-			
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
-			
-			if ($Pscmdlet.ShouldProcess($instance, "Performing CLEAR of sys.dm_os_wait_stats")) {
-				try {
-					$server.Query("DBCC SQLPERF (N'sys.dm_os_wait_stats', CLEAR);")
-					$status = "Success"
-				}
-				catch {
-					$status = $_.Exception
-				}
-				
-				[PSCustomObject]@{
-					ComputerName	 = $server.NetName
-					InstanceName	 = $server.ServiceName
-					SqlInstance	     = $server.DomainInstanceName
-					Status		     = $status
-				}
-			}
-		}
-	}
+    [CmdletBinding(ConfirmImpact = 'High', SupportsShouldProcess)]
+    param (
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [DbaInstance[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [switch][Alias('Silent')]$EnableException
+    )
+    process {
+        foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            if ($Pscmdlet.ShouldProcess($instance, "Performing CLEAR of sys.dm_os_wait_stats")) {
+                try {
+                    $server.Query("DBCC SQLPERF (N'sys.dm_os_wait_stats', CLEAR);")
+                    $status = "Success"
+                }
+                catch {
+                    $status = $_.Exception
+                }
+
+                [PSCustomObject]@{
+                    ComputerName = $server.NetName
+                    InstanceName = $server.ServiceName
+                    SqlInstance  = $server.DomainInstanceName
+                    Status       = $status
+                }
+            }
+        }
+    }
 }

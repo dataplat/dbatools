@@ -1,5 +1,5 @@
 Function Start-DbaSqlService {
-	<#
+    <#
     .SYNOPSIS
     Starts SQL Server services on a computer. 
 
@@ -69,41 +69,41 @@ Function Start-DbaSqlService {
     Starts the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
 
 #>
-	[CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess = $true)]
-	Param (
-		[Parameter(ParameterSetName = "Server", Position = 1)]
-		[Alias("cn", "host", "Server")]
-		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-		[Alias("Instance")]
-		[string[]]$InstanceName,
-		[ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS")]
-		[string[]]$Type,
-		[parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Service")]
-		[object[]]$ServiceCollection,
-		[int]$Timeout = 30,
-		[PSCredential]$Credential,
-		[switch][Alias('Silent')]$EnableException
-	)
-	begin {
-		$processArray = @()
-		if ($PsCmdlet.ParameterSetName -eq "Server") {
-			$serviceParams = @{ ComputerName = $ComputerName }
-			if ($InstanceName) { $serviceParams.InstanceName = $InstanceName }
-			if ($Type) { $serviceParams.Type = $Type }
-			if ($Credential) { $serviceParams.Credential = $Credential }
-			if ($EnableException) { $serviceParams.Silent = $EnableException }
-			$serviceCollection = Get-DbaSqlService @serviceParams
-		}
-	}
-	process {
-		#Get all the objects from the pipeline before proceeding
-		$processArray += $serviceCollection
-	}
-	end {
-		$processArray = $processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) }
-		if ($processArray) {
-			Update-ServiceStatus -ServiceCollection $processArray -Action 'start' -Timeout $Timeout -EnableException $EnableException
-		}
-		else { Write-Message -Level Warning -EnableException $EnableException -Message "No SQL Server services found with current parameters." }
-	}
+    [CmdletBinding(DefaultParameterSetName = "Server", SupportsShouldProcess = $true)]
+    Param (
+        [Parameter(ParameterSetName = "Server", Position = 1)]
+        [Alias("cn", "host", "Server")]
+        [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+        [Alias("Instance")]
+        [string[]]$InstanceName,
+        [ValidateSet("Agent", "Browser", "Engine", "FullText", "SSAS", "SSIS", "SSRS")]
+        [string[]]$Type,
+        [parameter(ValueFromPipeline = $true, Mandatory = $true, ParameterSetName = "Service")]
+        [object[]]$ServiceCollection,
+        [int]$Timeout = 30,
+        [PSCredential]$Credential,
+        [switch][Alias('Silent')]$EnableException
+    )
+    begin {
+        $processArray = @()
+        if ($PsCmdlet.ParameterSetName -eq "Server") {
+            $serviceParams = @{ ComputerName = $ComputerName }
+            if ($InstanceName) { $serviceParams.InstanceName = $InstanceName }
+            if ($Type) { $serviceParams.Type = $Type }
+            if ($Credential) { $serviceParams.Credential = $Credential }
+            if ($EnableException) { $serviceParams.Silent = $EnableException }
+            $serviceCollection = Get-DbaSqlService @serviceParams
+        }
+    }
+    process {
+        #Get all the objects from the pipeline before proceeding
+        $processArray += $serviceCollection
+    }
+    end {
+        $processArray = $processArray | Where-Object { (!$InstanceName -or $_.InstanceName -in $InstanceName) -and (!$Type -or $_.ServiceType -in $Type) }
+        if ($processArray) {
+            Update-ServiceStatus -ServiceCollection $processArray -Action 'start' -Timeout $Timeout -EnableException $EnableException
+        }
+        else { Write-Message -Level Warning -EnableException $EnableException -Message "No SQL Server services found with current parameters." }
+    }
 }

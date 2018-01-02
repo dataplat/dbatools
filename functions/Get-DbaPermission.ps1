@@ -1,98 +1,98 @@
 function Get-DbaPermission {
-	<#
-		.SYNOPSIS
-			Get a list of Server and Database level permissions
+    <#
+        .SYNOPSIS
+            Get a list of Server and Database level permissions
 
-		.DESCRIPTION
-			Retrieves a list of permissions
+        .DESCRIPTION
+            Retrieves a list of permissions
 
-			Permissions link principals to securables.
-			Principals exist on Windows, Instance and Database level.
-			Securables exist on Instance and Database level.
-			A permission state can be GRANT, DENY or REVOKE.
-			The permission type can be SELECT, CONNECT, EXECUTE and more.
+            Permissions link principals to securables.
+            Principals exist on Windows, Instance and Database level.
+            Securables exist on Instance and Database level.
+            A permission state can be GRANT, DENY or REVOKE.
+            The permission type can be SELECT, CONNECT, EXECUTE and more.
 
-			See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information
+            See https://msdn.microsoft.com/en-us/library/ms191291.aspx for more information
 
- 		.PARAMETER SqlInstance
-			The SQL Server instance to connect to.
+        .PARAMETER SqlInstance
+            The SQL Server instance to connect to.
 
         .PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-			To connect as a different Windows user, run PowerShell as that user.
+            To connect as a different Windows user, run PowerShell as that user.
 
-		.PARAMETER Database
-			Specifies one or more database(s) to process. If unspecified, all databases will be processed.
+        .PARAMETER Database
+            Specifies one or more database(s) to process. If unspecified, all databases will be processed.
 
-		.PARAMETER ExcludeDatabase
-			Specifies one or more database(s) to exclude from processing.
+        .PARAMETER ExcludeDatabase
+            Specifies one or more database(s) to exclude from processing.
 
-		.PARAMETER IncludeServerLevel
-			If this switch is enabled, information about Server Level Permissions will be output.
+        .PARAMETER IncludeServerLevel
+            If this switch is enabled, information about Server Level Permissions will be output.
 
-		.PARAMETER NoSystemObjects
-			If this switch is enabled, permissions on system securables will be excluded.
+        .PARAMETER NoSystemObjects
+            If this switch is enabled, permissions on system securables will be excluded.
 
-		.PARAMETER EnableException 
-			If this switch is enabled exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and provide a friendly error message.
+        .PARAMETER EnableException 
+            If this switch is enabled exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and provide a friendly error message.
 
-		.NOTES
-			Tags: Permissions, Databases
-			Author: Klaas Vandenberghe ( @PowerDBAKlaas )
+        .NOTES
+            Tags: Permissions, Databases
+            Author: Klaas Vandenberghe ( @PowerDBAKlaas )
 
-			Website: https://dbatools.io
-			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-		.LINK
-			https://dbatools.io/Get-DbaPermission
+        .LINK
+            https://dbatools.io/Get-DbaPermission
 
-		.EXAMPLE
-			Get-DbaPermission -SqlInstance ServerA\sql987
+        .EXAMPLE
+            Get-DbaPermission -SqlInstance ServerA\sql987
 
-			Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable.
+            Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable.
 
-		.EXAMPLE
-			Get-DbaPermission -SqlInstance ServerA\sql987 | Format-Table -AutoSize
+        .EXAMPLE
+            Get-DbaPermission -SqlInstance ServerA\sql987 | Format-Table -AutoSize
 
-			Returns a formatted table displaying Server, Database, permission state, permission type, grantee, granteetype, securable and securabletype.
+            Returns a formatted table displaying Server, Database, permission state, permission type, grantee, granteetype, securable and securabletype.
 
-		.EXAMPLE
-			Get-DbaPermission -SqlInstance ServerA\sql987 -NoSystemObjects -IncludeServerLevel
+        .EXAMPLE
+            Get-DbaPermission -SqlInstance ServerA\sql987 -NoSystemObjects -IncludeServerLevel
 
-			Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
-			in all databases and on the server level, but not on system securables.
+            Returns a custom object with Server name, Database name, permission state, permission type, grantee and securable
+            in all databases and on the server level, but not on system securables.
 
-		.EXAMPLE
-			Get-DbaPermission -SqlInstance sql2016 -Database master
+        .EXAMPLE
+            Get-DbaPermission -SqlInstance sql2016 -Database master
 
-			Returns a custom object with permissions for the master database.
-	#>
-	[CmdletBinding()]
-	param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstance[]]$SqlInstance,
-		[Alias("Credential")]
-		[PSCredential]$SqlCredential,
-		[Alias("Databases")]
-		[object[]]$Database,
-		[object[]]$ExcludeDatabase,
-		[switch]$IncludeServerLevel,
-		[switch]$NoSystemObjects,
-		[switch][Alias('Silent')]$EnableException
-	)
-	begin {
-		if ($NoSystemObjects) {
-			$ExcludeSystemObjectssql = "WHERE major_id > 0 "
-		}
+            Returns a custom object with permissions for the master database.
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstance[]]$SqlInstance,
+        [Alias("Credential")]
+        [PSCredential]$SqlCredential,
+        [Alias("Databases")]
+        [object[]]$Database,
+        [object[]]$ExcludeDatabase,
+        [switch]$IncludeServerLevel,
+        [switch]$NoSystemObjects,
+        [switch][Alias('Silent')]$EnableException
+    )
+    begin {
+        if ($NoSystemObjects) {
+            $ExcludeSystemObjectssql = "WHERE major_id > 0 "
+        }
 
-		$ServPermsql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName,
+        $ServPermsql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName,
 					   ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
 					   SERVERPROPERTY('ServerName') AS SqlInstance
 						, [Database] = ''
@@ -146,7 +146,7 @@ function Get-DbaPermission {
                     WHERE spr.[type]='R'
                     ;"
 
-		$DBPermsql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName,
+        $DBPermsql = "SELECT SERVERPROPERTY('MachineName') AS ComputerName,
 					ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
 					SERVERPROPERTY('ServerName') AS SqlInstance
 					, [Database] = DB_NAME()
@@ -213,45 +213,45 @@ function Get-DbaPermission {
                 WHERE dp.[type]='R'
 	                AND dp.is_fixed_role=1
 				;"
-	}
+    }
 
-	process {
-		foreach ($instance in $SqlInstance) {
-			Write-Message -Level Verbose -Message "Connecting to $instance."
-			
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
-			
-			if ($IncludeServerLevel) {
-				Write-Message -Level Debug -Message "T-SQL: $ServPermsql"
-				$server.Query($ServPermsql)
-			}
+    process {
+        foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Connecting to $instance."
+            
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+            
+            if ($IncludeServerLevel) {
+                Write-Message -Level Debug -Message "T-SQL: $ServPermsql"
+                $server.Query($ServPermsql)
+            }
 
-			$dbs = $server.Databases
+            $dbs = $server.Databases
 
-			if ($Database) {
-				$dbs = $dbs | Where-Object Name -In $Database
-			}
+            if ($Database) {
+                $dbs = $dbs | Where-Object Name -In $Database
+            }
 
-			if ($ExcludeDatabase) {
-				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
-			}
+            if ($ExcludeDatabase) {
+                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
+            }
 
-			foreach ($db in $dbs) {
-				Write-Message -Level Verbose -Message "Processing $db on $instance."
+            foreach ($db in $dbs) {
+                Write-Message -Level Verbose -Message "Processing $db on $instance."
 
-				if ($db.IsAccessible -eq $false) {
-					Write-Warning "The database $db is not accessible. Skipping database."
-					Continue
-				}
+                if ($db.IsAccessible -eq $false) {
+                    Write-Warning "The database $db is not accessible. Skipping database."
+                    Continue
+                }
 
-				Write-Message -Level Debug -Message "T-SQL: $DBPermsql"
-				$db.ExecuteWithResults($DBPermsql).Tables.Rows
-			}
-		}
-	}
+                Write-Message -Level Debug -Message "T-SQL: $DBPermsql"
+                $db.ExecuteWithResults($DBPermsql).Tables.Rows
+            }
+        }
+    }
 }
