@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $server.Query("CREATE TABLE [$db].[dbo].[Example] (id int identity, name nvarchar(max))")
             $server.Query("INSERT INTO [$db].[dbo].[Example] values ('sample')")
         }
-    
+
     }
     AfterAll {
         # these for sure
@@ -40,23 +40,23 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         Get-DbaDatabase -SqlInstance $script:instance2 -Database $testlastbackup | Backup-DbaDatabase -Type Log
         $server.Query("INSERT INTO [$testlastbackup].[dbo].[Example] values ('sample4')")
     }
-    
+
     Context "Test a single database" {
         $results = Test-DbaLastBackup -SqlInstance $script:instance2 -Database $testlastbackup
-        
+
         It "Should return success" {
             $results.RestoreResult | Should Be "Success"
             $results.DbccResult | Should Be "Success"
         }
     }
-    
+
     Context "Testing the whole instance" {
         $results = Test-DbaLastBackup -SqlInstance $script:instance2 -ExcludeDatabase tempdb
         It "Should be more than 3 databases" {
             $results.count | Should BeGreaterThan 3
         }
     }
-    
+
     Context "Restores using a specific path" {
         $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database "dbatoolsci_singlerestore" | Backup-DbaDatabase
         $null = Test-DbaLastBackup -SqlInstance $script:instance2 -Database "dbatoolsci_singlerestore" -DataDirectory C:\Temp -LogDirectory C:\Temp -NoDrop

@@ -22,7 +22,7 @@ function Get-DbaAgentJobHistory {
 
         .PARAMETER ExcludeJob
         The job(s) to exclude - this list is auto-populated from the server
-    
+
         .PARAMETER StartDate
             The DateTime starting from which the history is wanted. If unspecified, all available records will be processed.
 
@@ -35,7 +35,7 @@ function Get-DbaAgentJobHistory {
         .PARAMETER WithOutputFile
             Use this switch to retrieve the output file (only if you want step details). Bonus points, we handle the quirks
             of SQL Agent tokens to the best of our knowledge (https://technet.microsoft.com/it-it/library/ms175575(v=sql.110).aspx)
-    
+
         .PARAMETER JobCollection
             An array of SMO jobs
 
@@ -43,7 +43,7 @@ function Get-DbaAgentJobHistory {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Job, Agent
             Author: Klaas Vandenberghe ( @PowerDbaKlaas )
@@ -80,7 +80,7 @@ function Get-DbaAgentJobHistory {
             Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 -Job 'Output File Cleanup'
 
             Returns all properties for all SQl Agent Job execution results of the 'Output File Cleanup' job on sql2\Inst2K17.
-            
+
 
         .EXAMPLE
             Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 -Job 'Output File Cleanup' -WithOutputFile
@@ -97,12 +97,12 @@ function Get-DbaAgentJobHistory {
             Get-DbaAgentJobHistory -SqlInstance sql2\Inst2K17 -StartDate '2017-05-22' -EndDate '2017-05-23 12:30:00'
 
             Returns the SQL Agent Job execution results between 2017/05/22 00:00:00 and 2017/05/23 12:30:00 on sql2\Inst2K17.
-    
-        .EXAMPLE 
+
+        .EXAMPLE
             Get-DbaAgentJob -SqlInstance sql2016 | Where Name -match backup | Get-DbaAgentJobHistory
-    
+
             Gets all jobs with the name that match the regex pattern "backup" and then gets the job history from those. You can also use -Like *backup* in this example.
-    
+
     #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
@@ -121,17 +121,17 @@ function Get-DbaAgentJobHistory {
         [Microsoft.SqlServer.Management.Smo.Agent.Job]$JobCollection,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     begin {
         $filter = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobHistoryFilter
         $filter.StartRunDate = $StartDate
         $filter.EndRunDate = $EndDate
-        
-        
+
+
         if ($NoJobSteps -and $WithOutputFile) {
             Stop-Function -Message "You can't use -NoJobSteps and -WithOutputFile together"
         }
-        
+
         function Get-JobHistory {
             [CmdletBinding()]
             param (
@@ -149,17 +149,17 @@ function Get-DbaAgentJobHistory {
                 'SRVR'      = $Server.DomainInstanceName
                 # WMI( property ) impossible
             }
-            
-            
+
+
             $squote_rex = [regex]"(?<!')'(?!')"
             $dquote_rex = [regex]'(?<!")"(?!")'
             $rbrack_rex = [regex]'(?<!])](?!])'
-            
+
             function Resolve-TokenEscape($method, $value) {
                 if (!$method) {
                     return $value
                 }
-                $value = switch ($method) { 
+                $value = switch ($method) {
                     'ESCAPE_SQUOTE' { $squote_rex.Replace($value, "''") }
                     'ESCAPE_DQUOTE' { $dquote_rex.Replace($value, '""') }
                     'ESCAPE_RBRACKET' { $rbrack_rex.Replace($value, ']]') }
@@ -168,7 +168,7 @@ function Get-DbaAgentJobHistory {
                 }
                 return $value
             }
-            
+
             #'STEPID' =  stepid
             #'STRTTM' job begin time
             #'STRTDT' job begin date
@@ -225,11 +225,11 @@ function Get-DbaAgentJobHistory {
                 if ($NoJobSteps) {
                     $executions = $executions | Where-Object { $_.StepID -eq 0 }
                 }
-                
+
                 if ($WithOutputFile) {
                     $outmap = @{}
                     $outfiles = Get-DbaAgentJobOutputFile -SqlInstance $Server -SqlCredential $SqlCredential -Job $Job
-                    
+
                     foreach ($out in $outfiles) {
                         if (!$outmap.ContainsKey($out.Job)) {
                             $outmap[$out.Job] = @{}
@@ -262,7 +262,7 @@ function Get-DbaAgentJobHistory {
                     else {
                         Select-DefaultView -InputObject $execution -Property ComputerName, InstanceName, SqlInstance, 'JobName as Job', StepName, RunDate, RunDuration, RunStatus
                     }
-                    
+
                 }
             }
             catch {
@@ -270,17 +270,17 @@ function Get-DbaAgentJobHistory {
             }
         }
     }
-    
+
     process {
-        
+
         if (Test-FunctionInterrupt) { return }
-        
+
         if ($JobCollection) {
             foreach ($currentjob in $JobCollection) {
                 Get-JobHistory -Server $currentjob.Parent.Parent -Job $currentjob.Name -WithOutputFile:$WithOutputFile
             }
         }
-        
+
         foreach ($instance in $SqlInstance) {
             Write-Message -Message "Attempting to connect to $instance" -Level Verbose
             try {
@@ -289,8 +289,8 @@ function Get-DbaAgentJobHistory {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
-            
+
+
             if ($ExcludeJob) {
                 $jobs = $server.JobServer.Jobs.Name | Where-Object { $_ -notin $ExcludeJob }
                 foreach ($currentjob in $jobs) {

@@ -5,7 +5,7 @@ function Watch-DbaXESession {
 
     .DESCRIPTION
     Watch live XEvent Data as it happens - this command runs until you kill the PowerShell session or Ctrl-C.
-    
+
     Thanks to Dave Mason (@BeginTry) for some straightforward code samples https://itsalljustelectrons.blogspot.be/2017/01/SQL-Server-Extended-Event-Handling-Via-Powershell.html
 
     .PARAMETER SqlInstance
@@ -16,18 +16,18 @@ function Watch-DbaXESession {
 
     .PARAMETER Session
     Only return a specific session. This parameter is auto-populated.
-        
+
     .PARAMETER Raw
     Returns the Microsoft.SqlServer.XEvent.Linq.QueryableXEventData enumeration object
-    
+
     .PARAMETER SessionObject
     Internal parameter
-    
+
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
     .NOTES
     Tags: Xevent
     Website: https://dbatools.io
@@ -44,9 +44,9 @@ function Watch-DbaXESession {
 
     .EXAMPLE
     Get-DbaXESession  -SqlInstance sql2016 -Session system_health | Watch-DbaXESession | Select -ExpandProperty Fields
-    
+
     Also shows events for the system_health session as it happens and expands the Fields property. Looks a bit like this
-    
+
     Name                Type                                   Value
     ----                ----                                   -----
     id                  System.UInt32                              0
@@ -90,7 +90,7 @@ function Watch-DbaXESession {
             Write-Message -Level Verbose -Message "Getting XEvents Sessions on $SqlInstance."
             $SessionObject = $XEStore.sessions | Where-Object Name -eq $Session | Select-Object -First 1
         }
-        
+
         if ($SessionObject) {
             try {
                 $xevent = New-Object -TypeName Microsoft.SqlServer.XEvent.Linq.QueryableXEventData(
@@ -99,7 +99,7 @@ function Watch-DbaXESession {
                     [Microsoft.SqlServer.XEvent.Linq.EventStreamSourceOptions]::EventStream,
                     [Microsoft.SqlServer.XEvent.Linq.EventStreamCacheOptions]::DoNotCache
                 )
-                
+
                 if ($raw) {
                     foreach ($row in $xevent) {
                         $row

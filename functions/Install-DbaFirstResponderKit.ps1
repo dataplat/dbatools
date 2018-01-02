@@ -4,8 +4,8 @@ function Install-DbaFirstResponderKit {
             Installs or updates the First Responder Kit stored procedures.
 
         .DESCRIPTION
-            Downloads, extracts and installs the First Responder Kit stored procedures: 
-            sp_Blitz, sp_BlitzWho, sp_BlitzFirst, sp_BlitzIndex, sp_BlitzCache and sp_BlitzTrace. 
+            Downloads, extracts and installs the First Responder Kit stored procedures:
+            sp_Blitz, sp_BlitzWho, sp_BlitzFirst, sp_BlitzIndex, sp_BlitzCache and sp_BlitzTrace.
 
             First Responder Kit links:
             http://FirstResponderKit.org
@@ -24,7 +24,7 @@ function Install-DbaFirstResponderKit {
             To connect as a different Windows user, run PowerShell as that user.
 
         .PARAMETER Database
-            Specifies the database to instal the First Responder Kit stored procedures into 
+            Specifies the database to instal the First Responder Kit stored procedures into
 
         .PARAMETER Branch
             Specifies an alternate branch of the First Responder Kit to install.
@@ -33,8 +33,8 @@ function Install-DbaFirstResponderKit {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-                
-        .NOTES 
+
+        .NOTES
             Author: Tara Kizer, Brent Ozar Unlimited (https://www.brentozar.com/)
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -58,18 +58,18 @@ function Install-DbaFirstResponderKit {
 
             Logs into server1\instance1 with SQL authentication and then installs the FRK in the master database.
 
-        .EXAMPLE 
+        .EXAMPLE
             Install-DbaFirstResponderKit -SqlInstance sql2016\standardrtm, sql2016\sqlexpress, sql2014
 
             Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.
 
-        .EXAMPLE 
+        .EXAMPLE
             $servers = "sql2016\standardrtm", "sql2016\sqlexpress", "sql2014"
             $servers | Install-DbaFirstResponderKit
 
             Logs into sql2016\standardrtm, sql2016\sqlexpress and sql2014 with Windows authentication and then installs the FRK in the master database.
     #>
-    
+
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, ValueFromPipeline)]
@@ -80,26 +80,26 @@ function Install-DbaFirstResponderKit {
         [object]$Database = "master",
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     begin {
         $url = "https://github.com/BrentOzarULTD/SQL-Server-First-Responder-Kit/archive/$Branch.zip"
-        
+
         $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
         $zipfile = "$temp\SQL-Server-First-Responder-Kit-$Branch.zip"
         $zipfolder = "$temp\SQL-Server-First-Responder-Kit-$Branch\"
-        
+
         if ($zipfile | Test-Path) {
             Remove-Item -Path $zipfile -ErrorAction SilentlyContinue
         }
-        
+
         if ($zipfolder | Test-Path) {
             Remove-Item -Path $zipfolder -Recurse -ErrorAction SilentlyContinue
         }
-        
+
         $null = New-Item -ItemType Directory -Path $zipfolder -ErrorAction SilentlyContinue
-        
+
         Write-Message -Level Verbose -Message "Downloading and unzipping the First Responder Kit zip file."
-        
+
         try {
             try {
                 Invoke-WebRequest $url -OutFile $zipfile
@@ -109,18 +109,18 @@ function Install-DbaFirstResponderKit {
                 (New-Object System.Net.WebClient).Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
                 Invoke-WebRequest $url -OutFile $zipfile
             }
-            
+
             # Unblock if there's a block
             Unblock-File $zipfile -ErrorAction SilentlyContinue
-            
+
             # Unzip the files
             $shell = New-Object -ComObject Shell.Application
             $zip = $shell.NameSpace($zipfile)
-            
+
             foreach ($item in $zip.items()) {
                 $shell.Namespace($temp).CopyHere($item)
             }
-            
+
             Remove-Item -Path $zipfile
         }
         catch {
@@ -128,12 +128,12 @@ function Install-DbaFirstResponderKit {
             return
         }
     }
-    
+
     process {
         if (Test-FunctionInterrupt) {
             return
         }
-        
+
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance."
@@ -142,7 +142,7 @@ function Install-DbaFirstResponderKit {
             catch {
                 Stop-Function -Message "Failure." -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             Write-Message -Level Output -Message "Starting installing/updating the First Responder Kit stored procedures in $database on $instance."
             $allprocedures_query = "select name from sys.procedures where is_ms_shipped = 0"
             $allprocedures = ($server.Query($allprocedures_query, $Database)).Name
@@ -151,11 +151,11 @@ function Install-DbaFirstResponderKit {
                 $scriptname = $script.Name
                 if ($scriptname -ne "sp_BlitzRS.sql") {
                     $sql = [IO.File]::ReadAllText($script.FullName)
-                    
+
                     if ($scriptname -eq "sp_BlitzQueryStore.sql") {
                         if ($server.VersionMajor -lt 13) { continue }
                     }
-                    
+
                     foreach ($query in ($sql -Split "\nGO\b")) {
                         $query = $query.Trim()
                         if ($query) {

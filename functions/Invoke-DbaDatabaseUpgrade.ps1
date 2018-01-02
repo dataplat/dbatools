@@ -4,8 +4,8 @@ Function Invoke-DbaDatabaseUpgrade {
     Take a database and upgrades it to compatibility of the SQL Instance its hosted on. Based on https://thomaslarock.com/2014/06/upgrading-to-sql-server-2014-a-dozen-things-to-check/
 
     .DESCRIPTION
-    Updates compatibility level, then runs CHECKDB with data_purity, DBCC updateusage, sp_updatestats and finally sp_refreshview against all user views. 
-        
+    Updates compatibility level, then runs CHECKDB with data_purity, DBCC updateusage, sp_updatestats and finally sp_refreshview against all user views.
+
     .PARAMETER SqlInstance
     The SQL Server that you're connecting to.
 
@@ -20,7 +20,7 @@ Function Invoke-DbaDatabaseUpgrade {
 
     .PARAMETER AllUserDatabases
     Run command against all user databases
-    
+
     .PARAMETER Force
     Don't skip over databases that are already at the same level the instance is
 
@@ -35,10 +35,10 @@ Function Invoke-DbaDatabaseUpgrade {
 
     .PARAMETER NoRefreshView
     Skip view update
-    
+
     .PARAMETER DatabaseCollection
     A collection of databases (such as returned by Get-DbaDatabase)
-    
+
     .PARAMETER WhatIf
     Shows what would happen if the command were to run
 
@@ -53,7 +53,7 @@ Function Invoke-DbaDatabaseUpgrade {
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
     .NOTES
         Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
         Tags: Shrink, Databases
@@ -62,13 +62,13 @@ Function Invoke-DbaDatabaseUpgrade {
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
         License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-    
+
     .LINK
         https://dbatools.io/Invoke-DbaDatabaseUpgrade
 
     .EXAMPLE
         Invoke-DbaDatabaseUpgrade -SqlInstance PRD-SQL-MSD01 -Database Test
-        
+
         Runs the below processes against the databases
         -- Puts compatibility of database to level of SQL Instance
         -- Runs CHECKDB DATA_PURITY
@@ -78,17 +78,17 @@ Function Invoke-DbaDatabaseUpgrade {
 
     .EXAMPLE
         Invoke-DbaDatabaseUpgrade -SqlInstance PRD-SQL-INT01 -Database Test -NoRefreshView
-        
+
         Runs the upgrade command skipping the sp_refreshview update on all views
-    
+
     .EXAMPLE
         Invoke-DbaDatabaseUpgrade -SqlInstance PRD-SQL-INT01 -Database Test -Force
-        
+
         If database Test is already at the correct compatibility, runs every necessary step
-    
+
     .EXAMPLE
         Get-DbaDatabase -SqlInstance sql2016 | Out-GridView -Passthru | Invoke-DbaDatabaseUpgrade
-        
+
         Get only specific databases using GridView and pass those to Invoke-DbaDatabaseUpgrade
 #>
     [CmdletBinding(SupportsShouldProcess)]
@@ -110,17 +110,17 @@ Function Invoke-DbaDatabaseUpgrade {
         [switch][Alias('Silent')]$EnableException
     )
     process {
-        
+
         if (Test-Bound -not 'SqlInstance', 'DatabaseCollection') {
             Write-Message -Level Warning -Message "You must specify either a SQL instance or pipe a database collection"
             continue
         }
-        
+
         if (Test-Bound -not 'Database', 'DatabaseCollection', 'ExcludeDatabase', 'AllUserDatabases') {
             Write-Message -Level Warning -Message "You must explicitly specify a database. Use -Database, -ExcludeDatabase, -AllUserDatabases or pipe a database collection"
             continue
         }
-        
+
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level VeryVerbose -Message "Connecting to <c='green'>$instance</c>" -Target $instance
@@ -132,7 +132,7 @@ Function Invoke-DbaDatabaseUpgrade {
             }
             $DatabaseCollection += $server.Databases | Where-Object IsAccessible
         }
-        
+
         $DatabaseCollection = $DatabaseCollection | Where-Object { $_.IsSystemObject -eq $false }
         if ($Database) {
             $DatabaseCollection = $DatabaseCollection | Where-Object { $_.Name -contains $Database }
@@ -140,13 +140,13 @@ Function Invoke-DbaDatabaseUpgrade {
         if ($ExcludeDatabase) {
             $DatabaseCollection = $DatabaseCollection | Where-Object { $_.Name -notcontains $ExcludeDatabase }
         }
-        
+
         foreach ($db in $DatabaseCollection) {
             # create objects to use in updates
             $server = $db.Parent
             $ServerVersion = $server.VersionMajor
             Write-Message -Level Verbose -Message "SQL Server is using Version: $ServerVersion"
-            
+
             $ogcompat = $db.CompatibilityLevel
             $dbname = $db.Name
             $dbversion = switch ($db.CompatibilityLevel) {
@@ -182,7 +182,7 @@ Function Invoke-DbaDatabaseUpgrade {
             else {
                 $comResult = "No change"
             }
-            
+
             if (!($NoCheckDb)) {
                 Write-Message -Level Verbose -Message "Updating $db with DBCC CHECKDB DATA_PURITY"
                 If ($Pscmdlet.ShouldProcess($server, "Updating $db with DBCC CHECKDB DATA_PURITY")) {
@@ -200,7 +200,7 @@ Function Invoke-DbaDatabaseUpgrade {
             else {
                 Write-Message -Level Verbose -Message "Ignoring CHECKDB DATA_PURITY"
             }
-            
+
             if (!($NoUpdateUsage)) {
                 Write-Message -Level Verbose -Message "Updating $db with DBCC UPDATEUSAGE"
                 If ($Pscmdlet.ShouldProcess($server, "Updating $db with DBCC UPDATEUSAGE")) {
@@ -219,7 +219,7 @@ Function Invoke-DbaDatabaseUpgrade {
                 Write-Message -Level Verbose -Message "Ignore DBCC UPDATEUSAGE"
                 $UpdateUsageResult = "Skipped"
             }
-            
+
             if (!($NoUpdatestats)) {
                 Write-Message -Level Verbose -Message "Updating $db statistics"
                 If ($Pscmdlet.ShouldProcess($server, "Updating $db statistics")) {
@@ -238,7 +238,7 @@ Function Invoke-DbaDatabaseUpgrade {
                 Write-Message -Level Verbose -Message "Ignoring sp_updatestats"
                 $UpdateStatsResult = "Skipped"
             }
-            
+
             if (!($NoRefreshView)) {
                 Write-Message -Level Verbose -Message "Refreshing $db Views"
                 $dbViews = $db.Views | Where-Object IsSystemObject -eq $false
@@ -247,9 +247,9 @@ Function Invoke-DbaDatabaseUpgrade {
                     $viewName = $dbView.Name
                     $viewSchema = $dbView.Schema
                     $fullName = $viewSchema + "." + $viewName
-                    
+
                     $tsqlupdateView = "EXECUTE sp_refreshview N'$fullName';  "
-                    
+
                     If ($Pscmdlet.ShouldProcess($server, "Refreshing view $fullName on $db")) {
                         try {
                             $db.ExecuteNonQuery($tsqlupdateView)
@@ -265,10 +265,10 @@ Function Invoke-DbaDatabaseUpgrade {
                 Write-Message -Level Verbose -Message "Ignore View Refreshes"
                 $RefreshViewResult = "Skipped"
             }
-            
+
             If ($Pscmdlet.ShouldProcess("console", "Outputting object")) {
                 $db.Refresh()
-                
+
                 [PSCustomObject]@{
                     ComputerName          = $server.NetName
                     InstanceName          = $server.ServiceName

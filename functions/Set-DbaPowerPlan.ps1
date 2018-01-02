@@ -1,23 +1,23 @@
 function Set-DbaPowerPlan {
     <#
         .SYNOPSIS
-            Sets the SQL Server OS's Power Plan. 
-            
+            Sets the SQL Server OS's Power Plan.
+
         .DESCRIPTION
             Sets the SQL Server OS's Power Plan. Defaults to High Performance which is best practice.
-                
+
             If your organization uses a custom power plan that is considered best practice, specify -CustomPowerPlan.
-                
+
             References:
             https://support.microsoft.com/en-us/kb/2207548
             http://www.sqlskills.com/blogs/glenn/windows-power-plan-effects-on-newer-intel-processors/
-            
+
         .PARAMETER ComputerName
             The server(s) to set the Power Plan on.
-            
+
         .PARAMETER PowerPlan
             Specifies the Power Plan that you wish to use. Valid options for this match the Windows default Power Plans of "Power Saver", "Balanced", and "High Performance".
-            
+
         .PARAMETER CustomPowerPlan
             Specifies the name of a custom Power Plan to use.
 
@@ -27,9 +27,9 @@ function Set-DbaPowerPlan {
         .PARAMETER Confirm
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .NOTES 
+        .NOTES
             Requires: WMI access to servers
-                
+
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Copyright (C) 2016 Chrissy LeMaire
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -41,12 +41,12 @@ function Set-DbaPowerPlan {
             Set-DbaPowerPlan -ComputerName sqlserver2014a
 
             Sets the Power Plan to High Performance. Skips it if its already set.
-            
-        .EXAMPLE   
+
+        .EXAMPLE
             Set-DbaPowerPlan -ComputerName sqlcluster -CustomPowerPlan 'Maximum Performance'
-            
+
             Sets the Power Plan to the custom power plan called "Maximum Performance". Skips it if its already set.
-        
+
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
@@ -57,7 +57,7 @@ function Set-DbaPowerPlan {
         [string]$PowerPlan = 'High Performance',
         [string]$CustomPowerPlan
     )
-    
+
     begin {
         if ($CustomPowerPlan.Length -gt 0) {
             $PowerPlan = $CustomPowerPlan
@@ -67,13 +67,13 @@ function Set-DbaPowerPlan {
             try {
                 Write-Verbose "Testing connection to $server and resolving IP address."
                 $ipaddr = (Test-Connection $server -Count 1 -ErrorAction SilentlyContinue).Ipv4Address | Select-Object -First 1
-                
+
             }
             catch {
                 Write-Warning "Can't connect to $server."
                 return
             }
-            
+
             try {
                 Write-Verbose "Getting Power Plan information from $server."
                 $query = "Select ElementName from Win32_PowerPlan WHERE IsActive = 'true'"
@@ -84,19 +84,19 @@ function Set-DbaPowerPlan {
                 Write-Warning "Can't connect to WMI on $server."
                 return
             }
-            
+
             if ($currentplan -eq $null) {
                 # the try/catch above isn't working, so make it silent and handle it here.
                 Write-Warning "Cannot get Power Plan for $server."
                 return
             }
-            
+
             $planinfo = [PSCustomObject]@{
                 Server            = $server
                 PreviousPowerPlan = $currentplan
                 ActivePowerPlan   = $PowerPlan
             }
-            
+
             if ($PowerPlan -ne $currentplan) {
                 if ($Pscmdlet.ShouldProcess($server, "Changing Power Plan from $CurrentPlan to $PowerPlan")) {
                     try {
@@ -115,15 +115,15 @@ function Set-DbaPowerPlan {
                     Write-Warning "PowerPlan on $server is already set to $PowerPlan. Skipping."
                 }
             }
-            
+
             return $planinfo
         }
-        
-        
+
+
         $collection = New-Object System.Collections.ArrayList
         $processed = New-Object System.Collections.ArrayList
     }
-    
+
     process {
         foreach ($server in $ComputerName) {
             if ($server -match 'Server\=') {
@@ -135,11 +135,11 @@ function Set-DbaPowerPlan {
                 # There was some kind of parsing bug here, don't clown
                 $server = $lol.TrimStart("\=")
             }
-            
+
             if ($server -match '\\') {
                 $server = $server.Split('\\')[0]
             }
-            
+
             if ($server -notin $processed) {
                 $null = $processed.Add($server)
                 Write-Verbose "Connecting to $server."
@@ -147,9 +147,9 @@ function Set-DbaPowerPlan {
             else {
                 continue
             }
-            
+
             $data = Set-DbaPowerPlan $server
-            
+
             if ($data.Count -gt 1) {
                 $data.GetEnumerator() | ForEach-Object { $null = $collection.Add($_) }
             }
@@ -158,7 +158,7 @@ function Set-DbaPowerPlan {
             }
         }
     }
-    
+
     end {
         If ($Pscmdlet.ShouldProcess("console", "Showing results")) {
             return $collection

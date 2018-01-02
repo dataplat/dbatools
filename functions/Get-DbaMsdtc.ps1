@@ -69,14 +69,14 @@ Get DTC status for the computer srv0042 and show in a grid view
 
 
 #>
-    
+
     [CmdletBinding()]
     Param (
         [Parameter(ValueFromPipeline = $true)]
         [Alias('cn', 'host', 'Server')]
         [string[]]$Computername = $env:COMPUTERNAME
     )
-    
+
     BEGIN {
         $functionName = (Get-PSCallstack)[0].Command
         $ComputerName = $ComputerName | ForEach-Object {$_.split("\")[0]} | Select-Object -Unique

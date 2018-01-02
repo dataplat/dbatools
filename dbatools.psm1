@@ -5,24 +5,24 @@ function Import-ModuleFile {
     <#
     .SYNOPSIS
         Helps import dbatools files according to configuration
-    
+
     .DESCRIPTION
         Helps import dbatools files according to configuration
         Always dotsource this function!
-    
+
     .PARAMETER Path
         The full path to the file to import
-    
+
     .EXAMPLE
         PS C:\> Import-ModuleFile -Path $function.FullName
-    
+
         Imports the file stored at '$function.FullName'
 #>
     [CmdletBinding()]
     Param (
         $Path
     )
-    
+
     if ($script:doDotSource) { . $Path }
     else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText($Path))), $null, $null) }
 }
@@ -31,16 +31,16 @@ function Write-ImportTime {
     <#
     .SYNOPSIS
         Writes an entry to the import module time debug list
-    
+
     .DESCRIPTION
         Writes an entry to the import module time debug list
-    
+
     .PARAMETER Text
         The message to write
-    
+
     .EXAMPLE
         PS C:\> Write-ImportTime -Text "Starting SMO Import"
-    
+
         Adds the message "Starting SMO Import" to the debug list
 #>
     [CmdletBinding()]
@@ -48,11 +48,11 @@ function Write-ImportTime {
         [string]$Text,
         $Timestamp = (Get-Date)
     )
-    
+
     if ($dbatools_disableTimeMeasurements) { return }
-    
+
     if (-not $script:dbatools_ImportPerformance) { $script:dbatools_ImportPerformance = @() }
-    
+
     if (([System.Management.Automation.PSTypeName]'Sqlcollaborative.Dbatools.Configuration.Config').Type -eq $null) {
         $script:dbatools_ImportPerformance += New-Object PSObject -Property @{ Time = $timestamp; Action = $Text }
     }
@@ -60,7 +60,7 @@ function Write-ImportTime {
         if ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Count -eq 0) {
             foreach ($entry in $script:dbatools_ImportPerformance) { [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($entry.Action, $entry.Time, ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId)))) }
         }
-        
+
         [Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::ImportTimeEntries.Add((New-Object Sqlcollaborative.Dbatools.dbaSystem.StartTimeEntry($Text, $timestamp, ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))))
     }
 }
@@ -133,9 +133,9 @@ if (-not ([System.Management.Automation.PSTypeName]'Microsoft.SqlServer.Manageme
     Write-ImportTime -Text "Starting import SMO libraries"
 }
 
-<# 
+<#
 
-    Do the rest of the loading 
+    Do the rest of the loading
 
 #>
 
@@ -545,7 +545,7 @@ $timeSpent = 0
 while (($script:smoRunspace.Runspace.RunspaceAvailability -eq 'Busy') -or ($script:dbatoolsConfigRunspace.Runspace.RunspaceAvailability -eq 'Busy')) {
     Start-Sleep -Milliseconds 50
     $timeSpent = $timeSpent + 50
-    
+
     if ($timeSpent -ge $timeout) {
         Write-Warning @"
 The module import has hit a timeout while waiting for some background tasks to finish.

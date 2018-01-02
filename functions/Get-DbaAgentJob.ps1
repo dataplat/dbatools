@@ -25,7 +25,7 @@ FUNCTION Get-DbaAgentJob {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Job, Agent
             Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
@@ -56,15 +56,15 @@ FUNCTION Get-DbaAgentJob {
             Get-DbaAgentJob -SqlInstance localhost -ExcludeJob BackupDiff
 
             Returns all SQl Agent Jobs for the local SQL Server instances, except the BackupDiff Job.
-            
+
         .EXAMPLE
             Get-DbaAgentJob -SqlInstance localhost -NoDisabledJobs
 
             Returns all SQl Agent Jobs for the local SQL Server instances, excluding the disabled jobs.
-    
+
         .EXAMPLE
             $servers | Get-DbaAgentJob | Out-GridView -Passthru | Start-DbaAgentJob -WhatIf
-    
+
             Find all of your Jobs from servers in the $server collection, select the jobs you want to start then see jobs would start if you ran Start-DbaAgentJob
     #>
     [CmdletBinding()]
@@ -91,7 +91,7 @@ FUNCTION Get-DbaAgentJob {
             }
 
             $jobs = $server.JobServer.Jobs
-            
+
             if ($Job) {
                 $jobs = $jobs | Where-Object Name -In $Job
             }
@@ -101,12 +101,12 @@ FUNCTION Get-DbaAgentJob {
             if ($NoDisabledJobs) {
                 $jobs = $Jobs | Where-Object IsEnabled -eq $true
             }
-            
+
             foreach ($agentJob in $jobs) {
                 Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name ComputerName -value $agentJob.Parent.Parent.NetName
                 Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name InstanceName -value $agentJob.Parent.Parent.ServiceName
                 Add-Member -Force -InputObject $agentJob -MemberType NoteProperty -Name SqlInstance -value $agentJob.Parent.Parent.DomainInstanceName
-                
+
                 Select-DefaultView -InputObject $agentJob -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, CurrentRunStatus, CurrentRunRetryAttempt, 'IsEnabled as Enabled', LastRunDate, LastRunOutcome, DateCreated, HasSchedule, OperatorToEmail, 'DateCreated as CreateDate'
             }
         }

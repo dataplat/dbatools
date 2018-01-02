@@ -1,7 +1,7 @@
 function Copy-DbaSsisCatalog {
     <#
-        .SYNOPSIS 
-           Copy-DbaSsisCatalog migrates Folders, SSIS projects, and environments from one SQL Server to another. 
+        .SYNOPSIS
+           Copy-DbaSsisCatalog migrates Folders, SSIS projects, and environments from one SQL Server to another.
 
         .DESCRIPTION
             By default, all folders, projects, and environments are copied. The -Project parameter can be specified to copy only one project, if desired.
@@ -31,7 +31,7 @@ function Copy-DbaSsisCatalog {
             Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
             To connect as a different Windows user, run PowerShell as that user.
-            
+
         .PARAMETER Force
             If this switch is enabled, the SSIS Catalog will be dropped and recreated on Destination if it already exists.
 
@@ -55,29 +55,29 @@ function Copy-DbaSsisCatalog {
 
         .PARAMETER Confirm
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-           
+
         .NOTES
             Tags: Migration, SSIS
             Author: Phil Schwartz (philschwartz.me, @pschwartzzz)
-                
+
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
             Copyright (C) 2016 Chrissy LeMaire
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
         .LINK
             https://dbatools.io/Copy-DbaSsisCatalog
-            
-        .EXAMPLE   
+
+        .EXAMPLE
             Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster
 
             Copies all folders, environments and SSIS Projects from sqlserver2014a to sqlcluster, using Windows credentials to authenticate to both instances. If folders with the same name exist on the destination they will be skipped, but projects will be redeployed.
 
-        .EXAMPLE   
+        .EXAMPLE
             Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -Project Archive_Tables -SourceSqlCredential $cred -Force
 
             Copies a single Project, the Archive_Tables Project, from sqlserver2014a to sqlcluster using SQL credentials to authenticate to sqlserver2014a and Windows credentials to authenticate to sqlcluster. If a Project with the same name exists on sqlcluster, it will be deleted and recreated because -Force was used.
 
-        .EXAMPLE   
+        .EXAMPLE
             Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
 
             Shows what would happen if the command were executed using force.
@@ -104,7 +104,7 @@ function Copy-DbaSsisCatalog {
         [Switch]$EnableSqlClr,
         [Switch]$Force
     )
-    
+
     begin {
         function Get-RemoteIntegrationService {
             param (
@@ -130,7 +130,7 @@ function Copy-DbaSsisCatalog {
                 throw "No Integration Services service was found on the destination, please ensure the feature is installed and running."
             }
         }
-        
+
         function Invoke-ProjectDeployment {
             param (
                 [String]$Project,
@@ -171,7 +171,7 @@ function Copy-DbaSsisCatalog {
                 }
             }
         }
-        
+
         function New-CatalogFolder {
             param (
                 [String]$Folder,
@@ -198,7 +198,7 @@ function Copy-DbaSsisCatalog {
             $destFolder.Alter()
             $destFolder.Refresh()
         }
-        
+
         function New-FolderEnvironment {
             param (
                 [String]$Folder,
@@ -227,12 +227,12 @@ function Copy-DbaSsisCatalog {
             $targetEnv.Alter()
             $targetEnv.Refresh()
         }
-        
+
         function New-SSISDBCatalog {
             param (
                 [System.Security.SecureString]$Password
             )
-            
+
             if (!$Password) {
                 Write-Output "SSISDB Catalog requires a password."
                 $pass1 = Read-Host "Enter a password" -AsSecureString
@@ -247,21 +247,21 @@ function Copy-DbaSsisCatalog {
             else {
                 $plainTextPass = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password))
             }
-            
+
             $catalog = New-Object "$ISNamespace.Catalog" ($destinationSSIS, "SSISDB", $plainTextPass)
             $catalog.Create()
             $catalog.Refresh()
         }
 
         $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
-        
+
         $sourceConnection = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         $destinationConnection = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-        
+
         if ($sourceConnection.versionMajor -lt 11 -or $destinationConnection.versionMajor -lt 11) {
             throw "SSISDB catalog is only available on Sql Server 2012 and above, exiting..."
         }
-        
+
         try {
             Get-RemoteIntegrationService -Computer $Destination
         }
@@ -269,7 +269,7 @@ function Copy-DbaSsisCatalog {
             Write-Exception $_
             throw "An error occurred when checking the destination for Integration Services. Is Integration Services installed?"
         }
-        
+
         try {
             Write-Verbose "Connecting to $Source integration services."
             $sourceSSIS = New-Object "$ISNamespace.IntegrationServices" $sourceConnection
@@ -286,15 +286,15 @@ function Copy-DbaSsisCatalog {
             Write-Exception $_
             throw "There was an error connecting to the destination integration services."
         }
-        
+
         $sourceCatalog = $sourceSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
         $destinationCatalog = $destinationSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
-        
+
         $sourceFolders = $sourceCatalog.Folders
         $destinationFolders = $destinationCatalog.Folders
     }
     process {
-        
+
         if (!$sourceCatalog) {
             throw "The source SSISDB catalog does not exist."
         }
@@ -321,9 +321,9 @@ function Copy-DbaSsisCatalog {
                         $destinationConnection.Configuration.ShowAdvancedOptions.ConfigValue = $true
                         $changeback = $true
                     }
-                    
+
                     $destinationConnection.Configuration.IsSqlClrEnabled.ConfigValue = $true
-                    
+
                     if ($changeback -eq $true) {
                         $destinationConnection.Configuration.ShowAdvancedOptions.ConfigValue = $false
                     }
@@ -352,7 +352,7 @@ function Copy-DbaSsisCatalog {
                 else {
                     New-SSISDBCatalog -Password $CreateCatalogPassword
                 }
-                
+
                 $destinationSSIS.Refresh()
                 $destinationCatalog = $destinationSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
                 $destinationFolders = $destinationCatalog.Folders
@@ -376,7 +376,7 @@ function Copy-DbaSsisCatalog {
                             catch {
                                 Write-Exception $_
                             }
-                            
+
                         }
                     }
                 }
@@ -425,7 +425,7 @@ function Copy-DbaSsisCatalog {
                 }
             }
         }
-        
+
         # Refresh folders for project and environment deployment
         if ($Pscmdlet.ShouldProcess($Destination, "Refresh folders for project deployment")) {
             try {
@@ -436,7 +436,7 @@ function Copy-DbaSsisCatalog {
             }
             $destinationFolders.Refresh()
         }
-        
+
         if ($folder) {
             $sourceFolders = $sourceFolders | Where-Object { $_.Name -eq $folder }
             if (!$sourceFolders) {
@@ -475,7 +475,7 @@ function Copy-DbaSsisCatalog {
                 }
             }
         }
-        
+
         if ($environment) {
             $folderDeploy = $sourceFolders | Where-Object { $_.Environments.Name -eq $environment }
             if (!$folderDeploy) {

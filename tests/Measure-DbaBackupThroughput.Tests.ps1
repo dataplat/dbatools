@@ -14,7 +14,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         AfterAll {
             $null = Get-DbaDatabase -SqlInstance $server -Database $db | Remove-DbaDatabase -Confirm:$false
         }
-        
+
         $results = Measure-DbaBackupThroughput -SqlInstance $server -Database $db
         It "Should return just one backup" {
             $results.Database.Count -eq 1 | Should Be $true

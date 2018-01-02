@@ -7,7 +7,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     InModuleScope dbatools {
         #mock Connect-SqlInstance { $true }
         mock Test-DbaSqlPath { $true }
-        
+
         Context "Test Connection and User Rights" {
             It "Should throw on an invalid SQL Connection" {
                 #mock Test-SQLConnection {(1..12) | %{[System.Collections.ArrayList]$t += @{ConnectSuccess = $false}}}
@@ -89,8 +89,8 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
                 return $obj
             }
-            
-            
+
+
             $results = Get-XpDirTreeRestoreFile -path c:\temp -SqlInstance bad\bad -EnableException $true
             It "Should return array of 4 files - recursion" {
                 $results.count | Should Be 4

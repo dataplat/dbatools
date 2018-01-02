@@ -1,7 +1,7 @@
 Function Stop-DbaSqlService {
     <#
     .SYNOPSIS
-    Stops SQL Server services on a computer. 
+    Stops SQL Server services on a computer.
 
     .DESCRIPTION
     Stops the SQL Server related services on one or more computers. Will follow SQL Server service dependencies.
@@ -34,7 +34,7 @@ Function Stop-DbaSqlService {
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
     .PARAMETER WhatIf
     Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
@@ -46,7 +46,7 @@ Function Stop-DbaSqlService {
 
     .NOTES
     Author: Kirill Kravtsov( @nvarscar )
-    Tags: 
+    Tags:
     dbatools PowerShell module (https://dbatools.io)
     Copyright (C) 2017 Chrissy LeMaire
     License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -59,7 +59,7 @@ Function Stop-DbaSqlService {
 
     Stops the SQL Server related services on computer sqlserver2014a.
 
-    .EXAMPLE   
+    .EXAMPLE
     'sql1','sql2','sql3'| Get-DbaSqlService | Stop-DbaSqlService
 
     Gets the SQL Server related services on computers sql1, sql2 and sql3 and stops them.
@@ -116,8 +116,8 @@ Function Stop-DbaSqlService {
         foreach ($service in $processArray) {
             if ($Force -and $service.ServiceType -eq 'Engine' -and !($processArray | Where-Object { $_.ServiceType -eq 'Agent' -and $_.InstanceName -eq $service.InstanceName -and $_.ComputerName -eq $service.ComputerName })) {
                 #Construct parameters to call Get-DbaSqlService
-                $serviceParams = @{ 
-                    ComputerName = $service.ComputerName 
+                $serviceParams = @{
+                    ComputerName = $service.ComputerName
                     InstanceName = $service.InstanceName
                     Type         = 'Agent'
                 }

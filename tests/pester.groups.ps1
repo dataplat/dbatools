@@ -18,7 +18,7 @@ $TestsRunGroups = @{
         'Get-DbaDatabaseState',
         'Dismount-DbaDatabase'
     )
-    
+
     # do not run everywhere
     "disabled"          = @()
 }

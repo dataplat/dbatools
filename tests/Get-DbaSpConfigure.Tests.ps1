@@ -7,17 +7,17 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server = Connect-DbaInstance -SqlInstance $script:instance1
         $configs = $server.Query("sp_configure")
         $remotequerytimeout = $configs | Where-Object name -match 'remote query timeout'
-        
+
         It "returns equal to or more results than the straight T-SQL query" {
             $results = Get-DbaSpConfigure -SqlInstance $script:instance1
             $results.count -ge $configs.count
         }
-        
+
         It "returns two results" {
             $results = Get-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteQueryTimeout, AllowUpdates
             $results.Count | Should Be 2
         }
-        
+
         It "matches the output of sp_configure " {
             $results = Get-DbaSpConfigure -SqlInstance $script:instance1 -ConfigName RemoteQueryTimeout
             $results.ConfiguredValue -eq $remotequerytimeout.config_value | Should Be $true

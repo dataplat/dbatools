@@ -8,7 +8,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = Add-DbaComputerCertificate -Path $script:appveyorlabrepo\certificates\localhost.crt -Confirm:$false
             $thumbprint = "29C469578D6C6211076A09CEE5C5797EEA0C2713"
         }
-        
+
         $results = Remove-DbaComputerCertificate -Thumbprint $thumbprint -Confirm:$false
 
         It "returns the store Name" {
@@ -17,11 +17,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "returns the folder Name" {
             $results.Folder -eq "My" | Should Be $true
         }
-        
+
         It "reports the proper status of Removed" {
             $results.Status -eq "Removed" | Should Be $true
         }
-        
+
         It "really removed it" {
             $results = Get-DbaComputerCertificate -Thumbprint $thumbprint
             $results | Should Be $null

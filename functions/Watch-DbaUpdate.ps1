@@ -1,11 +1,11 @@
 function Watch-DbaUpdate {
-    <# 
-        .SYNOPSIS 
+    <#
+        .SYNOPSIS
             Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once per release.
 
-        .DESCRIPTION 
+        .DESCRIPTION
             Just for fun - checks the PowerShell Gallery every 1 hour for updates to dbatools. Notifies once max per release.
-            
+
             Anyone know how to make it clickable so that it opens an URL?
 
         .NOTES
@@ -14,10 +14,10 @@ function Watch-DbaUpdate {
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-        .LINK 
+        .LINK
             https://dbatools.io/Watch-DbaUpdate
 
-        .EXAMPLE   
+        .EXAMPLE
             Watch-DbaUpdate
 
             Watches the gallery for updates to dbatools.
@@ -28,36 +28,36 @@ function Watch-DbaUpdate {
             Write-Warning "This command only supports Windows 10 and higher."
             return
         }
-        
+
         if ($null -eq (Get-ScheduledTask -TaskName "dbatools version check" -ErrorAction SilentlyContinue)) {
             Install-DbaWatchUpdate
         }
-        
+
         # leave this in for the scheduled task
         $module = Get-Module -Name dbatools
-        
+
         if (!$module) {
             Import-Module dbatools
             $module = Get-Module -Name dbatools
         }
-        
+
         $galleryVersion = (Find-Module -Name dbatools -Repository PSGallery).Version
         $localVersion = $module.Version
-        
+
         if ($galleryVersion -le $localVersion) { return }
-        
+
         $file = "$env:LOCALAPPDATA\dbatools\watchupdate.xml"
-        
+
         $new = [pscustomobject]@{
             NotifyVersion = $galleryVersion
         }
-        
+
         # now that notifications stay until they are checked, we just have to keep
         # track of the last version we notified about
-        
+
         if (Test-Path $file) {
             $old = Import-Clixml -Path $file -ErrorAction SilentlyContinue
-            
+
             if ($galleryVersion -gt $old.NotifyVersion) {
                 Export-Clixml -InputObject $new -Path $file
                 Show-Notification
@@ -65,11 +65,11 @@ function Watch-DbaUpdate {
         }
         else {
             $directory = Split-Path $file
-            
+
             if (!(Test-Path $directory)) {
                 $null = New-Item -ItemType Directory -Path $directory
             }
-            
+
             Export-Clixml -InputObject $new -Path $file
             Show-Notification
         }

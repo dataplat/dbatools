@@ -1,12 +1,12 @@
 function Find-DbaLoginInGroup {
     <#
 .SYNOPSIS
-Finds Logins in Active Directory groups that have logins on the SQL Instance. 
+Finds Logins in Active Directory groups that have logins on the SQL Instance.
 
 .DESCRIPTION
 Outputs all the active directory groups members for a server, or limits it to find a specific AD user in the groups
 
-.NOTES 
+.NOTES
 Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
 Author: Simone Bizzotto, @niphlod
 
@@ -14,7 +14,7 @@ dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
 Copyright (C) 2016 Chrissy LeMaire
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.PARAMETER SqlInstance 
+.PARAMETER SqlInstance
 SQL Server name or SMO object representing the SQL Server to connect to. This can be a
 collection and receive pipeline input.
 
@@ -59,7 +59,7 @@ Returns all active directory users within all windows AD groups that have logins
             Write-warning "Failed to load Assembly needed"
             break
         }
-        
+
         function Get-AllLogins {
             param
             (
@@ -117,7 +117,7 @@ Returns all active directory users within all windows AD groups that have logins
             }
         }
     }
-    
+
     process {
         foreach ($Instance in $SqlInstance) {
             try {
@@ -128,14 +128,14 @@ Returns all active directory users within all windows AD groups that have logins
                 Write-Warning "Failed to connect to: $Instance"
                 continue
             }
-            
+
             $AdGroups = $server.Logins | Where-Object { $_.LoginType -eq "WindowsGroup" -and $_.Name -ne "BUILTIN\Administrators" -and $_.Name -notlike "*NT SERVICE*" }
-            
+
             foreach ($AdGroup in $AdGroups) {
                 Write-Verbose "Looking at Group: $AdGroup"
                 $ADGroupOut += Get-AllLogins $AdGroup.Name
             }
-            
+
             if (-not $Login) {
                 $res = $ADGroupOut
             }

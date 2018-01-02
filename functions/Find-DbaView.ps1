@@ -33,7 +33,7 @@ By default system databases are ignored but you can include them within the sear
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Author: Cláudio Silva (@ClaudioESSilva)
 
@@ -165,7 +165,7 @@ Searches in "mydb" database views for "runtime" in the textbody
 
                     foreach ($vw in $Views) {
                         $totalcount++; $vwcount++; $everyservervwcount++
-                        
+
                         $viewSchema = $row.ViewSchema
                         $view = $vw.Name
 

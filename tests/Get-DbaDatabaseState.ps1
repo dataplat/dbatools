@@ -3,7 +3,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    
+
     Context "Reading db statuses" {
         BeforeAll {
             $script:instance2 = $env:COMPUTERNAME
@@ -91,13 +91,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $result.DatabaseName | Should Be $db8
                 $result.RW | Should Be "READ_ONLY"
             }
-            
+
             $result = Get-DbaDatabaseState -SqlInstance $script:instance2 -Database $db1
             It "Has the correct properties" {
                 $ExpectedProps = 'SqlInstance,InstanceName,ComputerName,DatabaseName,RW,Status,Access,Database'.Split(',')
                 ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
             }
-            
+
             It "Has the correct default properties" {
                 $ExpectedPropsDefault = 'SqlInstance,InstanceName,ComputerName,DatabaseName,RW,Status,Access'.Split(',')
                 ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should Be ($ExpectedPropsDefault | Sort-Object)

@@ -5,7 +5,7 @@ function Copy-DbaAgentSharedSchedule {
 
         .DESCRIPTION
             All shared job schedules are copied.
-            
+
             If the associated credential for the account does not exist on the destination, it will be skipped. If the shared job schedule already exists on the destination, it will be skipped unless -Force is used.
 
         .PARAMETER Source
@@ -37,15 +37,15 @@ function Copy-DbaAgentSharedSchedule {
 
         .PARAMETER Confirm
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-        
+
         .PARAMETER Force
             If this switch is enabled, the Operator will be dropped and recreated on Destination.
 
-        .PARAMETER EnableException 
+        .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Migration, Agent
             Author: Chrissy LeMaire (@cl), netnerds.net
@@ -108,7 +108,7 @@ function Copy-DbaAgentSharedSchedule {
                 Notes             = $null
                 DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
             }
-            
+
             if ($schedules.Length -gt 0 -and $schedules -notcontains $scheduleName) {
                 continue
             }

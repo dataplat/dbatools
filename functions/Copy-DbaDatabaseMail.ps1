@@ -43,7 +43,7 @@ function Copy-DbaDatabaseMail {
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .PARAMETER Force
         If this switch is enabled, existing objects on Destination with matching names from Source will be dropped.
 
@@ -73,7 +73,7 @@ function Copy-DbaDatabaseMail {
         Copy-DbaDatabaseMail -Source sqlserver2014a -Destination sqlcluster -WhatIf
 
         Shows what would happen if the command were executed.
-    
+
     .EXAMPLE
         Copy-DbaDatabaseMail -Source sqlserver2014a -Destination sqlcluster -EnableException
 
@@ -99,7 +99,7 @@ function Copy-DbaDatabaseMail {
         function Copy-DbaDatabaseMailConfig {
             [cmdletbinding(SupportsShouldProcess = $true)]
             param ()
-            
+
             Write-Message -Message "Migrating mail server configuration values." -Level Verbose
             $copyMailConfigStatus = [pscustomobject]@{
                 SourceServer      = $sourceServer.Name
@@ -144,7 +144,7 @@ function Copy-DbaDatabaseMail {
                     Notes             = $null
                     DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
-                
+
                 if ($accounts.count -gt 0 -and $accounts -notcontains $accountName) {
                     continue
                 }
@@ -208,7 +208,7 @@ function Copy-DbaDatabaseMail {
                     Notes             = $null
                     DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
-                
+
                 if ($profiles.count -gt 0 -and $profiles -notcontains $profileName) {
                     continue
                 }
@@ -275,7 +275,7 @@ function Copy-DbaDatabaseMail {
                 if ($mailServers.count -gt 0 -and $mailServers -notcontains $mailServerName) {
                     continue
                 }
-                
+
                 if ($destMailServers.name -contains $mailServerName) {
                     if ($force -eq $false) {
                         $copyMailServerStatus.Status = "Skipped"

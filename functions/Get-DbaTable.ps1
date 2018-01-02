@@ -32,7 +32,7 @@ The correct way to find table named 'First.Table' on schema 'dbo' is passing dbo
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Tags: Database, Tables
 Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
@@ -79,16 +79,16 @@ Returns information on the CommandLog table in the DBA database on both instance
         [switch][Alias('Silent')]
         $EnableException
     )
-    
+
     begin {
         if ($Table) {
             $fqtns = @()
             foreach ($t in $Table) {
                 $splitName = [regex]::Matches($t, "(\[.+?\])|([^\.]+)").Value
                 $dotcount = $splitName.Count
-                
+
                 $splitDb = $Schema = $null
-                
+
                 switch ($dotcount) {
                     1 {
                         $tbl = $t
@@ -107,19 +107,19 @@ Returns information on the CommandLog table in the DBA database on both instance
                         Continue
                     }
                 }
-                
+
                 if ($splitDb -like "[[]*[]]") {
                     $splitDb = $splitDb.Substring(1, ($splitDb.Length - 2))
                 }
-                
+
                 if ($schema -like "[[]*[]]") {
                     $schema = $schema.Substring(1, ($schema.Length - 2))
                 }
-                
+
                 if ($tbl -like "[[]*[]]") {
                     $tbl = $tbl.Substring(1, ($tbl.Length - 2))
                 }
-                
+
                 $fqtns += [PSCustomObject] @{
                     Database = $splitDb
                     Schema   = $Schema
@@ -128,7 +128,7 @@ Returns information on the CommandLog table in the DBA database on both instance
             }
         }
     }
-    
+
     process {
         foreach ($instance in $sqlinstance) {
             try {
@@ -138,20 +138,20 @@ Returns information on the CommandLog table in the DBA database on both instance
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             try {
                 #only look at online databases (Status equal normal)
                 $dbs = $server.Databases | Where-Object IsAccessible
-                
+
                 #If IncludeSystemDBs is false, exclude systemdbs
                 if (!$IncludeSystemDBs -and !$Database) {
                     $dbs = $dbs | Where-Object { !$_.IsSystemObject }
                 }
-                
+
                 if ($Database) {
                     $dbs = $dbs | Where-Object { $Database -contains $_.Name }
                 }
-                
+
                 if ($ExcludeDatabase) {
                     $dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.Name }
                 }
@@ -159,10 +159,10 @@ Returns information on the CommandLog table in the DBA database on both instance
             catch {
                 Stop-Function -Message "Unable to gather dbs for $instance" -Target $instance -Continue -ErrorRecord $_
             }
-            
+
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $db"
-                
+
                 if ($fqtns) {
                     $tables = @()
                     foreach ($fqtn in $fqtns) {
@@ -173,9 +173,9 @@ Returns information on the CommandLog table in the DBA database on both instance
                                 continue
                             }
                         }
-                        
+
                         $tbl = $db.tables | Where-Object { $_.Name -in $fqtn.Table -and $fqtn.Schema -in ($_.Schema, $null) -and $fqtn.Database -in ($_.Parent.Name, $null) }
-                        
+
                         if (-not $tbl) {
                             Write-Message -Level Verbose -Message "Could not find table $($fqtn.Table) in $db on $server"
                         }
@@ -185,15 +185,15 @@ Returns information on the CommandLog table in the DBA database on both instance
                 else {
                     $tables = $db.Tables
                 }
-                
+
                 foreach ($sqltable in $tables) {
                     $sqltable | Add-Member -Force -MemberType NoteProperty -Name ComputerName -Value $server.NetName
                     $sqltable | Add-Member -Force -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                     $sqltable | Add-Member -Force -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                     $sqltable | Add-Member -Force -MemberType NoteProperty -Name Database -Value $db.Name
-                    
+
                     $defaultprops = "ComputerName", "InstanceName", "SqlInstance", "Database", "Schema", "Name", "IndexSpaceUsed", "DataSpaceUsed", "RowCount", "HasClusteredIndex", "IsFileTable", "IsMemoryOptimized", "IsPartitioned", "FullTextIndex", "ChangeTrackingEnabled"
-                    
+
                     Select-DefaultView -InputObject $sqltable -Property $defaultprops
                 }
             }

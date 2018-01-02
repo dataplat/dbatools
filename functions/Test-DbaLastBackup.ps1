@@ -42,10 +42,10 @@ The database backups to test. If -Database is not provided, all database backups
 Exclude specific Database backups to test
 
 .PARAMETER DataDirectory
-The command uses the SQL Server's default data directory for all restores. Use this parameter to specify a different directory for mdfs, ndfs and so on. 
+The command uses the SQL Server's default data directory for all restores. Use this parameter to specify a different directory for mdfs, ndfs and so on.
 
 .PARAMETER LogDirectory
-The command uses the SQL Server's default log directory for all restores. Use this parameter to specify a different directory for ldfs. 
+The command uses the SQL Server's default log directory for all restores. Use this parameter to specify a different directory for ldfs.
 
 .PARAMETER VerifyOnly
 Do not perform the actual restore. Just perform a VERIFYONLY
@@ -88,11 +88,11 @@ Are you sure you want to perform this action?
 Performing the operation "Restoring model as dbatools-testrestore-model" on target "SQL2016\VNEXT".
 [Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
 
-.PARAMETER EnableException 
+.PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Tags: DisasterRecovery, Backup, Restore
 
@@ -103,37 +103,37 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 .LINK
 https://dbatools.io/Test-DbaLastBackup
 
-.EXAMPLE 
+.EXAMPLE
 Test-DbaLastBackup -SqlInstance sql2016
 
 Determines the last full backup for ALL databases, attempts to restore all databases (with a different name and file structure), then performs a DBCC CHECKDB
 
 Once the test is complete, the test restore will be dropped
 
-.EXAMPLE 
+.EXAMPLE
 Test-DbaLastBackup -SqlInstance sql2016 -Database master
 
 Determines the last full backup for master, attempts to restore it, then performs a DBCC CHECKDB
 
-.EXAMPLE 
+.EXAMPLE
 Test-DbaLastBackup -SqlInstance sql2016 -Database model, master -VerifyOnly
 
-.EXAMPLE 
+.EXAMPLE
 Test-DbaLastBackup -SqlInstance sql2016 -NoCheck -NoDrop
 
 Skips the DBCC CHECKDB check. This can help speed up the tests but makes it less tested. NoDrop means that the test restores will remain on the server.
 
-.EXAMPLE 
+.EXAMPLE
 Test-DbaLastBackup -SqlInstance sql2016 -DataDirectory E:\bigdrive -LogDirectory L:\bigdrive -MaxMB 10240
 
 Restores data and log files to alternative locations and only restores databases that are smaller than 10 GB
 
-.EXAMPLE 
+.EXAMPLE
 Test-DbaLastBackup -SqlInstance sql2014 -Destination sql2016 -CopyFile
 
 Copies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.
 
-.EXAMPLE 
+.EXAMPLE
 Test-DbaLastBackup -SqlInstance sql2014 -Destination sql2016 -CopyFile -CopyPath "\\BackupShare\TestRestore\"
 
 Copies the backup files for sql2014 databases to sql2016 default backup locations and then attempts restore from there.
@@ -165,16 +165,16 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
         [string]$AzureCredential,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     process {
         foreach ($instance in $sqlinstance) {
-            
+
             if (-not $destination -or $nodestination) {
                 $nodestination = $true
                 $destination = $instance
                 $DestinationCredential = $SqlCredential
             }
-            
+
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
                 $sourceserver = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlCredential
@@ -182,7 +182,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             try {
                 Write-Message -Level Verbose -Message "Connecting to $destination"
                 $destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
@@ -190,15 +190,15 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
             catch {
                 Stop-Function -Message "Failed to connect to: $destination" -Target $destination -Continue
             }
-            
+
             if ($destserver.VersionMajor -lt $sourceserver.VersionMajor) {
                 Stop-Function -Message "$Destination is a lower version than $instance. Backups would be incompatible." -Continue
             }
-            
+
             if ($destserver.VersionMajor -eq $sourceserver.VersionMajor -and $destserver.VersionMinor -lt $sourceserver.VersionMinor) {
                 Stop-Function -Message "$Destination is a lower version than $instance. Backups would be incompatible." -Continue
             }
-            
+
             if ($CopyPath) {
                 $testpath = Test-DbaSqlPath -SqlInstance $destserver -Path $CopyPath
                 if (!$testpath) {
@@ -209,21 +209,21 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                 # If not CopyPath is specified, use the destination server default backup directory
                 $copyPath = $destserver.BackupDirectory
             }
-            
+
             if ($instance -ne $destination -and !$CopyFile) {
                 $sourcerealname = $sourceserver.ComputerNetBiosName
                 $destrealname = $destserver.ComputerNetBiosName
-                
+
                 if ($BackupFolder) {
                     if ($BackupFolder.StartsWith("\\") -eq $false -and $sourcerealname -ne $destrealname) {
                         Stop-Function -Message "Backup folder must be a network share if the source and destination servers are not the same." -Continue
                     }
                 }
             }
-            
+
             $source = $sourceserver.DomainInstanceName
             $destination = $destserver.DomainInstanceName
-            
+
             if ($datadirectory) {
                 if (!(Test-DbaSqlPath -SqlInstance $destserver -Path $datadirectory)) {
                     $serviceaccount = $destserver.ServiceAccount
@@ -233,7 +233,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
             else {
                 $datadirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType mdf
             }
-            
+
             if ($logdirectory) {
                 if (!(Test-DbaSqlPath -SqlInstance $destserver -Path $logdirectory)) {
                     $serviceaccount = $destserver.ServiceAccount
@@ -243,52 +243,52 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
             else {
                 $logdirectory = Get-SqlDefaultPaths -SqlInstance $destserver -FileType ldf
             }
-            
+
             if ((Test-Bound "AzureCredential") -and (Test-Bound "CopyFile")) {
                 Stop-Function -Message "Cannot use copyfile with Azure backups, set to false" -continue
                 $CopyFile = $false
             }
-            
+
             if (!$Database) {
                 $database = $sourceserver.databases.Name | Where-Object Name -ne 'tempdb'
             }
-            
+
             if ($ExcludeDatabase) {
                 $database = $database | Where-Object { $_ -notin $ExcludeDatabase }
             }
-            
+
             if ($Database -or $ExcludeDatabase) {
                 $dblist = $database
-                
+
                 Write-Message -Level Verbose -Message "Getting recent backup history for $instance"
-                
+
                 foreach ($dbname in $dblist) {
                     if ($dbname -eq 'tempdb') {
                         Write-Message -Level Verbose -Message "Skipping tempdb"
                         continue
                     }
-                    
+
                     Write-Message -Level Verbose -Message "Processing $dbname"
-                    
+
                     $copysuccess = $true
                     $db = $sourceserver.databases[$dbname]
-                    
+
                     # The db check is needed when the number of databases exceeds 255, then it's no longer auto-populated
                     if (!$db) {
                         Stop-Function -Message "$dbname does not exist on $source." -Continue
                     }
-                    
+
                     $lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly #-raw
                     if ($CopyFile) {
                         try {
                             Write-Message -Level Verbose -Message "Gathering information for file copy"
                             $removearray = @()
-                            
+
                             if (Test-Bound "IgnoreLogBackup") {
                                 Write-Message -Level Verbose -Message "Skipping Log backups as requested"
                                 $lastbackup = @()
                                 $lastbackup += $full = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastFull #-raw
-                                $diff = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastDiff # -raw 
+                                $diff = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -IncludeCopyOnly:$IncludeCopyOnly -LastDiff # -raw
                                 if ($full.start -le $diff.start) {
                                     $lastbackup += $diff
                                 }
@@ -296,26 +296,26 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                             else {
                                 $lastbackup = Get-DbaBackupHistory -SqlInstance $sourceserver -Database $dbname -Last -IncludeCopyOnly:$IncludeCopyOnly #-raw
                             }
-                            
+
                             foreach ($backup in $lastbackup) {
                                 foreach ($file in $backup) {
                                     $filename = Split-Path -Path $file.FullName -Leaf
                                     Write-Message -Level Verbose -Message "Processing $filename"
-                                    
+
                                     $sourcefile = Join-AdminUnc -servername $sourceserver.ComputerNamePhysicalNetBIOS -filepath $file.Path
-                                    
+
                                     if ($destserver.ComputerNamePhysicalNetBIOS -ne $env:COMPUTERNAME) {
                                         $remotedestdirectory = Join-AdminUnc -servername $destserver.ComputerNamePhysicalNetBIOS -filepath $copyPath
                                     }
                                     else {
                                         $remotedestdirectory = $copyPath
                                     }
-                                    
+
                                     $remotedestfile = "$remotedestdirectory\$filename"
                                     $localdestfile = "$copyPath\$filename"
                                     Write-Message -Level Verbose -Message "Destination directory is $destdirectory"
                                     Write-Message -Level Verbose -Message "Destination filename is $remotedestfile"
-                                    
+
                                     try {
                                         Write-Message -Level Verbose -Message "Copying $sourcefile to $remotedestfile"
                                         Copy-Item -Path $sourcefile -Destination $remotedestfile -ErrorAction Stop
@@ -366,26 +366,26 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                     }
                     if ($restoreresult -ne "Skipped" -or $lastbackup[0].Path -like 'http*') {
                         Write-Message -Level Verbose -Message "Looking good!"
-                        
+
                         $fileexists = $true
                         $ogdbname = $dbname
                         $restorelist = Read-DbaBackupHeader -SqlInstance $destserver -Path $lastbackup[0].Path -AzureCredential $AzureCredential
                         $mb = $restorelist.BackupSizeMB
-                        
+
                         if ($MaxMB -gt 0 -and $MaxMB -lt $mb) {
                             $success = "The backup size for $dbname ($mb MB) exceeds the specified maximum size ($MaxMB MB)"
                             $dbccresult = "Skipped"
                         }
                         else {
                             $dbccElapsed = $restoreElapsed = $startRestore = $endRestore = $startDbcc = $endDbcc = $null
-                            
+
                             $dbname = "$prefix$dbname"
                             $destdb = $destserver.databases[$dbname]
-                            
+
                             if ($destdb) {
                                 Stop-Function -Message "$dbname already exists on $destination - skipping" -Continue
                             }
-                            
+
                             if ($Pscmdlet.ShouldProcess($destination, "Restoring $ogdbname as $dbname")) {
                                 Write-Message -Level Verbose -Message "Performing restore"
                                 $startRestore = Get-Date
@@ -395,14 +395,14 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                                 else {
                                     $restoreresult = $lastbackup | Restore-DbaDatabase -SqlInstance $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory
                                     Write-verbose " Restore-DbaDatabase -SqlInstance $destserver -RestoredDatababaseNamePrefix $prefix -DestinationFilePrefix $Prefix -DestinationDataDirectory $datadirectory -DestinationLogDirectory $logdirectory -IgnoreLogBackup:$IgnoreLogBackup -AzureCredential $AzureCredential -TrustDbBackupHistory"
-                                    
+
                                 }
-                                
+
                                 $endRestore = Get-Date
                                 $restorets = New-TimeSpan -Start $startRestore -End $endRestore
                                 $ts = [timespan]::fromseconds($restorets.TotalSeconds)
                                 $restoreElapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
-                                
+
                                 if ($restoreresult.RestoreComplete -eq $true) {
                                     $success = "Success"
                                 }
@@ -410,9 +410,9 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                                     $success = "Failure"
                                 }
                             }
-                            
+
                             $destserver = Connect-SqlInstance -SqlInstance $destination -SqlCredential $DestinationCredential
-                            
+
                             if (!$NoCheck -and !$VerifyOnly) {
                                 # shouldprocess is taken care of in Start-DbccCheck
                                 if ($ogdbname -eq "master") {
@@ -421,11 +421,11 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                                 else {
                                     if ($success -eq "Success") {
                                         Write-Message -Level Verbose -Message "Starting DBCC"
-                                        
+
                                         $startDbcc = Get-Date
                                         $dbccresult = Start-DbccCheck -Server $destserver -DbName $dbname 3>$null
                                         $endDbcc = Get-Date
-                                        
+
                                         $dbccts = New-TimeSpan -Start $startDbcc -End $endDbcc
                                         $ts = [timespan]::fromseconds($dbccts.TotalSeconds)
                                         $dbccElapsed = "{0:HH:mm:ss}" -f ([datetime]$ts.Ticks)
@@ -435,13 +435,13 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                                     }
                                 }
                             }
-                            
+
                             if ($VerifyOnly) { $dbccresult = "Skipped" }
-                            
+
                             if (!$NoDrop -and $null -ne $destserver.databases[$dbname]) {
                                 if ($Pscmdlet.ShouldProcess($dbname, "Dropping Database $dbname on $destination")) {
                                     Write-Message -Level Verbose -Message "Dropping database"
-                                    
+
                                     ## Drop the database
                                     try {
                                         $removeresult = Remove-SqlDatabase -SqlInstance $destserver -DbName $dbname
@@ -455,7 +455,7 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                                     }
                                 }
                             }
-                            
+
                             #Cleanup BackupFiles if -CopyFile and backup was moved to destination
                             if ($CopyFile) {
                                 Write-Message -Level Verbose -Message "Removing copied backup file from $destination"
@@ -466,14 +466,14 @@ Copies the backup files for sql2014 databases to sql2016 default backup location
                                     Write-Message -Level Warning -Message $_ -ErrorRecord $_ -Target $instance
                                 }
                             }
-                            
+
                             $destserver.Databases.Refresh()
                             if ($destserver.Databases[$dbname] -and !$NoDrop) {
                                 Write-Message -Level Warning -Message "$dbname was not dropped"
                             }
                         }
                     }
-                    
+
                     if ($Pscmdlet.ShouldProcess("console", "Showing results")) {
                         [pscustomobject]@{
                             SourceServer   = $source

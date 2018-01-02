@@ -17,7 +17,7 @@ SqlCredential object to connect as. If not specified, current Windows login will
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
 
@@ -44,7 +44,7 @@ Returns all Security Audit Specifications for the local and sql2016 SQL Server i
         [PSCredential]$SqlCredential,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             Write-Verbose "Attempting to connect to $instance"
@@ -54,22 +54,22 @@ Returns all Security Audit Specifications for the local and sql2016 SQL Server i
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             if ($server.versionMajor -lt 10) {
                 Write-Warning "Server Audits are only supported in SQL Server 2008 and above. Quitting."
                 continue
             }
-            
+
             foreach ($auditSpecification in $server.ServerAuditSpecifications) {
                 Add-Member -Force -InputObject $auditSpecification -MemberType NoteProperty -Name ComputerName -value $server.NetName
                 Add-Member -Force -InputObject $auditSpecification -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $auditSpecification -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
-                
+
                 Select-DefaultView -InputObject $auditSpecification -Property ComputerName, InstanceName, SqlInstance, ID, Name, AuditName, Enabled, CreateDate, DateLastModified, Guid
             }
         }
     }
-    end { 
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlServerAuditSpecification 
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlServerAuditSpecification
     }
 }

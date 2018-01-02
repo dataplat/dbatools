@@ -23,16 +23,16 @@ function Get-DbaLogin {
 
         .PARAMETER ExcludeFilter
             A list of logins to exclude - accepts wildcard patterns
-        
+
         .PARAMETER NoSystem
             A Switch to remove System Logins from the output.
-        
+
         .PARAMETER SQLLogins
             A Switch to return Logins of type SQLLogin only.
-        
+
         .PARAMETER WindowsLogins
             A Switch to return Logins of type Windows only.
-        
+
         .PARAMETER Locked
             A Switch to return locked Logins.
 
@@ -46,7 +46,7 @@ function Get-DbaLogin {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Author: Mitchell Hamann (@SirCaptainMitch)
             Author: Klaas Vandenberghe (@powerdbaklaas)
@@ -101,7 +101,7 @@ function Get-DbaLogin {
             Get all user objects from server sql2016 that are SQLLogins
 
         .EXAMPLE
-            Get-DbaLogin -SqlInstance sql2016 -SQLLogins -IncludeFilter *Rob* 
+            Get-DbaLogin -SqlInstance sql2016 -SQLLogins -IncludeFilter *Rob*
 
             Get all user objects from server sql2016 that are SQLLogins  and have Rob in the name
 
@@ -194,7 +194,7 @@ function Get-DbaLogin {
 
             if ($ExcludeFilter) {
                 ForEach ($filter in $ExcludeFilter) {
-                    $serverLogins = $serverLogins | Where-Object Name -NotLike $filter    
+                    $serverLogins = $serverLogins | Where-Object Name -NotLike $filter
                 }
             }
 
