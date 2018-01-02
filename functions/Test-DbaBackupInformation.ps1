@@ -74,7 +74,7 @@ function Test-DbaBackupInformation {
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [switch]$Withreplace,
+        [switch]$WithReplace,
         [switch]$Continue,
         [switch]$VerifyOnly,
         [switch]$EnableException
@@ -96,16 +96,17 @@ function Test-DbaBackupInformation {
         }
     }
     end {
+        $RegisteredFileCheck = Get-DbaDbPhysicalFile -SqlInstance $RestoreInstance
+
         $Databases = $InternalHistory.Database | Select-Object -Unique
         foreach ($Database in $Databases) {
             $VerificationErrors = 0
             Write-Message -Message "Testing restore for $Database" -Level Verbose
-            #Test we're only restoring backups from one dataase, or hilarity will ensure
+            #Test we're only restoring backups from one database, or hilarity will ensure
             $DbHistory = $InternalHistory | Where-Object {$_.Database -eq $Database}
             if (( $DbHistory | Select-Object -Property OriginalDatabase -Unique ).Count -gt 1) {
                 Write-Message -Message "Trying to restore $Database from multiple sources databases" -Level Warning
                 $VerificationErrors++
-
             }
             #Test Db Existance on destination
             $DbCheck = Get-DbaDatabase -SqlInstance $RestoreInstance -Database $Database
@@ -117,19 +118,26 @@ function Test-DbaBackupInformation {
                     $VerificationErrors++
                 }
 
-
-                #Test no destinations exist
-                $DbFileCheck = (Get-DbaDatabaseFile -SqlInstance $RestoreInstance -Database $Database -WarningAction SilentlyContinue).PhysicalName
-                $OtherFileCheck = (Get-DbaDatabaseFile -SqlInstance $RestoreInstance -ExcludeDatabase $Database -WarningAction SilentlyContinue).PhysicalName
-                foreach ($path in ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object PhysicalName -Unique).PhysicalName) {
-                    if (Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $path) {
+                $DBFileCheck = ($RegisteredFileCheck | Where-Object Name -eq $Database).PhysicalName
+                $OtherFileCheck = ($RegisteredFileCheck | Where-Object Name -ne $Database).PhysicalName
+                $DBHistoryPhysicalPaths = ($DbHistory | Select-Object -ExpandProperty filelist | Select-Object PhysicalName -Unique).PhysicalName
+                $DBHistoryPhysicalPathsTest = Test-DbaSqlPath -SqlInstance $RestoreInstance -Path $DBHistoryPhysicalPaths
+                $DBHistoryPhysicalPathsExists = ($DBHistoryPhysicalPathsTest | Where-Object FileExists -eq $True).FilePath
+                foreach ($path in $DBHistoryPhysicalPaths) {
+                    if (($DBHistoryPhysicalPathsTest | Where-Object FilePath -eq $path).FileExists) {
                         if (($path -in $DBFileCheck) -and ($WithReplace -ne $True -and $Continue -ne $True)) {
-                            Write-Message -Message "File $Path already exists on $SqlInstance and WithReplace not specified, cannot restore" -Level Warning
+                            Write-Message -Message "File $path already exists on $SqlInstance and WithReplace not specified, cannot restore" -Level Warning
                             $VerificationErrors++
                         }
                         elseif ($path -in $OtherFileCheck) {
-                            Write-Message -Message "File $Path already exists on $SqlInstance and owned by another database, cannot restore" -Level Warning
+                            Write-Message -Message "File $path already exists on $SqlInstance and owned by another database, cannot restore" -Level Warning
                             $VerificationErrors++
+                        }
+                        elseif ($path -in $DBHistoryPhysicalPathsExists) {
+                            if (-not $WithReplace) {
+                                Write-Message -Message "File $path already exists on $SqlInstance, not owned by any database, cannot restore without WithReplace" -Level Warning
+                                #$VerificationErrors++ #FIXME, weird interaction with pagerestore and -AllowContinue in Restore-DbaDatabase
+                            }
                         }
                     }
                     else {
@@ -157,8 +165,8 @@ function Test-DbaBackupInformation {
 
                     $ExistingFS = Get-DbaFileStreamFolder -SqlInstance $SqlInstance
                     #$ExistingFS = ((Get-DbaDatabase -SqlInstance $RestoreInstance).FileGroups | ?{$_.FileGroupType -eq 'FileStreamDataFileGroup'}).Files.FileName
-                    Foreach ($FileStreamFolder in ($DbHistory | Select-Object -ExpandProperty filelist | Where-Object {$_.FileType -eq 's'} | Select-Object PhysicalName -unique).PhysicalName) {
-                        If ((Get-ChildItem $FileStreamFolder -ErrorAction SilentlyContinue).count -gt 0) {
+                    foreach ($FileStreamFolder in ($DbHistory | Select-Object -ExpandProperty filelist | Where-Object {$_.FileType -eq 's'} | Select-Object PhysicalName -unique).PhysicalName) {
+                        if ((Get-ChildItem $FileStreamFolder -ErrorAction SilentlyContinue).count -gt 0) {
                             Write-Message -Level Warning -Message "Folder $FileStreamFolder already exists and contains data. Cannot use to restore $Database on $SqlInstance"
                             $VerificationErrors++
                         }
