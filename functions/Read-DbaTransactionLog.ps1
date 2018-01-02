@@ -28,7 +28,7 @@ Switch to indicate that you wish to bypass the recommended limits of the functio
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Tags: Databases, Logs
 Author: Stuart Moore (@napalmgram), stuart-moore.com
@@ -84,9 +84,9 @@ Will read the contents of the transaction log of MyDatabase on SQL Server Instan
     else {
         #Warn if more than 0.5GB of live log. Dodgy conversion as SMO returns the value in an unhelpful format :(
         $SqlSizeCheck = "select
-								sum(FileProperty(sf.name,'spaceused')*8/1024) as 'SizeMb'
-								from sys.sysfiles sf
-								where CONVERT(INT,sf.status & 0x40) / 64=1"
+                                sum(FileProperty(sf.name,'spaceused')*8/1024) as 'SizeMb'
+                                from sys.sysfiles sf
+                                where CONVERT(INT,sf.status & 0x40) / 64=1"
         $TransLogSize = $server.Query($SqlSizeCheck, $Database)
         if ($TransLogSize.SizeMb -ge 500) {
             Stop-Function -Message "$Database has more than 0.5 Gb of live log data, returning this may have an impact on the database and the calling system. If you wish to proceed please rerun with the -IgnoreLimit switch"

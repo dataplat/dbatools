@@ -1,67 +1,67 @@
 Function Get-DbaSqlModule {
-    <# 
-    .SYNOPSIS 
+    <#
+    .SYNOPSIS
     Displays all objects in sys.sys_modules after specified modification date.  Works on SQL Server 2008 and above.
-    
-    .DESCRIPTION 
+
+    .DESCRIPTION
     Quickly find modules (Stored Procs, Functions, Views, Constraints, Rules, Triggers, etc) that have been modified in a database, or across all databases.
     Results will exclude the module definition, but can be queried explicitly.
-    
+
     .PARAMETER SqlInstance
     Allows you to specify a comma separated list of servers to query.
-    
+
     .PARAMETER SqlCredential
     Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-    $cred = Get-Credential, this pass this $cred to the param. 
-    Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.  
-    
+    $cred = Get-Credential, this pass this $cred to the param.
+    Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+
     .PARAMETER Database
     The database(s) to process. If unspecified, all databases will be processed.
 
     .PARAMETER ExcludeDatabase
     The database(s) to exclude.
-    
+
     .PARAMETER ModifiedSince
     DateTime value to use as minimum modified date of module.
-    
+
     .PARAMETER Type
     Limit by specific type of module. Valid choices include: View, TableValuedFunction, DefaultConstraint, StoredProcedure, Rule, InlineTableValuedFunction, Trigger, ScalarFunction
-    
+
     .PARAMETER NoSystemDb
     Allows you to suppress output on system databases
-    
+
     .PARAMETER NoSystemObjects
     Allows you to suppress output on system objects
-    
+
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
-    .NOTES 
+
+    .NOTES
     Author: Brandon Abshire, netnerds.net
     Tags: StoredProcedure, Trigger
-    
+
     Website: https://dbatools.io
     Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
     License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-    
-    .LINK 
+
+    .LINK
     https://dbatools.io/Get-DbaSqlModule
-    
-    .EXAMPLE   
+
+    .EXAMPLE
     Get-DbaSqlModule -SqlServer sql2008, sqlserver2012
     Return all modules for servers sql2008 and sqlserver2012 sorted by Database, Modify_Date ASC.
-    
-    .EXAMPLE   
+
+    .EXAMPLE
     Get-DbaSqlModule -SqlServer sql2008, sqlserver2012 | Select *
     Shows hidden definition column (informative wall of text).
-    
-    .EXAMPLE   
+
+    .EXAMPLE
     Get-DbaSqlModule -SqlServer sql2008 -Database TestDB -ModifiedSince "01/01/2017 10:00:00 AM"
     Return all modules on server sql2008 for only the TestDB database with a modified date after 01/01/2017 10:00:00 AM.
-    
-    .EXAMPLE   
+
+    .EXAMPLE
     Get-DbaSqlModule -SqlServer sql2008 -Type View, Trigger, ScalarFunction
     Return all modules on server sql2008 for all databases that are triggers, views or scalar functions.
 #>
@@ -82,11 +82,11 @@ Function Get-DbaSqlModule {
         [switch]$NoSystemObjects,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     begin {
-        
+
         $types = @()
-        
+
         foreach ($t in $type) {
             if ($t -eq "View") { $types += "VIEW" }
             if ($t -eq "TableValuedFunction") { $types += "SQL_TABLE_VALUED_FUNCTION" }
@@ -97,8 +97,8 @@ Function Get-DbaSqlModule {
             if ($t -eq "Trigger") { $types += "SQL_TRIGGER" }
             if ($t -eq "ScalarFunction") { $types += "SQL_SCALAR_FUNCTION" }
         }
-        
-        
+
+
         $sql = "SELECT  DB_NAME() AS DatabaseName,
         so.name AS ModuleName,
         so.object_id ,
@@ -110,8 +110,8 @@ Function Get-DbaSqlModule {
         so.modify_date ,
         so.is_ms_shipped ,
         sm.definition,
- 		OBJECTPROPERTY(so.object_id, 'ExecIsStartUp') as startup
-		FROM sys.sql_modules sm
+         OBJECTPROPERTY(so.object_id, 'ExecIsStartUp') as startup
+        FROM sys.sql_modules sm
         LEFT JOIN sys.objects so ON sm.object_id = so.object_id
         WHERE so.modify_date >= '$($ModifiedSince)'"
         if ($NoSystemObjects) {
@@ -123,7 +123,7 @@ Function Get-DbaSqlModule {
         }
         $sql += "`n ORDER BY so.modify_date"
     }
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -133,25 +133,25 @@ Function Get-DbaSqlModule {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $databases = Get-DbaDatabase -SqlInstance $server
-            
+
             if ($Database) {
                 $databases = $databases | Where-Object Name -In $Database
             }
             if ($ExcludeDatabase) {
                 $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
             }
-            
-            
+
+
             foreach ($db in $databases) {
-                
+
                 Write-Message -Level Verbose -Message "Processing $db on $instance"
-                
+
                 if ($db.IsAccessible -eq $false) {
                     Stop-Function -Message "The database $db is not accessible. Skipping database." -Target $db -Continue
                 }
-                
+
                 foreach ($row in $server.Query($sql, $db.name)) {
                     [PSCustomObject]@{
                         ComputerName  = $server.NetName

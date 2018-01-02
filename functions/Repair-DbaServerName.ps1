@@ -1,65 +1,65 @@
 function Repair-DbaServerName {
     <#
-		.SYNOPSIS
-			Renames @@SERVERNAME to match with the Windows name.
+        .SYNOPSIS
+            Renames @@SERVERNAME to match with the Windows name.
 
-		.DESCRIPTION
-			When a SQL Server's host OS is renamed, the SQL Server should be as well. This helps with Availability Groups and Kerberos.
+        .DESCRIPTION
+            When a SQL Server's host OS is renamed, the SQL Server should be as well. This helps with Availability Groups and Kerberos.
 
-			This command renames @@SERVERNAME to match with the Windows name. The new name is automatically determined. It does not matter if you use an alias to connect to the SQL instance.
+            This command renames @@SERVERNAME to match with the Windows name. The new name is automatically determined. It does not matter if you use an alias to connect to the SQL instance.
 
-			If the automatically determined new name matches the old name, the command will not run.
+            If the automatically determined new name matches the old name, the command will not run.
 
-			https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
+            https://www.mssqltips.com/sqlservertip/2525/steps-to-change-the-server-name-for-a-sql-server-machine/
 
-		.PARAMETER SqlInstance
-			The SQL Server that you're connecting to.
+        .PARAMETER SqlInstance
+            The SQL Server that you're connecting to.
 
-		.PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+        .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-			To connect as a different Windows user, run PowerShell as that user.
+            To connect as a different Windows user, run PowerShell as that user.
 
-		.PARAMETER AutoFix
-			If this switch is enabled, the repair will be performed automatically.
+        .PARAMETER AutoFix
+            If this switch is enabled, the repair will be performed automatically.
 
-		.PARAMETER Force
-			If this switch is enabled, most confirmation prompts will be skipped.
+        .PARAMETER Force
+            If this switch is enabled, most confirmation prompts will be skipped.
 
-		.PARAMETER WhatIf
-			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        .PARAMETER WhatIf
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-		.PARAMETER Confirm
-			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        .PARAMETER Confirm
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.NOTES
-			Tags: SPN
-			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-			Copyright (C) 2016 Chrissy LeMaire
-			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .NOTES
+            Tags: SPN
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Copyright (C) 2016 Chrissy LeMaire
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-		.LINK
-			https://dbatools.io/Repair-DbaServerName
+        .LINK
+            https://dbatools.io/Repair-DbaServerName
 
-		.EXAMPLE
-			Repair-DbaServerName -SqlInstance sql2014
+        .EXAMPLE
+            Repair-DbaServerName -SqlInstance sql2014
 
-			Checks to see if the server name is updatable and changes the name with a number of prompts.
+            Checks to see if the server name is updatable and changes the name with a number of prompts.
 
-		.EXAMPLE
-			Repair-DbaServerName -SqlInstance sql2014 -AutoFix
+        .EXAMPLE
+            Repair-DbaServerName -SqlInstance sql2014 -AutoFix
 
-			Checks to see if the server name is updatable and automatically performs the change. Replication or mirroring will be broken if necessary.
+            Checks to see if the server name is updatable and automatically performs the change. Replication or mirroring will be broken if necessary.
 
-		.EXAMPLE
-			Repair-DbaServerName -SqlInstance sql2014 -AutoFix -Force
+        .EXAMPLE
+            Repair-DbaServerName -SqlInstance sql2014 -AutoFix -Force
 
-			Checks to see if the server name is updatable and automatically performs the change, bypassing most prompts and confirmations. Replication or mirroring will be broken if necessary.
-	#>
+            Checks to see if the server name is updatable and automatically performs the change, bypassing most prompts and confirmations. Replication or mirroring will be broken if necessary.
+    #>
     [OutputType("System.String")]
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "High")]
     Param (

@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests'{
     #Mock Test-Path {$true}
-	<#
+    <#
     Context "Test Path handling" {
         It "Should throw on an invalid Path"{
             Mock Test-Path {$false}
@@ -19,7 +19,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests'{
             Assert-MockCalled Test-Path -ParameterFilter {$Path -and $Path -eq 'c:\temp\FULL'}  -Times 1
         }
     }
-	#>
+    #>
     Context "Test File returns" {
         New-item "TestDrive:\OlaH\" -ItemType directory
         New-item "TestDrive:\OlaH\Full\" -ItemType directory
@@ -83,7 +83,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests'{
             ($results3 | Where-Object {$_.Fullname -like '*\OlaH\Diff\Diff*.bak'}).count | Should be 2
         }
     }
-    Context "With Diff Files and IgnoreLogBackup" {  
+    Context "With Diff Files and IgnoreLogBackup" {
         New-item "TestDrive:\OlaH\" -ItemType directory
         New-item "TestDrive:\OlaH\Full\" -ItemType directory
         New-item "TestDrive:\OlaH\Full\full.bak" -ItemType File
@@ -102,7 +102,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests'{
         }
         It "Should contain 1 Full backup" {
             ($results4 | Where-Object {$_.Fullname -like '*\OlaH\Full\*.bak'}).count | Should be 1
-        }    
+        }
         It "Shoud contain 0 log backups" {
             ($results4 | Where-Object {$_.Fullname -like '*\OlaH\Log\Log*.trn'}).count | Should be 0
         }

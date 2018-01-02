@@ -13,13 +13,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterAll {
             Remove-DbaDatabase -SqlInstance $Server -Database $dbname -Confirm:$false
         }
-        
+
         $null = $db.Query("
-		CREATE TABLE dbo.[Example] (id int); 
-		INSERT dbo.[Example] 
-		SELECT top 1000 1 
-		FROM sys.objects")
-        
+        CREATE TABLE dbo.[Example] (id int);
+        INSERT dbo.[Example]
+        SELECT top 1000 1
+        FROM sys.objects")
+
         # make darn sure suspect pages show up, run twice
         try {
             $null = Invoke-DbaDatabaseCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
@@ -28,7 +28,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue
         }
         catch {} # should fail
-        
+
         try {
             $null = Invoke-DbaDatabaseCorruption -SqlInstance $script:instance2 -Database $dbname -Confirm:$false
             $null = $db.Query("select top 100 from example")
@@ -36,7 +36,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $null = Start-DbccCheck -Server $Server -dbname $dbname -WarningAction SilentlyContinue
         }
         catch { } # should fail
-        
+
         $results = Get-DbaSuspectPage -SqlInstance $server
         It "function should find at least one record in suspect_pages table" {
             $results.Database -contains $dbname | Should Be $true

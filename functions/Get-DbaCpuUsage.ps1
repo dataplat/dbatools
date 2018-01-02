@@ -1,62 +1,62 @@
 ﻿Function Get-DbaCpuUsage {
-<# 
-	.SYNOPSIS 
-		Provides detailed CPU usage information about a SQL Server's process
-		
-	.DESCRIPTION 
-		"If there are a lot of processes running on your instance and the CPU is very high, 
-		then it's hard to find the exact process eating up your CPU using just the SQL Server 
-		tools. One way to correlate the data between what is running within SQL Server and at 
-		the Windows level is to use SPID and KPID values to get the exact process."
-		
-		This command automates that process. 
-		
-		References: https://www.mssqltips.com/sqlservertip/2454/how-to-find-out-how-much-cpu-a-sql-server-process-is-really-using/
-		
-		Note: This command returns results from all SQL instances on the destionation server but the process
-		column is specific to -SqlInstance passed.
-	
-	.PARAMETER SqlInstance
-		Allows you to specify a comma separated list of servers to query.
+<#
+    .SYNOPSIS
+        Provides detailed CPU usage information about a SQL Server's process
 
-	.PARAMETER SqlCredential
-		Allows you to login to the SQL instance using alternative credentials.
+    .DESCRIPTION
+        "If there are a lot of processes running on your instance and the CPU is very high,
+        then it's hard to find the exact process eating up your CPU using just the SQL Server
+        tools. One way to correlate the data between what is running within SQL Server and at
+        the Windows level is to use SPID and KPID values to get the exact process."
 
-	.PARAMETER Credential
-		Allows you to login to the Windows Server using alternative credentials.
-	
-	.PARAMETER Threshold
-		CPU threshold.
-	
-	.PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
-	.NOTES
-		Tags: CPU
-		dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-		Copyright (C) 2016 Chrissy LeMaire
-		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        This command automates that process.
 
-	.LINK 
-		https://dbatools.io/Get-DbaCpuUsage
+        References: https://www.mssqltips.com/sqlservertip/2454/how-to-find-out-how-much-cpu-a-sql-server-process-is-really-using/
 
-	.EXAMPLE   
-		Get-DbaCpuUsage -SqlInstance sql2017
-		
-		Logs into the SQL Server instance "sql2017" and also the Computer itself (via WMI) to gather information
-		
-	.EXAMPLE 
-		$usage = Get-DbaCpuUsage -SqlInstance sql2017
-		$usage.Process
-		
-		Explores the processes (from Get-DbaProcess) associated with the usage results
-		
-	.EXAMPLE 
-		Get-DbaCpuUsage -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin) -Credential (Get-Credential ad\sqldba)
-		
-		Logs into the SQL instance using the SQL Login 'sqladmin' and then Windows instance as 'ad\sqldba'
+        Note: This command returns results from all SQL instances on the destionation server but the process
+        column is specific to -SqlInstance passed.
+
+    .PARAMETER SqlInstance
+        Allows you to specify a comma separated list of servers to query.
+
+    .PARAMETER SqlCredential
+        Allows you to login to the SQL instance using alternative credentials.
+
+    .PARAMETER Credential
+        Allows you to login to the Windows Server using alternative credentials.
+
+    .PARAMETER Threshold
+        CPU threshold.
+
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+    .NOTES
+        Tags: CPU
+        dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+        Copyright (C) 2016 Chrissy LeMaire
+        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+
+    .LINK
+        https://dbatools.io/Get-DbaCpuUsage
+
+    .EXAMPLE
+        Get-DbaCpuUsage -SqlInstance sql2017
+
+        Logs into the SQL Server instance "sql2017" and also the Computer itself (via WMI) to gather information
+
+    .EXAMPLE
+        $usage = Get-DbaCpuUsage -SqlInstance sql2017
+        $usage.Process
+
+        Explores the processes (from Get-DbaProcess) associated with the usage results
+
+    .EXAMPLE
+        Get-DbaCpuUsage -SqlInstance sql2017 -SqlCredential (Get-Credential sqladmin) -Credential (Get-Credential ad\sqldba)
+
+        Logs into the SQL instance using the SQL Login 'sqladmin' and then Windows instance as 'ad\sqldba'
 #>
     [CmdletBinding()]
     Param (
@@ -80,7 +80,7 @@
             6 = 'Transition. The thread is waiting for resources other than the processor.'
             7 = 'Unknown. The thread state is unknown.'
         }
-        
+
         $threadwaitreasons = [pscustomobject]@{
             0 = 'Executive'
             1 = 'FreePage'
@@ -114,21 +114,21 @@
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $processes = Get-DbaProcess -SqlInstance $server
             $threads = Get-DbaCmObject -ComputerName $instance.ComputerName -ClassName Win32_PerfFormattedData_PerfProc_Thread -Credential $Credential | Where-Object { $_.Name -like 'sql*' -and $_.PercentProcessorTime -ge $Threshold }
-            
+
             if ($server.VersionMajor -eq 8) {
                 $spidcollection = $server.Query("select spid, kpid from sysprocesses")
             }
             else {
                 $spidcollection = $server.Query("select t.os_thread_id as kpid, s.session_id as spid
-			from sys.dm_exec_sessions s
-			join sys.dm_exec_requests er on s.session_id = er.session_id
-			join sys.dm_os_workers w on er.task_address = w.task_address
-			join sys.dm_os_threads t on w.thread_address = t.thread_address")
+            from sys.dm_exec_sessions s
+            join sys.dm_exec_requests er on s.session_id = er.session_id
+            join sys.dm_os_workers w on er.task_address = w.task_address
+            join sys.dm_os_threads t on w.thread_address = t.thread_address")
             }
-            
+
             foreach ($thread in $threads) {
                 $spid = ($spidcollection | Where-Object kpid -eq $thread.IDThread).spid
                 $process = $processes | Where-Object spid -eq $spid
@@ -136,7 +136,7 @@
                 $threadstate = $thread.ThreadState
                 $ThreadStateValue = $threadstates.$threadstate
                 $ThreadWaitReasonValue = $threadwaitreasons.$threadwaitreason
-                
+
                 Add-Member -Force -InputObject $thread -MemberType NoteProperty -Name ComputerName -value $server.NetName
                 Add-Member -Force -InputObject $thread -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $thread -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
@@ -146,7 +146,7 @@
                 Add-Member -Force -InputObject $thread -MemberType NoteProperty -Name Process -Value $process
                 Add-Member -Force -InputObject $thread -MemberType NoteProperty -Name Query -Value $process.LastQuery
                 Add-Member -Force -InputObject $thread -MemberType NoteProperty -Name Spid -Value $spid
-                
+
                 Select-DefaultView -InputObject $thread -Property ComputerName, InstanceName, SqlInstance, Name, ContextSwitchesPersec, ElapsedTime, IDProcess, Spid, PercentPrivilegedTime, PercentProcessorTime, PercentUserTime, PriorityBase, PriorityCurrent, StartAddress, ThreadStateValue, ThreadWaitReasonValue, Process, Query
             }
         }

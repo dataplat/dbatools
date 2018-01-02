@@ -197,7 +197,7 @@ function New-DbaLogShippingPrimaryDatabase {
 
     # Check the MonitorServerSecurityMode if it's SQL Server authentication
     if ($MonitorServerSecurityMode -eq 0 -and -not $MonitorCredential) {
-        Stop-Function -Message "The MonitorServerCredential cannot be empty when using SQL Server authentication." -Target $SqlInstance 
+        Stop-Function -Message "The MonitorServerCredential cannot be empty when using SQL Server authentication." -Target $SqlInstance
         return
     }
     elseif ($MonitorServerSecurityMode -eq 0 -and $MonitorCredential) {
@@ -207,14 +207,14 @@ function New-DbaLogShippingPrimaryDatabase {
 
         # Check if the user is in the database
         if ($server.Databases['master'].Users.Name -notcontains $MonitorLogin) {
-            Stop-Function -Message "User $MonitorLogin for monitor login must be in the master database." -Target $SqlInstance 
+            Stop-Function -Message "User $MonitorLogin for monitor login must be in the master database." -Target $SqlInstance
             return
         }
     }
 
     # Check if the database is present on the source sql server
     if ($server.Databases.Name -notcontains $Database) {
-        Stop-Function -Message "Database $Database is not available on instance $SqlInstance" -Target $SqlInstance 
+        Stop-Function -Message "Database $Database is not available on instance $SqlInstance" -Target $SqlInstance
         return
     }
 
@@ -231,13 +231,13 @@ function New-DbaLogShippingPrimaryDatabase {
     # Set the log shipping primary
     $Query = "
         DECLARE @LS_BackupJobId AS uniqueidentifier;
-		DECLARE @LS_PrimaryId AS uniqueidentifier;
+        DECLARE @LS_PrimaryId AS uniqueidentifier;
         EXEC master.sys.sp_add_log_shipping_primary_database
             @database = N'$Database'
             ,@backup_directory = N'$BackupDirectory'
             ,@backup_share = N'$BackupShare'
             ,@backup_job_name = N'$BackupJob'
-			,@backup_retention_period = $BackupRetention"
+            ,@backup_retention_period = $BackupRetention"
 
     if ($SqlInstance.Version.Major -gt 9) {
         $Query += ",@backup_compression = $BackupCompression"
@@ -245,9 +245,9 @@ function New-DbaLogShippingPrimaryDatabase {
 
     if ($MonitorServer) {
         $Query += ",@monitor_server = N'$MonitorServer'
-			,@monitor_server_security_mode = $MonitorServerSecurityMode
-			,@threshold_alert = $ThressAlert
-			,@threshold_alert_enabled = $ThresholdAlertEnabled"
+            ,@monitor_server_security_mode = $MonitorServerSecurityMode
+            ,@threshold_alert = $ThressAlert
+            ,@threshold_alert_enabled = $ThresholdAlertEnabled"
     }
 
     $Query += ",@backup_threshold = $BackupThreshold

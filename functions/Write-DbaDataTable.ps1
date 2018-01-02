@@ -190,20 +190,20 @@ function Write-DbaDataTable {
         # http://stackoverflow.com/questions/1188384/sqlbulkcopy-row-count-when-complete
 
         $source = 'namespace System.Data.SqlClient {
-			using Reflection;
+            using Reflection;
 
-			public static class SqlBulkCopyExtension
-			{
-				const String _rowsCopiedFieldName = "_rowsCopied";
-				static FieldInfo _rowsCopiedField = null;
+            public static class SqlBulkCopyExtension
+            {
+                const String _rowsCopiedFieldName = "_rowsCopied";
+                static FieldInfo _rowsCopiedField = null;
 
-				public static int RowsCopiedCount(this SqlBulkCopy bulkCopy)
-				{
-					if (_rowsCopiedField == null) _rowsCopiedField = typeof(SqlBulkCopy).GetField(_rowsCopiedFieldName, BindingFlags.NonPublic | BindingFlags.GetField | BindingFlags.Instance);
-					return (int)_rowsCopiedField.GetValue(bulkCopy);
-				}
-			}
-		}'
+                public static int RowsCopiedCount(this SqlBulkCopy bulkCopy)
+                {
+                    if (_rowsCopiedField == null) _rowsCopiedField = typeof(SqlBulkCopy).GetField(_rowsCopiedFieldName, BindingFlags.NonPublic | BindingFlags.GetField | BindingFlags.Instance);
+                    return (int)_rowsCopiedField.GetValue(bulkCopy);
+                }
+            }
+        }'
 
         Add-Type -ReferencedAssemblies 'System.Data.dll' -TypeDefinition $source -ErrorAction SilentlyContinue
 
