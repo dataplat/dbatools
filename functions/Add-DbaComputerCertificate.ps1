@@ -56,96 +56,96 @@ function Add-DbaComputerCertificate {
 
 			Adds the local C:\temp\cert.cer to the local computer's LocalMachine\My (Personal) certificate store.
 	#>
-	[CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
-	param (
-		[Alias("ServerInstance", "SqlServer", "SqlInstance")]
-		[DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
-		[PSCredential]$Credential,
-		[securestring]$Password,
-		[parameter(ValueFromPipeline)]
-		[System.Security.Cryptography.X509Certificates.X509Certificate2[]]$Certificate,
-		[string]$Path,
-		[string]$Store = "LocalMachine",
-		[string]$Folder = "My",
-		[Alias('Silent')]
-		[switch]$EnableException
-	)
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
+    param (
+        [Alias("ServerInstance", "SqlServer", "SqlInstance")]
+        [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
+        [PSCredential]$Credential,
+        [securestring]$Password,
+        [parameter(ValueFromPipeline)]
+        [System.Security.Cryptography.X509Certificates.X509Certificate2[]]$Certificate,
+        [string]$Path,
+        [string]$Store = "LocalMachine",
+        [string]$Folder = "My",
+        [Alias('Silent')]
+        [switch]$EnableException
+    )
 
-	begin {
+    begin {
 
-		if ($Path) {
-			if (!(Test-Path -Path $Path)) {
-				Stop-Function -Message "Path ($Path) does not exist." -Category InvalidArgument
-				return
-			}
+        if ($Path) {
+            if (!(Test-Path -Path $Path)) {
+                Stop-Function -Message "Path ($Path) does not exist." -Category InvalidArgument
+                return
+            }
 
-			try {
-				# This may be too much, but ¯\_(ツ)_/¯
-				$bytes = [System.IO.File]::ReadAllBytes($Path)
-				$Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-				$Certificate.Import($bytes, $Password, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-			}
-			catch {
-				Stop-Function -Message "Can't import certificate." -ErrorRecord $_
-				return
-			}
-		}
+            try {
+                # This may be too much, but ¯\_(ツ)_/¯
+                $bytes = [System.IO.File]::ReadAllBytes($Path)
+                $Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+                $Certificate.Import($bytes, $Password, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+            }
+            catch {
+                Stop-Function -Message "Can't import certificate." -ErrorRecord $_
+                return
+            }
+        }
 
-		#region Remoting Script
-		$scriptBlock = {
+        #region Remoting Script
+        $scriptBlock = {
 
-			param (
-				$CertificateData,
+            param (
+                $CertificateData,
 
-				[securestring]$Password,
+                [securestring]$Password,
 
-				$Store,
+                $Store,
 
-				$Folder
-			)
+                $Folder
+            )
 
-			$cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-			$cert.Import($CertificateData, $Password, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
-			Write-Verbose "Importing cert to $Folder\$Store"
-			$tempStore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
-			$tempStore.Open('ReadWrite')
-			$tempStore.Add($cert)
-			$tempStore.Close()
+            $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+            $cert.Import($CertificateData, $Password, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+            Write-Verbose "Importing cert to $Folder\$Store"
+            $tempStore = New-Object System.Security.Cryptography.X509Certificates.X509Store($Folder, $Store)
+            $tempStore.Open('ReadWrite')
+            $tempStore.Add($cert)
+            $tempStore.Close()
 
-			Write-Verbose "Searching Cert:\$Store\$Folder"
-			Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
-		}
-		#endregion Remoting Script
-	}
-	process {
-		if (Test-FunctionInterrupt) { return }
+            Write-Verbose "Searching Cert:\$Store\$Folder"
+            Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
+        }
+        #endregion Remoting Script
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
 
-		if (-not $Certificate) {
-			Stop-Function -Message "You must specify either Certificate or Path" -Category InvalidArgument
-			return
-		}
+        if (-not $Certificate) {
+            Stop-Function -Message "You must specify either Certificate or Path" -Category InvalidArgument
+            return
+        }
 
-		foreach ($cert in $Certificate) {
+        foreach ($cert in $Certificate) {
 
-			try {
-				$certData = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $Password)
-			}
-			catch {
-				Stop-Function -Message "Can't export certificate" -ErrorRecord $_ -Continue
-			}
+            try {
+                $certData = $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::PFX, $Password)
+            }
+            catch {
+                Stop-Function -Message "Can't export certificate" -ErrorRecord $_ -Continue
+            }
 
-			foreach ($computer in $ComputerName) {
+            foreach ($computer in $ComputerName) {
 
-				if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import cert")) {
-					try {
-						Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
-							Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
-					}
-					catch {
-						Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
-					}
-				}
-			}
-		}
-	}
+                if ($PScmdlet.ShouldProcess("local", "Connecting to $computer to import cert")) {
+                    try {
+                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $Password, $Store, $Folder -ScriptBlock $scriptblock -ErrorAction Stop |
+                            Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
+                    }
+                    catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
+                    }
+                }
+            }
+        }
+    }
 }

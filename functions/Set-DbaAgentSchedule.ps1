@@ -81,10 +81,10 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command.
 
 .PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
 It will also remove the any present schedules with the same name for the specific job.
@@ -92,7 +92,7 @@ It will also remove the any present schedules with the same name for the specifi
 .NOTES 
 Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Step
-	
+
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -152,8 +152,8 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
         [Parameter(Mandatory = $false)]
         [int]$FrequencySubdayInterval,
         [Parameter(Mandatory = $false)]
-        [ValidateSet('Unused','First','Second','Third','Fourth','Last')]
-		[object]$FrequencyRelativeInterval,
+        [ValidateSet('Unused', 'First', 'Second', 'Third', 'Fourth', 'Last')]
+        [object]$FrequencyRelativeInterval,
         [Parameter(Mandatory = $false)]
         [int]$FrequencyRecurrenceFactor,
         [Parameter(Mandatory = $false)]

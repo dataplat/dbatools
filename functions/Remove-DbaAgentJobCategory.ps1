@@ -1,6 +1,6 @@
 function Remove-DbaAgentJobCategory {
 
-	<#
+    <#
 .SYNOPSIS 
 Remove-DbaAgentJobCategory removes a job category.
 
@@ -29,14 +29,14 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command. 
 
 .PARAMETER EnableException 
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        
 .NOTES 
 Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Category
-	
+
 Website: https://dbatools.io
 Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
 License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -60,64 +60,64 @@ Remove-DbaAgentJobCategory -SqlInstance sql1, sql2, sql3 -Category Category1, Ca
 Remove multiple job categories from the multiple instances.
 
 #>
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
-	param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[Parameter(Mandatory = $false)]
-		[ValidateNotNullOrEmpty()]
-		[string[]]$Category,
-		[switch]$Force,
-		[switch][Alias('Silent')]$EnableException
-	)
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [Parameter(Mandatory = $false)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$Category,
+        [switch]$Force,
+        [switch][Alias('Silent')]$EnableException
+    )
 
-	process {
+    process {
 
-		foreach ($instance in $sqlinstance) {
-			# Try connecting to the instance
-			Write-Message -Message "Attempting to connect to $instance" -Level Verbose
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
+        foreach ($instance in $sqlinstance) {
+            # Try connecting to the instance
+            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-			# Loop through each of the categories
-			foreach ($cat in $Category) {
+            # Loop through each of the categories
+            foreach ($cat in $Category) {
 
-				# Check if the job category exists
-				if ($cat -notin $server.JobServer.JobCategories.Name) {
-					Stop-Function -Message "Job category $cat doesn't exist on $instance" -Target $instance -Continue
-				}
+                # Check if the job category exists
+                if ($cat -notin $server.JobServer.JobCategories.Name) {
+                    Stop-Function -Message "Job category $cat doesn't exist on $instance" -Target $instance -Continue
+                }
 
-				# Remove the category
-				if ($PSCmdlet.ShouldProcess($instance, "Changing the job category $Category")) {
-					try {
-						# Get the category
-						$currentCategory = $server.JobServer.JobCategories[$cat]
+                # Remove the category
+                if ($PSCmdlet.ShouldProcess($instance, "Changing the job category $Category")) {
+                    try {
+                        # Get the category
+                        $currentCategory = $server.JobServer.JobCategories[$cat]
 
-						Write-Message -Message "Removing job category $cat" -Level Verbose
+                        Write-Message -Message "Removing job category $cat" -Level Verbose
 
-						$currentCategory.Drop()
-					}
-					catch {
-						Stop-Function -Message "Something went wrong removing the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
-					}
+                        $currentCategory.Drop()
+                    }
+                    catch {
+                        Stop-Function -Message "Something went wrong removing the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
+                    }
 
-				} #if should process
+                } #if should process
 
-			} # for each category
+            } # for each category
 
-		} # for each instance
+        } # for each instance
 
-	} # end process
+    } # end process
 
-	end {
-		if (Test-FunctionInterrupt) { return }
-		Write-Message -Message "Finished removing job category." -Level Verbose
-	}
+    end {
+        if (Test-FunctionInterrupt) { return }
+        Write-Message -Message "Finished removing job category." -Level Verbose
+    }
 
 }

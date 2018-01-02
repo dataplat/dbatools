@@ -1,94 +1,94 @@
 function Set-DbaDbCompression {
-<#
-	.SYNOPSIS
-		Sets tables and indexes with preferred compression setting.
+    <#
+    .SYNOPSIS
+        Sets tables and indexes with preferred compression setting.
 
      .DESCRIPTION
-		This function set the appropriate compression recommendation.
+        This function set the appropriate compression recommendation.
         Remember Uptime is critical, the longer uptime, the more accurate the analysis is.
         You would probably be best if you utilized Get-DbaUptime first, before running this command.
-		
-		Set-DbaDbCompression script derived from GitHub and the tigertoolbox 
+        
+        Set-DbaDbCompression script derived from GitHub and the tigertoolbox 
         (https://github.com/Microsoft/tigertoolbox/tree/master/Evaluate-Compression-Gains)
-	
-	.PARAMETER SqlInstance
-		SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
-	
-	.PARAMETER SqlCredential
-		SqlCredential object to connect as. If not specified, current Windows login will be used.
-	
-	.PARAMETER Database
-		The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
-	
-	.PARAMETER ExcludeDatabase
-		The database(s) to exclude - this list is autopopulated from the server
-	
+    
+    .PARAMETER SqlInstance
+        SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
+    
+    .PARAMETER SqlCredential
+        SqlCredential object to connect as. If not specified, current Windows login will be used.
+    
+    .PARAMETER Database
+        The database(s) to process - this list is autopopulated from the server. If unspecified, all databases will be processed.
+    
+    .PARAMETER ExcludeDatabase
+        The database(s) to exclude - this list is autopopulated from the server
+    
     .PARAMETER MaxRunTime
-		    Will continue to Alter tables and indexes for the given amount of minutes.
+            Will continue to Alter tables and indexes for the given amount of minutes.
 
     .PARAMETER PercentCompression
-		    Will only work on the tables/indexes that have the calculated savings at and higher for the given number provided.	
+            Will only work on the tables/indexes that have the calculated savings at and higher for the given number provided.
     
     .PARAMETER EnableException
-		    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		    
-	.NOTES
-		Author: Jason Squires (@js_0505, jstexasdba@gmail.com)
-		Tags: Compression, Table, Database
-		Website: https://dbatools.io
-		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-	
-	.LINK
-		https://dbatools.io/Set-DbaDbCompression
-	
-	.EXAMPLE
-		Set-DbaDbCompression -SqlInstance localhost -MaxRunTime 60 -PercentCompression 25
-		Set the compression run time to 60 minutes and will start the compression of tables/indexes
-        that have a difference of 25% or higher between current and recommended.
-	
-	.EXAMPLE
-		Set-DbaDbCompression -SqlInstance ServerA -Database DBName -MaxRunTime 60 -PercentCompression 25 | Out-GridView
-		Set the compression run time to 60 minutes and will start the compression of tables/indexes
-        that have a difference of 25% or higher between current and recommended and the results into a nicely formated GridView.
-	
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            
+    .NOTES
+        Author: Jason Squires (@js_0505, jstexasdba@gmail.com)
+        Tags: Compression, Table, Database
+        Website: https://dbatools.io
+        Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+        License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    
+    .LINK
+        https://dbatools.io/Set-DbaDbCompression
+    
     .EXAMPLE
-		$cred = Get-Credential sqladmin		
+        Set-DbaDbCompression -SqlInstance localhost -MaxRunTime 60 -PercentCompression 25
+        Set the compression run time to 60 minutes and will start the compression of tables/indexes
+        that have a difference of 25% or higher between current and recommended.
+    
+    .EXAMPLE
+        Set-DbaDbCompression -SqlInstance ServerA -Database DBName -MaxRunTime 60 -PercentCompression 25 | Out-GridView
+        Set the compression run time to 60 minutes and will start the compression of tables/indexes
+        that have a difference of 25% or higher between current and recommended and the results into a nicely formated GridView.
+    
+    .EXAMPLE
+        $cred = Get-Credential sqladmin
         Set-DbaDbCompression -SqlInstance ServerA -ExcludeDatabase Database -SqlCredential $cred -MaxRunTime 60 -PercentCompression 25
-		Returns results of all potential compression options for all databases
+        Returns results of all potential compression options for all databases
         with the recommendation of either Page or Row
-	
+    
     .EXAMPLE
         $servers = 'Server1','Server2'
         foreach ($svr in $servers)
         {
-			Set-DbaDbCompression -SqlInstance $svr -MaxRunTime 60 -PercentCompression 25 | Export-Csv -Path C:\temp\CompressionAnalysisPAC.csv -Append
+            Set-DbaDbCompression -SqlInstance $svr -MaxRunTime 60 -PercentCompression 25 | Export-Csv -Path C:\temp\CompressionAnalysisPAC.csv -Append
         }
-	
-	    This produces a full list of all your servers listed and is pushed to a csv for you to analyize.
+    
+        This produces a full list of all your servers listed and is pushed to a csv for you to analyize.
         Set the compression run time to 60 minutes and will start the compression of tables/indexes; across all listed servers;
         that have a difference of 25% or higher between current and recommended.
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default")]
-	param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[object[]]$Database,
-		[object[]]$ExcludeDatabase,
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[int]$MaxRunTime,
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[int]$PercentCompression,
-		[switch][Alias('Silent')]$EnableException
-	)
-	
-	begin {
-		Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
-		$sql = "SET NOCOUNT ON;
+    [CmdletBinding(DefaultParameterSetName = "Default")]
+    param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [object[]]$Database,
+        [object[]]$ExcludeDatabase,
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [int]$MaxRunTime,
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [int]$PercentCompression,
+        [switch][Alias('Silent')]$EnableException
+    )
+    
+    begin {
+        Write-Message -Level System -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
+        $sql = "SET NOCOUNT ON;
                 IF OBJECT_ID('tempdb..##setdbacompression' , 'U') IS NOT NULL
                 DROP TABLE ##setdbacompression
 				
@@ -368,86 +368,86 @@ function Set-DbaDbCompression {
                   DROP TABLE ##tmpEstimateRow
                   IF OBJECT_ID('tempdb..##tmpEstimatePage' , 'U') IS NOT NULL
                   DROP TABLE ##tmpEstimatePage;"
-	}
-	
-	process {
-		
-		foreach ($instance in $SqlInstance) {
-			try {
-				Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SourceSqlCredential -MinimumVersion 10
-			}
-			catch {
-				Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
-			}
-			
-			$Server.ConnectionContext.StatementTimeout = 0
-			
-			#The reason why we do this is because of SQL 2016 and they now allow for compression on standard edition.
-			if ($Server.EngineEdition -notmatch 'Enterprise' -and $Server.VersionMajor -lt '13') {
-				Stop-Function -Message "Only SQL Server Enterprise Edition supports compression on $Server" -Target $Server -Continue
-			}
-			#If IncludeSystemDBs is true, include systemdbs
-			#look at all databases, online/offline/accessible/inaccessible and tell user if a db can't be queried.
-			try {
-				$dbs = $server.Databases
-				if ($Database) {
-					$dbs = $dbs | Where-Object { $Database -contains $_.Name -and $_.IsAccessible -and $_.IsSystemObject -EQ 0 }
-				}
-				
-				else {
-					$dbs = $dbs | Where-Object { $_.IsAccessible -and $_.IsSystemObject -EQ 0 }
-				}
-				
-				if (Test-Bound "ExcludeDatabase") {
-					$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
-				}
-			}
-			catch {
-				Stop-Function -Message "Unable to gather list of databases for $instance" -Target $instance -ErrorRecord $_ -Continue
-			}
-			
-			
-			foreach ($db in $dbs) {
-				try {
-					Write-Message -Level Verbose -Message "Querying $instance - $db"
-					if ($db.status -ne 'Normal' -or $db.IsAccessible -eq $false) {
-						Write-Message -Level Warning -Message "$db is not accessible." -Target $db
-						
-						continue
-					}
-					if ($db.CompatibilityLevel -lt 'Version100') {
-						Stop-Function -Message "$db has a compatibility level lower than Version100 and will be skipped." -Target $db -Continue
-					}
-					#Execute query against individual database and add to output
-					foreach ($row in ($server.Query($sql, $db.Name))) {
-						[pscustomobject]@{
-							ComputerName  = $server.NetName
-							InstanceName  = $server.ServiceName
-							SqlInstance   = $server.DomainInstanceName
-							Database	  = $row.DBName
-							Schema	      = $row.Schema
-							TableName	  = $row.TableName
-							IndexName	  = $row.IndexName
-							Partition	  = $row.Partition
-							IndexID	      = $row.IndexID
-							IndexType	  = $row.IndexType
-							PercentScan   = $row.PercentScan
-							PercentUpdate = $row.PercentUpdate
-							RowEstimatePercentOriginal = $row.RowEstimatePercentOriginal
-							PageEstimatePercentOriginal = $row.PageEstimatePercentOriginal
-							CompressionTypeRecommendation = $row.CompressionTypeRecommendation
-							SizeCurrentKB = $row.SizeCurrentKB
-							SizeRequestedKB = $row.SizeRequestedKB
-							PercentCompression = $row.PercentCompression
-							AlreadyProcesssed = $row.AlreadyProcessed
-						}
-					}
-				}
-				catch {
-					Stop-Function -Message "Unable to query $instance - $db" -Target $db -ErrorRecord $_ -Continue
-				}
-			}
-		}
-	}
+    }
+    
+    process {
+        
+        foreach ($instance in $SqlInstance) {
+            try {
+                Write-Message -Level VeryVerbose -Message "Connecting to $instance" -Target $instance
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SourceSqlCredential -MinimumVersion 10
+            }
+            catch {
+                Stop-Function -Message "Failed to process Instance $Instance" -ErrorRecord $_ -Target $instance -Continue
+            }
+            
+            $Server.ConnectionContext.StatementTimeout = 0
+            
+            #The reason why we do this is because of SQL 2016 and they now allow for compression on standard edition.
+            if ($Server.EngineEdition -notmatch 'Enterprise' -and $Server.VersionMajor -lt '13') {
+                Stop-Function -Message "Only SQL Server Enterprise Edition supports compression on $Server" -Target $Server -Continue
+            }
+            #If IncludeSystemDBs is true, include systemdbs
+            #look at all databases, online/offline/accessible/inaccessible and tell user if a db can't be queried.
+            try {
+                $dbs = $server.Databases
+                if ($Database) {
+                    $dbs = $dbs | Where-Object { $Database -contains $_.Name -and $_.IsAccessible -and $_.IsSystemObject -EQ 0 }
+                }
+                
+                else {
+                    $dbs = $dbs | Where-Object { $_.IsAccessible -and $_.IsSystemObject -EQ 0 }
+                }
+                
+                if (Test-Bound "ExcludeDatabase") {
+                    $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
+                }
+            }
+            catch {
+                Stop-Function -Message "Unable to gather list of databases for $instance" -Target $instance -ErrorRecord $_ -Continue
+            }
+            
+            
+            foreach ($db in $dbs) {
+                try {
+                    Write-Message -Level Verbose -Message "Querying $instance - $db"
+                    if ($db.status -ne 'Normal' -or $db.IsAccessible -eq $false) {
+                        Write-Message -Level Warning -Message "$db is not accessible." -Target $db
+                        
+                        continue
+                    }
+                    if ($db.CompatibilityLevel -lt 'Version100') {
+                        Stop-Function -Message "$db has a compatibility level lower than Version100 and will be skipped." -Target $db -Continue
+                    }
+                    #Execute query against individual database and add to output
+                    foreach ($row in ($server.Query($sql, $db.Name))) {
+                        [pscustomobject]@{
+                            ComputerName                  = $server.NetName
+                            InstanceName                  = $server.ServiceName
+                            SqlInstance                   = $server.DomainInstanceName
+                            Database                      = $row.DBName
+                            Schema                        = $row.Schema
+                            TableName                     = $row.TableName
+                            IndexName                     = $row.IndexName
+                            Partition                     = $row.Partition
+                            IndexID                       = $row.IndexID
+                            IndexType                     = $row.IndexType
+                            PercentScan                   = $row.PercentScan
+                            PercentUpdate                 = $row.PercentUpdate
+                            RowEstimatePercentOriginal    = $row.RowEstimatePercentOriginal
+                            PageEstimatePercentOriginal   = $row.PageEstimatePercentOriginal
+                            CompressionTypeRecommendation = $row.CompressionTypeRecommendation
+                            SizeCurrentKB                 = $row.SizeCurrentKB
+                            SizeRequestedKB               = $row.SizeRequestedKB
+                            PercentCompression            = $row.PercentCompression
+                            AlreadyProcesssed             = $row.AlreadyProcessed
+                        }
+                    }
+                }
+                catch {
+                    Stop-Function -Message "Unable to query $instance - $db" -Target $db -ErrorRecord $_ -Continue
+                }
+            }
+        }
+    }
 }

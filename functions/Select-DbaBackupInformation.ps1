@@ -1,5 +1,5 @@
-function Select-DbaBackupInformation{
-<#
+function Select-DbaBackupInformation {
+    <#
     .SYNOPSIS 
     Select a subset of backups from a dbatools backup history object
 
@@ -81,19 +81,19 @@ function Select-DbaBackupInformation{
         [object]$ContinuePoints,
         [switch]$EnableException
     )
-    begin{
+    begin {
         $InternalHistory = @()
 
-        if((Test-Bound -ParameterName ContinuePoints) -and $null -ne $ContinuePoints){
-           Write-Message -Message "ContinuePoints provided so setting up for a continue" -Level Verbose 
+        if ((Test-Bound -ParameterName ContinuePoints) -and $null -ne $ContinuePoints) {
+            Write-Message -Message "ContinuePoints provided so setting up for a continue" -Level Verbose 
             
             $IgnoreDiffs = $true
             $IgnoreFull = $true
-            if (Test-Bound -ParameterName DatabaseName){
+            if (Test-Bound -ParameterName DatabaseName) {
                 $DatabaseName = $DatabaseName | Where-Object {$_ -in ($ContinuePoints | Select-Object -Property Database).Database}
                 
                 $DroppedDatabases = $DatabaseName | Where-Object {$_ -notin ($ContinuePoints | Select-Object -Property Database).Database}
-                if ($null -ne $DroppedDatabases){
+                if ($null -ne $DroppedDatabases) {
                     Write-Message -Message "$($DroppedDatabases.join(',')) filtered out as not in ContinuePoints" -Level Verbose
                 }
             }
@@ -102,21 +102,21 @@ function Select-DbaBackupInformation{
             }
         }
     }
-    process{
-            $internalHistory += $BackupHistory
+    process {
+        $internalHistory += $BackupHistory
     }
     
-    end{ 
-        ForEach ($History in $InternalHistory){
-            if ("RestoreTime" -notin $History.PSobject.Properties.name){
-               $History | Add-Member -Name 'RestoreTime' -Type NoteProperty -Value $RestoreTime
+    end { 
+        ForEach ($History in $InternalHistory) {
+            if ("RestoreTime" -notin $History.PSobject.Properties.name) {
+                $History | Add-Member -Name 'RestoreTime' -Type NoteProperty -Value $RestoreTime
             }
         }
-        if ((Test-Bound -ParameterName DatabaseName) -and '' -ne $DatabaseName){
+        if ((Test-Bound -ParameterName DatabaseName) -and '' -ne $DatabaseName) {
             Write-Message -Message "Filtering by DatabaseName" -Level Verbose 
             $InternalHistory = $InternalHistory | Where-Object {$_.Database -in $DatabaseName}
         }
-        if (Test-Bound -ParameterName ServerName){
+        if (Test-Bound -ParameterName ServerName) {
             Write-Message -Message "Filtering by ServerName" -Level Verbose 
             $InternalHistory = $InternalHistory | Where-Object {$_.InstanceName -in $servername}
         }
@@ -128,23 +128,23 @@ function Select-DbaBackupInformation{
             
             $dbHistory = @()
             #Find the Last Full Backup before RestoreTime
-            if ($true -ne $IgnoreFull){
-                $Full =  $DatabaseHistory | Where-Object {$_.Type -in ('Full','Database') -and $_.Start -le $RestoreTime} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
-                $full.Fullname = ($DatabaseHistory | Where-Object {$_.Type -in ('Full','Database') -and $_.BackupSetID -eq $Full.BackupSetID}).Fullname
+            if ($true -ne $IgnoreFull) {
+                $Full = $DatabaseHistory | Where-Object {$_.Type -in ('Full', 'Database') -and $_.Start -le $RestoreTime} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
+                $full.Fullname = ($DatabaseHistory | Where-Object {$_.Type -in ('Full', 'Database') -and $_.BackupSetID -eq $Full.BackupSetID}).Fullname
                 $dbHistory += $full
             }    
             #Find the Last diff between Full and RestoreTime
-            if ($true -ne $IgnoreDiffs){
-                $Diff = $DatabaseHistory | Where-Object {$_.Type -in ('Differential','Database Differential')  -and $_.Start -le $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
-                if ($null -ne $Diff){
-                    $Diff.FullName = ($DatabaseHistory | Where-Object {$_.Type -in ('Differential','Database Differential')  -and $_.BackupSetID -eq $diff.BackupSetID}).Fullname
+            if ($true -ne $IgnoreDiffs) {
+                $Diff = $DatabaseHistory | Where-Object {$_.Type -in ('Differential', 'Database Differential') -and $_.Start -le $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn -Descending | Select-Object -First 1
+                if ($null -ne $Diff) {
+                    $Diff.FullName = ($DatabaseHistory | Where-Object {$_.Type -in ('Differential', 'Database Differential') -and $_.BackupSetID -eq $diff.BackupSetID}).Fullname
                     $dbhistory += $Diff
                 }
             }
             #Get All t-logs up to restore time
-            if($IgnoreFull -eq $true){
+            if ($IgnoreFull -eq $true) {
                 [bigint]$LogBaseLsn = ($ContinuePoints | Where-Object {$_.Database -eq $Database}).redo_start_lsn
-                $FirstRecoveryForkID  = ($ContinuePoints | Where-Object {$_.Database -eq $Database}).FirstRecoveryForkID
+                $FirstRecoveryForkID = ($ContinuePoints | Where-Object {$_.Database -eq $Database}).FirstRecoveryForkID
                 Write-Message -Message "Continuing, setting fake LastLsn - $LogBaseLSN" -Level Verbose
             }
             else {
@@ -153,17 +153,17 @@ function Select-DbaBackupInformation{
                 $FirstRecoveryForkID = $Full.FirstRecoveryForkID
             }
 
-            if ($true -ne $IgnoreLogs){
-                $FilteredLogs = $DatabaseHistory | Where-Object {$_.Type -in ('Log','Transaction Log') -and $_.Start -le $RestoreTime  -and $_.LastLSN.ToString() -ge $LogBaseLsn  -and $_.FirstLSN -ne $_.LastLSN}  | Sort-Object -Property LastLsn, FirstLsn
+            if ($true -ne $IgnoreLogs) {
+                $FilteredLogs = $DatabaseHistory | Where-Object {$_.Type -in ('Log', 'Transaction Log') -and $_.Start -le $RestoreTime -and $_.LastLSN.ToString() -ge $LogBaseLsn -and $_.FirstLSN -ne $_.LastLSN}  | Sort-Object -Property LastLsn, FirstLsn
                 $GroupedLogs = $FilteredLogs | Group-Object -Property LastLSN, FirstLSN
-                ForEach ($Group in $GroupedLogs){
+                ForEach ($Group in $GroupedLogs) {
                     $Log = $DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID} | select-object -First 1
                     $Log.FullName = ($DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID}).Fullname
                     $dbhistory += $Log
                     #$dbhistory += $DatabaseHistory | Where-Object {$_.BackupSetID -eq $Group.group[0].BackupSetID}
                 }
                 # Get Last T-log
-                $dbHistory += $DatabaseHistory | Where-Object {$_.Type -in ('Log','Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn  | Select-Object -First 1
+                $dbHistory += $DatabaseHistory | Where-Object {$_.Type -in ('Log', 'Transaction Log') -and $_.End -ge $RestoreTime -and $_.DatabaseBackupLSN -eq $Full.CheckpointLSN} | Sort-Object -Property LastLsn  | Select-Object -First 1
             }
 
             $dbHistory  #| Group-Object -Property BackupSetId # -Unique
