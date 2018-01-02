@@ -10,17 +10,17 @@ function Set-DbaMaxDop {
 
             You can set MaxDop database scoped configurations if the server is version 2016 or higher
 
- 		.PARAMETER SqlInstance
-			The SQL Server instance to connect to.
+        .PARAMETER SqlInstance
+            The SQL Server instance to connect to.
 
         .PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-			$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-			To connect as a different Windows user, run PowerShell as that user.
+            To connect as a different Windows user, run PowerShell as that user.
 
         .PARAMETER Database
             Specifies one or more databases to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
@@ -40,12 +40,12 @@ function Set-DbaMaxDop {
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-		.PARAMETER WhatIf
+        .PARAMETER WhatIf
             Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
-		.PARAMETER Confirm
+        .PARAMETER Confirm
             Prompts you for confirmation before running the cmdlet.
 
         .NOTES
