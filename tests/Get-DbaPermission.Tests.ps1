@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Get-DbaPermission Unit Tests" -Tag "UnitTests" {
     InModuleScope dbatools {
         Context "Validate parameters" {
-            $params = (Get-ChildItem function:\Get-DbaPermission).Parameters	
+            $params = (Get-ChildItem function:\Get-DbaPermission).Parameters
             it "should have a parameter named SqlInstance" {
                 $params.ContainsKey("SqlInstance") | Should Be $true
             }

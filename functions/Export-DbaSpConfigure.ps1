@@ -6,7 +6,7 @@ function Export-DbaSpConfigure {
         .DESCRIPTION
             Exports advanced sp_configure global configuration options to sql file.
 
-        .PARAMETER SqlInstance 
+        .PARAMETER SqlInstance
             Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2005 or higher.
 
         .PARAMETER SqlCredential
@@ -51,23 +51,23 @@ function Export-DbaSpConfigure {
         [string]$Path,
         [PSCredential]$SqlCredential
     )
-    
+
     begin {
         $server = Connect-SqlInstance $sqlinstance $SqlCredential
-        
+
         if ($server.versionMajor -lt 9) {
             Write-Error "Windows 2000 is not supported for sp_configure export."
             break
         }
-        
+
         if ($path.length -eq 0) {
             $timenow = (Get-Date -uformat "%m%d%Y%H%M%S")
             $mydocs = [Environment]::GetFolderPath('MyDocuments')
             $path = "$mydocs\$($server.name.replace('\', '$'))-$timenow-sp_configure.sql"
         }
-    
+
     }
-    
+
     process {
         try {
             Set-Content -Path $path "EXEC sp_configure 'show advanced options' , 1;  RECONFIGURE WITH OVERRIDE"
@@ -75,7 +75,7 @@ function Export-DbaSpConfigure {
         catch {
             throw "Can't write to $path"
         }
-        
+
         $server.Configuration.ShowAdvancedOptions.ConfigValue = $true
         $server.Configuration.Alter($true)
         foreach ($sourceprop in $server.Configuration.Properties) {
@@ -89,10 +89,10 @@ function Export-DbaSpConfigure {
         $server.Configuration.Alter($true)
         return $path
     }
-    
+
     end {
         $server.ConnectionContext.Disconnect()
-        
+
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
             Write-Output "Server configuration export finished"
         }

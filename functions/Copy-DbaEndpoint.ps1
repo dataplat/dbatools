@@ -48,10 +48,10 @@ function Copy-DbaEndpoint {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .PARAMETER Force
             If this switch is enabled, existing endpoints on Destination with matching names from Source will be dropped.
-            
+
         .NOTES
             Tags: Migration, Endpoint
             Author: Chrissy LeMaire (@cl), netnerds.net
@@ -114,7 +114,7 @@ function Copy-DbaEndpoint {
 
         foreach ($currentEndpoint in $serverEndpoints) {
             $endpointName = $currentEndpoint.Name
-            
+
             $copyEndpointStatus = [pscustomobject]@{
                 SourceServer      = $sourceServer.Name
                 DestinationServer = $destServer.Name
@@ -124,7 +124,7 @@ function Copy-DbaEndpoint {
                 Notes             = $null
                 DateTime          = [DbaDateTime](Get-Date)
             }
-            
+
             if ($Endpoint -and $Endpoint -notcontains $endpointName -or $ExcludeEndpoint -contains $endpointName) {
                 continue
             }

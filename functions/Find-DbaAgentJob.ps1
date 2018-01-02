@@ -13,14 +13,14 @@ function Find-DbaAgentJob {
             Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
 
         .PARAMETER JobName
-            Filter agent jobs to only the name(s) you list. 
+            Filter agent jobs to only the name(s) you list.
             Supports regular expression (e.g. MyJob*) being passed in.
 
         .PARAMETER ExcludeJobName
             Allows you to enter an array of agent job names to ignore
 
         .PARAMETER StepName
-            Filter based on StepName. 
+            Filter based on StepName.
             Supports regular expression (e.g. MyJob*) being passed in.
 
         .PARAMETER LastUsed
@@ -51,7 +51,7 @@ function Find-DbaAgentJob {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Agent, Job
             Author: Stephen Bennett (https://sqlnotesfromtheunderground.wordpress.com/)
@@ -82,9 +82,9 @@ function Find-DbaAgentJob {
             Find-DbaAgentJob -SqlInstance Dev01 -IsDisabled -IsNoEmailNotification -IsNotScheduled
 
             Returns all agent job(s) that are either disabled, have no email notification or don't have a schedule. returned with detail
-    
+
         .EXAMPLE
-            $servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob 
+            $servers | Find-DbaAgentJob -IsFailed | Start-DbaAgentJob
 
             Finds all failed job then starts them. Consider using a -WhatIf at the end of Start-DbaAgentJob to see what it'll do first
 
@@ -227,8 +227,8 @@ function Find-DbaAgentJob {
                 Add-Member -Force -InputObject $job -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $job -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Add-Member -Force -InputObject $job -MemberType NoteProperty -Name JobName -value $job.Name
-                
-                
+
+
                 Select-DefaultView -InputObject $job -Property ComputerName, InstanceName, SqlInstance, Name, Category, OwnerLoginName, CurrentRunStatus, CurrentRunRetryAttempt, 'IsEnabled as Enabled', LastRunDate, LastRunOutcome, DateCreated, HasSchedule, OperatorToEmail, 'DateCreated as CreateDate'
             }
         }

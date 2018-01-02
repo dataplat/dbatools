@@ -1,13 +1,13 @@
 function Get-DbaUserLevelPermission {
-    <# 
-    .SYNOPSIS 
+    <#
+    .SYNOPSIS
         Displays detailed permissions information for the server and database roles and securables.
 
-    .DESCRIPTION 
+    .DESCRIPTION
         This command will display all server logins, server level securable, database logins and database securables.
-    
+
         DISA STIG implementators will find this command useful as it uses Permissions.sql provided by DISA.
-    
+
         Note that if you Ctrl-C out of this command and end it prematurely, it will leave behind a STIG schema in tempdb.
 
     .PARAMETER SqlInstance
@@ -15,9 +15,9 @@ function Get-DbaUserLevelPermission {
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-        $cred = Get-Credential, this pass this $cred to the param. 
+        $cred = Get-Credential, this pass this $cred to the param.
 
-        Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.    
+        Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
 
     .PARAMETER Database
         The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
@@ -34,11 +34,11 @@ function Get-DbaUserLevelPermission {
     .PARAMETER IncludeSystemObjects
         Allows you to include output on sys schema objects.
 
-    .PARAMETER EnableException 
+    .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
     Tags: Discovery, Permissions, Security
     Author: Brandon Abshire, netnerds.net
@@ -47,18 +47,18 @@ function Get-DbaUserLevelPermission {
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
         License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-    .LINK 
+    .LINK
         https://dbatools.io/Get-DbaUserLevelPermission
 
-    .EXAMPLE   
+    .EXAMPLE
         Get-DbaUserLevelPermission -SqlInstance sql2008, sqlserver2012
         Check server and database permissions for servers sql2008 and sqlserver2012.
 
-    .EXAMPLE   
+    .EXAMPLE
         Get-DbaUserLevelPermission -SqlInstance sql2008 -Database TestDB
         Check server and database permissions on server sql2008 for only the TestDB database
 
-    .EXAMPLE   
+    .EXAMPLE
         Get-DbaUserLevelPermission -SqlInstance sql2008 -Database TestDB -IncludePublicGuest -IncludeSystemObjects
         Check server and database permissions on server sql2008 for only the TestDB database,
         including public and guest grants, and sys schema objects.
@@ -78,11 +78,11 @@ function Get-DbaUserLevelPermission {
         [switch]$IncludeSystemObjects,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     BEGIN {
-        
-        $sql = [System.IO.File]::ReadAllText("$script:PSModuleRoot\bin\stig.sql") 
-        
+
+        $sql = [System.IO.File]::ReadAllText("$script:PSModuleRoot\bin\stig.sql")
+
         $endSQL = "	   BEGIN TRY DROP FUNCTION STIG.server_effective_permissions END TRY BEGIN CATCH END CATCH;
                        GO
                        BEGIN TRY DROP VIEW STIG.server_permissions END TRY BEGIN CATCH END CATCH;
@@ -105,8 +105,8 @@ function Get-DbaUserLevelPermission {
                        GO
                        BEGIN TRY DROP SCHEMA STIG END TRY BEGIN CATCH END CATCH;
                        GO"
-        
-        
+
+
         $serverSQL = "SELECT  'SERVER LOGINS' AS Type ,
                                     sl.name AS Member ,
                                     ISNULL(srm.role, 'None') AS [Role/Securable/Class] ,
@@ -140,7 +140,7 @@ function Get-DbaUserLevelPermission {
                                     LEFT JOIN tempdb.[STIG].[server_permissions] sp ON sl.name = sp.Grantee
                             WHERE   sl.name NOT LIKE 'NT %'
                                     AND sl.name NOT LIKE '##%';"
-        
+
         $dbSQL = "SELECT  'DB ROLE MEMBERS' AS type ,
                                 Member ,
                                 Role ,
@@ -174,56 +174,56 @@ function Get-DbaUserLevelPermission {
                                                                                      )
                         WHERE	dp.Grantor IS NOT NULL
                                 AND [Schema/Owner] <> 'sys'"
-        
+
         if ($IncludePublicGuest) { $dbSQL = $dbSQL.Replace("LEFT JOIN", "FULL JOIN") }
         if ($IncludeSystemObjects) { $dbSQL = $dbSQL.Replace("AND [Schema/Owner] <> 'sys'", "") }
-        
+
     }
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Attempting to connect to $instance"
-            
+
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $dbs = $server.Databases
-            
+
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.Name }
             }
-            
+
             if ($ExcludeDatabase) {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
-            
+
             if ($ExcludeSystemDatabase) {
                 $dbs = $dbs | Where-Object IsSystemObject -eq $false
             }
-            
+
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $db on $instance"
-                
+
                 if ($db.IsAccessible -eq $false) {
                     Stop-Function -Message "The database $db is not accessible" -Continue
                 }
-                
+
                 $sql = $sql.Replace("<TARGETDB>", $db.Name)
-                
+
                 #Create objects in active database
                 Write-Message -Level Verbose -Message "Creating objects"
                 try { $db.ExecuteNonQuery($sql) } catch {} # sometimes it complains about not being able to drop the stig schema if the person Ctrl-C'd before.
-                
+
                 #Grab permissions data
                 if (-not $serverDT) {
                     Write-Message -Level Verbose -Message "Building data table for server objects"
-                    
-                    try { $serverDT = $db.Query($serverSQL) } catch { } 
-                    
+
+                    try { $serverDT = $db.Query($serverSQL) } catch { }
+
                     foreach ($row in $serverDT) {
                         [PSCustomObject]@{
                             ComputerName       = $server.NetName
@@ -245,10 +245,10 @@ function Get-DbaUserLevelPermission {
                         }
                     }
                 }
-                
+
                 Write-Message -Level Verbose -Message "Building data table for $db objects"
-                try { $dbDT = $db.Query($dbSQL) } catch { } 
-                
+                try { $dbDT = $db.Query($dbSQL) } catch { }
+
                 foreach ($row in $dbDT) {
                     [PSCustomObject]@{
                         ComputerName       = $server.NetName
@@ -269,12 +269,12 @@ function Get-DbaUserLevelPermission {
                         SourceView         = $row.'Source View'
                     }
                 }
-                
+
                 #Delete objects
                 Write-Message -Level Verbose -Message "Deleting objects"
                 try { $db.ExecuteNonQuery($endSQL) }catch { }
                 $sql = $sql.Replace($db.Name, "<TARGETDB>")
-                
+
                 #Sashay Away
             }
         }

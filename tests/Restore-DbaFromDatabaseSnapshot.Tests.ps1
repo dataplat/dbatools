@@ -7,7 +7,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         if ($env:appveyor) {
             Get-Service | Where-Object { $_.DisplayName -match 'SQL Server (SQL2016)' } | Restart-Service -Force
-            
+
             do {
                 Start-Sleep 1
                 $null = (& sqlcmd -S $script:instance2 -b -Q "select 1" -d master)
@@ -63,16 +63,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterEach {
             Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1, $db2 -Force -ErrorAction SilentlyContinue
         }
-        
+
         if ($setupright) {
             It "Honors the Database parameter, restoring only snapshots of that database" {
                 $result = Restore-DbaFromDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Force
                 $result.Status | Should Be "Restored"
                 $result.Snapshot | Should Be $db2_snap1
                 $result.Database | Should Be $db2
-                
+
                 $server.Query("INSERT INTO [$db1].[dbo].[Example] values ('sample2')")
-                
+
                 $result = Restore-DbaFromDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Force
                 $result.Status | Should Be "Restored"
                 $result.Snapshot | Should Be $db1_snap2
@@ -96,7 +96,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $result.Database.Name | Should Be $db1_snap
                 # the log size has been restored to the correct size
                 $server.databases[$db1].Logfiles.Size | Should Be 13312
-                
+
             }
             It "Stops if multiple snapshot for the same db are passed" {
                 $result = Restore-DbaFromDatabaseSnapshot -SqlInstance $script:instance2 -Snapshot $db1_snap1, $db1_snap2 -Force *> $null

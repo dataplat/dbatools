@@ -25,7 +25,7 @@ function Get-DbaDbStoredProcedure {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Databases
             Author: Klaas Vandenberghe ( @PowerDbaKlaas )
@@ -80,9 +80,9 @@ function Get-DbaDbStoredProcedure {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $databases = $server.Databases | Where-Object IsAccessible
-            
+
             if ($Database) {
                 $databases = $databases | Where-Object Name -In $Database
             }
@@ -110,7 +110,7 @@ function Get-DbaDbStoredProcedure {
                     Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $proc -MemberType NoteProperty -Name Database -value $db.Name
 
-                    $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'ID as ObjectId', 'CreateDate', 
+                    $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Schema', 'ID as ObjectId', 'CreateDate',
                     'DateLastModified', 'Name', 'ImplementationType', 'Startup'
                     Select-DefaultView -InputObject $proc -Property $defaults
                 }

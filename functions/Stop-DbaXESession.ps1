@@ -17,7 +17,7 @@ function Stop-DbaXESession {
 
     .PARAMETER AllSessions
     Stop all Extended Events sessions on an instance, ignoring the packaged sessions: AlwaysOn_health, system_health, telemetry_xevents.
-    
+
     .PARAMETER SessionCollection
     Internal parameter to support piping from Get-DbaXESession
 
@@ -52,7 +52,7 @@ function Stop-DbaXESession {
     Stops the sessions returned from the Get-DbaXESession function.
 
 #>
-    [CmdletBinding(DefaultParameterSetName = 'Session')]  
+    [CmdletBinding(DefaultParameterSetName = 'Session')]
     param (
         [parameter(Position = 1, Mandatory, ParameterSetName = 'Session')]
         [parameter(Position = 1, Mandatory, ParameterSetName = 'All')]
@@ -74,7 +74,7 @@ function Stop-DbaXESession {
         [Microsoft.SqlServer.Management.XEvent.Session[]]$SessionCollection,
         [switch]$EnableException
     )
-    
+
     begin {
         # Stop each XESession
         function Stop-XESessions {
@@ -100,7 +100,7 @@ function Stop-DbaXESession {
             }
         }
     }
-    
+
     process {
         if ($SessionCollection) {
             Stop-XESessions $SessionCollection
@@ -108,7 +108,7 @@ function Stop-DbaXESession {
         else {
             foreach ($instance in $SqlInstance) {
                 $xeSessions = Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential
-                
+
                 # Filter xesessions based on parameters
                 if ($Session) {
                     $xeSessions = $xeSessions | Where-Object { $_.Name -in $Session }
@@ -117,7 +117,7 @@ function Stop-DbaXESession {
                     $systemSessions = @('AlwaysOn_health', 'system_health', 'telemetry_xevents')
                     $xeSessions = $xeSessions | Where-Object { $_.Name -notin $systemSessions }
                 }
-                
+
                 Stop-XESessions $xeSessions
             }
         }

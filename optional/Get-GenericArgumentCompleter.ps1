@@ -4,7 +4,7 @@ if (-not (Get-Command -Name Register-ArgumentCompleter -ErrorAction Ignore)) {
             [string]$name,
             [object]$collection
         )
-        
+
         Register-ArgumentCompleter -ParameterName $name -ScriptBlock {
             param (
                 $commandName,
@@ -13,7 +13,7 @@ if (-not (Get-Command -Name Register-ArgumentCompleter -ErrorAction Ignore)) {
                 $commandAst,
                 $fakeBoundParameter
             )
-            
+
             if ($collection) {
                 foreach ($item in $collection) {
                     New-CompletionResult -CompletionText $item -ToolTip $item

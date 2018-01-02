@@ -12,9 +12,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterAll {
             $db.Query("DROP TABLE dbo.dbatoolsci_schemachange1")
         }
-        
+
         $results = Get-DbaSchemaChangeHistory -SqlInstance $script:instance1 -Database tempdb
-        
+
         It "notices dbatoolsci_schemachange changed" {
             $results.Object -match 'dbatoolsci_schemachange' | Should Be $true
         }

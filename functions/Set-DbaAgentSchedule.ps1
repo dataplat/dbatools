@@ -1,7 +1,7 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 function Set-DbaAgentSchedule {
     <#
-.SYNOPSIS 
+.SYNOPSIS
 Set-DbaAgentSchedule updates a schedule in the msdb database.
 
 .DESCRIPTION
@@ -12,7 +12,7 @@ SQL Server instance. You must have sysadmin access and server version must be SQ
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER Job
@@ -25,10 +25,10 @@ The name of the schedule.
 The new name for the schedule.
 
 .PARAMETER Enabled
-Set the schedule to enabled. 
+Set the schedule to enabled.
 
 .PARAMETER Disabled
-Set the schedule to disabled. 
+Set the schedule to disabled.
 
 .PARAMETER FrequencyType
 A value indicating when a job is to be executed.
@@ -53,7 +53,7 @@ The number of subday type periods to occur between each execution of a job.
 A job's occurrence of FrequencyInterval in each month, if FrequencyInterval is 32 (monthlyrelative).
 
 .PARAMETER FrequencyRecurrenceFactor
-The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative". 
+The number of weeks or months between the scheduled execution of a job. FrequencyRecurrenceFactor is used only if FrequencyType is 8, "Weekly", 16, "Monthly", 32 or "MonthlyRelative".
 
 .PARAMETER StartDate
 The date on which execution of a job can begin.
@@ -63,16 +63,16 @@ The date on which execution of a job can stop.
 
 .PARAMETER StartTime
 The time on any day to begin execution of a job. Format HHMMSS / 24 hour clock.
-Example: '010000' for 01:00:00 AM. 
+Example: '010000' for 01:00:00 AM.
 Example: '140000' for 02:00:00 PM.
 
 .PARAMETER EndTime
 The time on any day to end execution of a job. Format HHMMSS / 24 hour clock.
-Example: '010000' for 01:00:00 AM. 
+Example: '010000' for 01:00:00 AM.
 Example: '140000' for 02:00:00 PM.
 
 .PARAMETER Owner
-The name of the server principal that owns the schedule. If no value is given the schedule is owned by the creator. 
+The name of the server principal that owns the schedule. If no value is given the schedule is owned by the creator.
 
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
@@ -84,12 +84,12 @@ Prompts you for confirmation before executing any changing operations within the
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
 It will also remove the any present schedules with the same name for the specific job.
 
-.NOTES 
+.NOTES
 Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Step
 
@@ -123,7 +123,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
 #>
 
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
-    
+
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
@@ -184,7 +184,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
 
         # Check if the interval is valid
         if (($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
-            Stop-Function -Message "The interval $FrequencyInterval needs to be higher than 1 and lower than 365 when using a daily frequency the interval." -Target $SqlInstance 
+            Stop-Function -Message "The interval $FrequencyInterval needs to be higher than 1 and lower than 365 when using a daily frequency the interval." -Target $SqlInstance
             return
         }
 
@@ -195,18 +195,18 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
                 Write-Message -Message "Recurrence factor not set for weekly or monthly interval. Setting it to $FrequencyRecurrenceFactor." -Level Verbose
             }
             else {
-                Stop-Function -Message "The recurrence factor $FrequencyRecurrenceFactor needs to be at least on when using a weekly or monthly interval." -Target $SqlInstance 
+                Stop-Function -Message "The recurrence factor $FrequencyRecurrenceFactor needs to be at least on when using a weekly or monthly interval." -Target $SqlInstance
                 return
             }
         }
-        
+
         # Check the subday interval
         if (($FrequencySubdayType -in 2, 4) -and (-not ($FrequencySubdayInterval -ge 1 -or $FrequencySubdayInterval -le 59))) {
-            Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 59 when subday type is 2, 'Seconds', 4 or 'Minutes'" -Target $SqlInstance 
+            Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 59 when subday type is 2, 'Seconds', 4 or 'Minutes'" -Target $SqlInstance
             return
         }
         elseif (($FrequencySubdayType -eq 8) -and (-not ($FrequencySubdayInterval -ge 1 -and $FrequencySubdayInterval -le 23))) {
-            Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 23 when subday type is 8 or 'Hours" -Target $SqlInstance 
+            Stop-Function -Message "Subday interval $FrequencySubdayInterval must be between 1 and 23 when subday type is 8 or 'Hours" -Target $SqlInstance
             return
         }
 
@@ -221,7 +221,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
                 foreach ($Item in $FrequencyInterval) {
                     switch ($Item) {
                         "Sunday" { $Interval += 1 }
-                        "Monday" { $Interval += 2 } 
+                        "Monday" { $Interval += 2 }
                         "Tuesday" { $Interval += 4 }
                         "Wednesday" { $Interval += 8 }
                         "Thursday" { $Interval += 16 }
@@ -245,19 +245,19 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
             }
 
             # If the FrequencyInterval is set for the relative monthly FrequencyInterval
-            if ($FrequencyType -eq 32) {   
+            if ($FrequencyType -eq 32) {
                 # Loop through the array
                 foreach ($Item in $FrequencyInterval) {
                     switch ($Item) {
                         "Sunday" { $Interval += 1 }
-                        "Monday" { $Interval += 2 } 
+                        "Monday" { $Interval += 2 }
                         "Tuesday" { $Interval += 3 }
                         "Wednesday" { $Interval += 4 }
                         "Thursday" { $Interval += 5 }
                         "Friday" { $Interval += 6 }
                         "Saturday" { $Interval += 7 }
                         "Day" { $Interval += 8 }
-                        "Weekday" { $Interval += 9 } 
+                        "Weekday" { $Interval += 9 }
                         "WeekendDay" { $Interval += 10 }
                         1 { $Interval += 1 }
                         2 { $Interval += 2 }
@@ -271,7 +271,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
                         10 { $Interval += 10 }
                     }
                 }
-            } 
+            }
         }
 
         # Check of the relative FrequencyInterval value is of type string and set the integer value
@@ -281,7 +281,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
 
         # Check if the interval is valid
         if (($FrequencyType -eq 4) -and ($FrequencyInterval -lt 1 -or $FrequencyInterval -ge 365)) {
-            Stop-Function -Message "The interval $FrequencyInterval needs to be higher than 1 and lower than 365 when using a daily frequency the interval." -Target $SqlInstance 
+            Stop-Function -Message "The interval $FrequencyInterval needs to be higher than 1 and lower than 365 when using a daily frequency the interval." -Target $SqlInstance
             return
         }
 
@@ -291,29 +291,29 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
 
         # Check the start date
         if ($StartDate -and ($StartDate -notmatch $RegexDate)) {
-            Stop-Function -Message "Start date $StartDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance 
+            Stop-Function -Message "Start date $StartDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance
             return
         }
 
         # Check the end date
         if ($EndDate -and ($EndDate -notmatch $RegexDate)) {
-            Stop-Function -Message "End date $EndDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance 
+            Stop-Function -Message "End date $EndDate needs to be a valid date with format yyyyMMdd" -Target $SqlInstance
             return
         }
         elseif ($EndDate -lt $StartDate) {
-            Stop-Function -Message "End date $EndDate cannot be before start date $StartDate" -Target $SqlInstance 
+            Stop-Function -Message "End date $EndDate cannot be before start date $StartDate" -Target $SqlInstance
             return
         }
 
         # Check the start time
         if ($StartTime -and ($StartTime -notmatch $RegexTime)) {
-            Stop-Function -Message "Start time $StartTime needs to match between '000000' and '235959'" -Target $SqlInstance 
+            Stop-Function -Message "Start time $StartTime needs to match between '000000' and '235959'" -Target $SqlInstance
             return
         }
 
         # Check the end time
         if ($EndTime -and ($EndTime -notmatch $RegexTime)) {
-            Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'" -Target $SqlInstance 
+            Stop-Function -Message "End time $EndTime needs to match between '000000' and '235959'" -Target $SqlInstance
             return
         }
     }
@@ -358,7 +358,7 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
 
                         if ($Enabled) {
                             Write-Message -Message "Setting job schedule to enabled for schedule $ScheduleName" -Level Verbose
-                            $JobSchedule.IsEnabled = $true    
+                            $JobSchedule.IsEnabled = $true
                         }
 
                         if ($Disabled) {
@@ -426,13 +426,13 @@ Changes the schedule for Job1 with the name 'daily' to enabled on multiple serve
                             try {
                                 # Excute the query and save the result
                                 Write-Message -Message "Changing the schedule $ScheduleName for job $j" -Level Verbose
-                        
+
                                 $JobSchedule.Alter()
-                        
+
                             }
                             catch {
                                 Stop-Function -Message "Something went wrong changing the schedule" -Target $instance -ErrorRecord $_ -Continue
-                                return 
+                                return
                             }
                         }
                     }

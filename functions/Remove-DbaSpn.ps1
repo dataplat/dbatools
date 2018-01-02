@@ -5,7 +5,7 @@ Function Remove-DbaSpn {
 Removes an SPN for a given service account in active directory and also removes delegation to the same SPN, if found
 
 .DESCRIPTION
-This function will connect to Active Directory and search for an account. If the account is found, it will attempt to remove the specified SPN. Once the SPN is removed, the function will also remove delegation to that service. 
+This function will connect to Active Directory and search for an account. If the account is found, it will attempt to remove the specified SPN. Once the SPN is removed, the function will also remove delegation to that service.
 
 In order to run this function, the credential you provide must have write access to Active Directory.
 
@@ -24,7 +24,7 @@ The credential you want to use to connect to Active Directory to make the change
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .PARAMETER Confirm
 Turns confirmations before changes on or off
 
@@ -81,7 +81,7 @@ Removes all set SPNs for sql2005 and the relative delegations
         [PSCredential]$Credential,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     process {
         Write-Message -Message "Looking for account $ServiceAccount..." -Level Verbose
         $searchfor = 'User'
@@ -105,7 +105,7 @@ Removes all set SPNs for sql2005 and the relative delegations
         else {
             Stop-Function -Message "The SQL Service account ($ServiceAccount) has not been found" -EnableException $EnableException -Target $ServiceAccount
         }
-        
+
         # Cool! Remove an SPN
         $delegate = $true
         $spnadobject = $adentry.Properties['servicePrincipalName']
@@ -115,7 +115,7 @@ Removes all set SPNs for sql2005 and the relative delegations
             $status = "SPN not found"
             $set = $false
         }
-        
+
         if ($PSCmdlet.ShouldProcess("$spn", "Removing SPN for service account")) {
             try {
                 if ($spnadobject -contains $spn) {
@@ -132,7 +132,7 @@ Removes all set SPNs for sql2005 and the relative delegations
                 $status = "Failed to remove SPN"
                 $delegate = $false
             }
-            
+
             [pscustomobject]@{
                 Name           = $spn
                 ServiceAccount = $ServiceAccount
@@ -169,7 +169,7 @@ Removes all set SPNs for sql2005 and the relative delegations
                         $set = $true
                         $status = "Failed to remove delegation"
                     }
-                    
+
                     [pscustomobject]@{
                         Name           = $spn
                         ServiceAccount = $ServiceAccount
@@ -179,7 +179,7 @@ Removes all set SPNs for sql2005 and the relative delegations
                     }
                 }
             }
-            
+
         }
     }
 }

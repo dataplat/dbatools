@@ -36,7 +36,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             { Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 *> $null } | Should Not Throw "You must specify"
         }
     }
-    
+
     Context "Operations on snapshots" {
         BeforeEach {
             $needed = @()
@@ -50,7 +50,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterEach {
             Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1, $db2 -Force -ErrorAction SilentlyContinue
         }
-        
+
         if ($setupright) {
             It "Honors the Database parameter, dropping only snapshots of that database" {
                 $results = Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Force
@@ -80,7 +80,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $ExpectedProps = 'ComputerName,Database,InstanceName,SnapshotOf,SqlInstance,Status'.Split(',')
                 ($result.PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
             }
-            
+
         }
     }
 }

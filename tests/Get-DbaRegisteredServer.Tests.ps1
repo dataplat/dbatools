@@ -54,7 +54,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Get-DbaRegisteredServer -SqlInstance $script:instance1 -Group "$group\$group2"
             $results.Count | Should Be 1
         }
-        
+
         # Property Comparisons will come later when we have the commands
     }
 }

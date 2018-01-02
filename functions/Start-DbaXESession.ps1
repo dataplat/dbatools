@@ -17,7 +17,7 @@ function Start-DbaXESession {
 
     .PARAMETER AllSessions
     Start all Extended Events sessions on an instance, ignoring the packaged sessions: AlwaysOn_health, system_health, telemetry_xevents.
-    
+
     .PARAMETER SessionCollection
     Internal parameter to support piping from Get-DbaXESession
 
@@ -52,7 +52,7 @@ function Start-DbaXESession {
     Starts the sessions returned from the Get-DbaXESession function.
 
 #>
-    [CmdletBinding(DefaultParameterSetName = 'Session')]  
+    [CmdletBinding(DefaultParameterSetName = 'Session')]
     param (
         [parameter(Position = 1, Mandatory, ParameterSetName = 'Session')]
         [parameter(Position = 1, Mandatory, ParameterSetName = 'All')]
@@ -74,7 +74,7 @@ function Start-DbaXESession {
         [Microsoft.SqlServer.Management.XEvent.Session[]]$SessionCollection,
         [switch]$EnableException
     )
-    
+
     begin {
         # Start each XESession
         function Start-XESessions {
@@ -100,7 +100,7 @@ function Start-DbaXESession {
             }
         }
     }
-    
+
     process {
         if ($SessionCollection) {
             Start-XESessions $SessionCollection
@@ -108,7 +108,7 @@ function Start-DbaXESession {
         else {
             foreach ($instance in $SqlInstance) {
                 $xeSessions = Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential
-                
+
                 # Filter xeSessions based on parameters
                 if ($Session) {
                     $xeSessions = $xeSessions | Where-Object { $_.Name -in $Session }
@@ -117,7 +117,7 @@ function Start-DbaXESession {
                     $systemSessions = @('AlwaysOn_health', 'system_health', 'telemetry_xevents')
                     $xeSessions = $xeSessions | Where-Object { $_.Name -notin $systemSessions }
                 }
-                
+
                 Start-XESessions $xeSessions
             }
         }

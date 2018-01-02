@@ -40,7 +40,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         # Drop created objects
         $conn.ExecuteNonQuery("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_valid') DROP EVENT SESSION [dbatoolsci_session_valid] ON SERVER;")
     }
-    
+
     Context "Verifying command works" {
         It "stops the system_health session" {
             $systemhealth | Stop-DbaXESession

@@ -20,11 +20,11 @@ Credential object used to connect to the SQL Server as a different user
 .PARAMETER Simple
 Shows concise information including Server name, Database name, and the date the last time backups were performed
 
-.PARAMETER EnableException 
+.PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Tags: Memory
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -63,7 +63,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
         [switch]$Simple,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     begin {
         if ($Simple) {
             $Memcounters = '(Total Server Memory |Target Server Memory |Connection Memory |Lock Memory |SQL Cache Memory |Optimizer Memory |Granted Workspace Memory |Cursor memory usage|Maximum Workspace)'
@@ -79,7 +79,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
             $SSAScounters = '(\\memory )'
             $SSIScounters = '(memory)'
         }
-        
+
         $scriptblock = {
             param( $Memcounters, $Plancounters, $BufManpagecounters, $SSAScounters, $SSIScounters )
             Write-Verbose "Searching for Memory Manager Counters on $Computer"
@@ -104,7 +104,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
             catch {
                 Write-Verbose "No Memory Manager Counters on $Computer"
             }
-            
+
             Write-Verbose "Searching for Plan Cache Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet '*sql*:Plan Cache*' -ErrorAction SilentlyContinue).paths
@@ -127,7 +127,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
             catch {
                 Write-Verbose "No Plan Cache Counters on $Computer"
             }
-            
+
             Write-Verbose "Searching for Buffer Manager Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet "*Buffer Manager*" -ErrorAction SilentlyContinue).paths
@@ -150,7 +150,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
             catch {
                 Write-Verbose "No Buffer Manager Counters on $Computer"
             }
-            
+
             Write-Verbose "Searching for SSAS Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet "MSAS*:Memory" -ErrorAction SilentlyContinue).paths
@@ -173,7 +173,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
             catch {
                 Write-Verbose "No SSAS Counters on $Computer"
             }
-            
+
             Write-Verbose "Searching for SSIS Counters on $Computer"
             try {
                 $availablecounters = (Get-Counter -ListSet "*SSIS*" -ErrorAction SilentlyContinue).paths
@@ -198,7 +198,7 @@ Returns a gridview displaying Server, counter instance, counter, number of pages
             }
         }
     }
-    
+
     process {
         foreach ($Computer in $ComputerName.ComputerName) {
             $reply = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -ErrorAction SilentlyContinue

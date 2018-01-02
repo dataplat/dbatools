@@ -1,7 +1,7 @@
 Function Get-DbaServerProtocol {
     <#
     .SYNOPSIS
-    Gets the SQL Server related server protocols on a computer. 
+    Gets the SQL Server related server protocols on a computer.
 
     .DESCRIPTION
     Gets the SQL Server related server protocols on one or more computers.
@@ -19,7 +19,7 @@ Function Get-DbaServerProtocol {
    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-   
+
     .NOTES
     Author: Klaas Vandenberghe ( @PowerDBAKlaas )
     Tags: Protocol
@@ -35,7 +35,7 @@ Function Get-DbaServerProtocol {
 
     Gets the SQL Server related server protocols on computer sqlserver2014a.
 
-    .EXAMPLE   
+    .EXAMPLE
     'sql1','sql2','sql3' | Get-DbaServerProtocol
 
     Gets the SQL Server related server protocols on computers sql1, sql2 and sql3.
@@ -60,7 +60,7 @@ Function Get-DbaServerProtocol {
         [PSCredential]$Credential,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     process {
         foreach ($Computer in $ComputerName.ComputerName) {
             $Server = Resolve-DbaNetworkName -ComputerName $Computer -Credential $credential
@@ -91,4 +91,4 @@ Function Get-DbaServerProtocol {
             }
         }
     }
-} 
+}

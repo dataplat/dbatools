@@ -6,9 +6,9 @@ function Copy-DbaCredential {
         .DESCRIPTION
             By using password decryption techniques provided by Antti Rantasaari (NetSPI, 2014), this script migrates SQL Server Credentials from one server to another while maintaining username and password.
 
-            Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/ 
-            License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause 
-              
+            Credit: https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
+            License: BSD 3-Clause http://opensource.org/licenses/BSD-3-Clause
+
         .PARAMETER Source
             Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
 
@@ -41,7 +41,7 @@ function Copy-DbaCredential {
 
         .PARAMETER ExcludeCredentialIdentity
             Auto-populated list of Credentials from Source to be excluded from the migration.
-    
+
         .PARAMETER Force
             If this switch is enabled, the Credential will be dropped and recreated if it already exists on Destination.
 
@@ -55,7 +55,7 @@ function Copy-DbaCredential {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: WSMan, Migration
             Author: Chrissy LeMaire (@cl), netnerds.net
@@ -100,10 +100,10 @@ function Copy-DbaCredential {
         [switch]$Force,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     begin {
         $null = Test-ElevationRequirement -ComputerName $Source.ComputerName
-        
+
         function Get-SqlCredential {
             <#
                 .SYNOPSIS
@@ -121,10 +121,10 @@ function Copy-DbaCredential {
                 [DbaInstanceParameter]$SqlInstance,
                 [PSCredential]$SqlCredential
             )
-            
+
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
             $sourceName = $server.Name
-            
+
             # Query Service Master Key from the database - remove padding from the key
             # key_id 102 eq service master key, thumbprint 3 means encrypted with machinekey
             $sql = "SELECT substring(crypt_property,9,len(crypt_property)-8) FROM sys.key_encryptions WHERE key_id=102 and (thumbprint=0x03 or thumbprint=0x0300000001)"
@@ -134,11 +134,11 @@ function Copy-DbaCredential {
             catch {
                 throw "Can't execute SQL on $sourceName"
             }
-            
+
             $sourceNetBios = Resolve-NetBiosName $server
             $instance = $server.InstanceName
             $serviceInstanceId = $server.ServiceInstanceId
-            
+
             # Get entropy from the registry - hopefully finds the right SQL server instance
             try {
                 [byte[]]$entropy = Invoke-Command2 -ComputerName $sourceNetBios -Credential $Credential -ArgumentList $serviceInstanceId -ScriptBlock {
@@ -150,7 +150,7 @@ function Copy-DbaCredential {
             catch {
                 throw "Can't access registry keys on $sourceName. Quitting. $_"
             }
-            
+
             # Decrypt the service master key
             try {
                 $serviceKey = Invoke-Command2 -ComputerName $sourceNetBios -Credential $Credential -ArgumentList $smkBytes, $Entropy -ScriptBlock {
@@ -164,7 +164,7 @@ function Copy-DbaCredential {
             catch {
                 throw "Can't unprotect registry data on $($source.Name)). Quitting."
             }
-            
+
             <#
                 Choose the encryption algorithm based on the SMK length:
                     3DES for 2008, AES for 2012
@@ -173,7 +173,7 @@ function Copy-DbaCredential {
             if (($serviceKey.Length -ne 16) -and ($serviceKey.Length -ne 32)) {
                 throw "Unknown key size. Cannot continue. Quitting."
             }
-            
+
             if ($serviceKey.Length -eq 16) {
                 $decryptor = New-Object System.Security.Cryptography.TripleDESCryptoServiceProvider
                 $ivlen = 8
@@ -182,7 +182,7 @@ function Copy-DbaCredential {
                 $decryptor = New-Object System.Security.Cryptography.AESCryptoServiceProvider
                 $ivlen = 16
             }
-            
+
             <#
                 Query link server password information from the Db. Remove header from pwdhash,
                     extract IV (as iv) and ciphertext (as pass).
@@ -193,8 +193,8 @@ function Copy-DbaCredential {
             }
             else {
                 $dacEnabled = $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue
-                
-                
+
+
                 if ($dacEnabled -eq $false) {
                     if ($Pscmdlet.ShouldProcess($server.Name, "Enabling DAC on clustered instance")) {
                         Write-Message -Level Verbose -Message "DAC must be enabled for clusters, even when accessed from active node. Enabling."
@@ -202,12 +202,12 @@ function Copy-DbaCredential {
                         $server.Configuration.Alter()
                     }
                 }
-                
+
                 $connString = "Server=ADMIN:$sourceName;Trusted_Connection=True"
             }
-            
+
             $sql = "SELECT QUOTENAME(name) AS name,credential_identity,substring(imageval,5,$ivlen) iv, substring(imageval,$($ivlen + 5),len(imageval)-$($ivlen + 4)) pass from sys.Credentials cred inner join sys.sysobjvalues obj on cred.credential_id = obj.objid where valclass=28 and valnum=2"
-            
+
             # Get entropy from the registry
             try {
                 $creds = Invoke-Command2 -ComputerName $sourceNetBios -Credential $Credential -ArgumentList $connString, $sql -ScriptBlock {
@@ -233,7 +233,7 @@ function Copy-DbaCredential {
                 Stop-Function -Message "Can't establish local DAC connection to $sourceName or other error. Quitting." -ErrorRecord $_
                 return
             }
-            
+
             if ($server.IsClustered -and $dacEnabled -eq $false) {
                 if ($Pscmdlet.ShouldProcess($server.Name, "Disabling DAC on clustered instance")) {
                     Write-Message -Level Verbose -Message "Setting DAC config back to 0"
@@ -241,12 +241,12 @@ function Copy-DbaCredential {
                     $server.Configuration.Alter()
                 }
             }
-            
+
             $decryptedLogins = New-Object "System.Data.DataTable"
             [void]$decryptedLogins.Columns.Add("Credential")
             [void]$decryptedLogins.Columns.Add("Identity")
             [void]$decryptedLogins.Columns.Add("Password")
-            
+
             # Go through each row in results
             foreach ($cred in $creds) {
                 # decrypt the password using the service master key and the extracted IV
@@ -254,13 +254,13 @@ function Copy-DbaCredential {
                 $decrypt = $decryptor.CreateEncryptor($serviceKey, $cred.iv)
                 $stream = New-Object System.IO.MemoryStream ( , $cred.pass)
                 $crypto = New-Object System.Security.Cryptography.CryptoStream $stream, $decrypt, "Write"
-                
+
                 $crypto.Write($cred.Pass, 0, $cred.Pass.Length)
                 [byte[]]$decrypted = $stream.ToArray()
-                
+
                 # convert decrypted password to unicode
                 $encode = New-Object System.Text.UnicodeEncoding
-                
+
                 <#
                     Print results - removing the weird padding (8 bytes in the front, some bytes at the end)...
                     Might cause problems but so far seems to work.. may be dependant on SQL server version...
@@ -275,12 +275,12 @@ function Copy-DbaCredential {
                     $i += 1
                 }
                 $decrypted = $decrypted[8 .. $i]
-                
+
                 [void]$decryptedLogins.Rows.Add($($cred.Name), $($cred.Credential_Identity), $($encode.GetString($decrypted)))
             }
             return $decryptedLogins
         }
-        
+
         function Copy-Credential {
             <#
                 .SYNOPSIS
@@ -293,24 +293,24 @@ function Copy-DbaCredential {
                 [string[]]$credentials,
                 [bool]$force
             )
-            
+
             Write-Message -Level Verbose -Message "Collecting Credential logins and passwords on $($sourceServer.Name)"
             $sourceCredentials = Get-SqlCredential $sourceServer
             $credentialList = $sourceServer.Credentials
-            
+
             if ($CredentialIdentity) {
                 $credentialList = $credentialList | Where-Object { $CredentialIdentity -contains $_.Name }
             }
-            
+
             if ($ExcludeCredentialIdentity) {
                 $credentialList = $credentialList | Where-Object { $CredentialIdentity -notcontains $_.Name }
             }
-            
+
             Write-Message -Level Verbose -Message "Starting migration"
             foreach ($credential in $credentialList) {
                 $destServer.Credentials.Refresh()
                 $credentialName = $credential.Name
-                
+
                 $copyCredentialStatus = [pscustomobject]@{
                     SourceServer      = $sourceServer.Name
                     DestinationServer = $destServer.Name
@@ -320,13 +320,13 @@ function Copy-DbaCredential {
                     Notes             = $null
                     DateTime          = [DbaDateTime](Get-Date)
                 }
-                
+
                 if ($destServer.Credentials[$credentialName] -ne $null) {
                     if (!$force) {
                         $copyCredentialStatus.Status = "Skipping"
                         $copyCredentialStatus.Notes = "Already exists"
                         $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Write-Message -Level Verbose -Message "$credentialName exists $($destServer.Name). Skipping."
                         continue
                     }
@@ -337,7 +337,7 @@ function Copy-DbaCredential {
                         }
                     }
                 }
-                
+
                 Write-Message -Level Verbose -Message "Attempting to migrate $credentialName"
                 try {
                     $currentCred = $sourceCredentials | Where-Object { $_.Credential -eq "[$credentialName]" }
@@ -350,33 +350,33 @@ function Copy-DbaCredential {
                         $destServer.Credentials.Refresh()
                         Write-Message -Level Verbose -Message "$credentialName successfully copied"
                     }
-                    
+
                     $copyCredentialStatus.Status = "Successful"
                     $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
                 catch {
                     $copyCredentialStatus.Status = "Failed"
                     $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    
+
                     Stop-Function -Message "Error creating credential" -Target $credentialName -ErrorRecord $_
                 }
             }
         }
-        
+
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-        
+
         $source = $sourceServer.DomainInstanceName
         $destination = $destServer.DomainInstanceName
-        
+
         if ($SourceSqlCredential.Username -ne $null) {
             Write-Message -Level Verbose -Message "You are using SQL credentials and this script requires Windows admin access to the $Source server. Trying anyway."
         }
-        
+
         if ($sourceServer.VersionMajor -lt 9 -or $destServer.VersionMajor -lt 9) {
             throw "Credentials are only supported in SQL Server 2005 and above. Quitting."
         }
-        
+
         Invoke-SmoCheck -SqlInstance $sourceServer
         Invoke-SmoCheck -SqlInstance $destServer
     }
@@ -384,7 +384,7 @@ function Copy-DbaCredential {
         if (Test-FunctionInterrupt) { return }
         Write-Message -Level Verbose -Message "Getting NetBios name for $source"
         $sourceNetBios = Resolve-NetBiosName $sourceServer
-        
+
         # This output is wrong. Will fix later.
         Write-Message -Level Verbose -Message "Checking if Remote Registry is enabled on $source"
         try {
@@ -394,7 +394,7 @@ function Copy-DbaCredential {
             Stop-Function -Message "Can't connect to registry on $source." -Target $sourceNetBios -ErrorRecord $_
             return
         }
-        
+
         # Magic happens here
         Copy-Credential $credentials -force:$force
     }

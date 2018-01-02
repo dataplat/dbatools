@@ -26,9 +26,9 @@ function Get-DbaLastBackup {
         .PARAMETER ExcludeDatabase
             Specifies one or more database(s) to exclude from processing.
 
-        .PARAMETER EnableException 
+        .PARAMETER EnableException
             If this switch is enabled exceptions will be thrown to the caller, which will need to perform its own exception processing. Otherwise, the function will try to catch the exception, interpret it and provide a friendly error message.
-                
+
         .NOTES
             Tags: DisasterRecovery, Backup
             Author: Klaas Vandenberghe ( @PowerDBAKlaas )

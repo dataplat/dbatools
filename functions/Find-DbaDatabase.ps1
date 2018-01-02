@@ -6,7 +6,7 @@ Find database/s on multiple servers that match criteria you input
 .DESCRIPTION
 Allows you to search SQL Server instances for database that have either the same name, owner or service broker guid.
 
-There a several reasons for the service broker guid not matching on a restored database primarily using alter database new broker. or turn off broker to return a guid of 0000-0000-0000-0000. 
+There a several reasons for the service broker guid not matching on a restored database primarily using alter database new broker. or turn off broker to return a guid of 0000-0000-0000-0000.
 
 .PARAMETER SqlInstance
 The SQL Server that you're connecting to.
@@ -45,13 +45,13 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 .EXAMPLE
 Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern Report
 Returns all database from the SqlInstances that have a database with Report in the name
-    
+
 .EXAMPLE
 Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Pattern TestDB -Exact | Select-Object *
 Returns all database from the SqlInstances that have a database named TestDB with a detailed output.
 
 .EXAMPLE
-Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Property ServiceBrokerGuid -Pattern '-faeb-495a-9898-f25a782835f5' | Select-Object * 
+Find-DbaDatabase -SqlInstance "DEV01", "DEV02", "UAT01", "UAT02", "PROD01", "PROD02" -Property ServiceBrokerGuid -Pattern '-faeb-495a-9898-f25a782835f5' | Select-Object *
 Returns all database from the SqlInstances that have the same Service Broker GUID with a deatiled output
 
 #>
@@ -83,7 +83,7 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
                 Write-Warning "Failed to connect to: $instance"
                 continue
             }
-            
+
             if ($exact -eq $true) {
                 $dbs = $server.Databases | Where-Object IsAccessible | Where-Object { $_.$property -eq $pattern }
             }
@@ -98,9 +98,9 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
                     $dbs = $server.Databases | Where-Object { $_.$property.ToString() -match $pattern }
                 }
             }
-            
+
             foreach ($db in $dbs) {
-                
+
                 $extendedproperties = @()
                 foreach ($xp in $db.ExtendedProperties) {
                     $extendedproperties += [PSCustomObject]@{
@@ -108,9 +108,9 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
                         Value = $db.ExtendedProperties[$xp.Name].Value
                     }
                 }
-                
+
                 if ($extendedproperties.count -eq 0) { $extendedproperties = 0 }
-                
+
                 [PSCustomObject]@{
                     ComputerName       = $server.NetName
                     InstanceName       = $server.ServiceName
@@ -125,7 +125,7 @@ Returns all database from the SqlInstances that have the same Service Broker GUI
                     Views              = ($db.Views | Where-Object { $_.IsSystemObject -eq $false }).Count
                     ExtendedProperties = $extendedproperties
                     Database           = $db
-                } | Select-DefaultView -ExcludeProperty Database, ExtendedProperties, ServiceBrokerGuid, StoredProcedures, Tables, Views 
+                } | Select-DefaultView -ExcludeProperty Database, ExtendedProperties, ServiceBrokerGuid, StoredProcedures, Tables, Views
             }
         }
     }

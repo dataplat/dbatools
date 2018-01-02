@@ -1,7 +1,7 @@
 ﻿Function New-DbaSqlConnectionString {
     <#
 .SYNOPSIS
-Builds or extracts a SQL Server Connection String 
+Builds or extracts a SQL Server Connection String
 
 .DESCRIPTION
 Builds or extracts a SQL Server Connection String
@@ -23,7 +23,7 @@ Gets or sets the access token for the connection.
 Appends to the current connection string. Note that you cannot pass authenitcation information using this method. Use -SqlInstance and, optionaly, -SqlCredential to set authentication information.
 
 .PARAMETER ApplicationIntent
-Declares the application workload type when connecting to a server. Possible values are ReadOnly and ReadWrite. 
+Declares the application workload type when connecting to a server. Possible values are ReadOnly and ReadWrite.
 
 .PARAMETER BatchSeparator
 By default, this is "GO"
@@ -184,26 +184,26 @@ Creates a connection string with ReadOnly ApplicantionIntent.
         [string]$WorkstationId,
         [string]$AppendConnectionString
     )
-    
+
     process {
         foreach ($instance in $sqlinstance) {
-            
+
             if ($instance.GetType() -eq [Microsoft.SqlServer.Management.Smo.Server]) {
                 return $instance.ConnectionContext.ConnectionString
             }
             else {
                 $guid = [System.Guid]::NewGuid()
                 $server = New-Object Microsoft.SqlServer.Management.Smo.Server $guid
-                
+
                 if ($AppendConnectionString) {
                     $connstring = $server.ConnectionContext.ConnectionString
                     $server.ConnectionContext.ConnectionString = "$connstring;$appendconnectionstring"
                     $server.ConnectionContext.ConnectionString
                 }
                 else {
-                    
+
                     $server.ConnectionContext.ApplicationName = $clientname
-                    
+
                     if ($AccessToken) { $server.ConnectionContext.AccessToken = $AccessToken }
                     if ($BatchSeparator) { $server.ConnectionContext.BatchSeparator = $BatchSeparator }
                     if ($ConnectTimeout) { $server.ConnectionContext.ConnectTimeout = $ConnectTimeout }
@@ -222,18 +222,18 @@ Creates a connection string with ReadOnly ApplicantionIntent.
                     if ($SqlExecutionModes) { $server.ConnectionContext.SqlExecutionModes = $SqlExecutionModes }
                     if ($TrustServerCertificate) { $server.ConnectionContext.TrustServerCertificate = $true }
                     if ($WorkstationId) { $server.ConnectionContext.WorkstationId = $WorkstationId }
-                    
+
                     $connstring = $server.ConnectionContext.ConnectionString
                     if ($MultiSubnetFailover) { $connstring = "$connstring;MultiSubnetFailover=True" }
                     if ($FailoverPartner) { $connstring = "$connstring;Failover Partner=$FailoverPartner" }
                     if ($ApplicationIntent) { $connstring = "$connstring;ApplicationIntent=$ApplicationIntent;" }
-                    
+
                     if ($connstring -ne $server.ConnectionContext.ConnectionString) {
                         $server.ConnectionContext.ConnectionString = $connstring
                     }
                     if ($Credential.username -ne $null) {
                         $username = ($Credential.username).TrimStart("\")
-                        
+
                         if ($username -like "*\*") {
                             $username = $username.Split("\")[1]
                             $authtype = "Windows Authentication with Credential"
@@ -249,7 +249,7 @@ Creates a connection string with ReadOnly ApplicantionIntent.
                             $server.ConnectionContext.set_SecurePassword($Credential.Password)
                         }
                     }
-                    
+
                     ($server.ConnectionContext.ConnectionString).Replace($guid, $SqlInstance)
                 }
             }

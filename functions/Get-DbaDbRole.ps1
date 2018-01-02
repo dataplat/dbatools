@@ -14,7 +14,7 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
 SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
@@ -89,9 +89,9 @@ Returns SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\sql1
         [switch]$ExcludeFixedRole,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     process {
-        
+
         foreach ($instance in $sqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -100,40 +100,40 @@ Returns SQLServer, Database, Role for DatabaseRoles on sql instance ServerB\sql1
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $dbs = $server.Databases | Where-Object IsAccessible
-            
+
             if ($Database) {
                 Write-Message -Level Verbose -Message "Databases to check: $Database"
                 $dbs = $dbs | Where-Object Name -In $Database
             }
-            
+
             if ($ExcludeDatabase) {
                 Write-Message -Level Verbose -Message "Databases excluded from check: $ExcludeDatabase"
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
-            
+
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Checking accessibility of $db on $instance"
-                
+
                 if ($db.IsAccessible -ne $true) {
                     Write-Message -Level Warning -Message "Database $db on $instance is not accessible"
                     continue
                 }
-                
+
                 $dbroles = $db.roles
                 Write-Message -Level Verbose -Message "Getting Database Roles for $db on $instance"
-                
+
                 if ($ExcludeFixedRole) {
                     $dbroles = $dbroles | Where-Object IsFixedRole -eq $false
                 }
-                
+
                 foreach ($dbrole in $dbroles) {
                     Add-Member -Force -InputObject $dbrole -MemberType NoteProperty -Name ComputerName -value $server.NetName
                     Add-Member -Force -InputObject $dbrole -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                     Add-Member -Force -InputObject $dbrole -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                     Add-Member -Force -InputObject $dbrole -MemberType NoteProperty -Name Database -value $db.Name
-                    
+
                     Select-DefaultView -InputObject $dbrole -Property ComputerName, InstanceName, SqlInstance, Database, Name, Owner, CreateDate, DateLastModified, IsFixedRole
                 }
             }

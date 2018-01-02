@@ -19,7 +19,7 @@ function Get-DbaTraceFlag {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: TraceFlag
             Author: Kevin Bullen (@sqlpadawan)
@@ -69,7 +69,7 @@ function Get-DbaTraceFlag {
             }
 
             $tflags = $server.EnumActiveGlobalTraceFlags()
-            
+
             if ($tFlags.Rows.Count -eq 0) {
                 Write-Message -Level Output -Message "No global trace flags enabled"
                 return
@@ -78,7 +78,7 @@ function Get-DbaTraceFlag {
             if ($TraceFlag) {
                 $tflags = $tflags | Where-Object TraceFlag -In $TraceFlag
             }
-            
+
             foreach ($tflag in $tflags) {
                 [pscustomobject]@{
                     ComputerName = $server.NetName

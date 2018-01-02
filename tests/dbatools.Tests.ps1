@@ -25,7 +25,7 @@ Describe "$ModuleName Aliases" -tag Build , Aliases {
             $Definition = (Get-Alias $Alias).Definition
             It "$Alias Alias should exist" {
                 Get-Alias $Alias| Should Not BeNullOrEmpty
-            }   
+            }
             It "$Alias Aliased Command $Definition Should Exist" {
                 Get-Command $Definition -ErrorAction SilentlyContinue | Should Not BeNullOrEmpty
             }
