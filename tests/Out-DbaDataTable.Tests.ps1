@@ -1,15 +1,15 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "Testing data table output when using a complex object" {
     $obj = New-Object -TypeName psobject -Property @{
-        guid = [system.guid]'32ccd4c4-282a-4c0d-997c-7b5deb97f9e0'
+        guid     = [system.guid]'32ccd4c4-282a-4c0d-997c-7b5deb97f9e0'
         timespan = New-TimeSpan -Start 2016-10-30 -End 2017-04-30
         datetime = Get-Date -Year 2016 -Month 10 -Day 30 -Hour 5 -Minute 52 -Second 0 -Millisecond 0
-        char = [System.Char]'T'
-        true = $true
-        false = $false
-        null = [bool]$null
-        string = "it's a boy!"
-        UInt64 = [System.UInt64]123456
+        char     = [System.Char]'T'
+        true     = $true
+        false    = $false
+        null     = [bool]$null
+        string   = "it's a boy!"
+        UInt64   = [System.UInt64]123456
     }
     
     $innedobj = New-Object -TypeName psobject -Property @{
