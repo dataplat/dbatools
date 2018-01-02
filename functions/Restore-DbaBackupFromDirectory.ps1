@@ -1,14 +1,14 @@
 function Restore-DbaBackupFromDirectory {
-    <# 
-        .SYNOPSIS 
+    <#
+        .SYNOPSIS
             Restores SQL Server databases from the backup directory structure created by Ola Hallengren's database maintenance scripts. Different structures coming soon.
 
-        .DESCRIPTION 
+        .DESCRIPTION
             Many SQL Server database administrators use Ola Hallengren's SQL Server Maintenance Solution which can be found at http://ola.hallengren.com
 
             Hallengren uses a predictable backup structure which made it relatively easy to create a script that can restore an entire SQL Server database instance, down to the master database (next version), to a new server. This script is intended to be used in the event that the originating SQL Server becomes unavailable, thus rendering my other SQL restore script (http://goo.gl/QmfQ6s) ineffective.
 
-        .PARAMETER SqlInstance 
+        .PARAMETER SqlInstance
             The SQL Server instance to which you will be restoring the database.
 
         .PARAMETER SqlCredential
@@ -21,7 +21,7 @@ function Restore-DbaBackupFromDirectory {
             To connect as a different Windows user, run PowerShell as that user.
 
         .PARAMETER Path
-            Specifies the full path to the directory that contains the database backups. The SQL Server service must have read access to this path. 
+            Specifies the full path to the directory that contains the database backups. The SQL Server service must have read access to this path.
 
         .PARAMETER ReuseSourceFolderStructure
             If this switch is enabled, the folder structure used on the instance where the backup was made will be recreated. By default, the database files will be restored to the default data and log directories for the instance you're restoring onto.
@@ -46,10 +46,10 @@ function Restore-DbaBackupFromDirectory {
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-        .LINK 
+        .LINK
             https://dbatools.io/Restore-SqlBackupFromDirectory
 
-        .EXAMPLE   
+        .EXAMPLE
             Restore-SqlBackupFromDirectory -SqlInstance sqlcluster -Path \\fileserver\share\sqlbackups\SQLSERVER2014A
 
             All user databases contained within \\fileserver\share\sqlbackups\SQLSERVERA will be restored to sqlcluster, down the most recent full/differential/logs.
@@ -69,9 +69,9 @@ function Restore-DbaBackupFromDirectory {
         [PSCredential]$SqlCredential,
         [switch]$Force
     )
-    
+
     DynamicParam {
-        
+
         if ($Path) {
             $newparams = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
             $paramattributes = New-Object System.Management.Automation.ParameterAttribute
@@ -80,11 +80,11 @@ function Restore-DbaBackupFromDirectory {
             $systemdbs = @("master", "msdb", "model", "SSIS")
             $dblist = (Get-ChildItem -Path $Path -Directory).Name | Where-Object { $systemdbs -notcontains $_ }
             $argumentlist = @()
-            
+
             foreach ($db in $dblist) {
                 $argumentlist += [Regex]::Escape($db)
             }
-            
+
             $validationset = New-Object System.Management.Automation.ValidateSetAttribute -ArgumentList $argumentlist
             $combinedattributes = New-Object -Type System.Collections.ObjectModel.Collection[System.Attribute]
             $combinedattributes.Add($paramattributes)
@@ -96,7 +96,7 @@ function Restore-DbaBackupFromDirectory {
             return $newparams
         }
     }
-    
+
     end {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Restore-SqlBackupFromDirectory -CustomMessage "Restore-DbaDatabase works way better. Please use that instead."
     }

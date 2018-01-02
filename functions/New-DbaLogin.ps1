@@ -2,104 +2,104 @@ function New-DbaLogin {
     <#
     .SYNOPSIS
     Creates a new SQL Server login
-    
+
     .DESCRIPTION
     Creates a new SQL Server login with provided specifications
-        
+
     .PARAMETER SqlInstance
     The target SQL Server(s)
-    
+
     .PARAMETER SqlCredential
     Allows you to login to SQL Server using alternative credentials
-    
+
     .PARAMETER Login
     The Login name(s)
-        
+
     .PARAMETER Password
     Secure string used to authenticate the Login
-    
+
     .PARAMETER HashedPassword
     Hashed password string used to authenticate the Login
-    
+
     .PARAMETER InputObject
     Takes the parameters required from a Login object that has been piped into the command
-    
+
     .PARAMETER LoginRenameHashtable
     Pass a hash table into this parameter to change login names when piping objects into the procedure
-    
+
     .PARAMETER MapToCertificate
     Map the login to a certificate
-    
+
     .PARAMETER MapToAsymmetricKey
     Map the login to an asymmetric key
-    
+
     .PARAMETER MapToCredential
     Map the login to a credential
-    
+
     .PARAMETER Sid
     Provide an explicit Sid that should be used when creating the account. Can be [byte[]] or hex [string] ('0xFFFF...')
-    
+
     .PARAMETER DefaultDatabase
     Default database for the login
-    
+
     .PARAMETER Language
     Login's default language
-    
+
     .PARAMETER PasswordExpiration
     Enforces password expiration policy. Requires PasswordPolicy to be enabled. Can be $true or $false(default)
-    
+
     .PARAMETER PasswordPolicy
     Enforces password complexity policy. Can be $true or $false(default)
-    
+
     .PARAMETER Disabled
     Create the login in a disabled state
-    
+
     .PARAMETER NewSid
     Ignore sids from the piped login object to generate new sids on the server. Useful when copying login onto the same server
-    
+
     .PARAMETER Force
-    If login exists, drop and recreate 
-        
-    .PARAMETER WhatIf 
-    Shows what would happen if the command were to run. No actions are actually performed 
-    
-    .PARAMETER Confirm 
-    Prompts you for confirmation before executing any changing operations within the command 
-    
-    .PARAMETER EnableException 
+    If login exists, drop and recreate
+
+    .PARAMETER WhatIf
+    Shows what would happen if the command were to run. No actions are actually performed
+
+    .PARAMETER Confirm
+    Prompts you for confirmation before executing any changing operations within the command
+
+    .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
     .NOTES
     Tags: Login
     Author: Kirill Kravtsov (@nvarscar)
     dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
     Copyright (C) 2016 Chrissy LeMaire
-    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0    
+    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
     .LINK
     https://dbatools.io/New-DbaLogin
-    
+
     .EXAMPLE
     New-DbaLogin -SqlInstance Server1,Server2 -Login Newlogin
-    
+
     You will be prompted to securely enter the password for a login [Newlogin]. The login would be created on servers Server1 and Server2 with default parameters.
-    
+
     .EXAMPLE
     $securePassword = Read-Host "Input password" -AsSecureString
     New-DbaLogin -SqlInstance Server1\sql1 -Login Newlogin -Password $securePassword -PasswordPolicy -PasswordExpiration
-    
+
     Creates a login on Server1\sql1 with a predefined password. The login will have password and expiration policies enforced onto it.
-    
+
     .EXAMPLE
     Get-DbaLogin -SqlInstance sql1 -Login Oldlogin | New-DbaLogin -SqlInstance sql1 -LoginRenameHashtable @{Oldlogin = 'Newlogin'} -Force -NewSid -Disabled:$false
-    
+
     Copies a login [Oldlogin] to the same instance sql1 with the same parameters (including password). New login will have a new sid, a new name [Newlogin] and will not be disabled. Existing login [Newlogin] will be removed prior to creation.
-    
+
     .EXAMPLE
     Get-DbaLogin -SqlInstance sql1 -Login Login1,Login2 | New-DbaLogin -SqlInstance sql2 -PasswordPolicy -PasswordExpiration -DefaultDatabase tempdb -Disabled
-    
+
     Copies logins [Login1] and [Login2] from instance sql1 to instance sql2, but enforces password and expiration policies for the new logins. New logins will also have a default database set to [tempdb] and will be created in a disabled state.
 #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Password")]
@@ -154,7 +154,7 @@ function New-DbaLogin {
         [switch]$Force,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     begin {
         if ($Sid) {
             if ($Sid.GetType().Name -ne 'Byte[]') {
@@ -167,21 +167,21 @@ function New-DbaLogin {
                 $Sid = Convert-HexStringToByte $Sid
             }
         }
-        
+
         if ($HashedPassword) {
             if ($HashedPassword.GetType().Name -eq 'Byte[]') {
-                $HashedPassword = Convert-ByteToHexString $HashedPassword 
+                $HashedPassword = Convert-ByteToHexString $HashedPassword
             }
         }
     }
-    
+
     process {
         #At least one of those should be specified
         if (!($Login -or $InputObject)) {
             Stop-Function -Message "No logins have been specified." -Category InvalidArgument -EnableException $EnableException
             Return
         }
-        
+
         $loginCollection = @()
         if ($InputObject) {
             $loginCollection += $InputObject
@@ -192,7 +192,7 @@ function New-DbaLogin {
         }
         else {
             $loginCollection += $Login
-            $Login | ForEach-Object { 
+            $Login | ForEach-Object {
                 if ($_.IndexOf('\') -eq -1 -and $PsCmdlet.ParameterSetName -like "Password*" -and !($Password -or $HashedPassword)) {
                     $passwordNotSpecified = $true
                 }
@@ -206,7 +206,7 @@ function New-DbaLogin {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             foreach ($loginItem in $loginCollection) {
                 #check if $loginItem is an SMO Login object
                 if ($loginItem.GetType().Name -eq 'Login') {
@@ -219,7 +219,7 @@ function New-DbaLogin {
                     $currentPasswordExpiration = $loginItem.PasswordExpiration
                     $currentPasswordPolicyEnforced = $loginItem.PasswordPolicyEnforced
                     $currentDisabled = $loginItem.IsDisabled
-                    
+
                     #Get previous password
                     if ($loginType -eq 'SqlLogin' -and !($Password -or $HashedPassword)) {
                         $sourceServer = $loginItem.Parent
@@ -229,11 +229,12 @@ function New-DbaLogin {
                             9 { $sql = "SELECT CONVERT(VARBINARY(256),password_hash) as hashedpass FROM sys.sql_logins where name='$loginName'" }
                             default {
                                 $sql = "SELECT CAST(CONVERT(VARCHAR(256), CAST(LOGINPROPERTY(name,'PasswordHash')
-									AS VARBINARY(256)), 1) AS NVARCHAR(max)) AS hashedpass FROM sys.server_principals
-									WHERE principal_id = $($loginItem.id)"
+                                    AS VARBINARY(256)), 1) AS NVARCHAR(max)) AS hashedpass
+                                    FROM sys.server_principals
+                                    WHERE principal_id = $($loginItem.id)"
                             }
                         }
-    
+
                         try {
                             $hashedPass = $sourceServer.ConnectionContext.ExecuteScalar($sql)
                         }
@@ -241,13 +242,13 @@ function New-DbaLogin {
                             $hashedPassDt = $sourceServer.Databases['master'].ExecuteWithResults($sql)
                             $hashedPass = $hashedPassDt.Tables[0].Rows[0].Item(0)
                         }
-    
+
                         if ($hashedPass.GetType().Name -ne "String") {
                             $hashedPass = Convert-ByteToHexString $hashedPass
                         }
                         $currentHashedPassword = $hashedPass
                     }
-                    
+
                     #Get cryptography and attached credentials
                     if ($loginType -eq 'AsymmetricKey') {
                         $currentAsymmetricKey = $loginItem.AsymmetricKey
@@ -265,17 +266,17 @@ function New-DbaLogin {
                 else {
                     $loginName = $loginItem
                     $currentSid = $currentDefaultDatabase = $currentLanguage = $currentPasswordExpiration = $currentAsymmetricKey = $currentCertificate = $currentCredential = $currentDisabled = $currentPasswordPolicyEnforced = $null
-                    
+
                     if ($PsCmdlet.ParameterSetName -eq "MapToCertificate") { $loginType = 'Certificate' }
                     elseif ($PsCmdlet.ParameterSetName -eq "MapToAsymmetricKey") { $loginType = 'AsymmetricKey' }
                     elseif ($loginItem.IndexOf('\') -eq -1) {    $loginType = 'SqlLogin' }
                     else { $loginType = 'WindowsUser' }
                 }
-                
+
                 if (($server.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($loginType -eq 'SqlLogin')) {
                     Write-Message -Level Warning -Message "$instance does not have Mixed Mode enabled. [$loginName] is an SQL Login. Enable mixed mode authentication after the migration completes to use this type of login." -EnableException $EnableException
                 }
-                
+
                 if ($Sid) {
                     $currentSid = $Sid
                 }
@@ -303,17 +304,17 @@ function New-DbaLogin {
                 if ($PSBoundParameters.Keys -contains 'Disabled') {
                     $currentDisabled = $Disabled
                 }
-                
+
                 #Apply renaming if necessary
                 if ($LoginRenameHashtable.Keys -contains $loginName) {
                     $loginName = $LoginRenameHashtable[$loginName]
                 }
-                
+
                 #Requesting password if required
-                if ($loginItem.GetType().Name -ne 'Login' -and $loginType -eq 'SqlLogin' -and !($Password -or $HashedPassword)) {    
+                if ($loginItem.GetType().Name -ne 'Login' -and $loginType -eq 'SqlLogin' -and !($Password -or $HashedPassword)) {
                     $Password = Read-Host -AsSecureString -Prompt "Enter a new password for the SQL Server login(s)"
                 }
-                
+
                 #verify if login exists on the server
                 if ($existingLogin = $server.Logins[$loginName]) {
                     if ($force) {
@@ -330,34 +331,34 @@ function New-DbaLogin {
                         Stop-Function -Message "Login $loginName already exists on $instance and -Force was not specified" -Target $loginName -Continue
                     }
                 }
-                
-                
+
+
                 if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating login $loginName on $instance")) {
                     try {
                         $newLogin = New-Object Microsoft.SqlServer.Management.Smo.Login($server, $loginName)
                         $newLogin.LoginType = $loginType
-                                        
+
                         $withParams = ""
-                        
+
                         if ($loginType -eq 'SqlLogin' -and $currentSid -and !$NewSid) {
                             Write-Message -Level Verbose -Message "Setting $loginName SID"
                             $withParams += ", SID = " + (Convert-ByteToHexString $currentSid)
                             $newLogin.Set_Sid($currentSid)
                         }
-                        
+
                         if ($loginType -in ("WindowsUser", "WindowsGroup", "SqlLogin")) {
                             if ($currentDefaultDatabase) {
                                 Write-Message -Level Verbose -Message "Setting $loginName default database to $currentDefaultDatabase"
                                 $withParams += ", DEFAULT_DATABASE = [$currentDefaultDatabase]"
                                 $newLogin.DefaultDatabase = $currentDefaultDatabase
                             }
-                            
+
                             if ($currentLanguage) {
                                 Write-Message -Level Verbose -Message "Setting $loginName language to $currentLanguage"
                                 $withParams += ", DEFAULT_LANGUAGE = [$currentLanguage]"
                                 $newLogin.Language = $currentLanguage
                             }
-                            
+
                             #CHECK_EXPIRATION: default - OFF
                             if ($currentPasswordExpiration) {
                                 $withParams += ", CHECK_EXPIRATION = ON"
@@ -367,7 +368,7 @@ function New-DbaLogin {
                                 $withParams += ", CHECK_EXPIRATION = OFF"
                                 $newLogin.PasswordExpirationEnabled = $false
                             }
-                            
+
                             #CHECK_POLICY: default - ON
                             if ($currentPasswordPolicyEnforced) {
                                 $withParams += ", CHECK_POLICY = ON"
@@ -377,7 +378,7 @@ function New-DbaLogin {
                                 $withParams += ", CHECK_POLICY = OFF"
                                 $newLogin.PasswordPolicyEnforced = $false
                             }
-                            
+
                             #Generate hashed password if necessary
                             if ($Password) {
                                 $currentHashedPassword = Get-PasswordHash $Password $server.versionMajor
@@ -392,14 +393,14 @@ function New-DbaLogin {
                         elseif ($loginType -eq 'Certificate') {
                             $newLogin.Certificate = $currentCertificate
                         }
-                        
+
                         #Add credential
                         if ($currentCredential) {
                             $withParams += ", CREDENTIAL = [$currentCredential]"
                         }
-                        
+
                         Write-Message -Level Verbose -Message "Adding as login type $loginType"
-                        
+
                         # Attempt to add login using SMO, then T-SQL
                         try {
                             if ($loginType -in ("WindowsUser", "WindowsGroup", "AsymmetricKey", "Certificate")) {
@@ -410,7 +411,7 @@ function New-DbaLogin {
                                 $newLogin.Create($currentHashedPassword, [Microsoft.SqlServer.Management.Smo.LoginCreateOptions]::IsHashed)
                             }
                             $newLogin.Refresh()
-                            
+
                             #Adding credential
                             if ($currentCredential) {
                                 try {
@@ -439,7 +440,7 @@ function New-DbaLogin {
                                 Stop-Function -Message "Failed to add $loginName to $instance." -Category InvalidOperation -ErrorRecord $_ -Target $instance -Continue
                             }
                         }
-                        
+
                         #Process the Disabled property
                         if ($currentDisabled) {
                             try {

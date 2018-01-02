@@ -8,7 +8,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             if ($env:appveyor) {
                 Get-Service | Where-Object { $_.DisplayName -match 'SQL Server (SQL2016)' } | Restart-Service -Force
-                
+
                 do {
                     Start-Sleep 1
                     $null = (& sqlcmd -S $script:instance2 -b -Q "select 1" -d master)
@@ -27,7 +27,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $server.Query("CREATE DATABASE $db2")
             $setupright = $true
             $needed = @()
-            $needed += New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Name $db1_snap1 -WarningAction SilentlyContinue 
+            $needed += New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Name $db1_snap1 -WarningAction SilentlyContinue
             $needed += New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1 -Name $db1_snap2 -WarningAction SilentlyContinue
             $needed += New-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db2 -Name $db2_snap1 -WarningAction SilentlyContinue
             if ($needed.Count -ne 3) {
@@ -41,7 +41,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             Remove-DbaDatabaseSnapshot -SqlInstance $script:instance2 -Database $db1, $db2 -Force -ErrorAction SilentlyContinue
             Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance2 -Database $db1, $db2 -ErrorAction SilentlyContinue
         }
-        
+
         if ($setupright) {
             It "Gets all snapshots by default" {
                 $results = Get-DbaDatabaseSnapshot -SqlInstance $script:instance2

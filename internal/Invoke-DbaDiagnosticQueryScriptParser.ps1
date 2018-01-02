@@ -1,5 +1,5 @@
 ﻿function Invoke-DbaDiagnosticQueryScriptParser {
-    [CmdletBinding(DefaultParameterSetName = "Default")] 
+    [CmdletBinding(DefaultParameterSetName = "Default")]
 
     Param(
         [parameter(Mandatory = $true)]
@@ -40,7 +40,7 @@
         if (!$NoColumnParsing) {
             if (($line -match "-- uncomment out these columns if not copying results to Excel") -or ($line -match "-- comment out this column if copying results to Excel")) {
                 $line = $QueryTextColumn + $PlanTextColumn
-            }  
+            }
         }
 
         if ($line -match "-{2,}\s{1,}(.*) \(Query (\d*)\) \((\D*)\)") {
@@ -55,13 +55,13 @@
                 $scriptpart = ""
             }
 
-            $querydescription = $prev_querydescription 
-            $querynr = $prev_querynr 
+            $querydescription = $prev_querydescription
+            $querynr = $prev_querynr
             $queryname = $prev_queryname
         }
         else {
             if (!$line.startswith("--") -and ($line.trim() -ne "") -and ($null -ne $line) -and ($line -ne "\n")) {
-                $scriptpart += $line + "`n"           
+                $scriptpart += $line + "`n"
             }
         }
     }

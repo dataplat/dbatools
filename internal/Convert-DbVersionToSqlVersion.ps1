@@ -1,4 +1,4 @@
-Function Convert-DbVersionToSqlVersion {
+function Convert-DbVersionToSqlVersion {
     <#
 .SYNOPSIS
 Internal function that makes db versions human readable

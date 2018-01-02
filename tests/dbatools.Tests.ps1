@@ -2,7 +2,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 $Path = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ModulePath = (get-item $Path ).parent.FullName
 $ModuleName = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -Replace ".Tests.ps1"
-$ManifestPath = "$ModulePath\$ModuleName.psd1"
+#$ManifestPath = "$ModulePath\$ModuleName.psd1"
 
 Describe 'dbatools module test' -Tag 'Compliance' {
     Context 'Doing something awesome' {
@@ -25,9 +25,28 @@ Describe "$ModuleName Aliases" -tag Build , Aliases {
             $Definition = (Get-Alias $Alias).Definition
             It "$Alias Alias should exist" {
                 Get-Alias $Alias| Should Not BeNullOrEmpty
-            }   
+            }
             It "$Alias Aliased Command $Definition Should Exist" {
                 Get-Command $Definition -ErrorAction SilentlyContinue | Should Not BeNullOrEmpty
+            }
+        }
+    }
+}
+
+Describe "$ModuleName indentation" -Tag 'Compliance' {
+    $AllFiles = Get-ChildItem -Path $ModulePath -File -Recurse  -Filter '*.ps*1'
+
+    foreach ($f in $AllFiles) {
+        $LeadingTabs = Select-String -Path $f -Pattern '^[\t]+'
+        if ($LeadingTabs.Count -gt 0) {
+            It "$f is not indented with tabs" {
+                $LeadingTabs.Count | Should Be 0
+            }
+        }
+        $TrailingSpaces = Select-String -Path $f -Pattern '[ \t]+$'
+        if ($TrailingSpaces.Count -gt 0) {
+            It "$f has no trailing spaces" {
+                $TrailingSpaces.Count | Should Be 0
             }
         }
     }

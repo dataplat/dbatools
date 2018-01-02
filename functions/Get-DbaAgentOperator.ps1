@@ -12,7 +12,7 @@ function Get-DbaAgentOperator {
 
         .PARAMETER SqlCredential
             PSCredential object to connect as. If not specified, current Windows login will be used.
-        
+
         .PARAMETER Operator
             The operator(s) to process - this list is auto-populated from the server. If unspecified, all operators will be processed.
 
@@ -23,7 +23,7 @@ function Get-DbaAgentOperator {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Agent, Operator
             Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -44,7 +44,7 @@ function Get-DbaAgentOperator {
             'ServerA','ServerB\instanceB' | Get-DbaAgentOperator
 
             Returns all SQL Agent operators  on serverA and serverB\instanceB
-        
+
         .EXAMPLE
             Get-DbaAgentOperator -SqlInstance ServerA -Operator Dba1,Dba2
 
@@ -75,14 +75,14 @@ function Get-DbaAgentOperator {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             Write-Message -Level Verbose -Message "Getting Edition from $server"
             Write-Message -Level Verbose -Message "$server is a $($server.Edition)"
-            
+
             if ($server.Edition -like 'Express*') {
                 Stop-Function -Message "There is no SQL Agent on $server, it's a $($server.Edition)" -Continue -Target $server
             }
-            
+
             $defaults = "ComputerName", "SqlInstance", "InstanceName", "Name", "ID", "Enabled as IsEnabled", "EmailAddress", "LastEmail"
 
             if ($Operator) {
@@ -94,12 +94,12 @@ function Get-DbaAgentOperator {
             else {
                 $operators = $server.JobServer.Operators
             }
-            
+
             foreach ($operat in $operators) {
-                
+
                 $jobs = $server.JobServer.jobs | Where-Object { $_.OperatorToEmail, $_.OperatorToNetSend, $_.OperatorToPage -contains $operat.Name }
                 $lastemail = [dbadatetime]$operat.LastEmailDate
-                
+
                 Add-Member -Force -InputObject $operat -MemberType NoteProperty -Name ComputerName -Value $server.NetName
                 Add-Member -Force -InputObject $operat -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                 Add-Member -Force -InputObject $operat -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName

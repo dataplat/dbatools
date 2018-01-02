@@ -23,7 +23,7 @@ function Get-DbaRegisteredServer {
 
         .PARAMETER ExcludeGroup
             Specifies one or more Central Management Server groups to exclude.
-    
+
         .PARAMETER ExcludeCmsServer
             Deprecated, now follows the Microsoft convention of not including it by default. If you'd like to include the CMS Server, use -IncludeSelf
 
@@ -32,14 +32,14 @@ function Get-DbaRegisteredServer {
 
         .PARAMETER ResolveNetworkName
             If this switch is enabled, the NetBIOS name and IP address(es) of each server will be returned.
-    
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-            
+
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
 
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Author: Bryan Hamby (@galador)
             Tags: RegisteredServer, CMS
@@ -55,7 +55,7 @@ function Get-DbaRegisteredServer {
             Get-DbaRegisteredServer -SqlInstance sqlserver2014a
 
             Gets a list of servers from the CMS on sqlserver2014a, using Windows Credentials.
-    
+
         .EXAMPLE
             Get-DbaRegisteredServer -SqlInstance sqlserver2014a -IncludeSelf
 
@@ -118,18 +118,18 @@ function Get-DbaRegisteredServer {
             }
             return $results
         }
-        
+
         $defaults = @()
         if ($ResolveNetworkName) {
             $defaults += 'ComputerName', 'FQDN', 'IPAddress'
         }
         $defaults += 'Name', 'ServerName', 'Description', 'ServerType', 'SecureConnectionString'
-        
+
     }
-    
+
     process {
-        if (Test-FunctionInterrupt) { 
-            return 
+        if (Test-FunctionInterrupt) {
+            return
         }
 
         $servers = @()
@@ -159,16 +159,16 @@ function Get-DbaRegisteredServer {
                 $cms = $cmsStore.DatabaseEngineServerGroup
                 $servers += ($cms.GetDescendantRegisteredServers())
             }
-            
+
             # Close the connection, otherwise using it with the ServersStore will keep it open
             $cmsStore.ServerConnection.Disconnect()
         }
-        
+
         foreach ($server in $servers) {
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name ComputerName -Value $null
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name FQDN -Value $null
             Add-Member -Force -InputObject $server -MemberType NoteProperty -Name IPAddress -Value $null
-            
+
             if ($ResolveNetworkName) {
                 try {
                     $lookup = Resolve-DbaNetworkName $server.ServerName -Turbo
@@ -186,11 +186,11 @@ function Get-DbaRegisteredServer {
                     catch {}
                 }
             }
-            
+
             Add-Member -Force -InputObject $server -MemberType ScriptMethod -Name ToString -Value { $this.ServerName }
             Select-DefaultView -InputObject $server -Property $defaults
         }
-        
+
         if ($IncludeSelf -and $servers) {
             $self = $servers[0].PsObject.Copy()
             $self | Add-Member -MemberType NoteProperty -Name Name -Value "CMS Instance" -Force

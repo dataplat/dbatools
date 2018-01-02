@@ -16,9 +16,9 @@ function Set-DbaJobOwner {
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-        .PARAMETER SqlInstance 
+        .PARAMETER SqlInstance
             Specifies the SQL Server instance(s) to scan.
-            
+
         .PARAMETER SqlCredential
             Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
@@ -28,12 +28,12 @@ function Set-DbaJobOwner {
 
             To connect as a different Windows user, run PowerShell as that user.
 
-        .PARAMETER Job 
+        .PARAMETER Job
             Specifies the job(s) to process. Options for this list are auto-populated from the server. If unspecified, all jobs will be processed.
-        
+
         .PARAMETER ExcludeJob
             Specifies the job(s) to exclude from processing. Options for this list are auto-populated from the server.
-        
+
         .PARAMETER Login
             Specifies the login that you wish check for ownership. This defaults to 'sa' or the sysadmin name if sa was renamed. This must be a valid security principal which exists on the target server.
 
@@ -47,7 +47,7 @@ function Set-DbaJobOwner {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .LINK
             https://dbatools.io/Set-DbaJobOwner
 

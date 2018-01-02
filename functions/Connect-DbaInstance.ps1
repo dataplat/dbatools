@@ -4,12 +4,12 @@ function Connect-DbaInstance {
         Creates a robust SMO SQL Server object.
 
     .DESCRIPTION
-        This command is robust because it initializes properties that do not cause enumeration by default. It also supports both Windows and SQL Server authentication methods, and detects which to use based upon the provided credentials. 
+        This command is robust because it initializes properties that do not cause enumeration by default. It also supports both Windows and SQL Server authentication methods, and detects which to use based upon the provided credentials.
 
         By default, this command also sets the connection's ApplicationName property  to "dbatools PowerShell module - dbatools.io - custom connection". If you're doing anything that requires profiling, you can look for this client name.
 
         Alternatively, you can pass in whichever client name you'd like using the -ClientName parameter. There are a ton of other parameters for you to explore as well.
-            
+
         See https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx
         and https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx,
         and https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.aspx
@@ -27,18 +27,18 @@ function Connect-DbaInstance {
 
     .PARAMETER AccessToken
         Gets or sets the access token for the connection.
-        
+
     .PARAMETER AppendConnectionString
         Appends to the current connection string. Note that you cannot pass authentication information using this method. Use -SqlInstance and optionally -SqlCredential to set authentication information.
 
     .PARAMETER ApplicationIntent
         Declares the application workload type when connecting to a server.
-        
-        Valid values are "ReadOnly" and "ReadWrite". 
-        
+
+        Valid values are "ReadOnly" and "ReadWrite".
+
     .PARAMETER BatchSeparator
         A string to separate groups of SQL statements being executed. By default, this is "GO".
-        
+
     .PARAMETER ClientName
         By default, this command sets the client's ApplicationName property to "dbatools PowerShell module - dbatools.io - custom connection" if you're doing anything that requires profiling, you can look for this client name. Using -ClientName allows you to set your own custom client application name.
 
@@ -48,21 +48,21 @@ function Connect-DbaInstance {
         Valid values are integers between 0 and 2147483647.
 
         When opening a connection to a Azure SQL Database, set the connection timeout to 30 seconds.
-        
+
     .PARAMETER EncryptConnection
         If this switch is enabled, SQL Server uses SSL encryption for all data sent between the client and server if the server has a certificate installed.
-        
+
         For more information, see Connection String Syntax. https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/connection-string-syntax
 
         Beginning in .NET Framework 4.5, when TrustServerCertificate is false and Encrypt is true, the server name (or IP address) in a SQL Server SSL certificate must exactly match the server name (or IP address) specified in the connection string. Otherwise, the connection attempt will fail. For information about support for certificates whose subject starts with a wildcard character (*), see Accepted wildcards used by server certificates for server authentication. https://support.microsoft.com/en-us/help/258858/accepted-wildcards-used-by-server-certificates-for-server-authenticati
-        
+
     .PARAMETER FailoverPartner
         The name of the failover partner server where database mirroring is configured.
 
         If the value of this key is "" (an empty string), then Initial Catalog must be present in the connection string, and its value must not be "".
 
         The server name can be 128 characters or less.
-        
+
         If you specify a failover partner but the failover partner server is not configured for database mirroring and the primary server (specified with the Server keyword) is not available, then the connection will fail.
 
         If you specify a failover partner and the primary server is not configured for database mirroring, the connection to the primary server (specified with the Server keyword) will succeed if the primary server is available.
@@ -73,16 +73,16 @@ function Connect-DbaInstance {
 
     .PARAMETER LockTimeout
         Sets the time in seconds required for the connection to time out when the current transaction is locked.
-        
+
     .PARAMETER MaxPoolSize
         Sets the maximum number of connections allowed in the connection pool for this specific connection string.
-        
+
     .PARAMETER MinPoolSize
         Sets the minimum number of connections allowed in the connection pool for this specific connection string.
-        
+
     .PARAMETER MultipleActiveResultSets
         If this switch is enabled, an application can maintain multiple active result sets (MARS).
-        
+
         If this switch is not enabled, an application must process or cancel all result sets from one batch before it can execute any other batch on that connection.
 
     .PARAMETER MultiSubnetFailover
@@ -90,7 +90,7 @@ function Connect-DbaInstance {
 
     .PARAMETER NetworkProtocol
         Explicitly sets the network protocol used to connect to the server.
-        
+
         Valid values are "TcpIp","NamedPipes","Multiprotocol","AppleTalk","BanyanVines","Via","SharedMemory" and "NWLinkIpxSpx"
 
     .PARAMETER NonPooledConnection
@@ -98,12 +98,12 @@ function Connect-DbaInstance {
 
     .PARAMETER PacketSize
         Sets the size in bytes of the network packets used to communicate with an instance of SQL Server. Must match at server.
-        
+
     .PARAMETER PooledConnectionLifetime
         When a connection is returned to the pool, its creation time is compared with the current time and the connection is destroyed if that time span (in seconds) exceeds the value specified by Connection Lifetime. This is useful in clustered configurations to force load balancing between a running server and a server just brought online.
 
         A value of zero (0) causes pooled connections to have the maximum connection timeout.
-        
+
     .PARAMETER SqlExecutionModes
         The SqlExecutionModes enumeration contains values that are used to specify whether the commands sent to the referenced connection to the server are executed immediately or saved in a buffer.
 
@@ -120,13 +120,13 @@ function Connect-DbaInstance {
 
     .PARAMETER SqlConnectionOnly
         Instead of returning a rich SMO server object, this command will only return a SqlConnection object when setting this switch.
-        
+
     .NOTES
         dbatools PowerShell module (https://dbatools.io)
         Website: https://dbatools.io
         Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
         License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-    
+
     .LINK
         https://dbatools.io/Connect-DbaInstance
 

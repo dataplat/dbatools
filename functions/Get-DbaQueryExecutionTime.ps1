@@ -37,7 +37,7 @@ Allows you to suppress output on system databases
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Tags: Query, Performance
 Author: Brandon Abshire, netnerds.net
@@ -89,50 +89,50 @@ limiting results to queries with more than 200 total executions and an execution
 
     begin {
         $sql = ";With StatsCTE AS
-			(
-				SELECT
-					DB_NAME() as DatabaseName,
-					(total_worker_time / execution_count) / 1000 AS AvgExec_ms ,
-					execution_count ,
-					max_worker_time / 1000 AS MaxExec_ms ,
-					OBJECT_NAME(object_id) as ProcName,
-					object_id,
-					type_desc,
-					cached_time,
-					last_execution_time,
-					total_worker_time / 1000 as total_worker_time_ms,
-					total_elapsed_time / 1000 as total_elapsed_time_ms,
-					OBJECT_NAME(object_id) as SQLText,
-					OBJECT_NAME(object_id) as full_statement_text
-				FROM    sys.dm_exec_procedure_stats
-				WHERE   database_id = DB_ID()"
+            (
+                SELECT
+                    DB_NAME() as DatabaseName,
+                    (total_worker_time / execution_count) / 1000 AS AvgExec_ms ,
+                    execution_count ,
+                    max_worker_time / 1000 AS MaxExec_ms ,
+                    OBJECT_NAME(object_id) as ProcName,
+                    object_id,
+                    type_desc,
+                    cached_time,
+                    last_execution_time,
+                    total_worker_time / 1000 as total_worker_time_ms,
+                    total_elapsed_time / 1000 as total_elapsed_time_ms,
+                    OBJECT_NAME(object_id) as SQLText,
+                    OBJECT_NAME(object_id) as full_statement_text
+                FROM    sys.dm_exec_procedure_stats
+                WHERE   database_id = DB_ID()"
 
         If ($MinExecs) { $sql += "`n AND execution_count >= " + $MinExecs }
         If ($MinExecMs) { $sql += "`n AND (total_worker_time / execution_count) / 1000 >= " + $MinExecMs }
 
         $sql += "`n UNION
-			SELECT
-				DB_NAME() as DatabaseName,
-				( qs.total_worker_time / qs.execution_count ) / 1000 AS AvgExec_ms ,
-				qs.execution_count ,
-				qs.max_worker_time / 1000 AS MaxExec_ms ,
-				OBJECT_NAME(st.objectid) as ProcName,
-				   st.objectid as [object_id],
-				   'STATEMENT' as type_desc,
-				   '1901-01-01 00:00:00' as cached_time,
-					qs.last_execution_time,
-					qs.total_worker_time / 1000 as total_worker_time_ms,
-					qs.total_elapsed_time / 1000 as total_elapsed_time_ms,
-					SUBSTRING(st.text, (qs.statement_start_offset/2)+1, 50) + '...' AS SQLText,
-					SUBSTRING(st.text, (qs.statement_start_offset/2)+1,
-						((CASE qs.statement_end_offset
-						  WHEN -1 THEN DATALENGTH(st.text)
-						 ELSE qs.statement_end_offset
-						 END - qs.statement_start_offset)/2) + 1) AS full_statement_text
-			FROM    sys.dm_exec_query_stats qs
-			CROSS APPLY sys.dm_exec_plan_attributes(qs.plan_handle) as pa
-			CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) as st
-			WHERE st.dbid = DB_ID() OR (pa.attribute = 'dbid' and pa.value = DB_ID())"
+            SELECT
+                DB_NAME() as DatabaseName,
+                ( qs.total_worker_time / qs.execution_count ) / 1000 AS AvgExec_ms ,
+                qs.execution_count ,
+                qs.max_worker_time / 1000 AS MaxExec_ms ,
+                OBJECT_NAME(st.objectid) as ProcName,
+                   st.objectid as [object_id],
+                   'STATEMENT' as type_desc,
+                   '1901-01-01 00:00:00' as cached_time,
+                    qs.last_execution_time,
+                    qs.total_worker_time / 1000 as total_worker_time_ms,
+                    qs.total_elapsed_time / 1000 as total_elapsed_time_ms,
+                    SUBSTRING(st.text, (qs.statement_start_offset/2)+1, 50) + '...' AS SQLText,
+                    SUBSTRING(st.text, (qs.statement_start_offset/2)+1,
+                        ((CASE qs.statement_end_offset
+                          WHEN -1 THEN DATALENGTH(st.text)
+                         ELSE qs.statement_end_offset
+                         END - qs.statement_start_offset)/2) + 1) AS full_statement_text
+            FROM    sys.dm_exec_query_stats qs
+            CROSS APPLY sys.dm_exec_plan_attributes(qs.plan_handle) as pa
+            CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) as st
+            WHERE st.dbid = DB_ID() OR (pa.attribute = 'dbid' and pa.value = DB_ID())"
 
         If ($MinExecs) { $sql += "`n AND execution_count >= " + $MinExecs }
         If ($MinExecMs) { $sql += "`n AND (total_worker_time / execution_count) / 1000 >= " + $MinExecMs }
@@ -140,23 +140,23 @@ limiting results to queries with more than 200 total executions and an execution
         If ($MaxResultsPerDb) { $sql += ")`n SELECT TOP " + $MaxResultsPerDb }
         Else {
             $sql += ")
-						SELECT "
+                        SELECT "
         }
 
         $sql += "`n     DatabaseName,
-						AvgExec_ms,
-						execution_count,
-						MaxExec_ms,
-						ProcName,
-						object_id,
-						type_desc,
-						cached_time,
-						last_execution_time,
-						total_worker_time_ms,
-						total_elapsed_time_ms,
-						SQLText,
-						full_statement_text
-					FROM StatsCTE "
+                        AvgExec_ms,
+                        execution_count,
+                        MaxExec_ms,
+                        ProcName,
+                        object_id,
+                        type_desc,
+                        cached_time,
+                        last_execution_time,
+                        total_worker_time_ms,
+                        total_elapsed_time_ms,
+                        SQLText,
+                        full_statement_text
+                    FROM StatsCTE "
 
         If ($MinExecs -or $MinExecMs) {
             $sql += "`n WHERE `n"

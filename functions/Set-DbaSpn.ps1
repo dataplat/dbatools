@@ -1,5 +1,5 @@
 #ValidationTags#FlowControl,Pipeline#
-Function Set-DbaSpn {
+function Set-DbaSpn {
     <#
 .SYNOPSIS
 Sets an SPN for a given service account in active directory (and also enables delegation to the same SPN by default)
@@ -27,7 +27,7 @@ Skips setting the delegation
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .PARAMETER Confirm
 Turns confirmations before changes on or off
 
@@ -88,7 +88,7 @@ Displays what would happen trying to set all missing SPNs for sql2016
         [switch]$NoDelegation,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     process {
         #did we find the server account?
         Write-Message -Message "Looking for account $ServiceAccount..." -Level Verbose
@@ -129,7 +129,7 @@ Displays what would happen trying to set all missing SPNs for sql2016
                 $status = "Failed to add SPN"
                 $delegate = $false
             }
-            
+
             [pscustomobject]@{
                 Name           = $spn
                 ServiceAccount = $ServiceAccount
@@ -138,7 +138,7 @@ Displays what would happen trying to set all missing SPNs for sql2016
                 Notes          = $status
             }
         }
-        
+
         #if we have the SPN set, we can add the delegation
         if ($delegate) {
             # but only if $NoDelegation is not passed
@@ -156,7 +156,7 @@ Displays what would happen trying to set all missing SPNs for sql2016
                         $set = $false
                         $status = "Failed to add constrained delegation"
                     }
-                    
+
                     [pscustomobject]@{
                         Name           = $spn
                         ServiceAccount = $ServiceAccount

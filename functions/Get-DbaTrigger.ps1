@@ -64,7 +64,7 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
         [object[]]$Database,
         [object[]]$ExcludeDatabase
     )
-    
+
     process {
         foreach ($Instance in $SqlInstance) {
             Write-Verbose "Connecting to $Instance"
@@ -75,7 +75,7 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
                 Write-Warning "Can't connect to $Instance"
                 continue
             }
-            
+
             Write-Verbose "Getting Server Level Triggers on $Instance"
             $server.Triggers |
                 ForEach-Object {
@@ -90,17 +90,17 @@ Returns a custom object displaying ComputerName, SqlInstance, Database, TriggerN
                     DateLastModified = $_.DateLastModified
                 }
             }
-            
+
             Write-Verbose "Getting Database Level Triggers on $Instance"
             $dbs = $server.Databases | Where-Object { $_.status -eq 'Normal' }
-            
+
             if ($Database) {
                 $dbs = $dbs | Where-Object Name -in $Database
             }
             if ($ExcludeDatabase) {
                 $dbs = $dbs | Where-Object Name -notin $ExcludeDatabase
             }
-            
+
             $dbs |
                 ForEach-Object {
                 $DatabaseName = $_.Name

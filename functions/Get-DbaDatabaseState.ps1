@@ -28,7 +28,7 @@ The database(s) to exclude - this list is auto-populated from the server
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Tags: Databases
 Author: niphlod
@@ -91,7 +91,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
             'EmergencyMode' = 'EMERGENCY'
             'Restoring'     = 'RESTORING'
         }
-        
+
         function Get-DbState($db) {
             $base = [PSCustomObject]@{
                 'Access' = ''
@@ -108,7 +108,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
             }
             return $base
         }
-        
+
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -121,7 +121,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
             }
             $all_dbs = $server.Databases | Where-Object IsAccessible
             $dbs = $all_dbs | Where-Object { @('master', 'model', 'msdb', 'tempdb', 'distribution') -notcontains $_.Name }
-            
+
             if ($Database) {
                 $dbs = $dbs | Where-Object Name -In $Database
             }
@@ -130,7 +130,7 @@ Gets options for all databases of sqlserver2014a and sqlserver2014b instances
             }
             foreach ($db in $dbs) {
                 $db_status = Get-DbState $db
-                
+
                 [PSCustomObject]@{
                     SqlInstance  = $server.Name
                     InstanceName = $server.ServiceName

@@ -5,9 +5,9 @@ function Get-DbaProcess {
 
         .DESCRIPTION
             This command displays processes associated with a spid, login, host, program or database.
-            
+
             Thanks to Michael J Swart at https://sqlperformance.com/2017/07/sql-performance/find-database-connection-leaks for the query to get the last executed SQL statement, minutesasleep and host process ID.
-    
+
         .PARAMETER SqlInstance
             The SQL Server instance to connect to.
 
@@ -25,7 +25,7 @@ function Get-DbaProcess {
 
         .PARAMETER Login
             Specifies one or more Login names with active processes to look for. Options for this parameter are auto-populated from the server.
-            
+
         .PARAMETER Hostname
             Specifies one or more hostnames with active processes to look for. Options for this parameter are auto-populated from the server.
 
@@ -42,13 +42,13 @@ function Get-DbaProcess {
 
         .PARAMETER NoSystemSpid
             If this switch is enabled, system Spids will be ignored.
-            
+
         .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
-        .NOTES 
+
+        .NOTES
             Tags:
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
@@ -62,19 +62,19 @@ function Get-DbaProcess {
 
             Shows information about the processes for base\ctrlb and sa on sqlserver2014a. Windows Authentication is used in connecting to sqlserver2014a.
 
-        .EXAMPLE   
+        .EXAMPLE
             Get-DbaProcess -SqlInstance sqlserver2014a -SqlCredential $credential -Spid 56, 77
-                
+
             Shows information about the processes for spid 56 and 57. Uses alternative (SQL or Windows) credentials to authenticate to sqlserver2014a.
 
-        .EXAMPLE   
+        .EXAMPLE
             Get-DbaProcess -SqlInstance sqlserver2014a -Program 'Microsoft SQL Server Management Studio'
-                
+
             Shows information about the processes that were created in Microsoft SQL Server Management Studio.
 
-        .EXAMPLE   
+        .EXAMPLE
             Get-DbaProcess -SqlInstance sqlserver2014a -Host workstationx, server100
-                
+
             Shows information about the processes that were initiated by hosts (computers/clients) workstationx and server 1000.
     #>
     [CmdletBinding()]
@@ -93,10 +93,10 @@ function Get-DbaProcess {
         [switch]$NoSystemSpid,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     process {
         foreach ($instance in $sqlinstance) {
-            
+
             Write-Message -Message "Attempting to connect to $instance." -Level Verbose
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -104,71 +104,71 @@ function Get-DbaProcess {
             catch {
                 Stop-Function -Message "Could not connect to Sql Server instance $instance : $_" -Target $instance -ErrorRecord $_ -Continue
             }
-            
+
             $sql = "SELECT datediff(minute, s.last_request_end_time, getdate()) as MinutesAsleep, s.session_id as spid, s.host_process_id as HostProcessId, t.text as Query,
-					s.login_time as LoginTime,s.client_version as ClientVersion, s.last_request_start_time as LastRequestStartTime, s.last_request_end_time as LastRequestEndTime,
-					c.net_transport as NetTransport, c.encrypt_option as EncryptOption, c.auth_scheme as AuthScheme, c.net_packet_size as NetPacketSize, c.client_net_address as ClientNetAddress
-					FROM sys.dm_exec_connections c join sys.dm_exec_sessions s on c.session_id = s.session_id cross apply sys.dm_exec_sql_text(c.most_recent_sql_handle) t"
-            
+                    s.login_time as LoginTime,s.client_version as ClientVersion, s.last_request_start_time as LastRequestStartTime, s.last_request_end_time as LastRequestEndTime,
+                    c.net_transport as NetTransport, c.encrypt_option as EncryptOption, c.auth_scheme as AuthScheme, c.net_packet_size as NetPacketSize, c.client_net_address as ClientNetAddress
+                    FROM sys.dm_exec_connections c join sys.dm_exec_sessions s on c.session_id = s.session_id cross apply sys.dm_exec_sql_text(c.most_recent_sql_handle) t"
+
             if ($server.VersionMajor -gt 8) {
                 $results = $server.Query($sql)
             }
             else {
                 $results = $null
             }
-            
+
             $allsessions = @()
-            
+
             $processes = $server.EnumProcesses()
-            
+
             if ($Login) {
                 $allsessions += $processes | Where-Object { $_.Login -in $Login -and $_.Spid -notin $allsessions.Spid }
             }
-            
+
             if ($Spid) {
                 $allsessions += $processes | Where-Object { ($_.Spid -in $Spid -or $_.BlockingSpid -in $Spid) -and $_.Spid -notin $allsessions.Spid }
             }
-            
+
             if ($Hostname) {
                 $allsessions += $processes | Where-Object { $_.Host -in $Hostname -and $_.Spid -notin $allsessions.Spid }
             }
-            
+
             if ($Program) {
                 $allsessions += $processes | Where-Object { $_.Program -in $Program -and $_.Spid -notin $allsessions.Spid }
             }
-            
+
             if ($Database) {
                 $allsessions += $processes | Where-Object { $Database -contains $_.Database -and $_.Spid -notin $allsessions.Spid }
             }
-            
+
             if (Test-Bound -not 'Login', 'Spid', 'ExcludeSpid', 'Hostname', 'Program', 'Database') {
                 $allsessions = $processes
             }
-            
+
             if ($NoSystemSpid -eq $true) {
                 $allsessions = $allsessions | Where-Object { $_.Spid -gt 50 }
             }
-            
+
             if ($Exclude) {
                 $allsessions = $allsessions | Where-Object { $Exclude -notcontains $_.SPID -and $_.Spid -notin $allsessions.Spid }
             }
-            
+
             foreach ($session in $allsessions) {
-                
+
                 if ($session.Status -eq "") {
                     $status = "sleeping"
                 }
                 else {
                     $status = $session.Status
                 }
-                
+
                 if ($session.Command -eq "") {
                     $command = "AWAITING COMMAND"
                 }
                 else {
                     $command = $session.Command
                 }
-                
+
                 $row = $results | Where-Object { $_.Spid -eq $session.Spid }
 
                 Add-Member -Force -InputObject $session -MemberType NoteProperty -Name Parent -value $server
@@ -189,7 +189,7 @@ function Get-DbaProcess {
                 Add-Member -Force -InputObject $session -MemberType NoteProperty -Name NetPacketSize -value $row.NetPacketSize
                 Add-Member -Force -InputObject $session -MemberType NoteProperty -Name ClientNetAddress -value $row.ClientNetAddress
                 Add-Member -Force -InputObject $session -MemberType NoteProperty -Name LastQuery -value $row.Query
-                
+
                 Select-DefaultView -InputObject $session -Property ComputerName, InstanceName, SqlInstance, Spid, Login, LoginTime, Host, Database, BlockingSpid, Program, Status, Command, Cpu, MemUsage, LastRequestStartTime, LastRequestEndTime, MinutesAsleep, ClientNetAddress, NetTransport, EncryptOption, AuthScheme, NetPacketSize, ClientVersion, HostProcessId, IsSystem, LastQuery
             }
         }

@@ -10,7 +10,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         foreach ($instance in ($script:instance1, $script:instance2)) {
             $server = Connect-DbaInstance -SqlInstance $instance
             $results = Get-DbaDbQueryStoreOptions -SqlInstance $instance -WarningVariable warning  3>&1
-            
+
             if ($server.VersionMajor -lt 13) {
                 It "should warn" {
                     $warning | Should Not Be $null
@@ -21,15 +21,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                     $result = $results | Where-Object Database -eq msdb
                     $result.MaxStorageSizeInMB | Should BeGreaterThan 1
                 }
-                
+
                 $newnumber = $oldnumber + 1
                 $null = Set-DbaDbQueryStoreOptions -SqlInstance $instance -Database msdb -State Off
-                
+
                 It "should warn that state is off" {
                     $results = Set-DbaDbQueryStoreOptions -SqlInstance $instance -Database msdb -FlushInterval $newnumber -WarningVariable warning  3>&1
                     $warning | Should Not Be $null
                 }
-                
+
                 It "should change the specified param to the new value" {
                     $results = Set-DbaDbQueryStoreOptions -SqlInstance $instance -Database msdb -FlushInterval $newnumber -State ReadWrite
                     $results.DataFlushIntervalInSeconds | Should Be $newnumber

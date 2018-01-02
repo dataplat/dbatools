@@ -3,21 +3,21 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    
+
     Context "Count system databases on localhost" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -ExcludeAllUserDb
         It "reports the right number of databases" {
             $results.Count | Should Be 4
         }
     }
-    
+
     Context "Check that temppb database is in Simple recovery mode" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database tempdb
         It "tempdb's recovery mode is Simple" {
             $results.RecoveryModel | Should Be "Simple"
         }
     }
-    
+
     Context "Check that master database is accessible" {
         $results = Get-DbaDatabase -SqlInstance $script:instance1 -Database master
         It "master is accessible" {

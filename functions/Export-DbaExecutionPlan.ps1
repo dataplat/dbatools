@@ -157,20 +157,20 @@ Exports all execution plans for databases db1 and db2 on sqlserver2014a since Ju
                 }
 
                 $select = "SELECT DB_NAME(deqp.dbid) as DatabaseName, OBJECT_NAME(deqp.objectid) as ObjectName,
-					detqp.query_plan AS SingleStatementPlan,
-					deqp.query_plan AS BatchQueryPlan,
-					ROW_NUMBER() OVER ( ORDER BY Statement_Start_offset ) AS QueryPosition,
-					sql_handle as SqlHandle,
-					plan_handle as PlanHandle,
-					creation_time as CreationTime,
-					last_execution_time as LastExecutionTime"
+                    detqp.query_plan AS SingleStatementPlan,
+                    deqp.query_plan AS BatchQueryPlan,
+                    ROW_NUMBER() OVER ( ORDER BY Statement_Start_offset ) AS QueryPosition,
+                    sql_handle as SqlHandle,
+                    plan_handle as PlanHandle,
+                    creation_time as CreationTime,
+                    last_execution_time as LastExecutionTime"
 
                 $from = " FROM sys.dm_exec_query_stats deqs
-				        CROSS APPLY sys.dm_exec_text_query_plan(deqs.plan_handle,
-							deqs.statement_start_offset,
-							deqs.statement_end_offset) AS detqp
-				        CROSS APPLY sys.dm_exec_query_plan(deqs.plan_handle) AS deqp
-				        CROSS APPLY sys.dm_exec_sql_text(deqs.plan_handle) AS execText"
+                        CROSS APPLY sys.dm_exec_text_query_plan(deqs.plan_handle,
+                            deqs.statement_start_offset,
+                            deqs.statement_end_offset) AS detqp
+                        CROSS APPLY sys.dm_exec_query_plan(deqs.plan_handle) AS deqp
+                        CROSS APPLY sys.dm_exec_sql_text(deqs.plan_handle) AS execText"
 
                 if ($ExcludeDatabase -or $Database -or $SinceCreation.length -gt 0 -or $SinceLastExecution.length -gt 0 -or $ExcludeEmptyQueryPlan -eq $true) {
                     $where = " WHERE "

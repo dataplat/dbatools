@@ -17,7 +17,7 @@ PSCredential object to connect as. If not specified, current Windows login will 
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Author: Klaas Vandenberghe (@powerdbaklaas)
 Website: https://dbatools.io
@@ -48,7 +48,7 @@ Returns SQL Instance properties on sql2 and sql4
         [PSCredential]$SqlCredential,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             try {

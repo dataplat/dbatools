@@ -1,7 +1,7 @@
-Function Get-DbaSqlService {
+function Get-DbaSqlService {
     <#
     .SYNOPSIS
-    Gets the SQL Server related services on a computer. 
+    Gets the SQL Server related services on a computer.
 
     .DESCRIPTION
     Gets the SQL Server related services on one or more computers.
@@ -13,10 +13,10 @@ Function Get-DbaSqlService {
 
     .PARAMETER InstanceName
     Only returns services that belong to the specific instances.
-    
+
     .PARAMETER Credential
     Credential object used to connect to the computer as a different user.
-    
+
     .PARAMETER Type
     Use -Type to collect only services of the desired SqlServiceType.
     Can be one of the following: "Agent","Browser","Engine","FullText","SSAS","SSIS","SSRS"
@@ -28,7 +28,7 @@ Function Get-DbaSqlService {
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
     .NOTES
     Tags:
     Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -45,7 +45,7 @@ Function Get-DbaSqlService {
 
     Gets the SQL Server related services on computer sqlserver2014a.
 
-    .EXAMPLE   
+    .EXAMPLE
     'sql1','sql2','sql3' | Get-DbaSqlService
 
     Gets the SQL Server related services on computers sql1, sql2 and sql3.
@@ -59,7 +59,7 @@ Function Get-DbaSqlService {
     Get-DbaSqlService -ComputerName $MyServers -Type SSRS
 
     Gets the SQL Server related services of type "SSRS" (Reporting Services) on computers in the variable MyServers.
-    
+
     .EXAMPLE
     $services = Get-DbaSqlService -ComputerName sql1 -Type Agent,Engine
     $services.ChangeStartMode('Manual')
@@ -87,7 +87,7 @@ Function Get-DbaSqlService {
         [string[]]$ServiceName,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     BEGIN {
         #Dictionary to transform service type IDs into the names from Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer.Services.Type
         $ServiceIdMap = @(
@@ -137,7 +137,7 @@ Function Get-DbaSqlService {
                 catch { }
                 if ($namespaces) {
                     $servicesTemp = @()
-                    
+
                     ForEach ($namespace in $namespaces) {
                         try {
                             Write-Message -Level Verbose -Message "Getting Cim class SqlService in Namespace $($namespace.Name) on $Computer." -Target $Computer
@@ -153,9 +153,9 @@ Function Get-DbaSqlService {
                             Write-Message -Level Verbose -EnableException $EnableException -Message "Failed to acquire services from namespace $($namespace.Name)." -Target $Computer
                         }
                     }
-                    
+
                     $services = ($servicesTemp | Group-Object Name | ForEach-Object { $_.Group | Sort-Object Namespace -Descending | Select-Object -First 1 }).Service
-                    
+
                     if ($services) {
                         Write-Message -Level Verbose -EnableException $EnableException -Message "Creating output objects"
                         ForEach ($service in $services) {
@@ -163,7 +163,7 @@ Function Get-DbaSqlService {
                             Add-Member -Force -InputObject $service -MemberType NoteProperty -Name ServiceType -Value ($ServiceIdMap | Where-Object { $_.Id -contains $service.SQLServiceType }).Name
                             Add-Member -Force -InputObject $service -MemberType NoteProperty -Name State -Value $(switch ($service.State) { 1 { 'Stopped' } 2 { 'Start Pending' }  3 { 'Stop Pending' } 4 { 'Running' } })
                             Add-Member -Force -InputObject $service -MemberType NoteProperty -Name StartMode -Value $(switch ($service.StartMode) { 1 { 'Unknown' } 2 { 'Automatic' }  3 { 'Manual' } 4 { 'Disabled' } })
-                            
+
                             if ($service.ServiceName -in ("MSSQLSERVER", "SQLSERVERAGENT", "ReportServer", "MSSQLServerOLAPService")) {
                                 $instance = "MSSQLSERVER"
                             }
@@ -189,14 +189,14 @@ Function Get-DbaSqlService {
                                 #Add other properties and methods
                                 Add-Member -Force -InputObject $service -NotePropertyName InstanceName -NotePropertyValue $instance
                                 Add-Member -Force -InputObject $service -NotePropertyName ServicePriority -NotePropertyValue $priority
-                                Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Stop" -Value { 
+                                Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Stop" -Value {
                                     Param ([bool]$Force = $false)
                                     Stop-DbaSqlService -ServiceCollection $this -Force:$Force
                                 }
                                 Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Start" -Value { Start-DbaSqlService -ServiceCollection $this }
-                                Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Restart" -Value { 
+                                Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "Restart" -Value {
                                     Param ([bool]$Force = $false)
-                                    Restart-DbaSqlService -ServiceCollection $this -Force:$Force 
+                                    Restart-DbaSqlService -ServiceCollection $this -Force:$Force
                                 }
                                 Add-Member -Force -InputObject $service -MemberType ScriptMethod -Name "ChangeStartMode" -Value {
                                     Param (
@@ -204,7 +204,7 @@ Function Get-DbaSqlService {
                                         [string]$Mode
                                     )
                                     $supportedModes = @("Automatic", "Manual", "Disabled")
-                                    if ($Mode -notin $supportedModes) { 
+                                    if ($Mode -notin $supportedModes) {
                                         Stop-Function -Message ("Incorrect mode '$Mode'. Use one of the following values: {0}" -f ($supportedModes -join ' | ')) -EnableException $false -FunctionName 'Get-DbaSqlService'
                                         Return
                                     }

@@ -14,12 +14,12 @@ function Get-DbaXESession {
 
     .PARAMETER Session
     Only return specific sessions. This parameter is auto-populated.
-        
+
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
     .NOTES
     Tags: Memory
     Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -56,13 +56,13 @@ function Get-DbaXESession {
         [object[]]$Session,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-DbaXEsSession
     }
-    
+
     process {
-        
+
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -71,24 +71,24 @@ function Get-DbaXESession {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $SqlConn = $server.ConnectionContext.SqlConnectionObject
             $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
             $XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
             Write-Message -Level Verbose -Message "Getting XEvents Sessions on $instance."
-            
+
             $xesessions = $XEStore.sessions
-            
+
             if ($Session) {
                 $xesessions = $xesessions | Where-Object { $_.Name -in $Session }
             }
-            
+
             foreach ($x in $xesessions) {
                 $status = switch ($x.IsRunning) { $true { "Running" } $false { "Stopped" } }
                 $files = $x.Targets.TargetFields | Where-Object Name -eq Filename | Select-Object -ExpandProperty Value
-                
+
                 $filecollection = $remotefile = @()
-                
+
                 if ($files) {
                     foreach ($file in $files) {
                         if ($file -notmatch ':\\' -and $file -notmatch '\\\\') {
@@ -99,7 +99,7 @@ function Get-DbaXESession {
                         $remotefile += Join-AdminUnc -servername $server.netName -filepath $file
                     }
                 }
-                
+
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name ComputerName -Value $server.NetName
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
@@ -108,7 +108,7 @@ function Get-DbaXESession {
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name TargetFile -Value $filecollection
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name RemoteTargetFile -Value $remotefile
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Parent -Value $server
-                
+
                 Select-DefaultView -InputObject $x -Property ComputerName, InstanceName, SqlInstance, Name, Status, StartTime, AutoStart, State, Targets, TargetFile, Events, MaxMemory, MaxEventSize
             }
         }

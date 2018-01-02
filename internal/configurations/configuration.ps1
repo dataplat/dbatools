@@ -60,19 +60,19 @@ $scriptBlock = {
         $DbatoolsConfig
     )
     $ModuleRoot = [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase
-    
+
     #region Helper functions
     # Empty dummy, should not have a cmdletbinding in order to avoid errors.
     function Stop-Function { }
-    
+
     $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\internal\Test-Bound.ps1"))), $null, $null)
     $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\internal\Register-DbaConfigValidation.ps1"))), $null, $null)
     $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\functions\Register-DbaConfig.ps1"))), $null, $null)
     $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\functions\Set-DbaConfig.ps1"))), $null, $null)
     #endregion Helper functions
-    
-    
-    
+
+
+
     $configpath = "$ModuleRoot\internal\configurations"
 
     # Import configuration validation
@@ -90,19 +90,19 @@ $scriptBlock = {
     #region Import settings from registry
     if (-not [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ImportFromRegistryDone) {
         $common = 'PSPath', 'PSParentPath', 'PSChildName', 'PSDrive', 'PSProvider'
-        
+
         function Convert-RegType {
             [CmdletBinding()]
             Param (
                 [string]
                 $Value
             )
-            
+
             $index = $Value.IndexOf(":")
             if ($index -lt 1) { throw "No type identifier found!" }
             $type = $Value.Substring(0, $index).ToLower()
             $content = $Value.Substring($index + 1)
-            
+
             switch ($type) {
                 "bool" {
                     if ($content -eq "true") { return $true }
@@ -118,11 +118,11 @@ $scriptBlock = {
                 "timespan" { return (New-Object System.TimeSpan($content)) }
                 "datetime" { return (New-Object System.DateTime($content)) }
                 "consolecolor" { return ([System.ConsoleColor]$content) }
-                
+
                 default { throw "Unknown type identifier" }
             }
         }
-        
+
         #region Import from registry
         $config_hash = @{ }
         foreach ($item in ((Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\WindowsPowerShell\dbatools\Config\Default" -ErrorAction Ignore).PSObject.Properties | Where-Object Name -NotIn $common)) {
@@ -174,7 +174,7 @@ $scriptBlock = {
             }
         }
         #endregion Import from registry
-        
+
         foreach ($value in $config_hash.Values) {
             try {
                 Set-DbaConfig -Name $value.Name -Value $value.Value -EnableException
@@ -183,7 +183,7 @@ $scriptBlock = {
             }
             catch { }
         }
-        
+
         [Sqlcollaborative.Dbatools.Configuration.ConfigurationHost]::ImportFromRegistryDone = $true
     }
     #endregion Import settings from registry

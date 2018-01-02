@@ -16,7 +16,7 @@ function Get-DbaOperatingSystem {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: ServerInfo, OperatingSystem
             Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
@@ -57,7 +57,7 @@ function Get-DbaOperatingSystem {
                 Write-Message -Level Warning -Message "Unable to resolve hostname of $computer. Skipping."
                 continue
             }
-            
+
             try {
                 $psVersion = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock { $PSVersionTable.PSVersion }
             }
@@ -107,7 +107,7 @@ function Get-DbaOperatingSystem {
 
             $activePowerPlan = ($powerPlan | Where-Object IsActive).ElementName -join ','
             $language = Get-Language $os.OSLanguage
-            
+
             [PSCustomObject]@{
                 ComputerName             = $computerResolved
                 Manufacturer             = $os.Manufacturer

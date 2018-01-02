@@ -5,7 +5,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 if (-not $env:appveyor) {
     Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $results = Get-DbaForceNetworkEncryption $script:instance1 -EnableException
-        
+
         It "returns true or false" {
             $results.ForceEncryption -ne $null
         }

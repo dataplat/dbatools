@@ -39,7 +39,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $server.Query("CREATE DATABASE $dbname")
         $server.Query("CREATE PROCEDURE $procName AS SELECT 1", $dbname)
     }
-    
+
     AfterAll {
         $null = Get-DbaDatabase -SqlInstance $script:instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }

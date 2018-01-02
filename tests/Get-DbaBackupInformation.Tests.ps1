@@ -3,7 +3,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    
+
     BeforeAll {
         $DestBackupDir = 'C:\Temp\GetBackups'
         if (-Not(Test-Path $DestBackupDir)) {
@@ -20,7 +20,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
         $db | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
-        
+
         $dbname2 = "dbatoolsci_Backuphistory2_$random"
         $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2 | Remove-DbaDatabase -Confirm:$false
         $null = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName $dbname2 -DestinationFilePrefix $dbname2
@@ -28,7 +28,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $db2 | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir
         $db2 | Backup-DbaDatabase -Type Differential -BackupDirectory $DestBackupDir
         $db2 | Backup-DbaDatabase -Type Log -BackupDirectory $DestBackupDir
-        
+
         $DestBackupDirOla = 'C:\Temp\GetBackupsOla'
         if (-Not(Test-Path $DestBackupDirOla)) {
             New-Item -Type Container -Path $DestBackupDirOla
@@ -50,12 +50,12 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $db3 | Backup-DbaDatabase -Type Differential -BackupDirectory "$DestBackupDirOla\Diff"
         $db3 | Backup-DbaDatabase -Type Log -BackupDirectory "$DestBackupDirOla\LOG"
     }
-    
+
     AfterAll {
         $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
         $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname2 | Remove-DbaDatabase -Confirm:$false
     }
-    
+
     Context "Get history for all database" {
         $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir
         It "Should be 6 backups returned" {
@@ -88,10 +88,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Check the export/import of backup history" {
         # This one used to cause all sorts of red
         $results = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDir -DatabaseName $dbname2 -ExportPath "$DestBackupDir\history.xml"
-        
+
         # the command below returns just a warning
         # Get-DbaBackupInformation -Import -Path "$DestBackupDir\history.xml" | Restore-DbaDatabase -SqlInstance $script:instance1 -DestinationFilePrefix hist -RestoredDatababaseNamePrefix hist -TrustDbBackupHistory
-        
+
         It "Should restore cleanly" {
             ($results | Where-Object {$_.RestoreComplete -eq $false}).count | Should be 0
         }
@@ -121,7 +121,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should be 0 log backups" {
             ($resultsSanLog | Where-Object {$_.Type -eq 'Transaction Log'}).count | Should be 0
         }
-        $ResultsSanLog = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDirOla -IgnoreLogBackup -WarningVariable warnvar -WarningAction SilentlyContinue    
+        $ResultsSanLog = Get-DbaBackupInformation -SqlInstance $script:instance1 -Path $DestBackupDirOla -IgnoreLogBackup -WarningVariable warnvar -WarningAction SilentlyContinue
         It "Should Warn if IgnoreLogBackup without Maintenance Solution" {
             ($WarnVar -match "IgnoreLogBackup can only by used with Maintenance Soultion. Will not be used") | Should Be $True
         }
