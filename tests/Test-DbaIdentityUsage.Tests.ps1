@@ -16,9 +16,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
      
         $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
-        for ($i=1; $i -le 128; $i++) {
-        Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $insertSql -database TempDb
-            }
+        for ($i = 1; $i -le 128; $i++) {
+            Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $insertSql -database TempDb
+        }
         $results = Test-DbaIdentityUsage -SqlInstance $script:instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
 
         It "Identity column should have 128 uses" {
@@ -29,8 +29,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
-        for ($i=1; $i -le 127; $i++) {
-        Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $insertSql -database TempDb
+        for ($i = 1; $i -le 127; $i++) {
+            Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $insertSql -database TempDb
         }
         $results = Test-DbaIdentityUsage -SqlInstance $script:instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
         
@@ -56,9 +56,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
      
         $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
-        for ($i=1; $i -le 25; $i++) {
-        Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $insertSql -database TempDb
-            }
+        for ($i = 1; $i -le 25; $i++) {
+            Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $insertSql -database TempDb
+        }
         $results = Test-DbaIdentityUsage -SqlInstance $script:instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
 
         It "Identity column should have 24 uses" {

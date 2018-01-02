@@ -1,5 +1,5 @@
 function Remove-DbaDbUser {
-<#
+    <#
     .SYNOPSIS
     Drop database user
 
@@ -73,41 +73,41 @@ function Remove-DbaDbUser {
 
 #>
     
-    [CmdletBinding(DefaultParameterSetName='User', SupportsShouldProcess = $true)]
-	Param (
-		[parameter(Position=1, Mandatory, ValueFromPipeline, ParameterSetName='User')]
-		[Alias("ServerInstance", "SqlServer")]
+    [CmdletBinding(DefaultParameterSetName = 'User', SupportsShouldProcess = $true)]
+    Param (
+        [parameter(Position = 1, Mandatory, ValueFromPipeline, ParameterSetName = 'User')]
+        [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         
-        [parameter(ParameterSetName='User')]
-		[Alias("Credential")]
-		[PSCredential]
+        [parameter(ParameterSetName = 'User')]
+        [Alias("Credential")]
+        [PSCredential]
         $SqlCredential,
         
-        [parameter(ParameterSetName='User')]
-		[Alias("Databases")]
+        [parameter(ParameterSetName = 'User')]
+        [Alias("Databases")]
         [object[]]$Database,
         
-        [parameter(ParameterSetName='User')]
+        [parameter(ParameterSetName = 'User')]
         [object[]]$ExcludeDatabase,
         
-        [parameter(Mandatory, ParameterSetName='User')]
+        [parameter(Mandatory, ParameterSetName = 'User')]
         [object[]]$User,
 
-        [parameter(Mandatory, ValueFromPipeline, ParameterSetName='Object')]
-		[Microsoft.SqlServer.Management.Smo.User[]]$UserCollection,
+        [parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Object')]
+        [Microsoft.SqlServer.Management.Smo.User[]]$UserCollection,
         
-        [parameter(ParameterSetName='User')]
-        [parameter(ParameterSetName='Object')]
+        [parameter(ParameterSetName = 'User')]
+        [parameter(ParameterSetName = 'Object')]
         [switch]$Force,
         
-		[switch][Alias('Silent')]$EnableException
+        [switch][Alias('Silent')]$EnableException
     )
 
     begin {
-		function Remove-DbUser {
-			[CmdletBinding()]
-			param ([Microsoft.SqlServer.Management.Smo.User[]]$users)
+        function Remove-DbUser {
+            [CmdletBinding()]
+            param ([Microsoft.SqlServer.Management.Smo.User[]]$users)
 
             foreach ($user in $users) {
                 $db = $user.Parent
@@ -133,7 +133,8 @@ function Remove-DbaDbUser {
                             $ownedUrns = $schema.EnumOwnedObjects()
                             if (-Not $ownedUrns) {
                                 $dropSchemas += $schema
-                            } else {
+                            }
+                            else {
                                 Write-Message -Level Warning -Message "User owns objects in the database and will not be removed."
                                 foreach ($ownedUrn in $ownedUrns) {
                                     $obj = $server.GetSmoObject($ownedUrn)
@@ -149,7 +150,8 @@ function Remove-DbaDbUser {
                             $ownedUrns = $schema.EnumOwnedObjects()
                             if (($ownedUrns -And $Force) -Or (-Not $ownedUrns)) {
                                 $alterSchemas += $schema
-                            } else {
+                            }
+                            else {
                                 Write-Message -Level Warning -Message "User $user owns the Schema $schema, which owns $($ownedUrns.Count) Object(s).  If you want to change the schemas' owner to [dbo] and drop the user anyway, use -Force parameter.  User $user will not be removed."
                                 $ownedObjects = $true
                             }
@@ -182,7 +184,8 @@ function Remove-DbaDbUser {
 
                         $status = "Dropped"
 
-                    } catch {
+                    }
+                    catch {
                         Write-Error -Message "Could not drop $user from Database $db on target $server"
                         $status = "Not Dropped"
                     }
@@ -197,13 +200,14 @@ function Remove-DbaDbUser {
                     }    
                 }
             }
-		}
-	}
+        }
+    }
     
     process {
         if ($UserCollection) {
             Remove-DbUser $UserCollection
-        } else {
+        }
+        else {
             foreach ($instance in $SqlInstance) {
                 try {
                     Write-Message -Level Verbose -Message "Connecting to $instance"

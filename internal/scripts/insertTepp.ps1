@@ -1,8 +1,8 @@
 ﻿if (Get-Command TabExpansionPlusPlus\Register-ArgumentCompleter -ErrorAction Ignore) {
-	$script:TEPP = $true
+    $script:TEPP = $true
 }
 else {
-	$script:TEPP = $false
+    $script:TEPP = $false
 }
 
 $functions = Get-ChildItem function:\*-Dba*
