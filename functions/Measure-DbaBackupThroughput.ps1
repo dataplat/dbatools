@@ -4,7 +4,7 @@ function Measure-DbaBackupThroughput {
             Determines how quickly SQL Server is backing up databases to media.
 
         .DESCRIPTION
-            Returns backup history details for one or more databases on a SQL Server. 
+            Returns backup history details for one or more databases on a SQL Server.
 
             Output looks like this:
             SqlInstance     : sql2016
@@ -52,7 +52,7 @@ function Measure-DbaBackupThroughput {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: DisasterRecovery, Backup, Databases
 
@@ -72,25 +72,25 @@ function Measure-DbaBackupThroughput {
             Measure-DbaBackupThroughput -SqlInstance sql2016 -Database AdventureWorks2014
 
             Parses every backup in msdb's backuphistory for stats on AdventureWorks2014.
-            
+
         .EXAMPLE
             Measure-DbaBackupThroughput -SqlInstance sql2005 -Last
 
             Processes the last full, diff and log backups every backup for all databases on sql2005.
-            
+
         .EXAMPLE
             Measure-DbaBackupThroughput -SqlInstance sql2005 -Last -Type Log
-            
+
             Processes the last log backups every backup for all databases on sql2005.
 
         .EXAMPLE
             Measure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-7)
-            
+
             Gets backup calculations for the last week.
-            
+
         .EXAMPLE
             Measure-DbaBackupThroughput -SqlInstance sql2016 -Since (Get-Date).AddDays(-365) -Database bigoldb
-            
+
             Gets backup calculations, limited to the last year and only the bigoldb database
 
     #>
@@ -111,7 +111,7 @@ function Measure-DbaBackupThroughput {
         [string[]]$DeviceType,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -121,22 +121,22 @@ function Measure-DbaBackupThroughput {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             if ($Database) {
                 $DatabaseCollection = $server.Databases | Where-Object Name -in $Database
             }
             else {
                 $DatabaseCollection = $server.Databases
             }
-            
+
             if ($ExcludeDatabase) {
                 $DatabaseCollection = $DatabaseCollection | Where-Object Name -NotIn $ExcludeDatabase
             }
-            
+
             foreach ($db in $DatabaseCollection) {
                 Write-Message -Level VeryVerbose -Message "Retrieving history for $db."
                 $allhistory = @()
-                
+
                 # Splatting didn't work
                 if ($since) {
                     $histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Since $since -DeviceType $DeviceType | Where-Object Type -eq $Type
@@ -144,31 +144,31 @@ function Measure-DbaBackupThroughput {
                 else {
                     $histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Last:$last -DeviceType $DeviceType | Where-Object Type -eq $Type
                 }
-                
+
                 foreach ($history in $histories) {
                     $timetaken = New-TimeSpan -Start $history.Start -End $history.End
-                    
+
                     if ($timetaken.TotalMilliseconds -eq 0) {
                         $throughput = $history.TotalSize.Megabyte
                     }
                     else {
                         $throughput = $history.TotalSize.Megabyte / $timetaken.TotalSeconds
                     }
-                    
+
                     Add-Member -Force -InputObject $history -MemberType Noteproperty -Name MBps -value $throughput
-                    
+
                     $allhistory += $history | Select-Object ComputerName, InstanceName, SqlInstance, Database, MBps, TotalSize, Start, End
                 }
-                
+
                 Write-Message -Level VeryVerbose -Message "Calculating averages for $db."
                 foreach ($db in ($allhistory | Sort-Object Database | Group-Object Database)) {
-                    
+
                     $measuremb = $db.Group.MBps | Measure-Object -Average -Minimum -Maximum
                     $measurestart = $db.Group.Start | Measure-Object -Minimum
                     $measureend = $db.Group.End | Measure-Object -Maximum
                     $measuresize = $db.Group.TotalSize.Megabyte | Measure-Object -Average
                     $avgduration = $db.Group | ForEach-Object { New-TimeSpan -Start $_.Start -End $_.End } | Measure-Object -Average TotalSeconds
-                    
+
                     [pscustomobject]@{
                         ComputerName    = $db.Group.ComputerName | Select-Object -First 1
                         InstanceName    = $db.Group.InstanceName | Select-Object -First 1

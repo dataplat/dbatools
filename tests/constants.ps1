@@ -4,7 +4,7 @@ if (Test-Path C:\temp\constants.ps1) {
     . C:\temp\constants.ps1
 }
 elseif (Test-Path "$PSScriptRoot\constants.local.ps1") {
-    Write-Verbose "tests\constants.local.ps1 found." 
+    Write-Verbose "tests\constants.local.ps1 found."
     . "$PSScriptRoot\constants.local.ps1"
 }
 else {

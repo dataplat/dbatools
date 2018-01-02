@@ -35,7 +35,7 @@ Prompts you for confirmation before executing any changing operations within the
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Tags: Migration, Certificate
 Author: Jess Pomfret (@jpomfret)
@@ -65,7 +65,7 @@ Imports all the certificates in the specified path.
 
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Retore-DbaDatabaseCertificate
-        
+
         function new-smocert ($directory, $certname) {
             if ($Pscmdlet.ShouldProcess("$cert on $SqlInstance", "Importing Certificate")) {
                 $smocert = New-Object Microsoft.SqlServer.Management.Smo.Certificate
@@ -109,7 +109,7 @@ Imports all the certificates in the specified path.
             if (-not (Test-DbaSqlPath -SqlInstance $server -Path $fullname)) {
                 Stop-Function -Message "$SqlInstance cannot access $fullname" -Continue -Target $fullname
             }
-            
+
             $directory = Split-Path $fullname
             $filename = Split-Path $fullname -Leaf
             $basename = [io.path]::GetFileNameWithoutExtension($filename)

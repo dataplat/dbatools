@@ -48,7 +48,7 @@ function Copy-DbaBackupDevice {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Migration, DisasterRecovery, Backup
             Author: Chrissy LeMaire (@cl), netnerds.net
@@ -88,25 +88,25 @@ function Copy-DbaBackupDevice {
         [switch]$Force,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     begin {
-        
+
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-        
+
         $source = $sourceServer.DomainInstanceName
         $destination = $destServer.DomainInstanceName
-        
+
         $serverBackupDevices = $sourceServer.BackupDevices
         $destBackupDevices = $destServer.BackupDevices
-        
+
         $sourceNetBios = Resolve-NetBiosName $sourceServer
         $destNetBios = Resolve-NetBiosName $destServer
     }
     process {
         foreach ($currentBackupDevice in $serverBackupDevices) {
             $deviceName = $currentBackupDevice.Name
-            
+
             $copyBackupDeviceStatus = [pscustomobject]@{
                 SourceServer      = $sourceServer.Name
                 DestinationServer = $destServer.Name
@@ -116,17 +116,17 @@ function Copy-DbaBackupDevice {
                 Notes             = $null
                 DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
             }
-            
+
             if ($BackupDevice -and $BackupDevice -notcontains $deviceName) {
                 continue
             }
-            
+
             if ($destBackupDevices.Name -contains $deviceName) {
                 if ($force -eq $false) {
                     $copyBackupDeviceStatus.Status = "Skipped"
                     $copyBackupDeviceStatus.Notes = "Already exists"
                     $copyBackupDeviceStatus
-                    
+
                     Write-Message -Level Verbose -Message "backup device $deviceName exists at destination. Use -Force to drop and migrate."
                     continue
                 }
@@ -139,13 +139,13 @@ function Copy-DbaBackupDevice {
                         catch {
                             $copyBackupDeviceStatus.Status = "Failed"
                             $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                            
+
                             Stop-Function -Message "Issue dropping backup device" -Target $deviceName -ErrorRecord $_ -Continue
                         }
                     }
                 }
             }
-            
+
             if ($Pscmdlet.ShouldProcess($destination, "Generating SQL code for $deviceName")) {
                 Write-Message -Level Verbose -Message "Scripting out SQL for $deviceName"
                 try {
@@ -155,29 +155,29 @@ function Copy-DbaBackupDevice {
                 catch {
                     $copyBackupDeviceStatus.Status = "Failed"
                     $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    
+
                     Stop-Function -Message "Issue scripting out backup device" -Target $deviceName -ErrorRecord $_ -Continue
                 }
             }
-            
+
             if ($Pscmdlet.ShouldProcess("console", "Stating that the actual file copy is about to occur")) {
                 Write-Message -Level Verbose -Message "Preparing to copy actual backup file"
             }
-            
+
             $path = Split-Path $sourceServer.BackupDevices[$deviceName].PhysicalLocation
             $destPath = Join-AdminUnc $destNetBios $path
             $sourcepath = Join-AdminUnc $sourceNetBios $sourceServer.BackupDevices[$deviceName].PhysicalLocation
-            
+
             Write-Message -Level Verbose -Message "Checking if directory $destPath exists"
-            
+
             if ($(Test-DbaSqlPath -SqlInstance $Destination -Path $path) -eq $false) {
                 $backupDirectory = $destServer.BackupDirectory
                 $destPath = Join-AdminUnc $destNetBios $backupDirectory
-                
+
                 if ($Pscmdlet.ShouldProcess($destination, "Updating create code to use new path")) {
                     Write-Message -Level Verbose -Message "$path doesn't exist on $destination"
                     Write-Message -Level Verbose -Message "Using default backup directory $backupDirectory"
-                    
+
                     try {
                         Write-Message -Level Verbose -Message "Updating $deviceName to use $backupDirectory"
                         $sql = $sql -replace $path, $backupDirectory
@@ -185,12 +185,12 @@ function Copy-DbaBackupDevice {
                     catch {
                         $copyBackupDeviceStatus.Status = "Failed"
                         $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        
+
                         Stop-Function -Message "Issue updating script of backup device with new path" -Target $deviceName -ErrorRecord $_ -Continue
                     }
                 }
             }
-            
+
             if ($Pscmdlet.ShouldProcess($destination, "Copying $sourcepath to $destPath using BITSTransfer")) {
                 try {
                     Start-BitsTransfer -Source $sourcepath -Destination $destPath -ErrorAction Stop
@@ -199,24 +199,24 @@ function Copy-DbaBackupDevice {
                 catch {
                     $copyBackupDeviceStatus.Status = "Failed"
                     $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    
+
                     Stop-Function -Message "Issue copying backup device to destination" -Target $deviceName -ErrorRecord $_ -Continue
                 }
             }
-            
+
             if ($Pscmdlet.ShouldProcess($destination, "Adding backup device $deviceName")) {
                 Write-Message -Level Verbose -Message "Adding backup device $deviceName on $destination"
                 try {
                     $destServer.Query($sql)
                     $destServer.BackupDevices.Refresh()
-                    
+
                     $copyBackupDeviceStatus.Status = "Successful"
                     $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
                 catch {
                     $copyBackupDeviceStatus.Status = "Failed"
                     $copyBackupDeviceStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    
+
                     Stop-Function -Message "Issue adding backup device" -Target $deviceName -ErrorRecord $_ -Continue
                 }
             }

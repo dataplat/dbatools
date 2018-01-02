@@ -11,20 +11,20 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     AfterAll {
         Remove-DbaDatabase -Confirm:$false -SqlInstance $script:instance1 -Database $db1
     }
-    
+
     $results = Expand-DbaTLogResponsibly -SqlInstance $script:instance1 -Database $db1 -TargetLogSizeMB 128
-    
+
     It -Skip "Should have correct properties" {
         $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,ID,Name,LogFileCount,InitialSize,CurrentSize,InitialVLFCount,CurrentVLFCount'.Split(',')
         ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
     }
-    
+
     It "Should have database name of $db1" {
         foreach ($result in $results) {
             $result.InitialSize -gt $result.CurrentSize
         }
     }
-    
+
     It "Should have grown the log file" {
         foreach ($result in $results) {
             $result.InitialSize -gt $result.CurrentSize

@@ -14,7 +14,7 @@ function Find-DbaUnusedIndex {
 
         .PARAMETER SqlInstance
             The SQL Server you want to check for unused indexes.
-        
+
         .PARAMETER SqlCredential
             Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
@@ -35,12 +35,12 @@ function Find-DbaUnusedIndex {
 
         .PARAMETER NoClobber
             If this switch is enabled, the output file will not be overwritten.
-            
+
         .PARAMETER Append
             If this switch is enabled, content will be appended to the output file.
 
         .PARAMETER IgnoreUptime
-            Less than 7 days uptime can mean that analysis of unused indexes is unreliable, and normally no results will be returned. By setting this option results will be returned even if the Instance has been running for less that 7 days.        
+            Less than 7 days uptime can mean that analysis of unused indexes is unreliable, and normally no results will be returned. By setting this option results will be returned even if the Instance has been running for less that 7 days.
 
             .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -52,7 +52,7 @@ function Find-DbaUnusedIndex {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Indexes
             Author: Aaron Nelson (@SQLvariant), SQLvariant.com
@@ -91,7 +91,7 @@ function Find-DbaUnusedIndex {
 
         .EXAMPLE
             Fine-DbaUnusedIndex -SqlInstance sqlserver2016 -IgnoreUptime
-            
+
             Generates the SQL statements to drop selected indexes on all user databases even if the instance has been online for less than 7 days.
             Note that results may not have enough detail for all indexes, so care should be taken when using them or the generated scripts. Best practice is to allow a full week to capture the mmajority of index use cases
 
@@ -118,21 +118,21 @@ function Find-DbaUnusedIndex {
 
         # Support Compression 2008+
         $unusedQuery = "
-		SELECT DB_NAME(database_id) AS 'DatabaseName', s.name AS 'SchemaName', t.name AS 'TableName', i.object_id , i.name AS 'IndexName', i.index_id, i.type_desc , user_seeks , user_scans , user_lookups , user_updates , last_user_seek , last_user_scan , last_user_lookup , last_user_UPDATE , system_seeks , system_scans , system_lookups , system_updates , last_system_seek , last_system_scan , last_system_lookup , last_system_update
-		FROM SYS.TABLES T
-		JOIN SYS.SCHEMAS S
-			ON T.schema_id = s.schema_id
-		JOIN SYS.indexes i
-			ON i.object_id = t.object_id LEFT OUTER
-		JOIN sys.dm_db_index_usage_stats iu
-			ON iu.object_id = i.object_id
-				AND iu.index_id = i.index_id
-		WHERE iu.database_id = DB_ID()
-				AND OBJECTPROPERTY(i.[object_id], 'IsMSShipped') = 0
-				AND user_seeks = 0
-				AND user_scans = 0
-				AND user_lookups = 0
-				AND i.type_desc NOT IN ('HEAP', 'CLUSTERED COLUMNSTORE')"
+        SELECT DB_NAME(database_id) AS 'DatabaseName', s.name AS 'SchemaName', t.name AS 'TableName', i.object_id , i.name AS 'IndexName', i.index_id, i.type_desc , user_seeks , user_scans , user_lookups , user_updates , last_user_seek , last_user_scan , last_user_lookup , last_user_UPDATE , system_seeks , system_scans , system_lookups , system_updates , last_system_seek , last_system_scan , last_system_lookup , last_system_update
+        FROM SYS.TABLES T
+        JOIN SYS.SCHEMAS S
+            ON T.schema_id = s.schema_id
+        JOIN SYS.indexes i
+            ON i.object_id = t.object_id LEFT OUTER
+        JOIN sys.dm_db_index_usage_stats iu
+            ON iu.object_id = i.object_id
+                AND iu.index_id = i.index_id
+        WHERE iu.database_id = DB_ID()
+                AND OBJECTPROPERTY(i.[object_id], 'IsMSShipped') = 0
+                AND user_seeks = 0
+                AND user_scans = 0
+                AND user_lookups = 0
+                AND i.type_desc NOT IN ('HEAP', 'CLUSTERED COLUMNSTORE')"
 
         if ($FilePath.Length -gt 0) {
             if ($FilePath -notlike "*\*") {

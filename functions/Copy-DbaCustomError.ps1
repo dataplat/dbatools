@@ -48,7 +48,7 @@ function Copy-DbaCustomError {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .PARAMETER Force
             If this switch is enabled, the custom error will be dropped and recreated if it already exists on Destination.
 
@@ -122,7 +122,7 @@ function Copy-DbaCustomError {
         foreach ($currentCustomError in $orderedCustomErrors) {
             $customErrorId = $currentCustomError.ID
             $language = $currentCustomError.Language.ToString()
-            
+
             $copyCustomErrorStatus = [pscustomobject]@{
                 SourceServer      = $sourceServer.Name
                 DestinationServer = $destServer.Name
@@ -132,7 +132,7 @@ function Copy-DbaCustomError {
                 Notes             = $null
                 DateTime          = [DbaDateTime](Get-Date)
             }
-            
+
             if ( $CustomError -and ($customErrorId -notin $CustomError -or $customErrorId -in $ExcludeCustomError) ) {
                 continue
             }

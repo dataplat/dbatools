@@ -6,7 +6,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "New Agent Job Category is changed properly" {
 
         It "Should have the right name and category type" {
-            $results = New-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1 
+            $results = New-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1
             $results.Name | Should Be "CategoryTest1"
             $results.CategoryType | Should Be "LocalJob"
         }
@@ -18,7 +18,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         }
 
         It "Change the name of the job category" {
-            $results = Set-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1 -NewName CategoryTest2 
+            $results = Set-DbaAgentJobCategory -SqlInstance $script:instance2 -Category CategoryTest1 -NewName CategoryTest2
             $results.NewCategoryName | Should Be "CategoryTest2"
         }
 

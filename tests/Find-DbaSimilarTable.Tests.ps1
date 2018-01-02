@@ -13,13 +13,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $db.Query("DROP TABLE dbatoolsci_table1")
             $db.Query("DROP TABLE dbatoolsci_table2")
         }
-        
+
         $results = Find-DbaSimilarTable -SqlInstance $script:instance1 -Database tempdb | Where-Object Table -Match dbatoolsci
-        
+
         It "returns at least two rows" { # not an exact count because who knows
             $results.Count -ge 2 | Should Be $true
         }
-        
+
         foreach ($result in $results) {
             It "matches 100% for the test tables" {
                 $result.MatchPercent -eq 100 | Should Be $true

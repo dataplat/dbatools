@@ -1,7 +1,7 @@
 function Export-DbaAvailabilityGroup {
     <#
         .SYNOPSIS
-        Exports SQL Server Availability Groups to a T-SQL file. 
+        Exports SQL Server Availability Groups to a T-SQL file.
 
         .DESCRIPTION
         Exports SQL Server Availability Groups creation scripts to a T-SQL file. This is a function that is not available in SSMS.
@@ -21,16 +21,16 @@ function Export-DbaAvailabilityGroup {
         .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
         SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
         .PARAMETER WhatIf
         Shows you what it'd output if you were to run the command
-            
+
         .PARAMETER Confirm
         Confirms each step/line of output
-            
+
         .NOTES
         Tags: DisasterRecovery, AG, AvailabilityGroup
         Author: Chris Sommer (@cjsommer), cjsommer.com
@@ -46,7 +46,7 @@ function Export-DbaAvailabilityGroup {
         Export-DbaAvailabilityGroup -SqlInstance sql2012
 
         Exports all Availability Groups from SQL server "sql2012". Output scripts are written to the Documents\SqlAgExports directory by default.
-            
+
         .EXAMPLE
         Export-DbaAvailabilityGroup -SqlInstance sql2012 -FilePath C:\temp\availability_group_exports
 
@@ -77,7 +77,7 @@ function Export-DbaAvailabilityGroup {
 
         Write-Output "Beginning Export-DbaAvailabilityGroup on $SqlInstance"
         Write-Verbose "Connecting to SqlServer $SqlInstance"
-        
+
         try {
             $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
@@ -90,26 +90,26 @@ function Export-DbaAvailabilityGroup {
 
         # Get all of the Availability Groups and filter if required
         $allags = $server.AvailabilityGroups
-        
+
         if ($AvailabilityGroups) {
             Write-Verbose 'Filtering AvailabilityGroups'
             $allags = $allags | Where-Object { $_.name -in $AvailabilityGroups }
         }
-        
+
         if ($allags.count -gt 0) {
-            
+
             # Set and create the OutputLocation if it doesn't exist
             $sqlinst = $SqlInstance.Replace('\', '$')
             $OutputLocation = "$FilePath\$sqlinst"
-            
+
             if (!(Test-Path $OutputLocation -PathType Container)) {
                 New-Item -Path $OutputLocation -ItemType Directory -Force | Out-Null
             }
-            
+
             # Script each Availability Group
             foreach ($ag in $allags) {
                 $agname = $ag.Name
-                
+
                 # Set the outfile name
                 if ($AppendDateToOutputFilename.IsPresent) {
                     $formatteddate = (Get-Date -Format 'yyyyMMdd_hhmm')
@@ -118,36 +118,36 @@ function Export-DbaAvailabilityGroup {
                 else {
                     $outfile = "$OutputLocation\$agname.sql"
                 }
-                
+
                 # Check NoClobber and script out the AG
                 if ($NoClobber.IsPresent -and (Test-Path -Path $outfile -PathType Leaf)) {
                     Write-Warning "OutputFile $outfile already exists. Skipping due to -NoClobber parameter"
                 }
                 else {
                     Write-output "Scripting Availability Group [$agname] on $SqlInstance to $outfile"
-                    
+
                     # Create comment block header for AG script
                     "/*" | Out-File -FilePath $outfile -Encoding ASCII -Force
                     " * Created by dbatools 'Export-DbaAvailabilityGroup' cmdlet on '$(Get-Date)'" | Out-File -FilePath $outfile -Encoding ASCII -Append
                     " * See https://dbatools.io/Export-DbaAvailabilityGroup for more help" | Out-File -FilePath $outfile -Encoding ASCII -Append
-                    
+
                     # Output AG and listener names
                     " *" | Out-File -FilePath $outfile -Encoding ASCII -Append
                     " * Availability Group Name: $($ag.name)" | Out-File -FilePath $outfile -Encoding ASCII -Append
                     $ag.AvailabilityGroupListeners | ForEach-Object { " * Listener Name: $($_.name)" } | Out-File -FilePath $outfile -Encoding ASCII -Append
-                    
+
                     # Output all replicas
                     " *" | Out-File -FilePath $outfile -Encoding ASCII -Append
                     $ag.AvailabilityReplicas | ForEach-Object { " * Replica: $($_.name)" } | Out-File -FilePath $outfile -Encoding ASCII -Append
-                    
+
                     # Output all databases
                     " *" | Out-File -FilePath $outfile -Encoding ASCII -Append
                     $ag.AvailabilityDatabases | ForEach-Object { " * Database: $($_.name)" } | Out-File -FilePath $outfile -Encoding ASCII -Append
-                    
+
                     # $ag | Select-Object -Property * | Out-File -FilePath $outfile -Encoding ASCII -Append
-                    
+
                     "*/" | Out-File -FilePath $outfile -Encoding ASCII -Append
-                    
+
                     # Script the AG
                     $ag.Script() | Out-File -FilePath $outfile -Encoding ASCII -Append
                 }

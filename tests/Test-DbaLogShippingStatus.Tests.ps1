@@ -7,7 +7,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $results = Test-DbaLogShippingStatus -SqlInstance $script:instance1 -WarningAction SilentlyContinue -WarningVariable editionwarn
         $editionwarn -match "Express" | Should Be $true
     }
-    
+
     It "warns if no log shipping found" {
         $results = Test-DbaLogShippingStatus -SqlInstance $script:instance2 -Database 'master' -WarningAction SilentlyContinue -WarningVariable doesntexist
         $doesntexist -match "No information available" | Should Be $true

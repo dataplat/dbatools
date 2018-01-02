@@ -21,7 +21,7 @@ User credential to connect to the remote servers or active directory.
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Tags: SPN
 Author: Drew Furgiuele (@pittfurg), http://www.port1433.com
@@ -60,7 +60,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
     )
     begin {
         Function Process-Account ($AccountName) {
-            
+
             ForEach ($account in $AccountName) {
                 Write-Message -Message "Looking for account $account..." -Level Verbose
                 $searchfor = 'User'
@@ -88,7 +88,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
                     Write-Message -Message "The SQL Service account ($Account) has not been found" -Level Warning
                     continue
                 }
-                
+
                 foreach ($spn in $spns) {
                     if ($spn -match "\:") {
                         try {
@@ -115,9 +115,9 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
             $ComputerName = @($env:COMPUTERNAME)
         }
     }
-    
+
     process {
-        
+
         foreach ($computer in $ComputerName) {
             if ($computer) {
                 if ($computer.EndsWith('$')) {
@@ -126,16 +126,16 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
                     continue
                 }
             }
-            
+
             Write-Message -Message "Getting SQL Server SPN for $computer" -Level Verbose
             $spns = Test-DbaSpn -ComputerName $computer -Credential $Credential
-            
+
             $sqlspns = 0
             $spncount = $spns.count
             Write-Message -Message "Calculated $spncount SQL SPN entries that should exist for $computer" -Level Verbose
             foreach ($spn in $spns | Where-Object { $_.IsSet -eq $true }) {
                 $sqlspns++
-                
+
                 if ($accountName) {
                     if ($accountName -eq $spn.InstanceServiceAccount) {
                         [pscustomobject] @{
@@ -159,7 +159,7 @@ Returns a custom object with SearchTerm (ServerName) and the SPNs that were foun
             }
             Write-Message -Message "Found $sqlspns set SQL SPN entries for $computer" -Level Verbose
         }
-        
+
         if ($AccountName) {
             foreach ($account in $AccountName) {
                 Process-Account -AccountName $account

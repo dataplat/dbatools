@@ -20,10 +20,10 @@ if (-not $env:appveyor) {
                     $server1.Query("EXEC master.dbo.sp_dropdevice @logicalname = N'$devicename'")
                 }
                 catch {
-                    # dont care    
+                    # dont care
                 }
             }
-            
+
             $results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue
             if ($warn) {
                 It "warns if it has a problem moving (issue for local to local)" {
@@ -35,7 +35,7 @@ if (-not $env:appveyor) {
                     $results.Status | Should Be "Successful"
                 }
             }
-            
+
             $results = Copy-DbaBackupDevice -Source $script:instance1 -Destination $script:instance2
             It "Should say skipped" {
                 $results.Status -ne "Successful" | Should be $true

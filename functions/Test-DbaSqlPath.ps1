@@ -26,7 +26,7 @@ function Test-DbaSqlPath {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .OUTPUTS
             System.Boolean
 
@@ -75,7 +75,7 @@ function Test-DbaSqlPath {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         $counter = [pscustomobject] @{ Value = 0 }
         $groupSize = 100
         $groups = $Path | Group-Object -Property { [math]::Floor($counter.Value++ / $groupSize) }

@@ -133,71 +133,71 @@ function Find-DbaDatabaseGrowthEvent {
         $eventClassFilter = $eventClass -join ","
 
         $sql = "
-			BEGIN TRY
-				IF (SELECT CONVERT(INT,[value_in_use]) FROM sys.configurations WHERE [name] = 'default trace enabled' ) = 1
-					BEGIN
-						DECLARE @curr_tracefilename VARCHAR(500);
-						DECLARE @base_tracefilename VARCHAR(500);
-						DECLARE @indx INT;
+            BEGIN TRY
+                IF (SELECT CONVERT(INT,[value_in_use]) FROM sys.configurations WHERE [name] = 'default trace enabled' ) = 1
+                    BEGIN
+                        DECLARE @curr_tracefilename VARCHAR(500);
+                        DECLARE @base_tracefilename VARCHAR(500);
+                        DECLARE @indx INT;
 
-						SELECT @curr_tracefilename = [path]
-						FROM sys.traces
-						WHERE is_default = 1 ;
+                        SELECT @curr_tracefilename = [path]
+                        FROM sys.traces
+                        WHERE is_default = 1 ;
 
-						SET @curr_tracefilename = REVERSE(@curr_tracefilename);
-						SELECT @indx  = PATINDEX('%\%', @curr_tracefilename);
-						SET @curr_tracefilename = REVERSE(@curr_tracefilename);
-						SET @base_tracefilename = LEFT( @curr_tracefilename,LEN(@curr_tracefilename) - @indx) + '\log.trc';
+                        SET @curr_tracefilename = REVERSE(@curr_tracefilename);
+                        SELECT @indx  = PATINDEX('%\%', @curr_tracefilename);
+                        SET @curr_tracefilename = REVERSE(@curr_tracefilename);
+                        SET @base_tracefilename = LEFT( @curr_tracefilename,LEN(@curr_tracefilename) - @indx) + '\log.trc';
 
-						SELECT
-							SERVERPROPERTY('MachineName') AS ComputerName,
-							ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-							SERVERPROPERTY('ServerName') AS SqlInstance,
-							CONVERT(INT,(DENSE_RANK() OVER (ORDER BY [StartTime] DESC))%2) AS OrderRank,
-								CONVERT(INT, [EventClass]) AS EventClass,
-							[DatabaseName],
-							[Filename],
-							CONVERT(INT,(Duration/1000)) AS Duration,
-							DATEADD (MINUTE, DATEDIFF(MINUTE, GETDATE(), GETUTCDATE()), [StartTime]) AS StartTime,  -- Convert to UTC time
-							DATEADD (MINUTE, DATEDIFF(MINUTE, GETDATE(), GETUTCDATE()), [EndTime]) AS EndTime,  -- Convert to UTC time
-							([IntegerData]*8.0/1024) AS ChangeInSize
-						FROM::fn_trace_gettable( @base_tracefilename, DEFAULT )
-						WHERE
-							[EventClass] IN ($eventClassFilter)
-							AND [ServerName] = @@SERVERNAME
-							AND [DatabaseName] IN (_DatabaseList_)
-						ORDER BY [StartTime] DESC;
-					END
-				ELSE
-					SELECT
-						SERVERPROPERTY('MachineName') AS ComputerName,
-						ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-						SERVERPROPERTY('ServerName') AS SqlInstance,
-						-100 AS [OrderRank],
-						-1 AS [OrderRank],
-						0 AS [EventClass],
-						0 [DatabaseName],
-						0 AS [Filename],
-						0 AS [Duration],
-						0 AS [StartTime],
-						0 AS [EndTime],
-						0 AS ChangeInSize
-			END	TRY
-			BEGIN CATCH
-				SELECT
-					SERVERPROPERTY('MachineName') AS ComputerName,
-					ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-					SERVERPROPERTY('ServerName') AS SqlInstance,
-					-100 AS [OrderRank],
-					-100 AS [OrderRank],
-					ERROR_NUMBER() AS [EventClass],
-					ERROR_SEVERITY() AS [DatabaseName],
-					ERROR_STATE() AS [Filename],
-					ERROR_MESSAGE() AS [Duration],
-					1 AS [StartTime],
-					1 AS [EndTime],
-					1 AS [ChangeInSize]
-			END CATCH"
+                        SELECT
+                            SERVERPROPERTY('MachineName') AS ComputerName,
+                            ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
+                            SERVERPROPERTY('ServerName') AS SqlInstance,
+                            CONVERT(INT,(DENSE_RANK() OVER (ORDER BY [StartTime] DESC))%2) AS OrderRank,
+                                CONVERT(INT, [EventClass]) AS EventClass,
+                            [DatabaseName],
+                            [Filename],
+                            CONVERT(INT,(Duration/1000)) AS Duration,
+                            DATEADD (MINUTE, DATEDIFF(MINUTE, GETDATE(), GETUTCDATE()), [StartTime]) AS StartTime,  -- Convert to UTC time
+                            DATEADD (MINUTE, DATEDIFF(MINUTE, GETDATE(), GETUTCDATE()), [EndTime]) AS EndTime,  -- Convert to UTC time
+                            ([IntegerData]*8.0/1024) AS ChangeInSize
+                        FROM::fn_trace_gettable( @base_tracefilename, DEFAULT )
+                        WHERE
+                            [EventClass] IN ($eventClassFilter)
+                            AND [ServerName] = @@SERVERNAME
+                            AND [DatabaseName] IN (_DatabaseList_)
+                        ORDER BY [StartTime] DESC;
+                    END
+                ELSE
+                    SELECT
+                        SERVERPROPERTY('MachineName') AS ComputerName,
+                        ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
+                        SERVERPROPERTY('ServerName') AS SqlInstance,
+                        -100 AS [OrderRank],
+                        -1 AS [OrderRank],
+                        0 AS [EventClass],
+                        0 [DatabaseName],
+                        0 AS [Filename],
+                        0 AS [Duration],
+                        0 AS [StartTime],
+                        0 AS [EndTime],
+                        0 AS ChangeInSize
+            END	TRY
+            BEGIN CATCH
+                SELECT
+                    SERVERPROPERTY('MachineName') AS ComputerName,
+                    ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
+                    SERVERPROPERTY('ServerName') AS SqlInstance,
+                    -100 AS [OrderRank],
+                    -100 AS [OrderRank],
+                    ERROR_NUMBER() AS [EventClass],
+                    ERROR_SEVERITY() AS [DatabaseName],
+                    ERROR_STATE() AS [Filename],
+                    ERROR_MESSAGE() AS [Duration],
+                    1 AS [StartTime],
+                    1 AS [EndTime],
+                    1 AS [ChangeInSize]
+            END CATCH"
     }
     process {
         foreach ($instance in $SqlInstance) {

@@ -9,7 +9,7 @@ function Update-Dbatools {
 
         .PARAMETER Development
             If this switch is enabled, the current development branch will be installed. By default, the latest official release is installed.
-    
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -21,7 +21,7 @@ function Update-Dbatools {
         .PARAMETER Confirm
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-        .NOTES 
+        .NOTES
             Tags: Module
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com

@@ -51,25 +51,25 @@ If Path is not specified, the "My Documents" location will be used.
             return
         }
     }
-    
+
     if (-not (Test-Path $Path)) {
         Stop-Function -Message "Path does not exist or access denied" -Target $path
         return
     }
-    
+
     Add-Type -AssemblyName System.Web
     $glenberryrss = "http://www.sqlskills.com/blogs/glenn/feed/"
     $glenberrysql = @()
-    
+
     Write-Message -Level Output -Message "Downloading RSS Feed"
     $rss = [xml](get-webdata -uri $glenberryrss)
     $Feed = $rss.rss.Channel
-    
+
     $glenberrysql = @()
     $RssPostFilter = "SQL Server Diagnostic Information Queries for*"
     $DropboxLinkFilter = "*dropbox.com*"
     $LinkTitleFilter = "*Diagnostic*"
-    
+
     foreach ($post in $Feed.item) {
         if ($post.title -like $RssPostFilter) {
             # We found the first post that matches it, lets go visit and scrape.

@@ -1,4 +1,4 @@
-Function Get-SqlCmdVars {
+function Get-SqlCmdVars {
     <#
         .SYNOPSIS
             Retrieves the values of PowerShell parameters and updates values of SqlmdVars listed in the publish.xml.
@@ -24,7 +24,7 @@ Function Get-SqlCmdVars {
             https://dbatools.io/Test-Noun
 
         .EXAMPLE
-        Imagine content of MyDbProject.publish.xml is as follows - 
+        Imagine content of MyDbProject.publish.xml is as follows -
         <?xml version="1.0" encoding="utf-8"?>
         <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
         <PropertyGroup>
@@ -43,8 +43,8 @@ Function Get-SqlCmdVars {
         </ItemGroup>
         </Project>
         We will need one PowerShell parameter named $DeployTag to update the value
-        
-        The following scenario will fail as no $deployTag - 
+
+        The following scenario will fail as no $deployTag -
         "
             $publishXml =  "C:\MyDbProject\bin\Debug\MyDbProject.publish.xml"
             $dacProfile = [Microsoft.SqlServer.Dac.DacProfile]::Load($publishXml)

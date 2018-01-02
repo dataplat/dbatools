@@ -87,7 +87,7 @@ function Invoke-DbaAdvancedRestore {
         $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance -OutputScriptOnly
         $BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance
 
-        First generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the full restore. By  reusing the BackupHistory object there is no need to rescan all the backup files again 
+        First generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the full restore. By  reusing the BackupHistory object there is no need to rescan all the backup files again
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
     param (

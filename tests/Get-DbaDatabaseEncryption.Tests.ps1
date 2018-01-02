@@ -13,7 +13,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterAll {
             Get-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $cert | Remove-DbaDbCertificate -confirm:$false
         }
-        $results = Get-DbaDatabaseEncryption -SqlInstance $script:instance1 
+        $results = Get-DbaDatabaseEncryption -SqlInstance $script:instance1
         It "Should find a certificate named $cert" {
             ($results.Name -match 'dbatoolsci').Count -gt 0 | Should Be $true
         }

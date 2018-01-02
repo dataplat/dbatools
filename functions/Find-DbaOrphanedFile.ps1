@@ -1,7 +1,7 @@
 #ValidationTags#FlowControl,Pipeline#
 function Find-DbaOrphanedFile {
     <#
-        .SYNOPSIS 
+        .SYNOPSIS
             Find-DbaOrphanedFile finds orphaned database files. Orphaned database files are files not associated with any attached database.
 
         .DESCRIPTION
@@ -39,7 +39,7 @@ function Find-DbaOrphanedFile {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: DisasterRecovery, Orphan
             Author: Sander Stad (@sqlstad), sqlstad.nl
@@ -59,29 +59,29 @@ function Find-DbaOrphanedFile {
 
             Connects to sqlserver2014a, authenticating with Windows credentials, and searches for orphaned files. Returns server name, local filename, and unc path to file.
 
-        .EXAMPLE   
+        .EXAMPLE
             Find-DbaOrphanedFile -SqlInstance sqlserver2014a -SqlCredential $cred
 
             Connects to sqlserver2014a, authenticating with SQL Server authentication, and searches for orphaned files. Returns server name, local filename, and unc path to file.
 
-        .EXAMPLE   
+        .EXAMPLE
             Find-DbaOrphanedFile -SqlInstance sql2014 -Path 'E:\Dir1', 'E:\Dir2'
 
             Finds the orphaned files in "E:\Dir1" and "E:Dir2" in addition to the default directories.
 
-        .EXAMPLE   
+        .EXAMPLE
             Find-DbaOrphanedFile -SqlInstance sql2014 -LocalOnly
 
             Returns only the local filepaths for orphaned files.
 
-        .EXAMPLE   
+        .EXAMPLE
             Find-DbaOrphanedFile -SqlInstance sql2014 -RemoteOnly
-    
+
             Returns only the remote filepath for orphaned files.
 
-        .EXAMPLE   
+        .EXAMPLE
             Find-DbaOrphanedFile -SqlInstance sql2014, sql2016 -FileType fsf, mld
-    
+
             Finds the orphaned ending with ".fsf" and ".mld" in addition to the default filetypes ".mdf", ".ldf", ".ndf" for both the servers sql2014 and sql2016.
 
     #>
@@ -108,18 +108,18 @@ function Find-DbaOrphanedFile {
             $q1 = "CREATE TABLE #enum ( id int IDENTITY, fs_filename nvarchar(512), depth int, is_file int, parent nvarchar(512) ); DECLARE @dir nvarchar(512);"
             $q2 = "SET @dir = 'dirname';
 
-				INSERT INTO #enum( fs_filename, depth, is_file )
-				EXEC xp_dirtree @dir, 1, 1;
+                INSERT INTO #enum( fs_filename, depth, is_file )
+                EXEC xp_dirtree @dir, 1, 1;
 
-				UPDATE #enum
-				SET parent = @dir,
-				fs_filename = ltrim(rtrim(fs_filename))
-				WHERE parent IS NULL;"
+                UPDATE #enum
+                SET parent = @dir,
+                fs_filename = ltrim(rtrim(fs_filename))
+                WHERE parent IS NULL;"
 
             $query_files_sql = "SELECT e.fs_filename AS filename, e.parent
-					FROM #enum AS e
-					WHERE e.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr' )
-					AND is_file = 1;"
+                    FROM #enum AS e
+                    WHERE e.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr' )
+                    AND is_file = 1;"
 
             # build the query string based on how many directories they want to enumerate
             $sql = $q1
@@ -192,7 +192,7 @@ function Find-DbaOrphanedFile {
             $dirtreefiles = $valid = $paths = $matching = @()
 
             $filestructure = Get-SqlFileStructure $server
-            
+
             # Get any paths associated with current data and log files
             foreach ($file in $filestructure) {
                 $paths += Split-Path -Path $file -Parent

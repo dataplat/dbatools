@@ -1,4 +1,4 @@
-Function Get-DbaRoleMember {
+function Get-DbaRoleMember {
     <#
 .SYNOPSIS
 Get members of all roles on a Sql instance.
@@ -14,7 +14,7 @@ The SQL Server that you're connecting to.
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
 SQL Server does not accept Windows credentials being passed as credentials. To connect as a different Windows user, run PowerShell as that user.
 
@@ -74,9 +74,9 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
         [switch]$IncludeServerLevel,
         [switch]$NoFixedRole
     )
-    
+
     process {
-        
+
         foreach ($instance in $sqlinstance) {
             Write-Verbose "Connecting to $Instance"
             try {
@@ -86,7 +86,7 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
                 Write-Warning "Failed to connect to $instance"
                 continue
             }
-            
+
             if ($IncludeServerLevel) {
                 Write-Verbose "Server Role Members included"
                 $instroles = $null
@@ -109,32 +109,32 @@ Returns a gridview displaying SQLServer, Database, Role, Member for both ServerR
                     }
                 }
             }
-            
+
             $dbs = $server.Databases
-            
+
             if ($Database) {
                 $dbs = $dbs | Where-Object Name -In $Database
             }
-            
+
             if ($Exclude) {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
-            
+
             foreach ($db in $dbs) {
                 Write-Verbose "Checking accessibility of $db on $instance"
-                
+
                 if ($db.IsAccessible -ne $true) {
                     Write-Warning "Database $db on $instance is not accessible"
                     continue
                 }
-                
+
                 $dbroles = $db.roles
                 Write-Verbose "Getting Database Roles for $db on $instance"
-                
+
                 if ($NoFixedRole) {
                     $dbroles = $dbroles | Where-Object { $_.isfixedrole -eq $false }
                 }
-                
+
                 foreach ($dbrole in $dbroles) {
                     Write-Verbose "Getting Database Role Members for $dbrole in $db on $instance"
                     $dbmembers = $dbrole.enummembers()

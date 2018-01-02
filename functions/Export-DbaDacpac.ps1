@@ -1,4 +1,4 @@
-Function Export-DbaDacpac {
+function Export-DbaDacpac {
     <#
     .SYNOPSIS
     Exports a dacpac from a server.
@@ -18,7 +18,7 @@ Function Export-DbaDacpac {
 
     .PARAMETER Path
     The directory where the .dacpac files will be exported to. Defaults to documents.
-    
+
     .PARAMETER Database
     The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
@@ -27,15 +27,15 @@ Function Export-DbaDacpac {
 
     .PARAMETER AllUserDatabases
     Run command against all user databases
-    
+
     .PARAMETER ExtendedParameters
     Optional parameters used to extract the DACPAC. More information can be found at
     https://msdn.microsoft.com/en-us/library/hh550080.aspx
-    
+
     .PARAMETER ExtendedProperties
     Optional properties used to extract the DACPAC. More information can be found at
     https://msdn.microsoft.com/en-us/library/hh550080.aspx
-    
+
 
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -49,7 +49,7 @@ Function Export-DbaDacpac {
     Website: https://dbatools.io
     Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
     License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-    
+
     .LINK
     https://dbatools.io/Export-DbaDacpac
 
@@ -63,7 +63,7 @@ Function Export-DbaDacpac {
 
     Sets the CommandTimeout to 10 then extracts the dacpac for SharePoint_Config on sql2016 to C:\temp\SharePoint_Config.dacpac then verifies extraction.
 
-    
+
     #>
     [CmdletBinding()]
     param
@@ -81,22 +81,22 @@ Function Export-DbaDacpac {
         [string]$ExtendedProperties,
         [switch]$EnableException
     )
-    
+
     process {
         if ((Test-Bound -Not -ParameterName Database) -and (Test-Bound -Not -ParameterName ExcludeDatabase) -and (Test-Bound -Not -ParameterName AllUserDatabases)) {
             Stop-Function -Message "You must specify databases to execute against using either -Database, -ExcludeDatabase or -AllUserDatabases"
         }
-        
+
         if (-not (Test-Path $Path)) {
             Stop-Function -Message "$Path doesn't exist or access denied"
         }
-        
+
         if ((Get-Item $path) -isnot [System.IO.DirectoryInfo]) {
             Stop-Function -Message "Path must be a directory"
         }
-        
+
         foreach ($instance in $sqlinstance) {
-            
+
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance."
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
@@ -105,20 +105,20 @@ Function Export-DbaDacpac {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
             $cleaninstance = $instance.ToString().Replace('\', '-')
-            
+
             $dbs = $server.Databases | Where-Object { $_.IsSystemObject -eq $false -and $_.IsAccessible }
-            
+
             if ($Database) {
                 $dbs = $dbs | Where-Object Name -in $Database
-                if (-not $dbs.name) { 
-                    Stop-Function -Message "Database $Database does not exist on $instance" -Target $instance -Continue 
-                } 
+                if (-not $dbs.name) {
+                    Stop-Function -Message "Database $Database does not exist on $instance" -Target $instance -Continue
+                }
             }
-            
+
             if ($ExcludeDatabase) {
                 $dbs = $dbs | Where-Object Name -notin $ExcludeDatabase
             }
-            
+
             foreach ($db in $dbs) {
                 $dbname = $db.name
                 $connstring = $server.ConnectionContext.ConnectionString.Replace('"', "'")
@@ -128,10 +128,10 @@ Function Export-DbaDacpac {
                 $filename = "$Path\$cleaninstance-$dbname.dacpac"
                 Write-Message -Level Verbose -Message "Exporting $filename"
                 Write-Message -Level Verbose -Message "Using connection string $connstring"
-                
+
                 $sqlPackageArgs = "/action:Extract /tf:""$filename"" /SourceConnectionString:""$connstring"" $ExtendedParameters $ExtendedProperties"
                 $resultstime = [diagnostics.stopwatch]::StartNew()
-                
+
                 try {
                     $startprocess = New-Object System.Diagnostics.ProcessStartInfo
                     $startprocess.FileName = "$script:PSModuleRoot\bin\smo\sqlpackage.exe"
@@ -147,7 +147,7 @@ Function Export-DbaDacpac {
                     $stdout = $process.StandardOutput.ReadToEnd()
                     $stderr = $process.StandardError.ReadToEnd()
                     Write-Message -level Verbose -Message "StandardOutput: $stdout"
-                    
+
                     [pscustomobject]@{
                         ComputerName = $server.NetName
                         InstanceName = $server.ServiceName
@@ -157,10 +157,10 @@ Function Export-DbaDacpac {
                         Elapsed      = [prettytimespan]($resultstime.Elapsed)
                     } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName
                 }
-                catch {        
+                catch {
                     Stop-Function -Message "SQLPackage Failure" -ErrorRecord $_ -Continue
                 }
-                
+
                 if ($process.ExitCode -ne 0) {
                     Stop-Function -Message "Standard output - $stderr" -Continue
                 }

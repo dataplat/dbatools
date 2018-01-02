@@ -6,7 +6,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\..\internal\Convert-HexStringToByte"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-	
+
     $credLogin = 'credologino'
     $certificateName = 'DBAToolsPesterlogincertificate'
     $password = 'MyV3ry$ecur3P@ssw0rd'
@@ -18,7 +18,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     $computerName = $server1.NetName
     $winLogin = "$computerName\$credLogin"
     $logins = "claudio", "port", "tester", "certifico", $winLogin
-	
+
     #cleanup
     foreach ($instance in $servers) {
         foreach ($login in $logins) {
@@ -34,7 +34,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
     }
-	
+
     #create Windows login
     $computer = [ADSI]"WinNT://$computerName"
     try {
@@ -44,19 +44,19 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     catch {<#User does not exist#>}
-	
+
     $user = $computer.Create("user", $credLogin)
     $user.SetPassword($password)
     $user.SetInfo()
-	
+
     #create credential
     $null = New-DbaCredential -SqlInstance $server1 -Name $credLogin -CredentialIdentity $credLogin -Password $securePassword -Force
-	
+
     #create master key if not exists
     if (!($mkey = Get-DbaDatabaseMasterKey -SqlInstance $server1 -Database master)) {
         $null = New-DbaDatabaseMasterKey -SqlInstance $server1 -Database master -Password $securePassword -Confirm:$false
     }
-	
+
     #create certificate
     if ($crt = $server1.Databases['master'].Certificates[$certificateName]) {
         $crt.Drop()
@@ -113,21 +113,21 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "Should be copied successfully" {
             $results = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server2 -Disabled:$false -Force
             $results.Name | Should Be "tester"
-			
+
             $results = Get-DbaLogin -SqlInstance $server1 -Login claudio, port | New-DbaLogin -SqlInstance $server2 -Force -PasswordPolicy -PasswordExpiration -DefaultDatabase tempdb -Disabled -Language Nederlands -NewSid -LoginRenameHashtable @{claudio = 'port'; port = 'claudio'} -MapToCredential $null
             $results.Name | Should Be @("port", "claudio")
-			
+
             $results = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server1 -LoginRenameHashtable @{tester = 'port'} -Force -NewSid
             $results.Name | Should Be "port"
         }
-		
+
         It "Should retain its same properties" {
-			
+
             $login1 = Get-Dbalogin -SqlInstance $script:instance1 -login tester
             $login2 = Get-Dbalogin -SqlInstance $script:instance2 -login tester
-			
+
             $login2 | Should Not BeNullOrEmpty
-			
+
             # Compare values
             $login1.Name | Should Be $login2.Name
             $login1.Language | Should Be $login2.Language
@@ -138,14 +138,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $login1.PasswordPolicyEnforced | Should be $login2.PasswordPolicyEnforced
             $login1.Sid | Should be $login2.Sid
         }
-		
+
         It "Should not have same properties because of the overrides" {
-			
+
             $login1 = Get-Dbalogin -SqlInstance $script:instance1 -login claudio
             $login2 = Get-Dbalogin -SqlInstance $script:instance2 -login port
-			
+
             $login2 | Should Not BeNullOrEmpty
-			
+
             # Compare values
             $login1.Language | Should Not Be $login2.Language
             $login1.EnumCredentials() | Should Not Be $login2.EnumCredentials()
@@ -168,14 +168,14 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             }
         }
     }
-	
+
     Context "No overwrite" {
         $null = Get-DbaLogin -SqlInstance $server1 -Login tester | New-DbaLogin -SqlInstance $server2 -WarningVariable warning 3>&1
         It "Should not attempt overwrite" {
             $warning | Should Match "Login tester already exists"
         }
     }
-	
+
     foreach ($instance in $servers) {
         foreach ($login in $logins) {
             if ($l = Get-DbaLogin -SqlInstance $instance -Login $login) {
@@ -191,7 +191,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    $computer.Delete('User', $credLogin) 
+    $computer.Delete('User', $credLogin)
     $server1.Credentials[$credLogin].Drop()
     $server1.Databases['master'].Certificates[$certificateName].Drop()
     if (!$mkey) {

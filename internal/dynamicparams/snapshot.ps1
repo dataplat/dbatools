@@ -8,43 +8,43 @@ if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["snaps
 $ScriptBlock = {
     param (
         $commandName,
-        
+
         $parameterName,
-        
+
         $wordToComplete,
-        
+
         $commandAst,
-        
+
         $fakeBoundParameter
     )
-    
-    
+
+
     $server = $fakeBoundParameter['SqlInstance']
-    
+
     if (-not $server) {
         $server = $fakeBoundParameter['Source']
     }
-    
+
     if (-not $server) {
         $server = $fakeBoundParameter['ComputerName']
     }
-    
+
     if (-not $server) { return }
-    
+
     try {
         [DbaInstanceParameter]$parServer = $server | Select-Object -First 1
     }
     catch {
         return
     }
-    
+
     if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"][$parServer.FullSmoName.ToLower()]) {
         foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*")) {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
         return
     }
-    
+
     try {
         foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["snapshot"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*")) {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name

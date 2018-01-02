@@ -1,4 +1,4 @@
-Function New-DbaSqlDirectory {
+function New-DbaSqlDirectory {
     <#
 .SYNOPSIS
 Creates new path as specified by the path variable
@@ -23,7 +23,7 @@ credentials being passed as credentials. To connect as a different Windows user,
 
 
 .NOTES
-Tags: 
+Tags:
 Author: Chrissy LeMaire (@cl), netnerds.net
 Requires: Admin access to server (not SQL Services),
 Remoting must be enabled and accessible if $SqlInstance is not local
@@ -38,7 +38,7 @@ https://dbatools.io/New-DbaSqlDirectory
 .EXAMPLE
 New-DbaSqlDirectory -SqlInstance sqlcluster -Path L:\MSAS12.MSSQLSERVER\OLAP
 
-If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\OLAP it will do and return $true, if not it will return $false. 
+If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\OLAP it will do and return $true, if not it will return $false.
 
 .EXAMPLE
 $credential = Get-Credential
@@ -56,21 +56,21 @@ If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\
         [string]$Path,
         [PSCredential]$SqlCredential
     )
-    
+
     $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-    
+
     $Path = $Path.Replace("'", "''")
-    
+
     $exists = Test-DbaSqlPath -SqlInstance $sqlinstance -SqlCredential $SqlCredential -Path $Path
-    
+
     if ($exists) {
         Write-Warning "$Path already exists"
         return
     }
-    
+
     $sql = "EXEC master.dbo.xp_create_subdir'$path'"
     Write-Debug $sql
-    
+
     try {
         $query = $server.Query($sql)
         $Created = $true
@@ -78,10 +78,10 @@ If the SQL Server instance sqlcluster can create the path L:\MSAS12.MSSQLSERVER\
     catch {
         $Created = $false
     }
-    
+
     [pscustomobject]@{
         Server  = $SqlInstance
         Path    = $Path
         Created = $Created
-    }   
+    }
 }

@@ -37,7 +37,7 @@ function Watch-DbaDbLogin {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Login
             Author: Chrissy LeMaire (@cl), netnerds.net
@@ -142,18 +142,18 @@ function Watch-DbaDbLogin {
             }
 
             $sql = "
-			SELECT
-				s.login_time AS [LoginTime]
-				, s.login_name AS [Login]
-				, ISNULL(s.host_name,N'') AS [Host]
-				, ISNULL(s.program_name,N'') AS [Program]
-				, ISNULL(r.database_id,N'') AS [DatabaseId]
-				, ISNULL(DB_NAME(r.database_id),N'') AS [Database]
-				, CAST(~s.is_user_process AS bit) AS [IsSystem]
-				, CaptureTime = (SELECT GETDATE())
-			FROM sys.dm_exec_sessions AS s
-			LEFT OUTER JOIN sys.dm_exec_requests AS r
-				ON r.session_id = s.session_id"
+            SELECT
+                s.login_time AS [LoginTime]
+                , s.login_name AS [Login]
+                , ISNULL(s.host_name,N'') AS [Host]
+                , ISNULL(s.program_name,N'') AS [Program]
+                , ISNULL(r.database_id,N'') AS [DatabaseId]
+                , ISNULL(DB_NAME(r.database_id),N'') AS [Database]
+                , CAST(~s.is_user_process AS bit) AS [IsSystem]
+                , CaptureTime = (SELECT GETDATE())
+            FROM sys.dm_exec_sessions AS s
+            LEFT OUTER JOIN sys.dm_exec_requests AS r
+                ON r.session_id = s.session_id"
             Write-Message -Level Debug -Message $sql
 
             $procs = $server.Query($sql) | Where-Object { $_.Host -ne $sourceserver.ComputerNamePhysicalNetBIOS -and ![string]::IsNullOrEmpty($_.Host) }

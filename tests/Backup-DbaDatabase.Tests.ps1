@@ -37,7 +37,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results | Should Be $null
         }
     }
-    
+
     Context "Database should backup 1 database" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master
         It "Database backup object count should be 1" {
@@ -45,7 +45,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.BackupComplete | Should Be $true
         }
     }
-    
+
     Context "Database should backup 2 databases" {
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database master, msdb
         It "Database backup object count should be 2" {
@@ -53,7 +53,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results.BackupComplete | Should Be @($true, $true)
         }
     }
-    
+
     Context "Backup can pipe to restore" {
         $null = Restore-DbaDatabase -SqlServer $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak -DatabaseName "dbatoolsci_singlerestore"
         $results = Backup-DbaDatabase -SqlInstance $script:instance1 -BackupDirectory $DestBackupDir -Database "dbatoolsci_singlerestore" | Restore-DbaDatabase -SqlInstance $script:instance2 -DatabaseName $DestDbRandom -TrustDbBackupHistory -ReplaceDbNameInFile
