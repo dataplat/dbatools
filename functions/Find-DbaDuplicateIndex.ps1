@@ -1,116 +1,116 @@
 function Find-DbaDuplicateIndex {
-	<#
-		.SYNOPSIS
-			Find duplicate and overlapping indexes.
+    <#
+        .SYNOPSIS
+            Find duplicate and overlapping indexes.
 
-		.DESCRIPTION
-			This command will help you to find duplicate and overlapping indexes on a database or a list of databases.
+        .DESCRIPTION
+            This command will help you to find duplicate and overlapping indexes on a database or a list of databases.
 
-			On SQL Server 2008 and higher, the IsFiltered property will also be checked
+            On SQL Server 2008 and higher, the IsFiltered property will also be checked
 
-			Also tells how much space you can save by dropping the index.
+            Also tells how much space you can save by dropping the index.
 
-			We show the type of compression so you can make a more considered decision.
+            We show the type of compression so you can make a more considered decision.
 
-			For now only supports CLUSTERED and NONCLUSTERED indexes.
+            For now only supports CLUSTERED and NONCLUSTERED indexes.
 
-			You can select the indexes you want to drop on the gridview and when clicking OK, the DROP statement will be generated.
+            You can select the indexes you want to drop on the gridview and when clicking OK, the DROP statement will be generated.
 
-			Output:
-				TableName
-				IndexName
-				KeyColumns
-				IncludedColumns
-				IndexSizeMB
-				IndexType
-				CompressionDescription (When 2008+)
-				[RowCount]
-				IsDisabled
-				IsFiltered (When 2008+)
-			
+            Output:
+                TableName
+                IndexName
+                KeyColumns
+                IncludedColumns
+                IndexSizeMB
+                IndexType
+                CompressionDescription (When 2008+)
+                [RowCount]
+                IsDisabled
+                IsFiltered (When 2008+)
+            
         .PARAMETER SqlInstance
-			The SQL Server you want to check for duplicate indexes.
+            The SQL Server you want to check for duplicate indexes.
         
         .PARAMETER SqlCredential
- 			Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
+             Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-			$cred = Get-Credential, then pass $cred object to the -SqlCredential parameter.
+            $cred = Get-Credential, then pass $cred object to the -SqlCredential parameter.
 
-			Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-			To connect as a different Windows user, run PowerShell as that user.
+            To connect as a different Windows user, run PowerShell as that user.
 
-		.PARAMETER Database
-			The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
+        .PARAMETER Database
+            The database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-		.PARAMETER IncludeOverlapping
-			If this switch is enabled, indexes which are partially duplicated will be returned. 
+        .PARAMETER IncludeOverlapping
+            If this switch is enabled, indexes which are partially duplicated will be returned. 
 
-			Example: If the first key column is the same between two indexes, but one has included columns and the other not, this will be shown.
+            Example: If the first key column is the same between two indexes, but one has included columns and the other not, this will be shown.
 
-		.PARAMETER WhatIf
-			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        .PARAMETER WhatIf
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-		.PARAMETER Confirm
-			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        .PARAMETER Confirm
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.PARAMETER Force
-			If this switch is enabled, the DROP statement(s) will be executed instead of being written to the output file.
+        .PARAMETER Force
+            If this switch is enabled, the DROP statement(s) will be executed instead of being written to the output file.
 
-		.PARAMETER EnableException
-			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
-		.NOTES 
-			Author: Claudio Silva (@ClaudioESSilva)
-			dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-			Copyright (C) 2016 Chrissy LeMaire
-			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            
+        .NOTES 
+            Author: Claudio Silva (@ClaudioESSilva)
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Copyright (C) 2016 Chrissy LeMaire
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-		.LINK
-			https://dbatools.io/Find-DbaDuplicateIndex
+        .LINK
+            https://dbatools.io/Find-DbaDuplicateIndex
 
-		.EXAMPLE
-			Find-DbaDuplicateIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql
+        .EXAMPLE
+            Find-DbaDuplicateIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql
 
-			Generates SQL statements to drop the selected duplicate indexes in server "sql2005" and writes them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
+            Generates SQL statements to drop the selected duplicate indexes in server "sql2005" and writes them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
 
-		.EXAMPLE
-			Find-DbaDuplicateIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql -Append
+        .EXAMPLE
+            Find-DbaDuplicateIndex -SqlInstance sql2005 -FilePath C:\temp\sql2005-DuplicateIndexes.sql -Append
 
-			Generates SQL statements to drop the selected duplicate indexes and writes/appends them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
-			
-		.EXAMPLE   
-			Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -SqlCredential $cred
-				
-			Finds exact duplicate indexes on all user databases present on sqlserver2014a, using SQL authentication.
-			
-		.EXAMPLE   
-			Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -Database db1, db2
+            Generates SQL statements to drop the selected duplicate indexes and writes/appends them to the file "C:\temp\sql2005-DuplicateIndexes.sql"
+            
+        .EXAMPLE   
+            Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -SqlCredential $cred
+                
+            Finds exact duplicate indexes on all user databases present on sqlserver2014a, using SQL authentication.
+            
+        .EXAMPLE   
+            Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -Database db1, db2
 
-			Finds exact duplicate indexes on the db1 and db2 databases.
+            Finds exact duplicate indexes on the db1 and db2 databases.
 
-		.EXAMPLE   
-			Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -IncludeOverlapping
+        .EXAMPLE   
+            Find-DbaDuplicateIndex -SqlInstance sqlserver2014a -IncludeOverlapping
 
-			Finds both duplicate and overlapping indexes on all user databases.
-			
-	#>
-	[CmdletBinding(SupportsShouldProcess = $true)]
-	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[Alias("Databases")]
-		[object[]]$Database,
-		[switch]$IncludeOverlapping,
-		[switch]$EnableException
-	)
-	
-	begin {
-		$exactDuplicateQuery2005 = "
+            Finds both duplicate and overlapping indexes on all user databases.
+            
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    Param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [Alias("Databases")]
+        [object[]]$Database,
+        [switch]$IncludeOverlapping,
+        [switch]$EnableException
+    )
+    
+    begin {
+        $exactDuplicateQuery2005 = "
 			WITH CTE_IndexCols
 			AS (
 				SELECT i.[object_id]
@@ -194,8 +194,8 @@ function Find-DbaDuplicateIndex {
 						AND CI1.IncludedColumns = CI2.IncludedColumns
 						AND CI1.IndexName <> CI2.IndexName
 					)"
-		
-		$overlappingQuery2005 = "
+        
+        $overlappingQuery2005 = "
 			WITH CTE_IndexCols
 			AS (
 				SELECT i.[object_id]
@@ -287,9 +287,9 @@ function Find-DbaDuplicateIndex {
 							)
 						AND CI1.IndexName <> CI2.IndexName
 					)"
-		
-		# Support Compression 2008+
-		$exactDuplicateQuery = "
+        
+        # Support Compression 2008+
+        $exactDuplicateQuery = "
 			WITH CTE_IndexCols
 			AS (
 				SELECT i.[object_id]
@@ -379,8 +379,8 @@ function Find-DbaDuplicateIndex {
 						AND CI1.IsFiltered = CI2.IsFiltered
 						AND CI1.IndexName <> CI2.IndexName
 					)"
-		
-		$overlappingQuery = "
+        
+        $overlappingQuery = "
 			WITH CTE_IndexCols AS
 			(
 				SELECT 
@@ -467,49 +467,49 @@ function Find-DbaDuplicateIndex {
 							AND CI1.IsFiltered = CI2.IsFiltered
 							AND CI1.IndexName <> CI2.IndexName
 						)"
-	}
-	process {
-		if (Test-FunctionInterrupt) { return }
-		
-		foreach ($instance in $sqlinstance) {
-			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance."
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
-			
-			if ($database) {
-				$databases = $server.Databases | Where-Object Name -in $database
-			}
-			else {
-				$databases = $server.Databases | Where-Object IsAccessible -eq $true
-			}
-			
-			foreach ($db in $databases) {
-				try {
-					Write-Message -Level Verbose -Message "Getting indexes from database '$db'."
-					
-					$query = if ($server.versionMajor -eq 9) {
-						if ($IncludeOverlapping) { $overlappingQuery2005 }
-						else { $exactDuplicateQuery2005 }
-					}
-					else {
-						if ($IncludeOverlapping) { $overlappingQuery }
-						else { $exactDuplicateQuery }
-					}
-					
-					$db.Query($query)
-					
-				}
-				catch {
-					Stop-Function -Message "Query failure" -Target $db
-				}
-			}
-		}
-	}
-	end {
-		Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlDuplicateIndex
-	}
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+        
+        foreach ($instance in $sqlinstance) {
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $instance."
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential -MinimumVersion 9
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+            
+            if ($database) {
+                $databases = $server.Databases | Where-Object Name -in $database
+            }
+            else {
+                $databases = $server.Databases | Where-Object IsAccessible -eq $true
+            }
+            
+            foreach ($db in $databases) {
+                try {
+                    Write-Message -Level Verbose -Message "Getting indexes from database '$db'."
+                    
+                    $query = if ($server.versionMajor -eq 9) {
+                        if ($IncludeOverlapping) { $overlappingQuery2005 }
+                        else { $exactDuplicateQuery2005 }
+                    }
+                    else {
+                        if ($IncludeOverlapping) { $overlappingQuery }
+                        else { $exactDuplicateQuery }
+                    }
+                    
+                    $db.Query($query)
+                    
+                }
+                catch {
+                    Stop-Function -Message "Query failure" -Target $db
+                }
+            }
+        }
+    }
+    end {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Get-SqlDuplicateIndex
+    }
 }

@@ -1,5 +1,5 @@
 ﻿function global:New-DbaTeppCompletionResult {
-	<#
+    <#
         .SYNOPSIS
             Generates a completion result for dbatools internal tab completion.
 
@@ -27,53 +27,53 @@
 
             Returns a CompletionResult with the text and tooltip 'master'
     #>
-	param (
-		[Parameter(Position = 0, ValueFromPipelineByPropertyName = $true, Mandatory = $true, ValueFromPipeline = $true)]
-		[ValidateNotNullOrEmpty()]
-		[string]
-		$CompletionText,
+    param (
+        [Parameter(Position = 0, ValueFromPipelineByPropertyName = $true, Mandatory = $true, ValueFromPipeline = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $CompletionText,
 
-		[Parameter(Position = 1, ValueFromPipelineByPropertyName = $true)]
-		[string]
-		$ToolTip,
+        [Parameter(Position = 1, ValueFromPipelineByPropertyName = $true)]
+        [string]
+        $ToolTip,
 
-		[Parameter(Position = 2, ValueFromPipelineByPropertyName = $true)]
-		[string]
-		$ListItemText,
+        [Parameter(Position = 2, ValueFromPipelineByPropertyName = $true)]
+        [string]
+        $ListItemText,
 
-		[System.Management.Automation.CompletionResultType]
-		$CompletionResultType = [System.Management.Automation.CompletionResultType]::ParameterValue,
+        [System.Management.Automation.CompletionResultType]
+        $CompletionResultType = [System.Management.Automation.CompletionResultType]::ParameterValue,
 
-		[Parameter(Mandatory = $false)]
-		[switch]
-		$NoQuotes = $false
-	)
+        [Parameter(Mandatory = $false)]
+        [switch]
+        $NoQuotes = $false
+    )
 
-	process {
-		$toolTipToUse = if ($ToolTip -eq '') { $CompletionText }
-		else { $ToolTip }
-		$listItemToUse = if ($ListItemText -eq '') { $CompletionText }
-		else { $ListItemText }
+    process {
+        $toolTipToUse = if ($ToolTip -eq '') { $CompletionText }
+        else { $ToolTip }
+        $listItemToUse = if ($ListItemText -eq '') { $CompletionText }
+        else { $ListItemText }
 
-		# If the caller explicitly requests that quotes
-		# not be included, via the -NoQuotes parameter,
-		# then skip adding quotes.
+        # If the caller explicitly requests that quotes
+        # not be included, via the -NoQuotes parameter,
+        # then skip adding quotes.
 
-		if ($CompletionResultType -eq [System.Management.Automation.CompletionResultType]::ParameterValue -and -not $NoQuotes) {
-			# Add single quotes for the caller in case they are needed.
-			# We use the parser to robustly determine how it will treat
-			# the argument.  If we end up with too many tokens, or if
-			# the parser found something expandable in the results, we
-			# know quotes are needed.
+        if ($CompletionResultType -eq [System.Management.Automation.CompletionResultType]::ParameterValue -and -not $NoQuotes) {
+            # Add single quotes for the caller in case they are needed.
+            # We use the parser to robustly determine how it will treat
+            # the argument.  If we end up with too many tokens, or if
+            # the parser found something expandable in the results, we
+            # know quotes are needed.
 
-			$tokens = $null
-			$null = [System.Management.Automation.Language.Parser]::ParseInput("echo $CompletionText", [ref]$tokens, [ref]$null)
-			if ($tokens.Length -ne 3 -or ($tokens[1] -is [System.Management.Automation.Language.StringExpandableToken] -and $tokens[1].Kind -eq [System.Management.Automation.Language.TokenKind]::Generic)) {
-				$CompletionText = "'$CompletionText'"
-			}
-		}
-		return New-Object System.Management.Automation.CompletionResult($CompletionText, $listItemToUse, $CompletionResultType, $toolTipToUse.Trim())
-	}
+            $tokens = $null
+            $null = [System.Management.Automation.Language.Parser]::ParseInput("echo $CompletionText", [ref]$tokens, [ref]$null)
+            if ($tokens.Length -ne 3 -or ($tokens[1] -is [System.Management.Automation.Language.StringExpandableToken] -and $tokens[1].Kind -eq [System.Management.Automation.Language.TokenKind]::Generic)) {
+                $CompletionText = "'$CompletionText'"
+            }
+        }
+        return New-Object System.Management.Automation.CompletionResult($CompletionText, $listItemToUse, $CompletionResultType, $toolTipToUse.Trim())
+    }
 }
 
 (Get-Item Function:\New-DbaTeppCompletionResult).Visibility = "Private"

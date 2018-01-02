@@ -59,35 +59,35 @@ function Get-DbaDbRecoveryModel {
     #>
     [CmdletBinding()]
     param (
-		[parameter(Mandatory, ValueFromPipeline)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstance[]]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[ValidateSet('Simple', 'Full', 'BulkLogged')]
-		[string[]]$RecoveryModel,
-		[object[]]$Database,
-		[object[]]$ExcludeDatabase,
-		[switch]$EnableException
-	)
-	begin {
-		$defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
-		'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
-		'LastLogBackupDate as LastLogBackup'
-	}
-	process {
-		$params = @{
-			SqlInstance	       = $SqlInstance
-			SqlCredential	   = $SqlCredential
-			Database		   = $Database
-			ExcludeDatabase    = $ExcludeDatabase
-			EnableException    = $EnableException
-		}
-		
-		if ($RecoveryModel) {
-			Get-DbaDatabase @params | Where-Object RecoveryModel -in $RecoveryModel | Where-Object IsAccessible | Select-DefaultView -Property $defaults
-		}
-		else {
-			Get-DbaDatabase @params | Select-DefaultView -Property $defaults
-		}
-	}
+        [parameter(Mandatory, ValueFromPipeline)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstance[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [ValidateSet('Simple', 'Full', 'BulkLogged')]
+        [string[]]$RecoveryModel,
+        [object[]]$Database,
+        [object[]]$ExcludeDatabase,
+        [switch]$EnableException
+    )
+    begin {
+        $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
+        'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
+        'LastLogBackupDate as LastLogBackup'
+    }
+    process {
+        $params = @{
+            SqlInstance     = $SqlInstance
+            SqlCredential   = $SqlCredential
+            Database        = $Database
+            ExcludeDatabase = $ExcludeDatabase
+            EnableException = $EnableException
+        }
+        
+        if ($RecoveryModel) {
+            Get-DbaDatabase @params | Where-Object RecoveryModel -in $RecoveryModel | Where-Object IsAccessible | Select-DefaultView -Property $defaults
+        }
+        else {
+            Get-DbaDatabase @params | Select-DefaultView -Property $defaults
+        }
+    }
 }

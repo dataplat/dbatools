@@ -1,6 +1,6 @@
 ﻿#region Initialize Cache
 if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"]) {
-	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] = @()
+    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] = @()
 }
 #endregion Initialize Cache
 
@@ -19,8 +19,7 @@ $ScriptBlock = {
     )
     
     
-    foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] | Where-DbaObject -Like "$wordToComplete*"))
-    {
+    foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] | Where-DbaObject -Like "$wordToComplete*")) {
         New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
     }
 }
