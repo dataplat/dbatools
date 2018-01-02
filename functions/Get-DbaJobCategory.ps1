@@ -1,4 +1,4 @@
-FUNCTION Get-DbaJobCategory {
+function Get-DbaJobCategory {
     <#
 .SYNOPSIS
 Gets SQL Agent Job Category information for each instance(s) of SQL Server.

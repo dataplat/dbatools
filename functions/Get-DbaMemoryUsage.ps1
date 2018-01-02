@@ -1,4 +1,4 @@
-Function Get-DbaMemoryUsage {
+function Get-DbaMemoryUsage {
     <#
 .SYNOPSIS
 Get amount of memory in use by *all* SQL Server components and instances

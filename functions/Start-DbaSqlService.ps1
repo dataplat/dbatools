@@ -1,4 +1,4 @@
-Function Start-DbaSqlService {
+function Start-DbaSqlService {
     <#
     .SYNOPSIS
     Starts SQL Server services on a computer.

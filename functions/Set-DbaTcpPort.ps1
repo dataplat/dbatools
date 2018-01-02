@@ -1,6 +1,6 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
 
-Function Set-DbaTcpPort {
+function Set-DbaTcpPort {
     <#
     .SYNOPSIS
         Changes the TCP port used by the specified SQL Server.

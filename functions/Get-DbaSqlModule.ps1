@@ -1,4 +1,4 @@
-Function Get-DbaSqlModule {
+function Get-DbaSqlModule {
     <#
     .SYNOPSIS
     Displays all objects in sys.sys_modules after specified modification date.  Works on SQL Server 2008 and above.

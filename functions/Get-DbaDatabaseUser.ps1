@@ -1,4 +1,4 @@
-Function Get-DbaDatabaseUser {
+function Get-DbaDatabaseUser {
     <#
 .SYNOPSIS
 Gets database users

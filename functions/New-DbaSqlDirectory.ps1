@@ -1,4 +1,4 @@
-Function New-DbaSqlDirectory {
+function New-DbaSqlDirectory {
     <#
 .SYNOPSIS
 Creates new path as specified by the path variable

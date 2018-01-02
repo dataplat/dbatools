@@ -1,4 +1,4 @@
-Function Get-DbaSqlService {
+function Get-DbaSqlService {
     <#
     .SYNOPSIS
     Gets the SQL Server related services on a computer.

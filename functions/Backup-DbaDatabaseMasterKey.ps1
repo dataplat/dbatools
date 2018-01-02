@@ -1,4 +1,4 @@
-Function Backup-DbaDatabaseMasterKey {
+function Backup-DbaDatabaseMasterKey {
     <#
 .SYNOPSIS
 Backs up specified database master key.

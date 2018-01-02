@@ -1,4 +1,4 @@
-Function Get-DbaRoleMember {
+function Get-DbaRoleMember {
     <#
 .SYNOPSIS
 Get members of all roles on a Sql instance.

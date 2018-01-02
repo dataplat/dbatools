@@ -1,4 +1,4 @@
-Function Stop-DbaSqlService {
+function Stop-DbaSqlService {
     <#
     .SYNOPSIS
     Stops SQL Server services on a computer.

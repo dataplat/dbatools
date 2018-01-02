@@ -1,4 +1,4 @@
-FUNCTION Get-DbaCustomError {
+function Get-DbaCustomError {
     <#
 .SYNOPSIS
 Gets SQL Custom Error Message information for each instance(s) of SQL Server.

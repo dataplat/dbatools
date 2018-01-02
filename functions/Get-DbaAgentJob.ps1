@@ -1,4 +1,4 @@
-FUNCTION Get-DbaAgentJob {
+function Get-DbaAgentJob {
     <#
         .SYNOPSIS
             Gets SQL Agent Job information for each instance(s) of SQL Server.

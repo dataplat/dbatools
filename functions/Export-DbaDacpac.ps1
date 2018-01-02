@@ -1,4 +1,4 @@
-Function Export-DbaDacpac {
+function Export-DbaDacpac {
     <#
     .SYNOPSIS
     Exports a dacpac from a server.

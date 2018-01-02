@@ -1,4 +1,4 @@
-Function Get-SqlCmdVars {
+function Get-SqlCmdVars {
     <#
         .SYNOPSIS
             Retrieves the values of PowerShell parameters and updates values of SqlmdVars listed in the publish.xml.

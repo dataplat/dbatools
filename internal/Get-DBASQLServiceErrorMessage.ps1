@@ -1,4 +1,4 @@
-Function Get-DBASQLServiceErrorMessage {
+function Get-DBASQLServiceErrorMessage {
     <#
     .SYNOPSIS
     Internal function. Returns the list of error code messages for Windows service management.

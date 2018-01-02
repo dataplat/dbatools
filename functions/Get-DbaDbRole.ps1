@@ -1,4 +1,4 @@
-﻿Function Get-DbaDbRole {
+﻿function Get-DbaDbRole {
     <#
 .SYNOPSIS
 Get database roles on a Sql instance.
