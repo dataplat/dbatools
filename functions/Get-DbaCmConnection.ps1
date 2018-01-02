@@ -17,16 +17,16 @@ function Get-DbaCmConnection {
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
     
-	.NOTES
-	Author: Fred Winmann (@FredWeinmann)
-	Tags: ComputerManagement
+    .NOTES
+    Author: Fred Winmann (@FredWeinmann)
+    Tags: ComputerManagement
 
-	Website: https://dbatools.io
-	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    Website: https://dbatools.io
+    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-	.LINK
-	https://dbatools.io/Get-DbaCmConnection
+    .LINK
+    https://dbatools.io/Get-DbaCmConnection
 
     .EXAMPLE
     Get-DbaCmConnection
