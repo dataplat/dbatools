@@ -5,10 +5,10 @@ function Invoke-DbaAdvancedRestore {
 		For 90% of users Restore-DbaDatabase should be your point of access to this function. The other 10% use it at their own risk
 
 	.DESCRIPTION
-		This is the final piece in the Restore-DbaDatabase Stack. Uusally a BackupHistory object will arrive here from Restore-DbaDatabse via the following pipeline:
+		This is the final piece in the Restore-DbaDatabase Stack. Usually a BackupHistory object will arrive here from Restore-DbaDatabse via the following pipeline:
 		Get-DbaBackupInformation  | Select-DbaBackupInformation | Format-DbaBackupInformation | Test-DbaBackupInformation | Invoke-DbaAdvancedRestore
 
-		We have exposed these functions publically to allow advanced users to perform operations that we don't support, or won't add as they would make things too complex for the majority of our users
+		We have exposed these functions publicly to allow advanced users to perform operations that we don't support, or won't add as they would make things too complex for the majority of our users
 
 		For example if you wanted to do some very complex redirection during a migration, then doing the rewrite of destinations may be better done with your own custom scripts rather than via Format-DbaBackupInformation
 
@@ -87,7 +87,7 @@ function Invoke-DbaAdvancedRestore {
 		$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance -OutputScriptOnly
 		$BackupHistory | Invoke-DbaAdvancedRestore -SqlInstance MyInstance
 
-		First generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the full restore. By  reusing the BackupHistory object there is no need to rescan all the backup files again 
+		First generates just the T-SQL restore scripts so they can be sanity checked, and then if they are good perform the full restore. By reusing the BackupHistory object there is no need to rescan all the backup files again
 	#>
 	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 	param (
