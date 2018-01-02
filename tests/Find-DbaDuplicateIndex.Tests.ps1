@@ -3,11 +3,11 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-	BeforeAll {
-		$server = Connect-DbaInstance -SqlInstance $script:instance1
-		$sql = "create database [dbatools_dupeindex]"
-		$server.Query($sql)
-		$sql = "CREATE TABLE [dbatools_dupeindex].[dbo].[WABehaviorEvent](
+    BeforeAll {
+        $server = Connect-DbaInstance -SqlInstance $script:instance1
+        $sql = "create database [dbatools_dupeindex]"
+        $server.Query($sql)
+        $sql = "CREATE TABLE [dbatools_dupeindex].[dbo].[WABehaviorEvent](
 				[BehaviorEventId] [smallint] NOT NULL,
 				[ClickType] [nvarchar](50) NOT NULL,
 				[Description] [nvarchar](512) NOT NULL,
@@ -33,16 +33,16 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 				[ClickType] ASC
 			)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 			"
-		$server.Query($sql)
-	}
-	AfterAll {
-		Remove-DbaDatabase -SqlInstance $script:instance1 -Database dbatools_dupeindex -Confirm:$false
-	}
-	
-	Context "Gets back some results" {
-		$results = Find-DbaDuplicateIndex -SqlInstance $script:instance1 -Database dbatools_dupeindex
-		It "return at least two results" {
-			$results.Count -ge 2 | Should Be $true
-		}
-	}
+        $server.Query($sql)
+    }
+    AfterAll {
+        Remove-DbaDatabase -SqlInstance $script:instance1 -Database dbatools_dupeindex -Confirm:$false
+    }
+    
+    Context "Gets back some results" {
+        $results = Find-DbaDuplicateIndex -SqlInstance $script:instance1 -Database dbatools_dupeindex
+        It "return at least two results" {
+            $results.Count -ge 2 | Should Be $true
+        }
+    }
 }

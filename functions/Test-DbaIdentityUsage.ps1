@@ -1,84 +1,84 @@
 function Test-DbaIdentityUsage {
-	<#
-		.SYNOPSIS
-			Displays information relating to IDENTITY seed usage.  Works on SQL Server 2008 and above.
+    <#
+        .SYNOPSIS
+            Displays information relating to IDENTITY seed usage.  Works on SQL Server 2008 and above.
 
-		.DESCRIPTION
-			IDENTITY seeds have max values based off of their data type.  This module will locate identity columns and report the seed usage.
+        .DESCRIPTION
+            IDENTITY seeds have max values based off of their data type.  This module will locate identity columns and report the seed usage.
 
-		.PARAMETER SqlInstance
-			Allows you to specify a comma separated list of servers to query.
+        .PARAMETER SqlInstance
+            Allows you to specify a comma separated list of servers to query.
 
-		.PARAMETER SqlCredential
-			Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-			$cred = Get-Credential, this pass this $cred to the param.
+        .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+            $cred = Get-Credential, this pass this $cred to the param.
 
-			Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
+            Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.
 
-		.PARAMETER Database
-			The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+        .PARAMETER Database
+            The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
 
-		.PARAMETER ExcludeDatabase
-			The database(s) to exclude - this list is auto-populated from the server
+        .PARAMETER ExcludeDatabase
+            The database(s) to exclude - this list is auto-populated from the server
 
-		.PARAMETER Threshold
-			Allows you to specify a minimum % of the seed range being utilized.  This can be used to ignore seeds that have only utilized a small fraction of the range.
+        .PARAMETER Threshold
+            Allows you to specify a minimum % of the seed range being utilized.  This can be used to ignore seeds that have only utilized a small fraction of the range.
 
-		.PARAMETER ExcludeSystemDb
-			Allows you to suppress output on system databases
+        .PARAMETER ExcludeSystemDb
+            Allows you to suppress output on system databases
 
-		.PARAMETER EnableException
-			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
-		.NOTES
-			Author: Brandon Abshire, netnerds.net
-			Tags: Identity
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            
+        .NOTES
+            Author: Brandon Abshire, netnerds.net
+            Tags: Identity
 
-			Website: https://dbatools.io
-			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-		.LINK
-			https://dbatools.io/Test-DbaIdentityUsage
+        .LINK
+            https://dbatools.io/Test-DbaIdentityUsage
 
-		.EXAMPLE
-			Test-DbaIdentityUsage -SqlInstance sql2008, sqlserver2012
+        .EXAMPLE
+            Test-DbaIdentityUsage -SqlInstance sql2008, sqlserver2012
 
-			Check identity seeds for servers sql2008 and sqlserver2012.
+            Check identity seeds for servers sql2008 and sqlserver2012.
 
-		.EXAMPLE
-			Test-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB
+        .EXAMPLE
+            Test-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB
 
-			Check identity seeds on server sql2008 for only the TestDB database
+            Check identity seeds on server sql2008 for only the TestDB database
 
-		.EXAMPLE
-			Test-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB -Threshold 20
+        .EXAMPLE
+            Test-DbaIdentityUsage -SqlInstance sql2008 -Database TestDB -Threshold 20
 
-			Check identity seeds on server sql2008 for only the TestDB database, limiting results to 20% utilization of seed range or higher
-	#>
-	[CmdletBinding()]
-	param (
-		[parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
-		[Alias("ServerInstance", "SqlServer", "SqlServers")]
-		[DbaInstance[]]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[Alias("Databases")]
-		[object[]]$Database,
-		[object[]]$ExcludeDatabase,
-		[parameter(Position = 1, Mandatory = $false)]
-		[int]$Threshold = 0,
-		[parameter(Position = 2, Mandatory = $false)]
-		[Alias("NoSystemDb")]
-		[switch]$ExcludeSystemDb,
-		[switch][Alias('Silent')]$EnableException
-	)
+            Check identity seeds on server sql2008 for only the TestDB database, limiting results to 20% utilization of seed range or higher
+    #>
+    [CmdletBinding()]
+    param (
+        [parameter(Position = 0, Mandatory = $true, ValueFromPipeline = $True)]
+        [Alias("ServerInstance", "SqlServer", "SqlServers")]
+        [DbaInstance[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [Alias("Databases")]
+        [object[]]$Database,
+        [object[]]$ExcludeDatabase,
+        [parameter(Position = 1, Mandatory = $false)]
+        [int]$Threshold = 0,
+        [parameter(Position = 2, Mandatory = $false)]
+        [Alias("NoSystemDb")]
+        [switch]$ExcludeSystemDb,
+        [switch][Alias('Silent')]$EnableException
+    )
 
-	begin {
-		Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NoSystemDb
+    begin {
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Parameter NoSystemDb
 
-		$sql = ";WITH CT_DT AS
+        $sql = ";WITH CT_DT AS
 		(
 			SELECT 'tinyint' AS DataType, 0 AS MinValue ,255 AS MaxValue UNION
 			SELECT 'smallint' AS DataType, -32768 AS MinValue ,32767 AS MaxValue UNION
@@ -138,78 +138,78 @@ function Test-DbaIdentityUsage {
 		SELECT DB_NAME() as DatabaseName, SchemaName, TableName, ColumnName, SeedValue, IncrementValue, LastValue, MaxNumberRows, NumberOfUses, [PercentUsed]
 		  FROM CTE_2"
 
-		if ($Threshold -gt 0) {
-			$sql += " WHERE [PercentUsed] >= " + $Threshold + " ORDER BY [PercentUsed] DESC"
-		}
-		else {
-			$sql += " ORDER BY [PercentUsed] DESC"
-		}
-	}
+        if ($Threshold -gt 0) {
+            $sql += " WHERE [PercentUsed] >= " + $Threshold + " ORDER BY [PercentUsed] DESC"
+        }
+        else {
+            $sql += " ORDER BY [PercentUsed] DESC"
+        }
+    }
 
-	process {
-		foreach ($instance in $SqlInstance) {
-			Write-Message -Level Verbose -Message "Attempting to connect to $instance"
+    process {
+        foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Attempting to connect to $instance"
 
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-			$dbs = $server.Databases
+            $dbs = $server.Databases
 
-			if ($Database) {
-				$dbs = $dbs | Where-Object Name -In $Database
-			}
+            if ($Database) {
+                $dbs = $dbs | Where-Object Name -In $Database
+            }
 
-			if ($ExcludeDatabase) {
-				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
-			}
+            if ($ExcludeDatabase) {
+                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
+            }
 
-			if ($ExcludeSystemDb) {
-				$dbs = $dbs | Where-Object IsSystemObject -EQ $false
-			}
+            if ($ExcludeSystemDb) {
+                $dbs = $dbs | Where-Object IsSystemObject -EQ $false
+            }
 
-			foreach ($db in $dbs) {
-				Write-Message -Level Verbose -Message "Processing $db on $instance"
+            foreach ($db in $dbs) {
+                Write-Message -Level Verbose -Message "Processing $db on $instance"
 
-				if ($db.IsAccessible -eq $false) {
-					Stop-Function -Message "The database $db is not accessible. Skipping." -Continue
-				}
+                if ($db.IsAccessible -eq $false) {
+                    Stop-Function -Message "The database $db is not accessible. Skipping." -Continue
+                }
 
-				try {
-					$results = $db.Query($sql)
-				}
-				catch {
-					Stop-Function -Message "Error capturing data on $db" -Target $instance -ErrorRecord $_ -Exception $_.Exception -Continue
-				}
+                try {
+                    $results = $db.Query($sql)
+                }
+                catch {
+                    Stop-Function -Message "Error capturing data on $db" -Target $instance -ErrorRecord $_ -Exception $_.Exception -Continue
+                }
 
-				foreach ($row in $results) {
-					if ($row.PercentUsed -eq [System.DBNull]::Value) {
-						continue
-					}
+                foreach ($row in $results) {
+                    if ($row.PercentUsed -eq [System.DBNull]::Value) {
+                        continue
+                    }
 
-					if ($row.PercentUsed -ge $threshold) {
-						[PSCustomObject]@{
-							ComputerName   = $server.NetName
-							InstanceName   = $server.ServiceName
-							SqlInstance    = $server.DomainInstanceName
-							Database       = $row.DatabaseName
-							Schema         = $row.SchemaName
-							Table          = $row.TableName
-							Column         = $row.ColumnName
-							SeedValue      = $row.SeedValue
-							IncrementValue = $row.IncrementValue
-							LastValue      = $row.LastValue
-							MaxNumberRows  = $row.MaxNumberRows
-							NumberOfUses   = $row.NumberOfUses
-							PercentUsed    = $row.PercentUsed
-						} | Select-DefaultView -Exclude MaxNumberRows, NumberOfUses
-					}
-				}
-			}
-		}
-	}
+                    if ($row.PercentUsed -ge $threshold) {
+                        [PSCustomObject]@{
+                            ComputerName   = $server.NetName
+                            InstanceName   = $server.ServiceName
+                            SqlInstance    = $server.DomainInstanceName
+                            Database       = $row.DatabaseName
+                            Schema         = $row.SchemaName
+                            Table          = $row.TableName
+                            Column         = $row.ColumnName
+                            SeedValue      = $row.SeedValue
+                            IncrementValue = $row.IncrementValue
+                            LastValue      = $row.LastValue
+                            MaxNumberRows  = $row.MaxNumberRows
+                            NumberOfUses   = $row.NumberOfUses
+                            PercentUsed    = $row.PercentUsed
+                        } | Select-DefaultView -Exclude MaxNumberRows, NumberOfUses
+                    }
+                }
+            }
+        }
+    }
 }
 

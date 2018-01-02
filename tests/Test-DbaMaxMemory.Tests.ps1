@@ -1,14 +1,14 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-	Context "Connects to multiple instances" {
-		It 'Returns multiple objects' {
-			$results = Test-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2
-			$results.Count | Should BeGreaterThan 1 # and ultimately not throw an exception
-		}
-	}
+    Context "Connects to multiple instances" {
+        It 'Returns multiple objects' {
+            $results = Test-DbaMaxMemory -SqlInstance $script:instance1, $script:instance2
+            $results.Count | Should BeGreaterThan 1 # and ultimately not throw an exception
+        }
+    }
 }
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
@@ -31,34 +31,34 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         }
         
         Context 'Validate functionality - Single Instance' {
-			Mock Connect-SqlInstance -MockWith {
-				"nothing"
-			}
-			
-			Mock Get-DbaMaxMemory -MockWith {
-				New-Object PSObject -Property @{
-					ComputerName = "SQL2016"
-					InstanceName = "MSSQLSERVER"
-					SqlInstance	 = "SQL2016"
-					TotalMB		 = 4096
-					SqlMaxMB	 = 2147483647
-				}
-			}
-			
-			Mock Get-DbaSqlService -MockWith {
-				New-Object PSObject -Property @{
-					InstanceName  = "foo"
-					State = "Running"
-				}
+            Mock Connect-SqlInstance -MockWith {
+                "nothing"
+            }
+            
+            Mock Get-DbaMaxMemory -MockWith {
+                New-Object PSObject -Property @{
+                    ComputerName = "SQL2016"
+                    InstanceName = "MSSQLSERVER"
+                    SqlInstance  = "SQL2016"
+                    TotalMB      = 4096
+                    SqlMaxMB     = 2147483647
+                }
+            }
+            
+            Mock Get-DbaSqlService -MockWith {
+                New-Object PSObject -Property @{
+                    InstanceName = "foo"
+                    State        = "Running"
+                }
             }
             
             It 'Connect to SQL Server' {
                 Mock Get-DbaMaxMemory -MockWith { }
                 
                 $result = Test-DbaMaxMemory -SqlInstance 'ABC'
-				
-				Assert-MockCalled Connect-SqlInstance -Scope It -Times 1
-				Assert-MockCalled Get-DbaSqlService -Scope It -Times 1
+                
+                Assert-MockCalled Connect-SqlInstance -Scope It -Times 1
+                Assert-MockCalled Get-DbaSqlService -Scope It -Times 1
                 Assert-MockCalled Get-DbaMaxMemory -Scope It -Times 1
             }
             

@@ -37,7 +37,7 @@ function Get-DbaBackupInformation {
     .PARAMETER NoXpDirTree
         If this switch is set, then Files will be parsed as locally files. This can cause failures if the running user can see files that the parsing SQL Instance cannot
     
-	.PARAMETER DirectoryRecurse
+    .PARAMETER DirectoryRecurse
         If specified the specified directory will be recursed into (only applies if not using XpDirTree)
     
     .PARAMETER Anonymise
@@ -110,26 +110,26 @@ function Get-DbaBackupInformation {
 
         As we know we are dealing with an Ola Hallengren style backup folder from the MaintenanceSolution switch, when IgnoreLogBackup is also included we can ignore the LOG folder to skip any scanning of log backups. Note this also means then WON'T be restored
     #>
-    [CmdletBinding( DefaultParameterSetName="Create")]
+    [CmdletBinding( DefaultParameterSetName = "Create")]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$Path,
-        [parameter(Mandatory = $true,ParameterSetName="Create")]
+        [parameter(Mandatory = $true, ParameterSetName = "Create")]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter]$SqlInstance,
-        [parameter(ParameterSetName="Create")]
+        [parameter(ParameterSetName = "Create")]
         [PSCredential][System.Management.Automation.CredentialAttribute()]$SqlCredential,
         [string[]]$DatabaseName,
         [string[]]$SourceInstance,
-        [parameter(ParameterSetName="Create")]
+        [parameter(ParameterSetName = "Create")]
         [Switch]$NoXpDirTree,
-        [parameter(ParameterSetName="Create")]
+        [parameter(ParameterSetName = "Create")]
         [switch]$DirectoryRecurse,
         [switch]$EnableException,
         [switch]$MaintenanceSolution,
         [switch]$IgnoreLogBackup,
         [string]$ExportPath,
-        [parameter(ParameterSetName="Import")]
+        [parameter(ParameterSetName = "Import")]
         [switch]$Import,
         [switch][Alias('Anonymize')]$Anonymise,
         [Switch]$NoClobber,
@@ -138,13 +138,13 @@ function Get-DbaBackupInformation {
     )
     begin {
 
-        Function Get-HashString{
+        Function Get-HashString {
             param(
                 [String]$InString
-                )
+            )
 
             $StringBuilder = New-Object System.Text.StringBuilder
-            [System.Security.Cryptography.HashAlgorithm]::Create("md5").ComputeHash([System.Text.Encoding]::UTF8.GetBytes($InString))| ForEach-Object{
+            [System.Security.Cryptography.HashAlgorithm]::Create("md5").ComputeHash([System.Text.Encoding]::UTF8.GetBytes($InString))| ForEach-Object {
                 [Void]$StringBuilder.Append($_.ToString("x2"))
             }
             return $StringBuilder.ToString()
@@ -152,15 +152,15 @@ function Get-DbaBackupInformation {
         Write-Message -Level InternalComment -Message "Starting"
         Write-Message -Level Debug -Message "Parameters bound: $($PSBoundParameters.Keys -join ", ")"
 
-            if (Test-Bound -ParameterName ExportPath){
+        if (Test-Bound -ParameterName ExportPath) {
             if ($true -eq $NoClobber) {
-                if (Test-Path $ExportPath){
+                if (Test-Path $ExportPath) {
                     Stop-Function -Message "$ExportPath exists and NoClobber set" 
                     return
                 }
             }
         }
-        if ($PSCmdlet.ParameterSetName -eq "Create"){
+        if ($PSCmdlet.ParameterSetName -eq "Create") {
             try {
                 $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
             }
@@ -170,21 +170,21 @@ function Get-DbaBackupInformation {
             }
         }
         
-        if($true -eq $MaintenanceSolution){
+        if ($true -eq $MaintenanceSolution) {
             $NoXpDirTree = $True
         }
 
-        if ($true -eq $IgnoreLogBackup -and $true -ne $MaintenanceSolution){
+        if ($true -eq $IgnoreLogBackup -and $true -ne $MaintenanceSolution) {
             Write-Message -Message "IgnoreLogBackup can only by used with Maintenance Soultion. Will not be used" -Level Warning
         }
     }
     process {
         if (Test-FunctionInterrupt) { return }
         if ((Test-Bound -Parameter Import) -and ($true -eq $Import)) {
-            ForEach ($f in $Path){
-                if (Test-Path -Path $f){
+            ForEach ($f in $Path) {
+                if (Test-Path -Path $f) {
                     $GroupResults += Import-CliXml -Path $f
-                    ForEach ($group in  $GroupResults){
+                    ForEach ($group in  $GroupResults) {
                         $Group.FirstLsn = [BigInt]$group.FirstLSN.ToString()
                         $Group.CheckpointLSN = [BigInt]$group.CheckpointLSN.ToString()
                         $Group.DatabaseBackupLsn = [BigInt]$group.DatabaseBackupLsn.ToString()
@@ -199,10 +199,10 @@ function Get-DbaBackupInformation {
         else {
             $Files = @()
             $groupResults = @()
-            if ($NoXpDirTree -ne $true){
+            if ($NoXpDirTree -ne $true) {
                 ForEach ($f in $path) {
                     if ($f -match '\.\w{3}\Z') {
-                        if ("Fullname" -notin $f.PSobject.Properties.name){
+                        if ("Fullname" -notin $f.PSobject.Properties.name) {
                             $f = $f | Select-Object *, @{ Name = "FullName"; Expression = { $f } }
                         }
                         Write-Message -Message "Testing a single file $f " -Level Verbose
@@ -210,8 +210,7 @@ function Get-DbaBackupInformation {
                             $files += $f
                         }
                     }
-                    else
-                    {
+                    else {
                         Write-Message -Message "Testing a folder $f" -Level Verbose
                         $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server
                     }
@@ -220,15 +219,15 @@ function Get-DbaBackupInformation {
             else {
                 ForEach ($f in $path) {
                     Write-Message -Level VeryVerbose -Message "Not using sql for $f"
-                    if ($f -is [System.IO.FileSystemInfo]){
-                        if ($f.PsIsContainer -eq $true -and $true -ne $MaintenanceSolution){
+                    if ($f -is [System.IO.FileSystemInfo]) {
+                        if ($f.PsIsContainer -eq $true -and $true -ne $MaintenanceSolution) {
                             Write-Message -Level VeryVerbose -Message "folder $($f.fullname)"
                             $Files = Get-ChildItem -Path $f.fullname -File -Recurse:$DirectoryRecurse
                         }
-                        elseif ($f.PsIsContainer -eq $true -and $true -eq $MaintenanceSolution){
+                        elseif ($f.PsIsContainer -eq $true -and $true -eq $MaintenanceSolution) {
                             $Files += Get-OlaHRestoreFile -Path $f.fullname -IgnoreLogBackup:$IgnoreLogBackup
                         }
-                        elseif ($true -eq $MaintenanceSolution){
+                        elseif ($true -eq $MaintenanceSolution) {
                             $Files += Get-OlaHRestoreFile -Path $f.fullname -IgnoreLogBackup:$IgnoreLogBackup
                         }
                         else {
@@ -236,8 +235,8 @@ function Get-DbaBackupInformation {
                             $Files += $f.fullname
                         }
                     }
-                    else{
-                        if ($true -eq $MaintenanceSolution){
+                    else {
+                        if ($true -eq $MaintenanceSolution) {
                             $Files += Get-OlaHRestoreFile -Path $f -IgnoreLogBackup:$IgnoreLogBackup
                         }
                         else {
@@ -252,7 +251,7 @@ function Get-DbaBackupInformation {
 
             $groupdetails = $FileDetails | group-object -Property BackupSetGUID
             
-            Foreach ($Group in $GroupDetails){
+            Foreach ($Group in $GroupDetails) {
                 $historyObject = New-Object Sqlcollaborative.Dbatools.Database.BackupHistory
                 $historyObject.ComputerName = $group.group[0].MachineName 
                 $historyObject.InstanceName = $group.group[0].ServiceName 
@@ -286,8 +285,8 @@ function Get-DbaBackupInformation {
         if (Test-Bound 'DatabaseName') {
             $groupResults = $groupResults | Where-Object {$_.Database -in $DatabaseName}
         }
-        if ($true -eq $Anonymise){
-            ForEach ($group in $GroupResults){
+        if ($true -eq $Anonymise) {
+            ForEach ($group in $GroupResults) {
                 $group.ComputerName = Get-HashString -InString $group.ComputerName 
                 $group.InstanceName = Get-HashString -InString $group.InstanceName
                 $group.SqlInstance = Get-HashString -InString $group.SqlInstance
@@ -299,7 +298,7 @@ function Get-DbaBackupInformation {
         }
         if ((Test-Bound -parameterName exportpath) -and $null -ne $ExportPath) {
             $groupResults | Export-CliXml -Path $ExportPath -Depth 5 -NoClobber:$NoClobber
-            if ($true -ne $PassThru){
+            if ($true -ne $PassThru) {
                 return
             }
         }
