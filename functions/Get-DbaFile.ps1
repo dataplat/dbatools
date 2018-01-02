@@ -131,7 +131,7 @@ Finds files in E:\Dir1 ending with ".fsf" and ".mld" for both the servers sql201
                            , dpath +'\'+d.[subdirectory]
                         FROM #DirectoryTree AS d
                         INNER JOIN dirs ON  d.ParentDirectory = dirs.id
-	                    WHERE dpath NOT LIKE '%RECYCLE.BIN%'
+                        WHERE dpath NOT LIKE '%RECYCLE.BIN%'
                     )
                     SELECT subdirectory as filename, container as filepath, isfile, dpath as fullpath FROM dirs
                     WHERE container IS NOT NULL

@@ -8,10 +8,10 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server = Connect-DbaInstance -SqlInstance $script:instance1
         $null = $server.Query("Create Database [$dbname]")
         $db = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname
-        $null = $db.Query("CREATE TABLE dbo.example (id int); 
-			INSERT dbo.example
-			SELECT top 100 1 
-			FROM sys.objects")
+        $null = $db.Query("CREATE TABLE dbo.example (id int);
+            INSERT dbo.example
+            SELECT top 100 1
+            FROM sys.objects")
         $publishprofile = New-DbaPublishProfile -SqlInstance $script:instance1 -Database $dbname -Path C:\temp
         $dacpac = Export-DbaDacpac -SqlInstance $script:instance1 -Database $dbname
     }

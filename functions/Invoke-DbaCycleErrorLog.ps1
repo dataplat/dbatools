@@ -30,7 +30,7 @@ function Invoke-DbaCycleErrorLog {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Log, Cycle
             Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
@@ -88,8 +88,8 @@ function Invoke-DbaCycleErrorLog {
             }
             default {
                 $sql = "
-					EXEC master.dbo.sp_cycle_errorlog;
-					EXEC msdb.dbo.sp_cycle_agent_errorlog;"
+                    EXEC master.dbo.sp_cycle_errorlog;
+                    EXEC msdb.dbo.sp_cycle_agent_errorlog;"
                 $logToCycle = 'instance', 'agent'
             }
         }

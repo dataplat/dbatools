@@ -7,15 +7,15 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         BeforeAll {
             $triggername = "dbatoolsci-trigger"
             $sql = "CREATE TRIGGER [$triggername] -- Trigger name
-					ON ALL SERVER FOR LOGON -- Tells you it's a logon trigger
-					AS
-					PRINT 'hello'"
+                    ON ALL SERVER FOR LOGON -- Tells you it's a logon trigger
+                    AS
+                    PRINT 'hello'"
             $server = Connect-DbaInstance -SqlInstance $script:instance1
             $server.Query($sql)
         }
         AfterAll {
             $server.Query("DROP TRIGGER [$triggername] ON ALL SERVER")
-            
+
             try {
                 $server1 = Connect-DbaInstance -SqlInstance $script:instance2
                 $server1.Query("DROP TRIGGER [$triggername] ON ALL SERVER")
@@ -24,13 +24,13 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 # dont care
             }
         }
-        
+
         $results = Copy-DbaServerTrigger -Source $script:instance1 -Destination $script:instance2 -WarningVariable warn -WarningAction SilentlyContinue # -ServerTrigger $triggername
-        
+
         It "should report success" {
             $results.Status | Should Be "Successful"
         }
-        
+
         # same properties need to be added
     }
 }
