@@ -1,5 +1,5 @@
 function Clear-DbaSqlConnectionPool {
-<#
+    <#
 	.SYNOPSIS
 		Resets (or empties) the connection pool.
 
@@ -41,37 +41,37 @@ function Clear-DbaSqlConnectionPool {
 
 		Clears all connection pools on workstation27.
 #>
-	[CmdletBinding()]
-	param (
-		[Parameter(ValueFromPipeline = $true)]
-		[Alias("cn", "host", "Server")]
-		[DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
-		[PSCredential]$Credential,
-		[switch][Alias('Silent')]$EnableException
-	)
-	
-	process {
-		# TODO: https://jamessdixon.wordpress.com/2013/01/22/ado-net-and-connection-pooling
-		
-		foreach ($computer in $ComputerName) {
-			if (-not $computer.IsLocalhost) {
-				Write-Message -Level Verbose -Message "Clearing all pools on remote computer $computer"
-				if (Test-Bound 'Credential') {
-					Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
-				}
-				else {
-					Invoke-Command2 -ComputerName $computer -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
-				}
-			}
-			else {
-				Write-Message -Level Verbose -Message "Clearing all local pools"
-				if (Test-Bound 'Credential') {
-					Invoke-Command2 -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
-				}
-				else {
-					Invoke-Command2 -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
-				}
-			}
-		}
-	}
+    [CmdletBinding()]
+    param (
+        [Parameter(ValueFromPipeline = $true)]
+        [Alias("cn", "host", "Server")]
+        [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
+        [PSCredential]$Credential,
+        [switch][Alias('Silent')]$EnableException
+    )
+
+    process {
+        # TODO: https://jamessdixon.wordpress.com/2013/01/22/ado-net-and-connection-pooling
+
+        foreach ($computer in $ComputerName) {
+            if (-not $computer.IsLocalhost) {
+                Write-Message -Level Verbose -Message "Clearing all pools on remote computer $computer"
+                if (Test-Bound 'Credential') {
+                    Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+                }
+                else {
+                    Invoke-Command2 -ComputerName $computer -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+                }
+            }
+            else {
+                Write-Message -Level Verbose -Message "Clearing all local pools"
+                if (Test-Bound 'Credential') {
+                    Invoke-Command2 -Credential $Credential -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+                }
+                else {
+                    Invoke-Command2 -ScriptBlock { [System.Data.SqlClient.SqlConnection]::ClearAllPools() }
+                }
+            }
+        }
+    }
 }
