@@ -38,12 +38,12 @@
     Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats
 
     Creates a new XESession named db_query_wait_stats from our repo to the SQL Server sql2017
-   
+
     .EXAMPLE
     Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats -Name "Query Wait Stats"
 
     Creates a new XESession named "Query Wait Stats" using the db_query_wait_stats template
-    
+
 #>
     [CmdletBinding()]
     param (
@@ -60,14 +60,14 @@
         if ((Test-Bound -ParameterName Path -Not) -and (Test-Bound -ParameterName Template -Not)) {
             Stop-Function -Message "You must specify Path or Template"
         }
-        
+
         if (($Path.Count -gt 1 -or $Tempalte.Count -gt 1) -and (Test-Bound -ParameterName Template)) {
             Stop-Function -Message "Name cannot be specified with multiple files or templates because the Session will already exist"
         }
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -80,7 +80,7 @@
             $SqlConn = $server.ConnectionContext.SqlConnectionObject
             $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
             $store = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
-            
+
             foreach ($file in $path) {
                 try {
                     $xml = [xml](Get-Content $file -ErrorAction Stop)
@@ -88,7 +88,7 @@
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
                 }
-                
+
                 if (-not $xml.event_sessions) {
                     Stop-Function -Message "$file is not a valid XESession tempalte document" -Continue
                 }
@@ -96,14 +96,14 @@
                     if ((Test-Bound -ParameterName Name -not)) {
                         $Name = (Get-ChildItem $file).BaseItem
                     }
-                    
+
                     $store.CreateSessionFromTemplate($Name, $file)
                 }
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $store -Continue
                 }
             }
-            
+
             foreach ($file in $template) {
                 $templatepath = "$script:PSModuleRoot\bin\xetemplates\$file.xml"
                 if ((Test-Path $TempaltePath)) {
