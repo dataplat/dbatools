@@ -126,7 +126,7 @@ function Test-DbaBackupInformation {
                 foreach ($path in $DBHistoryPhysicalPaths) {
                     if (($DBHistoryPhysicalPathsTest | Where-Object FilePath -eq $path).FileExists) {
                         if ($path -in $DBFileCheck) {
-                            #If the Files are owned by the db we're restoring check for Continue or WithReplace. If not, then report error otherwise just carry on 
+                            #If the Files are owned by the db we're restoring check for Continue or WithReplace. If not, then report error otherwise just carry on
                             if  ($WithReplace -ne $True -and $Continue -ne $True) {
                                 Write-Message -Message "File $path already exists on $SqlInstance and WithReplace not specified, cannot restore" -Level Warning
                                 $VerificationErrors++
