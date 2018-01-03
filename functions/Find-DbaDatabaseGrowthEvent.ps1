@@ -158,8 +158,6 @@ function Find-DbaDatabaseGrowthEvent {
                                 CONVERT(INT, [EventClass]) AS EventClass,
                             [DatabaseName],
                             [Filename],
-                            mf.physical_name AS PhysicalName,
-                            LEFT(mf.physical_name,1) AS DriveLetter,
                             CONVERT(INT,(Duration/1000)) AS Duration,
                             DATEADD (MINUTE, DATEDIFF(MINUTE, GETDATE(), GETUTCDATE()), [StartTime]) AS StartTimeUTC,  -- Convert to UTC time
                             DATEADD (MINUTE, DATEDIFF(MINUTE, GETDATE(), GETUTCDATE()), [EndTime]) AS EndTimeUTC,  -- Convert to UTC time
@@ -170,8 +168,7 @@ function Find-DbaDatabaseGrowthEvent {
                             HostName,
                             SessionLoginName,
                             SPID
-                        FROM::fn_trace_gettable( @base_tracefilename, DEFAULT ) AS t
-                        INNER JOIN sys.master_files AS mf ON mf.name = t.Filename
+                        FROM::fn_trace_gettable( @base_tracefilename, DEFAULT )
                         WHERE
                             [EventClass] IN ($eventClassFilter)
                             AND [ServerName] = @@SERVERNAME
@@ -188,8 +185,6 @@ function Find-DbaDatabaseGrowthEvent {
                         0 AS [EventClass],
                         0 [DatabaseName],
                         0 AS [Filename],
-                        0 AS [PhysicalName],
-                        0 AS [DriveLetter],
                         0 AS [Duration],
                         0 AS [StartTimeUTC],
                         0 AS [EndTimeUTC],
@@ -211,9 +206,7 @@ function Find-DbaDatabaseGrowthEvent {
                     ERROR_NUMBER() AS [EventClass],
                     ERROR_SEVERITY() AS [DatabaseName],
                     ERROR_STATE() AS [Filename],
-                    ERROR_MESSAGE() AS [PhysicalName],
-                    1 AS [DriveLetter],
-                    1 AS [Duration],
+                    ERROR_MESSAGE() AS [Duration],
                     1 AS [StartTimeUTC],
                     1 AS [EndTimeUTC],
                     1 AS [StartTime],
