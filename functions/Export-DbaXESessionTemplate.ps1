@@ -1,10 +1,10 @@
-﻿function Export-DbaXESession {
+﻿function Export-DbaXESessionTemplate {
  <#
     .SYNOPSIS
-    Exports a T-SQL Script to create a new session.
+    Exports an new XESession XML Template
 
     .DESCRIPTION
-    Exports a T-SQL Script to create a new session.
+    Exports an XESession XML Template either from our repo or a file you specify
 
     .PARAMETER SqlInstance
     The SQL Instances that you're connecting to.
@@ -16,7 +16,7 @@
     The Name of the session(s) to export
 
     .PARAMETER Path
-    The path to export the file. Can be .sql or directory.
+    The path to export the file. Can be .xml or directory.
 
     .PARAMETER SessionCollection
     Enables piping sessions
@@ -35,14 +35,14 @@
     License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
     .LINK
-    https://dbatools.io/Export-DbaXESession
+    https://dbatools.io/Export-DbaXESessionTemplate
 
     .EXAMPLE
-    Export-DbaXESession -SqlInstance sql2017 -Path C:\temp\xe
+    Export-DbaXESessionTemplate -SqlInstance sql2017 -Path C:\temp\xe
      Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
 
     .EXAMPLE
-    Get-DbaXESession -SqlInstance sql2017 -Session session_health | Export-DbaXESession -Path C:\temp
+    Get-DbaXESession -SqlInstance sql2017 -Session session_health | Export-DbaXESessionTemplate -Path C:\temp
      Returns a new XE Session object from sql2017 then adds an event, an action then creates it.
 
 #>
@@ -56,8 +56,6 @@
         [string]$Path,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.XEvent.Session[]]$SessionCollection,
-        [ValidateSet("SQL", "XML")]
-        [string]$Type = "SQL",
         [switch]$EnableException
     )
     process {
@@ -77,16 +75,15 @@
                     Stop-Function -Message "$Path does not exist" -Target $Path
                 }
 
-                if ($Type -eq "SQL") {
-                    if ($path.EndsWith(".sql")) {
-                        $filename = $path
-                    }
-                    else {
-                        $filename = "$path\$xesname.sql"
-                    }
-                    Write-Message -Level Output -Message "Wrote $type for $xesname to $filename"
-                    $xes.ScriptCreate.GetScript() | Out-File -FilePath $filename -Encoding UTF8 -Append
+                if ($path.EndsWith(".xml")) {
+                    $filename = $path
                 }
+                else {
+                    $filename = "$path\$xesname.xml"
+                }
+                Write-Message -Level Output -Message "Wrote $xesname to $filename"
+                [Microsoft.SqlServer.Management.XEvent.XEStore]::SaveSessionToTemplate($xes, $filename, $true)
+                #$xes.ScriptCreate.GetScript() | Out-File -FilePath $filename -Encoding UTF8 -Append
             }
         }
     }

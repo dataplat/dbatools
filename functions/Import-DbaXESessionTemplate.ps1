@@ -44,6 +44,11 @@
 
     Creates a new XESession named "Query Wait Stats" using the db_query_wait_stats template
 
+    .EXAMPLE
+    Get-DbaXESession -SqlInstance sql2017 -Session db_ola_health | Remove-DbaXESession
+    Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_ola_health | Start-DbaXESession
+
+    Removes a session if it exists then recreates it using a template
 #>
     [CmdletBinding()]
     param (
@@ -90,14 +95,23 @@
                 }
 
                 if (-not $xml.event_sessions) {
-                    Stop-Function -Message "$file is not a valid XESession tempalte document" -Continue
+                    Stop-Function -Message "$file is not a valid XESession template document" -Continue
                 }
-                try {
-                    if ((Test-Bound -ParameterName Name -not)) {
-                        $Name = (Get-ChildItem $file).BaseItem
-                    }
 
-                    $store.CreateSessionFromTemplate($Name, $file)
+                if ((Test-Bound -ParameterName Name -not)) {
+                    $Name = (Get-ChildItem $file).BaseName
+                }
+
+                if ((Get-DbaXESession -SqlInstance $server -Session $Name)) {
+                    Stop-Function -Message "$Name already exists on $instance"
+                    return
+                }
+
+                try {
+                    Write-Message -Level Verbose -Message "Importing $file as $name "
+                    $session = $store.CreateSessionFromTemplate($Name, $file)
+                    $session.Create()
+                    Get-DbaXESession -SqlInstance $server -Session $session.Name
                 }
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $store -Continue
@@ -106,12 +120,21 @@
 
             foreach ($file in $template) {
                 $templatepath = "$script:PSModuleRoot\bin\xetemplates\$file.xml"
-                if ((Test-Path $TempaltePath)) {
+                if ((Test-Path $templatepath)) {
                     try {
                         if ((Test-Bound -ParameterName Name -not)) {
                             $Name = $file
                         }
-                        $store.CreateSessionFromTemplate($Name, $Template)
+
+                        if ((Get-DbaXESession -SqlInstance $server -Session $Name)) {
+                            Stop-Function -Message "$Name already exists on $instance"
+                            return
+                        }
+
+                        Write-Message -Level Verbose -Message "Importing $file as $name"
+                        $session = $store.CreateSessionFromTemplate($Name, $templatepath)
+                        $session.Create()
+                        Get-DbaXESession -SqlInstance $server -Session $session.Name
                     }
                     catch {
                         Stop-Function -Message "Failure" -ErrorRecord $_ -Target $store -Continue
