@@ -76,4 +76,5 @@ Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess", "Stop-DbaProcess" -
 Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess", "Stop-DbaProcess" -Parameter Hostname -Name processHostname
 Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess", "Stop-DbaProcess" -Parameter Program -Name processProgram
 Register-DbaTeppArgumentCompleter -Command "Get-DbaProcess", "Stop-DbaProcess" -Parameter Spid -Name processSpid
+Register-DbaTeppArgumentCompleter -Command "Import-DbaXESession" -Parameter Template -Name xesessiontemplate
 #endregion Explicit TEPP
