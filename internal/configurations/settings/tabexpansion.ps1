@@ -5,7 +5,7 @@ Set-DbaConfig -FullName 'TabExpansion.UpdateTimeout' -Value (New-TimeSpan -Secon
 # Disable the management cache entire
 Set-DbaConfig -FullName 'TabExpansion.Disable' -Value $false -Initialize -Validation bool -Handler {
     [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled = $args[0]
-    
+
     # Disable Async TEPP runspace if not needed
     if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled) {
         [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"].Stop()
@@ -16,7 +16,7 @@ Set-DbaConfig -FullName 'TabExpansion.Disable' -Value $false -Initialize -Valida
 } -Description 'Globally disables all TEPP functionality by dbatools'
 Set-DbaConfig -FullName 'TabExpansion.Disable.Asynchronous' -Value $false -Initialize -Validation bool -Handler {
     [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled = $args[0]
-    
+
     # Disable Async TEPP runspace if not needed
     if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled -or [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled) {
         [Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"].Stop()

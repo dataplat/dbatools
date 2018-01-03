@@ -41,7 +41,7 @@ Internal parameter
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Tags: Snapshot, Database
 Author: niphlod
@@ -146,25 +146,25 @@ Removes all snapshots associated with databases that have dumpsterfire in the na
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
 
             $dbs = $server.Databases
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.DatabaseSnapshotBaseName }
             }
-            
+
             if ($ExcludeDatabase) {
                 $dbs = $dbs | Where-Object { $ExcludeDatabase -notcontains $_.DatabaseSnapshotBaseName }
             }
-            
+
             if ($Snapshot) {
                 $dbs = $dbs | Where-Object { $Snapshot -contains $_.Name }
             }
-            
+
             if (!$Snapshot -and !$Database) {
                 $dbs = $dbs | Where-Object IsDatabaseSnapshot -eq $true | Sort-Object DatabaseSnapshotBaseName, Name
             }
-            
+
 
             foreach ($db in $dbs) {
                 if ($db.IsAccessible -eq $false) {

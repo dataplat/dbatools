@@ -63,7 +63,7 @@ function Copy-DbaAgentCategory {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Migration, Agent
             Author: Chrissy LeMaire (@cl), netnerds.net
@@ -297,7 +297,7 @@ function Copy-DbaAgentCategory {
 
                 foreach ($alertCategory in $serverAlertCategories) {
                     $categoryName = $alertCategory.Name
-                    
+
                     $copyAlertCategoryStatus = [pscustomobject]@{
                         SourceServer      = $sourceServer.Name
                         DestinationServer = $destServer.Name
@@ -307,7 +307,7 @@ function Copy-DbaAgentCategory {
                         Notes             = $null
                         DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
                     }
-                    
+
                     if ($alertCategories.Length -gt 0 -and $alertCategories -notcontains $categoryName) {
                         continue
                     }
@@ -345,7 +345,7 @@ function Copy-DbaAgentCategory {
                                 $sql = $alertCategory.Script() | Out-String
                                 Write-Message -Level Debug -Message $sql
                                 $destServer.Query($sql)
-                                
+
                                 $copyAlertCategoryStatus.Status = "Successful"
                                 $copyAlertCategoryStatus
                             }

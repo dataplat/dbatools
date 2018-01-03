@@ -1,4 +1,4 @@
-Function Invoke-ManagedComputerCommand {
+function Invoke-ManagedComputerCommand {
     <#
         .SYNOPSIS
             Runs wmi commands against a target system.

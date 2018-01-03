@@ -33,17 +33,17 @@ Optional secure string used to create the certificate.
 .PARAMETER Password
 Optional password - if no password is supplied, the password will be protected by the master key
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+.PARAMETER WhatIf
+Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+.PARAMETER Confirm
+Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER EnableException 
+.PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Tags: Certificate
 
@@ -88,15 +88,15 @@ Suppresses all prompts to install but prompts to securely enter your password an
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             foreach ($db in $Database) {
 
                 $currentdb = $server.Databases[$db] | Where-Object IsAccessible
-                
+
                 if ($null -eq $currentdb) {
                     Stop-Function -Message "Database '$db' does not exist on $instance" -Target $server -Continue
                 }
-                
+
                 if ($null -eq $name) {
                     Write-Message -Level Verbose -Message "Name is NULL, setting it to '$db'"
                     $name = $db
@@ -110,28 +110,28 @@ Suppresses all prompts to install but prompts to securely enter your password an
                     if ($null -ne $currentdb.Certificates[$cert]) {
                         Stop-Function -Message "Certificate '$cert' already exists in the $db database on $instance" -Target $currentdb -Continue
                     }
-                    
+
                     if ($Pscmdlet.ShouldProcess($SqlInstance, "Creating certificate for database '$db' on $instance")) {
                         try {
                             $smocert = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Certificate $currentdb, $cert
-                            
+
                             $smocert.StartDate = $StartDate
                             $smocert.Subject = $Subject
                             $smocert.ExpirationDate = $ExpirationDate
                             $smocert.ActiveForServiceBrokerDialog = $ActiveForServiceBrokerDialog
-                            
+
                             if ($password.Length -gt 0) {
                                 $smocert.Create(([System.Runtime.InteropServices.marshal]::PtrToStringAuto([System.Runtime.InteropServices.marshal]::SecureStringToBSTR($password))))
                             }
                             else {
                                 $smocert.Create()
                             }
-                            
+
                             Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name ComputerName -value $server.NetName
                             Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                             Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                             Add-Member -Force -InputObject $smocert -MemberType NoteProperty -Name Database -value $currentdb.Name
-                            
+
                             Select-DefaultView -InputObject $smocert -Property ComputerName, InstanceName, SqlInstance, Database, Name, Subject, StartDate, ActiveForServiceBrokerDialog, ExpirationDate, Issuer, LastBackupDate, Owner, PrivateKeyEncryptionType, Serial
                         }
                         catch {
@@ -142,7 +142,7 @@ Suppresses all prompts to install but prompts to securely enter your password an
                             else {
                                 $exception = $_.Exception
                             }
-                            
+
                             Stop-Function -Message "Failed to create certificate in $db on $instance. Exception: $exception" -Target $smocert -InnerErrorRecord $_ -Continue
                         }
                     }

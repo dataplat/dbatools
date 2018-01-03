@@ -3,7 +3,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    
+
     BeforeAll {
         $DestBackupDir = 'C:\Temp\backups'
         if (-Not(Test-Path $DestBackupDir)) {
@@ -21,11 +21,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database master | Backup-DbaDatabase -Type Full
         $db | Backup-DbaDatabase -Type Full -BackupDirectory $DestBackupDir -BackupFileName CopyOnly.bak -CopyOnly
     }
-    
+
     AfterAll {
         $null = Get-DbaDatabase -SqlInstance $script:instance1 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
-    
+
     Context "Get last history for single database" {
         $results = Get-DbaBackupHistory -SqlInstance $script:instance1 -Database $dbname -Last
         It "Should be 4 backups returned" {
@@ -38,7 +38,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $results[-1].Type | Should Be "Log"
         }
     }
-    
+
     Context "Get last history for all databases" {
         $results = Get-DbaBackupHistory -SqlInstance $script:instance1
         It "Should be more than one database" {

@@ -11,7 +11,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         BeforeEach {
             # Create Database with small size and grow it
             $db = New-Object Microsoft.SqlServer.Management.SMO.Database($server, "dbatoolsci_shrinktest")
-            
+
             $primaryFileGroup = New-Object Microsoft.SqlServer.Management.Smo.Filegroup($db, "PRIMARY")
             $db.FileGroups.Add($primaryFileGroup)
             $primaryFile = New-Object Microsoft.SqlServer.Management.Smo.DataFile($primaryFileGroup, $db.Name)
@@ -27,7 +27,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $logFile.Growth = 8 * 1024
             $logFile.GrowthType = "KB"
             $db.LogFiles.Add($logFile)
-            
+
             $db.Create()
 
             # Execute a bunch of inserts in a transaction to grow the data and log files

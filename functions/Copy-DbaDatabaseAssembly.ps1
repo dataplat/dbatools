@@ -4,10 +4,10 @@ function Copy-DbaDatabaseAssembly {
             Copy-DbaDatabaseAssembly migrates assemblies from one SQL Server to another.
 
         .DESCRIPTION
-            By default, all assemblies are copied. 
-            
+            By default, all assemblies are copied.
+
             If the assembly already exists on the destination, it will be skipped unless -Force is used.
-            
+
             This script does not yet copy dependencies or dependent objects.
 
         .PARAMETER Source
@@ -50,10 +50,10 @@ function Copy-DbaDatabaseAssembly {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .PARAMETER Force
             If this switch is enabled, existing assemblies on Destination with matching names from Source will be dropped.
-            
+
         .NOTES
             Tags: Migration, Assembly
             Author: Chrissy LeMaire (@cl), netnerds.net
@@ -138,7 +138,7 @@ function Copy-DbaDatabaseAssembly {
             $assemblyName = $currentAssembly.Name
             $dbName = $currentAssembly.Parent.Name
             $destDb = $destServer.Databases[$dbName]
-            
+
             $copyDbAssemblyStatus = [pscustomobject]@{
                 SourceServer        = $sourceServer.Name
                 SourceDatabase      = $dbName
@@ -150,8 +150,8 @@ function Copy-DbaDatabaseAssembly {
                 Notes               = $null
                 DateTime            = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
             }
-            
-            
+
+
             if (!$destDb) {
                 $copyDbAssemblyStatus.Status = "Skipped"
                 $copyDbAssemblyStatus.Notes = "Destination database does not exist"

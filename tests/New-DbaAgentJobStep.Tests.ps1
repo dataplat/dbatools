@@ -9,7 +9,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         $job = New-DbaAgentJob -SqlInstance $script:instance2 -Job "Job One" -Description "Just another job"
 
         It "Should have the right name and description" {
-            $results = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $job -StepName "Step One" 
+            $results = New-DbaAgentJobStep -SqlInstance $script:instance2 -Job $job -StepName "Step One"
             $results.Name | Should Be "Step One"
         }
 

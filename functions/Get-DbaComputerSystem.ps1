@@ -11,7 +11,7 @@ function Get-DbaComputerSystem {
 
         .PARAMETER Credential
             Alternate credential object to use for accessing the target computer(s).
-        
+
         .PARAMETER IncludeAws
             If computer is hosted in AWS Infrastructure as a Service (IaaS), additional information will be included.
 
@@ -19,7 +19,7 @@ function Get-DbaComputerSystem {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: ServerInfo
             Author: Shawn Melton (@wsmelton | http://blog.wsmelton.info)
@@ -73,8 +73,8 @@ function Get-DbaComputerSystem {
             else {
                 $computerSystem = Get-DbaCmObject -ClassName Win32_ComputerSystem -ComputerName $computerResolved
             }
-            
-            $adminPasswordStatus = 
+
+            $adminPasswordStatus =
             switch ($computerSystem.AdminPasswordStatus) {
                 0 {"Disabled"}
                 1 {"Enabled"}
@@ -83,7 +83,7 @@ function Get-DbaComputerSystem {
                 default {"Unknown"}
             }
 
-            $domainRole = 
+            $domainRole =
             switch ($computerSystem.DomainRole) {
                 0 {"Standalone Workstation"}
                 1 {"Member Workstation"}
@@ -92,7 +92,7 @@ function Get-DbaComputerSystem {
                 4 {"Backup Domain Controller"}
                 5 {"Primary Domain Controller"}
             }
-            
+
             $isHyperThreading = $false
             if ($computerSystem.NumberOfLogicalProcessors -gt $computerSystem.NumberofProcessors) {
                 $isHyperThreading = $true
@@ -100,7 +100,7 @@ function Get-DbaComputerSystem {
 
             if ($IncludeAws) {
                 $isAws = Invoke-Command2 -ComputerName $computerResolved -Credential $Credential -ScriptBlock { ((Invoke-WebRequest -TimeoutSec 15 -Uri 'http://169.254.169.254').StatusCode) -eq 200} -Raw
-                
+
                 if ($isAws) {
                     $scriptBlock = {
                         [PSCustomObject]@{

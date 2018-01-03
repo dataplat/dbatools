@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\..\internal\Connect-SqlInstance.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    
+
     $login = 'winLogin'
     $password = 'MyV3ry$ecur3P@ssw0rd'
     $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
@@ -24,7 +24,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     catch {<#User does not exist#>}
-    
+
     if ($l = Get-DbaLogin -SqlInstance $script:instance2 -Login $winLogin) {
         $results = $server.Query("IF EXISTS (SELECT * FROM sys.server_principals WHERE name = '$winLogin') EXEC sp_who '$winLogin'")
         foreach ($spid in $results.spid) {
@@ -58,7 +58,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $isRevertable = $false
         }
     }
-    
+
     Context "Current configuration to be able to roll back" {
         It "Both agent and engine services must exist" {
             ($services | Measure-Object).Count | Should Be 2
@@ -79,8 +79,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $errVar = $warnVar = $null
         $cred = New-Object System.Management.Automation.PSCredential($login, $securePassword)
         $results = Update-DbaSqlServiceAccount -ComputerName $computerName -ServiceName $services.ServiceName -ServiceCredential $cred -ErrorVariable $errVar -WarningVariable $warnVar
-        
-        It "Should return something" {    
+
+        It "Should return something" {
             $results | Should Not Be $null
         }
         It "Should have no errors or warnings" {
@@ -103,7 +103,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $errVar = $warnVar = $null
         $results = $services | Sort-Object ServicePriority | Update-DbaSqlServiceAccount -Password $newSecurePassword -ErrorVariable $errVar -WarningVariable $warnVar
 
-        It "Password change should return something" {    
+        It "Password change should return something" {
             $results | Should Not Be $null
         }
         It "Should have no errors or warnings" {
@@ -118,7 +118,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
 
         $results = Get-DbaSqlService -ComputerName $computerName -ServiceName $services.ServiceName | Restart-DbaSqlService
-        It "Service restart should return something" {    
+        It "Service restart should return something" {
             $results | Should Not Be $null
         }
         It "Service restart should be successful" {
@@ -132,8 +132,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Change agent service account to local system" {
         $errVar = $warnVar = $null
         $results = $services | Where-Object { $_.ServiceType -eq 'Agent' } | Update-DbaSqlServiceAccount -Username 'NT AUTHORITY\LOCAL SYSTEM' -ErrorVariable $errVar -WarningVariable $warnVar
-        
-        It "Should return something" {    
+
+        It "Should return something" {
             $results | Should Not Be $null
         }
         It "Should have no errors or warnings" {
@@ -151,8 +151,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Revert SQL Agent service account changes ($currentAgentUser)" {
         $errVar = $warnVar = $null
         $results = $services | Where-Object { $_.ServiceType -eq 'Agent' } | Update-DbaSqlServiceAccount -Username $currentAgentUser -ErrorVariable $errVar -WarningVariable $warnVar
-        
-        It "Should return something" {    
+
+        It "Should return something" {
             $results | Should Not Be $null
         }
         It "Should have no errors or warnings" {
@@ -170,8 +170,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Revert SQL Engine service account changes ($currentEngineUser)" {
         $errVar = $warnVar = $null
         $results = $services | Where-Object { $_.ServiceType -eq 'Engine' } | Update-DbaSqlServiceAccount -Username $currentEngineUser -ErrorVariable $errVar -WarningVariable $warnVar
-        
-        It "Should return something" {    
+
+        It "Should return something" {
             $results | Should Not Be $null
         }
         It "Should have no errors or warnings" {
@@ -190,5 +190,5 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
 
     #Cleanup
     $server.Logins[$winLogin].Drop()
-    $computer.Delete('User', $login) 
+    $computer.Delete('User', $login)
 }

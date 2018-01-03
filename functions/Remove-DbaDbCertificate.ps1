@@ -18,18 +18,18 @@ The database where the certificate will be removed.
 .PARAMETER Certificate
 The certificate that will be removed
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+.PARAMETER WhatIf
+Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+.PARAMETER Confirm
+Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER EnableException 
+.PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
-.PARAMETER CertificateCollection 
+
+.PARAMETER CertificateCollection
 Internal parameter to support pipeline input
 
 .NOTES
@@ -65,15 +65,15 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
         [switch][Alias('Silent')]$EnableException
     )
     begin {
-        
+
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Remove-DbaDatabaseCertificate
-        
+
         function drop-cert ($smocert) {
             $server = $smocert.Parent.Parent
             $instance = $server.DomainInstanceName
             $cert = $smocert.Name
             $db = $smocert.Parent.Name
-            
+
             $output = [pscustomobject]@{
                 ComputerName = $server.NetName
                 InstanceName = $server.ServiceName
@@ -82,7 +82,7 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
                 Certificate  = $cert
                 Status       = $null
             }
-            
+
             if ($Pscmdlet.ShouldProcess($instance, "Dropping the certificate named $cert for database '$db' on $server")) {
                 try {
                     $smocert.Drop()
@@ -98,7 +98,7 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
         }
     }
     process {
-        
+
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -107,30 +107,30 @@ Suppresses all prompts to remove the certificate in the 'db1' database and drops
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             foreach ($db in $Database) {
                 $currentdb = $server.Databases[$db]
-                
+
                 if ($null -eq $currentdb) {
                     Stop-Function -Message "Database '$db' does not exist on $server" -Target $currentdb -Continue
                 }
-                
+
                 if (-not $currentdb.IsAccessible) {
                     Stop-Function -Message "Database '$db' is not accessible" -Target $currentdb -Continue
                 }
-                
+
                 foreach ($cert in $certificate) {
                     $smocert = $currentdb.Certificates[$cert]
-                    
+
                     if ($null -eq $smocert) {
                         Stop-Function -Message "No certificate named $cert exists in the $db database on $server" -Target $currentdb.Certificates -Continue
                     }
-                    
+
                     Drop-Cert -smocert $smocert
                 }
             }
         }
-        
+
         foreach ($smocert in $CertificateCollection) {
             Drop-Cert -smocert $smocert
         }

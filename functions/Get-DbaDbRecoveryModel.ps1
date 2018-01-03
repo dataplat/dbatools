@@ -1,6 +1,6 @@
 function Get-DbaDbRecoveryModel {
     <#
-        .SYNOPSIS 
+        .SYNOPSIS
             Get-DbaDbRecoveryModel displays the Recovery Model.
 
         .DESCRIPTION
@@ -26,8 +26,8 @@ function Get-DbaDbRecoveryModel {
 
         .PARAMETER RecoveryModel
             Filters the output based on Recovery Model. Valid options are Simple, Full and BulkLogged
-            
-            Details about the recovery models can be found here: 
+
+            Details about the recovery models can be found here:
             https://docs.microsoft.com/en-us/sql/relational-databases/backup-restore/recovery-models-sql-server
 
         .PARAMETER EnableException
@@ -82,7 +82,7 @@ function Get-DbaDbRecoveryModel {
             ExcludeDatabase = $ExcludeDatabase
             EnableException = $EnableException
         }
-        
+
         if ($RecoveryModel) {
             Get-DbaDatabase @params | Where-Object RecoveryModel -in $RecoveryModel | Where-Object IsAccessible | Select-DefaultView -Property $defaults
         }

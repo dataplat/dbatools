@@ -56,7 +56,7 @@ function Set-DbaDbQueryStoreOptions {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: QueryStore
             Author: Enrico van de Laar ( @evdlaar )
@@ -139,7 +139,7 @@ function Set-DbaDbQueryStoreOptions {
 
             # We have to exclude all the system databases since they cannot have the Query Store feature enabled
             $dbs = Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -ExcludeDatabase $ExcludeDatabase -Database $Database | Where-Object IsAccessible
-            
+
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $($db.name) on $instance"
 
@@ -147,7 +147,7 @@ function Set-DbaDbQueryStoreOptions {
                     Write-Message -Level Warning -Message "The database $db on server $instance is not accessible. Skipping database."
                     Continue
                 }
-                
+
                 if ($State) {
                     if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing DesiredState to $state")) {
                         $db.QueryStoreOptions.DesiredState = $State
@@ -155,12 +155,12 @@ function Set-DbaDbQueryStoreOptions {
                         $db.QueryStoreOptions.Refresh()
                     }
                 }
-                
+
                 if ($db.QueryStoreOptions.DesiredState -eq "Off" -and (Test-Bound -Parameter State -Not)) {
                     Write-Message -Level Warning -Message "State is set to Off; cannot change values. Please update State to ReadOnly or ReadWrite."
                     Continue
                 }
-                
+
                 if ($FlushInterval) {
                     if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing DataFlushIntervalInSeconds to $FlushInterval")) {
                         $db.QueryStoreOptions.DataFlushIntervalInSeconds = $FlushInterval

@@ -52,7 +52,7 @@ function Copy-DbaSqlDataCollector {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Migration,DataCollection
             Author: Chrissy LeMaire (@cl), netnerds.net
@@ -245,7 +245,7 @@ function Copy-DbaSqlDataCollector {
                     $copyCollectionSetStatus.Status = "Failed to start collection"
                     $copyCollectionSetStatus.Notes = $_.Exception
                     $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    
+
                     Stop-Function -Message "Issue starting collection set" -Target $collectionName -ErrorRecord $_
                 }
             }

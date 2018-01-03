@@ -1,13 +1,13 @@
 function Start-DbaMigration {
-    <# 
-        .SYNOPSIS 
-            Migrates SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers, 
+    <#
+        .SYNOPSIS
+            Migrates SQL Server *ALL* databases, logins, database mail profiles/accounts, credentials, SQL Agent objects, linked servers,
             Central Management Server objects, server configuration settings (sp_configure), user objects in systems databases,
-            system triggers and backup devices from one SQL Server to another. 
+            system triggers and backup devices from one SQL Server to another.
 
             For more granular control, please use one of the -No parameters and use the other functions available within the dbatools module.
 
-        .DESCRIPTION 
+        .DESCRIPTION
             Start-DbaMigration consolidates most of the migration tools in dbatools into one command.  This is useful when you're looking to migrate entire instances. It less flexible than using the underlying functions. Think of it as an easy button. It migrates:
 
             All user databases to exclude support databases such as ReportServerTempDB (Use -IncludeSupportDbs for this). Use -NoDatabases to skip.
@@ -69,15 +69,15 @@ function Start-DbaMigration {
 
         .PARAMETER ReuseSourceFolderStructure
             If this switch is enabled, the data and log directory structures on Source will be kept on Destination. Otherwise, databases will be migrated to Destination's default data and log directories.
-            
+
             Consider this if you're migrating between different versions and use part of Microsoft's default SQL structure (MSSQL12.INSTANCE, etc.).
 
         .PARAMETER DetachAttach
-            If this switch is enabled, the the detach/copy/attach method is used to perform database migrations. No files are deleted on Source. If the destination attachment fails, the source database will be reattached. File copies are performed over administrative shares (\\server\x$\mssql) using BITS. If a database is being mirrored, the mirror will be broken prior to migration. 
+            If this switch is enabled, the the detach/copy/attach method is used to perform database migrations. No files are deleted on Source. If the destination attachment fails, the source database will be reattached. File copies are performed over administrative shares (\\server\x$\mssql) using BITS. If a database is being mirrored, the mirror will be broken prior to migration.
 
         .PARAMETER Reattach
             If this switch is enabled, all databases are reattached to Source after a DetachAttach migration is complete.
-        
+
             .PARAMETER NoRecovery
             If this switch is enabled, databases will be left in the No Recovery state to enable further backups to be added.
 
@@ -143,10 +143,10 @@ function Start-DbaMigration {
 
         .PARAMETER NoDataCollector
             If this switch is enabled, the Data Collector will not be migrated.
-            
+
         .PARAMETER NoSaRename
             If this switch is enabled, the sa account will not be renamed on the destination instance to match the source.
-            
+
         .PARAMETER DisableJobsOnDestination
             If this switch is enabled, migrated SQL Agent jobs will be disabled on the destination instance.
 
@@ -154,8 +154,8 @@ function Start-DbaMigration {
             If this switch is enabled, SQL Agent jobs will be disabled on the source instance.
 
         .PARAMETER Force
-            If migrating users, forces drop and recreate of SQL and Windows logins. 
-            If migrating databases, deletes existing databases with matching names. 
+            If migrating users, forces drop and recreate of SQL and Windows logins.
+            If migrating databases, deletes existing databases with matching names.
             If using -DetachAttach, -Force will break mirrors and drop dbs from Availability Groups.
 
             For other migration objects, it will just drop existing items and readd, if -force is supported within the underlying function.
@@ -163,7 +163,7 @@ function Start-DbaMigration {
         .PARAMETER WhatIf
             If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-        .PARAMETER Confirm 
+        .PARAMETER Confirm
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
         .PARAMETER EnableException
@@ -177,20 +177,20 @@ function Start-DbaMigration {
             Limitations:     Doesn't cover what it doesn't cover (certificates, etc)
                             SQL Server 2000 login migrations have some limitations (server perms aren't migrated)
                             SQL Server 2000 databases cannot be directly migrated to SQL Server 2012 and above.
-                            Logins within SQL Server 2012 and above logins cannot be migrated to SQL Server 2008 R2 and below.    
+                            Logins within SQL Server 2012 and above logins cannot be migrated to SQL Server 2008 R2 and below.
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-        .LINK 
+        .LINK
             https://dbatools.io/Start-DbaMigration
 
-        .EXAMPLE   
-            Start-DbaMigration -Source sqlserver\instance -Destination sqlcluster -DetachAttach 
+        .EXAMPLE
+            Start-DbaMigration -Source sqlserver\instance -Destination sqlcluster -DetachAttach
 
             All databases, logins, job objects and sp_configure options will be migrated from sqlserver\instance to sqlcluster. Databases will be migrated using the detach/copy files/attach method. Dbowner will be updated. User passwords, SIDs, database roles and server roles will be migrated along with the login.
 
-        .EXAMPLE  
+        .EXAMPLE
             Start-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -SourceSqlCredential $scred -ReuseSourceFolderStructure -DestinationSqlCredential $cred -Force -NetworkShare \\fileserver\share\sqlbackups\Migration -BackupRestore
 
             Migrate databases uses backup/restore. Also migrate logins, database mail, credentials, SQL Agent, Central Management Server, SQL global configuration.
@@ -203,7 +203,7 @@ function Start-DbaMigration {
         .EXAMPLE
             Start-DbaMigration -Verbose -Source sqlcluster -Destination sql2016 -DetachAttach -Reattach -SetSourceReadonly
 
-            Migrate databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates everything else. 
+            Migrate databases using detach/copy/attach. Reattach at source and set source databases read-only. Also migrates everything else.
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
@@ -274,24 +274,24 @@ function Start-DbaMigration {
         [switch]$Force,
         [switch]$EnableException
     )
-    
+
     begin {
         $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
         $started = Get-Date
-        
+
         $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-        
+
         $source = $sourceserver.DomainInstanceName
         $destination = $destserver.DomainInstanceName
     }
-    
+
     process {
-        
+
         if ($BackupRestore -eq $false -and $DetachAttach -eq $false -and $NoDatabases -eq $false) {
             throw "You must specify a database migration method (-BackupRestore or -DetachAttach) or -NoDatabases"
         }
-        
+
         if (!$NoSpConfigure) {
             Write-Message -Level Verbose -Message "Migrating SQL Server Configuration."
             try {
@@ -301,8 +301,8 @@ function Start-DbaMigration {
                 Write-Message -Level Warning -Message "Configuration migration reported the following error $($_.Exception.Message)."
             }
         }
-        
-        
+
+
         if (!$NoCustomErrors) {
             Write-Message -Level Verbose -Message "Migrating custom errors (user defined messages)."
             try {
@@ -312,7 +312,7 @@ function Start-DbaMigration {
                 Write-Message -Level Warning -Message "Couldn't copy custom errors."
             }
         }
-        
+
         if (!$NoCredentials) {
             if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
                 Write-Message -Level Verbose -Message "Credentials are only supported in SQL Server 2005 and above. Skipping."
@@ -327,7 +327,7 @@ function Start-DbaMigration {
                 }
             }
         }
-        
+
         if (!$NoDatabaseMail) {
             if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
                 Write-Message -Level Verbose -Message "Database Mail is only supported in SQL Server 2005 and above. Skipping."
@@ -342,20 +342,20 @@ function Start-DbaMigration {
                 }
             }
         }
-        
+
         if (!$NoSysDbUserObjects) {
             Write-Message -Level Verbose -Message "Migrating user objects in system databases (this can take a second)."
             try {
                 If ($Pscmdlet.ShouldProcess($destination, "Copying user objects.")) {
                     Copy-DbaSysDbUserObject -Source $sourceserver -Destination $destserver
                 }
-                
+
             }
             catch {
                 Write-Message -Level Warning -Message "Couldn't copy all user objects in system databases."
             }
         }
-        
+
         if (!$NoCentralManagementServer) {
             if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
                 Write-Message -Level Verbose -Message "Central Management Server is only supported in SQL Server 2008 and above. Skipping."
@@ -370,7 +370,7 @@ function Start-DbaMigration {
                 }
             }
         }
-        
+
         if (!$NoBackupDevices) {
             Write-Message -Level Verbose -Message "Migrating Backup Devices."
             try {
@@ -380,7 +380,7 @@ function Start-DbaMigration {
                 Write-Message -Level Warning -Message "Backup device migration reported the following error $($_.Exception.Message)."
             }
         }
-        
+
         if (!$NoLinkedServers) {
             Write-Message -Level Verbose -Message "Migrating linked servers."
             try {
@@ -390,7 +390,7 @@ function Start-DbaMigration {
                 Write-Message -Level Warning -Message "Linked server migration reported the following error $($_.Exception.Message)."
             }
         }
-        
+
         if (!$NoSystemTriggers) {
             if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
                 Write-Message -Level Verbose -Message "Server Triggers are only supported in SQL Server 2008 and above. Skipping."
@@ -405,7 +405,7 @@ function Start-DbaMigration {
                 }
             }
         }
-        
+
         if (!$NoDatabases) {
             # Test some things
             if ($networkshare.length -gt 0) {
@@ -428,8 +428,8 @@ function Start-DbaMigration {
                 Write-Message -Level Warning -Message "Database migration reported the following error $($_.Exception.Message)."
             }
         }
-        
-        
+
+
         if (!$NoLogins) {
             Write-Message -Level Verbose -Message "Migrating logins."
             try {
@@ -444,7 +444,7 @@ function Start-DbaMigration {
                 Write-Message -Level Warning -Message "Login migration reported the following error $($_.Exception.Message)."
             }
         }
-        
+
         if (!$NoLogins -and !$NoDatabases -and !$NoRecovery) {
             Write-Message -Level Verbose -Message "Updating database owners to match newly migrated logins."
             try {
@@ -454,7 +454,7 @@ function Start-DbaMigration {
                 Write-Message -Level Warning -Message "Login migration reported the following error $($_.Exception.Message)."
             }
         }
-        
+
         if (!$NoDataCollector) {
             if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
                 Write-Message -Level Verbose -Message "Data Collection sets are only supported in SQL Server 2008 and above. Skipping."
@@ -469,8 +469,8 @@ function Start-DbaMigration {
                 }
             }
         }
-        
-        
+
+
         if (!$NoAudits) {
             if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
                 Write-Message -Level Verbose -Message "Server Audit Specifications are only supported in SQL Server 2008 and above. Skipping."
@@ -485,7 +485,7 @@ function Start-DbaMigration {
                 }
             }
         }
-        
+
         if (!$NoServerAuditSpecifications) {
             if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
                 Write-Message -Level Verbose -Message "Server Audit Specifications are only supported in SQL Server 2008 and above. Skipping."
@@ -500,7 +500,7 @@ function Start-DbaMigration {
                 }
             }
         }
-        
+
         if (!$NoEndpoints) {
             if ($sourceserver.versionMajor -lt 9 -or $destserver.versionMajor -lt 9) {
                 Write-Message -Level Verbose -Message "Server Endpoints are only supported in SQL Server 2008 and above. Skipping."
@@ -515,8 +515,8 @@ function Start-DbaMigration {
                 }
             }
         }
-        
-        
+
+
         if (!$NoPolicyManagement) {
             if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
                 Write-Message -Level Verbose -Message "Policy Management is only supported in SQL Server 2008 and above. Skipping."
@@ -531,7 +531,7 @@ function Start-DbaMigration {
                 }
             }
         }
-        
+
         if (!$NoResourceGovernor) {
             if ($sourceserver.versionMajor -lt 10 -or $destserver.versionMajor -lt 10) {
                 Write-Message -Level Verbose -Message "Resource Governor is only supported in SQL Server 2008 and above. Skipping."
@@ -546,7 +546,7 @@ function Start-DbaMigration {
                 }
             }
         }
-        
+
         if (!$NoExtendedEvents) {
             if ($sourceserver.versionMajor -lt 11 -or $destserver.versionMajor -lt 11) {
                 Write-Message -Level Verbose -Message "Extended Events are only supported in SQL Server 2012 and above. Skipping."
@@ -561,7 +561,7 @@ function Start-DbaMigration {
                 }
             }
         }
-        
+
         if (!$NoAgentServer) {
             Write-Message -Level Verbose -Message "Migrating job server."
             try {
@@ -571,19 +571,19 @@ function Start-DbaMigration {
                 Write-Message -Level Warning -Message "Job Server migration reported the following error $($_.Exception.Message)."
             }
         }
-        
+
     }
-    
+
     end {
         $totaltime = ($elapsed.Elapsed.toString().Split(".")[0])
-        
+
         if ($sourceserver.ConnectionContext.IsOpen -eq $true) {
             $sourceserver.ConnectionContext.Disconnect()
         }
         if ($destserver.ConnectionContext.IsOpen -eq $true) {
             $destserver.ConnectionContext.Disconnect()
         }
-        
+
         If ($Pscmdlet.ShouldProcess("console", "Showing SQL Server migration finished message")) {
             Write-Message -Level Verbose -Message "SQL Server migration complete."
             Write-Message -Level Verbose -Message "Migration started: $started"

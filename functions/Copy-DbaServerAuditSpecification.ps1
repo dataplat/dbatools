@@ -51,7 +51,7 @@ function Copy-DbaServerAuditSpecification {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Migration,ServerAudit,AuditSpecification
             Author: Chrissy LeMaire (@cl), netnerds.net
@@ -128,7 +128,7 @@ function Copy-DbaServerAuditSpecification {
 
         foreach ($auditSpec in $AuditSpecifications) {
             $auditSpecName = $auditSpec.Name
-            
+
             $copyAuditSpecStatus = [pscustomobject]@{
                 SourceServer      = $sourceServer.Name
                 DestinationServer = $destServer.Name
@@ -138,13 +138,13 @@ function Copy-DbaServerAuditSpecification {
                 Notes             = $null
                 DateTime          = [DbaDateTime](Get-Date)
             }
-            
+
             if ($AuditSpecification -and $auditSpecName -notin $AuditSpecification -or $auditSpecName -in $ExcludeAuditSpecification) {
                 continue
             }
 
             $destServer.Audits.Refresh()
-            
+
             if ($destServer.Audits.Name -notcontains $auditSpec.AuditName) {
                 $copyAuditSpecStatus.Status = "Skipped"
                 $copyAuditSpecStatus.Notes = "Already exists"

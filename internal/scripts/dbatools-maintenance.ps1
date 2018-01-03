@@ -5,11 +5,11 @@ foreach ($item in (Get-ChildItem "$script:PSModuleRoot\internal\maintenance" -Fi
 
 $scriptBlock = {
     $script:___ScriptName = 'dbatools-maintenance'
-    
+
     # Import module in a way where internals are available
     $dbatools_disableTimeMeasurements = $true
     Import-Module "$([Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleBase)\dbatools.psm1"
-    
+
     try {
         #region Main Execution
         while ($true) {
@@ -17,7 +17,7 @@ $scriptBlock = {
             if ([Sqlcollaborative.Dbatools.Runspace.RunspaceHost]::Runspaces[$___ScriptName.ToLower()].State -notlike "Running") {
                 break
             }
-            
+
             $task = $null
             $tasksDone = @()
             while ($task = [Sqlcollaborative.Dbatools.Maintenance.MaintenanceHost]::GetNextTask($tasksDone)) {
@@ -26,7 +26,7 @@ $scriptBlock = {
                 $task.LastExecution = Get-Date
                 $tasksDone += $task.Name
             }
-            
+
             Start-Sleep -Seconds 5
         }
         #endregion Main Execution

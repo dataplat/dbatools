@@ -1,7 +1,7 @@
 function Resolve-NetBiosName {
     <#
 .SYNOPSIS
-Internal function. Takes a best guess at the NetBIOS name of a server. 
+Internal function. Takes a best guess at the NetBIOS name of a server.
  #>
     [CmdletBinding()]
     param (

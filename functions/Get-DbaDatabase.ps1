@@ -36,7 +36,7 @@ function Get-DbaDatabase {
             This parameter cannot be used with -ExcludeAllUserDb.
 
         .PARAMETER Status
-            Specifies one or more database statuses to filter on. Only databases in the status(es) listed will be returned. Valid options for this parameter are 'Emergency', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', and 'Suspect'.    
+            Specifies one or more database statuses to filter on. Only databases in the status(es) listed will be returned. Valid options for this parameter are 'Emergency', 'Normal', 'Offline', 'Recovering', 'Restoring', 'Standby', and 'Suspect'.
 
         .PARAMETER Access
             Filters databases returned by their access type. Valid options for this parameter are 'ReadOnly' and 'ReadWrite'. If omitted, no filtering is performed.
@@ -75,7 +75,7 @@ function Get-DbaDatabase {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Database
             Author: Garry Bargsley (@gbargsley | http://blog.garrybargsley.com)
@@ -122,7 +122,7 @@ function Get-DbaDatabase {
         .EXAMPLE
             Get-DbaDatabase -SqlInstance SQL1\SQLExpress -IncludeLastUsed
 
-            Returns the databases from SQL Server instance SQL1\SQLExpress and includes the last used information 
+            Returns the databases from SQL Server instance SQL1\SQLExpress and includes the last used information
             from the sys.dm_db_index_usage_stats DMV.
 
         .EXAMPLE
@@ -173,17 +173,17 @@ function Get-DbaDatabase {
         [switch][Alias('Silent')]$EnableException,
         [switch]$IncludeLastUsed
     )
-    
+
     begin {
-        
+
         if ($ExcludeAllUserDb -and $ExcludeAllSystemDb) {
             Stop-Function -Message "You cannot specify both ExcludeAllUserDb and ExcludeAllSystemDb." -Continue -EnableException $EnableException
         }
-        
+
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        
+
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance."
@@ -192,50 +192,50 @@ function Get-DbaDatabase {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             if (!$IncludeLastUsed) {
                 $dblastused = $null
             }
             else {
                 ## Get last used information from the DMV
                 $querylastused = "WITH agg AS
-				(
-				  SELECT 
-				       max(last_user_seek) last_user_seek,
-				       max(last_user_scan) last_user_scan,
-				       max(last_user_lookup) last_user_lookup,
-				       max(last_user_update) last_user_update,
-				       sd.name dbname
-				   FROM
-				       sys.dm_db_index_usage_stats, master..sysdatabases sd
-				   WHERE
-				     database_id = sd.dbid AND database_id > 4
-					  group by sd.name 
-				)
-				SELECT 
-				   dbname,
-				   last_read = MAX(last_read),
-				   last_write = MAX(last_write)
-				FROM
-				(
-				   SELECT dbname, last_user_seek, NULL FROM agg
-				   UNION ALL
-				   SELECT dbname, last_user_scan, NULL FROM agg
-				   UNION ALL
-				   SELECT dbname, last_user_lookup, NULL FROM agg
-				   UNION ALL
-				   SELECT dbname, NULL, last_user_update FROM agg
-				) AS x (dbname, last_read, last_write)
-				GROUP BY
-				   dbname
-				ORDER BY 1;"
+                (
+                  SELECT
+                       max(last_user_seek) last_user_seek,
+                       max(last_user_scan) last_user_scan,
+                       max(last_user_lookup) last_user_lookup,
+                       max(last_user_update) last_user_update,
+                       sd.name dbname
+                   FROM
+                       sys.dm_db_index_usage_stats, master..sysdatabases sd
+                   WHERE
+                     database_id = sd.dbid AND database_id > 4
+                      group by sd.name
+                )
+                SELECT
+                   dbname,
+                   last_read = MAX(last_read),
+                   last_write = MAX(last_write)
+                FROM
+                (
+                   SELECT dbname, last_user_seek, NULL FROM agg
+                   UNION ALL
+                   SELECT dbname, last_user_scan, NULL FROM agg
+                   UNION ALL
+                   SELECT dbname, last_user_lookup, NULL FROM agg
+                   UNION ALL
+                   SELECT dbname, NULL, last_user_update FROM agg
+                ) AS x (dbname, last_read, last_write)
+                GROUP BY
+                   dbname
+                ORDER BY 1;"
                 # put a function around this to enable Pester Testing and also to ease any future changes
                 function Invoke-QueryDBlastUsed {
                     $server.Query($querylastused)
                 }
                 $dblastused = Invoke-QueryDBlastUsed
             }
-            
+
             if ($ExcludeAllUserDb) {
                 $DBType = @($true)
             }
@@ -245,16 +245,16 @@ function Get-DbaDatabase {
             else {
                 $DBType = @($false, $true)
             }
-            
+
             $Readonly = switch ($Access) {
                 'Readonly' { @($true) } 'ReadWrite' { @($false) }
-                default { @($true, $false) } 
+                default { @($true, $false) }
             }
             $Encrypt = switch (Test-Bound $Encrypted) {
                 $true { @($true) }
-                default { @($true, $false, $null) } 
+                default { @($true, $false, $null) }
             }
-            
+
             $inputobject = $server.Databases |
                 Where-Object {
                 ($_.Name -in $Database -or !$Database) -and
@@ -266,18 +266,18 @@ function Get-DbaDatabase {
                 $_.RecoveryModel -in $RecoveryModel -and
                 $_.EncryptionEnabled -in $Encrypt
             }
-            
+
             if ($NoFullBackup -or $NoFullBackupSince) {
                 $dabs = (Get-DbaBackupHistory -SqlInstance $server -LastFull )
                 if ($null -ne $NoFullBackupSince) {
                     $dabsWithinScope = ($dabs | Where-Object End -lt $NoFullBackupSince)
-                    
+
                     $inputobject = $inputobject | Where-Object { $_.Name -in $dabsWithinScope.Database -and $_.Name -ne 'tempdb' }
                 }
                 else {
                     $inputObject = $inputObject | Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' }
                 }
-                
+
             }
             if ($NoLogBackup -or $NoLogBackupSince) {
                 $dabs = (Get-DbaBackupHistory -SqlInstance $server -LastLog )
@@ -291,12 +291,12 @@ function Get-DbaDatabase {
                         Where-Object { $_.Name -notin $dabs.Database -and $_.Name -ne 'tempdb' -and $_.RecoveryModel -ne 'Simple' }
                 }
             }
-            
+
             $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
             'LogReuseWaitStatus', 'Size as SizeMB', 'CompatibilityLevel as Compatibility', 'Collation', 'Owner',
             'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
             'LastLogBackupDate as LastLogBackup'
-            
+
             if ($NoFullBackup -or $NoFullBackupSince -or $NoLogBackup -or $NoLogBackupSince) {
                 $defaults += ('Notes')
             }
@@ -304,17 +304,17 @@ function Get-DbaDatabase {
                 # Add Last Used to the default view
                 $defaults += ('LastRead as LastIndexRead', 'LastWrite as LastIndexWrite')
             }
-            
+
             try {
                 foreach ($db in $inputobject) {
-                    
+
                     $Notes = $null
                     if ($NoFullBackup -or $NoFullBackupSince) {
                         if (@($db.EnumBackupSets()).count -eq @($db.EnumBackupSets() | Where-Object { $_.IsCopyOnly }).count -and (@($db.EnumBackupSets()).count -gt 0)) {
                             $Notes = "Only CopyOnly backups"
                         }
                     }
-                    
+
                     $lastusedinfo = $dblastused | Where-Object { $_.dbname -eq $db.name }
                     Add-Member -Force -InputObject $db -MemberType NoteProperty BackupStatus -value $Notes
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name ComputerName -value $server.NetName

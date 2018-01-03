@@ -18,7 +18,7 @@ function Get-DbaWaitingTask {
             Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
             To connect as a different Windows user, run PowerShell as that user.
-            
+
         .PARAMETER Spid
             Find the waiting task of one or more specific process ids
 
@@ -65,42 +65,42 @@ function Get-DbaWaitingTask {
 
     begin {
         $sql = "
-			SELECT
-				[owt].[session_id] AS [Spid],
-				[owt].[exec_context_id] AS [Thread],
-				[ot].[scheduler_id] AS [Scheduler],
-				[owt].[wait_duration_ms] AS [WaitMs],
-				[owt].[wait_type] AS [WaitType],
-				[owt].[blocking_session_id] AS [BlockingSpid],
-				[owt].[resource_description] AS [ResourceDesc],
-				CASE [owt].[wait_type]
-					WHEN N'CXPACKET' THEN
-						RIGHT ([owt].[resource_description],
-							CHARINDEX (N'=', REVERSE ([owt].[resource_description])) - 1)
-					ELSE NULL
-				END AS [NodeId],
-				[eqmg].[dop] AS [Dop],
-				[er].[database_id] AS [DbId],
-				[est].text AS [SqlText],
-				[eqp].[query_plan] AS [QueryPlan],
-				CAST ('https://www.sqlskills.com/help/waits/' + [owt].[wait_type] as XML) AS [URL]
-			FROM sys.dm_os_waiting_tasks [owt]
-			INNER JOIN sys.dm_os_tasks [ot] ON
-				[owt].[waiting_task_address] = [ot].[task_address]
-			INNER JOIN sys.dm_exec_sessions [es] ON
-				[owt].[session_id] = [es].[session_id]
-			INNER JOIN sys.dm_exec_requests [er] ON
-				[es].[session_id] = [er].[session_id]
-			FULL JOIN sys.dm_exec_query_memory_grants [eqmg] ON
-				[owt].[session_id] = [eqmg].[session_id]
-			OUTER APPLY sys.dm_exec_sql_text ([er].[sql_handle]) [est]
-			OUTER APPLY sys.dm_exec_query_plan ([er].[plan_handle]) [eqp]
-			WHERE
-				[es].[is_user_process] = $(if (Test-Bound 'IncludeSystemSpid') {0} else {1})
-			ORDER BY
-				[owt].[session_id],
-				[owt].[exec_context_id]
-			OPTION(RECOMPILE);"
+            SELECT
+                [owt].[session_id] AS [Spid],
+                [owt].[exec_context_id] AS [Thread],
+                [ot].[scheduler_id] AS [Scheduler],
+                [owt].[wait_duration_ms] AS [WaitMs],
+                [owt].[wait_type] AS [WaitType],
+                [owt].[blocking_session_id] AS [BlockingSpid],
+                [owt].[resource_description] AS [ResourceDesc],
+                CASE [owt].[wait_type]
+                    WHEN N'CXPACKET' THEN
+                        RIGHT ([owt].[resource_description],
+                            CHARINDEX (N'=', REVERSE ([owt].[resource_description])) - 1)
+                    ELSE NULL
+                END AS [NodeId],
+                [eqmg].[dop] AS [Dop],
+                [er].[database_id] AS [DbId],
+                [est].text AS [SqlText],
+                [eqp].[query_plan] AS [QueryPlan],
+                CAST ('https://www.sqlskills.com/help/waits/' + [owt].[wait_type] as XML) AS [URL]
+            FROM sys.dm_os_waiting_tasks [owt]
+            INNER JOIN sys.dm_os_tasks [ot] ON
+                [owt].[waiting_task_address] = [ot].[task_address]
+            INNER JOIN sys.dm_exec_sessions [es] ON
+                [owt].[session_id] = [es].[session_id]
+            INNER JOIN sys.dm_exec_requests [er] ON
+                [es].[session_id] = [er].[session_id]
+            FULL JOIN sys.dm_exec_query_memory_grants [eqmg] ON
+                [owt].[session_id] = [eqmg].[session_id]
+            OUTER APPLY sys.dm_exec_sql_text ([er].[sql_handle]) [est]
+            OUTER APPLY sys.dm_exec_query_plan ([er].[plan_handle]) [eqp]
+            WHERE
+                [es].[is_user_process] = $(if (Test-Bound 'IncludeSystemSpid') {0} else {1})
+            ORDER BY
+                [owt].[session_id],
+                [owt].[exec_context_id]
+            OPTION(RECOMPILE);"
     }
     process {
         foreach ($instance in $SqlInstance) {

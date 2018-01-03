@@ -17,7 +17,7 @@ function Get-DbaAgentSchedule {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Agent, Schedule
             Author: Chris McKeown (@devopsfu), http://www.devopsfu.com
@@ -55,9 +55,9 @@ function Get-DbaAgentSchedule {
                 [Parameter(Mandatory = $true)]
                 [ValidateNotNullOrEmpty()]
                 [object]$Schedule
-            
+
             )
-            
+
             # Get the culture to make sure the right date and time format is displayed
             $datetimeFormat = (Get-culture).DateTimeFormat
 
@@ -81,7 +81,7 @@ function Get-DbaAgentSchedule {
             # Check the frequency types for daily or weekly i.e.
             switch ($schedule.FrequencyTypes) {
                 # Daily
-                {$_ -in 4, "Daily"} { 
+                {$_ -in 4, "Daily"} {
                     if ($Schedule.FrequencyInterval -eq 1) {
                         $description += "day "
                     }
@@ -91,7 +91,7 @@ function Get-DbaAgentSchedule {
                 }
 
                 # Weekly
-                {$_ -in 8, "Weekly"} { 
+                {$_ -in 8, "Weekly"} {
                     # Check if it's for one or more weeks
                     if ($Schedule.FrequencyRecurrenceFactor -eq 1) {
                         $description += "week on "
@@ -99,16 +99,16 @@ function Get-DbaAgentSchedule {
                     elseif ($Schedule.FrequencyRecurrenceFactor -gt 1) {
                         $description += "$($Schedule.FrequencyRecurrenceFactor) week(s) on "
                     }
-                    
+
                     # Save the interval for the loop
                     $frequencyInterval = $Schedule.FrequencyInterval
 
                     # Create the array to hold the days
                     $days = ($false, $false, $false, $false, $false, $false, $false)
-                    
+
                     # Loop through the days
                     while ($frequencyInterval -gt 0) {
-                        
+
                         switch ($FrequenctInterval) {
                             {($frequencyInterval - 64) -ge 0} {
                                 $days[5] = "Saturday"
@@ -139,17 +139,17 @@ function Get-DbaAgentSchedule {
                                 $frequencyInterval -= 1
                             }
                         }
-                    
+
                     }
-                    
+
                     # Add the days to the description by selecting the days and exploding the array
                     $description += ($days | Where-Object {$_ -ne $false}) -join ", "
                     $description += " "
-                
+
                 }
 
                 # Monthly
-                {$_ -in 16, "Monthly"} { 
+                {$_ -in 16, "Monthly"} {
                     # Check if it's for one or more months
                     if ($Schedule.FrequencyRecurrenceFactor -eq 1) {
                         $description += "month "
@@ -172,7 +172,7 @@ function Get-DbaAgentSchedule {
                         {$_ -in 8, "Fourth"} {$description += "fourth "}
                         {$_ -in 16, "Last"} {$description += "last "}
                     }
-                    
+
                     # Get the relative day of the week
                     switch ($Schedule.FrequencyInterval) {
                         1 { $description += "Sunday "}
@@ -188,7 +188,7 @@ function Get-DbaAgentSchedule {
                     }
 
                     $description += "of every $($Schedule.FrequencyRecurrenceFactor) month(s) "
-                    
+
                 }
             }
 
@@ -197,10 +197,10 @@ function Get-DbaAgentSchedule {
 
                 # Check the subday types for minutes or hours i.e.
                 if ($schedule.FrequencySubDayInterval -in 0, 1) {
-                    $description += "at $startTime. " 
+                    $description += "at $startTime. "
                 }
                 else {
-                    
+
                     switch ($Schedule.FrequencySubDayTypes) {
                         {$_ -in 2, "Seconds"} { $description += "every $($schedule.FrequencySubDayInterval) second(s) "}
                         {$_ -in 4, "Minutes"} {$description += "every $($schedule.FrequencySubDayInterval) minute(s) " }
@@ -218,7 +218,7 @@ function Get-DbaAgentSchedule {
                     $description += "Schedule will used between $startDate and $endDate."
                 }
             }
-            
+
             return $description
         }
     }

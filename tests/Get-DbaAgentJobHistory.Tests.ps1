@@ -98,7 +98,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
             return $obj
         } #mock connect-sqlserver
         Context "Return values" {
-            
+
             Mock Get-DbaAgentJobOutputFile -MockWith {
                 @(
                     @{
@@ -157,9 +157,9 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                 }
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -WithOutputFile
-                
+
                 ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq 'Job1').OutputFileName | Should Be 'BASEServiceName__Job1Output1'
-                
+
             }
             It "Handles MACH" {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
@@ -173,9 +173,9 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                 }
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -WithOutputFile
-                
+
                 ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq 'Job1').OutputFileName | Should Be 'BASENetName__Job1Output1'
-                
+
             }
             It "Handles SQLDIR" {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
@@ -189,9 +189,9 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                 }
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -WithOutputFile
-                
+
                 ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq 'Job1').OutputFileName | Should Be 'BASEInstallDataDirectory__Job1Output1'
-                
+
             }
             It "Handles SQLLOGDIR" {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
@@ -205,9 +205,9 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                 }
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -WithOutputFile
-                
+
                 ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq 'Job1').OutputFileName | Should Be 'BASEErrorLog_''_"_]_Path__Job1Output1'
-                
+
             }
             It "Handles SRVR" {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
@@ -221,11 +221,11 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                 }
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -WithOutputFile
-                
+
                 ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq 'Job1').OutputFileName | Should Be 'BASEDomainInstanceName__Job1Output1'
-                
+
             }
-            
+
             It "Handles STEPID" {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
@@ -239,7 +239,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -WithOutputFile
                 ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq 'Job1').OutputFileName | Should Be '1__Job1Output1'
-                
+
             }
             It "Handles JOBID" {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
@@ -253,12 +253,12 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                 }
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -WithOutputFile
-                
+
                 ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq 'Job1').OutputFileName | Should Be '0x848A71E7438BD0468F8D4FC4464F9FC5__Job1Output1'
-                
+
             }
-            
-            
+
+
             It "Handles STRTDT" {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
@@ -301,7 +301,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                 $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -WithOutputFile
                 ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq 'Job1').OutputFileName | Should Be '20170926__Job1Output1'
             }
-            
+
             It "Handles TIME" {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
                     @(
@@ -315,7 +315,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -WithOutputFile
                 ($Results | Where-Object StepID -eq 2 | Where-Object JobName -eq 'Job1').OutputFileName | Should Be '130001__Job1Output1'
-                
+
             }
         }
         Context "SQL Agent escape sequences" {
@@ -331,9 +331,9 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                 }
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -WithOutputFile
-                
+
                 ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq 'Job1').OutputFileName | Should Be 'BASEErrorLog_''_"_]_Path__Job1Output1'
-                
+
             }
             It "Handles ESCAPE_SQUOTE" {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
@@ -347,9 +347,9 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                 }
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -WithOutputFile
-                
+
                 ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq 'Job1').OutputFileName | Should Be 'BASEErrorLog_''''_"_]_Path__Job1Output1'
-                
+
             }
             It "Handles ESCAPE_DQUOTE" {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
@@ -363,9 +363,9 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                 }
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -WithOutputFile
-                
+
                 ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq 'Job1').OutputFileName | Should Be 'BASEErrorLog_''_""_]_Path__Job1Output1'
-                
+
             }
             It "Handles ESCAPE_RBRACKET" {
                 Mock Get-DbaAgentJobOutputFile -MockWith {
@@ -379,9 +379,9 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
                 }
                 $Results = @()
                 $Results += Get-DbaAgentJobHistory -SqlInstance 'SQLServerName' -WithOutputFile
-                
+
                 ($Results | Where-Object StepID -eq 1 | Where-Object JobName -eq 'Job1').OutputFileName | Should Be 'BASEErrorLog_''_"_]]_Path__Job1Output1'
-                
+
             }
         }
     }

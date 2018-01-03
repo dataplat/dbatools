@@ -29,7 +29,7 @@ function Import-DbaSpConfigure {
             Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
             To connect as a different Windows user, run PowerShell as that user.
-        
+
         .PARAMETER SqlInstance
             Specifies a SQL Server instance to set up sp_configure values on using a SQL file.
 
@@ -97,14 +97,14 @@ function Import-DbaSpConfigure {
         [Parameter(ParameterSetName = "FromFile")]
         [PSCredential]$SqlCredential,
         [switch]$Force
-        
+
     )
     begin {
-        
+
         if ($Path.length -eq 0) {
             $sourceserver = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
             $destserver = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-            
+
             $source = $sourceserver.DomainInstanceName
             $destination = $destserver.DomainInstanceName
         }
@@ -114,30 +114,30 @@ function Import-DbaSpConfigure {
                 throw "File Not Found"
             }
         }
-    
+
     }
     process {
         if ($Path.length -eq 0) {
             if ($Pscmdlet.ShouldProcess($destination, "Export sp_configure")) {
                 $sqlfilename = Export-SqlSpConfigure $sourceserver
             }
-            
+
             if ($sourceserver.versionMajor -ne $destserver.versionMajor -and $force -eq $false) {
                 Write-Warning "Source SQL Server major version and Destination SQL Server major version must match for sp_configure migration. Use -Force to override this precaution or check the exported sql file, $sqlfilename, and run manually."
                 return
             }
-            
+
             If ($Pscmdlet.ShouldProcess($destination, "Execute sp_configure")) {
                 $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
                 $sourceserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
                 $destserver.Configuration.ShowAdvancedOptions.ConfigValue = $true
                 $destserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
-                
+
                 $destprops = $destserver.Configuration.Properties
-                
+
                 foreach ($sourceprop in $sourceserver.Configuration.Properties) {
                     $displayname = $sourceprop.DisplayName
-                    
+
                     $destprop = $destprops | where-object { $_.Displayname -eq $displayname }
                     if ($destprop -ne $null) {
                         try {
@@ -156,12 +156,12 @@ function Import-DbaSpConfigure {
                 catch {
                     $needsrestart = $true
                 }
-                
+
                 $sourceserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
                 $sourceserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
                 $destserver.Configuration.ShowAdvancedOptions.ConfigValue = $false
                 $destserver.Query("RECONFIGURE WITH OVERRIDE") | Out-Null
-                
+
                 if ($needsrestart -eq $true) {
                     Write-Warning "Some configuration options will be updated once SQL Server is restarted."
                 }
@@ -169,14 +169,14 @@ function Import-DbaSpConfigure {
                     Write-Output "Configuration option has been updated."
                 }
             }
-            
+
             if ($Pscmdlet.ShouldProcess($destination, "Removing temp file")) {
                 Remove-Item $sqlfilename -ErrorAction SilentlyContinue
             }
-            
+
         }
         else {
-            if ($Pscmdlet.ShouldProcess($destination, "Importing sp_configure from $Path")) {    
+            if ($Pscmdlet.ShouldProcess($destination, "Importing sp_configure from $Path")) {
                 $server.Configuration.ShowAdvancedOptions.ConfigValue = $true
                 $sql = Get-Content $Path
                 foreach ($line in $sql) {
@@ -194,18 +194,18 @@ function Import-DbaSpConfigure {
         }
     }
     end {
-        if ($Path.length -gt 0) { 
-            $server.ConnectionContext.Disconnect() 
+        if ($Path.length -gt 0) {
+            $server.ConnectionContext.Disconnect()
         }
         else {
-            $sourceserver.ConnectionContext.Disconnect() 
-            $destserver.ConnectionContext.Disconnect() 
+            $sourceserver.ConnectionContext.Disconnect()
+            $destserver.ConnectionContext.Disconnect()
         }
-        
+
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
             Write-Output "SQL Server configuration options migration finished."
         }
-        
+
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Import-SqlSpConfigure
     }
 }

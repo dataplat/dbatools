@@ -1,6 +1,6 @@
-Function Remove-DbaClientAlias {
+function Remove-DbaClientAlias {
     <#
-    .SYNOPSIS 
+    .SYNOPSIS
     Removes a sql alias for the specified server - mimics cliconfg.exe
 
     .DESCRIPTION
@@ -14,12 +14,12 @@ Function Remove-DbaClientAlias {
 
     .PARAMETER Alias
     The alias to be deleted
-    
+
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
     .NOTES
     Tags: Alias
 
@@ -35,7 +35,7 @@ Function Remove-DbaClientAlias {
     Removes the sqlps SQL client alias on workstationx
 
     .EXAMPLE
-    Get-DbaClientAlias | Remove-DbaClientAlias 
+    Get-DbaClientAlias | Remove-DbaClientAlias
     Removes all SQL Server client aliases on the local computer
 
 #>
@@ -49,12 +49,12 @@ Function Remove-DbaClientAlias {
         [string]$Alias,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     process {
-        
+
         foreach ($computer in $ComputerName) {
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
-            
+
             $scriptblock = {
                 $Alias = $args[0]
                 function Get-ItemPropertyValue {
@@ -66,39 +66,39 @@ Function Remove-DbaClientAlias {
                     )
                     Get-ItemProperty -LiteralPath $Path -Name $Name
                 }
-                
+
                 $basekeys = "HKLM:\SOFTWARE\WOW6432Node\Microsoft\MSSQLServer", "HKLM:\SOFTWARE\Microsoft\MSSQLServer"
-                
+
                 foreach ($basekey in $basekeys) {
-                    
+
                     if ((Test-Path $basekey) -eq $false) {
                         Write-Warning "Base key ($basekey) does not exist. Quitting."
                         continue
                     }
-                    
+
                     $client = "$basekey\Client"
-                    
+
                     if ((Test-Path $client) -eq $false) {
                         continue
                     }
-                    
+
                     $connect = "$client\ConnectTo"
-                    
+
                     if ((Test-Path $connect) -eq $false) {
                         continue
                     }
-                    
+
                     if ($basekey -like "*WOW64*") {
                         $architecture = "32-bit"
                     }
                     else {
                         $architecture = "64-bit"
                     }
-                    
-                    
+
+
                     $all = Get-Item -Path $connect
                     foreach ($entry in $all) {
-                        
+
                         foreach ($en in $entry) {
                             $e = $entry.ToString().Replace('HKEY_LOCAL_MACHINE', 'HKLM:\')
                             if ($en.Property -contains $Alias) {
@@ -111,12 +111,12 @@ Function Remove-DbaClientAlias {
                     }
                 }
             }
-            
+
             if ($PScmdlet.ShouldProcess($computer, "Getting aliases")) {
                 try {
                     $null = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptblock -ErrorAction Stop -Verbose:$false -ArgumentList $Alias
                     Get-DbaClientAlias -ComputerName $computer
-                    
+
                 }
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue

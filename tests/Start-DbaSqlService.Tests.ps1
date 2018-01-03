@@ -4,14 +4,14 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\..\internal\Connect-SqlInstance.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    
+
     Context "Command actually works" {
-        
+
         $server = Connect-SqlInstance -SqlInstance $script:instance2
         $instanceName = $server.ServiceName
         $computerName = $server.NetName
 
-        
+
         #Stop services using native cmdlets
         if ($instanceName -eq 'MSSQLSERVER') {
             $serviceName = "SQLSERVERAGENT"
@@ -20,7 +20,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $serviceName = "SqlAgent`$$instanceName"
         }
         Get-Service -ComputerName $computerName -Name $serviceName | Stop-Service -WarningAction SilentlyContinue | Out-Null
-        
+
         It "starts the services back" {
             $services = Start-DbaSqlService -ComputerName $script:instance2 -Type Agent -InstanceName $instanceName
             $services | Should Not Be $null
@@ -29,7 +29,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 $service.Status | Should Be 'Successful'
             }
         }
-        
+
         #Stop services using native cmdlets
         if ($instanceName -eq 'MSSQLSERVER') {
             $serviceName = "SQLSERVERAGENT", "MSSQLSERVER"
@@ -38,7 +38,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $serviceName = "SqlAgent`$$instanceName", "MsSql`$$instanceName"
         }
         foreach ($sn in $servicename) { Get-Service -ComputerName $computerName -Name $sn | Stop-Service -WarningAction SilentlyContinue | Out-Null }
-        
+
         It "starts the services back through pipeline" {
             $services = Get-DbaSqlService -ComputerName $script:instance2 -InstanceName $instanceName -Type Agent, Engine | Start-DbaSqlService
             $services | Should Not Be $null

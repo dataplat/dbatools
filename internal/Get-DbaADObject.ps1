@@ -1,5 +1,5 @@
 #ValidationTags#FlowControl,Pipeline#
-Function Get-DbaADObject {
+function Get-DbaADObject {
     <#
     .SYNOPSIS
     Get-DbaADObject tries to facilitate searching AD with dbatools, which ATM can't require AD cmdlets.

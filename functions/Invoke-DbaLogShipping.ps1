@@ -199,7 +199,7 @@ If this parameter is set the database will be in recoery mode. The database will
 This setting is default.
 
 .PARAMETER NoInitialization
-If this parameter is set the secondary database will not be initialized. 
+If this parameter is set the secondary database will not be initialized.
 The database needs to be on the secondary instance in recovery mode.
 
 .PARAMETER PrimaryMonitorServer
@@ -1116,7 +1116,7 @@ The script will show a message that the copy destination has not been supplied a
 
         # Check if standby is being used
         if ($Standby) {
-            
+
             # Check the stand-by directory
             if ($StandbyDirectory) {
                 # Check if the path is reachable for the destination server

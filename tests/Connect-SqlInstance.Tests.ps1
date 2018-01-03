@@ -27,7 +27,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     $newLogin = New-Object Microsoft.SqlServer.Management.Smo.Login($server, $login)
     $newLogin.LoginType = "SqlLogin"
     $newLogin.Create($password)
-    
+
     Context "Connect with a new login" {
         It "Should login with newly created Sql Login (also tests credential login) and get instance name" {
             $cred = New-Object System.Management.Automation.PSCredential ($login, $securePassword)

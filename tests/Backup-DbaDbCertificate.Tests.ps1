@@ -13,11 +13,11 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             (Get-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb) | Remove-DbaDbCertificate -Confirm:$false
             (Get-DbaDatabaseMasterKey -SqlInstance $script:instance1 -Database tempdb) | Remove-DbaDatabaseMasterKey -Confirm:$false
         }
-        
+
         $cert = New-DbaDbCertificate -SqlInstance $script:instance1 -Database tempdb
         $results = Backup-DbaDbCertificate -SqlInstance $script:instance1 -Certificate $cert.Name -Database tempdb
         $null = Remove-Item -Path $results.Path -ErrorAction SilentlyContinue -Confirm:$false
-        
+
         It "backs up the db cert" {
             $results.Certificate -match $certificateName1
             $results.Status -match "Success"
