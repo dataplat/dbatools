@@ -1,6 +1,6 @@
 ﻿#region Initialize Cache
 if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["credential"]) {
-	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["credential"] = @{ }
+    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["credential"] = @{ }
 }
 #endregion Initialize Cache
 
@@ -8,58 +8,51 @@ if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["crede
 $ScriptBlock = {
     param (
         $commandName,
-        
+
         $parameterName,
-        
+
         $wordToComplete,
-        
+
         $commandAst,
-        
+
         $fakeBoundParameter
     )
-    
-	
-	$server = $fakeBoundParameter['SqlInstance']
-	
-	if (-not $server) {
-		$server = $fakeBoundParameter['Source']
-	}
-	
-	if (-not $server) {
-		$server = $fakeBoundParameter['ComputerName']
-	}
-	
-	if (-not $server) { return }
-	
-    try
-    {
+
+
+    $server = $fakeBoundParameter['SqlInstance']
+
+    if (-not $server) {
+        $server = $fakeBoundParameter['Source']
+    }
+
+    if (-not $server) {
+        $server = $fakeBoundParameter['ComputerName']
+    }
+
+    if (-not $server) { return }
+
+    try {
         [DbaInstanceParameter]$parServer = $server | Select-Object -First 1
     }
-    catch
-    {
+    catch {
         return
     }
-    
-    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["credential"][$parServer.FullSmoName.ToLower()])
-    {
-        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["credential"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*"))
-        {
+
+    if ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["credential"][$parServer.FullSmoName.ToLower()]) {
+        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["credential"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*")) {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
         return
     }
-    
-    try
-    {
+
+    try {
         $serverObject = Connect-SqlInstance -SqlInstance $parServer -SqlCredential $fakeBoundParameter['SqlCredential'] -ErrorAction Stop
-        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["credential"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*"))
-        {
+        foreach ($name in ([Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["credential"][$parServer.FullSmoName.ToLower()] | Where-DbaObject -Like "$wordToComplete*")) {
             New-DbaTeppCompletionResult -CompletionText $name -ToolTip $name
         }
         return
     }
-    catch
-    {
+    catch {
         return
     }
 }
@@ -70,7 +63,7 @@ Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name Credential
 #region Update Cache
 $ScriptBlock = {
 
-	[Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["credential"][$FullSmoName] = $server.Credentials.Name
+    [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["credential"][$FullSmoName] = $server.Credentials.Name
 }
 Register-DbaTeppInstanceCacheBuilder -ScriptBlock $ScriptBlock
 #endregion Update Cache

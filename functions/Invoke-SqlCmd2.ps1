@@ -1,5 +1,5 @@
 function Invoke-Sqlcmd2 {
-	<#
+    <#
         .SYNOPSIS
             Runs a T-SQL script.
 
@@ -14,26 +14,26 @@ function Invoke-Sqlcmd2 {
 
         .PARAMETER Database
             Specifies the name of the database to execute the query against. If specified, this database will be used in the ConnectionString when establishing the connection to SQL Server.
-            
+
             If a SQLConnection is provided, the default database for that connection is overridden with this database.
 
         .PARAMETER Query
             Specifies one or more queries to be run. The queries can be Transact-SQL, XQuery statements, or sqlcmd commands. Multiple queries in a single batch may be separated by a semicolon.
-            
+
             Do not specify the sqlcmd GO separator. Escape any double quotation marks included in the string.
-            
+
             Consider using bracketed identifiers such as [MyTable] instead of quoted identifiers such as "MyTable".
 
         .PARAMETER InputFile
             Specifies the full path to a file to be used as the query input to Invoke-Sqlcmd2. The file can contain Transact-SQL statements, XQuery statements, sqlcmd commands and scripting variables.
-            
+
         .PARAMETER Credential
             Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
             $cred = Get-Credential, this pass this $cred to the param.
 
             Windows Authentication will be used if Credential is not specified. To connect as a different Windows user, run PowerShell as that user.
-            
+
             SECURITY NOTE: If you use the -Debug switch, the connectionstring including plain text password will be sent to the debug stream.
 
         .PARAMETER Encrypt
@@ -78,7 +78,7 @@ function Invoke-Sqlcmd2 {
             Invoke-Sqlcmd2 -ServerInstance "MyComputer\MyInstance" -Query "SELECT login_time AS 'StartTime' FROM sysprocesses WHERE spid = 1"
 
             Connects to a named instance of the Database Engine on a computer and runs a basic T-SQL query.
-            
+
             StartTime
             -----------
             2010-08-12 21:21:03.593
@@ -147,7 +147,7 @@ function Invoke-Sqlcmd2 {
 
         .NOTES
             Changelog moved to CHANGELOG.md:
-            
+
             https://github.com/sqlcollaborative/Invoke-SqlCmd2/blob/master/CHANGELOG.md
 
         .LINK
@@ -159,134 +159,134 @@ function Invoke-Sqlcmd2 {
         .FUNCTIONALITY
             SQL
     #>
-	
-	[CmdletBinding(DefaultParameterSetName = 'Ins-Que')]
-	[OutputType([System.Management.Automation.PSCustomObject], [System.Data.DataRow], [System.Data.DataTable], [System.Data.DataTableCollection], [System.Data.DataSet])]
-	param (
-		[Parameter(ParameterSetName = 'Ins-Que',
-				   Position = 0,
-				   Mandatory = $true,
-				   ValueFromPipeline = $true,
-				   ValueFromPipelineByPropertyName = $true,
-				   ValueFromRemainingArguments = $false,
-				   HelpMessage = 'SQL Server Instance required...')]
-		[Parameter(ParameterSetName = 'Ins-Fil',
-				   Position = 0,
-				   Mandatory = $true,
-				   ValueFromPipeline = $true,
-				   ValueFromPipelineByPropertyName = $true,
-				   ValueFromRemainingArguments = $false,
-				   HelpMessage = 'SQL Server Instance required...')]
-		[Alias('Instance', 'Instances', 'ComputerName', 'Server', 'Servers', 'SqlInstance')]
-		[ValidateNotNullOrEmpty()]
-		[string[]]$ServerInstance,
-		[Parameter(Position = 1,
-				   Mandatory = $false,
-				   ValueFromPipelineByPropertyName = $true,
-				   ValueFromRemainingArguments = $false)]
-		[string]$Database,
-		[Parameter(ParameterSetName = 'Ins-Que',
-				   Position = 2,
-				   Mandatory = $true,
-				   ValueFromPipelineByPropertyName = $true,
-				   ValueFromRemainingArguments = $false)]
-		[Parameter(ParameterSetName = 'Con-Que',
-				   Position = 2,
-				   Mandatory = $true,
-				   ValueFromPipelineByPropertyName = $true,
-				   ValueFromRemainingArguments = $false)]
-		[string]$Query,
-		[Parameter(ParameterSetName = 'Ins-Fil',
-				   Position = 2,
-				   Mandatory = $true,
-				   ValueFromPipelineByPropertyName = $true,
-				   ValueFromRemainingArguments = $false)]
-		[Parameter(ParameterSetName = 'Con-Fil',
-				   Position = 2,
-				   Mandatory = $true,
-				   ValueFromPipelineByPropertyName = $true,
-				   ValueFromRemainingArguments = $false)]
-		[ValidateScript({ Test-Path $_ })]
-		[string]$InputFile,
-		[Parameter(ParameterSetName = 'Ins-Que',
-				   Position = 3,
-				   Mandatory = $false,
-				   ValueFromPipelineByPropertyName = $true,
-				   ValueFromRemainingArguments = $false)]
-		[Parameter(ParameterSetName = 'Ins-Fil',
-				   Position = 3,
-				   Mandatory = $false,
-				   ValueFromPipelineByPropertyName = $true,
-				   ValueFromRemainingArguments = $false)]
-		[Alias('SqlCredential')]
-		[System.Management.Automation.PSCredential]$Credential,
-		[Parameter(ParameterSetName = 'Ins-Que',
-				   Position = 4,
-				   Mandatory = $false,
-				   ValueFromRemainingArguments = $false)]
-		[Parameter(ParameterSetName = 'Ins-Fil',
-				   Position = 4,
-				   Mandatory = $false,
-				   ValueFromRemainingArguments = $false)]
-		[switch]$Encrypt,
-		[Parameter(Position = 5,
-				   Mandatory = $false,
-				   ValueFromPipelineByPropertyName = $true,
-				   ValueFromRemainingArguments = $false)]
-		[Int32]$QueryTimeout = 600,
-		[Parameter(ParameterSetName = 'Ins-Fil',
-				   Position = 6,
-				   Mandatory = $false,
-				   ValueFromPipelineByPropertyName = $true,
-				   ValueFromRemainingArguments = $false)]
-		[Parameter(ParameterSetName = 'Ins-Que',
-				   Position = 6,
-				   Mandatory = $false,
-				   ValueFromPipelineByPropertyName = $true,
-				   ValueFromRemainingArguments = $false)]
-		[Int32]$ConnectionTimeout = 15,
-		[Parameter(Position = 7,
-				   Mandatory = $false,
-				   ValueFromPipelineByPropertyName = $true,
-				   ValueFromRemainingArguments = $false)]
-		[ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "SingleValue")]
-		[string]$As = "DataRow",
-		[Parameter(Position = 8,
-				   Mandatory = $false,
-				   ValueFromPipelineByPropertyName = $true,
-				   ValueFromRemainingArguments = $false)]
-		[System.Collections.IDictionary]$SqlParameters,
-		[Parameter(Position = 9,
-				   Mandatory = $false)]
-		[switch]$AppendServerInstance,
-		[Parameter(ParameterSetName = 'Con-Que',
-				   Position = 10,
-				   Mandatory = $false,
-				   ValueFromPipeline = $false,
-				   ValueFromPipelineByPropertyName = $false,
-				   ValueFromRemainingArguments = $false)]
-		[Parameter(ParameterSetName = 'Con-Fil',
-				   Position = 10,
-				   Mandatory = $false,
-				   ValueFromPipeline = $false,
-				   ValueFromPipelineByPropertyName = $false,
-				   ValueFromRemainingArguments = $false)]
-		[Alias('Connection', 'Conn')]
-		[ValidateNotNullOrEmpty()]
-		[System.Data.SqlClient.SQLConnection]$SQLConnection
-	)
-	
-	begin {
-		if ($InputFile) {
-			$filePath = $(Resolve-Path $InputFile).ProviderPath
-			$Query = [System.IO.File]::ReadAllText("$filePath")
-		}
-		
-		Write-Verbose "Running Invoke-Sqlcmd2 with ParameterSet '$($PSCmdlet.ParameterSetName)'.  Performing query '$Query'."
-		
-		if ($As -eq "PSObject") {
-			#This code scrubs DBNulls.  Props to Dave Wyatt
-			$cSharp = @'
+
+    [CmdletBinding(DefaultParameterSetName = 'Ins-Que')]
+    [OutputType([System.Management.Automation.PSCustomObject], [System.Data.DataRow], [System.Data.DataTable], [System.Data.DataTableCollection], [System.Data.DataSet])]
+    param (
+        [Parameter(ParameterSetName = 'Ins-Que',
+            Position = 0,
+            Mandatory = $true,
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromRemainingArguments = $false,
+            HelpMessage = 'SQL Server Instance required...')]
+        [Parameter(ParameterSetName = 'Ins-Fil',
+            Position = 0,
+            Mandatory = $true,
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromRemainingArguments = $false,
+            HelpMessage = 'SQL Server Instance required...')]
+        [Alias('Instance', 'Instances', 'ComputerName', 'Server', 'Servers', 'SqlInstance')]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$ServerInstance,
+        [Parameter(Position = 1,
+            Mandatory = $false,
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromRemainingArguments = $false)]
+        [string]$Database,
+        [Parameter(ParameterSetName = 'Ins-Que',
+            Position = 2,
+            Mandatory = $true,
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromRemainingArguments = $false)]
+        [Parameter(ParameterSetName = 'Con-Que',
+            Position = 2,
+            Mandatory = $true,
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromRemainingArguments = $false)]
+        [string]$Query,
+        [Parameter(ParameterSetName = 'Ins-Fil',
+            Position = 2,
+            Mandatory = $true,
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromRemainingArguments = $false)]
+        [Parameter(ParameterSetName = 'Con-Fil',
+            Position = 2,
+            Mandatory = $true,
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromRemainingArguments = $false)]
+        [ValidateScript( { Test-Path $_ })]
+        [string]$InputFile,
+        [Parameter(ParameterSetName = 'Ins-Que',
+            Position = 3,
+            Mandatory = $false,
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromRemainingArguments = $false)]
+        [Parameter(ParameterSetName = 'Ins-Fil',
+            Position = 3,
+            Mandatory = $false,
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromRemainingArguments = $false)]
+        [Alias('SqlCredential')]
+        [System.Management.Automation.PSCredential]$Credential,
+        [Parameter(ParameterSetName = 'Ins-Que',
+            Position = 4,
+            Mandatory = $false,
+            ValueFromRemainingArguments = $false)]
+        [Parameter(ParameterSetName = 'Ins-Fil',
+            Position = 4,
+            Mandatory = $false,
+            ValueFromRemainingArguments = $false)]
+        [switch]$Encrypt,
+        [Parameter(Position = 5,
+            Mandatory = $false,
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromRemainingArguments = $false)]
+        [Int32]$QueryTimeout = 600,
+        [Parameter(ParameterSetName = 'Ins-Fil',
+            Position = 6,
+            Mandatory = $false,
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromRemainingArguments = $false)]
+        [Parameter(ParameterSetName = 'Ins-Que',
+            Position = 6,
+            Mandatory = $false,
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromRemainingArguments = $false)]
+        [Int32]$ConnectionTimeout = 15,
+        [Parameter(Position = 7,
+            Mandatory = $false,
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromRemainingArguments = $false)]
+        [ValidateSet("DataSet", "DataTable", "DataRow", "PSObject", "SingleValue")]
+        [string]$As = "DataRow",
+        [Parameter(Position = 8,
+            Mandatory = $false,
+            ValueFromPipelineByPropertyName = $true,
+            ValueFromRemainingArguments = $false)]
+        [System.Collections.IDictionary]$SqlParameters,
+        [Parameter(Position = 9,
+            Mandatory = $false)]
+        [switch]$AppendServerInstance,
+        [Parameter(ParameterSetName = 'Con-Que',
+            Position = 10,
+            Mandatory = $false,
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $false,
+            ValueFromRemainingArguments = $false)]
+        [Parameter(ParameterSetName = 'Con-Fil',
+            Position = 10,
+            Mandatory = $false,
+            ValueFromPipeline = $false,
+            ValueFromPipelineByPropertyName = $false,
+            ValueFromRemainingArguments = $false)]
+        [Alias('Connection', 'Conn')]
+        [ValidateNotNullOrEmpty()]
+        [System.Data.SqlClient.SQLConnection]$SQLConnection
+    )
+
+    begin {
+        if ($InputFile) {
+            $filePath = $(Resolve-Path $InputFile).ProviderPath
+            $Query = [System.IO.File]::ReadAllText("$filePath")
+        }
+
+        Write-Verbose "Running Invoke-Sqlcmd2 with ParameterSet '$($PSCmdlet.ParameterSetName)'.  Performing query '$Query'."
+
+        if ($As -eq "PSObject") {
+            #This code scrubs DBNulls.  Props to Dave Wyatt
+            $cSharp = @'
                 using System;
                 using System.Data;
                 using System.Management.Automation;
@@ -315,225 +315,225 @@ function Invoke-Sqlcmd2 {
                     }
                 }
 '@
-			
-			try {
-				Add-Type -TypeDefinition $cSharp -ReferencedAssemblies 'System.Data', 'System.Xml' -ErrorAction stop
-			}
-			catch {
-				if (-not $_.ToString() -like "*The type name 'DBNullScrubber' already exists*") {
-					Write-Warning "Could not load DBNullScrubber.  Defaulting to DataRow output: $_."
-					$As = "Datarow"
-				}
-			}
-		}
-		
-		#Handle existing connections
-		if ($PSBoundParameters.ContainsKey('SQLConnection')) {
-			if ($SQLConnection.State -notlike "Open") {
-				try {
-					Write-Verbose "Opening connection from '$($SQLConnection.State)' state."
-					$SQLConnection.Open()
-				}
-				catch {
-					throw $_
-				}
-			}
-			
-			if ($Database -and $SQLConnection.Database -notlike $Database) {
-				try {
-					Write-Verbose "Changing SQLConnection database from '$($SQLConnection.Database)' to $Database."
-					$SQLConnection.ChangeDatabase($Database)
-				}
-				catch {
-					throw "Could not change Connection database '$($SQLConnection.Database)' to $Database`: $_"
-				}
-			}
-			
-			if ($SQLConnection.state -like "Open") {
-				$ServerInstance = @($SQLConnection.DataSource)
-			}
-			else {
-				throw "SQLConnection is not open"
-			}
-		}
-		
-	}
-	process {
-		foreach ($SQLInstance in $ServerInstance) {
-			Write-Verbose "Querying ServerInstance '$SQLInstance'"
-			
-			if ($PSBoundParameters.Keys -contains "SQLConnection") {
-				$Conn = $SQLConnection
-			}
-			else {
-				$CSBuilder = New-Object -TypeName System.Data.SqlClient.SqlConnectionStringBuilder
-				$CSBuilder["Server"] = $SQLInstance
-				$CSBuilder["Database"] = $Database
-				$CSBuilder["Connection Timeout"] = $ConnectionTimeout
-				
-				if ($Encrypt) {
-					$CSBuilder["Encrypt"] = $true
-				}
-				
-				if ($Credential) {
-					$CSBuilder["Trusted_Connection"] = $false
-					$CSBuilder["User ID"] = $Credential.UserName
-					$CSBuilder["Password"] = $Credential.GetNetworkCredential().Password
-				}
-				else {
-					$CSBuilder["Integrated Security"] = $true
-				}
-				if ($ApplicationName) {
-					$CSBuilder["Application Name"] = $ApplicationName
-				}
-				else {
-					$ScriptName = (Get-PSCallStack)[-1].Command.ToString()
-					if ($ScriptName -ne "<ScriptBlock>") {
-						$CSBuilder["Application Name"] = $ScriptName
-					}
-				}
-				$conn = New-Object -TypeName System.Data.SqlClient.SQLConnection
-				
-				$ConnectionString = $CSBuilder.ToString()
-				$conn.ConnectionString = $ConnectionString
-				Write-Debug "ConnectionString $ConnectionString"
-				
-				try {
-					$conn.Open()
-				}
-				catch {
-					Write-Error $_
-					continue
-				}
-			}
-			
-			#Following EventHandler is used for PRINT and RAISERROR T-SQL statements. Executed when -Verbose parameter specified by caller
-			if ($PSBoundParameters.Verbose) {
-				$conn.FireInfoMessageEventOnUserErrors = $false # Shiyang, $true will change the SQL exception to information
-				$handler = [System.Data.SqlClient.SqlInfoMessageEventHandler] { Write-Verbose "$($_)" }
-				$conn.add_InfoMessage($handler)
-			}
-			
-			$cmd = New-Object system.Data.SqlClient.SqlCommand($Query, $conn)
-			$cmd.CommandTimeout = $QueryTimeout
-			
-			if ($SqlParameters -ne $null) {
-				$SqlParameters.GetEnumerator() |
-				ForEach-Object {
-					if ($_.Value -ne $null) {
-						$cmd.Parameters.AddWithValue($_.Key, $_.Value)
-					}
-					else {
-						$cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
-					}
-				} > $null
-			}
-			
-			$ds = New-Object system.Data.DataSet
-			$da = New-Object system.Data.SqlClient.SqlDataAdapter($cmd)
-			
-			try {
-				[void]$da.fill($ds)
-			}
-			catch [System.Data.SqlClient.SqlException] {
-				# For SQL exception
-				
-				$Err = $_
-				
-				Write-Verbose "Capture SQL Error"
-				
-				if ($PSBoundParameters.Verbose) {
-					Write-Verbose "SQL Error:  $Err"
-				} #Shiyang, add the verbose output of exception
-				
-				switch ($ErrorActionPreference.tostring()) {
-					{ 'SilentlyContinue', 'Ignore' -contains $_ } {
-						
-					}
-					'Stop' {
-						throw $Err
-					}
-					'Continue' {
-						throw $Err
-					}
-					Default {
-						Throw $Err
-					}
-				}
-			}
-			catch {
-				# For other exception 
-				Write-Verbose "Capture Other Error"
-				
-				$Err = $_
-				
-				if ($PSBoundParameters.Verbose) {
-					Write-Verbose "Other Error:  $Err"
-				}
-				
-				switch ($ErrorActionPreference.tostring()) {
-					{ 'SilentlyContinue', 'Ignore' -contains $_ } {
-						
-					}
-					'Stop' {
-						throw $Err
-					}
-					'Continue' {
-						throw $Err
-					}
-					Default {
-						throw $Err
-					}
-				}
-			}
-			finally {
-				#Close the connection
-				if (-not $PSBoundParameters.ContainsKey('SQLConnection')) {
-					$conn.Close()
-				}
-			}
-			
-			if ($AppendServerInstance) {
-				#Basics from Chad Miller
-				$Column = New-Object Data.DataColumn
-				$Column.ColumnName = "ServerInstance"
-				
-				if ($ds.Tables.Count -ne 0) {
-					$ds.Tables[0].Columns.Add($Column)
-					Foreach ($row in $ds.Tables[0]) {
-						$row.ServerInstance = $SQLInstance
-					}
-				}
-			}
-			
-			switch ($As) {
-				'DataSet' {
-					$ds
-				}
-				'DataTable' {
-					$ds.Tables
-				}
-				'DataRow' {
-					if ($ds.Tables.Count -ne 0) {
-						$ds.Tables[0]
-					}
-				}
-				'PSObject' {
-					if ($ds.Tables.Count -ne 0) {
-						#Scrub DBNulls - Provides convenient results you can use comparisons with
-						#Introduces overhead (e.g. ~2000 rows w/ ~80 columns went from .15 Seconds to .65 Seconds - depending on your data could be much more!)
-						foreach ($row in $ds.Tables[0].Rows) {
-							
-							[DBNullScrubber]::DataRowToPSObject($row)
-						}
-					}
-				}
-				'SingleValue' {
-					if ($ds.Tables.Count -ne 0) {
-						$ds.Tables[0] | Select-Object -ExpandProperty $ds.Tables[0].Columns[0].ColumnName
-					}
-				}
-			}
-		}
-	}
+
+            try {
+                Add-Type -TypeDefinition $cSharp -ReferencedAssemblies 'System.Data', 'System.Xml' -ErrorAction stop
+            }
+            catch {
+                if (-not $_.ToString() -like "*The type name 'DBNullScrubber' already exists*") {
+                    Write-Warning "Could not load DBNullScrubber.  Defaulting to DataRow output: $_."
+                    $As = "Datarow"
+                }
+            }
+        }
+
+        #Handle existing connections
+        if ($PSBoundParameters.ContainsKey('SQLConnection')) {
+            if ($SQLConnection.State -notlike "Open") {
+                try {
+                    Write-Verbose "Opening connection from '$($SQLConnection.State)' state."
+                    $SQLConnection.Open()
+                }
+                catch {
+                    throw $_
+                }
+            }
+
+            if ($Database -and $SQLConnection.Database -notlike $Database) {
+                try {
+                    Write-Verbose "Changing SQLConnection database from '$($SQLConnection.Database)' to $Database."
+                    $SQLConnection.ChangeDatabase($Database)
+                }
+                catch {
+                    throw "Could not change Connection database '$($SQLConnection.Database)' to $Database`: $_"
+                }
+            }
+
+            if ($SQLConnection.state -like "Open") {
+                $ServerInstance = @($SQLConnection.DataSource)
+            }
+            else {
+                throw "SQLConnection is not open"
+            }
+        }
+
+    }
+    process {
+        foreach ($SQLInstance in $ServerInstance) {
+            Write-Verbose "Querying ServerInstance '$SQLInstance'"
+
+            if ($PSBoundParameters.Keys -contains "SQLConnection") {
+                $Conn = $SQLConnection
+            }
+            else {
+                $CSBuilder = New-Object -TypeName System.Data.SqlClient.SqlConnectionStringBuilder
+                $CSBuilder["Server"] = $SQLInstance
+                $CSBuilder["Database"] = $Database
+                $CSBuilder["Connection Timeout"] = $ConnectionTimeout
+
+                if ($Encrypt) {
+                    $CSBuilder["Encrypt"] = $true
+                }
+
+                if ($Credential) {
+                    $CSBuilder["Trusted_Connection"] = $false
+                    $CSBuilder["User ID"] = $Credential.UserName
+                    $CSBuilder["Password"] = $Credential.GetNetworkCredential().Password
+                }
+                else {
+                    $CSBuilder["Integrated Security"] = $true
+                }
+                if ($ApplicationName) {
+                    $CSBuilder["Application Name"] = $ApplicationName
+                }
+                else {
+                    $ScriptName = (Get-PSCallStack)[-1].Command.ToString()
+                    if ($ScriptName -ne "<ScriptBlock>") {
+                        $CSBuilder["Application Name"] = $ScriptName
+                    }
+                }
+                $conn = New-Object -TypeName System.Data.SqlClient.SQLConnection
+
+                $ConnectionString = $CSBuilder.ToString()
+                $conn.ConnectionString = $ConnectionString
+                Write-Debug "ConnectionString $ConnectionString"
+
+                try {
+                    $conn.Open()
+                }
+                catch {
+                    Write-Error $_
+                    continue
+                }
+            }
+
+            #Following EventHandler is used for PRINT and RAISERROR T-SQL statements. Executed when -Verbose parameter specified by caller
+            if ($PSBoundParameters.Verbose) {
+                $conn.FireInfoMessageEventOnUserErrors = $false # Shiyang, $true will change the SQL exception to information
+                $handler = [System.Data.SqlClient.SqlInfoMessageEventHandler] { Write-Verbose "$($_)" }
+                $conn.add_InfoMessage($handler)
+            }
+
+            $cmd = New-Object system.Data.SqlClient.SqlCommand($Query, $conn)
+            $cmd.CommandTimeout = $QueryTimeout
+
+            if ($SqlParameters -ne $null) {
+                $SqlParameters.GetEnumerator() |
+                    ForEach-Object {
+                    if ($_.Value -ne $null) {
+                        $cmd.Parameters.AddWithValue($_.Key, $_.Value)
+                    }
+                    else {
+                        $cmd.Parameters.AddWithValue($_.Key, [DBNull]::Value)
+                    }
+                } > $null
+            }
+
+            $ds = New-Object system.Data.DataSet
+            $da = New-Object system.Data.SqlClient.SqlDataAdapter($cmd)
+
+            try {
+                [void]$da.fill($ds)
+            }
+            catch [System.Data.SqlClient.SqlException] {
+                # For SQL exception
+
+                $Err = $_
+
+                Write-Verbose "Capture SQL Error"
+
+                if ($PSBoundParameters.Verbose) {
+                    Write-Verbose "SQL Error:  $Err"
+                } #Shiyang, add the verbose output of exception
+
+                switch ($ErrorActionPreference.tostring()) {
+                    { 'SilentlyContinue', 'Ignore' -contains $_ } {
+
+                    }
+                    'Stop' {
+                        throw $Err
+                    }
+                    'Continue' {
+                        throw $Err
+                    }
+                    Default {
+                        Throw $Err
+                    }
+                }
+            }
+            catch {
+                # For other exception
+                Write-Verbose "Capture Other Error"
+
+                $Err = $_
+
+                if ($PSBoundParameters.Verbose) {
+                    Write-Verbose "Other Error:  $Err"
+                }
+
+                switch ($ErrorActionPreference.tostring()) {
+                    { 'SilentlyContinue', 'Ignore' -contains $_ } {
+
+                    }
+                    'Stop' {
+                        throw $Err
+                    }
+                    'Continue' {
+                        throw $Err
+                    }
+                    Default {
+                        throw $Err
+                    }
+                }
+            }
+            finally {
+                #Close the connection
+                if (-not $PSBoundParameters.ContainsKey('SQLConnection')) {
+                    $conn.Close()
+                }
+            }
+
+            if ($AppendServerInstance) {
+                #Basics from Chad Miller
+                $Column = New-Object Data.DataColumn
+                $Column.ColumnName = "ServerInstance"
+
+                if ($ds.Tables.Count -ne 0) {
+                    $ds.Tables[0].Columns.Add($Column)
+                    Foreach ($row in $ds.Tables[0]) {
+                        $row.ServerInstance = $SQLInstance
+                    }
+                }
+            }
+
+            switch ($As) {
+                'DataSet' {
+                    $ds
+                }
+                'DataTable' {
+                    $ds.Tables
+                }
+                'DataRow' {
+                    if ($ds.Tables.Count -ne 0) {
+                        $ds.Tables[0]
+                    }
+                }
+                'PSObject' {
+                    if ($ds.Tables.Count -ne 0) {
+                        #Scrub DBNulls - Provides convenient results you can use comparisons with
+                        #Introduces overhead (e.g. ~2000 rows w/ ~80 columns went from .15 Seconds to .65 Seconds - depending on your data could be much more!)
+                        foreach ($row in $ds.Tables[0].Rows) {
+
+                            [DBNullScrubber]::DataRowToPSObject($row)
+                        }
+                    }
+                }
+                'SingleValue' {
+                    if ($ds.Tables.Count -ne 0) {
+                        $ds.Tables[0] | Select-Object -ExpandProperty $ds.Tables[0].Columns[0].ColumnName
+                    }
+                }
+            }
+        }
+    }
 } #Invoke-Sqlcmd2
