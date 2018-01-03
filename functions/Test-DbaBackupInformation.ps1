@@ -125,19 +125,20 @@ function Test-DbaBackupInformation {
                 $DBHistoryPhysicalPathsExists = ($DBHistoryPhysicalPathsTest | Where-Object FileExists -eq $True).FilePath
                 foreach ($path in $DBHistoryPhysicalPaths) {
                     if (($DBHistoryPhysicalPathsTest | Where-Object FilePath -eq $path).FileExists) {
-                        if (($path -in $DBFileCheck) -and ($WithReplace -ne $True -and $Continue -ne $True)) {
-                            Write-Message -Message "File $path already exists on $SqlInstance and WithReplace not specified, cannot restore" -Level Warning
-                            $VerificationErrors++
+                        if ($path -in $DBFileCheck) {
+                            #If the Files are owned by the db we're restoring check for Continue or WithReplace. If not, then report error otherwise just carry on 
+                            if  ($WithReplace -ne $True -and $Continue -ne $True) {
+                                Write-Message -Message "File $path already exists on $SqlInstance and WithReplace not specified, cannot restore" -Level Warning
+                                $VerificationErrors++
+                            }
                         }
                         elseif ($path -in $OtherFileCheck) {
                             Write-Message -Message "File $path already exists on $SqlInstance and owned by another database, cannot restore" -Level Warning
                             $VerificationErrors++
                         }
                         elseif ($path -in $DBHistoryPhysicalPathsExists) {
-                            if (-not $WithReplace) {
-                                Write-Message -Message "File $path already exists on $SqlInstance, not owned by any database, cannot restore without WithReplace" -Level Verbose
-                                #$VerificationErrors++ #FIXME, weird interaction with pagerestore and -AllowContinue in Restore-DbaDatabase
-                            }
+                                Write-Message -Message "File $path already exists on $($SqlInstance.NetName), not owned by any database in $SqlInstance, will not overwrite." -Level Warning
+                                $VerificationErrors++
                         }
                     }
                     else {
