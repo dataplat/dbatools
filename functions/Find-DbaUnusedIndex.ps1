@@ -217,57 +217,35 @@ function Find-DbaUnusedIndex {
 					$scriptGenerated = $false
 
 					if ($unusedIndex.Tables[0].Rows.Count -gt 0) {
-						$indexesToDrop = $unusedIndex.Tables[0] | Out-GridView -Title "Unused Indexes on $($db) database - Choose indexes to generate DROP script" -PassThru
+						$indexesToDrop = $unusedIndex.Tables[0]
 
-						#When only 1 line selected, the count does not work
 						if ($indexesToDrop.Count -gt 0 -or !([string]::IsNullOrEmpty($indexesToDrop))) {
-							#reset to #Yes
-							$result = 0
 
-							if ($unusedIndex.Tables[0].Rows.Count -eq $indexesToDrop.Count) {
-								$title = "Indexes to drop on databases '$db':"
-								$message = "You will generate drop statements to all indexes.`r`nPerhaps you want to keep at least one.`r`nDo you wish to generate the script anyway? (Y/N)"
-								$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
-								$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
-								$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-								$result = $host.ui.PromptForChoice($title, $message, $options, 0)
-							}
-
-							#default OR answer = YES
-							if ($result -eq 0) {
-								$sqlout = "/*`r`n"
-								$sqlout += "`tScript generated @ $(Get-Date -format "yyyy-MM-dd HH:mm:ss.ms")`r`n"
-								$sqlout += "`tDatabase: $($db)`r`n"
-								$sqlout += "`tConfirm that you have chosen the right indexes before execute the drop script`r`n"
-								$sqlout += "*/`r`n"
-
-								foreach ($index in $indexesToDrop) {
-									if ($FilePath.Length -gt 0) {
-										Write-Message -Level Output -Message "Exporting $($index.TableName).$($index.IndexName)"
-									}
-
-									$sqlout += "USE [$($index.DatabaseName)]`r`n"
-									$sqlout += "GO`r`n"
-									$sqlout += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.SchemaName).$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
-									$sqlout += "    DROP INDEX $($index.SchemaName).$($index.TableName).$($index.IndexName)`r`n"
-									$sqlout += "GO`r`n`r`n"
+								foreach ($index in $indexesToDrop) 
+                                {
+								    if ($FilePath.Length -gt 0) 
+                                        {
+										    Write-Message -Level Output -Message "Exporting $($index.TableName).$($index.IndexName)"
+									        $sqlout += "USE [$($index.DatabaseName)]`r`n"
+									        $sqlout += "GO`r`n"
+									        $sqlout += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.SchemaName).$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
+									        $sqlout += "DROP INDEX $($index.SchemaName).$($index.TableName).$($index.IndexName)`r`n"
+									        $sqlout += "GO`r`n`r`n"`
+									    }
 								}
 
-								if ($FilePath.Length -gt 0) {
-									$sqlout | Out-File -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+								if ($FilePath.Length -gt 0) 
+                                {
+									    $sqlout | Out-File -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
 								}
-								else {
-									$sqlout
+								else 
+                                {
+									$indexesToDrop
 								}
 
 								$scriptGenerated = $true
 							}
-							#answer = no
-							else {
-								Write-Message -Level Warning -Message "Script will not be generated for database '$db'"
-							}
 						}
-					}
 					else {
 						Write-Message -Level Output -Message "No Unused indexes found!"
 					}
