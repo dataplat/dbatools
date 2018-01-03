@@ -2,10 +2,10 @@ function Get-DbaClusterActiveNode {
     <#
         .SYNOPSIS
             Returns the active node of a SQL Cluster.
-            
+
         .DESCRIPTION
             Returns the name of the current active node in the SQL Server cluster.
-            
+
         .PARAMETER SqlInstance
             Specifies the SQL Server clustered instance to check.
 
@@ -17,10 +17,10 @@ function Get-DbaClusterActiveNode {
             Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
             To connect as a different Windows user, run PowerShell as that user.
-            
+
         .PARAMETER Detailed
             Returns available details of SQL Cluster nodes. In SQL Server 2008, this will return node names. In SQL Server 2012 and above, this will return:
-                
+
             NodeName
             Status
             StatusDescription
@@ -31,7 +31,7 @@ function Get-DbaClusterActiveNode {
 
         .PARAMETER Confirm
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-            
+
         .NOTES
             Tags:
             dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
@@ -50,7 +50,7 @@ function Get-DbaClusterActiveNode {
             Get-DbaClusterActiveNode -SqlInstance sqlcluster -Detailed
 
             Returns a datatable with details about sqlcluster.
-                
+
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
@@ -60,17 +60,17 @@ function Get-DbaClusterActiveNode {
         [object]$SqlCredential,
         [switch]$Detailed
     )
-    
+
     begin {
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -RegularUser
         $computername = $server.ComputerNamePhysicalNetBIOS
     }
-    
+
     process {
         if ($server.IsClustered -eq $false) {
             return "Not a clustered instance."
         }
-        
+
         if ($Detailed -eq $true) {
             $sql = "Select *  FROM sys.dm_os_cluster_nodes"
             $datatable = $server.ConnectionContext.ExecuteWithResults($sql).Tables
@@ -88,7 +88,7 @@ function Get-DbaClusterActiveNode {
             }
         }
     }
-    
+
     end {
         $server.ConnectionContext.Disconnect()
     }

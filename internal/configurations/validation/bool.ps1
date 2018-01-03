@@ -2,7 +2,7 @@
     Param (
         $Value
     )
-    
+
     $Result = New-Object PSObject -Property @{
         Success = $True
         Value   = $null
@@ -20,8 +20,8 @@
         $Result.Success = $False
         return $Result
     }
-    
+
     $Result.Value = $Value
-    
+
     return $Result
 }

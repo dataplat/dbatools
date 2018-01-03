@@ -1,4 +1,4 @@
-Function Rename-DbaDatabase {
+function Rename-DbaDatabase {
     <#
     .SYNOPSIS
         Changes database name, logical file names, file group names and physical file names (optionally handling the move). BETA VERSION.

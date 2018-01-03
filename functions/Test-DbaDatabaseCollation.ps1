@@ -17,13 +17,13 @@ function Test-DbaDatabaseCollation {
             Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
             To connect as a different Windows user, run PowerShell as that user.
-    
+
         .PARAMETER Database
             Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
-        
+
         .PARAMETER ExcludeDatabase
             Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
-        
+
         .PARAMETER Detailed
             Output all properties, will be deprecated in 1.0.0 release.
 
@@ -31,7 +31,7 @@ function Test-DbaDatabaseCollation {
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
         .NOTES
             Tags: Database, Collation
             Website: https://dbatools.io
@@ -52,7 +52,7 @@ function Test-DbaDatabaseCollation {
             Returns inforamtion for the db1 and db2 databases on sqlserver2014a.
 
         .EXAMPLE
-            Test-DbaDatabaseCollation -SqlInstance sqlserver2014a, sql2016 -Exclude db1 
+            Test-DbaDatabaseCollation -SqlInstance sqlserver2014a, sql2016 -Exclude db1
 
             Returns information for database and server collations for all databases except db1 on sqlserver2014a and sql2016.
 
@@ -87,17 +87,17 @@ function Test-DbaDatabaseCollation {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $dbs = $server.Databases | Where-Object IsAccessible
-            
+
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.Name }
             }
-            
+
             if ($ExcludeDatabase) {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
-            
+
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $($db.name) on $servername."
                 [PSCustomObject]@{

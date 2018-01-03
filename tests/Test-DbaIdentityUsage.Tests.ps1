@@ -14,7 +14,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $cleanup = "Drop table $table"
             Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $cleanup -database TempDb
         }
-     
+
         $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
         for ($i = 1; $i -le 128; $i++) {
             Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $insertSql -database TempDb
@@ -33,7 +33,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $insertSql -database TempDb
         }
         $results = Test-DbaIdentityUsage -SqlInstance $script:instance1 -Database TempDb | Where-Object {$_.Table -eq $table}
-        
+
         It "Identity column should have 255 uses" {
             $results.NumberOfUses | Should Be 255
         }
@@ -54,7 +54,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
             $cleanup = "Drop table $table"
             Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $cleanup -database TempDb
         }
-     
+
         $insertSql = "INSERT INTO $table (testData) DEFAULT VALUES"
         for ($i = 1; $i -le 25; $i++) {
             Invoke-Sqlcmd2 -ServerInstance $script:instance1 -Query $insertSql -database TempDb

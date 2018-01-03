@@ -1,104 +1,104 @@
 function Backup-DbaDbCertificate {
     <#
-		.SYNOPSIS
-			Exports database certificates from SQL Server using SMO.
+        .SYNOPSIS
+            Exports database certificates from SQL Server using SMO.
 
-		.DESCRIPTION
-			Exports database certificates from SQL Server using SMO and outputs the .cer and .pvk files.
+        .DESCRIPTION
+            Exports database certificates from SQL Server using SMO and outputs the .cer and .pvk files.
 
-		.PARAMETER SqlInstance
-			SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
-		
-		.PARAMETER SqlCredential
-			SqlCredential object to connect as. If not specified, current Windows login will be used.
+        .PARAMETER SqlInstance
+            SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
 
-		.PARAMETER Certificate
-			Exports certificate that matches the name(s).
-		
-		.PARAMETER Database
-			Exports the encryptor for specific database(s).
+        .PARAMETER SqlCredential
+            SqlCredential object to connect as. If not specified, current Windows login will be used.
 
-		.PARAMETER ExcludeDatabase
-			Database(s) to skip when exporting encryptors.
+        .PARAMETER Certificate
+            Exports certificate that matches the name(s).
 
-		.PARAMETER EncryptionPassword 
-			A string value that specifies the system path to encrypt the private key.
+        .PARAMETER Database
+            Exports the encryptor for specific database(s).
 
-		.PARAMETER DecryptionPassword 
-			A string value that specifies the system path to decrypt the private key.
+        .PARAMETER ExcludeDatabase
+            Database(s) to skip when exporting encryptors.
 
-		.PARAMETER Path
-			The path to output the files to. The path is relative to the SQL Server itself. If no path is specified, the default data directory will be used.
-		
-		.PARAMETER Suffix
-			The suffix of the filename of the exported certificate.
+        .PARAMETER EncryptionPassword
+            A string value that specifies the system path to encrypt the private key.
 
-		.PARAMETER CertificateCollection 
-			Internal parameter to support pipeline input.
+        .PARAMETER DecryptionPassword
+            A string value that specifies the system path to decrypt the private key.
 
-		.PARAMETER Confirm
-			If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+        .PARAMETER Path
+            The path to output the files to. The path is relative to the SQL Server itself. If no path is specified, the default data directory will be used.
 
-		.PARAMETER EnableException
-			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-			
-		.PARAMETER WhatIf
-			If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+        .PARAMETER Suffix
+            The suffix of the filename of the exported certificate.
 
-		.NOTES
-			Author: Jess Pomfret (@jpomfret)
-			Tags: Migration, Certificate
+        .PARAMETER CertificateCollection
+            Internal parameter to support pipeline input.
 
-			Website: https://dbatools.io
-			Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-			License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .PARAMETER Confirm
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-		.EXAMPLE
-			Backup-DbaDbCertificate -SqlInstance Server1
-			Exports all the certificates on the specified SQL Server to the default data path for the instance.
+        .PARAMETER EnableException
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-		.EXAMPLE
-			$cred = Get-Credential sqladmin
-			Backup-DbaDbCertificate -SqlInstance Server1 -SqlCredential $cred
+        .PARAMETER WhatIf
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-			Connects using sqladmin credential and exports all the certificates on the specified SQL Server to the default data path for the instance.
+        .NOTES
+            Author: Jess Pomfret (@jpomfret)
+            Tags: Migration, Certificate
 
-		.EXAMPLE
-			Backup-DbaDbCertificate -SqlInstance Server1 -Certificate Certificate1
-			Exports only the certificate named Certificate1 on the specified SQL Server to the default data path for the instance.
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-		.EXAMPLE
-			Backup-DbaDbCertificate -SqlInstance Server1 -Database AdventureWorks
-			Exports only the certificates for AdventureWorks on the specified SQL Server to the default data path for the instance.
+        .EXAMPLE
+            Backup-DbaDbCertificate -SqlInstance Server1
+            Exports all the certificates on the specified SQL Server to the default data path for the instance.
 
-		.EXAMPLE
-			Backup-DbaDbCertificate -SqlInstance Server1 -ExcludeDatabase AdventureWorks
-			Exports all certificates except those for AdventureWorks on the specified SQL Server to the default data path for the instance.
+        .EXAMPLE
+            $cred = Get-Credential sqladmin
+            Backup-DbaDbCertificate -SqlInstance Server1 -SqlCredential $cred
 
-		.EXAMPLE
-			Backup-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
-			Exports all the certificates and private keys on the specified SQL Server.
+            Connects using sqladmin credential and exports all the certificates on the specified SQL Server to the default data path for the instance.
 
-		.EXAMPLE
-			$EncryptionPassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
-			$DecryptionPassword = ConvertTo-SecureString -AsPlainText "Password4567!!" -force
-			Backup-DbaDbCertificate -SqlInstance Server1 -EncryptionPassword $EncryptionPassword -DecryptionPassword $DecryptionPassword
-			Exports all the certificates on the specified SQL Server using the supplied DecryptionPassword, since an EncryptionPassword is specified private keys are also exported.
+        .EXAMPLE
+            Backup-DbaDbCertificate -SqlInstance Server1 -Certificate Certificate1
+            Exports only the certificate named Certificate1 on the specified SQL Server to the default data path for the instance.
 
-		.EXAMPLE
-			Backup-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates
-			Exports all certificates on the specified SQL Server to the specified path.
+        .EXAMPLE
+            Backup-DbaDbCertificate -SqlInstance Server1 -Database AdventureWorks
+            Exports only the certificates for AdventureWorks on the specified SQL Server to the default data path for the instance.
 
-		.EXAMPLE
-			Backup-DbaDbCertificate -SqlInstance Server1 -Suffix DbaTools
-			Exports all certificates on the specified SQL Server to the specified path, appends DbaTools to the end of the filenames.
+        .EXAMPLE
+            Backup-DbaDbCertificate -SqlInstance Server1 -ExcludeDatabase AdventureWorks
+            Exports all certificates except those for AdventureWorks on the specified SQL Server to the default data path for the instance.
 
-		.EXAMPLE
-			Get-DbaDbCertificate -SqlInstance sql2016 | Backup-DbaDbCertificate
-			Exports all certificates found on sql2016 to the default data directory.
-	#>
+        .EXAMPLE
+            Backup-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates -EncryptionPassword (ConvertTo-SecureString -force -AsPlainText GoodPass1234!!)
+            Exports all the certificates and private keys on the specified SQL Server.
+
+        .EXAMPLE
+            $EncryptionPassword = ConvertTo-SecureString -AsPlainText "GoodPass1234!!" -force
+            $DecryptionPassword = ConvertTo-SecureString -AsPlainText "Password4567!!" -force
+            Backup-DbaDbCertificate -SqlInstance Server1 -EncryptionPassword $EncryptionPassword -DecryptionPassword $DecryptionPassword
+            Exports all the certificates on the specified SQL Server using the supplied DecryptionPassword, since an EncryptionPassword is specified private keys are also exported.
+
+        .EXAMPLE
+            Backup-DbaDbCertificate -SqlInstance Server1 -Path \\Server1\Certificates
+            Exports all certificates on the specified SQL Server to the specified path.
+
+        .EXAMPLE
+            Backup-DbaDbCertificate -SqlInstance Server1 -Suffix DbaTools
+            Exports all certificates on the specified SQL Server to the specified path, appends DbaTools to the end of the filenames.
+
+        .EXAMPLE
+            Get-DbaDbCertificate -SqlInstance sql2016 | Backup-DbaDbCertificate
+            Exports all certificates found on sql2016 to the default data directory.
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory, ParameterSetName = "instance")]

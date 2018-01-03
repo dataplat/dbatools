@@ -1,7 +1,7 @@
-Function Start-DbaSqlService {
+function Start-DbaSqlService {
     <#
     .SYNOPSIS
-    Starts SQL Server services on a computer. 
+    Starts SQL Server services on a computer.
 
     .DESCRIPTION
     Starts the SQL Server related services on one or more computers. Will follow SQL Server service dependencies.
@@ -31,7 +31,7 @@ Function Start-DbaSqlService {
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
     .PARAMETER WhatIf
     Shows what would happen if the cmdlet runs. The cmdlet is not run.
 
@@ -53,7 +53,7 @@ Function Start-DbaSqlService {
 
     Starts the SQL Server related services on computer sqlserver2014a.
 
-    .EXAMPLE   
+    .EXAMPLE
     'sql1','sql2','sql3'| Get-DbaSqlService | Start-DbaSqlService
 
     Gets the SQL Server related services on computers sql1, sql2 and sql3 and starts them.

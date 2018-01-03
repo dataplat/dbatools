@@ -10,7 +10,7 @@ function Resolve-DbaNetworkName {
             First ICMP is used to test the connection, and get the connected IPAddress.
 
             Multiple protocols (e.g. WMI, CIM, etc) are attempted before giving up.
-            
+
             Important: Remember that FQDN doesn't always match "ComputerName dot Domain" as AD intends.
                 There are network setup (google "disjoint domain") where AD and DNS do not match.
                 "Full computer name" (as reported by sysdm.cpl) is the only match between the two,
@@ -18,7 +18,7 @@ function Resolve-DbaNetworkName {
                 This means that the notation of FQDN that matches "ComputerName dot Domain" is incorrect
                 in those scenarios.
                 In other words, the "suffix" of the FQDN CAN be different from the AD Domain.
-                
+
                 This cmdlet has been providing good results since its inception but for lack of useful
                 names some doubts may arise.
                 Let this clear the doubts:
@@ -31,7 +31,7 @@ function Resolve-DbaNetworkName {
                 - DNSHostEntry: Fully name as returned by DNS [System.Net.Dns]::GetHostEntry
                 - FQDN: "legacy" notation of ComputerName "dot" Domain (coming from AD)
                 - FullComputerName: Full name as configured from within the Computer (i.e. the only secure match between AD and DNS)
-            
+
             So, if you need to use something, go with FullComputerName, always, as it is the most correct in every scenario.
 
         .PARAMETER ComputerName
@@ -50,12 +50,12 @@ function Resolve-DbaNetworkName {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Network, Resolve
             Author: Klaas Vandenberghe ( @PowerDBAKlaas )
             Editor: niphlod
-            
+
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -99,14 +99,14 @@ function Resolve-DbaNetworkName {
             $conn = $ipaddress = $null
 
             $OGComputer = $Computer
-            
+
             if ($Computer.IsLocalhost) {
                 $Computer = $env:COMPUTERNAME
             }
             else {
                 $Computer = $Computer.ComputerName
             }
-            
+
             if ($Turbo) {
                 try {
                     Write-Message -Level VeryVerbose -Message "Resolving $Computer using .NET.Dns GetHostEntry"
@@ -125,7 +125,7 @@ function Resolve-DbaNetworkName {
                         Stop-Function -Message "DNS name not found" -Continue -InnerErrorRecord $_
                     }
                 }
-                
+
                 if ($fqdn -notmatch "\.") {
                     if ($computer.ComputerName -match "\.") {
                         $dnsdomain = $computer.ComputerName.Substring($computer.ComputerName.IndexOf(".") + 1)
@@ -138,7 +138,7 @@ function Resolve-DbaNetworkName {
                         }
                     }
                 }
-                
+
                 $hostname = $fqdn.Split(".")[0]
 
                 [PSCustomObject]@{
@@ -260,12 +260,12 @@ function Resolve-DbaNetworkName {
                     Write-Message -Level VeryVerbose -Message "No DNS FQDN found. Setting to null"
                     $FullComputerName = $null
                 }
-                
+
                 if ($FullComputerName -ne "." -and $FullComputerName -notmatch "\." -and $conn.Domain -match "\.") {
                     $d = $conn.Domain
                     $FullComputerName = "$FullComputerName.$d"
                 }
-                
+
                 [PSCustomObject]@{
                     InputName        = $OGComputer
                     ComputerName     = $conn.Name

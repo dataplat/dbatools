@@ -1,4 +1,4 @@
-Function Get-DbaPageFileSetting {
+function Get-DbaPageFileSetting {
     <#
 .SYNOPSIS
 Returns information about the network connection of the target computer including NetBIOS name, IP Address, domain name and fully qualified domain name (FQDN).
@@ -21,7 +21,7 @@ Credential object used to connect to the Computer as a different user
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
 .NOTES
 Tags: CIM
 Author: Klaas Vandenberghe ( @PowerDBAKlaas )
@@ -56,17 +56,17 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
     PROCESS {
         foreach ( $Computer in $ComputerName ) {
             $reply = Resolve-DbaNetworkName -ComputerName $Computer -Credential $Credential -ErrorAction silentlycontinue
-            
+
             if ( !$reply.FullComputerName ) {
-                # we can reach $computer 
+                # we can reach $computer
                 Write-Message -Level Warning -Message "$Computer is not available."
                 continue
             }
-            
+
             $computer = $reply.FullComputerName
             Write-Message -Level Verbose -Message "Getting computer information from $Computer via CIM (WSMan)"
             $CompSys = Get-CimInstance -ComputerName $Computer -Query "SELECT * FROM win32_computersystem" -ErrorAction SilentlyContinue
-            
+
             if ( $CompSys ) {
                 # we have computersystem class via WSMan
                 Write-Message -Level Verbose -Message "Successfully retrieved ComputerSystem information on $Computer via CIM (WSMan)"
@@ -87,14 +87,14 @@ Returns a custom object displaying ComputerName, AutoPageFile, FileName, Status,
                 }
             }
             else {
-                # we do not get computersystem class via WSMan, try via DCom 
+                # we do not get computersystem class via WSMan, try via DCom
                 Write-Message -Level Verbose -Message "No WSMan connection to $Computer"
                 Write-Message -Level Verbose -Message "Getting computer information from $Computer via CIM (DCOM)"
-                
+
                 $sessionoption = New-CimSessionOption -Protocol DCOM
                 $CIMsession = New-CimSession -ComputerName $Computer -SessionOption $sessionoption -Credential $Credential -ErrorAction SilentlyContinue
                 $CompSys = Get-CimInstance -CimSession $CIMsession -Query "SELECT * FROM win32_computersystem" -ErrorVariable $MyErr -ErrorAction SilentlyContinue
-                
+
                 if ( $CompSys ) {
                     # we have computersystem class via DCom
                     Write-Message -Level Verbose -Message "Successfully retrieved ComputerSystem information on $Computer via CIM (DCOM)"

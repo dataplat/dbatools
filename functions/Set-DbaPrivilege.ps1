@@ -1,7 +1,7 @@
 function Set-DbaPrivilege {
     <#
       .SYNOPSIS
-      Adds the SQL Service account to local privileges on one or more computers. 
+      Adds the SQL Service account to local privileges on one or more computers.
 
       .DESCRIPTION
       Adds the SQL Service account to local privileges 'Lock Pages in Memory', 'Instant File Initialization', 'Logon as Batch' on one or more computers.
@@ -13,13 +13,13 @@ function Set-DbaPrivilege {
 
       .PARAMETER Credential
       Credential object used to connect to the computer as a different user.
-    
-      .PARAMETER EnableException 
+
+      .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
-      .PARAMETER Type 
+
+      .PARAMETER Type
       Use this to choose the privilege(s) to which you want to add the SQL Service account.
       Accepts 'IFI', 'LPIM' and/or 'BatchLogon' for local privileges 'Instant File Initialization', 'Lock Pages in Memory' and 'Logon as Batch'.
 
@@ -29,7 +29,7 @@ function Set-DbaPrivilege {
       Website: https://dbatools.io
       Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
       License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-      
+
     .LINK
       https://dbatools.io/Set-DbaPrivilege
 
@@ -38,7 +38,7 @@ function Set-DbaPrivilege {
 
       Adds the SQL Service account(s) on computer sqlserver2014a to the local privileges 'SeManageVolumePrivilege' and 'SeLockMemoryPrivilege'.
 
-      .EXAMPLE   
+      .EXAMPLE
       'sql1','sql2','sql3' | Set-DbaPrivilege -Type IFI
 
       Adds the SQL Service account(s) on computers sql1, sql2 and sql3 to the local privilege 'SeManageVolumePrivilege'.
@@ -55,7 +55,7 @@ function Set-DbaPrivilege {
         [string[]]$Type,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     begin {
         $ResolveAccountToSID = @"
 function Convert-UserNameToSID ([string] `$Acc ) {

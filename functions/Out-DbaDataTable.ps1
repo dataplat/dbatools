@@ -3,64 +3,64 @@ function Out-DbaDataTable {
     <#
         .SYNOPSIS
             Creates a DataTable for an object.
-        
+
         .DESCRIPTION
             Creates a DataTable based on an object's properties. This allows you to easily write to SQL Server tables.
-            
+
             Thanks to Chad Miller, this is based on his script. https://gallery.technet.microsoft.com/scriptcenter/4208a159-a52e-4b99-83d4-8048468d29dd
-        
+
             If the attempt to convert to datatable fails, try the -Raw parameter for less accurate datatype detection.
-        
+
         .PARAMETER InputObject
             The object to transform into a DataTable.
-        
+
         .PARAMETER TimeSpanType
             Specifies the type to convert TimeSpan objects into. Default is 'TotalMilliseconds'. Valid options are: 'Ticks', 'TotalDays', 'TotalHours', 'TotalMinutes', 'TotalSeconds', 'TotalMilliseconds', and 'String'.
-        
+
         .PARAMETER SizeType
             Specifies the type to convert DbaSize objects to. Default is 'Int64'. Valid options are 'Int32', 'Int64', and 'String'.
-        
+
         .PARAMETER IgnoreNull
             If this switch is enabled, objects with null values will be ignored (empty rows will be added by default).
-        
+
         .PARAMETER Raw
             If this switch is enabled, the DataTable will be created with strings. No attempt will be made to parse/determine data types.
-        
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .EXAMPLE
             Get-Service | Out-DbaDataTable
-            
+
             Creates a DataTable from the output of Get-Service.
-        
+
         .EXAMPLE
             Out-DbaDataTable -InputObject $csv.cheesetypes
-            
+
             Creates a DataTable from the CSV object $csv.cheesetypes.
-        
+
         .EXAMPLE
             $dblist | Out-DbaDataTable
-            
+
             Creates a DataTable from the $dblist object passed in via pipeline.
-        
+
         .EXAMPLE
             Get-Process | Out-DbaDataTable -TimeSpanType TotalSeconds
-            
+
             Creates a DataTable with the running processes and converts any TimeSpan property to TotalSeconds.
-        
+
         .OUTPUTS
             System.Object[]
-        
+
         .NOTES
             Tags:
             Website: https://dbatools.io/
             dbatools PowerShell module (https://dbatools.io)
             Copyright: (C) 2016 Chrissy LeMaire
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
-        
+
         .LINK
             https://dbatools.io/Out-DbaDataTable
     #>
@@ -88,12 +88,12 @@ function Out-DbaDataTable {
         [switch]$Raw,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     begin {
         Write-Message -Level InternalComment -Message "Starting."
         Write-Message -Level Debug -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
         Write-Message -Level Debug -Message "TimeSpanType = $TimeSpanType | SizeType = $SizeType"
-        
+
         function Convert-Type {
             # This function will check so that the type is an accepted type which could be used when inserting into a table.
             # If a type is accepted (included in the $type array) then it will be passed on, otherwise it will first change type before passing it on.
@@ -101,14 +101,14 @@ function Out-DbaDataTable {
             # TimeSpan is a special type and will be converted into the $timespantype. (default: TotalMilliseconds) so that the timespan can be stored in a database further down the line.
             param (
                 $type,
-                
+
                 $value,
-                
+
                 $timespantype = 'TotalMilliseconds',
-                
+
                 $sizetype = 'Int64'
             )
-            
+
             $types = [System.Collections.ArrayList]@(
                 'System.Int32',
                 'System.UInt32',
@@ -126,12 +126,12 @@ function Out-DbaDataTable {
                 'System.Guid',
                 'System.Char'
             )
-            
+
             # The $special variable is used to mark the return value if a conversion was made on the value itself.
             # If this is set to true the original value will later be ignored when updating the DataTable.
             # And the value returned from this function will be used instead. (cannot modify existing properties)
             $special = $false
-            
+
             # Special types need to be converted in some way.
             # This attempt is to convert timespan into something that works in a table.
             # I couldn't decide on what to convert it to so the user can decide.
@@ -172,20 +172,20 @@ function Out-DbaDataTable {
                 # In this way we dont ignore it completely and it will be clear in the end why it looks as it does.
                 $type = 'System.String'
             }
-            
+
             # return a hashtable instead of an object. I like hashtables :)
             return @{ type = $type; Value = $value; Special = $special }
         }
-        
+
         $datatable = New-Object System.Data.DataTable
         $specialColumns = @{ } # will store names of properties with special data types
-        
+
         # The shouldCreateColumns variable will be set to false as soon as the column definition has been added to the data table.
         # This is to avoid that the rare scenario when columns are not created because the first object is null, which can be accepted.
         # This means that we cannot rely on the first object to create columns, hence this variable.
         $ShouldCreateColumns = $true
     }
-    
+
     process {
         if (!$InputObject) {
             if ($IgnoreNull) {
@@ -266,7 +266,7 @@ function Out-DbaDataTable {
                                 }
                             }
                         }
-                        
+
                         try {
                             $propValueLength = $property.value.length
                         }
@@ -283,7 +283,7 @@ function Out-DbaDataTable {
                                 if ($property.value.ToString().length -eq 15) {
                                     if ($property.value.ToString() -eq 'System.Object[]') {
                                         $datarow.Item($property.Name) = $property.value -join ", "
-                                    } 
+                                    }
                                     elseif ($property.value.ToString() -eq 'System.String[]') {
                                         $datarow.Item($property.Name) = $property.value -join ", "
                                     }
@@ -297,7 +297,7 @@ function Out-DbaDataTable {
                             }
                         }
                     }
-                    
+
                     $datatable.Rows.Add($datarow)
                     # If this is the first non-null object then the columns has just been created.
                     # Set variable to false to skip creating columns from now on.
@@ -308,7 +308,7 @@ function Out-DbaDataTable {
             }
         }
     }
-    
+
     end {
         Write-Message -Level InternalComment -Message "Finished."
         return @( , ($datatable))

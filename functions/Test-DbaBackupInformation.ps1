@@ -1,4 +1,4 @@
-Function Test-DbaBackupInformation {
+function Test-DbaBackupInformation {
     <#
     .SYNOPSIS
         Tests a dbatools backuphistory object is correct for restoring
@@ -164,14 +164,14 @@ Function Test-DbaBackupInformation {
                         }
                         if ($null -ne $ExistingFS) {
                             if ($null -ne ($ExistingFs | Where-Object {$_.Database -eq $Database}) -and $Withreplace -ne $True) {
-                                Write-Message -Level Warning -Message "Folder $FileStreamFolder already in use for Filestream data on $SqlInstance and WithReplace not specified, cannot restore"    
+                                Write-Message -Level Warning -Message "Folder $FileStreamFolder already in use for Filestream data on $SqlInstance and WithReplace not specified, cannot restore"
                                 $VerificationErrors++
                             }
                             $OtherOwners = $ExistingFs | Where-Object {$_.FileStreamFolder -eq $FileStreamFolder -and $_.Database -ne $Database}
                             if ($null -ne $OtherOwners) {
                                 Write-Message -Level Warning -Message "Folder $FileStreamFolder already in use for Filestream data by $($OtherOwners.Database) on $SqlInstance, cannot restore"
-                                $VerificationErrors++    
-                            }                
+                                $VerificationErrors++
+                            }
                         }
                     }
                 }

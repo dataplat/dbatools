@@ -7,7 +7,7 @@ function Remove-DbaDbUser {
     If user is the owner of a schema with the same name and if if the schema does not have any underlying objects the schema will be
     dropped.  If user owns more than one schema, the owner of the schemas that does not have the same name as the user, will be
     changed to 'dbo'. If schemas have underlying objects, you must specify the -Force parameter so the user can be dropped.
-       
+
     .PARAMETER SqlInstance
     The SQL Instances that you're connecting to.
 
@@ -22,7 +22,7 @@ function Remove-DbaDbUser {
 
     .PARAMETER User
     Specifies the list of users to remove.
-        
+
     .PARAMETER UserCollection
     Internal parameter to support piping from Get-DbaDatabaseUser.
 
@@ -39,7 +39,7 @@ function Remove-DbaDbUser {
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
     .NOTES
     Tags: Databases, User
     Author: Doug Meyers (@dgmyrs)
@@ -72,35 +72,35 @@ function Remove-DbaDbUser {
     Drops user1 from all databases it exists in on server 'sqlserver2014'.
 
 #>
-    
+
     [CmdletBinding(DefaultParameterSetName = 'User', SupportsShouldProcess = $true)]
     Param (
         [parameter(Position = 1, Mandatory, ValueFromPipeline, ParameterSetName = 'User')]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        
+
         [parameter(ParameterSetName = 'User')]
         [Alias("Credential")]
         [PSCredential]
         $SqlCredential,
-        
+
         [parameter(ParameterSetName = 'User')]
         [Alias("Databases")]
         [object[]]$Database,
-        
+
         [parameter(ParameterSetName = 'User')]
         [object[]]$ExcludeDatabase,
-        
+
         [parameter(Mandatory, ParameterSetName = 'User')]
         [object[]]$User,
 
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Object')]
         [Microsoft.SqlServer.Management.Smo.User[]]$UserCollection,
-        
+
         [parameter(ParameterSetName = 'User')]
         [parameter(ParameterSetName = 'Object')]
         [switch]$Force,
-        
+
         [switch][Alias('Silent')]$EnableException
     )
 
@@ -119,7 +119,7 @@ function Remove-DbaDbUser {
                 $schemaUrns = $user.EnumOwnedObjects() | Where-Object Type -EQ Schema
                 if ($schemaUrns) {
                     Write-Message -Level Verbose -Message "User $user owns $($schemaUrns.Count) schema(s)."
-                    
+
                     # Need to gather up the schema changes so they can be done in a non-desctructive order
                     $alterSchemas = @()
                     $dropSchemas = @()
@@ -197,12 +197,12 @@ function Remove-DbaDbUser {
                         Database     = $db.name
                         User         = $user
                         Status       = $status
-                    }    
+                    }
                 }
             }
         }
     }
-    
+
     process {
         if ($UserCollection) {
             Remove-DbUser $UserCollection
@@ -216,16 +216,16 @@ function Remove-DbaDbUser {
                 catch {
                     Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
-                
+
                 $databases = $server.Databases | Where-Object IsAccessible
-                
+
                 if ($Database) {
                     $databases = $databases | Where-Object Name -In $Database
                 }
                 if ($ExcludeDatabase) {
                     $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
                 }
-                
+
                 foreach ($db in $databases) {
                     Write-Message -Level Verbose -Message "Get users in Database $db on target $server"
                     $users = Get-DbaDatabaseUser -SqlInstance $instance -SqlCredential $SqlCredential -Database $db.Name

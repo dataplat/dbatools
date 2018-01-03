@@ -55,7 +55,7 @@ Describe "$CommandName Unit Tests" -Tag UnitTests, Get-DbaLogin {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Does sql instance have a SA account" {
-        $results = Get-DbaLogin -SqlInstance $script:instance1 -Login sa 
+        $results = Get-DbaLogin -SqlInstance $script:instance1 -Login sa
         It "Should report that one account named SA exists" {
             $results.Count | Should Be 1
         }

@@ -1,12 +1,12 @@
 ﻿$scriptBlock = {
     Param (
         $ModuleRoot,
-        
+
         $DllRoot,
-        
+
         $DoCopy
     )
-    
+
     function Copy-Assembly {
         [CmdletBinding()]
         Param (
@@ -15,21 +15,21 @@
             [bool]$DoCopy,
             [string]$Name
         )
-        
+
         if (-not $DoCopy) {
             return
         }
         if ("$ModuleRoot\bin\smo" -eq $DllRoot) {
             return
         }
-        
+
         if (-not (Test-Path $DllRoot)) {
             $null = New-Item -Path $DllRoot -ItemType Directory -ErrorAction Ignore
         }
-        
+
         Copy-Item -Path "$ModuleRoot\bin\smo\$Name.dll" -Destination $DllRoot
     }
-    
+
     #region Names
     $names = @(
         'Microsoft.SqlServer.BatchParser',
@@ -56,7 +56,7 @@
         'Microsoft.SqlServer.Rmo',
         'Microsoft.SqlServer.DTSPipelineWrap',
         'Microsoft.SqlServer.ScriptTask',
-        
+
         'Accessibility',
         'EnvDTE',
         'Microsoft.AnalysisServices.AppLocal.Core',
@@ -147,19 +147,19 @@
         'Microsoft.SqlServer.WmiEnum',
         'Microsoft.SqlServer.WMIEWTask',
         'Microsoft.SqlServer.XMLTask',
-        
+
         'Microsoft.SqlServer.Dmf.Adapters',
         'Microsoft.SqlServer.DmfSqlClrWrapper'
     )
     #endregion Names
-    
+
     foreach ($name in $names) {
         Copy-Assembly -ModuleRoot $ModuleRoot -DllRoot $DllRoot -DoCopy $DoCopy -Name $name
     }
     foreach ($name in $names) {
         Add-Type -Path "$DllRoot\$name.dll"
     }
-    
+
     <#
 Likely don't need yet
 Add-Type -Path "$script:PSModuleRoot\bin\smo\Microsoft.SqlServer.WizardFramework.dll"

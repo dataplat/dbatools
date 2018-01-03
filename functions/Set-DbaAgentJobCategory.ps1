@@ -1,6 +1,6 @@
 function Set-DbaAgentJobCategory {
     <#
-.SYNOPSIS 
+.SYNOPSIS
 Set-DbaAgentJobCategory changes a job category.
 
 .DESCRIPTION
@@ -11,7 +11,7 @@ SQL Server instance. You must have sysadmin access and server version must be SQ
 
 .PARAMETER SqlCredential
 Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+$scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER Category
@@ -23,18 +23,18 @@ New name of the job category
 .PARAMETER Force
 The force parameter will ignore some errors in the parameters and assume defaults.
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+.PARAMETER WhatIf
+Shows what would happen if the command were to run. No actions are actually performed.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+.PARAMETER Confirm
+Prompts you for confirmation before executing any changing operations within the command.
 
-.PARAMETER EnableException 
+.PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
-.NOTES 
+
+.NOTES
 Author: Sander Stad (@sqlstad, sqlstad.nl)
 Tags: Agent, Job, Job Category
 
@@ -45,12 +45,12 @@ License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 .LINK
 https://dbatools.io/Set-DbaAgentJobCategory
 
-.EXAMPLE   
+.EXAMPLE
 New-DbaAgentJobCategory -SqlInstance sql1 -Category 'Category 1' -NewName 'Category 2'
 
 Change the name of the category from 'Category 1' to 'Category 2'.
 
-.EXAMPLE 
+.EXAMPLE
 Set-DbaAgentJobCategory -SqlInstance sql1, sql2 -Category Category1, Category2 -NewName cat1, cat2
 
 Rename multiple jobs in one go on multiple servers.
@@ -95,7 +95,7 @@ Rename multiple jobs in one go on multiple servers.
 
             # Loop through each of the categories
             foreach ($cat in $Category) {
-                # Check if the category exists 
+                # Check if the category exists
                 if ($cat -notin $server.JobServer.JobCategories.Name) {
                     Stop-Function -Message "Job category $cat doesn't exist on $instance" -Target $instance -Continue
                 }
@@ -121,7 +121,7 @@ Rename multiple jobs in one go on multiple servers.
                             $currentCategory.Rename($NewName[$Category.IndexOf($cat)])
                             $newCategoryName = $currentCategory.Name
                         }
-                        
+
                         # Set up the custom object
                         $null = $collection.Add([PSCustomObject]@{
                                 ComputerName    = $server.NetName
@@ -134,7 +134,7 @@ Rename multiple jobs in one go on multiple servers.
                     }
                     catch {
                         Stop-Function -Message "Something went wrong changing the job category $cat on $instance" -Target $cat -Continue -ErrorRecord $_
-                    } 
+                    }
 
                 } # if should process
 

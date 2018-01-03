@@ -8,7 +8,7 @@ else {
 $functions = Get-ChildItem function:\*-Dba*
 [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::DbatoolsCommands = $functions
 $names = $functions.Name
- 
+
 #region Automatic TEPP by parameter name
 Register-DbaTeppArgumentCompleter -Command $names -Parameter Alert -Name Alert -All
 Register-DbaTeppArgumentCompleter -Command $names -Parameter AlertCategory -Name AlertCategory -All

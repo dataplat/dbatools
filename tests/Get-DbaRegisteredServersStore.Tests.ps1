@@ -4,7 +4,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Components are properly retreived" {
-        
+
         It "Should return the right values" {
             $results = Get-DbaRegisteredServersStore -SqlInstance $script:instance2
             $results.InstanceName | Should Be "SQL2016"

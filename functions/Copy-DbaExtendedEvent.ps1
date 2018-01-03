@@ -5,7 +5,7 @@ function Copy-DbaExtendedEvent {
 
         .DESCRIPTION
             Migrates SQL Extended Event Sessions except the two default sessions, AlwaysOn_health and system_health.
-            
+
             By default, all non-system Extended Events are migrated.
 
         .PARAMETER Source
@@ -48,7 +48,7 @@ function Copy-DbaExtendedEvent {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .PARAMETER Force
             If this switch is enabled, existing Extended Events sessions on Destination with matching names from Source will be dropped.
 
@@ -100,7 +100,7 @@ function Copy-DbaExtendedEvent {
         [switch][Alias('Silent')]$EnableException
     )
     begin {
-    
+
         $sourceServer = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
         $destServer = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential -MinimumVersion 10
 
@@ -128,7 +128,7 @@ function Copy-DbaExtendedEvent {
         Write-Message -Level Verbose -Message "Migrating sessions."
         foreach ($session in $storeSessions) {
             $sessionName = $session.Name
-            
+
             $copyXeSessionStatus = [pscustomobject]@{
                 SourceServer      = $sourceServer.Name
                 DestinationServer = $destServer.Name
@@ -138,7 +138,7 @@ function Copy-DbaExtendedEvent {
                 Notes             = $null
                 DateTime          = [DbaDateTime](Get-Date)
             }
-            
+
             if ($destStore.Sessions[$sessionName] -ne $null) {
                 if ($force -eq $false) {
                     $copyXeSessionStatus.Status = "Skipped"
@@ -179,7 +179,7 @@ function Copy-DbaExtendedEvent {
                         $destStore.Sessions.Refresh()
                         $destStore.Sessions[$sessionName].Start()
                     }
-                    
+
                     $copyXeSessionStatus.Status = "Successful"
                     $copyXeSessionStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }

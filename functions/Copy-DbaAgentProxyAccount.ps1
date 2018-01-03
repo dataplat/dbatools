@@ -37,15 +37,15 @@ function Copy-DbaAgentProxyAccount {
 
         .PARAMETER Confirm
             If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
-        
+
         .PARAMETER Force
             If this switch is enabled, the Operator will be dropped and recreated on Destination.
 
-        .PARAMETER EnableException 
+        .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: Migration, Agent
             Author: Chrissy LeMaire (@cl), netnerds.net
@@ -104,7 +104,7 @@ function Copy-DbaAgentProxyAccount {
     process {
         foreach ($proxyAccount in $serverProxyAccounts) {
             $proxyName = $proxyAccount.Name
-            
+
             $copyAgentProxyAccountStatus = [pscustomobject]@{
                 SourceServer      = $sourceServer.Name
                 DestinationServer = $destServer.Name
@@ -114,7 +114,7 @@ function Copy-DbaAgentProxyAccount {
                 Notes             = $null
                 DateTime          = [Sqlcollaborative.Dbatools.Utility.DbaDateTime](Get-Date)
             }
-            
+
             if ($proxyAccounts.Length -gt 0 -and $proxyAccounts -notcontains $proxyName) {
                 continue
             }
@@ -123,14 +123,14 @@ function Copy-DbaAgentProxyAccount {
             $credentialName = $proxyAccount.CredentialName
             $copyAgentProxyAccountStatus.Name = $credentialName
             $copyAgentProxyAccountStatus.Type = "Credential"
-            
+
             try {
                 $credentialtest = $destServer.Credentials[$CredentialName]
             }
             catch {
                 # don't care
             }
-            
+
             if ($null -eq $credentialtest) {
                 $copyAgentProxyAccountStatus.Status = "Skipped"
                 $copyAgentProxyAccountStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject

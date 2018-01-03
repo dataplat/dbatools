@@ -8,7 +8,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Get-DbaXESession -SqlInstance $script:instance2
             $results.Count -gt 1 | Should Be $true
         }
-        
+
         It "returns only the system_health session" {
             $results = Get-DbaXESession -SqlInstance $script:instance2 -Session system_health
             $results.Name -eq 'system_health' | Should Be $true

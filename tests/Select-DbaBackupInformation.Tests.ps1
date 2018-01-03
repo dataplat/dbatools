@@ -8,7 +8,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\EmptyTlogData.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
             $Output = Select-DbaBackupInformation -BackupHistory $header #-EnableException:$true
-            
+
             It "Should return an array of 3 items" {
                 $Output.count | Should be 2
             }
@@ -26,7 +26,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
             $Output = Select-DbaBackupInformation -BackupHistory $header -EnableException:$true
-            
+
             It "Should return an array of 7 items" {
                 $Output.count | Should be 7
             }
@@ -40,13 +40,13 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 ($Output | Where-Object { $_.BackupTypeDescription -eq 'Transaction Log' } | Measure-Object).count | Should Be 5
             }
         }
-        
+
 
         Context "General Diff Restore from Pipeline" {
             $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
             $Output = $Header | Select-DbaBackupInformation -EnableException:$true
-            
+
             It "Should return an array of 7 items" {
                 $Output.count | Should be 7
             }
@@ -64,7 +64,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
             $Output = $Header | Select-DbaBackupInformation -EnableException:$true -IgnoreDiff
-            
+
             It "Should return an array of 9 items" {
                 $Output.count | Should be 9
             }
@@ -82,7 +82,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
             $Output = $Header | Select-DbaBackupInformation -EnableException:$true -IgnoreLogs
-            
+
             It "Should return an array of 2 items" {
                 $Output.count | Should be 2
             }
@@ -101,7 +101,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             $header | Add-Member -Type NoteProperty -Name FullName -Value $_.BackupPath
 
             $Output = Select-DbaBackupInformation -BackupHistory $header
-            
+
             It "Should return an array of 7 items" {
                 $Output.count | Should be 7
             }
@@ -119,7 +119,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffRestore.json -raw)
             $header = $header | Where-Object { $_.BackupTypeDescription -ne 'Database Differential' }
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
-            
+
             $Output = Select-DbaBackupInformation  -BackupHistory $header
 
             It "Should return an array of 9 items" {
@@ -138,10 +138,10 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         Context "Overlapping Diff and log Restore" {
             $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\DiffIssues.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
-            
+
             $RestoreDate = Get-date "2017-07-18 09:00:00"
             $Output = Select-DbaBackupInformation  -BackupHistory $Header -RestoreTime $RestoreDate
-            
+
             It "Should return an array of 193 items" {
                 $Output.count | Should be 194
             }
@@ -161,10 +161,10 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         Context "When FirstLSN ne CheckPointLsn" {
             $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\chkptLSN-ne-firstLSN.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
-            
+
             $RestoreDate = Get-date "2017-07-18 09:00:00"
             $Output = Select-DbaBackupInformation  -BackupHistory $Header -RestoreTime $RestoreDate
-            
+
             It "Should return an array of 193 items" {
                 $Output.count | Should be 194
             }
@@ -184,7 +184,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         Context "When TLogs between full's FirstLsn and LastLsn" {
             $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\TLogBWFirstLastLsn.json -raw)
             $header | Add-Member -Type NoteProperty -Name FullName -Value 1
-            
+
             $RestoreDate = Get-date "2017-07-18 09:00:00"
             $Output = Select-DbaBackupInformation -BackupHistory $Header -RestoreTime $RestoreDate
 
@@ -213,7 +213,7 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 Database            = 'ContinuePointTest'
             }
             $Output = Select-DbaBackupInformation -BackupHistory $BackupInfo -EnableException:$true -ContinuePoints $ContinuePoints
-            
+
             It "Should return an array of 4 items" {
                 $Output.count | Should be 4
             }

@@ -129,7 +129,7 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
     $Query = "EXEC master.sys.sp_add_log_shipping_primary_secondary
         @primary_database = N'$PrimaryDatabase'
         ,@secondary_server = N'$SecondaryServer'
-		,@secondary_database = N'$SecondaryDatabase' "
+        ,@secondary_database = N'$SecondaryDatabase' "
 
     if ($ServerPrimary.Version.Major -gt 9) {
         $Query += ",@overwrite = 1;"
@@ -151,6 +151,6 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
         }
     }
 
-    Write-Message -Message "Finished configuring of primary database $PrimaryDatabase to secondary database $SecondaryDatabase." -Level Output 
+    Write-Message -Message "Finished configuring of primary database $PrimaryDatabase to secondary database $SecondaryDatabase." -Level Output
 
 }

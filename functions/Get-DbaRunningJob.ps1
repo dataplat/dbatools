@@ -22,8 +22,8 @@ function Get-DbaRunningJob {
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
-        .NOTES 
+
+        .NOTES
             Tags:
             Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
             Website: https://dbatools.io
@@ -65,9 +65,9 @@ function Get-DbaRunningJob {
             catch {
                 Stop-Function -Message "Failed to connect to: $Server." -Target $server -ErrorRecord $_ -Continue
             }
-            
+
             $jobs = $server.JobServer.jobs | Where-Object { $_.CurrentRunStatus -ne 'Idle' }
-            
+
             if (!$jobs) {
                 Write-Message -Level Verbose -Message "No Jobs are currently running on: $Server."
             }

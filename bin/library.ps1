@@ -63,7 +63,7 @@ if ($ImportLibrary) {
         else {
             $hasProject = Test-Path -Path "$libraryBase\projects\dbatools\dbatools.sln"
             $hasCompiledDll = Test-Path -Path "$libraryBase\dbatools.dll"
-            
+
             if ((-not $script:alwaysBuildLibrary) -and $hasCompiledDll -and ([System.Diagnostics.FileVersionInfo]::GetVersionInfo("$libraryBase\dbatools.dll").FileVersion -eq $currentLibraryVersion)) {
                 $start = Get-Date
                 try {
@@ -91,19 +91,19 @@ if ($ImportLibrary) {
                     # This doesn't seem to work. Keep it here for now
                     $msbuildOptions = '/logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"'
                     $msbuildConfiguration = '/p:Configuration=Debug'
-                    
+
                     if (-not (Test-Path "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll")) {
                         throw "msbuild logger not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
                     }
                 }
-                
+
                 if (-not (Test-Path $msbuild)) {
                     throw "msbuild not found, cannot compile library! Check your .NET installation health, then try again. Path checked: $msbuild"
                 }
-                
+
                 Write-Verbose -Message "Building the library"
                 & $msbuild "$libraryBase\projects\dbatools\dbatools.sln" $msbuildConfiguration $msbuildOptions
-                
+
                 try {
                     Write-Verbose -Message "Found library, trying to copy & import"
                     if ($script:alwaysBuildLibrary) { Move-Item -Path "$libraryBase\dbatools.dll" -Destination $script:DllRoot -Force -ErrorAction Stop }
@@ -120,7 +120,7 @@ if ($ImportLibrary) {
                 throw "No valid dbatools library found! Check your module integrity"
             }
         }
-        
+
         #region PowerShell TypeData
         Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsException" -SerializationDepth 2 -ErrorAction Ignore
         Update-TypeData -TypeName "Sqlcollaborative.Dbatools.dbaSystem.DbatoolsExceptionRecord" -SerializationDepth 2 -ErrorAction Ignore
@@ -140,7 +140,7 @@ we have failed.
 
 Please, in order to help us prevent this from happening again, visit us at:
 https://github.com/sqlcollaborative/dbatools/issues
-and tell us about this failure. All information will be appreciated, but 
+and tell us about this failure. All information will be appreciated, but
 especially valuable are:
 - Exports of the exception: $Error | Export-Clixml error.xml -Depth 4
 - Screenshots

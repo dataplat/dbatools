@@ -19,7 +19,7 @@ function Get-DbaSuspectPage {
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
         Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-        
+
         .NOTES
         Tags: Pages, DBCC
         Author: Garry Bargsley (@gbargsley), http://blog.garrybargsley.com
@@ -29,10 +29,10 @@ function Get-DbaSuspectPage {
         License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
         .EXAMPLE
-        Get-DbaSuspectPage -SqlInstance sql2016 
+        Get-DbaSuspectPage -SqlInstance sql2016
 
         Retrieve any records stored for Suspect Pages on the sql2016 SQL Server.
-        
+
         .EXAMPLE
         Get-DbaSuspectPage -SqlInstance sql2016 -Database Test
 
@@ -48,9 +48,9 @@ function Get-DbaSuspectPage {
         [PSCredential]$SqlCredential,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     process {
-        
+
         foreach ($instance in $sqlinstance) {
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
@@ -59,30 +59,30 @@ function Get-DbaSuspectPage {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 return
             }
-            
+
             $sql = "Select
-			DB_NAME(database_id) as DBName, 
-			file_id, 
-			page_id, 
-			CASE event_type 
-			WHEN 1 THEN '823 or 824 or Torn Page'
-			WHEN 2 THEN 'Bad Checksum'
-			WHEN 3 THEN 'Torn Page'
-			WHEN 4 THEN 'Restored'
-			WHEN 5 THEN 'Repaired (DBCC)'
-			WHEN 7 THEN 'Deallocated (DBCC)'
-			END as EventType, 
-			error_count, 
-			last_update_date
-			from msdb.dbo.suspect_pages"
-                
+            DB_NAME(database_id) as DBName,
+            file_id,
+            page_id,
+            CASE event_type
+            WHEN 1 THEN '823 or 824 or Torn Page'
+            WHEN 2 THEN 'Bad Checksum'
+            WHEN 3 THEN 'Torn Page'
+            WHEN 4 THEN 'Restored'
+            WHEN 5 THEN 'Repaired (DBCC)'
+            WHEN 7 THEN 'Deallocated (DBCC)'
+            END as EventType,
+            error_count,
+            last_update_date
+            from msdb.dbo.suspect_pages"
+
             try {
-                $results = $server.Query($sql) 
+                $results = $server.Query($sql)
             }
             catch {
                 Stop-Function -Message "Issue collecting data on $server" -Target $server -ErrorRecord $_ -Continue
             }
-            
+
             if ($Database) {
                 $results = $results | Where-Object DBName -EQ $Database
             }
@@ -100,6 +100,6 @@ function Get-DbaSuspectPage {
                 ErrorCount     = $row.error_count
                 LastUpdateDate = $row.last_update_date
             }
-        }   
+        }
     }
 }

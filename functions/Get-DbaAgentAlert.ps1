@@ -1,4 +1,4 @@
-FUNCTION Get-DbaAgentAlert {
+function Get-DbaAgentAlert {
     <#
     .SYNOPSIS
     Returns all SQL Agent alerts on a SQL Server Agent.
@@ -24,7 +24,7 @@ FUNCTION Get-DbaAgentAlert {
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
+
     .LINK
     https://dbatools.io/Get-DbaAgentAlert
 
@@ -46,7 +46,7 @@ FUNCTION Get-DbaAgentAlert {
         $SqlCredential,
         [switch][Alias('Silent')]$EnableException
     )
-    
+
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -56,27 +56,27 @@ FUNCTION Get-DbaAgentAlert {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             Write-Message -Level Verbose -Message "Getting Edition from $server"
             Write-Message -Level Verbose -Message "$server is a $($server.Edition)"
-            
+
             if ($server.Edition -like 'Express*') {
                 Stop-Function -Message "There is no SQL Agent on $server, it's a $($server.Edition)" -Continue
             }
-            
+
             $defaults = "ComputerName", "SqlInstance", "InstanceName", "Name", "ID", "JobName", "AlertType", "CategoryName", "Severity", "IsEnabled", "DelayBetweenResponses", "LastRaised", "OccurrenceCount"
-            
+
             $alerts = $server.Jobserver.Alerts
-            
+
             foreach ($alert in $alerts) {
                 $lastraised = [dbadatetime]$alert.LastOccurrenceDate
-                
+
                 Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name ComputerName -value $server.NetName
                 Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name InstanceName -value $server.ServiceName
                 Add-Member -Force -InputObject $alert -MemberType NoteProperty -Name SqlInstance -value $server.DomainInstanceName
                 Add-Member -Force -InputObject $alert -MemberType NoteProperty Notifications -value $alert.EnumNotifications()
                 Add-Member -Force -InputObject $alert -MemberType NoteProperty LastRaised -value $lastraised
-                
+
                 Select-DefaultView -InputObject $alert -Property $defaults
             }
         }
