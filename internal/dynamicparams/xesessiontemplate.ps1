@@ -8,17 +8,13 @@ if (-not [Sqlcollaborative.Dbatools.TabExpansion.TabExpansionHost]::Cache["xeses
 $ScriptBlock = {
     param (
         $commandName,
-
         $parameterName,
-
         $wordToComplete,
-
         $commandAst,
-
         $fakeBoundParameter
     )
 
-	(Get-ChildItem "$script:PSModuleRoot\bin\xetemplates\*.xml").BaseName
+    (Get-ChildItem "$script:PSModuleRoot\bin\xetemplates\*.xml").BaseName
 }
 
 Register-DbaTeppScriptblock -ScriptBlock $ScriptBlock -Name xesessiontemplate
