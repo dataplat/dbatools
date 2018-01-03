@@ -96,7 +96,8 @@ function Find-DbaDatabaseGrowthEvent {
         [string]$EventType,
         [ValidateSet('Data', 'Log')]
         [string]$FileType,
-        [switch][Alias('Silent')]$EnableException
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
@@ -158,9 +159,15 @@ function Find-DbaDatabaseGrowthEvent {
                             [DatabaseName],
                             [Filename],
                             CONVERT(INT,(Duration/1000)) AS Duration,
-                            DATEADD (MINUTE, DATEDIFF(MINUTE, GETDATE(), GETUTCDATE()), [StartTime]) AS StartTime,  -- Convert to UTC time
-                            DATEADD (MINUTE, DATEDIFF(MINUTE, GETDATE(), GETUTCDATE()), [EndTime]) AS EndTime,  -- Convert to UTC time
-                            ([IntegerData]*8.0/1024) AS ChangeInSize
+                            DATEADD (MINUTE, DATEDIFF(MINUTE, GETDATE(), GETUTCDATE()), [StartTime]) AS StartTimeUTC,  -- Convert to UTC time
+                            DATEADD (MINUTE, DATEDIFF(MINUTE, GETDATE(), GETUTCDATE()), [EndTime]) AS EndTimeUTC,  -- Convert to UTC time
+                            [StartTime] AS StartTime,
+                            [EndTime] AS EndTime,
+                            ([IntegerData]*8.0/1024) AS ChangeInSize,
+                            ApplicationName,
+                            HostName,
+                            SessionLoginName,
+                            SPID
                         FROM::fn_trace_gettable( @base_tracefilename, DEFAULT )
                         WHERE
                             [EventClass] IN ($eventClassFilter)
@@ -226,10 +233,9 @@ function Find-DbaDatabaseGrowthEvent {
             $sql = $sql -replace '_DatabaseList_', $dbsList
             Write-Message -Level Debug -Message "Executing SQL Statement:`n $sql"
 
-            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'EventClass', 'DatabaseName', 'Filename', 'Duration', 'StartTime', 'EndTime', 'ChangeInSize'
+            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'EventClass', 'DatabaseName', 'Filename', 'Duration', 'StartTimeUTC', 'EndTimeUTC', 'ChangeInSize', 'ApplicationName', 'HostName'
 
             Select-DefaultView -InputObject $server.Query($sql) -Property $defaults
         }
     }
 }
-
