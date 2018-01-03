@@ -135,7 +135,7 @@ function Test-DbaBackupInformation {
                         }
                         elseif ($path -in $DBHistoryPhysicalPathsExists) {
                             if (-not $WithReplace) {
-                                Write-Message -Message "File $path already exists on $SqlInstance, not owned by any database, cannot restore without WithReplace" -Level Warning
+                                Write-Message -Message "File $path already exists on $SqlInstance, not owned by any database, cannot restore without WithReplace" -Level Verbose
                                 #$VerificationErrors++ #FIXME, weird interaction with pagerestore and -AllowContinue in Restore-DbaDatabase
                             }
                         }
