@@ -516,6 +516,10 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"  = "Backup-DbaDatabaseCertificate"
         "Definition" = "Backup-DbaDbCertificate"
+    },
+    @{
+        "AliasName"  = "Find-DbaDatabaseGrowthEvent"
+        "Definition" = "Find-DbaDbGrowthEvent"
     }
 ) | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
