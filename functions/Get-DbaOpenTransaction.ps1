@@ -30,7 +30,7 @@
             Get-DbaOpenTransaction -SqlInstance sqlserver2014a
 
             Returns open transactions for sqlserver2014a
-    
+
         .EXAMPLE
             Get-DbaOpenTransaction -SqlInstance sqlserver2014a -SqlCredential (Get-Credential sqladmin)
 
@@ -44,7 +44,7 @@
         [PSCredential]$SqlCredential,
         [switch]$EnableException
     )
-    
+
     begin {
         $sql = "
             SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
@@ -92,7 +92,7 @@
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             $server.Query($sql)
         }
     }
