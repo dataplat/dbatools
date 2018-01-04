@@ -42,9 +42,6 @@
         [Alias("ServerInstance", "SqlServer", "SqlServers")]
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(ValueFromPipelineByPropertyName = $true)]
-        [object[]]$Spid,
-        [switch]$IncludeSystemSpid,
         [switch]$EnableException
     )
     
