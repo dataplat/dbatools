@@ -1000,6 +1000,7 @@ function Get-DbaHelpIndex {
                         [pscustomobject]@{
                             DatabaseName     = $db.Name
                             ObjectName       = $detail.FullObjectName
+                            IndexName        = $detail.IndexName
                             IndexType        = $detail.IndexType
                             KeyColumns       = $detail.KeyColumns
                             IncludeColumns   = $detail.IncludeColumns
@@ -1030,6 +1031,7 @@ function Get-DbaHelpIndex {
                         [pscustomobject]@{
                             DatabaseName     = $db.Name
                             ObjectName       = $detail.FullObjectName
+                            IndexName        = $detail.IndexName
                             IndexType        = $detail.IndexType
                             KeyColumns       = $detail.KeyColumns
                             IncludeColumns   = $detail.IncludeColumns
