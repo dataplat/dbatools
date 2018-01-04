@@ -1,5 +1,5 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Find-DbaDatabaseGrowthEvent {
+function Find-DbaDbGrowthEvent {
     <#
         .SYNOPSIS
             Finds any database AutoGrow events in the Default Trace.
@@ -226,6 +226,8 @@ function Find-DbaDatabaseGrowthEvent {
                     1 AS [SessionLoginName],
                     1 AS [SPID]
             END CATCH"
+
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Find-DbaDatabaseGrowthEvent
     }
     process {
         foreach ($instance in $SqlInstance) {
