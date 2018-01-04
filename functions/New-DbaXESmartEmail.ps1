@@ -21,6 +21,9 @@
     .PARAMETER Bcc
     Address of the Bcc recipient(s)
 
+    .PARAMETER Credential
+    Credential containing username and password used to authenticate on the SMTP server. When blank, no authentication is performed.
+    
     .PARAMETER Subject
     Subject of the mail message. Accepts placeholders in the text.
     Placeholders are in the form {PropertyName}, where PropertyName is one of the fields or actions available in the Event object.
