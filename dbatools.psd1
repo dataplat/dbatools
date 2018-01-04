@@ -231,7 +231,7 @@
         'Remove-DbaDatabase',
         'Get-DbaQueryExecutionTime',
         'Get-DbaTempdbUsage',
-        'Find-DbaDatabaseGrowthEvent',
+        'Find-DbaDbGrowthEvent',
         'Get-DbaNetworkActivity',
         'Get-DbaAgentJobOutputFile',
         'Set-DbaAgentJobOutputFile',
@@ -432,7 +432,7 @@
     # Aliases to export from this module
     # Aliases are stored in dbatools.psm1
     # KEEP Detach-DbaDatabase, Dismount-DbaDatabase and Start-SqlMigration FOREVER
-    AliasesToExport         = 'Detach-DbaDatabase', 'Attach-DbaDatabase',
+    AliasesToExport        = 'Detach-DbaDatabase', 'Attach-DbaDatabase',
     'Reset-SqlSaPassword',
     'Copy-SqlUserDefinedMessage',
     'Copy-SqlJobServer',
@@ -512,7 +512,8 @@
     'Get-DbaDatabaseCertificate',
     'New-DbaDatabaseCertificate',
     'Remove-DbaDatabaseCertificate',
-    'Restore-DbaDatabaseCertificate'
+    'Restore-DbaDatabaseCertificate',
+    'Find-DbaDatabaseGrowthEvent'
 
     # List of all modules packaged with this module
     ModuleList              = @()
