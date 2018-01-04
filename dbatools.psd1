@@ -8,65 +8,65 @@
 @{
 
     # Script module or binary module file associated with this manifest.
-    RootModule             = 'dbatools.psm1'
+    RootModule              = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion          = '0.9.144'
+    ModuleVersion           = '0.9.145'
 
     # ID used to uniquely identify this module
-    GUID                   = '9d139310-ce45-41ce-8e8b-d76335aa1789'
+    GUID                    = '9d139310-ce45-41ce-8e8b-d76335aa1789'
 
     # Author of this module
-    Author                 = 'Chrissy LeMaire'
+    Author                  = 'Chrissy LeMaire'
 
     # Company or vendor of this module
-    CompanyName            = 'dbatools.io'
+    CompanyName             = 'dbatools.io'
 
     # Copyright statement for this module
-    Copyright              = '2017 Chrissy LeMaire'
+    Copyright               = '2017 Chrissy LeMaire'
 
     # Description of the functionality provided by this module
-    Description            = "The community module that enables SQL Server Pros to automate database development and server administration"
+    Description             = "The community module that enables SQL Server Pros to automate database development and server administration"
 
     # Minimum version of the Windows PowerShell engine required by this module
-    PowerShellVersion      = '3.0'
+    PowerShellVersion       = '3.0'
 
     # Name of the Windows PowerShell host required by this module
-    PowerShellHostName     = ''
+    PowerShellHostName      = ''
 
     # Minimum version of the Windows PowerShell host required by this module
-    PowerShellHostVersion  = ''
+    PowerShellHostVersion   = ''
 
     # Minimum version of the .NET Framework required by this module
-    DotNetFrameworkVersion = ''
+    DotNetFrameworkVersion  = ''
 
     # Minimum version of the common language runtime (CLR) required by this module
-    CLRVersion             = ''
+    CLRVersion              = ''
 
     # Processor architecture (None, X86, Amd64, IA64) required by this module
-    ProcessorArchitecture  = ''
+    ProcessorArchitecture   = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules        = @()
+    RequiredModules         = @()
 
     # Assemblies that must be loaded prior to importing this module
-    RequiredAssemblies     = @()
+    RequiredAssemblies      = @()
 
     # Script files () that are run in the caller's environment prior to importing this module
-    ScriptsToProcess       = @()
+    ScriptsToProcess        = @()
 
     # Type files (xml) to be loaded when importing this module
-    TypesToProcess         = @()
+    TypesToProcess          = @()
 
     # Format files (xml) to be loaded when importing this module
     # "xml\dbatools.Format.ps1xml"
-    FormatsToProcess       = @("xml\dbatools.Format.ps1xml")
+    FormatsToProcess        = @("xml\dbatools.Format.ps1xml")
 
     # Modules to import as nested modules of the module specified in ModuleToProcess
-    NestedModules          = @()
+    NestedModules           = @()
 
     # Functions to export from this module
-    FunctionsToExport      = @(
+    FunctionsToExport       = @(
         'Start-DbaMigration',
         'Copy-DbaDatabase',
         'Copy-DbaLogin',
@@ -410,19 +410,29 @@
         'Get-DbaDbRole',
         'Get-DbaServerRole',
         'Find-DbaBackup',
-        'Get-DbaCpuUsage'
+        'Get-DbaCpuUsage',
+        'Remove-DbaXESession',
+        'New-DbaXESession',
+        'Import-DbaXESessionTemplate',
+        'Get-DbaXEStore',
+        'Export-DbaXESessionTemplate',
+        'New-DbaXESmartTableWriter',
+        'New-DbaXESmartReplay',
+        'New-DbaXESmartEmail',
+        'New-DbaXESmartQueryExecution',
+        'Start-DbaXESmartTarget'
     )
 
     # Cmdlets to export from this module
-    CmdletsToExport        = '*'
+    CmdletsToExport         = '*'
 
     # Variables to export from this module
-    VariablesToExport      = '*'
+    VariablesToExport       = '*'
 
     # Aliases to export from this module
     # Aliases are stored in dbatools.psm1
     # KEEP Detach-DbaDatabase, Dismount-DbaDatabase and Start-SqlMigration FOREVER
-    AliasesToExport        = 'Detach-DbaDatabase', 'Attach-DbaDatabase',
+    AliasesToExport         = 'Detach-DbaDatabase', 'Attach-DbaDatabase',
     'Reset-SqlSaPassword',
     'Copy-SqlUserDefinedMessage',
     'Copy-SqlJobServer',
@@ -505,40 +515,40 @@
     'Restore-DbaDatabaseCertificate'
 
     # List of all modules packaged with this module
-    ModuleList             = @()
+    ModuleList              = @()
 
     # List of all files packaged with this module
-    FileList               = ''
+    FileList                = ''
 
-    PrivateData            = @{
+    PrivateData             = @{
         # PSData is module packaging and gallery metadata embedded in PrivateData
         # It's for rebuilding PowerShellGet (and PoshCode) NuGet-style packages
         # We had to do this because it's the only place we're allowed to extend the manifest
         # https://connect.microsoft.com/PowerShell/feedback/details/421837
-        PSData = @{
+        PSData  = @{
             # The primary categorization of this module (from the TechNet Gallery tech tree).
-            Category     = "Databases"
+            Category      = "Databases"
 
             # Keyword tags to help users find this module via navigations and search.
-            Tags         = @('sqlserver', 'migrations', 'sql', 'dba', 'databases')
+            Tags          = @('sqlserver', 'migrations', 'sql', 'dba', 'databases')
 
             # The web address of an icon which can be used in galleries to represent this module
-            IconUri      = "https://dbatools.io/logo.png"
+            IconUri       = "https://dbatools.io/logo.png"
 
             # The web address of this module's project or support homepage.
-            ProjectUri   = "https://dbatools.io"
+            ProjectUri    = "https://dbatools.io"
 
             # The web address of this module's license. Points to a page that's embeddable and linkable.
-            LicenseUri   = "http://www.gnu.org/licenses/gpl-3.0.en.html"
+            LicenseUri    = "http://www.gnu.org/licenses/gpl-3.0.en.html"
 
             # Release notes for this particular version of the module
-            ReleaseNotes = "https://dbatools.io/releases"
+            ReleaseNotes  = "https://dbatools.io/releases"
 
             # If true, the LicenseUrl points to an end-user license (not just a source license) which requires the user agreement before use.
             # RequireLicenseAcceptance = ""
 
             # Indicates this is a pre-release/testing version of the module.
-            IsPrerelease = 'True'
+            IsPrerelease  = 'True'
         }
     }
 }
