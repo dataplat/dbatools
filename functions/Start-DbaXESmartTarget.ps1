@@ -28,8 +28,8 @@
     .PARAMETER Responder
     The list of responses can include zero or more Response objects, each to be configured by specifying values for their public members.
 
-    .PARAMETER Path
-    Path to Json responders
+    .PARAMETER Template
+    Path to our built in templates
 
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -62,10 +62,9 @@
         [string]$Database,
         [parameter(Mandatory)]
         [string]$Session,
-        [switch]$AutoCreateTargetTable,
         [switch]$FailOnProcessingError,
         [object[]]$Responder,
-        [string]$Path,
+        [string[]]$Template,
         [switch]$EnableException
     )
     begin {
