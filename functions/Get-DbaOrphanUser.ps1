@@ -24,7 +24,7 @@ function Get-DbaOrphanUser {
         .NOTES
             Tags: Orphan, Databases
             Author: Claudio Silva (@ClaudioESSilva)
-			Author: Garry Bargsley (@gbargsley)
+            Author: Garry Bargsley (@gbargsley)
             Website: https://dbatools.io
             Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
