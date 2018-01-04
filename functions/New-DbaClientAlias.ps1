@@ -40,6 +40,11 @@ function New-DbaClientAlias {
     New-DbaClientAlias -ServerName sqlcluster\sharepoint -Alias sp
     Creates a new TCP alias on the local workstation called sp, which points sqlcluster\sharepoint
 
+
+    .EXAMPLE
+    New-DbaClientAlias -ServerName 'sqlcluster,14443' -Alias spinstance
+    Creates a new TCP alias on the local workstation called spinstance, which points to sqlcluster, port 14443.
+
     .EXAMPLE
     New-DbaClientAlias -ServerName sqlcluster\sharepoint -Alias sp -Protocol NamedPipes
     Creates a new NamedPipes alias on the local workstation called sp, which points sqlcluster\sharepoint
