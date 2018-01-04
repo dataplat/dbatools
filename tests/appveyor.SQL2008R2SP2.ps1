@@ -20,8 +20,8 @@ $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer
 $uri = "ManagedComputer[@Name='$env:COMPUTERNAME']/ ServerInstance[@Name='$instance']/ServerProtocol[@Name='Tcp']"
 $Tcp = $wmi.GetSmoObject($uri)
 foreach ($ipAddress in $Tcp.IPAddresses) {
-	$ipAddress.IPAddressProperties["TcpDynamicPorts"].Value = ""
-	$ipAddress.IPAddressProperties["TcpPort"].Value = $port
+    $ipAddress.IPAddressProperties["TcpDynamicPorts"].Value = ""
+    $ipAddress.IPAddressProperties["TcpPort"].Value = $port
 }
 $Tcp.Alter()
 Write-Host -Object "$indent Starting $instance" -ForegroundColor DarkGreen
@@ -36,13 +36,13 @@ $server.Configuration.RemoteDacConnectionsEnabled.ConfigValue = $true
 $server.Configuration.Alter()
 
 do {
-	Start-Sleep 1
-	$null = (& sqlcmd -S "$sqlinstance" -b -Q "select 1" -d master)
+    Start-Sleep 1
+    $null = (& sqlcmd -S "$sqlinstance" -b -Q "select 1" -d master)
 }
 while ($lastexitcode -ne 0 -and $t++ -lt 10)
 
 Write-Host -Object "$indent Executing startup scripts for SQL Server 2008" -ForegroundColor DarkGreen
 # Add some jobs to the sql2008r2sp2 instance (1433 = default)
 foreach ($file in (Get-ChildItem C:\github\appveyor-lab\sql2008-startup\*.sql -Recurse -ErrorAction SilentlyContinue)) {
-	Invoke-Sqlcmd2 -ServerInstance $sqlinstance -InputFile $file
+    Invoke-Sqlcmd2 -ServerInstance $sqlinstance -InputFile $file
 }

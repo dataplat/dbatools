@@ -101,8 +101,7 @@ function Find-DbaUnusedIndex {
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential]
-        $SqlCredential,
+        [PSCredential]$SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
@@ -111,7 +110,8 @@ function Find-DbaUnusedIndex {
         [switch]$NoClobber,
         [switch]$Append,
         [switch]$IgnoreUptime,
-        [switch][Alias('Silent')]$EnableException
+        [switch][Alias('Silent')]
+        $EnableException
     )
 
     begin {
@@ -185,7 +185,7 @@ function Find-DbaUnusedIndex {
         $diffDays = (New-TimeSpan -Start $endDate -End (Get-Date)).Days
 
         if ($diffDays -le 6) {
-            if ($IgnoreUptime -ne $true ) {
+            if ($IgnoreUptime -ne $true) {
                 Stop-Function -Message "The SQL Service was restarted on $lastRestart, which is not long enough for a solid evaluation."
                 return
             }
@@ -202,7 +202,7 @@ function Find-DbaUnusedIndex {
         #>
         if (
             ($server.VersionMajor -eq 11 -and $server.BuildNumber -lt 6537) `
-                -or ($server.VersionMajor -eq 12 -and $server.BuildNumber -lt 5000)
+            -or ($server.VersionMajor -eq 12 -and $server.BuildNumber -lt 5000)
         ) {
             Stop-Function -Message "This SQL version has a known issue. Rebuilding an index clears any existing row entry from sys.dm_db_index_usage_stats for that index.`r`nPlease refer to connect item: https://connect.microsoft.com/sqlserver/feedback/details/739566/rebuilding-an-index-clears-stats-from-sys-dm-db-index-usage-stats"
             return
@@ -217,7 +217,7 @@ function Find-DbaUnusedIndex {
         }
 
         if ($database.Count -eq 0) {
-            $database = ($server.Databases | Where-Object { $_.IsSystemObject -eq 0 -and $_.IsAccessible}).Name
+            $database = ($server.Databases | Where-Object { $_.IsSystemObject -eq 0 -and $_.IsAccessible }).Name
         }
 
         if ($database.Count -gt 0) {
@@ -251,7 +251,7 @@ function Find-DbaUnusedIndex {
                                     $sqlout += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.SchemaName).$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
                                     $sqlout += "DROP INDEX $($index.SchemaName).$($index.TableName).$($index.IndexName)`r`n"
                                     $sqlout += "GO`r`n`r`n"`
-									    
+
                                 }
                             }
 
@@ -270,7 +270,7 @@ function Find-DbaUnusedIndex {
                     }
                 }
                 catch {
-                    Stop-Function -Message "Issue gathering indexes" -Category InvalidOperation -InnerErrorRecord $_ -Target $db
+                    Stop-Function -Message "Issue gathering indexes" -Category InvalidOperation -ErrorRecord $_ -Target $db
                 }
             }
 
@@ -292,4 +292,3 @@ function Find-DbaUnusedIndex {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlUnusedIndex
     }
 }
-
