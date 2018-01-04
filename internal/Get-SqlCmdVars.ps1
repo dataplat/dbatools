@@ -1,5 +1,5 @@
-Function Get-SqlCmdVars {
-        <#
+function Get-SqlCmdVars {
+    <#
         .SYNOPSIS
             Retrieves the values of PowerShell parameters and updates values of SqlmdVars listed in the publish.xml.
 
@@ -10,9 +10,9 @@ Function Get-SqlCmdVars {
         .PARAMETER SqlCommandVariableValues
             Mandatory. The SqlCommandVariableValues from the DeployOptions property in the Microsoft.SqlServer.Dac.DacProfile
         .PARAMETER EnableException
-			By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-			This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-			Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+            By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+            This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+            Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .NOTES
             Author: Richie lee (@bzzzt_io)
@@ -24,7 +24,7 @@ Function Get-SqlCmdVars {
             https://dbatools.io/Test-Noun
 
         .EXAMPLE
-        Imagine content of MyDbProject.publish.xml is as follows - 
+        Imagine content of MyDbProject.publish.xml is as follows -
         <?xml version="1.0" encoding="utf-8"?>
         <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
         <PropertyGroup>
@@ -43,8 +43,8 @@ Function Get-SqlCmdVars {
         </ItemGroup>
         </Project>
         We will need one PowerShell parameter named $DeployTag to update the value
-        
-        The following scenario will fail as no $deployTag - 
+
+        The following scenario will fail as no $deployTag -
         "
             $publishXml =  "C:\MyDbProject\bin\Debug\MyDbProject.publish.xml"
             $dacProfile = [Microsoft.SqlServer.Dac.DacProfile]::Load($publishXml)

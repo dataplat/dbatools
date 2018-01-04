@@ -1,5 +1,5 @@
 function New-DbaLogShippingPrimarySecondary {
-	<#
+    <#
 .SYNOPSIS
 New-DbaLogShippingPrimarySecondary adds an entry for a secondary database.
 
@@ -35,9 +35,9 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command.
 
 .PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 .NOTES
 Author: Sander Stad (@sqlstad, sqlstad.nl)
@@ -56,101 +56,101 @@ New-DbaLogShippingPrimarySecondary -SqlInstance sql1 -PrimaryDatabase DB1 -Secon
 
 #>
 
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = "Low")]
 
-	param (
-		[parameter(Mandatory = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[object]$SqlInstance,
+    param (
+        [parameter(Mandatory = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [object]$SqlInstance,
 
-		[System.Management.Automation.PSCredential]
-		$SqlCredential,
+        [System.Management.Automation.PSCredential]
+        $SqlCredential,
 
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$PrimaryDatabase,
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [object]$PrimaryDatabase,
 
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$SecondaryDatabase,
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [object]$SecondaryDatabase,
 
-		[Parameter(Mandatory = $true)]
-		[ValidateNotNullOrEmpty()]
-		[object]$SecondaryServer,
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [object]$SecondaryServer,
 
-		[System.Management.Automation.PSCredential]
-		$SecondarySqlCredential,
+        [System.Management.Automation.PSCredential]
+        $SecondarySqlCredential,
 
-		[switch][Alias('Silent')]$EnableException
-	)
+        [switch][Alias('Silent')]$EnableException
+    )
 
-	# Try connecting to the instance
-	Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
-	try {
-		$ServerPrimary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-	}
-	catch {
-		Stop-Function -Message "Could not connect to Sql Server instance" -Target $SqlInstance -Continue
-	}
+    # Try connecting to the instance
+    Write-Message -Message "Attempting to connect to $SqlInstance" -Level Verbose
+    try {
+        $ServerPrimary = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+    }
+    catch {
+        Stop-Function -Message "Could not connect to Sql Server instance" -Target $SqlInstance -Continue
+    }
 
-	# Try connecting to the instance
-	Write-Message -Message "Attempting to connect to $SecondaryServer" -Level Verbose
-	try {
-		$ServerSecondary = Connect-SqlInstance -SqlInstance $SecondaryServer -SqlCredential $SecondarySqlCredential
-	}
-	catch {
-		Stop-Function -Message "Could not connect to Sql Server instance" -Target $SecondaryServer -Continue
-	}
+    # Try connecting to the instance
+    Write-Message -Message "Attempting to connect to $SecondaryServer" -Level Verbose
+    try {
+        $ServerSecondary = Connect-SqlInstance -SqlInstance $SecondaryServer -SqlCredential $SecondarySqlCredential
+    }
+    catch {
+        Stop-Function -Message "Could not connect to Sql Server instance" -Target $SecondaryServer -Continue
+    }
 
-	# Check if the database is present on the source sql server
-	if ($ServerPrimary.Databases.Name -notcontains $PrimaryDatabase) {
-		Stop-Function -Message "Database $PrimaryDatabase is not available on instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance -Continue
-	}
+    # Check if the database is present on the source sql server
+    if ($ServerPrimary.Databases.Name -notcontains $PrimaryDatabase) {
+        Stop-Function -Message "Database $PrimaryDatabase is not available on instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance -Continue
+    }
 
-	# Check if the database is present on the destination sql server
-	if ($ServerSecondary.Databases.Name -notcontains $SecondaryDatabase) {
-		Stop-Function -Message "Database $SecondaryDatabase is not available on instance $SecondaryServer" -ErrorRecord $_ -Target $SecondaryServer -Continue
-	}
+    # Check if the database is present on the destination sql server
+    if ($ServerSecondary.Databases.Name -notcontains $SecondaryDatabase) {
+        Stop-Function -Message "Database $SecondaryDatabase is not available on instance $SecondaryServer" -ErrorRecord $_ -Target $SecondaryServer -Continue
+    }
 
-	$Query = "SELECT primary_database FROM msdb.dbo.log_shipping_primary_databases WHERE primary_database = '$PrimaryDatabase'"
+    $Query = "SELECT primary_database FROM msdb.dbo.log_shipping_primary_databases WHERE primary_database = '$PrimaryDatabase'"
 
-	try {
-		Write-Message -Message "Executing query:`n$Query" -Level Verbose
-		$Result = $ServerPrimary.Query($Query)
-		if ($Result.Count -eq 0 -or $Result[0] -ne $PrimaryDatabase) {
-			Stop-Function -Message "Database $PrimaryDatabase does not exist as log shipping primary.`nPlease run New-DbaLogShippingPrimaryDatabase first."  -ErrorRecord $_ -Target $SqlInstance -Continue
-		}
-	}
-	catch {
-		Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query" -ErrorRecord $_ -Target $SqlInstance -Continue
-	}
+    try {
+        Write-Message -Message "Executing query:`n$Query" -Level Verbose
+        $Result = $ServerPrimary.Query($Query)
+        if ($Result.Count -eq 0 -or $Result[0] -ne $PrimaryDatabase) {
+            Stop-Function -Message "Database $PrimaryDatabase does not exist as log shipping primary.`nPlease run New-DbaLogShippingPrimaryDatabase first."  -ErrorRecord $_ -Target $SqlInstance -Continue
+        }
+    }
+    catch {
+        Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query" -ErrorRecord $_ -Target $SqlInstance -Continue
+    }
 
-	# Set the query for the log shipping primary and secondary
-	$Query = "EXEC master.sys.sp_add_log_shipping_primary_secondary
+    # Set the query for the log shipping primary and secondary
+    $Query = "EXEC master.sys.sp_add_log_shipping_primary_secondary
         @primary_database = N'$PrimaryDatabase'
         ,@secondary_server = N'$SecondaryServer'
-		,@secondary_database = N'$SecondaryDatabase' "
+        ,@secondary_database = N'$SecondaryDatabase' "
 
-	if ($ServerPrimary.Version.Major -gt 9) {
-		$Query += ",@overwrite = 1;"
-	}
-	else {
-		$Query += ";"
-	}
+    if ($ServerPrimary.Version.Major -gt 9) {
+        $Query += ",@overwrite = 1;"
+    }
+    else {
+        $Query += ";"
+    }
 
-	# Execute the query to add the log shipping primary
-	if ($PSCmdlet.ShouldProcess($SqlInstance, ("Configuring logshipping connecting the primary database $PrimaryDatabase to secondary database $SecondaryDatabase on $SqlInstance"))) {
-		try {
-			Write-Message -Message "Configuring logshipping connecting the primary database $PrimaryDatabase to secondary database $SecondaryDatabase on $SqlInstance." -Level Output
-			Write-Message -Message "Executing query:`n$Query" -Level Verbose
-			$ServerPrimary.Query($Query)
-		}
-		catch {
-			Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
-			Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query" -ErrorRecord $_ -Target $SqlInstance -Continue
-		}
-	}
+    # Execute the query to add the log shipping primary
+    if ($PSCmdlet.ShouldProcess($SqlInstance, ("Configuring logshipping connecting the primary database $PrimaryDatabase to secondary database $SecondaryDatabase on $SqlInstance"))) {
+        try {
+            Write-Message -Message "Configuring logshipping connecting the primary database $PrimaryDatabase to secondary database $SecondaryDatabase on $SqlInstance." -Level Output
+            Write-Message -Message "Executing query:`n$Query" -Level Verbose
+            $ServerPrimary.Query($Query)
+        }
+        catch {
+            Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
+            Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query" -ErrorRecord $_ -Target $SqlInstance -Continue
+        }
+    }
 
-	Write-Message -Message "Finished configuring of primary database $PrimaryDatabase to secondary database $SecondaryDatabase." -Level Output 
+    Write-Message -Message "Finished configuring of primary database $PrimaryDatabase to secondary database $SecondaryDatabase." -Level Output
 
 }

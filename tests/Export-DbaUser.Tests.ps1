@@ -37,5 +37,5 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
                 (Get-ChildItem $outputFile).Length | Should BeGreaterThan 0
             }
         }
-	}
+    }
 }

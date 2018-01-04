@@ -1,4 +1,4 @@
-﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1","")
+﻿$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
@@ -8,8 +8,8 @@ Describe "$CommandName Unit Tests" -Tag UnitTests, Get-DbaLogin {
         It "Should have a mandatory parameter SQLInstance" {
             $Params['SQLInstance'].Attributes.Mandatory | Should be $true
         }
-        It "Should have Alias of ServerInstance and SqlServer for Parameter SQLInstance"{
-            $params['SQLInstance'].Aliases | Should Be @('ServerInstance','SqlServer')
+        It "Should have Alias of ServerInstance and SqlServer for Parameter SQLInstance" {
+            $params['SQLInstance'].Aliases | Should Be @('ServerInstance', 'SqlServer')
         }
         It "Should have a parameter SqlCredential" {
             $Params['SqlCredential'].Count | Should Be 1
@@ -55,16 +55,16 @@ Describe "$CommandName Unit Tests" -Tag UnitTests, Get-DbaLogin {
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     Context "Does sql instance have a SA account" {
-        $results = Get-DbaLogin -SqlInstance $script:instance1 -Login sa 
+        $results = Get-DbaLogin -SqlInstance $script:instance1 -Login sa
         It "Should report that one account named SA exists" {
             $results.Count | Should Be 1
         }
     }
 
     Context "Check that SA account is enabled" {
-            $results = Get-DbaLogin -SqlInstance $script:instance1 -Login sa
-            It "Should say the SA account is disabled FALSE" {
-                $results.IsDisabled | Should Be "False"
-            }
+        $results = Get-DbaLogin -SqlInstance $script:instance1 -Login sa
+        It "Should say the SA account is disabled FALSE" {
+            $results.IsDisabled | Should Be "False"
         }
+    }
 }
