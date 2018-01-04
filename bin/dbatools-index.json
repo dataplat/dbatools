@@ -676,7 +676,7 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabase -SqlInstance \"DEV01\", \"DEV02\", \"UAT01\", \"UAT02\", \"PROD01\", \"PROD02\" -Pattern Report\r\n\r\nReturns all database from the SqlInstances that have a database with Report in the name\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabase -SqlInstance \"DEV01\", \"DEV02\", \"UAT01\", \"UAT02\", \"PROD01\", \"PROD02\" -Pattern TestDB -Exact | \r\nSelect-Object *\r\n\r\nReturns all database from the SqlInstances that have a database named TestDB with a detailed output.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabase -SqlInstance \"DEV01\", \"DEV02\", \"UAT01\", \"UAT02\", \"PROD01\", \"PROD02\" -Property ServiceBrokerGuid \r\n-Pattern \u0027-faeb-495a-9898-f25a782835f5\u0027 | Select-Object *\r\n\r\nReturns all database from the SqlInstances that have the same Service Broker GUID with a deatiled output\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Find-DbaDatabaseGrowthEvent",
+        "CommandName":  "Find-DbaDbGrowthEvent",
         "Description":  "Finds any database AutoGrow events in the Default Trace.\n\nThe following events are included:\n    92 - Data File Auto Grow\n    93 - Log File Auto Grow\n    94 - Data File Auto Shrink\n    95 - Log File Auto Shrink",
         "Tags":  [
                      "AutoGrow",
@@ -685,9 +685,9 @@
                  ],
         "Author":  "Aaron Nelson",
         "Synopsis":  "Finds any database AutoGrow events in the Default Trace.",
-        "Name":  "Find-DbaDatabaseGrowthEvent",
+        "Name":  "Find-DbaDbGrowthEvent",
         "Links":  "https://dbatools.io/Find-DbaDatabaseGrowthEvent",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabaseGrowthEvent -SqlInstance localhost\r\n\r\nReturns any database AutoGrow events in the Default Trace for every database on the localhost instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabaseGrowthEvent -SqlInstance ServerA\\SQL2016, ServerA\\SQL2014\r\n\r\nReturns any database AutoGrow events in the Default Traces for every database on ServerA\\sql2016 \u0026 ServerA\\SQL2014.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabaseGrowthEvent -SqlInstance ServerA\\SQL2016 | Format-Table -AutoSize -Wrap\r\n\r\nReturns any database AutoGrow events in the Default Trace for every database on the ServerA\\SQL2016 instance in a table \r\nformat.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabaseGrowthEvent -SqlInstance ServerA\\SQL2016 -EventType Shrink\r\n\r\nReturns any database Auto Shrink events in the Default Trace for every database on the ServerA\\SQL2016 instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabaseGrowthEvent -SqlInstance ServerA\\SQL2016 -EventType Growth -FileType Data\r\n\r\nReturns any database Auto Growth events on data files in the Default Trace for every database on the ServerA\\SQL2016 \r\ninstance.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabaseGrowthEvent -SqlInstance localhost\r\n\r\nReturns any database AutoGrow events in the Default Trace with UTC time for the instance for every database on the \r\nlocalhost instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabaseGrowthEvent -SqlInstance localhost -UseLocalTime\r\n\r\nReturns any database AutoGrow events in the Default Trace with the local time of the instance for every database on the \r\nlocalhost instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabaseGrowthEvent -SqlInstance ServerA\\SQL2016, ServerA\\SQL2014\r\n\r\nReturns any database AutoGrow events in the Default Traces for every database on ServerA\\sql2016 \u0026 ServerA\\SQL2014.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabaseGrowthEvent -SqlInstance ServerA\\SQL2016 | Format-Table -AutoSize -Wrap\r\n\r\nReturns any database AutoGrow events in the Default Trace for every database on the ServerA\\SQL2016 instance in a table \r\nformat.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabaseGrowthEvent -SqlInstance ServerA\\SQL2016 -EventType Shrink\r\n\r\nReturns any database Auto Shrink events in the Default Trace for every database on the ServerA\\SQL2016 instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eFind-DbaDatabaseGrowthEvent -SqlInstance ServerA\\SQL2016 -EventType Growth -FileType Data\r\n\r\nReturns any database Auto Growth events on data files in the Default Trace for every database on the ServerA\\SQL2016 \r\ninstance.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Find-DbaDuplicateIndex",
@@ -1604,6 +1604,19 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaOperatingSystem\r\n\r\nReturns information about the local computer\u0027s operating system\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaOperatingSystem -ComputerName sql2016\r\n\r\nReturns information about the sql2016\u0027s operating system\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaOrphanUser",
+        "Description":  "An orphan user is defined by a user that does not have their matching login. (Login property = \"\").",
+        "Tags":  [
+                     "Orphan",
+                     "Databases"
+                 ],
+        "Author":  "Claudio Silva (@ClaudioESSilva)",
+        "Synopsis":  "Get orphaned users.",
+        "Name":  "Get-DbaOrphanUser",
+        "Links":  "https://dbatools.io/Get-DbaOrphanUser",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaOrphanUser -SqlInstance localhost\\sql2016\r\n\r\nFinds all orphan users without matching Logins in all databases present on server \u0027localhost\\sql2016\u0027.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaOrphanUser -SqlInstance localhost\\sql2016 -SqlCredential $cred\r\n\r\nFinds all orphan users without matching Logins in all databases present on server \u0027localhost\\sql2016\u0027. SQL Server \r\nauthentication will be used in connecting to the server.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaOrphanUser -SqlInstance localhost\\sql2016 -Database db1\r\n\r\nFinds orphan users without matching Logins in the db1 database present on server \u0027localhost\\sql2016\u0027.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaPageFileSetting",
         "Description":  "WMI class Win32_ComputerSystem tells us if Page File is managed automatically.\nIf TRUE all other properties do not exist.\nIf FALSE classes Win32_PageFile, Win32_PageFileSetting en Win32_PageFileUsage are examined.\nCIM is used, first via WinRM, and if not successful, via DCOM.\nThis function needs to be executed as a user with local admin rights on the target computer(s).",
         "Tags":  "CIM",
@@ -2405,7 +2418,7 @@
         "Synopsis":  "Creates/updates a sql alias for the specified server - mimics cliconfg.exe",
         "Name":  "New-DbaClientAlias",
         "Links":  "https://dbatools.io/New-DbaClientAlias",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaClientAlias -ServerName sqlcluster\\sharepoint -Alias sp\r\n\r\nCreates a new TCP alias on the local workstation called sp, which points sqlcluster\\sharepoint\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaClientAlias -ServerName sqlcluster\\sharepoint -Alias sp -Protocol NamedPipes\r\n\r\nCreates a new NamedPipes alias on the local workstation called sp, which points sqlcluster\\sharepoint\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaClientAlias -ServerName sqlcluster\\sharepoint -Alias sp\r\n\r\nCreates a new TCP alias on the local workstation called sp, which points sqlcluster\\sharepoint\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaClientAlias -ServerName \u0027sqlcluster,14443\u0027 -Alias spinstance\r\n\r\nCreates a new TCP alias on the local workstation called spinstance, which points to sqlcluster, port 14443.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eNew-DbaClientAlias -ServerName sqlcluster\\sharepoint -Alias sp -Protocol NamedPipes\r\n\r\nCreates a new NamedPipes alias on the local workstation called sp, which points sqlcluster\\sharepoint\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "New-DbaCmConnection",
