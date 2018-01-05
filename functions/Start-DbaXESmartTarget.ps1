@@ -160,10 +160,10 @@
             Start-SmartFunction @PSBoundParameters
         }
         else {
-            $date = (Get-Date -UFormat "%m%d%Y%H%M%S")
+            $date = (Get-Date -UFormat "%H%M%S") #"%m%d%Y%H%M%S"
             Start-Job -Name "XESmartTarget-$session-$date" -ArgumentList $PSBoundParameters -ScriptBlock {
                 Start-DbaXESmartTarget -SqlInstance $args.SqlInstance.InputObject -SqlCredential $args.SqlCredential -Database $args.Database -Session $args.Session -NotAsJob
-            }
+            } | Select-Object -Property ID, Name, State
         }
     }
 }
