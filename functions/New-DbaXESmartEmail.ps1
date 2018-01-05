@@ -64,10 +64,19 @@
     https://github.com/spaghettidba/XESmartTarget/wiki
 
     .EXAMPLE
-    $emailresponse = New-DbaXESmartEmail -SmtpServer smtp.ad.local -To admin@ad.local -Sender reports@ad.local
-    Start-DbaXESmartTarget -SqlInstance sql2017 -Session telemetry_xevents -Responder $emailresponse
+    $params = @{
+        SmtpServer = "smtp.ad.local"
+        To = "admin@ad.local"
+        Sender = "reports@ad.local"
+        Subject = "Query executed"
+        Body = "Query executed at {collection_time}"
+        Attachment = "batch_text"
+        AttachmentFileName = "query.sql"
+    }
+    $emailresponse = New-DbaXESmartEmail @params
+    Start-DbaXESmartTarget -SqlInstance sql2017 -Session querytracker -Responder $emailresponse
 
-    More info soon
+    Sends an email each time a querytracker event is captured.
 
 #>
     [CmdletBinding()]
@@ -81,10 +90,12 @@
         [string[]]$Cc,
         [string[]]$Bcc,
         [pscredential]$Credential,
-        [string]$Subject = "Query executed",
-        [string]$Body = "Query executed at {collection_time}",
-        [string]$Attachment = "batch_text",
-        [string]$AttachmentFileName = "query.sql",
+        [parameter(Mandatory)]
+        [string]$Subject,
+        [parameter(Mandatory)]
+        [string]$Body,
+        [string]$Attachment,
+        [string]$AttachmentFileName,
         [string]$PlainText,
         [string[]]$Events,
         [string]$Filter,

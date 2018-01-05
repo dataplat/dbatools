@@ -47,10 +47,12 @@
     https://github.com/spaghettidba/XESmartTarget/wiki
 
     .EXAMPLE
-    $emailresponse = New-DbaXESmartEmail -SmtpServer smtp.ad.local -To admin@ad.local -Sender reports@ad.local
-    Start-DbaXESmartTarget -SqlInstance sql2017 -Session telemetry_xevents -Responder $emailresponse
-
-    More info soon
+    $response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"
+    Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlocks -Responder $response
+    
+    .EXAMPLE
+    $response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"
+    Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlocks -Responder $response
 
 #>
     [CmdletBinding()]
