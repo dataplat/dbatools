@@ -18,6 +18,9 @@ function Test-DbaSqlBuild {
         Instead of using a specific MinimumBuild here you can pass "how many service packs and cu back" is the targeted compliance level
         You can use xxSP or xxCU or both, where xx is a number. See Examples for more informations
 
+    .PARAMETER Latest
+        Shortcut for specifying the very most up-to-date build available.
+
     .PARAMETER SqlInstance
         Target any number of instances, in order to return their compliance state.
 
@@ -63,6 +66,11 @@ function Test-DbaSqlBuild {
         Returns information about a build identified by "12.0.5540", making sure it is the latest CU release.
 
     .EXAMPLE
+        Test-DbaSqlBuild -Build "12.0.5540" -Latest
+
+        Same as previous, returns information about a build identified by "12.0.5540", making sure it is the latest build available.
+
+    .EXAMPLE
         Test-DbaSqlBuild -Build "12.00.4502" -MinimumBuild "12.0.4511" -Update
 
         Same as before, but tries to fetch the most up to date index online. When the online version is newer, the local one gets overwritten
@@ -101,6 +109,9 @@ function Test-DbaSqlBuild {
         [string]
         $MaxBehind,
 
+        [switch]
+        $Latest,
+
         [parameter(Mandatory = $false, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]
@@ -129,6 +140,20 @@ function Test-DbaSqlBuild {
             $writable_idxfile = Join-Path $DbatoolsData "dbatools-buildref-index.json"
             $result = Get-Content $writable_idxfile -Raw | ConvertFrom-Json
             $result.Data | Select-Object @{ Name = "VersionObject"; Expression = { [version]$_.Version } }, *
+        }
+
+        $ComplianceSpec = @()
+        $ComplianceSpecExclusiveParams = @('MinimumBuild', 'MaxBehind', 'Latest')
+        foreach ($exclParam in $ComplianceSpecExclusiveParams) {
+            if (Test-Bound -Parameter $exclParam) { $ComplianceSpec += $exclParam }
+        }
+        if ($ComplianceSpec.Length -gt 1) {
+            Stop-Function -Category InvalidArgument -Message "-MinimumBuild, -MaxBehind and -Latest are mutually exclusive. Please choose only one. Quitting."
+            return
+        }
+        if ($ComplianceSpec.Length -eq 0) {
+            Stop-Function -Category InvalidArgument -Message "You need to choose one from -MinimumBuild, -MaxBehind and -Latest. Quitting."
+            return
         }
         try {
             # Empty call just to make sure the buildref is updated and on the right path
@@ -181,7 +206,7 @@ function Test-DbaSqlBuild {
         if ($MinimumBuild) {
             $hiddenProps += 'MaxBehind', 'SPTarget', 'CUTarget', 'BuildTarget'
         }
-        elseif ($MaxBehind) {
+        elseif ($MaxBehind -or $Latest) {
             $hiddenProps += 'MinimumBuild'
         }
         $BuildVersions = Get-DbaSqlBuildReference -Build $Build -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Update:$Update -EnableException:$EnableException
@@ -197,7 +222,7 @@ function Test-DbaSqlBuild {
                     $compliant = $true
                 }
             }
-            elseif ($MaxBehind) {
+            elseif ($MaxBehind -or $Latest) {
                 $IdxVersion = $IdxRef | Where-Object Version -like "$($inputbuild.Major).$($inputbuild.Minor).*"
                 $lastsp = ''
                 $SPsAndCUs = @()
@@ -218,26 +243,31 @@ function Test-DbaSqlBuild {
                     }
                 }
                 $targetedBuild = $SPsAndCUs[0]
-                if ($ParsedMaxBehind.ContainsKey('SP')) {
-                    $AllSPs = $SPsAndCUs.SP | Select-Object -Unique
-                    $targetSP = $AllSPs.Length - $ParsedMaxBehind['SP'] - 1
-                    if ($targetSP -lt 0) {
-                        $targetSP = 0
-                    }
-                    $targetSPName = $AllSPs[$targetSP]
-                    Write-Message -Level verbose -Message "Target SP is $targetSPName - $targetSP on $($AllSPs.Length)"
-                    $targetedBuild = $SPsAndCUs | Where-Object SP -eq $targetSPName | Select-Object -First 1
+                if ($Latest) {
+                    $targetedBuild = $IdxVersion[$IdxVersion.Length - 1]
                 }
-                if ($ParsedMaxBehind.ContainsKey('CU')) {
-                    $SPsAndCUs | Where-Object Version -gt $targetedBuild.Version | ConvertTo-Json
-                    $AllCUs = ($SPsAndCUs | Where-Object VersionObject -gt $targetedBuild.VersionObject).CU | Select-Object -Unique
-                    $targetCU = $AllCUs.Length - $ParsedMaxBehind['CU'] - 1
-                    if ($targetCU -lt 0) {
-                        $targetCU = 0
+                else {
+                    if ($ParsedMaxBehind.ContainsKey('SP')) {
+                        $AllSPs = $SPsAndCUs.SP | Select-Object -Unique
+                        $targetSP = $AllSPs.Length - $ParsedMaxBehind['SP'] - 1
+                        if ($targetSP -lt 0) {
+                            $targetSP = 0
+                        }
+                        $targetSPName = $AllSPs[$targetSP]
+                        Write-Message -Level verbose -Message "Target SP is $targetSPName - $targetSP on $($AllSPs.Length)"
+                        $targetedBuild = $SPsAndCUs | Where-Object SP -eq $targetSPName | Select-Object -First 1
                     }
-                    $targetCUName = $AllCUs[$targetCU]
-                    Write-Message -Level verbose -Message "Target CU is $targetCUName - $targetCU on $($AllCUs.Length)"
-                    $targetedBuild = $SPsAndCUs | Where-Object VersionObject -gt $targetedBuild.VersionObject | Where-Object CU -eq $targetCUName | Select-Object -First 1
+                    if ($ParsedMaxBehind.ContainsKey('CU')) {
+                        $SPsAndCUs | Where-Object Version -gt $targetedBuild.Version | ConvertTo-Json
+                        $AllCUs = ($SPsAndCUs | Where-Object VersionObject -gt $targetedBuild.VersionObject).CU | Select-Object -Unique
+                        $targetCU = $AllCUs.Length - $ParsedMaxBehind['CU'] - 1
+                        if ($targetCU -lt 0) {
+                            $targetCU = 0
+                        }
+                        $targetCUName = $AllCUs[$targetCU]
+                        Write-Message -Level verbose -Message "Target CU is $targetCUName - $targetCU on $($AllCUs.Length)"
+                        $targetedBuild = $SPsAndCUs | Where-Object VersionObject -gt $targetedBuild.VersionObject | Where-Object CU -eq $targetCUName | Select-Object -First 1
+                    }
                 }
                 if ($inputbuild -ge $targetedBuild.VersionObject) {
                     $compliant = $true
