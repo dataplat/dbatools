@@ -49,9 +49,9 @@
     .EXAMPLE
     $response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"
     Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
-    
+
     Executes a T-SQL command against dbadb on sql2017 whenever a deadlock event is recorded.
-	
+
     .EXAMPLE
     $response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"
     $params = @{
@@ -65,14 +65,14 @@
     }
     $emailresponse = New-DbaXESmartEmail @params
     Start-DbaXESmartTarget -SqlInstance sql2017 -Session querytracker -Responder $response, $emailresponse
-    
+
     Executes a T-SQL command against dbadb on sql2017 whenever a querytracker event is recorded. Also sends an email.
 
     .EXAMPLE
     $columns = "cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count", "batch_text"
     $response = New-DbaXESmartTableWriter -SqlInstance sql2017 -Database dbadb -Table deadlocktracker -OutputColumns $columns -Filter "duration > 10000"
     Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
-    
+
     Writes Extended Events to the deadlocktracker table in dbadb on sql2017.
 #>
     [CmdletBinding()]
