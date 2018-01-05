@@ -43,7 +43,7 @@ Describe "$ModuleName indentation" -Tag 'Compliance' {
                 $LeadingTabs.Count | Should Be 0
             }
         }
-        $TrailingSpaces = Select-String -Path $f -Pattern '[ \t]+$'
+        $TrailingSpaces = Select-String -Path $f -Pattern '([^ \t\r\n])[ \t]+$'
         if ($TrailingSpaces.Count -gt 0) {
             It "$f has no trailing spaces" {
                 $TrailingSpaces.Count | Should Be 0
