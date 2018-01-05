@@ -1,6 +1,6 @@
 function Get-DbaLogShippingError {
     <#
-    .SYNOPSIS 
+    .SYNOPSIS
     Get-DbaLogShippingError returns all the log shipping errors that occured
 
     .DESCRIPTION
@@ -12,7 +12,7 @@ function Get-DbaLogShippingError {
 
     .PARAMETER SqlCredential
     Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
-    $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter. 
+    $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
     To connect as a different Windows user, run PowerShell as that user.
 
     .PARAMETER Database
@@ -21,7 +21,7 @@ function Get-DbaLogShippingError {
 
     .PARAMETER ExcludeDatabase
     Allows you to filter the results to only return the databases you're not interested in. This can be one or more values separated by commas.
-    This is not a wildcard and should be the exact database name. 
+    This is not a wildcard and should be the exact database name.
 
     .PARAMETER Action
     Filter to get the log shipping action that has occured like Backup, Copy, Restore.
@@ -29,7 +29,7 @@ function Get-DbaLogShippingError {
 
     .PARAMETER DateTimeFrom
     Filter the results based on the date starting from datetime X
-    
+
     .PARAMETER DateTimeTo
     Filter the results based on the date ending with datetime X
 
@@ -43,11 +43,11 @@ function Get-DbaLogShippingError {
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
     Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-    
-    .NOTES 
+
+    .NOTES
     Original Author: Sander Stad (@sqlstad, sqlstad.nl)
     Tags: LogShipping
-        
+
     Website: https://dbatools.io
     Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
     License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
@@ -56,7 +56,7 @@ function Get-DbaLogShippingError {
     https://dbatools.io/Get-DbaLogShippingError
 
     .EXAMPLE
-    Get-DbaLogShippingError -SqlInstance sql1 
+    Get-DbaLogShippingError -SqlInstance sql1
 
     Get all the log shipping errors that occured
 
@@ -68,7 +68,7 @@ function Get-DbaLogShippingError {
     .EXAMPLE
     Get-DbaLogShippingError -SqlInstance sql1 -Secondary
 
-    Get the errors that occured on the secondary instance. 
+    Get the errors that occured on the secondary instance.
     This will return the copy of the restore actions because those only occur on the secondary instance
 
     .EXAMPLE
@@ -79,11 +79,11 @@ function Get-DbaLogShippingError {
     .EXAMPLE
     Get-DbaLogShippingError -SqlInstance sql1 -Secondary -DateTimeFrom "01/05/2018" -DateTimeTo "2018-01-07"
 
-    Get the errors that have occured between "01/05/2018" and "01/07/2018". 
-    See that is doesn't matter how the date is represented. 
+    Get the errors that have occured between "01/05/2018" and "01/07/2018".
+    See that is doesn't matter how the date is represented.
 
-#>	
-    
+#>
+
     [CmdletBinding()]
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -118,7 +118,7 @@ function Get-DbaLogShippingError {
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            
+
             if ($server.EngineEdition -match "Express") {
                 Write-Message -Level Warning -Message "$instance is Express Edition which does not support Log Shipping"
                 continue
@@ -185,18 +185,18 @@ DROP TABLE #DatabaseID;"
 
             # Get the log shipping errors
             $results = $server.Query($query)
-            
+
             if ($results.Count -ge 1) {
 
                 # Filter the results
-                if($Database){
+                if ($Database) {
                     $results = $results | Where-Object { $_.DatabaseName -in $Database }
                 }
 
-                if($Action){
+                if ($Action) {
                     $results = $results | Where-Object { $_.Action -in $Action }
                 }
-                
+
                 if ($DateTimeFrom) {
                     $results = $results | Where-Object {$_.Logtime -ge $DateTimeFrom}
                 }
@@ -205,14 +205,14 @@ DROP TABLE #DatabaseID;"
                     $results = $results | Where-Object {$_.Logtime -le $DateTimeTo}
                 }
 
-                if($Primary){
+                if ($Primary) {
                     $results = $results | Where-Object {$_.Instance -eq 'Primary'}
                 }
 
-                if($Secondary){
+                if ($Secondary) {
                     $results = $results | Where-Object {$_.Instance -eq 'Secondary'}
                 }
-                
+
                 # Loop through each of the results
                 foreach ($result in $results) {
                     # Set up the custom object
@@ -228,7 +228,7 @@ DROP TABLE #DatabaseID;"
                             LogTime        = $result.LogTime
                             Message        = $result.Message
                         })
-                        
+
                 } # for each result
             }
             else {
@@ -236,7 +236,7 @@ DROP TABLE #DatabaseID;"
             }
 
         } # foreach instance
-        
+
         return $collection
 
     } # end process
