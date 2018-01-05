@@ -39,22 +39,6 @@
     Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
     
     Executes a T-SQL command against dbadb on sql2017 whenever a deadlock event is recorded.
-	
-    .EXAMPLE
-    $response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query "update table set whatever = 1"
-    $params = @{
-        SmtpServer = "smtp.ad.local"
-        To = "admin@ad.local"
-        Sender = "reports@ad.local"
-        Subject = "Query executed"
-        Body = "Query executed at {collection_time}"
-        Attachment = "batch_text"
-        AttachmentFileName = "query.sql"
-    }
-    $emailresponse = New-DbaXESmartEmail @params
-    Start-DbaXESmartTarget -SqlInstance sql2017 -Session querytracker -Responder $response, $emailresponse
-    
-    Executes a T-SQL command against dbadb on sql2017 whenever a querytracker event is recorded. Also sends an email.
 #>
     [CmdletBinding()]
     param (

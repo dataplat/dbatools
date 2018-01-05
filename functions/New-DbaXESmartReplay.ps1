@@ -54,9 +54,10 @@
     https://github.com/spaghettidba/XESmartTarget/wiki
 
     .EXAMPLE
-    New-DbaXESmartReplay
-
-    Coming soon
+    $response = New-DbaXESmartReplay -SqlInstance sql2017 -Database planning
+    Start-DbaXESmartTarget -SqlInstance sql2016 -Session loadrelay -Responder $response
+    
+    Replays events from sql2016 on sql2017.
 #>
     [CmdletBinding()]
     param (

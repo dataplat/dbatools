@@ -60,9 +60,11 @@
     https://github.com/spaghettidba/XESmartTarget/wiki
 
     .EXAMPLE
-    New-DbaXESmartTableWriter
-
-    Coming soon
+    $columns = "cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count", "batch_text"
+    $response = New-DbaXESmartTableWriter -SqlInstance sql2017 -Database dbadb -Table deadlocktracker -OutputColumns $columns -Filter "duration > 10000"
+    Start-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response
+    
+    Writes Extended Events to the deadlocktracker table in dbadb on sql2017.
 #>
     [CmdletBinding()]
     param (
@@ -77,8 +79,8 @@
         [switch]$AutoCreateTargetTable,
         [int]$UploadIntervalSeconds = 10,
         [string[]]$Events,
-        [string[]]$OutputColumns = @("cpu_time", "duration", "physical_reads", "logical_reads", "writes", "row_count", "batch_text"),
-        [string]$Filter = "duration > 10000",
+        [string[]]$OutputColumns,
+        [string]$Filter,
         [switch]$EnableException
     )
     begin {
