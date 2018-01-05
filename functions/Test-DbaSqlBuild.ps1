@@ -217,7 +217,7 @@ function Test-DbaSqlBuild {
                 Stop-Function -Message "$($BuildVersion.Build) is not recognized as a correct version" -ErrorRecord $_ -Continue
             }
             if ($MinimumBuild) {
-                Write-Message -Level verbose -Message "Comparing $MinimumBuild to $inputbuild"
+                Write-Message -Level Debug -Message "Comparing $MinimumBuild to $inputbuild"
                 if ($inputbuild -ge $MinimumBuild) {
                     $compliant = $true
                 }
@@ -254,19 +254,21 @@ function Test-DbaSqlBuild {
                             $targetSP = 0
                         }
                         $targetSPName = $AllSPs[$targetSP]
-                        Write-Message -Level verbose -Message "Target SP is $targetSPName - $targetSP on $($AllSPs.Length)"
+                        Write-Message -Level Debug -Message "Target SP is $targetSPName - $targetSP on $($AllSPs.Length)"
                         $targetedBuild = $SPsAndCUs | Where-Object SP -eq $targetSPName | Select-Object -First 1
                     }
                     if ($ParsedMaxBehind.ContainsKey('CU')) {
-                        $SPsAndCUs | Where-Object Version -gt $targetedBuild.Version | ConvertTo-Json
                         $AllCUs = ($SPsAndCUs | Where-Object VersionObject -gt $targetedBuild.VersionObject).CU | Select-Object -Unique
-                        $targetCU = $AllCUs.Length - $ParsedMaxBehind['CU'] - 1
-                        if ($targetCU -lt 0) {
-                            $targetCU = 0
+                        if ($AllCUs.Length -gt 0) {
+                            #CU after the targeted build available
+                            $targetCU = $AllCUs.Length - $ParsedMaxBehind['CU'] - 1
+                            if ($targetCU -lt 0) {
+                                $targetCU = 0
+                            }
+                            $targetCUName = $AllCUs[$targetCU]
+                            Write-Message -Level Debug -Message "Target CU is $targetCUName - $targetCU on $($AllCUs.Length)"
+                            $targetedBuild = $SPsAndCUs | Where-Object VersionObject -gt $targetedBuild.VersionObject | Where-Object CU -eq $targetCUName | Select-Object -First 1
                         }
-                        $targetCUName = $AllCUs[$targetCU]
-                        Write-Message -Level verbose -Message "Target CU is $targetCUName - $targetCU on $($AllCUs.Length)"
-                        $targetedBuild = $SPsAndCUs | Where-Object VersionObject -gt $targetedBuild.VersionObject | Where-Object CU -eq $targetCUName | Select-Object -First 1
                     }
                 }
                 if ($inputbuild -ge $targetedBuild.VersionObject) {
