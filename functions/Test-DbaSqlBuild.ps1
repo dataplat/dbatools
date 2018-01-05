@@ -27,6 +27,12 @@ function Test-DbaSqlBuild {
     .PARAMETER Update
         Looks online for the most up to date reference, replacing the local one.
 
+    .PARAMETER Quiet
+        Makes the function just return $true/$false. It's useful if you use Test-DbaSqlBuild in your own scripts, like
+            if (Test-DbaSqlBuild -Build "12.0.5540" -MaxBehind "0CU" -Quiet) {
+                Do-Something
+            }
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -101,11 +107,14 @@ function Test-DbaSqlBuild {
         $SqlInstance,
 
         [Alias("Credential")]
-        [PsCredential]
+        [PSCredential]
         $SqlCredential,
 
         [switch]
         $Update,
+
+        [switch]
+        $Quiet,
 
         [switch]
         [Alias('Silent')]$EnableException
@@ -120,6 +129,15 @@ function Test-DbaSqlBuild {
             $writable_idxfile = Join-Path $DbatoolsData "dbatools-buildref-index.json"
             $result = Get-Content $writable_idxfile -Raw | ConvertFrom-Json
             $result.Data | Select-Object @{ Name = "VersionObject"; Expression = { [version]$_.Version } }, *
+        }
+        try {
+            # Empty call just to make sure the buildref is updated and on the right path
+            Get-DbaSqlBuildReference -Update:$Update -EnableException:$true
+            $IdxRef = Get-DbaSqlBuildReferenceIndex
+        }
+        catch {
+            Stop-Function -Message "Error loading SQL build reference" -ErrorRecord $_
+            return
         }
         if ($MaxBehind) {
             $MaxBehindValidator = [regex]'^(?<howmany>[\d]+)(?<what>SP|CU)$'
@@ -156,13 +174,6 @@ function Test-DbaSqlBuild {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        try {
-            $IdxRef = Get-DbaSqlBuildReferenceIndex -Moduledirectory $moduledirectory -Update $Update -EnableException $EnableException
-        }
-        catch {
-            Stop-Function -Message "Error loading SQL build reference" -ErrorRecord $_
-            return
-        }
         $hiddenProps = @()
         if (-not $SqlInstance) {
             $hiddenProps += 'SqlInstance'
@@ -238,9 +249,12 @@ function Test-DbaSqlBuild {
             Add-Member -InputObject $BuildVersion -MemberType NoteProperty -Name SPTarget -Value $targetSPName
             Add-Member -InputObject $BuildVersion -MemberType NoteProperty -Name CUTarget -Value $targetCUName
             Add-Member -InputObject $BuildVersion -MemberType NoteProperty -Name BuildTarget -Value $targetedBuild.VersionObject
-
-            $BuildVersion | Select-Object * | Select-DefaultView -ExcludeProperty $hiddenProps
+            if ($Quiet) {
+                $BuildVersion.Compliant
+            }
+            else {
+                $BuildVersion | Select-Object * | Select-DefaultView -ExcludeProperty $hiddenProps
+            }
         }
     }
 }
-
