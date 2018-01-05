@@ -1,7 +1,7 @@
 function Test-DbaLogShippingStatus {
     <#
-    .SYNOPSIS
-    Get-DbaLogShippingStatus returns the status of your log shipping databases
+    .SYNOPSIS 
+    Test-DbaLogShippingStatus returns the status of your log shipping databases
 
     .DESCRIPTION
     Most of the time your log shipping "just works".
@@ -101,48 +101,49 @@ function Test-DbaLogShippingStatus {
         $collection = New-Object System.Collections.ArrayList
 
         # Setup the query
-        [string[]]$query = "IF ( OBJECT_ID('tempdb..#logshippingstatus') ) IS NOT NULL
-                BEGIN
-                    DROP TABLE #logshippingstatus;
-                END;
+        [string[]]$query = "
+IF ( OBJECT_ID('tempdb..#logshippingstatus') ) IS NOT NULL
+BEGIN
+DROP TABLE #logshippingstatus;
+END;
 
-            CREATE TABLE #logshippingstatus
-            (
-              Status BIT ,
-              IsPrimary BIT ,
-              Server VARCHAR(100) ,
-              DatabaseName VARCHAR(100) ,
-              TimeSinceLastBackup INT ,
-              LastBackupFile VARCHAR(255) ,
-              BackupThresshold INT ,
-              IsBackupAlertEnabled BIT ,
-              TimeSinceLastCopy INT ,
-              LastCopiedFile VARCHAR(255) ,
-              TimeSinceLastRestore INT ,
-              LastRestoredFile VARCHAR(255) ,
-              LastRestoredLatency INT ,
-              RestoreThresshold INT ,
-              IsRestoreAlertEnabled BIT
-            );
+CREATE TABLE #logshippingstatus
+(
+    Status BIT ,
+    IsPrimary BIT ,
+    Server VARCHAR(100) ,
+    DatabaseName VARCHAR(100) ,
+    TimeSinceLastBackup INT ,
+    LastBackupFile VARCHAR(255) ,
+    BackupThresshold INT ,
+    IsBackupAlertEnabled BIT ,
+    TimeSinceLastCopy INT ,
+    LastCopiedFile VARCHAR(255) ,
+    TimeSinceLastRestore INT ,
+    LastRestoredFile VARCHAR(255) ,
+    LastRestoredLatency INT ,
+    RestoreThresshold INT ,
+    IsRestoreAlertEnabled BIT
+);
 
-            INSERT	INTO #logshippingstatus
-                    (   Status ,
-                    IsPrimary ,
-                    Server ,
-                    DatabaseName ,
-                    TimeSinceLastBackup ,
-                    LastBackupFile ,
-                    BackupThresshold ,
-                    IsBackupAlertEnabled ,
-                    TimeSinceLastCopy ,
-                    LastCopiedFile ,
-                    TimeSinceLastRestore ,
-                    LastRestoredFile ,
-                    LastRestoredLatency ,
-                    RestoreThresshold ,
-                    IsRestoreAlertEnabled
-                    )
-                    EXEC master.sys.sp_help_log_shipping_monitor"
+INSERT	INTO #logshippingstatus
+(   Status ,
+    IsPrimary ,
+    Server ,
+    DatabaseName ,
+    TimeSinceLastBackup ,
+    LastBackupFile ,
+    BackupThresshold ,
+    IsBackupAlertEnabled ,
+    TimeSinceLastCopy ,
+    LastCopiedFile ,
+    TimeSinceLastRestore ,
+    LastRestoredFile ,
+    LastRestoredLatency ,
+    RestoreThresshold ,
+    IsRestoreAlertEnabled 
+)
+EXEC master.sys.sp_help_log_shipping_monitor"
 
         $select = "SELECT * FROM #logshippingstatus"
 
