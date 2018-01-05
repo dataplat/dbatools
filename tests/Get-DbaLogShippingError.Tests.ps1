@@ -17,7 +17,7 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
     Context "Return values" {
         It "Get the log shipping errors" {
             $Results = @()
-            $Results += Get-DbaLogShippingError -SqlInstance $script:instance1
+            $Results += Get-DbaLogShippingError -SqlInstance $script:instance2
             $Results.Count | Should Be 0
         }
     }
