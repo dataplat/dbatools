@@ -126,7 +126,7 @@ CREATE TABLE #logshippingstatus
     IsRestoreAlertEnabled BIT
 );
 
-INSERT	INTO #logshippingstatus
+INSERT INTO #logshippingstatus
 (   Status ,
     IsPrimary ,
     Server ,
@@ -141,7 +141,7 @@ INSERT	INTO #logshippingstatus
     LastRestoredFile ,
     LastRestoredLatency ,
     RestoreThresshold ,
-    IsRestoreAlertEnabled 
+    IsRestoreAlertEnabled
 )
 EXEC master.sys.sp_help_log_shipping_monitor"
 
