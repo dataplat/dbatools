@@ -67,7 +67,7 @@
         [PSCredential]$SqlCredential,
         [parameter(Mandatory)]
         [string]$Database,
-        [string[]]$Events,
+        [string[]]$Events= "sql_batch_completed",
         [string]$Filter,
         [int]$DelaySeconds,
         [switch]$StopOnError,
@@ -105,8 +105,8 @@
                 $replay.StopOnError = $StopOnError
                 $replay.Filter = $Filter
                 $replay.DelaySeconds = $DelaySeconds
-                $replay.IsSingleEvent = $IsSingleEvent
-                $replay.FailOnSingleEventViolation = $FailOnSingleEventViolation
+                #$replay.IsSingleEvent = $IsSingleEvent
+                #$replay.FailOnSingleEventViolation = $FailOnSingleEventViolation
                 $replay.ReplayIntervalSeconds = $ReplayIntervalSeconds
 
                 if ($SqlCredential) {
