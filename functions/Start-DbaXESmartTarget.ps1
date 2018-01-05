@@ -33,7 +33,7 @@
 
     .PARAMETER NotAsJob
     By default, this this command will start a job that runs in the background. Use NotAsJob to output to screen indefinitely.
-    
+
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -121,7 +121,7 @@
             }
             process {
                 if (Test-FunctionInterrupt) { return }
-                
+
                 foreach ($instance in $SqlInstance) {
                     try {
                         Write-Message -Level Verbose -Message "Connecting to $instance"
@@ -130,21 +130,21 @@
                     catch {
                         Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                     }
-                    
+
                     $target = New-Object -TypeName XESmartTarget.Core.Target
                     $target.ServerName = $instance
                     $target.SessionName = $Session
                     $target.FailOnProcessingError = $FailOnProcessingError
-                    
+
                     if ($SqlCredential) {
                         $target.UserName = $SqlCredential.UserName
                         $target.Password = $SqlCredential.GetNetworkCredential().Password
                     }
-                    
+
                     foreach ($response in $Responder) {
                         $target.Responses.Add($response)
                     }
-                    
+
                     try {
                         $target.Start()
                     }
@@ -165,5 +165,5 @@
                 Start-DbaXESmartTarget -SqlInstance $args.SqlInstance.InputObject -SqlCredential $args.SqlCredential -Database $args.Database -Session $args.Session -NotAsJob
             }
         }
-    }   
+    }
 }
