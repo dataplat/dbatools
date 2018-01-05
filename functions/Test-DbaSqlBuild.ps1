@@ -213,6 +213,8 @@ function Test-DbaSqlBuild {
         foreach ($BuildVersion in $BuildVersions) {
             $inputbuild = $BuildVersion.Build
             $compliant = $false
+            $targetSPName = $null
+            $targetCUName = $null
             if ($BuildVersion.MatchType -eq 'Approximate') {
                 Stop-Function -Message "$($BuildVersion.Build) is not recognized as a correct version" -ErrorRecord $_ -Continue
             }
