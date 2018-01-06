@@ -156,13 +156,24 @@
         }
     }
     process {
+        foreach ($instance in $SqlInstance) {
+            if (-not ($xesession = Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential -Session $Session)) {
+                Stop-Function -Message "Session $Session does not exist on $instance"
+                return
+            }
+            if ($xesession.Status -ne "Running") {
+                Stop-Function -Message "Session $Session on $instance is not running"
+                return
+            }
+        }
+        
         if ($NotAsJob) {
             Start-SmartFunction @PSBoundParameters
         }
         else {
             $date = (Get-Date -UFormat "%H%M%S") #"%m%d%Y%H%M%S"
             Start-Job -Name "XESmartTarget-$session-$date" -ArgumentList $PSBoundParameters -ScriptBlock {
-                Start-DbaXESmartTarget -SqlInstance $args.SqlInstance.InputObject -SqlCredential $args.SqlCredential -Database $args.Database -Session $args.Session -NotAsJob
+                Start-DbaXESmartTarget -SqlInstance $args.SqlInstance.InputObject -SqlCredential $args.SqlCredential -Database $args.Database -Session $args.Session -NotAsJob -FailOnProcessingError
             } | Select-Object -Property ID, Name, State
         }
     }
