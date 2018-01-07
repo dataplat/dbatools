@@ -1,6 +1,6 @@
 function Get-DbaDbRecoveryModel {
     <#
-        .SYNOPSIS 
+        .SYNOPSIS
             Get-DbaDbRecoveryModel displays the Recovery Model.
 
         .DESCRIPTION
@@ -26,8 +26,8 @@ function Get-DbaDbRecoveryModel {
 
         .PARAMETER RecoveryModel
             Filters the output based on Recovery Model. Valid options are Simple, Full and BulkLogged
-            
-            Details about the recovery models can be found here: 
+
+            Details about the recovery models can be found here:
             https://docs.microsoft.com/en-us/sql/relational-databases/backup-restore/recovery-models-sql-server
 
         .PARAMETER EnableException
@@ -59,35 +59,35 @@ function Get-DbaDbRecoveryModel {
     #>
     [CmdletBinding()]
     param (
-		[parameter(Mandatory, ValueFromPipeline)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstance[]]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[ValidateSet('Simple', 'Full', 'BulkLogged')]
-		[string[]]$RecoveryModel,
-		[object[]]$Database,
-		[object[]]$ExcludeDatabase,
-		[switch]$EnableException
-	)
-	begin {
-		$defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
-		'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
-		'LastLogBackupDate as LastLogBackup'
-	}
-	process {
-		$params = @{
-			SqlInstance	       = $SqlInstance
-			SqlCredential	   = $SqlCredential
-			Database		   = $Database
-			ExcludeDatabase    = $ExcludeDatabase
-			EnableException    = $EnableException
-		}
-		
-		if ($RecoveryModel) {
-			Get-DbaDatabase @params | Where-Object RecoveryModel -in $RecoveryModel | Select-DefaultView -Property $defaults
-		}
-		else {
-			Get-DbaDatabase @params | Select-DefaultView -Property $defaults
-		}
-	}
+        [parameter(Mandatory, ValueFromPipeline)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstance[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [ValidateSet('Simple', 'Full', 'BulkLogged')]
+        [string[]]$RecoveryModel,
+        [object[]]$Database,
+        [object[]]$ExcludeDatabase,
+        [switch]$EnableException
+    )
+    begin {
+        $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'Name', 'Status', 'IsAccessible', 'RecoveryModel',
+        'LastBackupDate as LastFullBackup', 'LastDifferentialBackupDate as LastDiffBackup',
+        'LastLogBackupDate as LastLogBackup'
+    }
+    process {
+        $params = @{
+            SqlInstance     = $SqlInstance
+            SqlCredential   = $SqlCredential
+            Database        = $Database
+            ExcludeDatabase = $ExcludeDatabase
+            EnableException = $EnableException
+        }
+
+        if ($RecoveryModel) {
+            Get-DbaDatabase @params | Where-Object RecoveryModel -in $RecoveryModel | Where-Object IsAccessible | Select-DefaultView -Property $defaults
+        }
+        else {
+            Get-DbaDatabase @params | Select-DefaultView -Property $defaults
+        }
+    }
 }

@@ -1,8 +1,6 @@
 # dbatools
 
-dbatools is sort of like a command-line SQL Server Management Studio. The project initially started out as Start-SqlMigration.ps1, but has now grown into a collection of [over 300 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
-
-![dbatools logo](https://blog.netnerds.net/wp-content/uploads/2016/05/dbatools.png)
+<img align="left" src=https://blog.netnerds.net/wp-content/uploads/2016/05/dbatools.png alt="dbatools logo">  dbatools is sort of like a command-line SQL Server Management Studio. The project initially started out as Start-SqlMigration.ps1, but has now grown into a collection of [over 300 commands](https://dbatools.io/commands) that help automate SQL Server tasks and encourage best practices.
 
 Got ideas for new commands? Please propose them as [issues](https://dbatools.io/issues) and let us know what you'd like to see. Bug reports should also be filed under this repository's [issues](https://github.com/sqlcollaborative/dbatools/issues) section.
 
@@ -25,10 +23,10 @@ Note: please only use `Invoke-Expression (Invoke-WebRequest..)` from sources you
 
 In addition to the simple things you can do in SSMS (like starting a job), we've also read a whole bunch of docs and came up with commands that do nifty things quickly.
 
-* Lost sysadmin access and need to regain entry to your SQL Server? Use [Reset-DbaAdmin](/Reset-DbaAdmin).
-* Need to easily test your backups? Use [Test-DbaLastBackup](/Test-DbaLastBackup).
-* SPN management got you down? Use [our suite of SPN commands](/schwifty) to find which SPNs are missing and easily add them.
-* Got so many databases you can't keep track? Congrats on your big ol' environment! Use [Find-DbaDatabase](/Find-DbaDatabase) to easily find your database.
+* Lost sysadmin access and need to regain entry to your SQL Server? Use [Reset-DbaAdmin](http://dbatools.io/Reset-DbaAdmin).
+* Need to easily test your backups? Use [Test-DbaLastBackup](http://dbatools.io/Test-DbaLastBackup).
+* SPN management got you down? Use [our suite of SPN commands](http://dbatools.io/schwifty) to find which SPNs are missing and easily add them.
+* Got so many databases you can't keep track? Congrats on your big ol' environment! Use [Find-DbaDatabase](http://dbatools.io/Find-DbaDatabase) to easily find your database.
 
 ## Usage examples
 

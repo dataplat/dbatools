@@ -26,10 +26,10 @@ Return information for only specific snapshots
 The snapshot(s) to exclude - this list is auto-populated from the server
 
 .PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
 .NOTES
 Tags: Snapshot
 Author: niphlod
@@ -84,7 +84,7 @@ Returns information for database snapshots HR_snapshot and Accounting_snapshot
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $dbs = $server.Databases
+            $dbs = $server.Databases | Where-Object IsAccessible
 
             if ($Database) {
                 $dbs = $dbs | Where-Object { $Database -contains $_.DatabaseSnapshotBaseName }

@@ -60,6 +60,11 @@ namespace Sqlcollaborative.Dbatools.Database
         public Size TotalSize;
 
         /// <summary>
+        /// What is the total compressesed size of the backup
+        /// </summary>
+        public Size CompressedBackupSize;
+
+        /// <summary>
         /// The kind of backup this was
         /// </summary>
         public string Type;

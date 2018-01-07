@@ -18,15 +18,15 @@ function Get-DbaAgListener {
 
         .PARAMETER AvailabilityGroup
             Specify the Availability Group name that you want to get information on.
-		
-		.PARAMETER Listener
-			Specify the Listener name that you want to get information on.
+
+        .PARAMETER Listener
+            Specify the Listener name that you want to get information on.
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-            
+
         .NOTES
             Tags: DisasterRecovery, AG, AvailabilityGroup, Replica
             Author: Viorel Ciucu (@viorelciucu)
@@ -58,7 +58,7 @@ function Get-DbaAgListener {
         $SqlCredential,
         [parameter(ValueFromPipeline = $true)]
         [object[]]$AvailabilityGroup,
-		[object[]]$Listener,
+        [object[]]$Listener,
         [switch][Alias('Silent')]$EnableException
     )
 
@@ -79,19 +79,19 @@ function Get-DbaAgListener {
             if ($AvailabilityGroup) {
                 $ags = $ags | Where-Object Name -in $AvailabilityGroup
             }
-			
-			if ($Listener) {
-				$ags = $ags | Where-Object AvailabilityGroupListeners -match $Listener
-				if ($ags.Length -eq 0) {
-					Stop-Function -Message "We could not find the listener $Listener on $serverName" -Target $serverName -Continue
-				}
-			}
 
-            foreach ($ag in $ags) {     
-                
+            if ($Listener) {
+                $ags = $ags | Where-Object AvailabilityGroupListeners -match $Listener
+                if ($ags.Length -eq 0) {
+                    Stop-Function -Message "We could not find the listener $Listener on $serverName" -Target $serverName -Continue
+                }
+            }
+
+            foreach ($ag in $ags) {
+
                 $Listener = $ag.AvailabilityGroupListeners
-                $defaults = 'Parent as AvailabilityGroupName','Name as ListenerName','PortNumber','ClusterIPConfiguration'
-                
+                $defaults = 'Parent as AvailabilityGroupName', 'Name as ListenerName', 'PortNumber', 'ClusterIPConfiguration'
+
                 Select-DefaultView -InputObject $Listener -Property $defaults
             }
 
