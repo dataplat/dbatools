@@ -56,6 +56,9 @@ function Export-DbaLogin {
         .PARAMETER ExcludeGoBatchSeparator
             If specified, will NOT script the 'GO' batch separator.
 
+        .PARAMETER DestinationVersion
+            To say to which version the script should be generated. If not specified will use instance major version.
+
         .NOTES
             Tags: Export, Login
             Author: Chrissy LeMaire (@cl), netnerds.net
@@ -90,6 +93,11 @@ function Export-DbaLogin {
             Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun, netnerds -FilePath C:\temp\login.sql -ExcludeGoBatchSeparator
 
             Exports ONLY logins netnerds and realcajun FROM sqlserver2008 server, to the C:\temp\login.sql file without the 'GO' batch separator.
+
+        .EXAMPLE
+            Export-DbaLogin -SqlInstance sqlserver2008 -Login realcajun -FilePath C:\temp\users.sql -DestinationVersion SQLServer2016
+
+            Exports login realcajun fron sqlsever2008 to the file C:\temp\users.sql with sintax to run on SQL Server 2016
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
@@ -111,7 +119,9 @@ function Export-DbaLogin {
         [switch]$NoDatabases,
         [switch]$NoJobs,
         [switch][Alias('Silent')]$EnableException,
-        [switch]$ExcludeGoBatchSeparator
+        [switch]$ExcludeGoBatchSeparator,
+        [ValidateSet('SQLServer2000', 'SQLServer2005', 'SQLServer2008/2008R2', 'SQLServer2012', 'SQLServer2014', 'SQLServer2016', 'SQLServer2017')]
+        [string]$DestinationVersion
     )
 
     begin {
@@ -129,6 +139,26 @@ function Export-DbaLogin {
         }
 
         $outsql = @()
+
+        $versions = @{
+            'SQLServer2000'        = 'Version80'
+            'SQLServer2005'        = 'Version90'
+            'SQLServer2008/2008R2' = 'Version100'
+            'SQLServer2012'        = 'Version110'
+            'SQLServer2014'        = 'Version120'
+            'SQLServer2016'        = 'Version130'
+            'SQLServer2017'        = 'Version140'
+        }
+
+        $versionsNumbers = @{
+            '8'  = 'Version80'
+            '9'  = 'Version90'
+            '10' = 'Version100'
+            '11' = 'Version110'
+            '12' = 'Version120'
+            '13' = 'Version130'
+            '14' = 'Version140'
+        }
     }
     process {
         if (Test-FunctionInterrupt) {
@@ -137,6 +167,14 @@ function Export-DbaLogin {
 
         Write-Message -Level Verbose -Message "Connecting to $sqlinstance."
         $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $sqlcredential
+
+        if ([string]::IsNullOrEmpty($destinationVersion)) {
+            #Get compatibility level for scripting the objects
+            $scriptVersion = $versionsNumbers[$server.VersionMajor.ToString()]
+        }
+        else {
+            $scriptVersion = $versions[$destinationVersion]
+        }
 
         if ($NoDatabases -eq $false) {
             # if we got a database or a list of databases passed
@@ -281,7 +319,12 @@ function Export-DbaLogin {
                 }
 
                 if ($roleMembers -contains $userName) {
-                    $outsql += "ALTER SERVER ROLE [$roleName] ADD MEMBER [$userName]"
+                    if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
+                        $outsql += "EXEC sys.sp_addrolemember @rolename = N'$roleName', @membername = N'$userName'"
+                    }
+                    else {
+                        $outsql += "ALTER SERVER ROLE [$roleName] ADD MEMBER [$userName]"
+                    }
                 }
             }
 
@@ -351,7 +394,12 @@ function Export-DbaLogin {
                     foreach ($role in $sourceDb.Roles) {
                         if ($role.EnumMembers() -contains $userName) {
                             $roleName = $role.Name
-                            $outsql += "ALTER ROLE [$roleName] ADD MEMBER [$userName]"
+                            if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
+                                $outsql += "EXEC sys.sp_addrolemember @rolename = N'$roleName', @membername = N'$userName'"
+                            }
+                            else {
+                                $outsql += "ALTER ROLE [$roleName] ADD MEMBER [$userName]"
+                            }
                         }
                     }
 
@@ -397,4 +445,3 @@ function Export-DbaLogin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Export-SqlLogin
     }
 }
-
