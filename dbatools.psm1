@@ -581,8 +581,8 @@ if ($script:dbatoolsConfigRunspace) {
 }
 Write-ImportTime -Text "Waiting for runspaces to finish"
 
-. Import-ModuleFile "$script:PSModuleRoot\bin\type-extensions.ps1"
-Write-ImportTime -Text "Loaded type extensions"
+#. Import-ModuleFile "$script:PSModuleRoot\bin\type-extensions.ps1"
+#Write-ImportTime -Text "Loaded type extensions"
 
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true;
 
