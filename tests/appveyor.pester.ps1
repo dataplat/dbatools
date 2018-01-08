@@ -50,7 +50,7 @@ Remove-Module dbatools -ErrorAction Ignore
 #imports the psm1 to be able to use internal functions in tests
 Import-Module "$ModuleBase\dbatools.psm1"
 #imports the module making sure DLL is loaded ok
-Import-Module "$ModuleBase\dbatools.psd1"
+Import-Module "$ModuleBase\dbatools.psd1" -Force
 Start-Sleep 5
 
 function Get-CoverageIndications($Path, $ModuleBase) {
