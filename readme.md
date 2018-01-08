@@ -240,3 +240,7 @@ dbatools aims to support as many configurations as possible, including
 * Auto-populated parameters for command-line completion (think -Database and -Login)
 
 Read more at our website at [dbatools.io](https://dbatools.io)
+
+## Contributing
+
+Want to contribute to the project? We'd love to have you! Visit our [contributing.md](https://github.com/sqlcollaborative/dbatools/blob/master/contributing.md) for a jump start.
