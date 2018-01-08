@@ -511,7 +511,7 @@ function Get-DbaBackupHistory {
                     $historyObject.End = ($group.Group.End | Measure-Object -Maximum).Maximum
                     $historyObject.Duration = New-TimeSpan -Seconds ($group.Group.Duration | Measure-Object -Maximum).Maximum
                     $historyObject.Path = $group.Group.Path
-                    $historyObject.TotalSize = ($group.Group.TotalSize | Measure-Object -Sum).Sum
+                    $historyObject.TotalSize = $group.Group[0].TotalSize
                     $historyObject.Type = $group.Group[0].Type
                     $historyObject.BackupSetId = $group.Group[0].BackupSetId
                     $historyObject.DeviceType = $group.Group[0].DeviceType
