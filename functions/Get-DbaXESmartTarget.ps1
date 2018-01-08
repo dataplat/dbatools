@@ -23,6 +23,8 @@
 
     .EXAMPLE
     Get-DbaXESmartTarget
+    
+    Gets an XESmartTarget PowerShell Job created by Start-DbaXESmartTarget
 
 #>
     [CmdletBinding()]
