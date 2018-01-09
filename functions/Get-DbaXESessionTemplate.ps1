@@ -28,7 +28,7 @@
     Returns information about all the templates in the local dbatools repository
     
     .EXAMPLE
-    Get-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017
+    Get-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017 | Start-DbaXESession
     
     Allows you to select a Session template then import to an instance named
     
