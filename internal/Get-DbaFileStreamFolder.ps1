@@ -1,4 +1,4 @@
-Function Get-DbaFileStreamFolder {
+function Get-DbaFileStreamFolder {
     <#
 
     .SYNOPSIS
@@ -7,11 +7,11 @@ Function Get-DbaFileStreamFolder {
     .DESCRIPTION
         Given a SQL Instance, and an optional list of databases returns the FileStream containing folders on that Instance. Without the Database parameter, all dbs with FileStream are returned
 
-	.PARAMETER SqlInstance
-		The Sql Server instance to be queries
+    .PARAMETER SqlInstance
+        The Sql Server instance to be queries
 
-	.PARAMETER SqlCredential
-		A Sql Credential to connect to $SqlInstance
+    .PARAMETER SqlCredential
+        A Sql Credential to connect to $SqlInstance
 
     .PARAMETER Database
         Database to be tested, multiple databases may be specified as a comma seperated list.
@@ -23,30 +23,30 @@ Function Get-DbaFileStreamFolder {
 
     .EXAMPLE
         Get-DbaFileStreamFolder -SqlInstance server1\instance2
-        
+
         Returns all FileStream folders from server1\instance2
 
     .EXAMPLE
         Get-DbaFileStreamFolder -SqlInstance server1\instance2 -Database Archive
-        
+
         Returns any FileStream folders from the Archive database on server1\instance2
-    
+
     .NOTES
-	Author:Stuart Moore (@napalmgram stuart-moore.com )
+    Author:Stuart Moore (@napalmgram stuart-moore.com )
 
 
-	Website: https://dbatools.io
-	Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-	License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+    Website: https://dbatools.io
+    Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+    License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
     #>
-	param (
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[string[]]$Database,
-		[switch]$EnableException
+    param (
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [string[]]$Database,
+        [switch]$EnableException
     )
-    
+
     BEGIN {
         try {
             Write-Message -Level VeryVerbose -Message "Connecting to $SqlInstance." -Target $SqlInstance
@@ -58,7 +58,7 @@ Function Get-DbaFileStreamFolder {
     }
 
     PROCESS {
-        $sql = "select d.name as 'dbname', mf.Physical_Name from sys.master_files mf inner join sys.databases d on mf.database_id = d.database_id 
+        $sql = "select d.name as 'dbname', mf.Physical_Name from sys.master_files mf inner join sys.databases d on mf.database_id = d.database_id
         where mf.type=2"
         $databases = @()
         if ($null -ne $Database) {
@@ -69,15 +69,15 @@ Function Get-DbaFileStreamFolder {
         }
 
         $results = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows | Select-Object * -ExcludeProperty  RowError, Rowstate, table, itemarray, haserrors
-        foreach ($result in $results){
-                [PsCustomObject]@{
-                    ServerInstance = $SqlInstance
-                    Database = $result.dbname
-                    FileStreamFolder = $result.Physical_Name
-                }
+        foreach ($result in $results) {
+            [PsCustomObject]@{
+                ServerInstance   = $SqlInstance
+                Database         = $result.dbname
+                FileStreamFolder = $result.Physical_Name
+            }
         }
 
-        
+
     }
 
     END {}

@@ -1,5 +1,5 @@
 function Read-DbaTransactionLog {
-	<#
+    <#
 .SYNOPSIS
 Reads the live Transaction log from specied SQL Server Database
 
@@ -25,10 +25,10 @@ Database to read the transaction log of
 Switch to indicate that you wish to bypass the recommended limits of the function
 
 .PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
 .NOTES
 Tags: Databases, Logs
 Author: Stuart Moore (@napalmgram), stuart-moore.com
@@ -48,55 +48,55 @@ $Log = Read-DbaTransactionLog -SqlInstance sql2016 -Database MyDatabase -IgnoreL
 Will read the contents of the transaction log of MyDatabase on SQL Server Instance sql2016 into the local PowerShell object $Log, ignoring the recommnedation of not returning more that 0.5GB of log
 
 #>
-	[CmdletBinding(DefaultParameterSetName = "Default")]
-	Param (
-		[parameter(Position = 0, Mandatory = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[parameter(Mandatory = $true)]
-		[object]$Database,
-		[Switch]$IgnoreLimit,
-		[switch][Alias('Silent')]$EnableException
-	)
+    [CmdletBinding(DefaultParameterSetName = "Default")]
+    Param (
+        [parameter(Position = 0, Mandatory = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [parameter(Mandatory = $true)]
+        [object]$Database,
+        [Switch]$IgnoreLimit,
+        [switch][Alias('Silent')]$EnableException
+    )
 
-	try {
-		$server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-	}
-	catch {
-		Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-		return
-	}
+    try {
+        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+    }
+    catch {
+        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        return
+    }
 
-	if (-not $server.databases[$Database]) {
-		Stop-Function -Message "$Database does not exist"
-		return
-	}
+    if (-not $server.databases[$Database]) {
+        Stop-Function -Message "$Database does not exist"
+        return
+    }
 
-	if ($server.databases[$Database].Status -ne 'Normal') {
-		Stop-Function -Message "$Database is not in a normal State, command will not run."
-		return
-	}
+    if ($server.databases[$Database].Status -ne 'Normal') {
+        Stop-Function -Message "$Database is not in a normal State, command will not run."
+        return
+    }
 
-	if ($IgnoreLimit) {
-		Write-Message -Level Verbose -Message "Please be aware that ignoring the recommended limits may impact on the performance of the SQL Server database and the calling system"
-	}
-	else {
-		#Warn if more than 0.5GB of live log. Dodgy conversion as SMO returns the value in an unhelpful format :(
-		$SqlSizeCheck = "select
-								sum(FileProperty(sf.name,'spaceused')*8/1024) as 'SizeMb'
-								from sys.sysfiles sf
-								where CONVERT(INT,sf.status & 0x40) / 64=1"
-		$TransLogSize = $server.Query($SqlSizeCheck, $Database)
-		if ($TransLogSize.SizeMb -ge 500) {
-			Stop-Function -Message "$Database has more than 0.5 Gb of live log data, returning this may have an impact on the database and the calling system. If you wish to proceed please rerun with the -IgnoreLimit switch"
-			return
-		}
-	}
+    if ($IgnoreLimit) {
+        Write-Message -Level Verbose -Message "Please be aware that ignoring the recommended limits may impact on the performance of the SQL Server database and the calling system"
+    }
+    else {
+        #Warn if more than 0.5GB of live log. Dodgy conversion as SMO returns the value in an unhelpful format :(
+        $SqlSizeCheck = "select
+                                sum(FileProperty(sf.name,'spaceused')*8/1024) as 'SizeMb'
+                                from sys.sysfiles sf
+                                where CONVERT(INT,sf.status & 0x40) / 64=1"
+        $TransLogSize = $server.Query($SqlSizeCheck, $Database)
+        if ($TransLogSize.SizeMb -ge 500) {
+            Stop-Function -Message "$Database has more than 0.5 Gb of live log data, returning this may have an impact on the database and the calling system. If you wish to proceed please rerun with the -IgnoreLimit switch"
+            return
+        }
+    }
 
-	$sql = "select * from fn_dblog(NULL,NULL)"
-	Write-Message -Level Debug -Message $sql
-	Write-Message -Level Verbose -Message "Starting Log retrieval"
-	$server.Query($sql, $Database)
+    $sql = "select * from fn_dblog(NULL,NULL)"
+    Write-Message -Level Debug -Message $sql
+    Write-Message -Level Verbose -Message "Starting Log retrieval"
+    $server.Query($sql, $Database)
 
 }
