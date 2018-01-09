@@ -48,7 +48,12 @@
     Get-DbaXESession -SqlInstance sql2017 -Session db_ola_health | Remove-DbaXESession
     Import-DbaXESessionTemplate -SqlInstance sql2017 -Template db_ola_health | Start-DbaXESession
 
-    Removes a session if it exists then recreates it using a template
+    Imports a session if it exists then recreates it using a template
+    
+    .EXAMPLE
+    Get-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017
+    
+    Allows you to select a Session template then import to an instance named sql2017
 #>
     [CmdletBinding()]
     param (
@@ -57,22 +62,20 @@
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string]$Name,
+        [parameter(ValueFromPipelineByPropertyName)]
         [string[]]$Path,
         [string[]]$Template,
         [switch]$EnableException
     )
-    begin {
+    process {
         if ((Test-Bound -ParameterName Path -Not) -and (Test-Bound -ParameterName Template -Not)) {
             Stop-Function -Message "You must specify Path or Template"
         }
-
+        
         if (($Path.Count -gt 1 -or $Tempalte.Count -gt 1) -and (Test-Bound -ParameterName Template)) {
             Stop-Function -Message "Name cannot be specified with multiple files or templates because the Session will already exist"
         }
-    }
-    process {
-        if (Test-FunctionInterrupt) { return }
-
+        
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
