@@ -11,7 +11,7 @@
     RootModule              = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion           = '0.9.150'
+    ModuleVersion           = '0.9.153'
 
     # ID used to uniquely identify this module
     GUID                    = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -56,7 +56,7 @@
     ScriptsToProcess        = @()
 
     # Type files (xml) to be loaded when importing this module
-    TypesToProcess          = @()
+    TypesToProcess          = @("xml\dbatools.Types.ps1xml")
 
     # Format files (xml) to be loaded when importing this module
     # "xml\dbatools.Format.ps1xml"
@@ -561,8 +561,8 @@
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQU4sDxm7AEU+5Ak5osVzJCrruc
-# tlyggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUZSWhSGn1GjdtWgsIeXkT3GgK
+# X6eggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -693,22 +693,22 @@
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQULz2NCSjIpwxz0iJ3Lv3tkTJKY14wDQYJKoZIhvcNAQEBBQAE
-# ggEAU+WKCNpmdXNDwvz18aLOOysrFAs8ZBNY87pi3zMh16MDVccAagEDMT3bB0S2
-# eEjYiUa3cUByzS6fOaJuk/0eoIdWyd/fYz0rcGUiInLtNFgBRPKtaQykwtH4BfHY
-# f/Is8jz/8w3wmGFQOcZsE+zHTVsDgsoJEQncqAYYa4IjvtIlHrRv8yEYEwi9hLw8
-# I2zgYJnwdMG7RlVzqwGvsoGhxK09UcLd43sB/EANfkstMkBxVewbh+yC13MTmiPe
-# EkBR4jhsktAJ7UUbaq+SFcYAxwMEyTkqMyrAPySBiUzgzsRzpnwj4seUCocom/xD
-# fOPRLs8sMet9+EPjAK/J92WhFaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUIkKjGr3IiLYRfTeKfxyWJCxjJ2kwDQYJKoZIhvcNAQEBBQAE
+# ggEAb/0to2ApuNRGEcDWJQt9awxXpORGs//vaL0bMUCcvugjwE0bL5yJXGHXSV2x
+# RW9XEAF/o9G7d6Pm13rgc3jXFDCvWDtVEM1pQsxMqa3qAxqo3FGL5NCUMDYnjNKH
+# F9IV8FTrK/2P6ISDiN/UEFLelpJzgDZoI5xC9mMcsclGmvi+qhJsm50gBWbUui47
+# JDNzCCEqtTyeWJDuqoopJVWoUe1p7PtWIG72kBK3uWXN/dnCl5L4wtNjmydhaXrg
+# w3Idc/3uE1o5kQxSxy7AP1qbajU5PsHfkDottJgVh4eQPrudsy5URxfUw0YDAVMt
+# 4I3h0lazs2DaMJvJlsBq312SVqGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwMTA1MTYxNjQwWjAj
-# BgkqhkiG9w0BCQQxFgQUcepvlrEeP3mhQgx5DnguLrYGItAwDQYJKoZIhvcNAQEB
-# BQAEggEAHNDg2SMFSIT3DM8qmv4/FinF/V2Hhzv5B8xyL/syUFhR4KBLygSoKxmz
-# unpo00HJBF7NSt4UqyhZ86pHeILQNrwP/pYFHmSLJHRz/ep3uCLxT/dUc7C6p4BP
-# t+2N7IOMi740GBuGcLfP59kqcN/vOCgGjQ8iI7KKKQ3zgLhv8nDFuQvxhuPktj5D
-# wGt8on4IMW+vb1mM6/R3RItg9FDOyMUNu+A3ov6aZk9ELhkou6cNao+ljvCj3Tu9
-# Mfzreb3MBHGyHcXJquHny3UPitVrLJ/p7VXmoSSm6ZSwAjUlFvxqOMjA5icrY+8x
-# txFm4cb0B33yHZMvMFcspGj+8MRG9w==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwMTA5MTcxNDU4WjAj
+# BgkqhkiG9w0BCQQxFgQUDD7HSyl39EQc2PwXDYexLKFW8fkwDQYJKoZIhvcNAQEB
+# BQAEggEAIdY7legi3UmIlI3hMEGV3q6M+zRqkLeNwcBZjjkjlPUhsoe1W3TCtH2N
+# 0njlq+etBguVGZZGp+mb8HPg+07+V8B/OBrnG22O/sfCGi759n4T78O1mDAKFJ3A
+# XM4GLg+g0JkE6Y6ng0f6V/RNs97v4VKafMzmjKRxkfyd2+o+L1xh/7nPUV6HsSrp
+# hs+x8mL2UI9oIBr0PB2S9NmOEZOoxKAnbQPcb2UnfQgtyQZkXU5FpW4xMH2W1IdU
+# WXeX0/oVKJenM9N5WS17WFSIxZ0zFpJl9Re0mSeMkC7ngeMDpSh9Q8BmeBbUgZy6
+# jfPxmNzdPOxOTfyaBH/z7/GNGIDE0Q==
 # SIG # End signature block
