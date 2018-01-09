@@ -7,9 +7,35 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         Context "Everything as it should" {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
-            Mock Connect-SqlInstance { [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]"done" }
+            Mock Connect-SqlInstance -MockWith {
+                $obj = [PSCustomObject]@{
+                    Name                 = 'BASEName'
+                    NetName              = 'BASENetName'
+                    InstanceName         = 'BASEInstanceName'
+                    DomainInstanceName   = 'BASEDomainInstanceName'
+                    InstallDataDirectory = 'BASEInstallDataDirectory'
+                    ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
+                    ServiceName          = 'BASEServiceName'
+                    VersionMajor         = 9
+                    ConnectionContext    = New-Object PSObject
+                }
+                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
+                Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
+                    param($query)
+                    if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
+                        return @(
+                        @{ "Name"         = "master"
+                           "PhysicalName" = "C:\temp\master.mdf"
+                        }
+                        )
+                    }
+                }
+                $obj.PSObject.TypeNames.Clear()
+                $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
+                return $obj
+            }
             Mock Get-DbaDatabase { $null }
-            Mock Get-DbaDatabaseFile { $null }
+
             Mock New-DbaSqlDirectory {$true}
             Mock Test-DbaSqlPath { [pscustomobject]@{
                     FilePath   = 'does\exists'
@@ -27,9 +53,34 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
         Context "Not being able to see backups is bad" {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
-            Mock Connect-SqlInstance { [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]"done" }
+            Mock Connect-SqlInstance -MockWith {
+                $obj = [PSCustomObject]@{
+                    Name                 = 'BASEName'
+                    NetName              = 'BASENetName'
+                    InstanceName         = 'BASEInstanceName'
+                    DomainInstanceName   = 'BASEDomainInstanceName'
+                    InstallDataDirectory = 'BASEInstallDataDirectory'
+                    ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
+                    ServiceName          = 'BASEServiceName'
+                    VersionMajor         = 9
+                    ConnectionContext    = New-Object PSObject
+                }
+                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
+                Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
+                    param($query)
+                    if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
+                        return @(
+                        @{ "Name"         = "master"
+                           "PhysicalName" = "C:\temp\master.mdf"
+                        }
+                        )
+                    }
+                }
+                $obj.PSObject.TypeNames.Clear()
+                $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
+                return $obj
+            }
             Mock Get-DbaDatabase { $null }
-            Mock Get-DbaDatabaseFile { $null }
             Mock New-DbaSqlDirectory {$true}
             Mock Test-DbaSqlPath { [pscustomobject]@{
                     FilePath   = 'does\not\exists'
@@ -48,9 +99,34 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
             $BackupHistory[1].OriginalDatabase = 'Error'
-            Mock Connect-SqlInstance { [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]"done" }
+            Mock Connect-SqlInstance -MockWith {
+                $obj = [PSCustomObject]@{
+                    Name                 = 'BASEName'
+                    NetName              = 'BASENetName'
+                    InstanceName         = 'BASEInstanceName'
+                    DomainInstanceName   = 'BASEDomainInstanceName'
+                    InstallDataDirectory = 'BASEInstallDataDirectory'
+                    ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
+                    ServiceName          = 'BASEServiceName'
+                    VersionMajor         = 9
+                    ConnectionContext    = New-Object PSObject
+                }
+                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
+                Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
+                    param($query)
+                    if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
+                        return @(
+                        @{ "Name"         = "master"
+                           "PhysicalName" = "C:\temp\master.mdf"
+                        }
+                        )
+                    }
+                }
+                $obj.PSObject.TypeNames.Clear()
+                $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
+                return $obj
+            }
             Mock Get-DbaDatabase { $null }
-            Mock Get-DbaDatabaseFile { $null }
             Mock New-DbaSqlDirectory {$true}
             Mock Test-DbaSqlPath { [pscustomobject]@{
                     FilePath   = 'does\exists'
@@ -69,9 +145,34 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
             $BackupHistory[1].OriginalDatabase = 'Error'
-            Mock Connect-SqlInstance { [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]"done" }
+            Mock Connect-SqlInstance -MockWith {
+                $obj = [PSCustomObject]@{
+                    Name                 = 'BASEName'
+                    NetName              = 'BASENetName'
+                    InstanceName         = 'BASEInstanceName'
+                    DomainInstanceName   = 'BASEDomainInstanceName'
+                    InstallDataDirectory = 'BASEInstallDataDirectory'
+                    ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
+                    ServiceName          = 'BASEServiceName'
+                    VersionMajor         = 9
+                    ConnectionContext    = New-Object PSObject
+                }
+                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
+                Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
+                    param($query)
+                    if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
+                        return @(
+                        @{ "Name"         = "master"
+                           "PhysicalName" = "C:\temp\master.mdf"
+                        }
+                        )
+                    }
+                }
+                $obj.PSObject.TypeNames.Clear()
+                $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
+                return $obj
+            }
             Mock Get-DbaDatabase { '1' }
-            Mock Get-DbaDatabaseFile { $null }
             Mock New-DbaSqlDirectory {$true}
             Mock Test-DbaSqlPath { [pscustomobject]@{
                     FilePath   = 'does\exists'
@@ -90,9 +191,34 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
             $BackupHistory = Import-CliXml $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\CleanFormatDbaInformation.xml
             $BackupHistory = $BackupHistory | Format-DbaBackupInformation
             $BackupHistory[1].OriginalDatabase = 'Error'
-            Mock Connect-SqlInstance { [Sqlcollaborative.Dbatools.Parameter.DbaInstanceParameter]"done" }
+            Mock Connect-SqlInstance -MockWith {
+                $obj = [PSCustomObject]@{
+                    Name                 = 'BASEName'
+                    NetName              = 'BASENetName'
+                    InstanceName         = 'BASEInstanceName'
+                    DomainInstanceName   = 'BASEDomainInstanceName'
+                    InstallDataDirectory = 'BASEInstallDataDirectory'
+                    ErrorLogPath         = 'BASEErrorLog_{0}_{1}_{2}_Path' -f "'", '"', ']'
+                    ServiceName          = 'BASEServiceName'
+                    VersionMajor         = 9
+                    ConnectionContext    = New-Object PSObject
+                }
+                Add-Member -InputObject $obj.ConnectionContext -Name ConnectionString  -MemberType NoteProperty -Value 'put=an=equal=in=it'
+                Add-Member -InputObject $obj -Name Query -MemberType ScriptMethod -Value {
+                    param($query)
+                    if ($query -eq "SELECT DB_NAME(database_id) AS Name, physical_name AS PhysicalName FROM sys.master_files") {
+                        return @(
+                        @{ "Name"         = "master"
+                           "PhysicalName" = "C:\temp\master.mdf"
+                        }
+                        )
+                    }
+                }
+                $obj.PSObject.TypeNames.Clear()
+                $obj.PSObject.TypeNames.Add("Microsoft.SqlServer.Management.Smo.Server")
+                return $obj
+            }
             Mock Get-DbaDatabase { '1' }
-            Mock Get-DbaDatabaseFile { $null }
             Mock New-DbaSqlDirectory {$true}
             Mock Test-DbaSqlPath { [pscustomobject]@{
                     FilePath   = 'does\exists'
