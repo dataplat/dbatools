@@ -56,7 +56,7 @@
     ScriptsToProcess        = @()
 
     # Type files (xml) to be loaded when importing this module
-    TypesToProcess          = @()
+    TypesToProcess          = @("xml\dbatools.Types.ps1xml")
 
     # Format files (xml) to be loaded when importing this module
     # "xml\dbatools.Format.ps1xml"
