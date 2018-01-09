@@ -320,7 +320,7 @@ function Export-DbaLogin {
 
                 if ($roleMembers -contains $userName) {
                     if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
-                        $outsql += "EXEC sys.sp_addrolemember @rolename = N'$roleName', @membername = N'$userName'"
+                        $outsql += "EXEC sys.sp_addsrvrolemember @rolename=N'$roleName', @loginame=N'$userName'"
                     }
                     else {
                         $outsql += "ALTER SERVER ROLE [$roleName] ADD MEMBER [$userName]"
@@ -395,7 +395,7 @@ function Export-DbaLogin {
                         if ($role.EnumMembers() -contains $dbUserName) {
                             $roleName = $role.Name
                             if (($server.VersionMajor -lt 11 -and [string]::IsNullOrEmpty($destinationVersion)) -or ($DestinationVersion -in "SQLServer2000", "SQLServer2005", "SQLServer2008/2008R2")) {
-                                $outsql += "EXEC sys.sp_addrolemember @rolename = N'$roleName', @membername = N'$dbUserName'"
+                                $outsql += "EXEC sys.sp_addrolemember @rolename=N'$roleName', @membername=N'$dbUserName'"
                             }
                             else {
                                 $outsql += "ALTER ROLE [$roleName] ADD MEMBER [$dbUserName]"
