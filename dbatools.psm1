@@ -1,4 +1,4 @@
-$start = Get-Date
+﻿$start = Get-Date
 
 #region Import helper functions
 function Import-ModuleFile {
@@ -162,7 +162,7 @@ if (-not ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath)) {
 }
 
 # All internal functions privately available within the toolset - 221ms
-foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\*.ps1")) {
+foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\functions\*.ps1")) {
     . Import-ModuleFile $function.FullName
 }
 Write-ImportTime -Text "Loading Internal Commands"
@@ -579,9 +579,17 @@ if ($script:dbatoolsConfigRunspace) {
     $script:dbatoolsConfigRunspace.Dispose()
     Remove-Variable -Name dbatoolsConfigRunspace -Scope script
 }
+Write-ImportTime -Text "Waiting for runspaces to finish"
+
+if ($PSCommandPath -like "*.psm1") {
+    Update-TypeData -AppendPath "$script:PSModuleRoot\xml\dbatools.Types.ps1xml"
+    Write-ImportTime -Text "Loaded type extensions"
+}
+#. Import-ModuleFile "$script:PSModuleRoot\bin\type-extensions.ps1"
+#Write-ImportTime -Text "Loaded type extensions"
 
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true;
-Write-ImportTime -Text "Waiting for runspaces to finish"
+
 #endregion Post-Import Cleanup
 
 
