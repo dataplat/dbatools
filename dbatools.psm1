@@ -1,4 +1,4 @@
-$start = Get-Date
+﻿$start = Get-Date
 
 #region Import helper functions
 function Import-ModuleFile {
@@ -582,8 +582,8 @@ if ($script:dbatoolsConfigRunspace) {
 Write-ImportTime -Text "Waiting for runspaces to finish"
 
 if ($PSCommandPath -like "*.psm1") {
-	Update-TypeData -AppendPath "$script:PSModuleRoot\xml\dbatools.Types.ps1xml"
-	Write-ImportTime -Text "Loaded type extensions"
+    Update-TypeData -AppendPath "$script:PSModuleRoot\xml\dbatools.Types.ps1xml"
+    Write-ImportTime -Text "Loaded type extensions"
 }
 #. Import-ModuleFile "$script:PSModuleRoot\bin\type-extensions.ps1"
 #Write-ImportTime -Text "Loaded type extensions"
