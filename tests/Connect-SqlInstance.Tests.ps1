@@ -1,7 +1,7 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. "$PSScriptRoot\..\internal\Connect-SqlInstance.ps1"
+. "$PSScriptRoot\..\internal\functions\Connect-SqlInstance.ps1"
 
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     $password = 'MyV3ry$ecur3P@ssw0rd'

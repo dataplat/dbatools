@@ -65,8 +65,8 @@ $scriptBlock = {
     # Empty dummy, should not have a cmdletbinding in order to avoid errors.
     function Stop-Function { }
 
-    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\internal\Test-Bound.ps1"))), $null, $null)
-    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\internal\Register-DbaConfigValidation.ps1"))), $null, $null)
+    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\internal\functions\Test-Bound.ps1"))), $null, $null)
+    $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\internal\functions\Register-DbaConfigValidation.ps1"))), $null, $null)
     $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\functions\Register-DbaConfig.ps1"))), $null, $null)
     $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText("$ModuleRoot\functions\Set-DbaConfig.ps1"))), $null, $null)
     #endregion Helper functions

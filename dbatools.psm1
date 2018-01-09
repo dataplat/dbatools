@@ -1,4 +1,4 @@
-$start = Get-Date
+﻿$start = Get-Date
 
 #region Import helper functions
 function Import-ModuleFile {
@@ -162,7 +162,7 @@ if (-not ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath)) {
 }
 
 # All internal functions privately available within the toolset - 221ms
-foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\*.ps1")) {
+foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\functions\*.ps1")) {
     . Import-ModuleFile $function.FullName
 }
 Write-ImportTime -Text "Loading Internal Commands"
@@ -579,17 +579,25 @@ if ($script:dbatoolsConfigRunspace) {
     $script:dbatoolsConfigRunspace.Dispose()
     Remove-Variable -Name dbatoolsConfigRunspace -Scope script
 }
+Write-ImportTime -Text "Waiting for runspaces to finish"
+
+if ($PSCommandPath -like "*.psm1") {
+    Update-TypeData -AppendPath "$script:PSModuleRoot\xml\dbatools.Types.ps1xml"
+    Write-ImportTime -Text "Loaded type extensions"
+}
+#. Import-ModuleFile "$script:PSModuleRoot\bin\type-extensions.ps1"
+#Write-ImportTime -Text "Loaded type extensions"
 
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true;
-Write-ImportTime -Text "Waiting for runspaces to finish"
+
 #endregion Post-Import Cleanup
 
 
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUsOCbUVP0FH4jyVumK04ceiNN
-# QHqggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUJ6z7fLV0wf+BYkLQXN0I75EV
+# fRiggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -720,22 +728,22 @@ Write-ImportTime -Text "Waiting for runspaces to finish"
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQU1VngZTQ57UcRl1ZTpiVLAURUNecwDQYJKoZIhvcNAQEBBQAE
-# ggEAW6v25RzFXa+ikfShVCtXpt1LHINanz2AuiNlGCrHji0QZTPzkodsvA5/yetB
-# sUOxoCK3qOZt3pZPfpGCKQLS9ko7H5BmDY3HSZWdmQYDNhN0K5GqjOQ7DFviwm0H
-# ja3FNlcXq9TkbnnVSi+brQPwVS9MmjEsfbAO4g1HB+Ld9dTfaj9/OadRc97BqMwn
-# vPUZOJAFAAs9kXTaPqSLWps7v1lAHOIaPZSRzuxKIzEqG+7dpIWJttL+Vbs74Ueg
-# EStUpA/4Poe11oBDLux8P9F29BiMS/JS0B9QWBa3m6lTK5zAVRRHD4KnTeoJalh0
-# VPZ9dNaJvqMLX1zm7wrj3dQBR6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQU9LcHzBfNDV77liDyilIxNxa3Y3YwDQYJKoZIhvcNAQEBBQAE
+# ggEADNxU+368tKtWj1M4bZt/7jw0YWy1oiZGZlERoJU/k5dC2g2n9KSyLgLlY2AP
+# daVzkVX9iQdB1Er6Q8Qn6mRdFnToSxbxZ0jggwc8t87KpohG3D7H+jQunJCtKrYW
+# Uetbbn2uwZM+2t9XaXsqBcSL90PYZZwaHGhDntzaKRo6KMa/eYUOCshptn8okGN9
+# b328VofDMr2vqsPdDwqPO5rmS147SqxBw5keQm3ooR3vlluugnn2peXrEgLCqzfc
+# fxTDTtNZyNdoZSS7z9+TixCWSp8nYeEyxgw9UYOolUszblbtHbzmCf8Cp6RJjw8c
+# Wbtn71QA7jh0ob2DweKILwAPf6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwMTA1MTYxNjQxWjAj
-# BgkqhkiG9w0BCQQxFgQURh0jcT0cHf1U5h1qwMwvF6Obf6EwDQYJKoZIhvcNAQEB
-# BQAEggEAWQSFvxkB7SeSDW4lZN8r+sbwVZEzg2314FZSFwQ/1b6Apc0QAhse6nE9
-# N8zQ3Q2VJj/dWpbaC8JZEPXdNjvnJO881dIe6VDaNfDTd8DOSOilB15jNEpihJNJ
-# YgxAkXH0pFW8yXuSDVczgknKM/wbwAoRxswXn6hP7TXR5l61ua28iS4OKM1DghiN
-# 7HCRtxm3UphY7AagbLMmuSSInS8MqkRinqs1mMTiG9T4U6XgfCGAXJ6p1Y5kEXJh
-# q4MC2BQxG7lXIjBqorE7uZ06PUwaLAeCUexnWj577uNWSk2XdsCbjIkdRZfKLlA1
-# 2/xQhp0VOOnHhN9TydvUtIMaXeEA3A==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwMTA5MTcxNDU5WjAj
+# BgkqhkiG9w0BCQQxFgQUgaGtJsjzmGpCkbZF3GWJpFlqc/gwDQYJKoZIhvcNAQEB
+# BQAEggEAiUZTSJ5hg+YZ39OuO4wsp3tZVGMc+3pOxFGTOhRuPm7A/CTl6Q+GMlsW
+# TSZ9AhPKAhPWgfH0f8fTMEjRieWzPA8ZIzPObtoUXyWED34gMmMfsPLHgGImlK9M
+# 802Sn3KIy+BE8Bm4RMIEV9E8cCPNE0tjnR2yLcakW9EejB9h438DL3zCtLfZxHiX
+# 8KJFNJvU19eZxFv5KXWJeEA8Aowwb+aXDpSDgNbraMruDbs5Rk3kcMfNbCBJmK3N
+# eeGPfVv00cJGRDDnPZOr7utz3+RhFJyvQVEhEsxVIoR28ti+96zrvTbFDYkx8Ilo
+# P2gj+lASTiEGvpI26rSVO2TCT6tZnw==
 # SIG # End signature block

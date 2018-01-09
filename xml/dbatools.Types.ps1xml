@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Types>
+    <!--Microsoft.SqlServer.Management.Smo.Database -->
+    <Type>
+        <Name>Microsoft.SqlServer.Management.Smo.Database</Name>
+        <Members>
+            <ScriptMethod>
+                <Name>Query</Name>
+                <Script>
+                    param (
+                        $Query,
+
+                        $AllTables = $false
+                    )
+
+                    if ($AllTables) { ($this.ExecuteWithResults($Query)).Tables }
+                    else { ($this.ExecuteWithResults($Query)).Tables[0] }
+                </Script>
+            </ScriptMethod>
+            <ScriptMethod>
+                <Name>Invoke</Name>
+                <Script>
+                    param (
+                        $Command
+                    )
+
+                    $this.ExecuteNonQuery($Command)
+                </Script>
+            </ScriptMethod>
+        </Members>
+    </Type>
+    
+    <!--Microsoft.SqlServer.Management.Smo.Server -->
+    <Type>
+        <Name>Microsoft.SqlServer.Management.Smo.Server</Name>
+        <Members>
+            <ScriptMethod>
+                <Name>Query</Name>
+                <Script>
+                    param (
+                        $Query,
+
+                        $Database = "master",
+
+                        $AllTables = $false
+                    )
+
+                    if ($AllTables) { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables }
+                    else { ($this.Databases[$Database].ExecuteWithResults($Query)).Tables[0] }
+                </Script>
+            </ScriptMethod>
+            <ScriptMethod>
+                <Name>Invoke</Name>
+                <Script>
+                    param (
+                        $Command,
+
+                        $Database = "master"
+                    )
+
+                    $this.Databases[$Database].ExecuteNonQuery($Command)
+                </Script>
+            </ScriptMethod>
+        </Members>
+    </Type>
+</Types>
