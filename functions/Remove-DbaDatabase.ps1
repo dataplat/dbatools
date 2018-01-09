@@ -1,5 +1,5 @@
 function Remove-DbaDatabase {
-<#
+    <#
 .SYNOPSIS
 Drops a database, hopefully even the really stuck ones.
 
@@ -32,10 +32,10 @@ Shows what would happen if the command were to run. No actions are actually perf
 Prompts you for confirmation before executing any changing operations within the command.
 
 .PARAMETER EnableException
-		By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-		This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-		Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-		
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
 .NOTES
 Tags: Delete, Databases
 
@@ -71,101 +71,101 @@ Get-DbaDatabase -SqlInstance server\instance -ExcludeAllSystemDb | Remove-DbaDat
 
 Removes all the user databases from server\instance without any confirmation
 #>
-	[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName= "Default")]
-	Param (
-		[parameter(, Mandatory, ParameterSetName = "instance")]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[parameter(Mandatory = $false)]
-		[Alias("Credential")]
-		[PSCredential]
-		$SqlCredential,
-		[parameter(Mandatory, ParameterSetName = "instance")]
-		[Alias("Databases")]
-		[object[]]$Database,
-		[Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "databases")]
-		[Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
-		[switch]$IncludeSystemDb,
-		[switch][Alias('Silent')]$EnableException
-	)
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName = "Default")]
+    Param (
+        [parameter(, Mandatory, ParameterSetName = "instance")]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [parameter(Mandatory = $false)]
+        [Alias("Credential")]
+        [PSCredential]
+        $SqlCredential,
+        [parameter(Mandatory, ParameterSetName = "instance")]
+        [Alias("Databases")]
+        [object[]]$Database,
+        [Parameter(ValueFromPipeline, Mandatory, ParameterSetName = "databases")]
+        [Microsoft.SqlServer.Management.Smo.Database[]]$DatabaseCollection,
+        [switch]$IncludeSystemDb,
+        [switch][Alias('Silent')]$EnableException
+    )
 
-	process {
+    process {
 
-		foreach ($instance in $SqlInstance) {
-			try {
-				Write-Message -Level Verbose -Message "Connecting to $instance"
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}							
-			$databasecollection += $server.Databases | Where-Object { $_.Name -in $Database }			
-		}
+        foreach ($instance in $SqlInstance) {
+            try {
+                Write-Message -Level Verbose -Message "Connecting to $instance"
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+            $databasecollection += $server.Databases | Where-Object { $_.Name -in $Database }
+        }
 
-		$system_dbs = @( "master", "model", "tempdb", "resource", "msdb" )
-		
-		if (-not($IncludeSystemDb)){
-			$databasecollection = $databasecollection | Where-Object { $_.Name -notin $system_dbs}
-		}
+        $system_dbs = @( "master", "model", "tempdb", "resource", "msdb" )
 
-		foreach ($db in $databasecollection) {
-			try {
-				$server = $db.Parent
-				if ($Pscmdlet.ShouldProcess("$db on $server", "KillDatabase")) {
-					$server.KillDatabase($db.name)
-					$server.Refresh()
+        if (-not($IncludeSystemDb)) {
+            $databasecollection = $databasecollection | Where-Object { $_.Name -notin $system_dbs}
+        }
 
-					[pscustomobject]@{
-						ComputerName = $server.NetName
-						InstanceName = $server.ServiceName
-						SqlInstance = $server.DomainInstanceName
-						Database = $db.name
-						Status = "Dropped"
-					}
-				}
-			}
-			catch {
-				try {
-					if ($Pscmdlet.ShouldProcess("$db on $server", "alter db set single_user with rollback immediate then drop")) {
-						$null = $server.Query("if exists (select * from sys.databases where name = '$($db.name)' and state = 0) alter database $db set single_user with rollback immediate; drop database $db")
+        foreach ($db in $databasecollection) {
+            try {
+                $server = $db.Parent
+                if ($Pscmdlet.ShouldProcess("$db on $server", "KillDatabase")) {
+                    $server.KillDatabase($db.name)
+                    $server.Refresh()
 
-						[pscustomobject]@{
-							ComputerName = $server.NetName
-							InstanceName = $server.ServiceName
-							SqlInstance = $server.DomainInstanceName
-							Database = $db.name
-							Status = "Dropped"
-						}
-					}
-				}
-				catch {
-					try {
-						if ($Pscmdlet.ShouldProcess("$db on $server", "SMO drop")) {
-							$server.databases[$dbname].Drop()
-							$server.Refresh()
+                    [pscustomobject]@{
+                        ComputerName = $server.NetName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Database     = $db.name
+                        Status       = "Dropped"
+                    }
+                }
+            }
+            catch {
+                try {
+                    if ($Pscmdlet.ShouldProcess("$db on $server", "alter db set single_user with rollback immediate then drop")) {
+                        $null = $server.Query("if exists (select * from sys.databases where name = '$($db.name)' and state = 0) alter database $db set single_user with rollback immediate; drop database $db")
 
-							[pscustomobject]@{
-								ComputerName = $server.NetName
-								InstanceName = $server.ServiceName
-								SqlInstance = $server.DomainInstanceName
-								Database = $db.name
-								Status = "Dropped"
-							}
-						}
-					}
-					catch {
-						Write-Message -Level Verbose -Message "Could not drop database $db on $server"
+                        [pscustomobject]@{
+                            ComputerName = $server.NetName
+                            InstanceName = $server.ServiceName
+                            SqlInstance  = $server.DomainInstanceName
+                            Database     = $db.name
+                            Status       = "Dropped"
+                        }
+                    }
+                }
+                catch {
+                    try {
+                        if ($Pscmdlet.ShouldProcess("$db on $server", "SMO drop")) {
+                            $server.databases[$dbname].Drop()
+                            $server.Refresh()
 
-						[pscustomobject]@{
-							ComputerName = $server.NetName
-							InstanceName = $server.ServiceName
-							SqlInstance = $server.DomainInstanceName
-							Database = $db.name
-							Status = $_
-						}
-					}
-				}
-			}
-		}
-	}
+                            [pscustomobject]@{
+                                ComputerName = $server.NetName
+                                InstanceName = $server.ServiceName
+                                SqlInstance  = $server.DomainInstanceName
+                                Database     = $db.name
+                                Status       = "Dropped"
+                            }
+                        }
+                    }
+                    catch {
+                        Write-Message -Level Verbose -Message "Could not drop database $db on $server"
+
+                        [pscustomobject]@{
+                            ComputerName = $server.NetName
+                            InstanceName = $server.ServiceName
+                            SqlInstance  = $server.DomainInstanceName
+                            Database     = $db.name
+                            Status       = $_
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

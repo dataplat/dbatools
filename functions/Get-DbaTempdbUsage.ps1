@@ -1,28 +1,28 @@
-Function Get-DbaTempdbUsage {
-	<#
+function Get-DbaTempdbUsage {
+    <#
     .SYNOPSIS
     Gets Tempdb usage for running queries.
-	
+
     .DESCRIPTION
     This function queries DMVs for running sessions using Tempdb and returns results if those sessions have user or internal space allocated or deallocated against them.
-	
+
     .PARAMETER SqlInstance
     The SQL Instance you are querying against.
 
     .PARAMETER SqlCredential
     If you want to use alternative credentials to connect to the server.
-	
-    .PARAMETER WhatIf
-	Shows what would happen if the command were to run. No actions are actually performed.
 
-    .PARAMETER Confirm 
-	Prompts you for confirmation before executing any changing operations within the command.
-	
+    .PARAMETER WhatIf
+    Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+    Prompts you for confirmation before executing any changing operations within the command.
+
     .PARAMETER EnableException
-	By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-	This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-	Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
-	
+    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
     .NOTES
     dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
     Copyright (C) 2016 Chrissy LeMaire
@@ -32,32 +32,32 @@ Function Get-DbaTempdbUsage {
     https://dbatools.io/Get-DbaTempdbUsage
     .EXAMPLE
     Get-DbaTempdbUsage -SqlInstance localhost\SQLDEV2K14
-	
-	Gets tempdb usage for localhost\SQLDEV2K14
+
+    Gets tempdb usage for localhost\SQLDEV2K14
     #>
-	[CmdletBinding()]
-	param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]$SqlCredential,
-		[switch][Alias('Silent')]$EnableException
-	)
-	
-	process {
-		foreach ($instance in $SqlInstance) {
-			try {
-				$server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
-			}
-			catch {
-				Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-			}
-			
-			if ($server.VersionMajor -le 9) {
-				Stop-Function -Message "This function is only supported in SQL Server 2008 or higher." -Continue
-			}
-			
-			$sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
+    [CmdletBinding()]
+    param (
+        [parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [PSCredential]$SqlCredential,
+        [switch][Alias('Silent')]$EnableException
+    )
+
+    process {
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            if ($server.VersionMajor -le 9) {
+                Stop-Function -Message "This function is only supported in SQL Server 2008 or higher." -Continue
+            }
+
+            $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
         ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
         SERVERPROPERTY('ServerName') AS SqlInstance,
         t.session_id AS Spid,
@@ -122,8 +122,8 @@ OUTER APPLY sys.dm_exec_sql_text(r.[sql_handle]) AS est
 WHERE   t.session_id != @@SPID
   AND   (tdb.UserObjectAllocated - tdb.UserObjectDeallocated + tdb.InternalObjectAllocated - tdb.InternalObjectDeallocated) != 0
 OPTION (RECOMPILE);"
-			
-			$server.Query($sql)
-		}
-	}
+
+            $server.Query($sql)
+        }
+    }
 }
