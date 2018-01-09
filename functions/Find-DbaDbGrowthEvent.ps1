@@ -1,5 +1,5 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Find-DbaDatabaseGrowthEvent {
+function Find-DbaDbGrowthEvent {
     <#
         .SYNOPSIS
             Finds any database AutoGrow events in the Default Trace.
@@ -41,6 +41,9 @@ function Find-DbaDatabaseGrowthEvent {
 
             Allowed vaules: Data, Log
 
+        .PARAMETER UseLocalTime
+            Return the local time of the instance instead of converting to UTC.
+
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
             This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -61,7 +64,12 @@ function Find-DbaDatabaseGrowthEvent {
         .EXAMPLE
             Find-DbaDatabaseGrowthEvent -SqlInstance localhost
 
-            Returns any database AutoGrow events in the Default Trace for every database on the localhost instance.
+            Returns any database AutoGrow events in the Default Trace with UTC time for the instance for every database on the localhost instance.
+
+        .EXAMPLE
+            Find-DbaDatabaseGrowthEvent -SqlInstance localhost -UseLocalTime
+
+            Returns any database AutoGrow events in the Default Trace with the local time of the instance for every database on the localhost instance.
 
         .EXAMPLE
             Find-DbaDatabaseGrowthEvent -SqlInstance ServerA\SQL2016, ServerA\SQL2014
@@ -96,7 +104,9 @@ function Find-DbaDatabaseGrowthEvent {
         [string]$EventType,
         [ValidateSet('Data', 'Log')]
         [string]$FileType,
-        [switch][Alias('Silent')]$EnableException
+        [switch]$UseLocalTime,
+        [Alias('Silent')]
+        [switch]$EnableException
     )
 
     begin {
@@ -158,9 +168,19 @@ function Find-DbaDatabaseGrowthEvent {
                             [DatabaseName],
                             [Filename],
                             CONVERT(INT,(Duration/1000)) AS Duration,
+                            $(if (-not $UseLocalTime) { "
                             DATEADD (MINUTE, DATEDIFF(MINUTE, GETDATE(), GETUTCDATE()), [StartTime]) AS StartTime,  -- Convert to UTC time
-                            DATEADD (MINUTE, DATEDIFF(MINUTE, GETDATE(), GETUTCDATE()), [EndTime]) AS EndTime,  -- Convert to UTC time
-                            ([IntegerData]*8.0/1024) AS ChangeInSize
+                            DATEADD (MINUTE, DATEDIFF(MINUTE, GETDATE(), GETUTCDATE()), [EndTime]) AS EndTime,  -- Convert to UTC time"
+                            }
+                            else { "
+                            [StartTime] AS StartTime,
+                            [EndTime] AS EndTime,"
+                            })
+                            ([IntegerData]*8.0/1024) AS ChangeInSize,
+                            ApplicationName,
+                            HostName,
+                            SessionLoginName,
+                            SPID
                         FROM::fn_trace_gettable( @base_tracefilename, DEFAULT )
                         WHERE
                             [EventClass] IN ($eventClassFilter)
@@ -181,7 +201,11 @@ function Find-DbaDatabaseGrowthEvent {
                         0 AS [Duration],
                         0 AS [StartTime],
                         0 AS [EndTime],
-                        0 AS ChangeInSize
+                        0 AS ChangeInSize,
+                        0 AS [ApplicationName],
+                        0 AS [HostName],
+                        0 AS [SessionLoginName],
+                        0 AS [SPID]
             END	TRY
             BEGIN CATCH
                 SELECT
@@ -196,8 +220,14 @@ function Find-DbaDatabaseGrowthEvent {
                     ERROR_MESSAGE() AS [Duration],
                     1 AS [StartTime],
                     1 AS [EndTime],
-                    1 AS [ChangeInSize]
+                    1 AS [ChangeInSize],
+                    1 AS [ApplicationName],
+                    1 AS [HostName],
+                    1 AS [SessionLoginName],
+                    1 AS [SPID]
             END CATCH"
+
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Find-DbaDatabaseGrowthEvent
     }
     process {
         foreach ($instance in $SqlInstance) {
@@ -226,10 +256,14 @@ function Find-DbaDatabaseGrowthEvent {
             $sql = $sql -replace '_DatabaseList_', $dbsList
             Write-Message -Level Debug -Message "Executing SQL Statement:`n $sql"
 
-            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'EventClass', 'DatabaseName', 'Filename', 'Duration', 'StartTime', 'EndTime', 'ChangeInSize'
+            $defaults = 'ComputerName', 'InstanceName', 'SqlInstance', 'EventClass', 'DatabaseName', 'Filename', 'Duration', 'StartTime', 'EndTime', 'ChangeInSize', 'ApplicationName', 'HostName'
 
-            Select-DefaultView -InputObject $server.Query($sql) -Property $defaults
+            try {
+                Select-DefaultView -InputObject $server.Query($sql) -Property $defaults
+            }
+            catch {
+                Stop-Function -Message "Issue collecting data on $server" -Target $server -ErrorRecord $_ -Exception $_.Exception.InnerException.InnerException.InnerException -Continue
+            }
         }
     }
 }
-

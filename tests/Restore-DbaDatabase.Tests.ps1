@@ -8,6 +8,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     $LogFolder = 'C:\temp\logfiles'
     New-Item -Type Directory $DataFolder -ErrorAction SilentlyContinue
     new-Item -Type Directory $LogFolder -ErrorAction SilentlyContinue
+
     Context "Properly restores a database on the local drive using Path" {
         $null = Get-DbaDatabase -SqlInstance $script:instance1 -NoSystemDb | Remove-DbaDatabase -Confirm:$false
         $results = Restore-DbaDatabase -SqlInstance $script:instance1 -Path $script:appveyorlabrepo\singlerestore\singlerestore.bak

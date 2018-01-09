@@ -1,7 +1,7 @@
 function Get-DbaServerRole {
     <#
         .SYNOPSIS
-            Gets the list of server-level roles with the logins that are members of that role.
+            Gets the list of server-level roles.
 
         .DESCRIPTION
             Gets the list of server-level roles for SQL Server instance.
@@ -44,31 +44,12 @@ function Get-DbaServerRole {
         .EXAMPLE
             Get-DbaServerRole -SqlInstance sql2016a
 
-            Outputs list of server-level roles and logins that are members for sql2016a instance.
-
-        .EXAMPLE
-            Get-DbaServerRole -SqlInstance sql2016a -Role sysadmin
-
-            Outputs members of sysadmin server-level role on sql2016a instance.
+            Outputs list of server-level roles for sql2016a instance.
 
         .EXAMPLE
             Get-DbaServerRole -SqlInstance sql2017a -ExcludeFixedRole
 
             Outputs the server-level role(s) that are not fixed roles on sql2017a instance.
-
-        .EXAMPLE
-            Get-DbaServerRole -SqlInstance sql2016a -Login Bob
-
-            Outputs the server-level role(s) that the login Bob is a member of on sql2016a instance.
-
-            If Bob is not a member of any role, no output is returned.
-
-        .EXAMPLE
-            Get-DbaServerRole -SqlInstance sql2016a -Role sysadmin -Login Bob
-
-            Outputs the server-level role sysadmin with the login Bob as a member on sql2016a instance.
-
-            If Bob is not a member of that role, no output is returned.
     #>
     [CmdletBinding()]
     param (

@@ -60,6 +60,7 @@ function New-DbaSqlConnectionStringBuilder {
     #>
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingPlainTextForPassword", "")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingUserNameAndPassWordParams", "")]
     param (
         [Parameter(Mandatory = $false, ValueFromPipeline = $true)]
         [string[]]$ConnectionString = "",

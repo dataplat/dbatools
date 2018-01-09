@@ -101,8 +101,7 @@ function Find-DbaUnusedIndex {
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
-        [PSCredential]
-        $SqlCredential,
+        [PSCredential]$SqlCredential,
         [Alias("Databases")]
         [object[]]$Database,
         [object[]]$ExcludeDatabase,
@@ -111,14 +110,37 @@ function Find-DbaUnusedIndex {
         [switch]$NoClobber,
         [switch]$Append,
         [switch]$IgnoreUptime,
-        [switch][Alias('Silent')]$EnableException
+        [switch][Alias('Silent')]
+        $EnableException
     )
 
     begin {
 
         # Support Compression 2008+
         $unusedQuery = "
-        SELECT DB_NAME(database_id) AS 'DatabaseName', s.name AS 'SchemaName', t.name AS 'TableName', i.object_id , i.name AS 'IndexName', i.index_id, i.type_desc , user_seeks , user_scans , user_lookups , user_updates , last_user_seek , last_user_scan , last_user_lookup , last_user_UPDATE , system_seeks , system_scans , system_lookups , system_updates , last_system_seek , last_system_scan , last_system_lookup , last_system_update
+        SELECT DB_NAME(database_id) AS 'DatabaseName'
+        ,s.name AS 'SchemaName'
+        ,t.name AS 'TableName'
+        ,i.object_id AS ObjectId
+        ,i.name AS 'IndexName'
+        ,i.index_id as 'IndexId'
+        ,i.type_desc as 'TypeDesc'
+        ,user_seeks as 'UserSeeks'
+        ,user_scans as 'UserScans'
+        ,user_lookups  as 'UserLookups'
+        ,user_updates  as 'UserUpdates'
+        ,last_user_seek  as 'LastUserSeek'
+        ,last_user_scan  as 'LastUserScan'
+        ,last_user_lookup  as 'LastUserLookup'
+        ,last_user_UPDATE  as 'LastUserUpdate'
+        ,system_seeks  as 'SystemSeeks'
+        ,system_scans  as 'SystemScans'
+        ,system_lookups  as 'SystemLookup'
+        ,system_updates  as 'SystemUpdates'
+        ,last_system_seek  as 'LastSystemSeek'
+        ,last_system_scan  as 'LastSystemScan'
+        ,last_system_lookup  as 'LastSystemLookup'
+        ,last_system_update as 'LastSystemUpdate'
         FROM SYS.TABLES T
         JOIN SYS.SCHEMAS S
             ON T.schema_id = s.schema_id
@@ -163,7 +185,7 @@ function Find-DbaUnusedIndex {
         $diffDays = (New-TimeSpan -Start $endDate -End (Get-Date)).Days
 
         if ($diffDays -le 6) {
-            if ($IgnoreUptime -ne $true ) {
+            if ($IgnoreUptime -ne $true) {
                 Stop-Function -Message "The SQL Service was restarted on $lastRestart, which is not long enough for a solid evaluation."
                 return
             }
@@ -180,7 +202,7 @@ function Find-DbaUnusedIndex {
         #>
         if (
             ($server.VersionMajor -eq 11 -and $server.BuildNumber -lt 6537) `
-                -or ($server.VersionMajor -eq 12 -and $server.BuildNumber -lt 5000)
+            -or ($server.VersionMajor -eq 12 -and $server.BuildNumber -lt 5000)
         ) {
             Stop-Function -Message "This SQL version has a known issue. Rebuilding an index clears any existing row entry from sys.dm_db_index_usage_stats for that index.`r`nPlease refer to connect item: https://connect.microsoft.com/sqlserver/feedback/details/739566/rebuilding-an-index-clears-stats-from-sys-dm-db-index-usage-stats"
             return
@@ -195,7 +217,7 @@ function Find-DbaUnusedIndex {
         }
 
         if ($database.Count -eq 0) {
-            $database = ($server.Databases | Where-Object { $_.IsSystemObject -eq 0 -and $_.IsAccessible}).Name
+            $database = ($server.Databases | Where-Object { $_.IsSystemObject -eq 0 -and $_.IsAccessible }).Name
         }
 
         if ($database.Count -gt 0) {
@@ -217,55 +239,30 @@ function Find-DbaUnusedIndex {
                     $scriptGenerated = $false
 
                     if ($unusedIndex.Tables[0].Rows.Count -gt 0) {
-                        $indexesToDrop = $unusedIndex.Tables[0] | Out-GridView -Title "Unused Indexes on $($db) database - Choose indexes to generate DROP script" -PassThru
+                        $indexesToDrop = $unusedIndex.Tables[0]
 
-                        #When only 1 line selected, the count does not work
                         if ($indexesToDrop.Count -gt 0 -or !([string]::IsNullOrEmpty($indexesToDrop))) {
-                            #reset to #Yes
-                            $result = 0
 
-                            if ($unusedIndex.Tables[0].Rows.Count -eq $indexesToDrop.Count) {
-                                $title = "Indexes to drop on databases '$db':"
-                                $message = "You will generate drop statements to all indexes.`r`nPerhaps you want to keep at least one.`r`nDo you wish to generate the script anyway? (Y/N)"
-                                $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Will continue"
-                                $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Will exit"
-                                $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
-                                $result = $host.ui.PromptForChoice($title, $message, $options, 0)
-                            }
-
-                            #default OR answer = YES
-                            if ($result -eq 0) {
-                                $sqlout = "/*`r`n"
-                                $sqlout += "`tScript generated @ $(Get-Date -format "yyyy-MM-dd HH:mm:ss.ms")`r`n"
-                                $sqlout += "`tDatabase: $($db)`r`n"
-                                $sqlout += "`tConfirm that you have chosen the right indexes before execute the drop script`r`n"
-                                $sqlout += "*/`r`n"
-
-                                foreach ($index in $indexesToDrop) {
-                                    if ($FilePath.Length -gt 0) {
-                                        Write-Message -Level Output -Message "Exporting $($index.TableName).$($index.IndexName)"
-                                    }
-
+                            foreach ($index in $indexesToDrop) {
+                                if ($FilePath.Length -gt 0) {
+                                    Write-Message -Level Output -Message "Exporting $($index.TableName).$($index.IndexName)"
                                     $sqlout += "USE [$($index.DatabaseName)]`r`n"
                                     $sqlout += "GO`r`n"
                                     $sqlout += "IF EXISTS (SELECT 1 FROM sys.indexes WHERE [object_id] = OBJECT_ID('$($index.SchemaName).$($index.TableName)') AND name = '$($index.IndexName)')`r`n"
-                                    $sqlout += "    DROP INDEX $($index.SchemaName).$($index.TableName).$($index.IndexName)`r`n"
-                                    $sqlout += "GO`r`n`r`n"
-                                }
+                                    $sqlout += "DROP INDEX $($index.SchemaName).$($index.TableName).$($index.IndexName)`r`n"
+                                    $sqlout += "GO`r`n`r`n"`
 
-                                if ($FilePath.Length -gt 0) {
-                                    $sqlout | Out-File -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
                                 }
-                                else {
-                                    $sqlout
-                                }
-
-                                $scriptGenerated = $true
                             }
-                            #answer = no
+
+                            if ($FilePath.Length -gt 0) {
+                                $sqlout | Out-File -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                            }
                             else {
-                                Write-Message -Level Warning -Message "Script will not be generated for database '$db'"
+                                $indexesToDrop
                             }
+
+                            $scriptGenerated = $true
                         }
                     }
                     else {
@@ -273,7 +270,7 @@ function Find-DbaUnusedIndex {
                     }
                 }
                 catch {
-                    Stop-Function -Message "Issue gathering indexes" -Category InvalidOperation -InnerErrorRecord $_ -Target $db
+                    Stop-Function -Message "Issue gathering indexes" -Category InvalidOperation -ErrorRecord $_ -Target $db
                 }
             }
 
@@ -295,4 +292,3 @@ function Find-DbaUnusedIndex {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlUnusedIndex
     }
 }
-

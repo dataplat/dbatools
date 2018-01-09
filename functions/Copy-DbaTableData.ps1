@@ -292,13 +292,13 @@ function Copy-DbaTableData {
             $fqtnfrom = "$($server.Databases[$Database]).$sqltable"
             $fqtndest = "$($destServer.Databases[$DestinationDatabase]).$desttable"
 
-            if (-not $Query) {
+            if (Test-Bound -ParameterName Query -Not) {
                 $Query = "SELECT * FROM $fqtnfrom"
             }
 
             if ($Truncate -eq $true) {
                 if ($Pscmdlet.ShouldProcess($destServer, "Truncating table $fqtndest")) {
-                    $null = $destServer.Databases[$DestinationDatabase].Query("TRUNCATE TABLE $fqtndest")
+                    $null = $destServer.Databases[$DestinationDatabase].ExecuteNonQuery("TRUNCATE TABLE $fqtndest")
                 }
             }
             $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
