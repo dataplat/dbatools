@@ -51,6 +51,9 @@ function Get-DbaTrace {
     )
     begin {
         Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaTraceFile
+        
+        # A Microsoft.SqlServer.Management.Trace.TraceServer class exists but is buggy
+        # and requires x86 PowerShell. So we'll go with T-SQL.
         $sql = "SELECT id, status, path, max_size, stop_time, max_files, is_rowset, is_rollover, is_shutdown, is_default, buffer_count, buffer_size, file_position, reader_spid, start_time, last_event_time, event_count, dropped_event_count FROM sys.traces"
     }
     process {
