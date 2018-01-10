@@ -18,7 +18,7 @@
     .PARAMETER Path
     The path to export the file. Can be .xml or directory.
 
-    .PARAMETER SessionCollection
+    .PARAMETER InputObject
     Enables piping sessions
 
     .PARAMETER Type
@@ -51,40 +51,40 @@
         [Alias("ServerInstance", "SqlServer")]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [parameter(Mandatory)]
         [object[]]$Session,
         [string]$Path,
         [Parameter(ValueFromPipeline)]
-        [Microsoft.SqlServer.Management.XEvent.Session[]]$SessionCollection,
+        [Microsoft.SqlServer.Management.XEvent.Session[]]$InputObject,
         [switch]$EnableException
     )
     process {
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Level Verbose -Message "Connecting to $instance"
-                $SessionCollection += Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential -Session $Session -EnableException
+                $InputObject += Get-DbaXESession -SqlInstance $instance -SqlCredential $SqlCredential -Session $Session -EnableException
             }
             catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-
-            foreach ($xes in $SessionCollection) {
-                $xesname = $xes.Name
-
-                if (-not (Test-Path -Path $Path)) {
-                    Stop-Function -Message "$Path does not exist" -Target $Path
-                }
-
-                if ($path.EndsWith(".xml")) {
-                    $filename = $path
-                }
-                else {
-                    $filename = "$path\$xesname.xml"
-                }
-                Write-Message -Level Output -Message "Wrote $xesname to $filename"
-                [Microsoft.SqlServer.Management.XEvent.XEStore]::SaveSessionToTemplate($xes, $filename, $true)
-                #$xes.ScriptCreate.GetScript() | Out-File -FilePath $filename -Encoding UTF8 -Append
+        }
+        
+        foreach ($xes in $InputObject) {
+            $xesname = $xes.Name
+            
+            if (-not (Test-Path -Path $Path)) {
+                Stop-Function -Message "$Path does not exist" -Target $Path
             }
+            
+            if ($path.EndsWith(".xml")) {
+                $filename = $path
+            }
+            else {
+                $filename = "$path\$xesname.xml"
+            }
+            Write-Message -Level Verbose -Message "Wrote $xesname to $filename"
+            [Microsoft.SqlServer.Management.XEvent.XEStore]::SaveSessionToTemplate($xes, $filename, $true)
+            Get-ChildItem -Path $filename
+            #$xes.ScriptCreate.GetScript() | Out-File -FilePath $filename -Encoding UTF8 -Append
         }
     }
 }
