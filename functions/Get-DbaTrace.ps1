@@ -50,7 +50,7 @@ function Get-DbaTrace {
         [switch][Alias('Silent')]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaTrace
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaTraceFile
     }
     process {
 
