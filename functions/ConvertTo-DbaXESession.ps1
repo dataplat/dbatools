@@ -55,8 +55,7 @@
         [switch]$EnableException
     )
     begin {
-        $createsql = Get-Content "$script:PSModuleRoot\bin\sp_SQLskills_ConvertTraceToEEs.sql" -Raw
-        $dropsql = "IF OBJECT_ID('sp_SQLskills_ConvertTraceToExtendedEvents') IS NOT NULL DROP PROCEDURE sp_SQLskills_ConvertTraceToExtendedEvents;"
+        $rawsql = Get-Content "$script:PSModuleRoot\bin\sp_SQLskills_ConvertTraceToEEs.sql" -Raw
     }
     process {
         foreach ($trace in $InputObject) {
@@ -86,20 +85,13 @@
                 $Name = "$name-$(Get-Random)"
                 Write-Message -Level Output -Message "XE Session $oldname already exists on $server, trying $name"
             }
-
-            $executesql = "sp_SQLskills_ConvertTraceToExtendedEvents @traceid = $traceid, @sessionname = [$Name]"
-
+            
+            $sql = $rawsql.Replace("--TRACEID--", $traceid)
+            $sql = $sql.Replace("--SESSIONNAME--", $name)
+            
             try {
-                # I attempted to make this a straightforward query but then ended up
-                # changing the script too much, so decided to drop/create/drop in tempdb
-                Write-Message -Level Verbose -Message "Dropping sp_SQLskills_ConvertTraceToExtendedEvents from tempdb if it exists"
-                $null = $tempdb.Query($dropsql)
-                Write-Message -Level Verbose -Message "Creating sp_SQLskills_ConvertTraceToExtendedEvents in tempdb"
-                $null = $tempdb.Query($createsql)
-                Write-Message -Level Verbose -Message "Executing $executesql from tempdb"
-                $results = $tempdb.ExecuteWithResults($executesql).Tables.Rows.SqlString
-                Write-Message -Level Verbose -Message "Dropping sp_SQLskills_ConvertTraceToExtendedEvents from tempdb"
-                $null = $tempdb.Query($dropsql)
+                Write-Message -Level Verbose -Message "Executing SQL in tempdb"
+                $results = $tempdb.ExecuteWithResults($sql).Tables.Rows.SqlString
             }
             catch {
                 Stop-Function -Message "Issue creating, dropping or executing sp_SQLskills_ConvertTraceToExtendedEvents in tempdb on $server" -Target $server -ErrorRecord $_
