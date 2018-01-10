@@ -18,7 +18,7 @@
     .PARAMETER AllSessions
     Remove all Extended Events sessions on an instance, ignoring the packaged sessions: AlwaysOn_health, system_health, telemetry_xevents.
 
-    .PARAMETER SessionCollection
+    .PARAMETER InputObject
     Internal parameter to support piping from Get-DbaXESession
 
     .PARAMETER EnableException
@@ -66,7 +66,7 @@
         [parameter(Mandatory, ParameterSetName = 'All')]
         [switch]$AllSessions,
         [parameter(Mandatory, ValueFromPipeline, ParameterSetName = 'Object')]
-        [Microsoft.SqlServer.Management.XEvent.Session[]]$SessionCollection,
+        [Microsoft.SqlServer.Management.XEvent.Session[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -84,11 +84,11 @@
                 try {
                     $xe.Drop()
                     [pscustomobject]@{
-                        ComputerName   = $xe.Parent.NetName
-                        InstanceName   = $xe.Parent.ServiceName
-                        SqlInstance    = $xe.Parent.DomainInstanceName
-                        Session        = $session
-                        Status         = "Successful"
+                        ComputerName    = $xe.Parent.NetName
+                        InstanceName    = $xe.Parent.ServiceName
+                        SqlInstance     = $xe.Parent.DomainInstanceName
+                        Session         = $session
+                        Status          = "Successful"
                     }
                 }
                 catch {
@@ -97,10 +97,14 @@
             }
         }
     }
-    
+
     process {
-        if ($SessionCollection) {
-            Remove-XESessions $SessionCollection
+        if ($InputObject) {
+            # avoid the collection issue
+            $sessions = Get-DbaXESession -SqlInstance $InputObject.Parent -Session $InputObject.Name
+            foreach ($item in $sessions) {
+                Remove-XESessions $item
+            }
         }
         else {
             foreach ($instance in $SqlInstance) {
