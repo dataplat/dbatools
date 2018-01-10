@@ -426,7 +426,10 @@
         'Get-DbaLogShippingError',
         'Test-DbaSqlBuild',
         'Get-DbaXESessionTemplate',
-        'ConvertTo-DbaXESession'
+        'ConvertTo-DbaXESession',
+        'Start-DbaTrace',
+        'Stop-DbaTrace',
+        'Remove-DbaTrace'
     )
 
     # Cmdlets to export from this module
