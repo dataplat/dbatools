@@ -30,12 +30,10 @@
 *
 ******************************************************************************/
 
-CREATE PROCEDURE sp_SQLskills_ConvertTraceToExtendedEvents
-(      @TraceID INT,
-       @SessionName NVARCHAR(128),
-       @PrintOutput BIT = 1,
-       @Execute BIT = 0)
-AS
+DECLARE @TraceID INT = --TRACEID--
+DECLARE @SessionName NVARCHAR(128) = '--SESSIONNAME--'
+DECLARE @PrintOutput BIT = 1
+DECLARE @Execute BIT = 0
 
 SET NOCOUNT ON
 
@@ -698,12 +696,4 @@ BEGIN
               SELECT @Position = @Next + 1
     END
 END
-
--- Test the procedure
---GO
-
---EXECUTE sp_SQLskills_ConvertTraceToExtendedEvents 
---              @TraceID = 2, 
---              @SessionName = 'ConvertedFromTrace', 
---              @PrintOutput = 1, 
---              @Execute = 0;
+DROP TABLE [#SQLskills_Trace_XE_Column_Map]
