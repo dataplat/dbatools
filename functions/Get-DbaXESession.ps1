@@ -110,7 +110,7 @@ function Get-DbaXESession {
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Parent -Value $server
                 Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Store -Value $XEStore
                 Select-DefaultView -InputObject $x -Property ComputerName, InstanceName, SqlInstance, Name, Status, StartTime, AutoStart, State, Targets, TargetFile, Events, MaxMemory, MaxEventSize
-                $xesessions.Refresh()
+                try { $xesessions.Refresh() } catch {}
             }
         }
     }
