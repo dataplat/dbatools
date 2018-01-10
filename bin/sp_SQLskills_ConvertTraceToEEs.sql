@@ -28,25 +28,14 @@
 *   TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
 *   PARTICULAR PURPOSE. 
 *
-*
-* Slight mods by Chrissy LeMaire to support PowerShell
 ******************************************************************************/
 
-/*
-DROP PROCEDURE sp_SQLskills_ConvertTraceToExtendedEvents
-go
 CREATE PROCEDURE sp_SQLskills_ConvertTraceToExtendedEvents
-(      @TraceID int = 2,
-       @SessionName NVARCHAR(128) = 'Default Profiler Trace',
+(      @TraceID INT,
+       @SessionName NVARCHAR(128),
        @PrintOutput BIT = 1,
        @Execute BIT = 0)
 AS
-*/
-
-DECLARE @TraceID int = 1
-DECLARE @SessionName NVARCHAR(128) = 'Default Profiler Trace'
-DECLARE @PrintOutput BIT = 1
-DECLARE @Execute BIT = 0
 
 SET NOCOUNT ON
 
@@ -694,7 +683,7 @@ BEGIN
        DECLARE @Position INT = 1, 
                      @Next INT = 0, 
                      @Delimeter NCHAR(1) = CHAR(10),
-                     @WorkString VARCHAR(MAX) = @sqlcmd;
+                     @WorkString VARCHAR(MAX) = @DropCmd + 'GO' + CHAR(10) + @sqlcmd;
 
        WHILE (1 = 1)
        BEGIN
@@ -704,8 +693,17 @@ BEGIN
                      BREAK
 
               IF (@Position <> @Next)
-                     SELECT SUBSTRING(@WorkString, @Position, @Next - @Position) as SQLString
+                     SELECT SUBSTRING(@WorkString, @Position, @Next - @Position) as SqlString
 
               SELECT @Position = @Next + 1
     END
 END
+
+-- Test the procedure
+--GO
+
+--EXECUTE sp_SQLskills_ConvertTraceToExtendedEvents 
+--              @TraceID = 2, 
+--              @SessionName = 'ConvertedFromTrace', 
+--              @PrintOutput = 1, 
+--              @Execute = 0;
