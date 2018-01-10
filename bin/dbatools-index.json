@@ -74,6 +74,18 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eConnect-DbaInstance -SqlInstance sql2014\r\n\r\nCreates an SMO Server object that connects using Windows Authentication\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$wincred = Get-Credential ad\\sqladmin\r\n\r\nConnect-DbaInstance -SqlInstance sql2014 -Credential $wincred\r\n\r\nCreates an SMO Server object that connects using alternative Windows credentials\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$sqlcred = Get-Credential sqladmin\r\n\r\n$server = Connect-DbaInstance -SqlInstance sql2014 -Credential $sqlcred\r\n\r\nLogin to sql2014 as SQL login sqladmin.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -ClientName \"my connection\"\r\n\r\nCreates an SMO Server object that connects using Windows Authentication and uses the client name \"my connection\". So \r\nwhen you open up profiler or use extended events, you can search for \"my connection\".\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -AppendConnectionString \"Packet \r\nSize=4096;AttachDbFilename=C:\\MyFolder\\MyDataFile.mdf;User Instance=true;\"\r\n\r\nCreates an SMO Server object that connects to sql2014 using Windows Authentication, then it sets the packet size (this \r\ncan also be done via -PacketSize) and other connection attributes.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaInstance -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover\r\n\r\nCreates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover \r\nenabled.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003e$server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly\r\n\r\nConnects with ReadOnly ApplicationIntent.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "ConvertTo-DbaXESession",
+        "Description":  "Uses a slightly modified version of sp_SQLskills_ConvertTraceToExtendedEvents.sql to convert Traces to Extended Events\n\nT-SQL code by: Jonathan M. Kehayias, SQLskills.com. T-SQL can be found in this module directory and at\nhttps://www.sqlskills.com/blogs/jonathan/converting-sql-trace-to-extended-events-in-sql-server-2012/",
+        "Tags":  [
+                     "Trace",
+                     "ExtendedEvent"
+                 ],
+        "Synopsis":  "Uses a slightly modified version of sp_SQLskills_ConvertTraceToExtendedEvents.sql to convert Traces to Extended Events",
+        "Name":  "ConvertTo-DbaXESession",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2017, sql2012 | Where Id -eq 2 | ConvertTo-DbaXESession -Name \u0027Test\u0027\r\n\r\nConverts Trace with ID 2 to a Session named Test on SQL Server instances named sql2017 and sql2012\r\nand creates the Session on each respective server\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2014 | Out-GridView -PassThru | ConvertTo-DbaXESession -Name \u0027Test\u0027 | \r\nStart-DbaXESession\r\n\r\nConverts selected traces on sql2014 to sessions, creates the session and starts it\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2014 | Where Id -eq 1 | ConvertTo-DbaXESession -Name \u0027Test\u0027 -OutputScriptOnly\r\n\r\nConverts trace ID 1 on sql2014 to an Extended Event and outputs the resulting T-SQL\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Copy-DbaAgentAlert",
         "Description":  "By default, all alerts are copied. The -Alert parameter is auto-populated for command-line completion and can be used to copy only specific alerts.\n\nIf the alert already exists on the destination, it will be skipped unless -Force is used.",
         "Tags":  [
@@ -623,6 +635,14 @@
         "Name":  "Export-DbaUser",
         "Links":  "https://dbatools.io/Export-DbaUser",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sql2005 -FilePath C:\\temp\\sql2005-users.sql\r\n\r\nExports SQL for the users in server \"sql2005\" and writes them to the file \"C:\\temp\\sql2005-users.sql\"\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2014a $scred -FilePath C:\\temp\\users.sql -Append\r\n\r\nAuthenticates to sqlserver2014a using SQL Authentication. Exports all users to C:\\temp\\users.sql, and appends to the \r\nfile if it exists. If not, the file will be created.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2014a -User User1, User2 -FilePath C:\\temp\\users.sql\r\n\r\nExports ONLY users User1 and User2 fron sqlsever2014a to the file  C:\\temp\\users.sql\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -User User1 -FilePath C:\\temp\\users.sql -DestinationVersion \r\nSQLServer2016\r\n\r\nExports user User1 fron sqlsever2008 to the file C:\\temp\\users.sql with sintax to run on SQL Server 2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\\temp\\users.sql\r\n\r\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003e$options = New-DbaScriptingOption\r\n\r\n$options.ScriptDrops = $false\r\n$options.WithDependencies = $true\r\n\r\nExport-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\\temp\\users.sql -ScriptingOptionsObject $options\r\n\r\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file.\r\nIt will not script drops but will script dependencies.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaUser -SqlInstance sqlserver2008 -Database db1,db2 -FilePath C:\\temp\\users.sql -ExcludeGoBatchSeparator\r\n\r\nExports ONLY users from db1 and db2 database on sqlserver2008 server, to the C:\\temp\\users.sql file without the \u0027GO\u0027 \r\nbatch separator.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Export-DbaXESessionTemplate",
+        "Description":  "Exports an XESession XML Template either from our repo or a file you specify",
+        "Synopsis":  "Exports an new XESession XML Template",
+        "Name":  "Export-DbaXESessionTemplate",
+        "Links":  "https://dbatools.io/Export-DbaXESessionTemplate",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eExport-DbaXESessionTemplate -SqlInstance sql2017 -Path C:\\temp\\xe\r\n\r\nReturns a new XE Session object from sql2017 then adds an event, an action then creates it.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2017 -Session session_health | Export-DbaXESessionTemplate -Path C:\\temp\r\n\r\nReturns a new XE Session object from sql2017 then adds an event, an action then creates it.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Find-DbaAgentJob",
@@ -2033,17 +2053,17 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2008, sql2012\r\n\r\nReturn the 80 (20 x 4 types) top usage results by duration, frequency, IO, and CPU servers for servers sql2008 and \r\nsql2012\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2008 -Type Duration, Frequency -Database TestDB\r\n\r\nReturn the highest usage by duration (top 20) and frequency (top 20) for the TestDB on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2016 -Limit 30\r\n\r\nReturn the highest usage by duration (top 30) and frequency (top 30) for the TestDB on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2008, sql2012 -ExcludeSystem\r\n\r\nReturn the 80 (20 x 4 types) top usage results by duration, frequency, IO, and CPU servers for servers sql2008 and \r\nsql2012 without any System Objects\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTopResourceUsage -SqlInstance sql2016| Select *\r\n\r\nReturn all the columns plus the QueryPlan column\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
-        "CommandName":  "Get-DbaTraceFile",
-        "Description":  "This function returns a list of Trace Files on a SQL Server Instance and identify the default Trace File",
+        "CommandName":  "Get-DbaTrace",
+        "Description":  "This function returns a list of Traces on a SQL Server Instance and identify the default Trace File",
         "Tags":  [
                      "Security",
                      "Trace"
                  ],
         "Author":  "Garry Bargsley (@gbargsley), http://blog.garrybargsley.com",
-        "Synopsis":  "Gets a list of trace file(s) from specied SQL Server Instance",
-        "Name":  "Get-DbaTraceFile",
+        "Synopsis":  "Gets a list of trace(s) from specied SQL Server Instance",
+        "Name":  "Get-DbaTrace",
         "Links":  null,
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTraceFile -SqlInstance sql2016\r\n\r\nLists all the tracefiles on the sql2016 SQL Server.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTraceFile -SqlInstance sql2016 -Default\r\n\r\nLists the default trace information on the sql2016 SQL Server.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2016\r\n\r\nLists all the tracefiles on the sql2016 SQL Server.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2016 -Default\r\n\r\nLists the default trace information on the sql2016 SQL Server.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaTraceFlag",
@@ -2145,6 +2165,22 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTarget -SqlInstance ServerA\\sql987 -Session system_health\r\n\r\nShows targets for the system_health session on ServerA\\sql987\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2016 -Session system_health | Get-DbaXESessionTarget\r\n\r\nReturns the targets for the system_health session on sql2016\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2016 -Session system_health | Get-DbaXESessionTarget -Target package0.event_file\r\n\r\nReturn only the package0.event_file target for the system_health session on sql2016\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaXESessionTemplate",
+        "Description":  "Parses Extended Event XML templates. Defaults to parsing templates in our template repository (\\bin\\xetemplates\\)",
+        "Synopsis":  "Parses Extended Event XML templates. Defaults to parsing templates in our template repository (\\bin\\xetemplates\\)",
+        "Name":  "Get-DbaXESessionTemplate",
+        "Links":  "https://dbatools.io/Get-DbaXESessionTemplate",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate\r\n\r\nReturns information about all the templates in the local dbatools repository\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017 | \r\nStart-DbaXESession\r\n\r\nAllows you to select a Session template then import to an instance named\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate -Path \"$home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates\"\r\n\r\nReturns information about all the templates in your local XEventTemplates repository\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Get-DbaXEStore",
+        "Description":  "Get a Extended Events store",
+        "Synopsis":  "Get a Extended Events store",
+        "Name":  "Get-DbaXEStore",
+        "Links":  "https://dbatools.io/Get-DbaXEStore",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXEStore -SqlInstance ServerA\\sql987\r\n\r\nReturns a XEvent Store\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Import-DbaCsvToSql",
         "Description":  "Import-DbaCsvToSql takes advantage of .NET\u0027s super fast SqlBulkCopy class to import CSV files into SQL Server at up to 90,000 rows a second.\n\nThe entire import is contained within a transaction, so if a failure occurs or the script is aborted, no changes will persist.\n\nIf the table specified does not exist, it will be automatically created using best guessed data types. In addition, the destination table can be truncated prior to import.\n\nThe Query parameter will be used to import only the data returned from a SQL Query executed against the CSV file(s). This function supports a number of bulk copy options. Please see parameter list for details.",
         "Tags":  "Migration",
@@ -2161,6 +2197,14 @@
         "Name":  "Import-DbaSpConfigure",
         "Links":  null,
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaSpConfigure sqlserver sqlcluster $SourceSqlCredential $DestinationSqlCredential\r\n\r\nImports the sp_configure settings from the source server sqlserver and sets them on the sqlcluster server\r\nusing the SQL credentials stored in the variables\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaSpConfigure -SqlInstance sqlserver -Path .\\spconfig.sql -SqlCredential $SqlCredential\r\n\r\nImports the sp_configure settings from the file .\\spconfig.sql and sets them on the sqlcluster server\r\nusing the SQL credential stored in the variables\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Import-DbaXESessionTemplate",
+        "Description":  "Imports a new XESession XML Template either from our repo or a file you specify",
+        "Synopsis":  "Imports a new XESession XML Template",
+        "Name":  "Import-DbaXESessionTemplate",
+        "Links":  "https://dbatools.io/Import-DbaXESessionTemplate",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats\r\n\r\nCreates a new XESession named db_query_wait_stats from our repo to the SQL Server sql2017\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eImport-DbaXESessionTemplate -SqlInstance sql2017 -Template db_query_wait_stats -Name \"Query Wait Stats\"\r\n\r\nCreates a new XESession named \"Query Wait Stats\" using the db_query_wait_stats template\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2017 -Session db_ola_health | Remove-DbaXESession\r\n\r\nImport-DbaXESessionTemplate -SqlInstance sql2017 -Template db_ola_health | Start-DbaXESession\r\n\r\nImports a session if it exists then recreates it using a template\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017\r\n\r\nAllows you to select a Session template then import to an instance named sql2017\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Install-DbaFirstResponderKit",
@@ -2593,6 +2637,46 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eNew-DbatoolsSupportPackage\r\n\r\nCreates a large support pack in order to help us troubleshoot stuff.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "New-DbaXESession",
+        "Description":  "Creates a new XESession object - for the dogged (very manual, Import-DbaXESession is recommended). See the following for more info:\n\nhttps://docs.microsoft.com/en-us/sql/relational-databases/extended-events/use-the-powershell-provider-for-extended-events",
+        "Synopsis":  "Creates a new XESession object - for the dogged.",
+        "Name":  "New-DbaXESession",
+        "Links":  "https://dbatools.io/New-DbaXESession",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$session = New-DbaXESession -SqlInstance sql2017\r\n\r\n$event = $session.AddEvent(\"sqlserver.file_written\")\r\n$event.AddAction(\"package0.callstack\")\r\n$session.Create()\r\n\r\nReturns a new XE Session object from sql2017 then adds an event, an action then creates it.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "New-DbaXESmartEmail",
+        "Description":  "This Response type can be used to send an email each time an event is captured.",
+        "Synopsis":  "This Response type can be used to send an email each time an event is captured.",
+        "Name":  "New-DbaXESmartEmail",
+        "Links":  "https://dbatools.io/New-DbaXESmartEmail\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$params = @{\r\n\r\nSmtpServer = \"smtp.ad.local\"\r\n    To = \"admin@ad.local\"\r\n    Sender = \"reports@ad.local\"\r\n    Subject = \"Query executed\"\r\n    Body = \"Query executed at {collection_time}\"\r\n    Attachment = \"batch_text\"\r\n    AttachmentFileName = \"query.sql\"\r\n}\r\n$emailresponse = New-DbaXESmartEmail @params\r\nStart-DbaXESmartTarget -SqlInstance sql2017 -Session querytracker -Responder $emailresponse\r\n\r\nSends an email each time a querytracker event is captured.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "New-DbaXESmartQueryExec",
+        "Description":  "This Response type executes a T-SQL command against a target database whenever an event is recorded.",
+        "Synopsis":  "This Response type executes a T-SQL command against a target database whenever an event is recorded.",
+        "Name":  "New-DbaXESmartQueryExec",
+        "Links":  "https://dbatools.io/New-DbaXESmartQueryExec\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query \"update table set whatever = 1\"\r\n\r\nStart-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response\r\n\r\nExecutes a T-SQL command against dbadb on sql2017 whenever a deadlock event is recorded.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "New-DbaXESmartReplay",
+        "Description":  "This Response type can be used to replay execution related events to a target SQL Server instance. The events that you can replay are of the type sql_batch_completed and rpc_completed: all other events are ignored.",
+        "Synopsis":  "This Response type can be used to replay execution related events to a target SQL Server instance.",
+        "Name":  "New-DbaXESmartReplay",
+        "Links":  "https://dbatools.io/New-DbaXESmartReplay\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$response = New-DbaXESmartReplay -SqlInstance sql2017 -Database planning\r\n\r\nStart-DbaXESmartTarget -SqlInstance sql2016 -Session loadrelay -Responder $response\r\n\r\nReplays events from sql2016 on sql2017.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "New-DbaXESmartTableWriter",
+        "Description":  "This Response type is used to write Extended Events to a database table. The events are temporarily stored in memory before being written to the database at regular intervals.\n\nThe target table can be created manually upfront or you can let the TableAppenderResponse create a target table based on the fields and actions available in the events captured.\nThe columns of the target table and the fields/actions of the events are mapped by name (case-sensitive).",
+        "Synopsis":  "This Response type is used to write Extended Events to a database table.",
+        "Name":  "New-DbaXESmartTableWriter",
+        "Links":  "https://dbatools.io/New-DbaXESmartTableWriter\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$columns = \"cpu_time\", \"duration\", \"physical_reads\", \"logical_reads\", \"writes\", \"row_count\", \"batch_text\"\r\n\r\n$response = New-DbaXESmartTableWriter -SqlInstance sql2017 -Database dbadb -Table deadlocktracker -OutputColumns \r\n$columns -Filter \"duration \u003e 10000\"\r\nStart-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response\r\n\r\nWrites Extended Events to the deadlocktracker table in dbadb on sql2017.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Out-DbaDataTable",
         "Description":  "Creates a DataTable based on an object\u0027s properties. This allows you to easily write to SQL Server tables.\n\nThanks to Chad Miller, this is based on his script. https://gallery.technet.microsoft.com/scriptcenter/4208a159-a52e-4b99-83d4-8048468d29dd\n\nIf the attempt to convert to datatable fails, try the -Raw parameter for less accurate datatype detection.",
         "Tags":  "",
@@ -2882,6 +2966,27 @@
         "Name":  "Remove-DbaSpn",
         "Links":  "https://dbatools.io/Remove-DbaSpn",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account\r\n\r\nConnects to Active Directory and removes a provided SPN from the given account (and also the relative delegation)\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account -EnableException\r\n\r\nConnects to Active Directory and removes a provided SPN from the given account, suppressing all error messages and \r\nthrow exceptions that can be caught instead\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaSpn -SPN MSSQLSvc\\SQLSERVERA.domain.something -ServiceAccount domain\\account -Credential \r\n(Get-Credential)\r\n\r\nConnects to Active Directory and removes a provided SPN to the given account. Uses alternative account to connect to AD.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2005 | Where { $_.isSet -eq $true } | Remove-DbaSpn -WhatIf\r\n\r\nShows what would happen trying to remove all set SPNs for sql2005 and the relative delegations\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eTest-DbaSpn -ComputerName sql2005 | Where { $_.isSet -eq $true } | Remove-DbaSpn\r\n\r\nRemoves all set SPNs for sql2005 and the relative delegations\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Remove-DbaTrace",
+        "Description":  "Stops and closes the specified trace and deletes its definition from the server.",
+        "Tags":  [
+                     "Security",
+                     "Trace"
+                 ],
+        "Synopsis":  "Stops and closes the specified trace and deletes its definition from the server.",
+        "Name":  "Remove-DbaTrace",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaTrace -SqlInstance sql2008\r\n\r\nStops all traces on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaTrace -SqlInstance sql2008 -Id 1\r\n\r\nStops all trace with ID 1 on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2008 | Out-GridView -PassThru | Remove-DbaTrace\r\n\r\nStops selected traces on sql2008\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Remove-DbaXESession",
+        "Description":  "This script starts Extended Events sessions on a SQL Server instance.",
+        "Tags":  "Xevent",
+        "Synopsis":  "Removes Extended Events sessions.",
+        "Name":  "Remove-DbaXESession",
+        "Links":  "https://dbatools.io/Remove-DbaXESession",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaXESession -SqlInstance sqlserver2012 -AllSessions\r\n\r\nRemoves all Extended Event Session on the sqlserver2014 instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2\r\n\r\nRemoves the xesession1 and xesession2 Extended Event sessions.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Remove-DbaXESession\r\n\r\nRemoves the sessions returned from the Get-DbaXESession function.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Rename-DbaDatabase",
@@ -3335,6 +3440,18 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaSqlService -ComputerName sqlserver2014a\r\n\r\nStarts the SQL Server related services on computer sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027| Get-DbaSqlService | Start-DbaSqlService\r\n\r\nGets the SQL Server related services on computers sql1, sql2 and sql3 and starts them.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaSqlService -ComputerName sql1,sql2 -Instance MSSQLSERVER\r\n\r\nStarts the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaSqlService -ComputerName $MyServers -Type SSRS\r\n\r\nStarts the SQL Server related services of type \"SSRS\" (Reporting Services) on computers in the variable MyServers.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Start-DbaTrace",
+        "Description":  "This command starts a trace on a SQL Server Instance",
+        "Tags":  [
+                     "Security",
+                     "Trace"
+                 ],
+        "Synopsis":  "Start a list of trace(s) from specied SQL Server Instance",
+        "Name":  "Start-DbaTrace",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaTrace -SqlInstance sql2008\r\n\r\nStarts all traces on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaTrace -SqlInstance sql2008 -Id 1\r\n\r\nStarts all trace with ID 1 on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2008 | Out-GridView -PassThru | Start-DbaTrace\r\n\r\nStarts selected traces on sql2008\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Start-DbaXESession",
         "Description":  "This script starts Extended Events sessions on a SQL Server instance.",
         "Tags":  "Xevent",
@@ -3343,6 +3460,14 @@
         "Name":  "Start-DbaXESession",
         "Links":  "https://dbatools.io/Start-DbaXESession",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -AllSessions\r\n\r\nStarts all Extended Event Session on the sqlserver2014 instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStart-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2\r\n\r\nStarts the xesession1 and xesession2 Extended Event sessions.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Start-DbaXESession\r\n\r\nStarts the sessions returned from the Get-DbaXESession function.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Start-DbaXESmartTarget",
+        "Description":  "XESmartTarget offers the ability to set up complex actions in response to Extended Events captured in sessions, without writing a single line of code.\n\nSee more: https://github.com/spaghettidba/XESmartTarget/wiki",
+        "Synopsis":  "XESmartTarget runs as a client application for an Extended Events session running on a SQL Server instance",
+        "Name":  "Start-DbaXESmartTarget",
+        "Links":  "https://dbatools.io/Start-DbaXESmartTarget\nhttps://github.com/spaghettidba/XESmartTarget/wiki",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query \"update table set whatever = 1\"\r\n\r\nStart-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response\r\n\r\nExecutes a T-SQL command against dbadb on sql2017 whenever a deadlock event is recorded.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e$response = New-DbaXESmartQueryExec -SqlInstance sql2017 -Database dbadb -Query \"update table set whatever = 1\"\r\n\r\n$params = @{\r\n    SmtpServer = \"smtp.ad.local\"\r\n    To = \"admin@ad.local\"\r\n    Sender = \"reports@ad.local\"\r\n    Subject = \"Query executed\"\r\n    Body = \"Query executed at {collection_time}\"\r\n    Attachment = \"batch_text\"\r\n    AttachmentFileName = \"query.sql\"\r\n}\r\n$emailresponse = New-DbaXESmartEmail @params\r\nStart-DbaXESmartTarget -SqlInstance sql2017 -Session querytracker -Responder $response, $emailresponse\r\n\r\nExecutes a T-SQL command against dbadb on sql2017 whenever a querytracker event is recorded. Also sends an email.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003e$columns = \"cpu_time\", \"duration\", \"physical_reads\", \"logical_reads\", \"writes\", \"row_count\", \"batch_text\"\r\n\r\n$response = New-DbaXESmartTableWriter -SqlInstance sql2017 -Database dbadb -Table deadlocktracker -OutputColumns \r\n$columns -Filter \"duration \u003e 10000\"\r\nStart-DbaXESmartTarget -SqlInstance sql2017 -Session deadlock_tracker -Responder $response\r\n\r\nWrites Extended Events to the deadlocktracker table in dbadb on sql2017.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Stop-DbaAgentJob",
@@ -3374,6 +3499,18 @@
         "Name":  "Stop-DbaSqlService",
         "Links":  "https://dbatools.io/Stop-DbaSqlService",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaSqlService -ComputerName sqlserver2014a\r\n\r\nStops the SQL Server related services on computer sqlserver2014a.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003e\u0027sql1\u0027,\u0027sql2\u0027,\u0027sql3\u0027| Get-DbaSqlService | Stop-DbaSqlService\r\n\r\nGets the SQL Server related services on computers sql1, sql2 and sql3 and stops them.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaSqlService -ComputerName sql1,sql2 -Instance MSSQLSERVER\r\n\r\nStops the SQL Server services related to the default instance MSSQLSERVER on computers sql1 and sql2.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaSqlService -ComputerName $MyServers -Type SSRS\r\n\r\nStops the SQL Server related services of type \"SSRS\" (Reporting Services) on computers in the variable MyServers.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaSqlService -ComputerName sql1 -Type Engine -Force\r\n\r\nStops SQL Server database engine services on sql1 forcing dependent SQL Server Agent services to stop as well.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Stop-DbaTrace",
+        "Description":  "This command stops a trace on a SQL Server Instance",
+        "Tags":  [
+                     "Security",
+                     "Trace"
+                 ],
+        "Synopsis":  "Stop a list of trace(s) from specied SQL Server Instance",
+        "Name":  "Stop-DbaTrace",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaTrace -SqlInstance sql2008\r\n\r\nStops all traces on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eStop-DbaTrace -SqlInstance sql2008 -Id 1\r\n\r\nStops all trace with ID 1 on sql2008\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTrace -SqlInstance sql2008 | Out-GridView -PassThru | Stop-DbaTrace\r\n\r\nStops selected traces on sql2008\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Stop-DbaXESession",
