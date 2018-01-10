@@ -29,7 +29,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
     Context "Test Check Default Trace" {
-        $results = Get-DbaTraceFile -SqlInstance $script:instance2
+        $results = Get-DbaTrace -SqlInstance $script:instance2
         It "Should find at least one trace file" {
             $results.Id.Count -gt 0 | Should Be $true
         }
