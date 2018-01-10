@@ -8,13 +8,13 @@
 
         T-SQL code by: Jonathan M. Kehayias, SQLskills.com. T-SQL can be found in this module directory and at
         https://www.sqlskills.com/blogs/jonathan/converting-sql-trace-to-extended-events-in-sql-server-2012/
-    
+
         .PARAMETER InputObject
         Piped input from Get-DbaTrace
-    
+
         .PARAMETER Name
         The name of the Trace - if the name exists, extra characters will be appended
-    
+
         .PARAMETER OutputScriptOnly
         Output the script in plain-ol T-SQL instead of executing it
 
@@ -39,11 +39,11 @@
         Get-DbaTrace -SqlInstance sql2014 | Out-GridView -PassThru | ConvertTo-DbaXESession -Name 'Test' | Start-DbaXESession
 
         Converts selected traces on sql2014 to sessions, creates the session and starts it
-    
+
         .EXAMPLE
         Get-DbaTrace -SqlInstance sql2014 | Where Id -eq 1 | ConvertTo-DbaXESession -Name 'Test' -OutputScriptOnly
 
-        Converts trace ID 1 on sql2014 to an Extended Event and outputs the resulting T-SQL 
+        Converts trace ID 1 on sql2014 to an Extended Event and outputs the resulting T-SQL
 #>
     [CmdletBinding()]
     Param (
@@ -64,31 +64,31 @@
                 Stop-Function -Message "Input is of the wrong type. Use Get-DbaTrace." -Continue
                 return
             }
-            
+
             $server = $trace.Parent
-            
+
             if ($server.VersionMajor -lt 11) {
                 Stop-Function -Message "SQL Server version 2012+ required - $server not supported."
                 return
             }
-            
+
             $tempdb = $server.Databases['tempdb']
             $traceid = $trace.id
-            
+
             if ((Get-DbaXESession -SqlInstance $server -Session $PSBoundParameters.Name)) {
                 $oldname = $name
                 $Name = "$name-$traceid"
                 Write-Message -Level Output -Message "XE Session $oldname already exists on $server, trying $name"
             }
-            
+
             if ((Get-DbaXESession -SqlInstance $server -Session $Name)) {
                 $oldname = $name
                 $Name = "$name-$(Get-Random)"
                 Write-Message -Level Output -Message "XE Session $oldname already exists on $server, trying $name"
             }
-            
+
             $executesql = "sp_SQLskills_ConvertTraceToExtendedEvents @traceid = $traceid, @sessionname = [$Name]"
-            
+
             try {
                 # I attempted to make this a straightforward query but then ended up
                 # changing the script too much, so decided to drop/create/drop in tempdb
@@ -104,9 +104,9 @@
             catch {
                 Stop-Function -Message "Issue creating, dropping or executing sp_SQLskills_ConvertTraceToExtendedEvents in tempdb on $server" -Target $server -ErrorRecord $_
             }
-            
+
             $results = $results -join "`r`n"
-            
+
             if ($OutputScriptOnly) {
                 $results
             }
