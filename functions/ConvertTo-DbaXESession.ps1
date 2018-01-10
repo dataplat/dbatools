@@ -85,10 +85,10 @@
                 $Name = "$name-$(Get-Random)"
                 Write-Message -Level Output -Message "XE Session $oldname already exists on $server, trying $name"
             }
-            
+
             $sql = $rawsql.Replace("--TRACEID--", $traceid)
             $sql = $sql.Replace("--SESSIONNAME--", $name)
-            
+
             try {
                 Write-Message -Level Verbose -Message "Executing SQL in tempdb"
                 $results = $tempdb.ExecuteWithResults($sql).Tables.Rows.SqlString
