@@ -76,31 +76,32 @@ function Get-DbaTrace {
                 $results = $results | Where-Object { $_.is_default }
             }
         }
-
+        
         foreach ($row in $results) {
             [PSCustomObject]@{
-                ComputerName      = $server.NetName
-                InstanceName      = $server.ServiceName
-                SqlInstance       = $server.DomainInstanceName
-                Id                = $row.id
-                Status            = $row.status
-                Path              = $row.path
-                MaxSize           = $row.max_size
-                StopTime          = $row.stop_time
-                MaxFiles          = $row.max_files
-                IsRowset          = $row.is_rowset
-                IsRollover        = $row.is_rollover
-                IsShutdown        = $row.is_shutdown
-                IsDefault         = $row.is_default
-                BufferCount       = $row.buffer_count
-                BufferSize        = $row.buffer_size
-                FilePosition      = $row.file_position
-                ReaderSpid        = $row.reader_spid
-                StartTime         = $row.start_time
-                LastEventTime     = $row.last_event_time
-                EventCount        = $row.event_count
-                DroppedEventCount = $row.dropped_event_count
-            }
+                ComputerName       = $server.NetName
+                InstanceName       = $server.ServiceName
+                SqlInstance        = $server.DomainInstanceName
+                Id                 = $row.id
+                Status             = $row.status
+                Path               = $row.path
+                MaxSize            = $row.max_size
+                StopTime           = $row.stop_time
+                MaxFiles           = $row.max_files
+                IsRowset           = $row.is_rowset
+                IsRollover         = $row.is_rollover
+                IsShutdown         = $row.is_shutdown
+                IsDefault          = $row.is_default
+                BufferCount        = $row.buffer_count
+                BufferSize         = $row.buffer_size
+                FilePosition       = $row.file_position
+                ReaderSpid         = $row.reader_spid
+                StartTime          = $row.start_time
+                LastEventTime      = $row.last_event_time
+                EventCount         = $row.event_count
+                DroppedEventCount  = $row.dropped_event_count
+                Parent             = $server
+            } | Select-DefaultView -ExcludeProperty Parent
         }
     }
 }
