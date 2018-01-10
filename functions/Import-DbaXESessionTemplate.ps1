@@ -106,8 +106,7 @@
                 }
 
                 if ((Get-DbaXESession -SqlInstance $server -Session $Name)) {
-                    Stop-Function -Message "$Name already exists on $instance"
-                    return
+                    Stop-Function -Message "$Name already exists on $instance" -Continue
                 }
 
                 try {
@@ -130,8 +129,7 @@
                         }
 
                         if ((Get-DbaXESession -SqlInstance $server -Session $Name)) {
-                            Stop-Function -Message "$Name already exists on $instance"
-                            return
+                            Stop-Function -Message "$Name already exists on $instance" -Continue
                         }
 
                         Write-Message -Level Verbose -Message "Importing $file as $name"
