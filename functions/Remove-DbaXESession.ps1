@@ -97,7 +97,7 @@
             }
         }
     }
-
+    
     process {
         if ($SessionCollection) {
             Remove-XESessions $SessionCollection
