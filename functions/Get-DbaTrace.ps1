@@ -1,10 +1,10 @@
-function Get-DbaTraceFile {
+function Get-DbaTrace {
     <#
         .SYNOPSIS
-        Gets a list of trace file(s) from specied SQL Server Instance
+        Gets a list of trace(s) from specied SQL Server Instance
 
         .DESCRIPTION
-        This function returns a list of Trace Files on a SQL Server Instance and identify the default Trace File
+        This function returns a list of Traces on a SQL Server Instance and identify the default Trace File
 
         .PARAMETER SqlInstance
         A SQL Server instance to connect to
@@ -49,7 +49,9 @@ function Get-DbaTraceFile {
         [switch]$Default,
         [switch][Alias('Silent')]$EnableException
     )
-
+    begin {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaTraceFile
+    }
     process {
 
         foreach ($instance in $SqlInstance) {
