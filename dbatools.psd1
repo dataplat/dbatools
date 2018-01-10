@@ -356,7 +356,7 @@
         'Find-DbaSimilarTable',
         'Disable-DbaAgHadr',
         'Enable-DbaAgHadr',
-        'Get-DbaTraceFile',
+        'Get-DbaTrace',
         'Get-DbaSuspectPage',
         'Get-DbaWaitStatistic',
         'Clear-DbaWaitStatistics',
@@ -518,7 +518,8 @@
     'New-DbaDatabaseCertificate',
     'Remove-DbaDatabaseCertificate',
     'Restore-DbaDatabaseCertificate',
-    'Find-DbaDatabaseGrowthEvent'
+    'Find-DbaDatabaseGrowthEvent',
+    'Get-DbaTraceFile'
 
     # List of all modules packaged with this module
     ModuleList              = @()
