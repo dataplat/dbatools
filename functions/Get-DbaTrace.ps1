@@ -30,12 +30,12 @@ function Get-DbaTrace {
         License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
         .EXAMPLE
-        Get-DbaTraceFile -SqlInstance sql2016
+        Get-DbaTrace -SqlInstance sql2016
 
         Lists all the tracefiles on the sql2016 SQL Server.
 
         .EXAMPLE
-        Get-DbaTraceFile -SqlInstance sql2016 -Default
+        Get-DbaTrace -SqlInstance sql2016 -Default
 
         Lists the default trace information on the sql2016 SQL Server.
 
@@ -50,7 +50,7 @@ function Get-DbaTrace {
         [switch][Alias('Silent')]$EnableException
     )
     begin {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaTraceFile
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-DbaTrace
     }
     process {
 
