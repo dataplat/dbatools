@@ -71,7 +71,7 @@
             $default = Get-DbaTrace -SqlInstance $server -Default
             
             if ($default.id -eq $traceid) {
-                Stop-Function -Message "The default trace cannot be started. Use Set-DbaSpConfigure to turn it on." -Continue
+                Stop-Function -Message "The default trace on $server cannot be started. Use Set-DbaSpConfigure to turn it on." -Continue
             }
             
             $sql = "sp_trace_setstatus $traceid, 1"
