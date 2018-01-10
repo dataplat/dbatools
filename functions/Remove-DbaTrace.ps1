@@ -83,11 +83,11 @@
                     $server.Query($removesql)
                 }
                 [pscustomobject]@{
-                    ComputerName     = $server.NetName
-                    InstanceName     = $server.ServiceName
-                    SqlInstance      = $server.DomainInstanceName
-                    TraceId          = $traceid
-                    Status           = "Stopped, closed and deleted"
+                    ComputerName      = $server.NetName
+                    InstanceName      = $server.ServiceName
+                    SqlInstance       = $server.DomainInstanceName
+                    Id                = $traceid
+                    Status            = "Stopped, closed and deleted"
                 }
             }
             catch {
