@@ -91,7 +91,7 @@
             $store = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
             
             foreach ($file in $path) {
-                Write-Message -Level Warning -Message "Importing $file to $instance"
+                Write-Message -Level Verbose -Message "Importing $file to $instance"
                 try {
                     $xml = [xml](Get-Content $file -ErrorAction Stop)
                 }
@@ -106,7 +106,13 @@
                 if ((Test-Bound -ParameterName Name -not)) {
                     $Name = (Get-ChildItem $file).BaseName
                 }
-
+                
+                $no2012 = 'Activity Tracking', 'Database Health', 'Wait Statistics', 'Deadlock Graphs'
+                
+                if ($Name -in $no2012 -and $server.VersionMajor -eq 11) {
+                    Stop-Function -Message "$Name is not supported in SQL Server 2012 ($server)" -Continue
+                }
+                
                 if ((Get-DbaXESession -SqlInstance $server -Session $Name)) {
                     Stop-Function -Message "$Name already exists on $instance" -Continue
                 }
