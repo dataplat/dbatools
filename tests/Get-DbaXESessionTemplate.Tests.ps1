@@ -8,7 +8,8 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         It "returns good results with no missing information" {
             $results | Where-Object Name -eq $null | Should Be $null
             $results | Where-Object TemplateName -eq $null | Should Be $null
-            $results | Where-Object TemplateDescription -eq $null | Should Be $null
+            $results | Where-Object Description -eq $null | Should Be $null
+            $results | Where-Object Category -eq $null | Should Be $null
         }
     }
 }

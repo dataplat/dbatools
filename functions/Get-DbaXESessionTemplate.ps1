@@ -53,15 +53,16 @@
                 catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $file -Continue
                 }
-
+                
                 foreach ($session in $xml.event_sessions) {
                     [pscustomobject]@{
-                        Name     = $session.event_session.name
-                        File     = $file.Name
+                        Name      = $session.event_session.name
+                        Category   = $session.event_session.TemplateCategory.'#text'
+                        Description = $session.event_session.TemplateDescription.'#text'
                         TemplateName = $session.event_session.TemplateName.'#text'
-                        TemplateDescription = $session.event_session.TemplateDescription.'#text'
-                        Path = $file
-                    }
+                        Path       = $file
+                        File       = $file.Name
+                    } | Select-DefaultView -ExcludeProperty File, TemplateName, Path
                 }
             }
         }

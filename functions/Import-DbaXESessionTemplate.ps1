@@ -63,6 +63,7 @@
         [PSCredential]$SqlCredential,
         [string]$Name,
         [parameter(ValueFromPipelineByPropertyName)]
+        [Alias("FullName")]
         [string[]]$Path,
         [string[]]$Template,
         [switch]$EnableException
@@ -88,8 +89,9 @@
             $SqlConn = $server.ConnectionContext.SqlConnectionObject
             $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
             $store = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
-
+            
             foreach ($file in $path) {
+                Write-Message -Level Warning -Message "Importing $file to $instance"
                 try {
                     $xml = [xml](Get-Content $file -ErrorAction Stop)
                 }
