@@ -6,9 +6,11 @@
     .DESCRIPTION
     Copies non-Microsoft templates from our template repository (\bin\xetemplates\) to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates
 
+    Useful for when you want to use the SSMS GUI
+
     .PARAMETER Path
     The path to the template directory. Defaults to our template repository (\bin\xetemplates\)
-    
+
     .PARAMETER Destination
     Path to the Destination directory, defaults to $home\Documents\SQL Server Management Studio\Templates\XEventTemplates
 
@@ -49,7 +51,7 @@
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $Destination
-            }            
+            }
         }
         try {
             $files = (Get-DbaXESessionTemplate -Path $Path | Where-Object Source -ne Microsoft).Path
