@@ -10,6 +10,12 @@
     
             Microsoft's Templates that come with SSMS
             Jes Borland's "Everyday Extended Events" presentation and GitHub repository (https://github.com/grrlgeek/extended-events)
+    
+    Some profile templates converted using:
+    
+            sp_SQLskills_ConvertTraceToExtendedEvents.sql
+            Jonathan M. Kehayias, SQLskills.com
+            http://sqlskills.com/blogs/jonathan
 
     .PARAMETER Path
     The path to the template directory. Defaults to our template repository (\bin\xetemplates\)
