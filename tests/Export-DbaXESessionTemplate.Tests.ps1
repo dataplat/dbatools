@@ -5,13 +5,13 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     AfterAll {
         $null = Get-DbaXESession -SqlInstance $script:instance2 -Session db_ola_health | Remove-DbaXESession
-        Remove-Item -Path C:\windows\temp\db_ola_health.xml -ErrorAction SilentlyContinue
+        Remove-Item -Path 'C:\windows\temp\Profiler TSQL Duration.xml' -ErrorAction SilentlyContinue
     }
     Context "Test Importing Session Template" {
-        $session = Import-DbaXESessionTemplate -SqlInstance $script:instance2 -Template db_ola_health
+        $session = Import-DbaXESessionTemplate -SqlInstance $script:instance2 -Template 'Profiler TSQL Duration'
         $results = $session | Export-DbaXESessionTemplate -Path C:\windows\temp
         It "session exports to disk" {
-            $results.Name | Should Be "db_ola_health.xml"
+            $results.Name | Should Be 'Profiler TSQL Duration.xml'
         }
     }
 }
