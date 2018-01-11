@@ -1,5 +1,5 @@
 function Find-DbaView {
-<#
+    <#
 .SYNOPSIS
 Returns all views that contain a specific case-insensitive string or regex pattern.
 
@@ -7,7 +7,7 @@ Returns all views that contain a specific case-insensitive string or regex patte
 This function can either run against specific databases or all databases searching all user or user and system views.
 
 .PARAMETER SqlInstance
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
 
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, current Windows login will be used.
@@ -29,8 +29,10 @@ Warning - this will likely make it super slow if you run it on all databases.
 .PARAMETER IncludeSystemDatabases
 By default system databases are ignored but you can include them within the search using this parameter
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+.PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 .NOTES
 Author: Cláudio Silva (@ClaudioESSilva)
@@ -76,7 +78,7 @@ Searches in "mydb" database views for "runtime" in the textbody
         [string]$Pattern,
         [switch]$IncludeSystemObjects,
         [switch]$IncludeSystemDatabases,
-        [switch]$Silent
+        [switch][Alias('Silent')]$EnableException
     )
 
     begin {
@@ -163,7 +165,7 @@ Searches in "mydb" database views for "runtime" in the textbody
 
                     foreach ($vw in $Views) {
                         $totalcount++; $vwcount++; $everyservervwcount++
-                        
+
                         $viewSchema = $row.ViewSchema
                         $view = $vw.Name
 

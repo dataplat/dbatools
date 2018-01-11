@@ -1,93 +1,94 @@
 function Copy-DbaSsisCatalog {
     <#
-.SYNOPSIS 
-Copy-DbaSsisCatalog migrates Folders, SSIS projects, and environments from one SQL Server to another. 
+        .SYNOPSIS
+           Copy-DbaSsisCatalog migrates Folders, SSIS projects, and environments from one SQL Server to another.
 
-.DESCRIPTION
-By default, all folders, projects, and environments are copied. 
-The -Project parameter can be specified to copy only one project, if desired.
-The parameters get more granular from the Folder level.  i.e. specifying folder will only deploy projects/environments from within that folder.
+        .DESCRIPTION
+            By default, all folders, projects, and environments are copied. The -Project parameter can be specified to copy only one project, if desired.
 
-.PARAMETER Source
-Source SQL Server.You must have sysadmin access and server version must be SQL Server version 2012 or greater.
+            The parameters get more granular from the Folder level. For example, specifying -Folder will only deploy projects/environments from within that folder.
 
-.PARAMETER Destination
-Destination Sql Server. You must have sysadmin access and server version must be SQL Server version 2012 or greater.
+        .PARAMETER Source
+            Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2012 or higher.
 
-.PARAMETER Force
-Drops and recreates the SSIS Catalog if it exists
+        .PARAMETER SourceSqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER Project
-Specify a source Project name.
+            $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-.PARAMETER Folder
-Specify a source folder name.
+            Windows Authentication will be used if SourceSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.PARAMETER Environment
-Specify an environment to copy over.
+            To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER EnableSqlClr
-If the destination does not have SQL CLR configuration option enabled (which is required for SSISDB), providing this parameter will skip user prompts for enabling CLR on the destination.
+        .PARAMETER Destination
+            Destination SQL Server. You must have sysadmin access and the server must be SQL Server 2012 or higher.
 
-.PARAMETER CreateCatalogPassword
-If a destination SSISDB catalog needs to be created, specify this secure string parameter to skip password prompts.
+        .PARAMETER DestinationSqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-.PARAMETER WhatIf 
-Shows what would happen if the command were to run. No actions are actually performed. 
+            $dcred = Get-Credential, then pass this $dcred to the -DestinationSqlCredential parameter.
 
-.PARAMETER Confirm 
-Prompts you for confirmation before executing any changing operations within the command. 
+            Windows Authentication will be used if DestinationSqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-.PARAMETER SourceSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+            To connect as a different Windows user, run PowerShell as that user.
 
-$scred = Get-Credential, this pass $scred object to the param. 
+        .PARAMETER Force
+            If this switch is enabled, the SSIS Catalog will be dropped and recreated on Destination if it already exists.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+        .PARAMETER Project
+            Specifies a source Project name.
 
-.PARAMETER DestinationSqlCredential
-Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+        .PARAMETER Folder
+            Specifies a source folder name.
 
-$dcred = Get-Credential, this pass this $dcred to the param. 
+        .PARAMETER Environment
+            Specifies an environment to copy.
 
-Windows Authentication will be used if DestinationSqlCredential is not specified. To connect as a different Windows user, run PowerShell as that user.	
+        .PARAMETER EnableSqlClr
+            If this switch is enabled and Destination does not have the SQL CLR configuration option enabled, user prompts for enabling it on Destination will be skipped. SQL CLR is required for SSISDB.
 
-.NOTES
-Tags: Migration, SSIS
-Author: Phil Schwartz (philschwartz.me, @pschwartzzz)
-	
-dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
-Copyright (C) 2016 Chrissy LeMaire
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+        .PARAMETER CreateCatalogPassword
+            Specifies a secure string to use in creating an SSISDB catalog on Destination. If this is specified, prompts for the password will be skipped.
 
-.LINK
-https://dbatools.io/Copy-DbaSsisCatalog
-	
-.EXAMPLE   
-Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster
+        .PARAMETER WhatIf
+            If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-Copies all folders, environments and all ssis Projects from sqlserver2014a to sqlcluster, using Windows credentials. If folders with the same name exist on the destination they will be skipped, but projects will be redeployed.
+        .PARAMETER Confirm
+            If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-.EXAMPLE   
-Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -Project Archive_Tables -SourceSqlCredential $cred -Force
+        .NOTES
+            Tags: Migration, SSIS
+            Author: Phil Schwartz (philschwartz.me, @pschwartzzz)
 
-Copies a single Project, the Archive_Tables Project from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a
-and Windows credentials for sqlcluster. If a Project with the same name exists on sqlcluster, it will be deleted and recreated because -Force was used.
+            dbatools PowerShell module (https://dbatools.io, clemaire@gmail.com)
+            Copyright (C) 2016 Chrissy LeMaire
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-.EXAMPLE   
-Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+        .LINK
+            https://dbatools.io/Copy-DbaSsisCatalog
 
-Shows what would happen if the command were executed using force.
+        .EXAMPLE
+            Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster
 
-.EXAMPLE
-$SecurePW = Read-Host "Enter password" -AsSecureString
-Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -CreateCatalogPassword $SecurePW
+            Copies all folders, environments and SSIS Projects from sqlserver2014a to sqlcluster, using Windows credentials to authenticate to both instances. If folders with the same name exist on the destination they will be skipped, but projects will be redeployed.
 
-Deploy entire SSIS catalog to an instance without a destination catalog.  Passing -CreateCatalogPassword will bypass any user prompts for creating the destination catalog.
+        .EXAMPLE
+            Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -Project Archive_Tables -SourceSqlCredential $cred -Force
 
-#>
+            Copies a single Project, the Archive_Tables Project, from sqlserver2014a to sqlcluster using SQL credentials to authenticate to sqlserver2014a and Windows credentials to authenticate to sqlcluster. If a Project with the same name exists on sqlcluster, it will be deleted and recreated because -Force was used.
+
+        .EXAMPLE
+            Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+
+            Shows what would happen if the command were executed using force.
+
+        .EXAMPLE
+            $SecurePW = Read-Host "Enter password" -AsSecureString
+            Copy-DbaSsisCatalog -Source sqlserver2014a -Destination sqlcluster -CreateCatalogPassword $SecurePW
+
+            Deploy entire SSIS catalog to an instance without a destination catalog. User prompts for creating the catalog on Destination will be bypassed.
+
+    #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess = $true)]
     param (
         [parameter(Mandatory = $true)]
@@ -103,14 +104,14 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
         [Switch]$EnableSqlClr,
         [Switch]$Force
     )
-	
-	begin {
+
+    begin {
         function Get-RemoteIntegrationService {
             param (
                 [Object]$Computer
             )
-	    $result = Get-DbaSqlService -ComputerName $Computer | Where-Object Servicename -like "MsDts*"
-            if ($result.Count -gt 0) {
+            $result = Get-DbaSqlService -ComputerName $Computer -Type SSIS
+            if ($result) {
                 $running = $false
                 foreach ($service in $result) {
                     if (!$service.State -eq "Running") {
@@ -122,15 +123,15 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
                     }
                 }
                 if (!$running) {
-                    throw "No Integration Services' service was found running on the destination."
+                    throw "No Integration Services service was found running on the destination."
                 }
             }
             else {
-                throw "No Integration Services' service was found on the destination, please ensure the feature is installed and running."
+                throw "No Integration Services service was found on the destination, please ensure the feature is installed and running."
             }
         }
-		
-        Function Invoke-ProjectDeployment {
+
+        function Invoke-ProjectDeployment {
             param (
                 [String]$Project,
                 [String]$Folder
@@ -153,7 +154,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
                     $destFolder = $destinationFolders | Where-Object { $_.Name -eq $Folder }
                     $deployedProject = $destFolder.DeployProject($Project, $results)
                     if ($deployedProject.Status -ne "Success") {
-                        Write-Error "An error occured deploying project $Project."
+                        Write-Error "An error occurred deploying project $Project."
                     }
                 }
                 else {
@@ -170,7 +171,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
                 }
             }
         }
-		
+
         function New-CatalogFolder {
             param (
                 [String]$Folder,
@@ -197,7 +198,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
             $destFolder.Alter()
             $destFolder.Refresh()
         }
-		
+
         function New-FolderEnvironment {
             param (
                 [String]$Folder,
@@ -226,12 +227,12 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
             $targetEnv.Alter()
             $targetEnv.Refresh()
         }
-		
+
         function New-SSISDBCatalog {
             param (
                 [System.Security.SecureString]$Password
             )
-			
+
             if (!$Password) {
                 Write-Output "SSISDB Catalog requires a password."
                 $pass1 = Read-Host "Enter a password" -AsSecureString
@@ -246,29 +247,29 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
             else {
                 $plainTextPass = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password))
             }
-			
+
             $catalog = New-Object "$ISNamespace.Catalog" ($destinationSSIS, "SSISDB", $plainTextPass)
             $catalog.Create()
             $catalog.Refresh()
         }
 
         $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
-		
+
         $sourceConnection = Connect-SqlInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
         $destinationConnection = Connect-SqlInstance -SqlInstance $Destination -SqlCredential $DestinationSqlCredential
-		
+
         if ($sourceConnection.versionMajor -lt 11 -or $destinationConnection.versionMajor -lt 11) {
             throw "SSISDB catalog is only available on Sql Server 2012 and above, exiting..."
         }
-		
+
         try {
             Get-RemoteIntegrationService -Computer $Destination
         }
         catch {
             Write-Exception $_
-            throw "An error occured when checking the destination for Integration Services. Is Integration Services installed?"
+            throw "An error occurred when checking the destination for Integration Services. Is Integration Services installed?"
         }
-		
+
         try {
             Write-Verbose "Connecting to $Source integration services."
             $sourceSSIS = New-Object "$ISNamespace.IntegrationServices" $sourceConnection
@@ -285,16 +286,16 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
             Write-Exception $_
             throw "There was an error connecting to the destination integration services."
         }
-		
+
         $sourceCatalog = $sourceSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
         $destinationCatalog = $destinationSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
-		
+
         $sourceFolders = $sourceCatalog.Folders
         $destinationFolders = $destinationCatalog.Folders
     }
-	process {
-		
-		if (!$sourceCatalog) {
+    process {
+
+        if (!$sourceCatalog) {
             throw "The source SSISDB catalog does not exist."
         }
         if (!$destinationCatalog) {
@@ -307,8 +308,12 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
                         $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
                         $result = $host.ui.PromptForChoice($null, $message, $options, 0)
                         switch ($result) {
-                            0 { continue }
-                            1 { return }
+                            0 {
+                                continue
+                            }
+                            1 {
+                                return
+                            }
                         }
                     }
                     Write-Verbose "Enabling SQL CLR configuration option at the destination."
@@ -316,9 +321,9 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
                         $destinationConnection.Configuration.ShowAdvancedOptions.ConfigValue = $true
                         $changeback = $true
                     }
-					
+
                     $destinationConnection.Configuration.IsSqlClrEnabled.ConfigValue = $true
-					
+
                     if ($changeback -eq $true) {
                         $destinationConnection.Configuration.ShowAdvancedOptions.ConfigValue = $false
                     }
@@ -336,14 +341,18 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
                     $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
                     $result = $host.ui.PromptForChoice($null, $message, $options, 0)
                     switch ($result) {
-                        0 { New-SSISDBCatalog }
-                        1 { return }
+                        0 {
+                            New-SSISDBCatalog
+                        }
+                        1 {
+                            return
+                        }
                     }
                 }
                 else {
                     New-SSISDBCatalog -Password $CreateCatalogPassword
                 }
-				
+
                 $destinationSSIS.Refresh()
                 $destinationCatalog = $destinationSSIS.Catalogs | Where-Object { $_.Name -eq "SSISDB" }
                 $destinationFolders = $destinationCatalog.Folders
@@ -367,7 +376,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
                             catch {
                                 Write-Exception $_
                             }
-							
+
                         }
                     }
                 }
@@ -416,14 +425,18 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
                 }
             }
         }
-		
+
         # Refresh folders for project and environment deployment
         if ($Pscmdlet.ShouldProcess($Destination, "Refresh folders for project deployment")) {
-            try { $destinationFolders.Alter() }
-            catch { } # Sometimes it says Alter() doesn't exist
+            try {
+                $destinationFolders.Alter()
+            }
+            catch {
+                # Sometimes it says Alter() doesn't exist
+            }
             $destinationFolders.Refresh()
         }
-		
+
         if ($folder) {
             $sourceFolders = $sourceFolders | Where-Object { $_.Name -eq $folder }
             if (!$sourceFolders) {
@@ -462,7 +475,7 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
                 }
             }
         }
-		
+
         if ($environment) {
             $folderDeploy = $sourceFolders | Where-Object { $_.Environments.Name -eq $environment }
             if (!$folderDeploy) {
@@ -532,6 +545,6 @@ Deploy entire SSIS catalog to an instance without a destination catalog.  Passin
         }
     }
     end {
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Silent:$false -Alias Copy-SqlSsisCatalog
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -EnableException:$false -Alias Copy-SqlSsisCatalog
     }
 }

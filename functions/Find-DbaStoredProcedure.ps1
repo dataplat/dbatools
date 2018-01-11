@@ -7,7 +7,7 @@ Returns all stored procedures that contain a specific case-insensitive string or
 This function can either run against specific databases or all databases searching all user or user and system stored procedures.
 
 .PARAMETER SqlInstance
-SQLServer name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
+SQL Server name or SMO object representing the SQL Server to connect to. This can be a collection and receive pipeline input
 
 .PARAMETER SqlCredential
 PSCredential object to connect as. If not specified, current Windows login will be used.
@@ -29,8 +29,10 @@ Warning - this will likely make it super slow if you run it on all databases.
 .PARAMETER IncludeSystemDatabases
 By default system databases are ignored but you can include them within the search using this parameter
 
-.PARAMETER Silent
-Use this switch to disable any kind of verbose messages
+.PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
 .NOTES
 Author: Stephen Bennett, https://sqlnotesfromtheunderground.wordpress.com/
@@ -76,7 +78,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
         [string]$Pattern,
         [switch]$IncludeSystemObjects,
         [switch]$IncludeSystemDatabases,
-        [switch]$Silent
+        [switch][Alias('Silent')]$EnableException
     )
 
     begin {
@@ -163,7 +165,7 @@ Searches in "mydb" database stored procedures for "runtime" in the textbody
 
                     foreach ($sp in $storedprocedures) {
                         $totalcount++; $sproccount++; $everyserverspcount++
-                        
+
                         $procSchema = $sp.Schema
                         $proc = $sp.Name
 

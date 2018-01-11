@@ -1,127 +1,115 @@
 function Test-DbaDatabaseCollation {
-	<#
-	.SYNOPSIS
-		Compares Database Collations to Server Collation
+    <#
+        .SYNOPSIS
+            Compares Database Collations to Server Collation
 
-	.DESCRIPTION
-		Compares Database Collations to Server Collation
+        .DESCRIPTION
+            Compares Database Collations to Server Collation
 
-	.PARAMETER SqlInstance
-		The SQL Server that you're connecting to.
+        .PARAMETER SqlInstance
+            The target SQL Server instance or instances.
 
-	.PARAMETER Credential
-		Credential object used to connect to the SQL Server as a different user
+        .PARAMETER SqlCredential
+            Allows you to login to servers using SQL Logins instead of Windows Authentication (AKA Integrated or Trusted). To use:
 
-	.PARAMETER Database
-		The database(s) to process - this list is auto-populated from the server. If unspecified, all databases will be processed.
+            $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-	.PARAMETER ExcludeDatabase
-		The database(s) to exclude - this list is auto-populated from the server
+            Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
 
-	.PARAMETER Detailed
-		Shows detailed information about the server and database collations
+            To connect as a different Windows user, run PowerShell as that user.
 
-	.NOTES
-		Website: https://dbatools.io
-		Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
-		License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
+        .PARAMETER Database
+            Specifies the database(s) to process. Options for this list are auto-populated from the server. If unspecified, all databases will be processed.
 
-	.LINK
-		https://dbatools.io/Test-DbaDatabaseCollation
+        .PARAMETER ExcludeDatabase
+            Specifies the database(s) to exclude from processing. Options for this list are auto-populated from the server.
 
-	.EXAMPLE
-		Test-DbaDatabaseCollation -SqlInstance sqlserver2014a
+        .PARAMETER Detailed
+            Output all properties, will be deprecated in 1.0.0 release.
 
-		Returns server name, databse name and true/false if the collations match for all databases on sqlserver2014a
+        .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-	.EXAMPLE
-		Test-DbaDatabaseCollation -SqlInstance sqlserver2014a -Database db1, db2
+        .NOTES
+            Tags: Database, Collation
+            Website: https://dbatools.io
+            Copyright: (C) Chrissy LeMaire, clemaire@gmail.com
+            License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
-		Returns server name, databse name and true/false if the collations match for the db1 and db2 databases on sqlserver2014a
+        .LINK
+            https://dbatools.io/Test-DbaDatabaseCollation
 
-	.EXAMPLE
-		Test-DbaDatabaseCollation -SqlInstance sqlserver2014a, sql2016 -Detailed -Exclude db1
+        .EXAMPLE
+            Test-DbaDatabaseCollation -SqlInstance sqlserver2014a
 
-		Lots of detailed information for database and server collations for all databases except db1 on sqlserver2014a and sql2016
+            Returns server name, database name and true/false if the collations match for all databases on sqlserver2014a.
 
-	.EXAMPLE
-		Get-DbaRegisteredServer -SqlInstance sql2016 | Test-DbaDatabaseCollation
+        .EXAMPLE
+            Test-DbaDatabaseCollation -SqlInstance sqlserver2014a -Database db1, db2
 
-		Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016
-	#>
-	[CmdletBinding()]
-	[OutputType("System.Collections.ArrayList")]
-	Param (
-		[parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[Alias("ServerInstance", "SqlServer")]
-		[DbaInstanceParameter[]]$SqlInstance,
-		[PSCredential]
-		$Credential,
-		[Alias("Databases")]
-		[object[]]$Database,
-		[object[]]$ExcludeDatabase,
-		[switch]$Detailed
-	)
+            Returns inforamtion for the db1 and db2 databases on sqlserver2014a.
 
-	begin {
-		$collection = New-Object System.Collections.ArrayList
+        .EXAMPLE
+            Test-DbaDatabaseCollation -SqlInstance sqlserver2014a, sql2016 -Exclude db1
 
-	}
+            Returns information for database and server collations for all databases except db1 on sqlserver2014a and sql2016.
 
-	process {
-		foreach ($servername in $SqlInstance) {
-			try {
-				$server = Connect-SqlInstance -SqlInstance $servername -SqlCredential $Credential
-			}
-			catch {
-				if ($SqlInstance.count -eq 1) {
-					throw $_
-				}
-				else {
-					Write-Warning "Can't connect to $servername. Moving on."
-					Continue
-				}
-			}
+        .EXAMPLE
+            Get-DbaRegisteredServer -SqlInstance sql2016 | Test-DbaDatabaseCollation
 
-			$dbs = $server.Databases
+            Returns db/server collation information for every database on every server listed in the Central Management Server on sql2016.
+    #>
+    [CmdletBinding()]
+    Param (
+        [parameter(Mandatory, ValueFromPipeline)]
+        [Alias("ServerInstance", "SqlServer")]
+        [DbaInstanceParameter[]]$SqlInstance,
+        [Alias("Credential")]
+        [PSCredential]$SqlCredential,
+        [Alias("Databases")]
+        [object[]]$Database,
+        [object[]]$ExcludeDatabase,
+        [switch]$Detailed,
+        [switch]$EnableException
+    )
+    begin {
+        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Parameter "Detailed"
+    }
+    process {
+        foreach ($instance in $sqlinstance) {
+            # Try connecting to the instance
+            Write-Message -Message "Attempting to connect to $instance" -Level Verbose
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            }
+            catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
 
-			if ($Database) {
-				$dbs = $dbs | Where-Object { $Database -contains $_.Name }
-			}
+            $dbs = $server.Databases | Where-Object IsAccessible
 
-			if ($ExcludeDatabase) {
-				$dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
-			}
+            if ($Database) {
+                $dbs = $dbs | Where-Object { $Database -contains $_.Name }
+            }
 
-			foreach ($db in $dbs) {
-				Write-Verbose "Processing $($db.name) on $servername"
-				$null = $collection.Add([PSCustomObject]@{
-						Server            = $server.name
-						ServerCollation   = $server.collation
-						Database          = $db.name
-						DatabaseCollation = $db.collation
-						IsEqual           = $db.collation -eq $server.collation
-					})
-			}
-		}
-	}
+            if ($ExcludeDatabase) {
+                $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
+            }
 
-	end {
-		if ($detailed) {
-			return $collection
-		}
-
-		if ($Database.count -eq 1) {
-			if ($SqlInstance.count -eq 1) {
-				return $collection.IsEqual
-			}
-			else {
-				return ($collection | Select-Object Server, isEqual)
-			}
-		}
-		else {
-			return ($collection | Select-Object Server, Database, IsEqual)
-		}
-	}
+            foreach ($db in $dbs) {
+                Write-Message -Level Verbose -Message "Processing $($db.name) on $servername."
+                [PSCustomObject]@{
+                    ComputerName      = $server.NetName
+                    InstanceName      = $server.ServiceName
+                    SqlInstance       = $server.DomainInstanceName
+                    Database          = $db.name
+                    ServerCollation   = $server.collation
+                    DatabaseCollation = $db.collation
+                    IsEqual           = $db.collation -eq $server.collation
+                }
+            }
+        }
+    }
 }
-
