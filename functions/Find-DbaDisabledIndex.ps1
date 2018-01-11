@@ -89,8 +89,7 @@
     )
 
     begin {
-        # 
-        $disabledQuery = "
+        $sql = "
         SELECT DB_NAME() AS 'DatabaseName'
         ,s.name AS 'SchemaName'
         ,t.name AS 'TableName'
@@ -104,60 +103,43 @@
         JOIN sys.indexes i
             ON i.object_id = t.object_id
         WHERE i.is_disabled = 1"
-
-        Write-Message -Level Output -Message "Attempting to connect to Sql Server."
-        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
     }
     process {
-        if (Test-FunctionInterrupt) { return }
-
-        if ($server.VersionMajor -lt 9) {
-            Stop-Function -Message "This function does not support versions lower than SQL Server 2005 (v9)."
-            return
-        }
+        Write-Message -Level Output -Message "Attempting to connect to Sql Server."
+        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 9
 
         $lastRestart = $server.Databases['tempdb'].CreateDate
         $endDate = Get-Date -Date $lastRestart
-        $diffDays = (New-TimeSpan -Start $endDate -End (Get-Date)).Days
+        $diffDays = (New-TimeSpan $server.Databases['tempdb'].CreateDate).Days
 
-        <#
-            Validate if server version is:
-                - sql 2012 and if have SP3 CU3 (Build 6537) or higher
-                - sql 2014 and if have SP2 (Build 5000) or higher
-            If the major version is the same but the build is lower, throws the message
-        #>
         if ($pipedatabase.Length -gt 0) {
-            $database = $pipedatabase.name
+            $databases = $pipedatabase.name
         }
 
-        if ($database.Count -eq 0) {
-            $database = ($server.Databases | Where-Object { $_.IsSystemObject -eq 0 -and $_.IsAccessible}).Name
+        if ($databases.Count -eq 0) {
+            $databases = ($server.Databases | Where-Object { $_.IsSystemObject -eq 0 -and $_.IsAccessible}).Name
         }
 
-        if ($database.Count -gt 0) {
-            foreach ($db in $database) {
+        if ($databases.Count -gt 0) {
+            foreach ($db in $databases) {
                 
                 if ($ExcludeDatabase -contains $db -or $null -eq $server.Databases[$db]) {
-                    continue
-                }
-                if ($server.Databases[$db].IsAccessible -eq $false) {
-                    Write-Message -Level Warning -Message "Database [$db] is not accessible."
                     continue
                 }
                 
                 try {
                     Write-Message -Level Output -Message "Getting indexes from database '$db'."
- 
-                    $disabledIndex  = $server.Databases[$db].ExecuteWithResults($disabledQuery)
+                    Write-Message -Level Debug -Message "SQL Statement: $sql"
+                    $disabledIndex = $server.Databases[$db].ExecuteWithResults($sql)
                     
                     if ($disabledIndex.Tables[0].Rows.Count -gt 0) {
-                    $results = $disabledIndex.Tables[0];
-                         if ($results.Count -gt 0 -or !([string]::IsNullOrEmpty($results))) {
+                        $results = $disabledIndex.Tables[0];
+                        if ($results.Count -gt 0 -or !([string]::IsNullOrEmpty($results))) {
                             foreach ($index in $results) {
-                            $index
+                                $index
                             }
-                         }
-                            }
+                        }
+                    }
                     else {
                         Write-Message -Level Output -Message "No Disabled indexes found!"
                     }
