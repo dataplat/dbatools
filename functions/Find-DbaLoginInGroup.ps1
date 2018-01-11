@@ -1,5 +1,5 @@
 function Find-DbaLoginInGroup {
-    <#
+	<#
 .SYNOPSIS
 Finds Logins in Active Directory groups that have logins on the SQL Instance.
 
@@ -62,14 +62,14 @@ Returns all active directory users within all windows AD groups that have logins
 			Write-warning "Failed to load Assembly needed"
 			break
 		}
-		
+
 		function Get-AllLogins
 		{
 			param
 			(
 			    [string]$ADGroup,
 			    [string[]]$discard,
-                [string]$ParentADGroup
+				[string]$ParentADGroup
 			)
 			begin
 			{
@@ -102,15 +102,15 @@ Returns all active directory users within all windows AD groups that have logins
 						}
 						else
 						{
-                            if (!$ParentADGroup) { $ParentADGroup = $AdGroup }
+							if (!$ParentADGroup) { $ParentADGroup = $AdGroup }
 							$output += [PSCustomObject]@{
 								SqlInstance = $server.Name
 								InstanceName = $server.ServiceName
 								ComputerName = $server.NetName
 								Login = $memberDomain + "\" + $member.SamAccountName
-                                DisplayName = $member.DisplayName
-								MemberOf = $AdGroup 
-                                ParentADGroupLogin = $ParentADGroup
+								DisplayName = $member.DisplayName
+								MemberOf = $AdGroup
+								ParentADGroupLogin = $ParentADGroup
 							}
 						}
 					}
@@ -136,7 +136,7 @@ Returns all active directory users within all windows AD groups that have logins
 			}
 		}
 	}
-	
+
 	PROCESS
 	{
 		foreach ($Instance in $SqlInstance)
@@ -151,15 +151,15 @@ Returns all active directory users within all windows AD groups that have logins
 				Write-Warning "Failed to connect to: $Instance"
 				continue
 			}
-			
+
 			$AdGroups = $server.Logins | Where-Object { $_.LoginType -eq "WindowsGroup" -and $_.Name -ne "BUILTIN\Administrators" -and $_.Name -notlike "*NT SERVICE*" }
-			
+
 			foreach ($AdGroup in $AdGroups)
 			{
 				Write-Verbose "Looking at Group: $AdGroup"
 				$ADGroupOut += Get-AllLogins $AdGroup.Name
 			}
-			
+
 			if (-not $Login)
 			{
 				$res = $ADGroupOut
