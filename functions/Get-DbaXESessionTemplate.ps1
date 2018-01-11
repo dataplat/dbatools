@@ -20,6 +20,9 @@
 
     .PARAMETER Path
     The path to the template directory. Defaults to our template repository (\bin\xetemplates\)
+    
+    .PARAMETER Pattern
+    Specify a pattern for filtering. Alternatively, you can use Out-GridView -Passthru to select objects and pipe them to Import-DbaXESessionTemplate
 
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -48,11 +51,22 @@
     Get-DbaXESessionTemplate -Path "$home\Documents\SQL Server Management Studio\Templates\XEventTemplates"
 
     Returns information about all the templates in your local XEventTemplates repository
+    
+    .EXAMPLE
+    Get-DbaXESessionTemplate -Pattern duration
+
+    Returns information about all the templates that match the word duration in the title, category or body
+    
+    .EXAMPLE
+    Get-DbaXESessionTemplate | Select *
+
+    Returns more information about the template, including the full path/filename
 
 #>
     [CmdletBinding()]
     param (
         [string[]]$Path = "$script:PSModuleRoot\bin\xetemplates",
+        [string]$Pattern,
         [switch]$EnableException
     )
     process {
@@ -67,14 +81,34 @@
                 }
                 
                 foreach ($session in $xml.event_sessions) {
-                    [pscustomobject]@{
-                        Name      = $session.event_session.name
-                        Category   = $session.event_session.TemplateCategory.'#text'
-                        Description = $session.event_session.TemplateDescription.'#text'
-                        TemplateName = $session.event_session.TemplateName.'#text'
-                        Path       = $file
-                        File       = $file.Name
-                    } | Select-DefaultView -ExcludeProperty File, TemplateName, Path
+                    if ($Pattern) {
+                        if (
+                            # There's probably a better way to do this
+                            ($session.event_session.name -match $Pattern) -or
+                            ($session.event_session.TemplateCategory.'#text' -match $Pattern) -or
+                            ($session.event_session.TemplateDescription.'#text' -match $Pattern) -or
+                            ($session.event_session.TemplateName.'#text' -match $Pattern)
+                        ) {
+                            [pscustomobject]@{
+                                Name          = $session.event_session.name
+                                Category      = $session.event_session.TemplateCategory.'#text'
+                                Description   = $session.event_session.TemplateDescription.'#text'
+                                TemplateName  = $session.event_session.TemplateName.'#text'
+                                Path          = $file
+                                File          = $file.Name
+                            } | Select-DefaultView -ExcludeProperty File, TemplateName, Path
+                        }
+                    }
+                    else {
+                        [pscustomobject]@{
+                            Name          = $session.event_session.name
+                            Category      = $session.event_session.TemplateCategory.'#text'
+                            Description   = $session.event_session.TemplateDescription.'#text'
+                            TemplateName  = $session.event_session.TemplateName.'#text'
+                            Path          = $file
+                            File          = $file.Name
+                        } | Select-DefaultView -ExcludeProperty File, TemplateName, Path
+                    }
                 }
             }
         }
