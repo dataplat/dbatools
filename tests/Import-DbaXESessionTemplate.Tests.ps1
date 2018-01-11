@@ -8,7 +8,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     }
     Context "Test Importing Session Template" {
         $results = Import-DbaXESessionTemplate -SqlInstance $script:instance2 -Template 'Function Executions' | Start-DbaXESession
-        It "session imports and is running" {
+        It -Skip "session imports and is running" {
             $results.Name | Should Be "Function Executions"
             $results.Status | Should Be "Running"
         }
