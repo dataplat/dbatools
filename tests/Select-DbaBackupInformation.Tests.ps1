@@ -204,6 +204,32 @@ Describe "$commandname Unit Tests" -Tag 'UnitTests' {
                 ($Output | Where-Object { $_.LastLsn -eq '14975000000265600001' } | Measure-Object).count | Should Be 0
             }
         }
+        Context "Last log backup has same lastlsn as consequent backups" {
+            $Header = ConvertFrom-Json -InputObject (Get-Content $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\broken_chain.json -raw)
+            $header | Add-Member -Type NoteProperty -Name FullName -Value 1
+
+            $RestoreDate = Get-date "7/16/2017 5:51:30 PM"
+            $Output = Select-DbaBackupInformation -BackupHistory $Header -RestoreTime $RestoreDate
+
+            It "Should return an array of 3 items" {
+                $Output.count | Should be 3
+            }
+            It "Should return 1 Full backups" {
+                ($Output | Where-Object { $_.BackupTypeDescription -eq 'Database' } | Measure-Object).count | Should Be 1
+            }
+            It "Should return 0 Diff backups" {
+                ($Output | Where-Object { $_.BackupTypeDescription -eq 'Database Differential' } | Measure-Object).count | Should Be 0
+            }
+            It "Should return 2 log backups" {
+                ($Output | Where-Object { $_.BackupTypeDescription -eq 'Transaction Log' } | Measure-Object).count | Should Be 2
+            }
+            It "Should not contain the Log backup with FirstLsn=LastLsn=17126658000000315600037 " {
+                ($Output | Where-Object { $_.LastLsn -eq '17126658000000315600037' -and $_.FirstLsn -eq '17126658000000315600037' } | Measure-Object).count | Should Be 0
+            }
+            It "Should contain the Log backup with FirstLsn 17126658000000314600037 " {
+                ($Output | Where-Object { $_.FirstLsn -eq '17126658000000314600037' } | Measure-Object).count | Should Be 1
+            }
+        }
         Context "Continue Points" {
             $BackupInfo = Get-DbaBackupInformation -Import -Path $PSScriptRoot\..\tests\ObjectDefinitions\BackupRestore\RawInput\ContinuePointTest.xml
             [bigint]$redo_start_lsn = '34000000016700004'
