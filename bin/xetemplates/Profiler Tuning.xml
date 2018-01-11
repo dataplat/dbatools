@@ -1,16 +1,17 @@
 ﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
-  <event_session name="batch_all" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
+  <event_session name="Profiler Tuning" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
     <templateCategory>
-      <!-- _locID_text="templateCategory" _locComment = "" -->Query Execution</templateCategory>
+      <!-- _locID_text="templateCategory" _locComment = "" -->Profiler Equivalents</templateCategory>
     <templateName>
-      <!-- _locID_text = "templateName" _locComment = "" -->Query Batch Tracking</templateName>
+      <!-- _locID_text = "templateName" _locComment = "" -->Profiler Tuning</templateName>
     <templateDescription>
-      <!-- _locID_text = "templateDescription" _locComment = "" -->This template collects batch and RPC level statements as well as error information. You can use this template to understand the flow of queries that are executing on your system and track errors back to the queries that caused them. All batch events are collected in this session so collection size may be very large. To reduce the collection size, consider using the Query Batch Sampling template, which already includes a filter.</templateDescription>    
-    <event package="sqlserver" name="error_reported">
-      <action package="sqlserver" name="client_app_name" />
-      <action package="sqlserver" name="database_id" />
-      <action package="sqlserver" name="query_hash" />
-      <action package="sqlserver" name="session_id" />
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Matches the 'Tuning' template in Profiler. Captures information about stored procedures and Transact-SQL batch execution.</templateDescription>
+    <event package="sqlserver" name="rpc_completed">
+      <action package="sqlserver" name="database_id" />            
+      <action package="sqlserver" name="database_name" />            
+      <action package="sqlserver" name="server_principal_name" />
+      <action package="sqlserver" name="session_id" />                    
+      <parameter name="collect_data_stream" value="1" />      
       <predicate>
         <and>
           <leaf>
@@ -26,11 +27,11 @@
         </and>
       </predicate>
     </event>
-    <event package="sqlserver" name="rpc_completed">
-      <action package="sqlserver" name="client_app_name" />
-      <action package="sqlserver" name="database_id" />
-      <action package="sqlserver" name="query_hash" />
-      <action package="sqlserver" name="session_id" />
+    <event package="sqlserver" name="sp_statement_completed">
+      <action package="sqlserver" name="database_id" />            
+      <action package="sqlserver" name="database_name" />            
+      <action package="sqlserver" name="server_principal_name" />
+      <action package="sqlserver" name="session_id" />                    
       <predicate>
         <and>
           <leaf>
@@ -47,10 +48,10 @@
       </predicate>
     </event>
     <event package="sqlserver" name="sql_batch_completed">
-      <action package="sqlserver" name="client_app_name" />
-      <action package="sqlserver" name="database_id" />
-      <action package="sqlserver" name="query_hash" />
-      <action package="sqlserver" name="session_id" />
+      <action package="sqlserver" name="database_id" />            
+      <action package="sqlserver" name="database_name" />            
+      <action package="sqlserver" name="server_principal_name" />
+      <action package="sqlserver" name="session_id" />                    
       <predicate>
         <and>
           <leaf>
@@ -66,6 +67,5 @@
         </and>
       </predicate>
     </event>
-    <target package="package0" name="ring_buffer" />
   </event_session>
 </event_sessions>
