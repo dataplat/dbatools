@@ -6,7 +6,6 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Query Detail Sampling</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Collects detailed statement and error information. You can use this template to track each statement that has executed on your system as a result of query batches or stored procedures and track errors back to the specific statement that caused them. This template also collects the query hash and query plan hash for every statement it tracks. Events are only collected from 20% of the active sessions on the server at any given time. You can change the sampling rate by modifying the filter for the event session.</templateDescription>
-	  <templateSource>Microsoft</templateSource>
     <event package="sqlserver" name="error_reported">
       <action package="sqlserver" name="client_app_name" />
       <action package="sqlserver" name="database_id" />

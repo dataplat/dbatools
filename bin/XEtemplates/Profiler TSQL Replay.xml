@@ -6,7 +6,6 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Profiler TSQL Replay</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Matches the 'TSQL_Replay' template in Profiler. Use to perform iterative tuning, such as benchmark testing.</templateDescription>
-	  <templateSource>Microsoft</templateSource>
     <event package="sqlserver" name="attention">
       <action package="sqlserver" name="client_app_name" />
       <action package="sqlserver" name="client_pid" />

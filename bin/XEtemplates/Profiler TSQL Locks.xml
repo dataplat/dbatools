@@ -6,7 +6,6 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Profiler TSQL Locks</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Matches the 'TSQL_Locks' template in Profiler. Captures all of the Transact-SQL statements that are submitted to SQL Server by clients along with exceptional lock events. Use to troubleshoot deadlocks, lock time-out, and lock escalation events. </templateDescription>
-	  <templateSource>Microsoft</templateSource>
     <event package="sqlserver" name="blocked_process_report">
       <action package="sqlserver" name="session_id" />      
     </event>

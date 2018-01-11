@@ -6,7 +6,6 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Index Page Splits</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Captures index page splits for detecting fragmentation.</templateDescription>
-	  <templateSource>Jes Borland</templateSource>
       <event package="sqlserver" name="page_split">
          <action package="sqlserver" name="client_app_name" />
          <action package="sqlserver" name="client_hostname" />
