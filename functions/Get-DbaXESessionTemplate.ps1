@@ -5,6 +5,11 @@
 
     .DESCRIPTION
     Parses Extended Event XML templates. Defaults to parsing templates in our template repository (\bin\xetemplates\)
+    
+    The default repository contains templates from:
+    
+            Microsoft's Templates that come with SSMS
+            Jes Borland's "Everyday Extended Events" presentation and GitHub repository (https://github.com/grrlgeek/extended-events)
 
     .PARAMETER Path
     The path to the template directory. Defaults to our template repository (\bin\xetemplates\)
