@@ -25,10 +25,6 @@ Describe "$CommandName Unittests" -Tag 'UnitTests' {
             New-DbaLogin -SqlInstance $script:instance2 -Login testlogin -Password $password1
         }
 
-        AfterEach {
-            $server.Refresh()
-        }
-
         It "Does test login exist" {
             $logins = Get-DbaLogin -SqlInstance $script:instance2 | Where-Object {$_.Name -eq "testlogin"} | Select-Object Name
             $logins.Name | Should -Be "testlogin"
