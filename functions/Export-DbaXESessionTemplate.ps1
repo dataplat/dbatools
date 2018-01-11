@@ -69,7 +69,7 @@
         }
         
         foreach ($xes in $InputObject) {
-            $xesname = $xes.Name
+            $xesname = Remove-InvalidFileNameChars -Name $xes.Name
             
             if (-not (Test-Path -Path $Path)) {
                 Stop-Function -Message "$Path does not exist" -Target $Path
