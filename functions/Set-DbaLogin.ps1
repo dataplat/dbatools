@@ -16,6 +16,9 @@ function Set-DbaLogin {
     $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
     To connect as a different Windows user, run PowerShell as that user.
 
+    .PARAMETER Login
+    The login that needs to be changed
+
     .PARAMETER Password
     The new password for the login This can be either a credential or a secure string.
 
