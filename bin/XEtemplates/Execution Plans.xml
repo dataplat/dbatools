@@ -26,7 +26,7 @@
          </predicate>
       </event>
       <target package="package0" name="event_file">
-         <parameter name="filename" value="Capture execution plan" />
+         <parameter name="filename" value="capture_execution_plan.xel" />
          <parameter name="max_rollover_files" value="0" />
       </target>
    </event_session>
