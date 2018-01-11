@@ -107,7 +107,7 @@
                     $Name = (Get-ChildItem $file).BaseName
                 }
                 
-                $no2012 = 'Activity Tracking', 'Database Health', 'Wait Statistics', 'Deadlock Graphs'
+                $no2012 = 'Activity Tracking', 'Database Health', 'Query Wait Statistics', 'Deadlock Graphs'
                 
                 if ($Name -in $no2012 -and $server.VersionMajor -eq 11) {
                     Stop-Function -Message "$Name is not supported in SQL Server 2012 ($server)" -Continue
