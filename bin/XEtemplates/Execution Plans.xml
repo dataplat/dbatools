@@ -6,7 +6,6 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Execution Plans</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Description</templateDescription>
-	  <templateSource>Jes Borland</templateSource>
       <event package="sqlserver" name="query_post_execution_showplan">
          <action package="sqlserver" name="client_app_name" />
          <action package="sqlserver" name="client_hostname" />

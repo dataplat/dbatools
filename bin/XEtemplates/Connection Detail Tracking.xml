@@ -6,7 +6,6 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Connection Detail Tracking</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Tracks connection activity for a server. Normal connection activity is tracked using the login and logout events, and problems are recorded using the connectivity_ring_buffer_recorded event.</templateDescription>
-	  <templateSource>Microsoft</templateSource>
     <event package="sqlserver" name="connectivity_ring_buffer_recorded">
       <action package="sqlserver" name="client_app_name" />
       <action package="sqlserver" name="client_connection_id" />

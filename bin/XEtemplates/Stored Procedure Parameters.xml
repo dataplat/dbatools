@@ -6,7 +6,6 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Stored Procedure Parameters</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Captures what parameters were used when a stored procedure was executed.</templateDescription>
-	  <templateSource>Jes Borland</templateSource>
       <event package="sqlserver" name="rpc_completed">
          <action package="sqlserver" name="client_app_name" />
          <action package="sqlserver" name="client_hostname" />

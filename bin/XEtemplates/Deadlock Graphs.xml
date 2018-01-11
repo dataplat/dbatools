@@ -6,7 +6,6 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Deadlock Graphs</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Captures deadlock graphs. Careful, the Deadlock tab is sneaky!</templateDescription>
-	  <templateSource>Jes Borland</templateSource>
       <event package="sqlserver" name="database_xml_deadlock_report">
          <action package="sqlserver" name="client_app_name" />
          <action package="sqlserver" name="client_hostname" />

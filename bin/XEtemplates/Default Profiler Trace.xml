@@ -3,7 +3,6 @@
       <templateCategory><!-- _locID_text="templateCategory" _locComment = "" -->System Monitoring</templateCategory>
       <templateName><!-- _locID_text = "templateName" _locComment = "" -->Default Profiler Trace</templateName>
       <templateDescription><!-- _locID_text = "templateDescription" _locComment = "" -->The default profiler trace, converted using sp_SQLskills_ConvertTraceToExtendedEvents.</templateDescription>
-	  <templateSource>Chrissy LeMaire</templateSource>
       <event package="sqlserver" name="existing_connection">
          <action package="sqlserver" name="client_app_name" />
          <action package="sqlserver" name="client_pid" />

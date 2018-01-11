@@ -6,7 +6,6 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Profiler TSQL</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Matches the 'TSQL' template in Profiler. Captures all Transact-SQL statements that are submitted to SQL Server by clients and the time issued. Use to debug client applications.</templateDescription>
-	  <templateSource>Microsoft</templateSource>
     <event package="sqlserver" name="login">
       <action package="package0" name="event_sequence" />
       <action package="sqlserver" name="session_id" />

@@ -6,7 +6,6 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Query Batch Tracking</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Collects batch and RPC level statements as well as error information. You can use this template to understand the flow of queries that are executing on your system and track errors back to the queries that caused them. All batch events are collected in this session so collection size may be very large. To reduce the collection size, consider using the Query Batch Sampling template, which already includes a filter.</templateDescription>    
-	  <templateSource>Microsoft</templateSource>
     <event package="sqlserver" name="error_reported">
       <action package="sqlserver" name="client_app_name" />
       <action package="sqlserver" name="database_id" />
