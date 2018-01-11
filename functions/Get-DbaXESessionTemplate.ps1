@@ -86,27 +86,30 @@
                             # There's probably a better way to do this
                             ($session.event_session.name -match $Pattern) -or
                             ($session.event_session.TemplateCategory.'#text' -match $Pattern) -or
+                            ($session.event_session.TemplateSource -match $Pattern) -or
                             ($session.event_session.TemplateDescription.'#text' -match $Pattern) -or
                             ($session.event_session.TemplateName.'#text' -match $Pattern)
                         ) {
                             [pscustomobject]@{
-                                Name          = $session.event_session.name
-                                Category      = $session.event_session.TemplateCategory.'#text'
-                                Description   = $session.event_session.TemplateDescription.'#text'
-                                TemplateName  = $session.event_session.TemplateName.'#text'
-                                Path          = $file
-                                File          = $file.Name
+                                Name           = $session.event_session.name
+                                Category       = $session.event_session.TemplateCategory.'#text'
+                                Source         = $session.event_session.TemplateSource
+                                Description    = $session.event_session.TemplateDescription.'#text'
+                                TemplateName   = $session.event_session.TemplateName.'#text'
+                                Path           = $file
+                                File           = $file.Name
                             } | Select-DefaultView -ExcludeProperty File, TemplateName, Path
                         }
                     }
                     else {
                         [pscustomobject]@{
-                            Name          = $session.event_session.name
-                            Category      = $session.event_session.TemplateCategory.'#text'
-                            Description   = $session.event_session.TemplateDescription.'#text'
-                            TemplateName  = $session.event_session.TemplateName.'#text'
-                            Path          = $file
-                            File          = $file.Name
+                            Name           = $session.event_session.name
+                            Category       = $session.event_session.TemplateCategory.'#text'
+                            Source         = $session.event_session.TemplateSource
+                            Description    = $session.event_session.TemplateDescription.'#text'
+                            TemplateName   = $session.event_session.TemplateName.'#text'
+                            Path           = $file
+                            File           = $file.Name
                         } | Select-DefaultView -ExcludeProperty File, TemplateName, Path
                     }
                 }
