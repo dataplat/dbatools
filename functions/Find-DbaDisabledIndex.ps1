@@ -105,58 +105,66 @@
         WHERE i.is_disabled = 1"
     }
     process {
-        Write-Message -Level Output -Message "Attempting to connect to Sql Server."
-        $server = Connect-SqlInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -MinimumVersion 9
+        foreach ($instance in $SqlInstance) {
+            Write-Message -Level Verbose -Message "Connecting to $instance"
+            try {
+                $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $sqlcredential
+            }
+            catch {
+                Write-Message -Level Warning -Message "Can't connect to $instance"
+                Continue
+            }
+        
+            $lastRestart = $server.Databases['tempdb'].CreateDate
+            $endDate = Get-Date -Date $lastRestart
+            $diffDays = (New-TimeSpan $server.Databases['tempdb'].CreateDate).Days
 
-        $lastRestart = $server.Databases['tempdb'].CreateDate
-        $endDate = Get-Date -Date $lastRestart
-        $diffDays = (New-TimeSpan $server.Databases['tempdb'].CreateDate).Days
+            if ($pipedatabase.Length -gt 0) {
+                $databases = $pipedatabase.name
+            }
 
-        if ($pipedatabase.Length -gt 0) {
-            $databases = $pipedatabase.name
-        }
+            if ($databases.Count -eq 0) {
+                $databases = ($server.Databases | Where-Object { $_.IsSystemObject -eq 0 -and $_.IsAccessible}).Name
+            }
 
-        if ($databases.Count -eq 0) {
-            $databases = ($server.Databases | Where-Object { $_.IsSystemObject -eq 0 -and $_.IsAccessible}).Name
-        }
-
-        if ($databases.Count -gt 0) {
-            foreach ($db in $databases) {
+            if ($databases.Count -gt 0) {
+                foreach ($db in $databases) {
                 
-                if ($ExcludeDatabase -contains $db -or $null -eq $server.Databases[$db]) {
-                    continue
-                }
+                    if ($ExcludeDatabase -contains $db -or $null -eq $server.Databases[$db]) {
+                        continue
+                    }
                 
-                try {
-                    Write-Message -Level Output -Message "Getting indexes from database '$db'."
-                    Write-Message -Level Debug -Message "SQL Statement: $sql"
-                    $disabledIndex = $server.Databases[$db].ExecuteWithResults($sql)
+                    try {
+                        Write-Message -Level Output -Message "Getting indexes from database '$db'."
+                        Write-Message -Level Debug -Message "SQL Statement: $sql"
+                        $disabledIndex = $server.Databases[$db].ExecuteWithResults($sql)
                     
-                    if ($disabledIndex.Tables[0].Rows.Count -gt 0) {
-                        $results = $disabledIndex.Tables[0];
-                        if ($results.Count -gt 0 -or !([string]::IsNullOrEmpty($results))) {
-                            foreach ($index in $results) {
-                                $index
+                        if ($disabledIndex.Tables[0].Rows.Count -gt 0) {
+                            $results = $disabledIndex.Tables[0];
+                            if ($results.Count -gt 0 -or !([string]::IsNullOrEmpty($results))) {
+                                foreach ($index in $results) {
+                                    $index
+                                }
                             }
                         }
+                        else {
+                            Write-Message -Level Output -Message "No Disabled indexes found!"
+                        }
                     }
-                    else {
-                        Write-Message -Level Output -Message "No Disabled indexes found!"
+                    catch {
+                        Stop-Function -Message "Issue gathering indexes" -Category InvalidOperation -InnerErrorRecord $_ -Target $db
                     }
-                }
-                catch {
-                    Stop-Function -Message "Issue gathering indexes" -Category InvalidOperation -InnerErrorRecord $_ -Target $db
                 }
             }
+            else {
+                Write-Message -Level Output -Message "There are no databases to analyse."
+            }
         }
-        else {
-            Write-Message -Level Output -Message "There are no databases to analyse."
+        end {
+            if (Test-FunctionInterrupt) {
+                return
+            }
+            Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlDisabledIndex
         }
-    }
-    end {
-        if (Test-FunctionInterrupt) {
-            return
-        }
-        Test-DbaDeprecation -DeprecatedOn "1.0.0" -Alias Get-SqlDisabledIndex
     }
 }
