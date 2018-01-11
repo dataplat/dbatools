@@ -1,4 +1,4 @@
-﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventsconfig">
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
   <event_session name="Profiler Standard" maxMemory="8" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="5" maxEventSize="0" memoryPartitionMode="perCpu">
     <templateCategory>
       <!-- _locID_text="templateCategory" _locComment = "" -->Profiler Equivalents</templateCategory>
@@ -6,7 +6,7 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Profiler Standard</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Matches the 'Standard' template in Profiler. Generic starting point for creating a trace. Captures all stored procedures and Transact-SQL batches that are run. Use to monitor general database server activity.</templateDescription>
-    
+	  <templateSource>Microsoft</templateSource>    
     <event package="sqlserver" name="login">
       <action package="package0" name="event_sequence" />
       <action package="sqlserver" name="client_app_name" />

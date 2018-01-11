@@ -6,6 +6,7 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Count Query Locks</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Counts the number of locks acquired by each query based on the query_hash value. You can use this template to identify the most lock intensive queries for investigation and tuning.</templateDescription>
+	  <templateSource>Microsoft</templateSource>
     <event package="sqlserver" name="lock_acquired">
       <action package="sqlserver" name="query_hash" />
       <predicate>

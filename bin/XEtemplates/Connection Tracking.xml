@@ -6,6 +6,7 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Connection Tracking</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Tracks connection activity for a server. Normal connection activity is tracked using the login and logout events</templateDescription>
+	  <templateSource>Microsoft</templateSource>
     <event package="sqlserver" name="login">
       <action package="sqlserver" name="client_app_name" />
       <action package="sqlserver" name="client_connection_id" />

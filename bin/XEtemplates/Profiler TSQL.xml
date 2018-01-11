@@ -1,4 +1,4 @@
-﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventsconfig">
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
   <event_session name="Profiler TSQL" maxMemory="8" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="5" maxEventSize="0" memoryPartitionMode="perCpu">
     <templateCategory>
       <!-- _locID_text="templateCategory" _locComment = "" -->Profiler Equivalents</templateCategory>
@@ -6,6 +6,7 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Profiler TSQL</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Matches the 'TSQL' template in Profiler. Captures all Transact-SQL statements that are submitted to SQL Server by clients and the time issued. Use to debug client applications.</templateDescription>
+	  <templateSource>Microsoft</templateSource>
     <event package="sqlserver" name="login">
       <action package="package0" name="event_sequence" />
       <action package="sqlserver" name="session_id" />

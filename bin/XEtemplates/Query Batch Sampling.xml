@@ -6,6 +6,7 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Query Batch Sampling</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Collects batch and RPC level statements as well as error information. You can use this template to understand the flow of queries that are executing on your system and track errors back to the queries that caused them. Events are only collected from 20% of the active sessions on the server at any given time. You can change the sampling rate by modifying the filter for the event session.</templateDescription>
+	  <templateSource>Microsoft</templateSource>
     <event package="sqlserver" name="error_reported">
       <action package="sqlserver" name="client_app_name" />
       <action package="sqlserver" name="database_id" />
