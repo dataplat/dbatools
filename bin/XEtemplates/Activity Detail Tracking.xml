@@ -6,6 +6,7 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Activity Detail Tracking</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Similar to the 'Default Trace' that exists in the SQL Trace system. Use this template to track general activity on your system. The difference between this template and the 'Default Trace' is that this template does not include security audit events. If you would like to audit your system you should use the SQL Server Audit feature.</templateDescription>
+	  <templateSource>Microsoft</templateSource>
     <event package="sqlserver" name="database_file_size_change">
       <action package="sqlserver" name="client_app_name" />
       <action package="sqlserver" name="client_hostname" />

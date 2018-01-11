@@ -1,4 +1,4 @@
-﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventsconfig">
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
    <event_session name="Deprecated Feature Usage" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
     <templateCategory>
       <!-- _locID_text="templateCategory" _locComment = "" -->Features</templateCategory>
@@ -6,6 +6,7 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Deprecated Feature Usage</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Tracks deprecated feature usage.</templateDescription>
+	  <templateSource>Christian Gräfe</templateSource>
       <event package="sqlserver" name="deprecation_announcement">
          <action package="sqlserver" name="client_app_name" />
          <action package="sqlserver" name="client_hostname" />

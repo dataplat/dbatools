@@ -6,6 +6,7 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Query Wait Statistics Detail</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Tracks internal and external wait statistics for individual query statements, batches and RPCs. This template also collects the query hash and query plan hash for every statement it tracks. Events are only collected from 20% of the active sessions on the server at any given time. You can change the sampling rate by modifying the filter for the event session.</templateDescription>
+	  <templateSource>Microsoft</templateSource>
     <event package="sqlos" name="wait_info">
       <action package="sqlserver" name="client_app_name" />
       <action package="sqlserver" name="database_id" />

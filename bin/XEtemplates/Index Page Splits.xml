@@ -1,4 +1,4 @@
-﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventsconfig">
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
    <event_session name="Index Page Splits" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="false" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
     <templateCategory>
       <!-- _locID_text="templateCategory" _locComment = "" -->Everyday Extended Events</templateCategory>
@@ -6,6 +6,7 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Index Page Splits</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Captures index page splits for detecting fragmentation.</templateDescription>
+	  <templateSource>Jes Borland</templateSource>
       <event package="sqlserver" name="page_split">
          <action package="sqlserver" name="client_app_name" />
          <action package="sqlserver" name="client_hostname" />

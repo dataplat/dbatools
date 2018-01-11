@@ -6,7 +6,7 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Log File IO Tracking</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Monitors the IO for database log files by tracking waits of type WRITELOG.</templateDescription>
-   
+	  <templateSource>Microsoft</templateSource>
     <event package="sqlos" name="wait_info">
       <action package="sqlserver" name="client_app_name" />
       <action package="sqlserver" name="session_id" />

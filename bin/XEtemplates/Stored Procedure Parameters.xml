@@ -1,4 +1,4 @@
-﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventsconfig">
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
    <event_session name="Stored Procedure Parameters" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="false" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
     <templateCategory>
       <!-- _locID_text="templateCategory" _locComment = "" -->Everyday Extended Events</templateCategory>
@@ -6,6 +6,7 @@
       <!-- _locID_text = "templateName" _locComment = "" -->Stored Procedure Parameters</templateName>
     <templateDescription>
       <!-- _locID_text = "templateDescription" _locComment = "" -->Captures what parameters were used when a stored procedure was executed.</templateDescription>
+	  <templateSource>Jes Borland</templateSource>
       <event package="sqlserver" name="rpc_completed">
          <action package="sqlserver" name="client_app_name" />
          <action package="sqlserver" name="client_hostname" />
