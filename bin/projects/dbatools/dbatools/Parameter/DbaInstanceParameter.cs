@@ -149,7 +149,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
         /// Whether the input is a connection string
         /// </summary>
         [ParameterContract(ParameterContractType.Field, ParameterContractBehavior.Mandatory)]
-        public bool IsConnectionString;
+        public bool IsConnectionString { get; private set; } //TODO: figure out how to not limit ourselves to .NET 4.0
 
         /// <summary>
         /// The original object passed to the parameter class.
@@ -184,6 +184,8 @@ namespace Sqlcollaborative.Dbatools.Parameter
                             return DbaInstanceInputType.Linked;
                         case "microsoft.sqlserver.management.registeredservers.registeredserver":
                             return DbaInstanceInputType.RegisteredServer;
+                        case "system.data.sqlclient.sqlconnection":
+                            return DbaInstanceInputType.SqlConnection;
                         default:
                             return DbaInstanceInputType.Default;
                     }
@@ -243,7 +245,7 @@ namespace Sqlcollaborative.Dbatools.Parameter
         {
             InputObject = Name;
 
-            if (Name == "")
+            if (string.IsNullOrWhiteSpace(Name))
                 throw new BloodyHellGiveMeSomethingToWorkWithException("Please provide an instance name", "DbaInstanceParameter");
 
             if (Name == ".")
@@ -255,6 +257,8 @@ namespace Sqlcollaborative.Dbatools.Parameter
 
             string tempString = Name.Trim();
             tempString = Regex.Replace(tempString, @"^\[(.*)\]$", "$1");
+            if (UtilityHost.IsLike(tempString, "*.WORKGROUP"))
+                tempString = Regex.Replace(tempString, @"\.WORKGROUP$", "", RegexOptions.IgnoreCase);
 
             // Named Pipe path notation interpretation
             if (Regex.IsMatch(tempString, @"^\\\\[^\\]+\\pipe\\([^\\]+\\){0,1}sql\\query$", RegexOptions.IgnoreCase))
@@ -279,18 +283,51 @@ namespace Sqlcollaborative.Dbatools.Parameter
             // Connection String interpretation
             try
             {
-                System.Data.SqlClient.SqlConnectionStringBuilder connectionString = new System.Data.SqlClient.SqlConnectionStringBuilder(tempString);
+                System.Data.SqlClient.SqlConnectionStringBuilder connectionString =
+                    new System.Data.SqlClient.SqlConnectionStringBuilder(tempString);
                 DbaInstanceParameter tempParam = new DbaInstanceParameter(connectionString.DataSource);
                 _ComputerName = tempParam.ComputerName;
-                if (tempParam.InstanceName != "MSSQLSERVER") { _InstanceName = tempParam.InstanceName; }
-                if (tempParam.Port != 1433) { _Port = tempParam.Port; }
+                if (tempParam.InstanceName != "MSSQLSERVER")
+                {
+                    _InstanceName = tempParam.InstanceName;
+                }
+                if (tempParam.Port != 1433)
+                {
+                    _Port = tempParam.Port;
+                }
                 _NetworkProtocol = tempParam.NetworkProtocol;
+                
+                if (UtilityHost.IsLike(tempString, @"(localdb)\*"))
+                    _NetworkProtocol = SqlConnectionProtocol.NP;
 
                 IsConnectionString = true;
 
                 return;
             }
+            catch (ArgumentException ex)
+            {
+                string name = "unknown";
+                try
+                {
+                    name = ex.TargetSite.GetParameters()[0].Name;
+                }
+                catch
+                {
+                }
+                if (name == "keyword")
+                {
+                    throw;
+                }
+            }
+            catch (FormatException)
+            {
+                throw;
+            }
             catch { }
+
+            // Handle localfile dbs, both shared and unshared
+            if (UtilityHost.IsLike(tempString, @"(localdb)\*"))
+                tempString = Regex.Replace((Regex.Replace(tempString, @"^\(localdb\)\\\.", "localhost", RegexOptions.IgnoreCase)), @"^\(localdb\)", "localhost", RegexOptions.IgnoreCase);
 
             // Handle and clear protocols. Otherwise it'd make port detection unneccessarily messy
             if (Regex.IsMatch(tempString, "^TCP:", RegexOptions.IgnoreCase)) //TODO: Use case insinsitive String.BeginsWith()
@@ -383,10 +420,11 @@ namespace Sqlcollaborative.Dbatools.Parameter
                     }
                 }
 
-                if (Utility.Validation.IsValidComputerTarget(tempComputerName) && Utility.Validation.IsValidInstanceName(tempInstanceName))
+                if (Utility.Validation.IsValidComputerTarget(tempComputerName) && Utility.Validation.IsValidInstanceName(tempInstanceName, true))
                 {
                     _ComputerName = tempComputerName;
-                    _InstanceName = tempInstanceName;
+                    if ((tempInstanceName.ToLower() != "default") && (tempInstanceName.ToLower() != "mssqlserver"))
+                        _InstanceName = tempInstanceName;
                 }
 
                 else
@@ -424,6 +462,27 @@ namespace Sqlcollaborative.Dbatools.Parameter
         public DbaInstanceParameter(IPHostEntry Entry)
         {
             _ComputerName = Entry.HostName;
+        }
+
+        /// <summary>
+        /// Creates a DBA Instance Parameter from an established SQL Connection
+        /// </summary>
+        /// <param name="Connection">The connection to reuse</param>
+        public DbaInstanceParameter(System.Data.SqlClient.SqlConnection Connection)
+        {
+            InputObject = Connection;
+            DbaInstanceParameter tempParam = new DbaInstanceParameter(Connection.DataSource);
+
+            _ComputerName = tempParam.ComputerName;
+            if (tempParam.InstanceName != "MSSQLSERVER")
+            {
+                _InstanceName = tempParam.InstanceName;
+            }
+            if (tempParam.Port != 1433)
+            {
+                _Port = tempParam.Port;
+            }
+            _NetworkProtocol = tempParam.NetworkProtocol;
         }
 
         /// <summary>

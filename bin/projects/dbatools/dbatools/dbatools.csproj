@@ -33,6 +33,26 @@
     <DocumentationFile>..\..\..\dbatools.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ps3|AnyCPU'">
+    <OutputPath>..\..\..\</OutputPath>
+    <DefineConstants>TRACE;NORUNSPACENAME</DefineConstants>
+    <DocumentationFile>..\..\..\dbatools.xml</DocumentationFile>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ps4|AnyCPU'">
+    <OutputPath>..\..\..\</OutputPath>
+    <DefineConstants>TRACE;NORUNSPACENAME</DefineConstants>
+    <DocumentationFile>..\..\..\dbatools.xml</DocumentationFile>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Management.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -54,13 +74,26 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Computer\DiskSpace.cs" />
+    <Compile Include="Computer\DriveType.cs" />
+    <Compile Include="Configuration\ConfigScope.cs" />
+    <Compile Include="Configuration\ConfigurationHost.cs" />
     <Compile Include="Database\BackupHistory.cs" />
     <Compile Include="Configuration\Config.cs" />
     <Compile Include="Connection\ConnectionHost.cs" />
     <Compile Include="Database\Dependency.cs" />
+    <Compile Include="dbaSystem\StartTimeEntry.cs" />
+    <Compile Include="dbaSystem\StartTimeResult.cs" />
     <Compile Include="dbaSystem\SystemHost.cs" />
     <Compile Include="Exceptions\BloodyHellGiveMeSomethingToWorkWithException.cs" />
+    <Compile Include="Maintenance\MaintenanceHost.cs" />
+    <Compile Include="Maintenance\MaintenancePriority.cs" />
+    <Compile Include="Maintenance\MaintenanceTask.cs" />
     <Compile Include="Parameter\DbaCredentialParameter.cs" />
+    <Compile Include="Runspace\DbaRunspaceState.cs" />
+    <Compile Include="Runspace\RunspaceContainer.cs" />
+    <Compile Include="Runspace\RunspaceHost.cs" />
+    <Compile Include="TabExpansion\TabCompletionSet.cs" />
     <Compile Include="TypeConversion\DbaCredentialParameterConverter.cs" />
     <Compile Include="Utility\CredentialPrompt.cs" />
     <Compile Include="Validation\LinkedServerResult.cs" />
@@ -87,7 +120,6 @@
     <Compile Include="Connection\ManagementConnectionType.cs" />
     <Compile Include="dbaSystem\LogEntry.cs" />
     <Compile Include="dbaSystem\LogEntryType.cs" />
-    <Compile Include="dbaSystem\LogWriterHost.cs" />
     <Compile Include="dbaSystem\MessageHost.cs" />
     <Compile Include="dbaSystem\MessageLevel.cs" />
     <Compile Include="Parameter\ParameterContractAttribute.cs" />
