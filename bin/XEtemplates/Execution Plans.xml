@@ -1,5 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
-<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventsconfig">
+﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventsconfig">
    <event_session name="Execution Plans" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="false" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
     <templateCategory>
       <!-- _locID_text="templateCategory" _locComment = "" -->Everyday Extended Events</templateCategory>
