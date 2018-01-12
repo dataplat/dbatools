@@ -5,7 +5,7 @@
     <templateName>
       <!-- _locID_text = "templateName" _locComment = "" -->Database Health</templateName>
     <templateDescription>
-      <!-- _locID_text = "templateDescription" _locComment = "" -->Similar to system_health but for databases by Ola Hallengren. This Extended Event captures most of the valuable data for troubleshooting such as deadlocks, blocking processes, slow statements, errors, file size changes, info for tempdb troubleshooting etc.</templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Similar to system_health but for databases by Ola Hallengren. This Extended Event captures most of the valuable data for troubleshooting such as deadlocks, blocking processes, slow statements, errors, file size changes, info for tempdb troubleshooting etc. To capture blocking processes, configure blocked threshold (Set-DbaSpConfigure -SqlInstance sql2017 -ConfigName BlockedProcessThreshold -Value 5)</templateDescription>
       <event package="sqlos" name="wait_info">
          <action package="sqlserver" name="client_app_name" />
          <action package="sqlserver" name="client_hostname" />
