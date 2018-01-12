@@ -1,11 +1,11 @@
 ﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
-  <event_session name="query_detail_final_fix_pred" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
+  <event_session name="Query Detail Tracking" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
     <templateCategory>
       <!-- _locID_text="templateCategory" _locComment = "" -->Query Execution</templateCategory>
     <templateName>
       <!-- _locID_text = "templateName" _locComment = "" -->Query Detail Tracking</templateName>
     <templateDescription>
-      <!-- _locID_text = "templateDescription" _locComment = "" -->This template collects detailed statement and error information. You can use this template to track each statement has executed on your system as a result of query batches or stored procedures and then track errors back to the specific statement that caused them. This template also collects the query hash and query plan hash for every statement it tracks. All statement events are collected in this session so collection size may be very large. To reduce the collection size consider using the Query Detail Sampling template, which already includes a filter.</templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Collects detailed statement and error information. You can use this template to track each statement has executed on your system as a result of query batches or stored procedures and then track errors back to the specific statement that caused them. This template also collects the query hash and query plan hash for every statement it tracks. All statement events are collected in this session so collection size may be very large. To reduce the collection size consider using the Query Detail Sampling template, which already includes a filter.</templateDescription>
     <event package="sqlserver" name="error_reported">
       <action package="sqlserver" name="client_app_name" />
       <action package="sqlserver" name="database_id" />
