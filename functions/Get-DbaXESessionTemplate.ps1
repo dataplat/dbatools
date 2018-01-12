@@ -11,6 +11,7 @@
             Microsoft's Templates that come with SSMS
             Jes Borland's "Everyday Extended Events" presentation and GitHub repository (https://github.com/grrlgeek/extended-events)
             Christian Gräfe's XE Repo: https://github.com/chrgraefe/sqlscripts/blob/master/XE-Events/
+            Erin Stellato's Blog: https://www.sqlskills.com/blogs/erin/
     
     Some profile templates converted using:
     
