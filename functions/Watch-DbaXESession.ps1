@@ -113,7 +113,7 @@ function Watch-DbaXESession {
                 else {
                     # make it pretty
                     foreach ($event in $xevent) {
-                        $columns = "Name", "Timestamp"
+                        $columns = "name", "timestamp"
                         foreach ($action in $event.Actions) {
                             $columns += $action.Name
                             Add-Member -InputObject $event -NotePropertyName $action.Name -NotePropertyValue $action.Value
