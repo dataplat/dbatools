@@ -14,7 +14,7 @@
 
         .PARAMETER Type
         Used to specify the type. Valid types include:
-        
+
             Action
             Event
             Map
@@ -39,7 +39,7 @@
         Get-DbaXEObject -SqlInstance sql2016
 
         Lists all the XE Objects on the sql2016 SQL Server
-    
+
         .EXAMPLE
         Get-DbaXEObject -SqlInstance sql2017 -Type Action, Event
 
@@ -66,22 +66,22 @@
         }
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
                 ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
-                SERVERPROPERTY('ServerName') AS SqlInstance, 
+                SERVERPROPERTY('ServerName') AS SqlInstance,
                 p.name AS PackageName,
-                ObjectType =  
-                      CASE o.object_type  
-                         WHEN 'type' THEN 'Type'  
-                         WHEN 'event' THEN 'Event'  
-                         WHEN 'target' THEN 'Target'  
-                		 WHEN 'pred_compare' THEN 'PredicateComparator' 
+                ObjectType =
+                      CASE o.object_type
+                         WHEN 'type' THEN 'Type'
+                         WHEN 'event' THEN 'Event'
+                         WHEN 'target' THEN 'Target'
+                		 WHEN 'pred_compare' THEN 'PredicateComparator'
                          WHEN 'pred_source' THEN 'PredicateSource'
                 		 WHEN 'action' THEN 'Action'
                 		 WHEN 'map' THEN 'Map'
-                		 WHEN 'message' THEN 'Message'  
+                		 WHEN 'message' THEN 'Message'
                          ELSE o.object_type
-                      END,  
-                o.object_type as ObjectTypeRaw, 
-                o.name AS TargetName, 
+                      END,
+                o.object_type as ObjectTypeRaw,
+                o.name AS TargetName,
                 o.description as Description
                 FROM sys.dm_xe_packages AS p
                 JOIN sys.dm_xe_objects AS o ON p.guid = o.package_guid
@@ -93,7 +93,7 @@
     }
     process {
         foreach ($instance in $SqlInstance) {
-            
+
             try {
                 $server = Connect-SqlInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             }
@@ -101,7 +101,7 @@
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 return
             }
-            
+
             try {
                 $server.Query($sql) | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, ObjectTypeRaw
             }
