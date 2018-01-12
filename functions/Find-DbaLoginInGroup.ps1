@@ -121,7 +121,7 @@ function Find-DbaLoginInGroup {
         }
     }
     
-    PROCESS {
+    process {
         foreach ($Instance in $SqlInstance) {
             try {
                 Write-Verbose "Connecting to $Instance"
