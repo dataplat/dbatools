@@ -4,12 +4,12 @@ function Watch-DbaXESession {
     Watch live XEvent Data as it happens
 
     .DESCRIPTION
-    Watch live XEvent Data as it happens - this command runs until you kill the PowerShell session or Ctrl-C.
+    Watch live XEvent Data as it happens - this command runs until you stop the session, kill the PowerShell session, or Ctrl-C a few hundred times ;).
 
     Thanks to Dave Mason (@BeginTry) for some straightforward code samples https://itsalljustelectrons.blogspot.be/2017/01/SQL-Server-Extended-Event-Handling-Via-Powershell.html
 
     .PARAMETER SqlInstance
-    The SQL Instances that you're connecting to.
+    The SQL Instance that you're connecting to.
 
     .PARAMETER SqlCredential
     Credential object used to connect to the SQL Server as a different user
@@ -92,8 +92,9 @@ function Watch-DbaXESession {
         }
         
         if ($InputObject) {
-            if ((Get-DbaXESession -SqlInstance $server -Session $InputObject.Name)) {
-                Stop-Function -Message "$($InputObject.Name) is in a stopped state"
+            $status = (Get-DbaXESession -SqlInstance $server -Session $InputObject.Name).Status
+            if ($status -ne "Running") {
+                Stop-Function -Message "$($InputObject.Name) is in a $status state"
                 return
             }
             try {
@@ -111,8 +112,18 @@ function Watch-DbaXESession {
                 }
                 else {
                     # make it pretty
-                    foreach ($row in $xevent) {
-                        Select-DefaultView -InputObject $row -Property Name, Timestamp, Fields, Actions
+                    foreach ($event in $xevent) {
+                        $columns = "Name", "Timestamp"
+                        foreach ($action in $event.Actions) {
+                            $columns += $action.Name
+                            Add-Member -InputObject $event -NotePropertyName $action.Name -NotePropertyValue $action.Value
+                        }
+                        
+                        foreach ($field in $event.Fields) {
+                            $columns += $field.Name
+                            Add-Member -Force -InputObject $event -NotePropertyName $field.Name -NotePropertyValue $field.Value
+                        }
+                        Select-DefaultView -InputObject $event -Property $columns #-ExcludeProperty Fields, Actions, UUID, Package, Metadata, Location
                     }
                 }
             }

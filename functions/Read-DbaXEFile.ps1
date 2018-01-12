@@ -104,21 +104,18 @@ function Read-DbaXEFile {
             else {
                 # Make it selectable, otherwise it's a weird enumeration
                 foreach ($event in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile))) {
-                    # it's okay to return more rows
-                    $row = [pscustomobject]@{
-                        Name      = $event.Name
-                        TimeStemp = $event.Timestamp
-                    }
-                    
+                    $columns = "Name", "Timestamp"
                     foreach ($action in $event.Actions) {
-                        Add-Member -InputObject $row -NotePropertyName $action.Name -NotePropertyValue $action.Value
+                        $columns += $action.Name
+                        Add-Member -InputObject $event -NotePropertyName $action.Name -NotePropertyValue $action.Value
                     }
                     
                     foreach ($field in $event.Fields) {
-                        Add-Member -Force -InputObject $row -NotePropertyName $field.Name -NotePropertyValue $field.Value
+                        $columns += $field.Name
+                        Add-Member -Force -InputObject $event -NotePropertyName $field.Name -NotePropertyValue $field.Value
                     }
                     
-                    Select-DefaultView -InputObject $row -ExcludeProperty Fields, Actions
+                    Select-DefaultView -InputObject $event -Property $columns #-ExcludeProperty Fields, Actions, UUID, Package, Metadata, Location
                 }
             }
         }
