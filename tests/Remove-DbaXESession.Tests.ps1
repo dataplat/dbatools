@@ -7,6 +7,9 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     AfterAll {
         $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
     }
+    AfterAll {
+        $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
+    }
     Context "Test Importing Session Template" {
         $results = Import-DbaXESessionTemplate -SqlInstance $script:instance2 -Template 'Profiler TSQL Duration'
         
