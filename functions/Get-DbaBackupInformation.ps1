@@ -238,7 +238,7 @@ function Get-DbaBackupInformation {
                             }
                         }
                         elseif ($true -eq $MaintenanceSolution) {
-                            $Files += Get-ChildItem -Path $f.fullname
+                            $Files += Get-ChildItem -Path $f.fullname -Recurse:$DirectoryRecurse
                         }
                         else {
                             Write-Message -Level VeryVerbose -Message "File"
