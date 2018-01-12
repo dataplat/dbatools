@@ -20,7 +20,7 @@ function Watch-DbaXESession {
     .PARAMETER Raw
     Returns the Microsoft.SqlServer.XEvent.Linq.QueryableXEventData enumeration object
 
-    .PARAMETER SessionObject
+    .PARAMETER InputObject
     Internal parameter
 
     .PARAMETER EnableException
@@ -68,13 +68,13 @@ function Watch-DbaXESession {
         [PSCredential]$SqlCredential,
         [string]$Session,
         [parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
-        [Microsoft.SqlServer.Management.XEvent.Session]$SessionObject,
+        [Microsoft.SqlServer.Management.XEvent.Session]$InputObject,
         [switch]$Raw,
         [switch][Alias('Silent')]$EnableException
     )
     process {
         if (-not $SqlInstance) {
-            $server = $SessionObject.Parent
+            $server = $InputObject.Parent
         }
         else {
             try {
@@ -88,14 +88,18 @@ function Watch-DbaXESession {
             $SqlStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $SqlConn
             $XEStore = New-Object  Microsoft.SqlServer.Management.XEvent.XEStore $SqlStoreConnection
             Write-Message -Level Verbose -Message "Getting XEvents Sessions on $SqlInstance."
-            $SessionObject = $XEStore.sessions | Where-Object Name -eq $Session | Select-Object -First 1
+            $InputObject = $XEStore.sessions | Where-Object Name -eq $Session | Select-Object -First 1
         }
-
-        if ($SessionObject) {
+        
+        if ($InputObject) {
+            if ((Get-DbaXESession -SqlInstance $server -Session $InputObject.Name)) {
+                Stop-Function -Message "$($InputObject.Name) is in a stopped state"
+                return
+            }
             try {
                 $xevent = New-Object -TypeName Microsoft.SqlServer.XEvent.Linq.QueryableXEventData(
                     ($server.ConnectionContext.ConnectionString),
-                    ($SessionObject.Name),
+                    ($InputObject.Name),
                     [Microsoft.SqlServer.XEvent.Linq.EventStreamSourceOptions]::EventStream,
                     [Microsoft.SqlServer.XEvent.Linq.EventStreamCacheOptions]::DoNotCache
                 )
@@ -113,7 +117,12 @@ function Watch-DbaXESession {
                 }
             }
             catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $session
+                if ((Get-DbaXESession -SqlInstance $server -Session $Session)) {
+                    Stop-Function -Message "$($InputObject.Name) was stopped"
+                }
+                else {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $session
+                }
             }
             finally {
                 if ($xevent -is [IDisposable]) {

@@ -64,7 +64,15 @@ function Read-DbaXEFile {
                 $currentfile = $file.FullName
             }
             else {
-                if ($file.TargetFile.Length -eq 0) { continue }
+                if ($file -isnot [Microsoft.SqlServer.Management.XEvent.Session]) {
+                    Stop-Function -Message "Unsupported file type"
+                    return
+                }
+                
+                if ($file.TargetFile.Length -eq 0) {
+                    Stop-Function -Message "This session does not have an associated Target File"
+                    return
+                }
                 
                 $instance = [dbainstance]$file.ComputerName
                 
