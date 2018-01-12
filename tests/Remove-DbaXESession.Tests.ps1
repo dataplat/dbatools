@@ -2,7 +2,7 @@
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
 
-if (not $env:appevyor) {
+if (-not $env:appevyor) {
     Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         AfterAll {
             $null = Get-DbaXESession -SqlInstance $script:instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
