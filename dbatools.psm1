@@ -1,4 +1,4 @@
-$start = Get-Date
+﻿$start = Get-Date
 
 #region Import helper functions
 function Import-ModuleFile {
@@ -162,7 +162,7 @@ if (-not ([Sqlcollaborative.Dbatools.dbaSystem.DebugHost]::LoggingPath)) {
 }
 
 # All internal functions privately available within the toolset - 221ms
-foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\*.ps1")) {
+foreach ($function in (Get-ChildItem "$script:PSModuleRoot\internal\functions\*.ps1")) {
     . Import-ModuleFile $function.FullName
 }
 Write-ImportTime -Text "Loading Internal Commands"
@@ -520,6 +520,10 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"  = "Find-DbaDatabaseGrowthEvent"
         "Definition" = "Find-DbaDbGrowthEvent"
+    },
+    @{
+        "AliasName"   = "Get-DbaTraceFile"
+        "Definition"  = "Get-DbaTrace"
     }
 ) | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }
@@ -579,17 +583,25 @@ if ($script:dbatoolsConfigRunspace) {
     $script:dbatoolsConfigRunspace.Dispose()
     Remove-Variable -Name dbatoolsConfigRunspace -Scope script
 }
+Write-ImportTime -Text "Waiting for runspaces to finish"
+
+if ($PSCommandPath -like "*.psm1") {
+    Update-TypeData -AppendPath "$script:PSModuleRoot\xml\dbatools.Types.ps1xml"
+    Write-ImportTime -Text "Loaded type extensions"
+}
+#. Import-ModuleFile "$script:PSModuleRoot\bin\type-extensions.ps1"
+#Write-ImportTime -Text "Loaded type extensions"
 
 [Sqlcollaborative.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true;
-Write-ImportTime -Text "Waiting for runspaces to finish"
+
 #endregion Post-Import Cleanup
 
 
 # SIG # Begin signature block
 # MIIcYgYJKoZIhvcNAQcCoIIcUzCCHE8CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUsOCbUVP0FH4jyVumK04ceiNN
-# QHqggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUmodU8tPkmwVATJVzbnnZDv/7
+# q7yggheRMIIFGjCCBAKgAwIBAgIQAsF1KHTVwoQxhSrYoGRpyjANBgkqhkiG9w0B
 # AQsFADByMQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYD
 # VQQLExB3d3cuZGlnaWNlcnQuY29tMTEwLwYDVQQDEyhEaWdpQ2VydCBTSEEyIEFz
 # c3VyZWQgSUQgQ29kZSBTaWduaW5nIENBMB4XDTE3MDUwOTAwMDAwMFoXDTIwMDUx
@@ -720,22 +732,22 @@ Write-ImportTime -Text "Waiting for runspaces to finish"
 # c3N1cmVkIElEIENvZGUgU2lnbmluZyBDQQIQAsF1KHTVwoQxhSrYoGRpyjAJBgUr
 # DgMCGgUAoHgwGAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMx
 # DAYKKwYBBAGCNwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkq
-# hkiG9w0BCQQxFgQU1VngZTQ57UcRl1ZTpiVLAURUNecwDQYJKoZIhvcNAQEBBQAE
-# ggEAW6v25RzFXa+ikfShVCtXpt1LHINanz2AuiNlGCrHji0QZTPzkodsvA5/yetB
-# sUOxoCK3qOZt3pZPfpGCKQLS9ko7H5BmDY3HSZWdmQYDNhN0K5GqjOQ7DFviwm0H
-# ja3FNlcXq9TkbnnVSi+brQPwVS9MmjEsfbAO4g1HB+Ld9dTfaj9/OadRc97BqMwn
-# vPUZOJAFAAs9kXTaPqSLWps7v1lAHOIaPZSRzuxKIzEqG+7dpIWJttL+Vbs74Ueg
-# EStUpA/4Poe11oBDLux8P9F29BiMS/JS0B9QWBa3m6lTK5zAVRRHD4KnTeoJalh0
-# VPZ9dNaJvqMLX1zm7wrj3dQBR6GCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
+# hkiG9w0BCQQxFgQUX3D21voLNmUjNhauV/peMjlTptcwDQYJKoZIhvcNAQEBBQAE
+# ggEAfxCgqNQvu4c37d89uKB4cpjzk8qd6L3NLYD6+845fiKfzpqAl70vQBqdz/Qh
+# VySqlCk2az244js5dpEokmj70+tcv5rEV0kHvNKvBV3YGG4kbUeJwkEpWHrYDWy7
+# Jxgw5HBfIfQF6hiORX/+9Xbxmz5VmOHJFg/G4eiZQlBmqZn1TmwUDktiMcnhQtL+
+# fl6YEBrM+EjTnFusgRmRmEZVJrhAkIAsuOJyLWXXKFeAqwZgSoSt5w8Qye2NVSpA
+# IkUA0+coiwT9Z6gE3Xz/soaUmkArkxfgGQW1fObYqTDsLM/tjrRM1CS1KyFji2t+
+# m10TQtaqH+sAOwzazVJKD5GiSaGCAg8wggILBgkqhkiG9w0BCQYxggH8MIIB+AIB
 # ATB2MGIxCzAJBgNVBAYTAlVTMRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNV
 # BAsTEHd3dy5kaWdpY2VydC5jb20xITAfBgNVBAMTGERpZ2lDZXJ0IEFzc3VyZWQg
 # SUQgQ0EtMQIQAwGaAjr/WLFr1tXq5hfwZjAJBgUrDgMCGgUAoF0wGAYJKoZIhvcN
-# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwMTA4MjAzNzEzWjAj
-# BgkqhkiG9w0BCQQxFgQURh0jcT0cHf1U5h1qwMwvF6Obf6EwDQYJKoZIhvcNAQEB
-# BQAEggEAmfJNWkBfip2kpTX1ssEMwgJ3RoWwudWiWRblGRBDZ9qnfeiuNjhfYmt9
-# lYgvRGrpkuCfqW7U68aGqcAwdbmxus+Y35/mT1xU2CCLwOgt7vZ+sMphsnFpDtod
-# DXSbVaGn3USGUJIV/78mwAzEkei2T6D+ybfZINW1e8PCa2MYpIsk87ty29Nkmt1P
-# AhcFgksymie107+yQXtNiDNXpGf5GUSogaIxWhG/5x9531fZsKTIRb97HrYiZT9n
-# rfSOuR3fU6wFZZHx+dYDCLKVJhiDO6RZN7+WQpl39zed+9eERTqI1+R4rL7x5VH1
-# 5GWveYzhZZixYw3CVc3lSfTFvDGrxg==
+# AQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwMTEwMjEyNjM0WjAj
+# BgkqhkiG9w0BCQQxFgQUHorJkJNKz3lpgp3ml1WezA2TVYYwDQYJKoZIhvcNAQEB
+# BQAEggEAfiotmAG6EnHFMvZBiu4ozDZq0o0cX5PdalzK0eEnd0gFBFHYYUNwQ80F
+# Z7V6jhrYGTMMQd0y24mMs5gSfxdF8OgPWR3VSvHfbORIubpqWx8+S4GHliR8rsnz
+# ooKuLi0bgMYo02SdeDSma09UmX+VBAfD1yXqWUFQ/rKPNDpmS0sRP3Ucj/V4/1jC
+# upMbsaeO/tYyZSqGmB7N0qvUhdrvy5bnxTgShWlSOlmsBrYHdIfkPpH8Tg+kVHSE
+# K/dxoT1dJ+k9mYDeJllU3YEfvoQWjVb1UBG60Q+aKNRIDhmrX94hd2cqxlSFvtsP
+# pC8W5s1I997URvoa5mrq/kgaT/JK7g==
 # SIG # End signature block

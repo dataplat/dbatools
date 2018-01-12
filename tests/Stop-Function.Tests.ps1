@@ -1,7 +1,7 @@
 $CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 . "$PSScriptRoot\constants.ps1"
-. $PSScriptRoot\..\internal\Stop-Function.ps1
+. "$PSScriptRoot\..\internal\functions\Stop-Function.ps1"
 
 Describe "$commandname Unit Tests" -Tag 'UnitTests' {
     Context "Testing non-EnableException: Explicit call" {
