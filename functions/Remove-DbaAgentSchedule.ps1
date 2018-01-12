@@ -18,6 +18,9 @@ To connect as a different Windows user, run PowerShell as that user.
 .PARAMETER Schedule
 The name of the job schedule.
 
+.PARAMETER ScheduleCollection
+A collection of schedule (such as returned by Get-DbaAgentSchedule), to be removed.
+
 .PARAMETER WhatIf
 Shows what would happen if the command were to run. No actions are actually performed.
 
@@ -63,6 +66,11 @@ Remove the schedule on multiple servers for multiple schedules
 .EXAMPLE
 sql1, sql2, sql3 | Remove-DbaAgentSchedule -Schedule daily, weekly
 Remove the schedule on multiple servers using pipe line
+
+.EXAMPLE
+Get-DbaAgentSchedule -SqlInstance sql1 -Schedule sched1, sched2, sched3 | Remove-DbaAgentSchedule
+
+Remove the schedules using a pipeline
 
 #>
 
