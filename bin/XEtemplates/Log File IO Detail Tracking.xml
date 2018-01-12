@@ -1,11 +1,11 @@
 ﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
-  <event_session name="log_io" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="false" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
+  <event_session name="Log File IO Detail Tracking" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="false" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
     <templateCategory>
       <!-- _locID_text="templateCategory" _locComment = "" -->System Monitoring</templateCategory>
     <templateName>
-      <!-- _locID_text = "templateName" _locComment = "" -->Database Log File IO Tracking</templateName>
+      <!-- _locID_text = "templateName" _locComment = "" -->Log File IO Detail Tracking</templateName>
     <templateDescription>
-      <!-- _locID_text = "templateDescription" _locComment = "" -->This template monitors the IO for database log files on a server by tracking asynchronous IO, database log flushes, file writes, spinlock backoffs of type LOGFLUSHQ and waits of type WRITELOG. This template collects data in two ways: raw data is collected to a ring buffer and spinlock backoff information is aggregated based on the input buffer (sql_text). The session is filtered for a single log file per database; if you have multiple log files you can modify the filter for the file_write_completed and file_written events to include more than just file_id = 2.</templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Monitors the IO for database log files on a server by tracking asynchronous IO, database log flushes, file writes, spinlock backoffs of type LOGFLUSHQ and waits of type WRITELOG. This template collects data in two ways: raw data is collected to a ring buffer and spinlock backoff information is aggregated based on the input buffer (sql_text). The session is filtered for a single log file per database; if you have multiple log files you can modify the filter for the file_write_completed and file_written events to include more than just file_id = 2.</templateDescription>
     <event package="sqlos" name="async_io_completed" />
     <event package="sqlos" name="async_io_requested" />
     <event package="sqlos" name="spinlock_backoff">

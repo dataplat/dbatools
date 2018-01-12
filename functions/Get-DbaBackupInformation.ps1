@@ -209,10 +209,16 @@ function Get-DbaBackupInformation {
                         if ((Test-DbaSqlPath -Path $f.fullname -SqlInstance $server)) {
                             $files += $f
                         }
+                        else {
+                            Write-Message -Level Verbose -Message "$server cannot 'see' file $($f.FullName)"
+                        }
                     }
                     else {
                         Write-Message -Message "Testing a folder $f" -Level Verbose
-                        $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server
+                        $Files += $Check = Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server
+                        if  ($null -eq $check) {
+                            Write-Message -Message "Nothing returned from $f" -Level Verbose
+                        }
                     }
                 }
             }

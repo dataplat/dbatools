@@ -139,10 +139,10 @@ function Measure-DbaBackupThroughput {
 
                 # Splatting didn't work
                 if ($since) {
-                    $histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Since $since -DeviceType $DeviceType | Where-Object Type -eq $Type
+                    $histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Since $since -DeviceType $DeviceType -Type $Type
                 }
                 else {
-                    $histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Last:$last -DeviceType $DeviceType | Where-Object Type -eq $Type
+                    $histories = Get-DbaBackupHistory -SqlInstance $server -Database $db.name -Last:$last -DeviceType $DeviceType -Type $Type
                 }
 
                 foreach ($history in $histories) {

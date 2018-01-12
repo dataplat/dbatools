@@ -157,6 +157,7 @@ function Find-DbaCommand {
         $moduleDirectory = (Get-Module -Name dbatools).ModuleBase
     }
     process {
+        $Pattern = $Pattern.TrimEnd("s")
         $idxFile = "$moduleDirectory\bin\dbatools-index.json"
         if (!(Test-Path $idxFile) -or $Rebuild) {
             Write-Verbose "Rebuilding index into $idxFile"
