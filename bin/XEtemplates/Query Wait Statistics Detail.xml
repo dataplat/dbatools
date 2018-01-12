@@ -1,11 +1,11 @@
 ﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
-  <event_session name="query_wait_stats" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
+  <event_session name="Query Wait Statistics Detail" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
     <templateCategory>
       <!-- _locID_text="templateCategory" _locComment = "" -->Query Execution</templateCategory>
     <templateName>
-      <!-- _locID_text = "templateName" _locComment = "" -->Query Wait Statistic</templateName>
+      <!-- _locID_text = "templateName" _locComment = "" -->Query Wait Statistics Detail</templateName>
     <templateDescription>
-      <!-- _locID_text = "templateDescription" _locComment = "" -->This template tracks internal and external wait statistics for individual query statements, batches and RPCs. This template also collects the query hash and query plan hash for every statement it tracks. Events are only collected from 20% of the active sessions on the server at any given time. You can change the sampling rate by modifying the filter for the event session.</templateDescription>
+      <!-- _locID_text = "templateDescription" _locComment = "" -->Tracks internal and external wait statistics for individual query statements, batches and RPCs. This template also collects the query hash and query plan hash for every statement it tracks. Events are only collected from 20% of the active sessions on the server at any given time. You can change the sampling rate by modifying the filter for the event session.</templateDescription>
     <event package="sqlos" name="wait_info">
       <action package="sqlserver" name="client_app_name" />
       <action package="sqlserver" name="database_id" />
