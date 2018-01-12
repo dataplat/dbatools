@@ -52,7 +52,8 @@ function Read-DbaXEFile {
         [object[]]$Path,
         [switch]$Exact,
         [switch]$Raw,
-        [switch][Alias('Silent')]$EnableException
+        [switch][Alias('Silent')]
+        $EnableException
     )
     process {
         foreach ($file in $path) {
@@ -88,22 +89,36 @@ function Read-DbaXEFile {
                 $currentfile = $currentfile.Replace('.xel', '*.xel')
                 $currentfile = $currentfile.Replace('.xem', '*.xem')
             }
-
+            
             $accessible = Test-Path -Path $currentfile
             $whoami = whoami
-
+            
             if (-not $accessible) {
                 if ($file.Status -eq "Stopped") { continue }
                 Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
             }
-
+            
             if ($raw) {
                 New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
             }
             else {
                 # Make it selectable, otherwise it's a weird enumeration
-                foreach ($row in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile))) {
-                    Select-DefaultView -InputObject $row -Property Name, Timestamp, Fields, Actions
+                foreach ($event in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile))) {
+                    # it's okay to return more rows
+                    $row = [pscustomobject]@{
+                        Name      = $event.Name
+                        TimeStemp = $event.Timestamp
+                    }
+                    
+                    foreach ($action in $event.Actions) {
+                        Add-Member -InputObject $row -NotePropertyName $action.Name -NotePropertyValue $action.Value
+                    }
+                    
+                    foreach ($field in $event.Fields) {
+                        Add-Member -Force -InputObject $row -NotePropertyName $field.Name -NotePropertyValue $field.Value
+                    }
+                    
+                    Select-DefaultView -InputObject $row -ExcludeProperty Fields, Actions
                 }
             }
         }
