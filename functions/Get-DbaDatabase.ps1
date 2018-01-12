@@ -323,6 +323,7 @@ function Get-DbaDatabase {
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastRead -value $lastusedinfo.last_read
                     Add-Member -Force -InputObject $db -MemberType NoteProperty -Name LastWrite -value $lastusedinfo.last_write
                     Select-DefaultView -InputObject $db -Property $defaults
+                    try { $server.Databases.Refresh() } catch {}
                 }
             }
             catch {

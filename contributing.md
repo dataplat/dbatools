@@ -28,7 +28,7 @@ Start out reviewing the [list of functions on the website](https://dbatools.io/f
 [Open a new issue](https://GitHub.com/sqlcollaborative/dbatools/issues/new) on GitHub and fill in all the details. The title should report the affected function, followed by a brief description (e.g. _Get-DbaDatabase - Add property x to default view_). The provided template holds most of the details coders need to fix the issue.
 
 ## Fix Bugs
-TODO: do we have an "how to open a PR" guide somewhere ?
+If you don't know to use github, we have a [step-by-step guide](https://dbatools.io/firstpull) to get acquainted.
 [Open a PR](https://GitHub.com/sqlcollaborative/dbatools/pulls) targeting ideally just one ps1 file (the PR needs to target the *development* branch), with the name of the function being fixed as a title. Everyone will chime in reviewing the code and either approve the PR or request changes. The more targeted and focused the PR, the easier to merge, the fastest to go into the next release. Keep them as simple as possible to speed up the process.
 
 ## Standardize Parameters and Variables
@@ -86,8 +86,6 @@ A recent introduction in our CI pipeline is code coverage. [Dbatools' CodeCov](h
 
 If you want to start contributing new tests, choose the ones with no coverage. You can also inspect functions with low coverage and improve existing tests (https://dbatools.io/improving-tests/)
 
-TODO: rewrite manual.pester.ps1 to show coverage, too
-
 
 ## Bill of Health
 
@@ -97,4 +95,4 @@ When each and every function is healthy enough, the module itself will be ready 
 
 There are a few checks which need a core developer to manually sign off the "check", but there are a lot everyone else can fix too, namely ScriptAnalyzer and CodeCoverage.
 
-TODO: copy documentation for manually signing off checks from https://GitHub.com/sqlcollaborative/dbatools-progressmanagement
+
