@@ -170,10 +170,6 @@ function Get-DbaBackupInformation {
             }
         }
 
-        if ($true -eq $MaintenanceSolution) {
-            $NoXpDirTree = $True
-        }
-
         if ($true -eq $IgnoreLogBackup -and $true -ne $MaintenanceSolution) {
             Write-Message -Message "IgnoreLogBackup can only by used with Maintenance Soultion. Will not be used" -Level Warning
         }
@@ -213,6 +209,15 @@ function Get-DbaBackupInformation {
                             Write-Message -Level Verbose -Message "$server cannot 'see' file $($f.FullName)"
                         }
                     }
+                    elseif ($True -eq $MaintenanceSolution){
+                        if ($true -eq $IgnoreLogBackup -and $f -like '*log*'){
+                            Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
+                        }
+                        else {
+                            Write-Message -Level Verbose -Message "OLA - Getting folder contents"
+                            $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server
+                        }
+                    }
                     else {
                         Write-Message -Message "Testing a folder $f" -Level Verbose
                         $Files += $Check = Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server
@@ -228,13 +233,18 @@ function Get-DbaBackupInformation {
                     if ($f -is [System.IO.FileSystemInfo]) {
                         if ($f.PsIsContainer -eq $true -and $true -ne $MaintenanceSolution) {
                             Write-Message -Level VeryVerbose -Message "folder $($f.fullname)"
-                            $Files = Get-ChildItem -Path $f.fullname -File -Recurse:$DirectoryRecurse
+                            $Files += Get-ChildItem -Path $f.fullname -File -Recurse:$DirectoryRecurse
                         }
                         elseif ($f.PsIsContainer -eq $true -and $true -eq $MaintenanceSolution) {
-                            $Files += Get-OlaHRestoreFile -Path $f.fullname -IgnoreLogBackup:$IgnoreLogBackup
+                            if ($IgnoreLogBackup -and $f -notlike '*LOG' ) {
+                                Write-Message -Level Verbose -Message "Skipping Log backups for Maintenance backups"
+                            }
+                            else {
+                                $Files += Get-ChildItem -Path $f.fullname -File -Recurse:$DirectoryRecurse
+                            }
                         }
                         elseif ($true -eq $MaintenanceSolution) {
-                            $Files += Get-OlaHRestoreFile -Path $f.fullname -IgnoreLogBackup:$IgnoreLogBackup
+                            $Files += Get-ChildItem -Path $f.fullname -Recurse:$DirectoryRecurse
                         }
                         else {
                             Write-Message -Level VeryVerbose -Message "File"
@@ -243,7 +253,9 @@ function Get-DbaBackupInformation {
                     }
                     else {
                         if ($true -eq $MaintenanceSolution) {
-                            $Files += Get-OlaHRestoreFile -Path $f -IgnoreLogBackup:$IgnoreLogBackup
+                            $Files += Get-XpDirTreeRestoreFile -Path $f\FULL -SqlInstance $server -NoRecurse
+                            $Files += Get-XpDirTreeRestoreFile -Path $f\DIFF -SqlInstance $server -NoRecurse
+                            $Files += Get-XpDirTreeRestoreFile -Path $f\LOG -SqlInstance $server -NoRecurse
                         }
                         else {
                             Write-Message -Level VeryVerbose -Message "File"
@@ -251,6 +263,11 @@ function Get-DbaBackupInformation {
                         }
                     }
                 }
+            }
+
+            if ($True -eq $MaintenanceSolution -and $True -eq $IgnoreLogBackup) {
+                Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
+                $Files = $Files | Where-Object {$_.FullName -notlike '*\LOG\*'}
             }
 
             $FileDetails = $Files | Read-DbaBackupHeader -SqlInstance $server
