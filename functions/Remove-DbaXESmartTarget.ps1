@@ -9,6 +9,12 @@
     .PARAMETER InputObject
     The XESmartTarget job object
     
+    .PARAMETER WhatIf
+    Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+    Prompts you for confirmation before executing any changing operations within the command.
+        
     .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -35,21 +41,23 @@
     Removes a specific XESmartTarget job
 
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [object[]]$InputObject,
         [switch]$EnableException
     )
     process {
-        try {
-            $id = $InputObject.Id
-            Write-Message -Level Output -Message "Removing job $id, this may take a couple minutes"
-            Get-Job -ID $InputObject.Id | Remove-Job -Force
-            Write-Message -Level Output -Message "Successfully removed $id"
-        }
-        catch {
-            Stop-Function -Message "Failure" -ErrorRecord $_
+        if ($Pscmdlet.ShouldProcess("localhost", "Removing job $id")) {
+            try {
+                $id = $InputObject.Id
+                Write-Message -Level Output -Message "Removing job $id, this may take a couple minutes"
+                Get-Job -ID $InputObject.Id | Remove-Job -Force
+                Write-Message -Level Output -Message "Successfully removed $id"
+            }
+            catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_
+            }
         }
     }
 }
