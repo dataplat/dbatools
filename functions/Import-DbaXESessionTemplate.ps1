@@ -68,6 +68,9 @@
         [string[]]$Template,
         [switch]$EnableException
     )
+    begin {
+        $metadata = Import-Clixml "$script:PSModuleRoot\bin\xetemplates-metadata.xml"
+    }
     process {
         if ((Test-Bound -ParameterName Path -Not) -and (Test-Bound -ParameterName Template -Not)) {
             Stop-Function -Message "You must specify Path or Template"
@@ -107,7 +110,7 @@
                     $Name = (Get-ChildItem $file).BaseName
                 }
                 
-                $no2012 = 'Activity Tracking', 'Database Health', 'Query Wait Statistics', 'Deadlock Graphs'
+                $no2012 = ($metadata | Where-Object Compatability -gt 2012).Name
                 
                 if ($Name -in $no2012 -and $server.VersionMajor -eq 11) {
                     Stop-Function -Message "$Name is not supported in SQL Server 2012 ($server)" -Continue
