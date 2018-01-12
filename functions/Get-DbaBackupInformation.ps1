@@ -170,10 +170,6 @@ function Get-DbaBackupInformation {
             }
         }
 
-        if ($true -eq $MaintenanceSolution) {
-     #       $NoXpDirTree = $True
-        }
-
         if ($true -eq $IgnoreLogBackup -and $true -ne $MaintenanceSolution) {
             Write-Message -Message "IgnoreLogBackup can only by used with Maintenance Soultion. Will not be used" -Level Warning
         }
@@ -235,7 +231,7 @@ function Get-DbaBackupInformation {
                         }
                         elseif ($f.PsIsContainer -eq $true -and $true -eq $MaintenanceSolution) {
                             if ($IgnoreLogBackup -and $f -notlike '*LOG' ) {
-                                Write-Message -Level Verbose -Message "Skipping Log backups for Maintenance backups" 
+                                Write-Message -Level Verbose -Message "Skipping Log backups for Maintenance backups"
                             }
                             else {
                                 $Files += Get-ChildItem -Path $f.fullname -File -Recurse:$DirectoryRecurse
@@ -251,7 +247,7 @@ function Get-DbaBackupInformation {
                     }
                     else {
                         if ($true -eq $MaintenanceSolution) {
-                            $Files += Get-XpDirTreeRestoreFile -Path $f\FULL -SqlInstance $server -NoRecurse 
+                            $Files += Get-XpDirTreeRestoreFile -Path $f\FULL -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path $f\DIFF -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path $f\LOG -SqlInstance $server -NoRecurse
                         }
