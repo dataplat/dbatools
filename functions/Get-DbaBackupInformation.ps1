@@ -211,10 +211,11 @@ function Get-DbaBackupInformation {
                         }
                     }
                     elseif ($True -eq $MaintenanceSolution){
-                        if ($true -eq $IgnoreLogBackup -and $f -like '*log'){
+                        if ($true -eq $IgnoreLogBackup -and $f -like '*log*'){
                             Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
                         }
                         else {
+                            Write-Message -Level Verbose -Message "OLA - Getting folder contents"
                             $Files += Get-XpDirTreeRestoreFile -Path $f -SqlInstance $server
                         }
                     }
@@ -228,7 +229,6 @@ function Get-DbaBackupInformation {
                 ForEach ($f in $path) {
                     Write-Message -Level VeryVerbose -Message "Not using sql for $f"
                     if ($f -is [System.IO.FileSystemInfo]) {
-                        Write-Verbose "go sys info"
                         if ($f.PsIsContainer -eq $true -and $true -ne $MaintenanceSolution) {
                             Write-Message -Level VeryVerbose -Message "folder $($f.fullname)"
                             $Files += Get-ChildItem -Path $f.fullname -File -Recurse:$DirectoryRecurse
@@ -250,16 +250,10 @@ function Get-DbaBackupInformation {
                         }
                     }
                     else {
-                        Write-Verbose "It's a $($f.GetType().ToString())"
                         if ($true -eq $MaintenanceSolution) {
                             $Files += Get-XpDirTreeRestoreFile -Path $f\FULL -SqlInstance $server -NoRecurse 
                             $Files += Get-XpDirTreeRestoreFile -Path $f\DIFF -SqlInstance $server -NoRecurse
-                            if ($True -eq $IgnoreLogBackup) {
-                                Write-Message -Level Verbose -Message "Skipping Logs as requested"
-                            }
-                            else {
-                                $Files += Get-XpDirTreeRestoreFile -Path $f\LOG -SqlInstance $server -NoRecurse
-                            }
+                            $Files += Get-XpDirTreeRestoreFile -Path $f\LOG -SqlInstance $server -NoRecurse
                         }
                         else {
                             Write-Message -Level VeryVerbose -Message "File"
@@ -267,6 +261,11 @@ function Get-DbaBackupInformation {
                         }
                     }
                 }
+            }
+
+            if ($True -eq $MaintenanceSolution -and $True -eq $IgnoreLogBackup) {
+                Write-Message -Level Verbose -Message "Skipping Log Backups as requested"
+                $Files = $Files | Where-Object {$_.FullName -notlike '*\LOG\*'}
             }
 
             $FileDetails = $Files | Read-DbaBackupHeader -SqlInstance $server
