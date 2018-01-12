@@ -1,5 +1,5 @@
 ﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
-   <event_session name="Default Profiler Trace" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="false" dispatchLatency="30" maxEventSize="0" memoryPartitionMode="none">
+   <event_session name="Default Profiler Trace" maxMemory="4" eventRetentionMode="allowSingleEventLoss" trackCausality="false" dispatchLatency="1" maxEventSize="0" memoryPartitionMode="none">
       <templateCategory><!-- _locID_text="templateCategory" _locComment = "" -->System Monitoring</templateCategory>
       <templateName><!-- _locID_text = "templateName" _locComment = "" -->Default Profiler Trace</templateName>
       <templateDescription><!-- _locID_text = "templateDescription" _locComment = "" -->The default profiler trace, converted using sp_SQLskills_ConvertTraceToExtendedEvents.</templateDescription>

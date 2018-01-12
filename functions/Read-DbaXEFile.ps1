@@ -104,7 +104,7 @@ function Read-DbaXEFile {
             else {
                 # Make it selectable, otherwise it's a weird enumeration
                 foreach ($event in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile))) {
-                    $columns = "Name", "Timestamp"
+                    $columns = "name", "timestamp"
                     foreach ($action in $event.Actions) {
                         $columns += $action.Name
                         Add-Member -InputObject $event -NotePropertyName $action.Name -NotePropertyValue $action.Value
