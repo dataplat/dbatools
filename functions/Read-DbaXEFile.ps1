@@ -30,9 +30,14 @@ function Read-DbaXEFile {
     https://dbatools.io/Read-DbaXEFile
 
     .EXAMPLE
-    Read-DbaXEFile -SqlInstance ServerA\sql987 -Path C:\temp\deadocks.xel
+    Read-DbaXEFile -Path C:\temp\deadocks.xel
 
-    Returns events
+    Returns events from C:\temp\deadocks.xel
+    
+    .EXAMPLE
+    Get-ChildItem C:\temp\xe\*.xel | Read-DbaXEFile
+
+    Returns events from all .xel files in C:\temp\xe
 
     .EXAMPLE
     Get-DbaXESession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEFile
@@ -43,6 +48,7 @@ function Read-DbaXEFile {
     [CmdletBinding()]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
+        [Alias('FullName')]
         [object[]]$Path,
         [switch]$Exact,
         [switch]$Raw,
@@ -50,15 +56,18 @@ function Read-DbaXEFile {
     )
     process {
         foreach ($file in $path) {
-
+            
             if ($file -is [System.String]) {
                 $currentfile = $file
             }
+            elseif ($file -is [System.IO.FileInfo]) {
+                $currentfile = $file.FullName
+            }
             else {
                 if ($file.TargetFile.Length -eq 0) { continue }
-
+                
                 $instance = [dbainstance]$file.ComputerName
-
+                
                 if ($instance.IsLocalHost) {
                     $currentfile = $file.TargetFile
                 }
@@ -66,7 +75,7 @@ function Read-DbaXEFile {
                     $currentfile = $file.RemoteTargetFile
                 }
             }
-
+            
             if (-not $Exact) {
                 $currentfile = $currentfile.Replace('.xel', '*.xel')
                 $currentfile = $currentfile.Replace('.xem', '*.xem')
