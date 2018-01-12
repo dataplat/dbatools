@@ -455,6 +455,14 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table\r\n\r\nCopies all the data from sql1 to sql2, using the database dbatools_from.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -DatabaseDest dbatools_dest -Table \r\ntest_table\r\n\r\nCopies all the data from sql1 to sql2, using the database dbatools_from as source and dbatools_dest as destination\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaTableData -DestinationTable tb3\r\n\r\nCopies all data from tables tb1 and tb2 in tempdb on sql1 to tb3 in tempdb onsql1\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaTable -SqlInstance sql1 -Database tempdb -Table tb1, tb2 | Copy-DbaTableData -Destination sql2\r\n\r\nCopies data from tbl1 in tempdb on sql1 to tbl1 in tempdb on sql2\r\nthen\r\nCopies data from tbl2 in tempdb on sql1 to tbl2 in tempdb on sql2\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table\r\n\r\nCopies all the data from sql1 to sql2, using the database dbatools_from.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity \r\n-Truncate\r\n\r\nCopies all the data from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the \r\ndestination\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaTableData -SqlInstance sql1 -Destination sql2 -Database dbatools_from -Table test_table -KeepIdentity \r\n-Truncate\r\n\r\nCopies all the data from sql1 to sql2, using the database dbatools_from, keeping identity columns and truncating the \r\ndestination\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Copy-DbaXESessionTemplate",
+        "Description":  "Copies non-Microsoft templates from our template repository (\\bin\\xetemplates\\) to $home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates\n\nUseful for when you want to use the SSMS GUI",
+        "Synopsis":  "Copies non-Microsoft templates from our template repository (\\bin\\xetemplates\\) to $home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates",
+        "Name":  "Copy-DbaXESessionTemplate",
+        "Links":  "https://dbatools.io/Copy-DbaXESessionTemplate",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaXESessionTemplate\r\n\r\nCopies non-Microsoft templates from our template repository (\\bin\\xetemplates\\) to $home\\Documents\\SQL Server \r\nManagement Studio\\Templates\\XEventTemplates\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eCopy-DbaXESessionTemplate -Path C:\\temp\\xetemplates\r\n\r\nCopies your templates from C:\\temp\\xetemplates to $home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Disable-DbaAgHadr",
         "Description":  "In order to build an AG a cluster has to be built and then the Hadr enabled for the SQL Server\nservice. This function disables that feature for the SQL Server service.",
         "Tags":  [
@@ -638,7 +646,7 @@
     },
     {
         "CommandName":  "Export-DbaXESessionTemplate",
-        "Description":  "Exports an XESession XML Template either from our repo or a file you specify",
+        "Description":  "Exports an XESession XML Template either from our repo or a file you specify. Exports to\n\"$home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates\" by default",
         "Synopsis":  "Exports an new XESession XML Template",
         "Name":  "Export-DbaXESessionTemplate",
         "Links":  "https://dbatools.io/Export-DbaXESessionTemplate",
@@ -2146,6 +2154,15 @@
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$ErrorLogs = Get-DbaWindowsLog -SqlInstance sql01\\sharepoint\r\n\r\n$ErrorLogs | Where-Object ErrorNumber -eq 18456\r\n\r\nReturns all lines in the errorlogs that have event number 18456 in them\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
+        "CommandName":  "Get-DbaXEObject",
+        "Description":  "This function returns a list of Traces on a SQL Server Instance and identify the default Trace File",
+        "Tags":  "ExtendedEvent",
+        "Synopsis":  "Gets a list of trace(s) from specied SQL Server Instance",
+        "Name":  "Get-DbaXEObject",
+        "Links":  null,
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXEObject -SqlInstance sql2016\r\n\r\nLists all the XE Objects on the sql2016 SQL Server\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXEObject -SqlInstance sql2017 -Type Action, Event\r\n\r\nLists all the XE Objects of type action and event on the sql2017 SQL Server\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
         "CommandName":  "Get-DbaXESession",
         "Description":  "Retrieves a list of Extended Events Sessions",
         "Tags":  "Memory",
@@ -2166,11 +2183,11 @@
     },
     {
         "CommandName":  "Get-DbaXESessionTemplate",
-        "Description":  "Parses Extended Event XML templates. Defaults to parsing templates in our template repository (\\bin\\xetemplates\\)",
+        "Description":  "Parses Extended Event XML templates. Defaults to parsing templates in our template repository (\\bin\\xetemplates\\)\n\nThe default repository contains templates from:\n\n        Microsoft\u0027s Templates that come with SSMS\n        Jes Borland\u0027s \"Everyday Extended Events\" presentation and GitHub repository (https://github.com/grrlgeek/extended-events)\n        Christian Gräfe\u0027s XE Repo: https://github.com/chrgraefe/sqlscripts/blob/master/XE-Events/\n        Erin Stellato\u0027s Blog: https://www.sqlskills.com/blogs/erin/\n\nSome profile templates converted using:\n\n        sp_SQLskills_ConvertTraceToExtendedEvents.sql\n        Jonathan M. Kehayias, SQLskills.com\n        http://sqlskills.com/blogs/jonathan",
         "Synopsis":  "Parses Extended Event XML templates. Defaults to parsing templates in our template repository (\\bin\\xetemplates\\)",
         "Name":  "Get-DbaXESessionTemplate",
         "Links":  "https://dbatools.io/Get-DbaXESessionTemplate",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate\r\n\r\nReturns information about all the templates in the local dbatools repository\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017 | \r\nStart-DbaXESession\r\n\r\nAllows you to select a Session template then import to an instance named\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate -Path \"$home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates\"\r\n\r\nReturns information about all the templates in your local XEventTemplates repository\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate\r\n\r\nReturns information about all the templates in the local dbatools repository\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate | Out-GridView -PassThru | Import-DbaXESessionTemplate -SqlInstance sql2017 | \r\nStart-DbaXESession\r\n\r\nAllows you to select a Session template then import to an instance named\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate -Path \"$home\\Documents\\SQL Server Management Studio\\Templates\\XEventTemplates\"\r\n\r\nReturns information about all the templates in your local XEventTemplates repository\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate -Pattern duration\r\n\r\nReturns information about all the templates that match the word duration in the title, category or body\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESessionTemplate | Select *\r\n\r\nReturns more information about the template, including the full path/filename\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Get-DbaXEStore",
@@ -2744,7 +2761,7 @@
         "Synopsis":  "Read XEvents from a xel or xem file",
         "Name":  "Read-DbaXEFile",
         "Links":  "https://dbatools.io/Read-DbaXEFile",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaXEFile -SqlInstance ServerA\\sql987 -Path C:\\temp\\deadocks.xel\r\n\r\nReturns events\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEFile\r\n\r\nReads remote xevents by acccessing the file over the admin UNC share\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRead-DbaXEFile -Path C:\\temp\\deadocks.xel\r\n\r\nReturns events from C:\\temp\\deadocks.xel\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eGet-ChildItem C:\\temp\\xe\\*.xel | Read-DbaXEFile\r\n\r\nReturns events from all .xel files in C:\\temp\\xe\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2014 -Session deadlocks | Read-DbaXEFile\r\n\r\nReads remote xevents by acccessing the file over the admin UNC share\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Register-DbaConfig",
@@ -2801,14 +2818,13 @@
         "Tags":  [
                      "Agent",
                      "Job",
-                     "Job Step",
                      "Schedule"
                  ],
         "Author":  "Sander Stad (@sqlstad, sqlstad.nl)",
         "Synopsis":  "Remove-DbaAgentJobSchedule removes a job schedule.",
         "Name":  "Remove-DbaAgentSchedule",
         "Links":  "https://dbatools.io/Remove-DbaAgentJobSchedule",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly\r\n\r\nRemove the schedule weekly\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly -Force\r\n\r\nRemove the schedule weekly from the job even if the schedule is being used by another job.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule daily, weekly\r\n\r\nRemove multiple schedule\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Schedule daily, weekly\r\n\r\nRemove the schedule on multiple servers for multiple schedules\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | Remove-DbaAgentSchedule -Schedule daily, weekly\r\n\r\nRemove the schedule on multiple servers using pipe line\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly\r\n\r\nRemove the schedule weekly\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule weekly -Force\r\n\r\nRemove the schedule weekly from the job even if the schedule is being used by another job.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1 -Schedule daily, weekly\r\n\r\nRemove multiple schedule\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaAgentSchedule -SqlInstance sql1, sql2, sql3 -Schedule daily, weekly\r\n\r\nRemove the schedule on multiple servers for multiple schedules\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003esql1, sql2, sql3 | Remove-DbaAgentSchedule -Schedule daily, weekly\r\n\r\nRemove the schedule on multiple servers using pipe line\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaAgentSchedule -SqlInstance sql1 -Schedule sched1, sched2, sched3 | Remove-DbaAgentSchedule\r\n\r\nRemove the schedules using a pipeline\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Remove-DbaBackup",
@@ -2986,7 +3002,7 @@
         "Synopsis":  "Removes Extended Events sessions.",
         "Name":  "Remove-DbaXESession",
         "Links":  "https://dbatools.io/Remove-DbaXESession",
-        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaXESession -SqlInstance sqlserver2012 -AllSessions\r\n\r\nRemoves all Extended Event Session on the sqlserver2014 instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaXESession -SqlInstance sqlserver2012 -Session xesession1,xesession2\r\n\r\nRemoves the xesession1 and xesession2 Extended Event sessions.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sqlserver2012 -Session xesession1 | Remove-DbaXESession\r\n\r\nRemoves the sessions returned from the Get-DbaXESession function.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaXESession -SqlInstance sql2012 -AllSessions\r\n\r\nRemoves all Extended Event Session on the sqlserver2014 instance.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eRemove-DbaXESession -SqlInstance sql2012 -Session xesession1,xesession2\r\n\r\nRemoves the xesession1 and xesession2 Extended Event sessions.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2017 | Remove-DbaXESession -Confirm:$false\r\n\r\nRemoves all sessions from sql2017, bypassing prompting\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eGet-DbaXESession -SqlInstance sql2012 -Session xesession1 | Remove-DbaXESession\r\n\r\nRemoves the sessions returned from the Get-DbaXESession function.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Rename-DbaDatabase",
@@ -3290,6 +3306,15 @@
         "Name":  "Set-DbaJobOwner",
         "Links":  "https://dbatools.io/Set-DbaJobOwner",
         "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaJobOwner -SqlInstance localhost\r\n\r\nSets SQL Agent Job owner to sa on all jobs where the owner does not match sa.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaJobOwner -SqlInstance localhost -Login DOMAIN\\account\r\n\r\nSets SQL Agent Job owner to sa on all jobs where the owner does not match \u0027DOMAIN\\account\u0027. Note\r\nthat Login must be a valid security principal that exists on the target server.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaJobOwner -SqlInstance localhost -Job job1, job2\r\n\r\nSets SQL Agent Job owner to \u0027sa\u0027 on the job1 and job2 jobs if their current owner does not match \u0027sa\u0027.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003e\u0027sqlserver\u0027,\u0027sql2016\u0027 | Set-DbaJobOwner\r\n\r\nSets SQL Agent Job owner to sa on all jobs where the owner does not match sa on both sqlserver and sql2016.\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
+    },
+    {
+        "CommandName":  "Set-DbaLogin",
+        "Description":  "Set-DbaLogin will enable you to change the password, unlock, rename, disable or enable, deny or grant login privileges to the login.\nIt\u0027s also possible to add or remove server roles from the login.",
+        "Tags":  "Login",
+        "Synopsis":  "Set-DbaLogin makes it possible to make changes to one or more logins.",
+        "Name":  "Set-DbaLogin",
+        "Links":  "https://dbatools.io/Set-DbaLogin",
+        "Examples":  "\r\n-------------------------- EXAMPLE 1 --------------------------\r\n\r\nPS C:\\\u003e$password = ConvertTo-SecureString \"PlainTextPassword\" -AsPlainText -Force\r\n\r\n$cred = New-Object System.Management.Automation.PSCredential (\"username\", $password)\r\nSet-DbaLogin -SqlInstance sql1 -Login login1 -Password $cred -Unlock -MustChange\r\n\r\nSet the new password for login1 using a credential, unlock the account and set the option\r\nthat the usermust change password at next logon.\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 2 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -Enable\r\n\r\nEnable the login\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 3 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1, login2, login3, login4 -Enable\r\n\r\nEnable multiple logins\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 4 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1, sql2, sql3 -Login login1, login2, login3, login4 -Enable\r\n\r\nEnable multiple logins on multiple instances\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 5 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -Disable\r\n\r\nDisable the login\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 6 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -DenyLogin\r\n\r\nDeny the login to connect to the instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 7 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login login1 -GrantLogin\r\n\r\nGrant the login to connect to the instance\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 8 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login test -AddRole serveradmin\r\n\r\nAdd the server role \"serveradmin\" to the login\r\n\r\n\r\n\r\n\r\n-------------------------- EXAMPLE 9 --------------------------\r\n\r\nPS C:\\\u003eSet-DbaLogin -SqlInstance sql1 -Login test -RemoveRole bulkadmin\r\n\r\nRemove the server role \"bulkadmin\" to the login\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n"
     },
     {
         "CommandName":  "Set-DbaMaxDop",
