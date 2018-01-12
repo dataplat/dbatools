@@ -13,10 +13,10 @@ $ScriptBlock = {
         $commandAst,
         $fakeBoundParameter
     )
-    
+
     $files = (Get-ChildItem "$script:PSModuleRoot\bin\xetemplates\*.xml").BaseName
     foreach ($file in $files) {
-        "'$file'"    
+        "'$file'"
     }
 }
 
