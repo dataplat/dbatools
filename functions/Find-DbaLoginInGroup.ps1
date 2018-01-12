@@ -90,7 +90,6 @@ function Find-DbaLoginInGroup {
                             }
                         }
                         else {
-                            if (!$ParentADGroup) { $ParentADGroup = $AdGroup }
                             $output += [PSCustomObject]@{
                                 SqlInstance  = $server.Name
                                 InstanceName = $server.ServiceName
@@ -111,7 +110,7 @@ function Find-DbaLoginInGroup {
                     if ($gr -notin $discard) {
                         $discard += $gr
                         Write-Verbose "Recursing Looking at $gr"
-                        Get-AllLogins -ADGroup $gr -discard $discard -ParentADGroup $ADGroup
+                        Get-AllLogins -ADGroup $gr -discard $discard -ParentADGroup $ParentADGroup
                     }
                 }
             }
@@ -136,7 +135,7 @@ function Find-DbaLoginInGroup {
             
             foreach ($AdGroup in $AdGroups) {
                 Write-Verbose "Looking at Group: $AdGroup"
-                $ADGroupOut += Get-AllLogins $AdGroup.Name
+                $ADGroupOut += Get-AllLogins $AdGroup.Name -ParentADGroup $AdGroup.Name
             }
             
             if (-not $Login) {
