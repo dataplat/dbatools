@@ -188,16 +188,6 @@ Describe "Testing input parameters" {
             $null
         }
 
-        It "Returns message if Null value in pipeline when IgnoreNull is set" {
-            $null = returnnull | ConvertTo-DbaDataTable -IgnoreNull -WarningVariable warn -WarningAction SilentlyContinue
-            $warn.message | Should Match 'The InputObject from the pipe is null'
-        }
-
-        It "Returns warning if Null value in array when IgnoreNull is set" {
-            $null = ConvertTo-DbaDataTable -InputObject (returnnull) -IgnoreNull -WarningVariable warn -WarningAction SilentlyContinue
-            $warn.message | Should Match 'Object in array is null'
-        }
-
         It "Does not create row if null is in array when IgnoreNull is set" {
             $result = ConvertTo-DbaDataTable -InputObject (returnnull) -IgnoreNull -WarningAction SilentlyContinue
             $result.Rows.Count | Should Be 2
