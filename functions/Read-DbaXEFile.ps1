@@ -57,18 +57,31 @@ function Read-DbaXEFile {
     )
     process {
         foreach ($file in $path) {
+            # in order to ensure CSV gets all fields, all columns will be
+            # collected and output in the first (all all subsequent) object
+            $columns = @("name", "timestamp")
             
             if ($file -is [System.String]) {
                 $currentfile = $file
+                $manualadd = $true
             }
             elseif ($file -is [System.IO.FileInfo]) {
                 $currentfile = $file.FullName
+                $manualadd = $true
             }
             else {
                 if ($file -isnot [Microsoft.SqlServer.Management.XEvent.Session]) {
                     Stop-Function -Message "Unsupported file type"
                     return
                 }
+                
+                foreach ($action in $file.Events.Actions.Name) {
+                    $columns += ($action -Split '\.')[-1]
+                }
+                foreach ($column in $file.Events.EventFields.Name) {
+                    $columns += ($column -Split 'collect_')[-1]
+                }
+                $columns = $columns | Select-Object -Unique
                 
                 if ($file.TargetFile.Length -eq 0) {
                     Stop-Function -Message "This session does not have an associated Target File"
@@ -98,21 +111,46 @@ function Read-DbaXEFile {
                 Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
             }
             
+            if ($manualadd) {
+                $enum = New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
+                
+                foreach ($action in $enum.Actions.Name) {
+                    $columns += ($action -Split '\.')[-1]
+                }
+                foreach ($column in $enum.Fields.Name) {
+                    $columns += ($column -Split 'collect_')[-1]
+                }
+                $columns = $columns | Select-Object -Unique
+            }
+            
             if ($raw) {
                 New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
             }
             else {
                 # Make it selectable, otherwise it's a weird enumeration
                 foreach ($event in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile))) {
-                    $columns = "name", "timestamp"
+                    
                     foreach ($action in $event.Actions) {
-                        $columns += $action.Name
+                        if ($manualadd) {
+                            $columns += $action.Name
+                        }
                         Add-Member -InputObject $event -NotePropertyName $action.Name -NotePropertyValue $action.Value
                     }
                     
                     foreach ($field in $event.Fields) {
-                        $columns += $field.Name
+                        if ($manualadd) {
+                            $columns += $field.Name
+                        }
                         Add-Member -Force -InputObject $event -NotePropertyName $field.Name -NotePropertyValue $field.Value
+                    }
+                    
+                    if (-not $forcedcolumns) {
+                        foreach ($column in $columns) {
+                            if (($event | Get-Member | Select-Object -ExpandProperty Name) -notcontains $column) {
+                                Add-Member -InputObject $event -NotePropertyName $column -NotePropertyValue $null
+                            }
+                        }
+                        $forcedcolumns = $true
                     }
                     
                     Select-DefaultView -InputObject $event -Property $columns #-ExcludeProperty Fields, Actions, UUID, Package, Metadata, Location
