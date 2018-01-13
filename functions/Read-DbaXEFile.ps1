@@ -133,8 +133,8 @@ function Read-DbaXEFile {
                 foreach ($field in $event.Fields) {
                     $hash[$field.Name] = $field.Value
                 }
-                $hash
-                #[pscustomobject]$hash
+                
+                [pscustomobject]$hash
             }
         }
     }
