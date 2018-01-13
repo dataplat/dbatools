@@ -59,17 +59,40 @@
     License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
     .LINK
-    https://dbatools.io/Copy-DbaXESessionTemplate
+    https://dbatools.io/Invoke-DbaRelog
 
     .EXAMPLE
-    Invoke-DbaRelog
+    Invoke-DbaRelog -Path C:\temp\perfmon.blg -Destination C:\temp\a\b\c
 
-    Example
+    Creats the temp, a, and b directories if needed, then generates c.tsv (tab separated) from C:\temp\perfmon.blg
+    
+    [Invoke-DbaRelog][21:21:35] relog "C:\temp\perfmon.blg" -f csv -o C:\temp\a\b\c
+
+    Input
+    ----------------
+    File(s):
+         C:\temp\perfmon.blg (Binary)
+
+    Begin:    1/13/2018 5:13:23
+    End:      1/13/2018 14:29:55
+    Samples:  2227
+
+    100.00%
+
+    Output
+    ----------------
+    File:     C:\temp\a\b\c.csv
+
+    Begin:    1/13/2018 5:13:23
+    End:      1/13/2018 14:29:55
+    Samples:  2227
+
+    The command completed successfully.
 
     .EXAMPLE
-    Invoke-DbaRelog -Path C:\temp\xetemplates
-
-    Example
+    Invoke-DbaRelog -Path 'C:\temp\perflog with spaces.blg' -Destination C:\temp\a\b\c -Type csv
+    
+    Creates the temp, a, and b directories if needed, then generates c.csv (comma separated) from C:\temp\perflog with spaces.blg'
 
 #>
     [CmdletBinding()]
@@ -153,9 +176,8 @@
                 }
             }
         }
-
+        
         try {
-            $command = "relog"
             $arguments = ($params -join " ")
             Write-Message -Level Output -Message "relog $arguments"
             cmd /c "relog $arguments"
