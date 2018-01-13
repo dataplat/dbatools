@@ -55,7 +55,7 @@
          </predicate>
       </event>
       <target package="package0" name="event_file">
-         <parameter name="filename" value="Deprecated Feature Usage.xel" />
+         <parameter name="filename" value="Deprecated Feature Usage" />
          <parameter name="max_rollover_files" value="25" />
       </target>
    </event_session>

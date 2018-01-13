@@ -93,6 +93,10 @@ function Read-DbaXEFile {
             if (-not $Exact) {
                 $currentfile = $currentfile.Replace('.xel', '*.xel')
                 $currentfile = $currentfile.Replace('.xem', '*.xem')
+                
+                if ($currentfile -notmatch "xel" -and $currentfile -notmatch "xem") {
+                    $currentfile =  "$currentfile*.xel"
+                }
             }
             
             $accessible = Test-Path -Path $currentfile
