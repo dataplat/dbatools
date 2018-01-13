@@ -38,27 +38,19 @@ function Watch-DbaXESession {
     https://dbatools.io/Watch-DbaXESession
 
     .EXAMPLE
-    Watch-DbaXESession -SqlInstance ServerA\sql987 -Session system_health
+    Watch-DbaXESession -SqlInstance sql2017 -Session system_health
 
     Shows events for the system_health session as it happens
 
     .EXAMPLE
-    Get-DbaXESession  -SqlInstance sql2016 -Session system_health | Watch-DbaXESession | Select -ExpandProperty Fields
+    Watch-DbaXESession -SqlInstance sql2017 -Session system_health | Export-Csv -NoTypeInformation -Path C:\temp\system_health.csv
 
-    Also shows events for the system_health session as it happens and expands the Fields property. Looks a bit like this
+    Exports live events to CSV. Ctrl-C may not not cancel out of it - fastest way is to stop the session.
+    
+    .EXAMPLE
+    Get-DbaXESession -SqlInstance sql2017 -Session system_health | Start-DbaXESession | Watch-DbaXESession | Export-Csv -NoTypeInformation -Path C:\temp\system_health.csv
 
-    Name                Type                                   Value
-    ----                ----                                   -----
-    id                  System.UInt32                              0
-    timestamp           System.UInt64                              0
-    process_utilization System.UInt32                              0
-    system_idle         System.UInt32                             99
-    user_mode_time      System.UInt64                        8906250
-    kernel_mode_time    System.UInt64                         468750
-    page_faults         System.UInt32                             60
-    working_set_delta   System.Int64                               0
-    memory_utilization  System.UInt32                             99
-
+    Exports live events to CSV. Ctrl-C may not not cancel out of it - fastest way is to stop the session.
 #>
     [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
