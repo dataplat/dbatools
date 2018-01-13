@@ -1,5 +1,5 @@
 ﻿<event_sessions xmlns="http://schemas.microsoft.com/sqlserver/2008/07/extendedeventconfig">
-  <event_session name="Profiler Standard" maxMemory="8" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="5" maxEventSize="0" memoryPartitionMode="perCpu">
+  <event_session name="Profiler Standard" maxMemory="8" eventRetentionMode="allowSingleEventLoss" trackCausality="true" dispatchLatency="1" maxEventSize="0" memoryPartitionMode="perCpu">
     <templateCategory>
       <!-- _locID_text="templateCategory" _locComment = "" -->Profiler Equivalents</templateCategory>
     <templateName>
