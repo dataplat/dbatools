@@ -75,14 +75,6 @@ function Read-DbaXEFile {
                     return
                 }
                 
-                foreach ($action in $file.Events.Actions.Name) {
-                    $columns += ($action -Split '\.')[-1]
-                }
-                foreach ($column in $file.Events.EventFields.Name) {
-                    $columns += ($column -Split 'collect_')[-1]
-                }
-                $columns = $columns | Select-Object -Unique
-                
                 if ($file.TargetFile.Length -eq 0) {
                     Stop-Function -Message "This session does not have an associated Target File"
                     return
@@ -111,50 +103,38 @@ function Read-DbaXEFile {
                 Stop-Function -Continue -Message "$currentfile cannot be accessed from $($env:COMPUTERNAME). Does $whoami have access?"
             }
             
-            if ($manualadd) {
-                $enum = New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
-                
-                foreach ($action in $enum.Actions.Name) {
-                    $columns += ($action -Split '\.')[-1]
-                }
-                foreach ($column in $enum.Fields.Name) {
-                    $columns += ($column -Split 'collect_')[-1]
-                }
-                $columns = $columns | Select-Object -Unique
+            if ($raw) {
+                return New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
             }
             
-            if ($raw) {
-                New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
+            $enum = New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile)
+            $newcolumns = ($enum.Fields.Name | Select-Object -Unique)
+            
+            $actions = ($enum.Actions.Name | Select-Object -Unique)
+            foreach ($action in $actions) {
+                $newcolumns += ($action -Split '\.')[-1]
             }
-            else {
-                # Make it selectable, otherwise it's a weird enumeration
-                foreach ($event in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile))) {
-                    
-                    foreach ($action in $event.Actions) {
-                        if ($manualadd) {
-                            $columns += $action.Name
-                        }
-                        Add-Member -InputObject $event -NotePropertyName $action.Name -NotePropertyValue $action.Value
-                    }
-                    
-                    foreach ($field in $event.Fields) {
-                        if ($manualadd) {
-                            $columns += $field.Name
-                        }
-                        Add-Member -Force -InputObject $event -NotePropertyName $field.Name -NotePropertyValue $field.Value
-                    }
-                    
-                    if (-not $forcedcolumns) {
-                        foreach ($column in $columns) {
-                            if (($event | Get-Member | Select-Object -ExpandProperty Name) -notcontains $column) {
-                                Add-Member -InputObject $event -NotePropertyName $column -NotePropertyValue $null
-                            }
-                        }
-                        $forcedcolumns = $true
-                    }
-                    
-                    Select-DefaultView -InputObject $event -Property $columns #-ExcludeProperty Fields, Actions, UUID, Package, Metadata, Location
+            
+            $newcolumns = $newcolumns | Sort-Object
+            $columns = ($columns += $newcolumns) | Select-Object -Unique
+
+            # Make it selectable, otherwise it's a weird enumeration
+            foreach ($event in (New-Object Microsoft.SqlServer.XEvent.Linq.QueryableXEventData($currentfile))) {
+                $hash = [ordered]@{ }
+                
+                foreach ($column in $columns) {
+                    $null = $hash.Add($column, $event.$column)
                 }
+                
+                foreach ($action in $event.Actions) {
+                    $hash[$action.Name] = $action.Value
+                }
+                
+                foreach ($field in $event.Fields) {
+                    $hash[$field.Name] = $field.Value
+                }
+                
+                [pscustomobject]$hash
             }
         }
     }

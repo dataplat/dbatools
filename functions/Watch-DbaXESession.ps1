@@ -91,15 +91,22 @@ function Watch-DbaXESession {
                 return
             }
             
-            # Setup all columns
+            # Setup all columns for csv but do it in an order
             $columns = @("name", "timestamp")
-            foreach ($action in $InputObject.Events.Actions.Name) {
-                $columns += ($action -Split '\.')[-1]
+            $newcolumns = @()
+            
+            $fields = ($InputObject.Events.EventFields.Name | Select-Object -Unique)
+            foreach ($column in $fields) {
+                $newcolumns += $column.TrimStart("collect_")
             }
-            foreach ($column in $InputObject.Events.EventFields.Name) {
-                $columns += ($column -Split 'collect_')[-1]
+            
+            $actions = ($InputObject.Events.Actions.Name | Select-Object -Unique)
+            foreach ($action in $actions) {
+                $newcolumns += ($action -Split '\.')[-1]
             }
-            $columns = $columns | Select-Object -Unique
+            
+            $newcolumns = $newcolumns | Sort-Object
+            $columns = ($columns += $newcolumns) | Select-Object -Unique
             
             try {
                 $xevent = New-Object -TypeName Microsoft.SqlServer.XEvent.Linq.QueryableXEventData(
@@ -110,37 +117,30 @@ function Watch-DbaXESession {
                 )
                 
                 if ($raw) {
-                    foreach ($row in $xevent) {
-                        $row
-                    }
+                    return $xevent
                 }
-                else {
-                    # make it pretty
-                    foreach ($event in $xevent) {
-                        foreach ($action in $event.Actions) {
-                            #$columns += $action.Name
-                            Add-Member -InputObject $event -NotePropertyName $action.Name -NotePropertyValue $action.Value
-                        }
-                        
-                        foreach ($field in $event.Fields) {
-                            # $columns += $field.Name
-                            Add-Member -Force -InputObject $event -NotePropertyName $field.Name -NotePropertyValue $field.Value
-                        }
-                        
-                        if (-not $forcedcolumns) {
-                            foreach ($column in $columns) {
-                                if (($event | Get-Member | Select-Object -ExpandProperty Name) -notcontains $column) {
-                                    Add-Member -InputObject $event -NotePropertyName $column -NotePropertyValue $null
-                                }
-                            }
-                            $forcedcolumns = $true
-                        }
-                        
-                        Select-DefaultView -InputObject $event -Property $columns #-ExcludeProperty Fields, Actions, UUID, Package, Metadata, Location
+                
+                # make it pretty
+                foreach ($event in $xevent) {
+                    $hash = [ordered]@{}
+                    
+                    foreach ($column in $columns) {
+                            $null = $hash.Add($column, $event.$column) # this basically adds name and timestamp then nulls
                     }
+                    
+                    foreach ($action in $event.Actions) {
+                        $hash[$action.Name] = $action.Value
+                    }
+                    
+                    foreach ($field in $event.Fields) {
+                        $hash[$field.Name] = $field.Value
+                    }
+                    
+                    [pscustomobject]($hash)
                 }
             }
             catch {
+                Start-Sleep 1
                 $status = Get-DbaXESession -SqlInstance $server -Session $Session
                 if ($status.Status -ne "Running") {
                     Stop-Function -Message "$($InputObject.Name) was stopped"
