@@ -91,7 +91,7 @@
          </predicate>
       </event>
       <target package="package0" name="event_file">
-         <parameter name="filename" value="capture_queries_and_resources.xel" />
+         <parameter name="filename" value="capture_queries_and_resources" />
          <parameter name="max_rollover_files" value="0" />
       </target>
       <target package="package0" name="ring_buffer">

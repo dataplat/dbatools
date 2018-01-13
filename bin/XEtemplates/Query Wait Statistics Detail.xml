@@ -285,7 +285,7 @@
       </predicate>
     </event>
     <target package="package0" name="event_file">
-      <parameter name="filename" value="query_wait_analysis.xel" />
+      <parameter name="filename" value="query_wait_analysis" />
     </target>
   </event_session>
 </event_sessions>
