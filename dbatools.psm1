@@ -524,6 +524,10 @@ Write-ImportTime -Text "Script: Maintenance"
     @{
         "AliasName"   = "Get-DbaTraceFile"
         "Definition"  = "Get-DbaTrace"
+    },
+    @{
+        "AliasName"  = "Out-DbaDataTable"
+        "Definition" = "ConvertTo-DbaDataTable"
     }
 ) | ForEach-Object {
     if (-not (Test-Path Alias:$($_.AliasName))) { Set-Alias -Scope Global -Name $($_.AliasName) -Value $($_.Definition) }

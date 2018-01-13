@@ -17,7 +17,7 @@ Describe "Testing data table output when using a complex object" {
     }
 
     Add-Member -Force -InputObject $obj -MemberType NoteProperty -Name myobject -Value $innedobj
-    $result = Out-DbaDataTable -InputObject $obj
+    $result = ConvertTo-DbaDataTable -InputObject $obj
 
     Context "Property: guid" {
         It 'Has a column called "guid"' {
@@ -150,25 +150,25 @@ Describe "Testing input parameters" {
 
     Context "Verifying TimeSpanType" {
         It "Should return '1.00:00:00' when String is used" {
-            (Out-DbaDataTable -InputObject $obj -TimeSpanType String).Timespan | Should Be '1.00:00:00'
+            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType String).Timespan | Should Be '1.00:00:00'
         }
         It "Should return 864000000000 when Ticks is used" {
-            (Out-DbaDataTable -InputObject $obj -TimeSpanType Ticks).Timespan | Should Be 864000000000
+            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType Ticks).Timespan | Should Be 864000000000
         }
         It "Should return 1 when TotalDays is used" {
-            (Out-DbaDataTable -InputObject $obj -TimeSpanType TotalDays).Timespan | Should Be 1
+            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType TotalDays).Timespan | Should Be 1
         }
         It "Should return 24 when TotalHours is used" {
-            (Out-DbaDataTable -InputObject $obj -TimeSpanType TotalHours).Timespan | Should Be 24
+            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType TotalHours).Timespan | Should Be 24
         }
         It "Should return 86400000 when TotalMilliseconds is used" {
-            (Out-DbaDataTable -InputObject $obj -TimeSpanType TotalMilliseconds).Timespan | Should Be 86400000
+            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType TotalMilliseconds).Timespan | Should Be 86400000
         }
         It "Should return 1440 when TotalMinutes is used" {
-            (Out-DbaDataTable -InputObject $obj -TimeSpanType TotalMinutes).Timespan | Should Be 1440
+            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType TotalMinutes).Timespan | Should Be 1440
         }
         It "Should return 86400 when TotalSeconds is used" {
-            (Out-DbaDataTable -InputObject $obj -TimeSpanType TotalSeconds).Timespan | Should Be 86400
+            (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType TotalSeconds).Timespan | Should Be 86400
         }
     }
 
@@ -188,35 +188,25 @@ Describe "Testing input parameters" {
             $null
         }
 
-        It "Returns message if Null value in pipeline when IgnoreNull is set" {
-            $null = returnnull | Out-DbaDataTable -IgnoreNull -WarningVariable warn -WarningAction SilentlyContinue
-            $warn.message | Should Match 'The InputObject from the pipe is null'
-        }
-
-        It "Returns warning if Null value in array when IgnoreNull is set" {
-            $null = Out-DbaDataTable -InputObject (returnnull) -IgnoreNull -WarningVariable warn -WarningAction SilentlyContinue
-            $warn.message | Should Match 'Object in array is null'
-        }
-
         It "Does not create row if null is in array when IgnoreNull is set" {
-            $result = Out-DbaDataTable -InputObject (returnnull) -IgnoreNull -WarningAction SilentlyContinue
+            $result = ConvertTo-DbaDataTable -InputObject (returnnull) -IgnoreNull -WarningAction SilentlyContinue
             $result.Rows.Count | Should Be 2
         }
 
         It "Does not create row if null is in pipeline when IgnoreNull is set" {
-            $result = returnnull | Out-DbaDataTable -IgnoreNull -WarningAction SilentlyContinue
+            $result = returnnull | ConvertTo-DbaDataTable -IgnoreNull -WarningAction SilentlyContinue
             $result.Rows.Count | Should Be 2
         }
 
         It "Returns empty row when null value is provided (without IgnoreNull)" {
-            $result = Out-DbaDataTable -InputObject (returnnull)
+            $result = ConvertTo-DbaDataTable -InputObject (returnnull)
             $result.Name[0] | Should Be 1
             $result.Name[1].GetType().FullName | Should Be 'System.DBNull'
             $result.Name[2] | Should Be 3
         }
 
         It "Returns empty row when null value is passed in pipe (without IgnoreNull)" {
-            $result = returnnull | Out-DbaDataTable
+            $result = returnnull | ConvertTo-DbaDataTable
             $result.Name[0] | Should Be 1
             $result.Name[1].GetType().FullName | Should Be 'System.DBNull'
             $result.Name[2] | Should Be 3
@@ -232,7 +222,7 @@ Describe "Testing input parameters" {
         }
 
         It "Suppresses warning messages when Silent is used" {
-            $null = Out-DbaDataTable -InputObject (returnnull) -IgnoreNull -EnableException -WarningVariable warn -WarningAction SilentlyContinue
+            $null = ConvertTo-DbaDataTable -InputObject (returnnull) -IgnoreNull -EnableException -WarningVariable warn -WarningAction SilentlyContinue
             $warn.message -eq $null | Should Be $true
         }
     }
@@ -242,7 +232,7 @@ Describe "Testing input parameters" {
         It "Returns string column if a script property returns null" {
             $myobj = New-Object -TypeName psobject -Property @{ Name = 'Test' }
             $myobj | Add-Member -Force -MemberType ScriptProperty -Name ScriptNothing -Value { $null }
-            $r = Out-DbaDataTable -InputObject $myobj
+            $r = ConvertTo-DbaDataTable -InputObject $myobj
             ($r.Columns | Where-Object ColumnName -eq ScriptNothing | Select-Object -ExpandProperty DataType).ToString() | Should Be 'System.String'
 
         }
