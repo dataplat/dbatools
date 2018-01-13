@@ -203,7 +203,7 @@ function ConvertTo-DbaDataTable {
         #>
             [CmdletBinding()]
             Param (
-                $Value,                
+                $Value,
                 [ValidateSet('Timespan','Size')] [string]$Type,
                 [string]$SizeType,
                 [string]$TimeSpanType
@@ -282,6 +282,8 @@ function ConvertTo-DbaDataTable {
         $columns = @()
         $specialColumns = @()
         $specialColumnsType = @{ }
+        
+        $ShouldCreateColumns = $true
     }
     
     process {
@@ -367,7 +369,7 @@ function ConvertTo-DbaDataTable {
                                         $specialColumnsType[$property.Name] = $newColumn.SpecialType
                                     }
                                     
-                                    $datarow.Item($property.Name) = $value
+                                    $datarow.Item($property.Name) = $newColumn.Value
                                 }
                                 catch {
                                     Write-Message -Level Warning -Message "Failed to add property $($property.Name) from $object" -ErrorRecord $_ -Target $object
