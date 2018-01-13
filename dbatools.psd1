@@ -166,7 +166,6 @@
         'Test-DbaValidLogin',
         'Get-DbaMemoryUsage',
         'Export-DbaAvailabilityGroup',
-        'Out-DbaDataTable',
         'Write-DbaDataTable',
         'New-DbaDatabaseSnapshot',
         'Restore-DbaFromDatabaseSnapshot',
@@ -433,7 +432,8 @@
         'Find-DbaDisabledIndex',
         'Set-DbaLogin',
         'Copy-DbaXESessionTemplate',
-        'Get-DbaXEObject'
+        'Get-DbaXEObject',
+        'ConvertTo-DbaDataTable'
     )
 
     # Cmdlets to export from this module
@@ -527,7 +527,8 @@
     'Remove-DbaDatabaseCertificate',
     'Restore-DbaDatabaseCertificate',
     'Find-DbaDatabaseGrowthEvent',
-    'Get-DbaTraceFile'
+    'Get-DbaTraceFile',
+    'Out-DbaDataTable'
 
     # List of all modules packaged with this module
     ModuleList              = @()
