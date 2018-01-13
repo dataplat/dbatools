@@ -1,5 +1,5 @@
 #ValidationTags#Messaging,FlowControl,Pipeline,CodeStyle#
-function Out-DbaDataTable {
+function ConvertTo-DbaDataTable {
     <#
         .SYNOPSIS
             Creates a DataTable for an object.
@@ -32,22 +32,22 @@ function Out-DbaDataTable {
             Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
         .EXAMPLE
-            Get-Service | Out-DbaDataTable
+            Get-Service | ConvertTo-DbaDataTable
 
             Creates a DataTable from the output of Get-Service.
 
         .EXAMPLE
-            Out-DbaDataTable -InputObject $csv.cheesetypes
+            ConvertTo-DbaDataTable -InputObject $csv.cheesetypes
 
             Creates a DataTable from the CSV object $csv.cheesetypes.
 
         .EXAMPLE
-            $dblist | Out-DbaDataTable
+            $dblist | ConvertTo-DbaDataTable
 
             Creates a DataTable from the $dblist object passed in via pipeline.
 
         .EXAMPLE
-            Get-Process | Out-DbaDataTable -TimeSpanType TotalSeconds
+            Get-Process | ConvertTo-DbaDataTable -TimeSpanType TotalSeconds
 
             Creates a DataTable with the running processes and converts any TimeSpan property to TotalSeconds.
 
@@ -62,7 +62,7 @@ function Out-DbaDataTable {
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
 
         .LINK
-            https://dbatools.io/Out-DbaDataTable
+            https://dbatools.io/ConvertTo-DbaDataTable
     #>
     [CmdletBinding()]
     [OutputType([System.Object[]])]
@@ -90,15 +90,16 @@ function Out-DbaDataTable {
     )
 
     begin {
-        Write-Message -Level InternalComment -Message "Starting."
         Write-Message -Level Debug -Message "Bound parameters: $($PSBoundParameters.Keys -join ", ")"
         Write-Message -Level Debug -Message "TimeSpanType = $TimeSpanType | SizeType = $SizeType"
+        Test-DbaDeprecation -DeprecatedOn 1.0.0 -Alias Out-DbaDataTable
 
         function Convert-Type {
             # This function will check so that the type is an accepted type which could be used when inserting into a table.
             # If a type is accepted (included in the $type array) then it will be passed on, otherwise it will first change type before passing it on.
             # Special types will have both their types converted as well as the value.
             # TimeSpan is a special type and will be converted into the $timespantype. (default: TotalMilliseconds) so that the timespan can be stored in a database further down the line.
+            [CmdletBinding()]
             param (
                 $type,
 
