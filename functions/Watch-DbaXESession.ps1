@@ -70,7 +70,8 @@ function Watch-DbaXESession {
         [parameter(ValueFromPipeline, ParameterSetName = "piped", Mandatory)]
         [Microsoft.SqlServer.Management.XEvent.Session]$InputObject,
         [switch]$Raw,
-        [switch][Alias('Silent')]$EnableException
+        [switch][Alias('Silent')]
+        $EnableException
     )
     process {
         if (-not $SqlInstance) {
@@ -92,11 +93,22 @@ function Watch-DbaXESession {
         }
         
         if ($InputObject) {
-            $status = (Get-DbaXESession -SqlInstance $server -Session $InputObject.Name).Status
+            $status = $InputObject.Status
             if ($status -ne "Running") {
                 Stop-Function -Message "$($InputObject.Name) is in a $status state"
                 return
             }
+            
+            # Setup all columns
+            $columns = @("name", "timestamp")
+            foreach ($action in $InputObject.Events.Actions.Name) {
+                $columns += ($action -Split '\.')[-1]
+            }
+            foreach ($column in $InputObject.Events.EventFields.Name) {
+                $columns += ($column -Split 'collect_')[-1]
+            }
+            $columns = $columns | Select-Object -Unique
+            
             try {
                 $xevent = New-Object -TypeName Microsoft.SqlServer.XEvent.Linq.QueryableXEventData(
                     ($server.ConnectionContext.ConnectionString),
@@ -104,7 +116,7 @@ function Watch-DbaXESession {
                     [Microsoft.SqlServer.XEvent.Linq.EventStreamSourceOptions]::EventStream,
                     [Microsoft.SqlServer.XEvent.Linq.EventStreamCacheOptions]::DoNotCache
                 )
-
+                
                 if ($raw) {
                     foreach ($row in $xevent) {
                         $row
@@ -113,22 +125,32 @@ function Watch-DbaXESession {
                 else {
                     # make it pretty
                     foreach ($event in $xevent) {
-                        $columns = "name", "timestamp"
                         foreach ($action in $event.Actions) {
-                            $columns += $action.Name
+                            #$columns += $action.Name
                             Add-Member -InputObject $event -NotePropertyName $action.Name -NotePropertyValue $action.Value
                         }
                         
                         foreach ($field in $event.Fields) {
-                            $columns += $field.Name
+                            # $columns += $field.Name
                             Add-Member -Force -InputObject $event -NotePropertyName $field.Name -NotePropertyValue $field.Value
                         }
+                        
+                        if (-not $forcedcolumns) {
+                            foreach ($column in $columns) {
+                                if (($event | Get-Member | Select-Object -ExpandProperty Name) -notcontains $column) {
+                                    Add-Member -InputObject $event -NotePropertyName $column -NotePropertyValue $null
+                                }
+                            }
+                            $forcedcolumns = $true
+                        }
+                        
                         Select-DefaultView -InputObject $event -Property $columns #-ExcludeProperty Fields, Actions, UUID, Package, Metadata, Location
                     }
                 }
             }
             catch {
-                if ((Get-DbaXESession -SqlInstance $server -Session $Session)) {
+                $status = Get-DbaXESession -SqlInstance $server -Session $Session
+                if ($status.Status -ne "Running") {
                     Stop-Function -Message "$($InputObject.Name) was stopped"
                 }
                 else {
