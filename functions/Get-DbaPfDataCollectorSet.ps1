@@ -61,7 +61,6 @@
     
     begin {
         $setscript = {
-            
             # Get names / status info
             $schedule = New-Object -ComObject "Schedule.Service"
             $schedule.Connect()
@@ -84,8 +83,8 @@
             while ($done -eq $false)
             $null = [System.Runtime.Interopservices.Marshal]::ReleaseComObject($schedule)
             
-            if ($args) {
-                $tasks = $tasks | Where-Object Name -in $args
+            if ($args[0]) {
+                $tasks = $tasks | Where-Object Name -in $args[0]
             }
             
             $sets = New-Object -ComObject Pla.DataCollectorSet
@@ -114,40 +113,41 @@
                     }
                     
                     [pscustomobject]@{
-                        ComputerName                    = $env:COMPUTERNAME
-                        Name                            = $setname
-                        LatestOutputLocation            = $set.LatestOutputLocation
-                        OutputLocation                  = $set.OutputLocation
-                        RemoteOutputLocation            = $remote
-                        RootPath                        = $set.RootPath
-                        Duration                        = $set.Duration
-                        Description                     = $set.Description
-                        DescriptionUnresolved           = $set.DescriptionUnresolved
-                        DisplayName                     = $set.DisplayName
-                        DisplayNameUnresolved           = $set.DisplayNameUnresolved
-                        Keywords                        = $set.Keywords
-                        Segment                         = $set.Segment
-                        SegmentMaxDuration              = $set.SegmentMaxDuration
-                        SegmentMaxSize                  = $set.SegmentMaxSize
-                        SerialNumber                    = $set.SerialNumber
-                        Server                          = $set.Server
-                        Status                          = $set.Status
-                        Subdirectory                    = $set.Subdirectory
-                        SubdirectoryFormat              = $set.SubdirectoryFormat
-                        SubdirectoryFormatPattern       = $set.SubdirectoryFormatPattern
-                        Task                            = $set.Task
-                        TaskRunAsSelf                   = $set.TaskRunAsSelf
-                        TaskArguments                   = $set.TaskArguments
-                        TaskUserTextArguments           = $set.TaskUserTextArguments
-                        Schedules                       = $set.Schedules
-                        SchedulesEnabled                = $set.SchedulesEnabled
-                        UserAccount                     = $set.UserAccount
-                        Xml                             = $set.Xml
-                        Security                        = $set.Security
-                        StopOnCompletion                = $set.StopOnCompletion
-                        State                           = $state.Trim()
-                        DataCollectorSetObject          = $set
-                        TaskObject                      = $task
+                        ComputerName                     = $env:COMPUTERNAME
+                        Name                             = $setname
+                        LatestOutputLocation             = $set.LatestOutputLocation
+                        OutputLocation                   = $set.OutputLocation
+                        RemoteOutputLocation             = $remote
+                        RootPath                         = $set.RootPath
+                        Duration                         = $set.Duration
+                        Description                      = $set.Description
+                        DescriptionUnresolved            = $set.DescriptionUnresolved
+                        DisplayName                      = $set.DisplayName
+                        DisplayNameUnresolved            = $set.DisplayNameUnresolved
+                        Keywords                         = $set.Keywords
+                        Segment                          = $set.Segment
+                        SegmentMaxDuration               = $set.SegmentMaxDuration
+                        SegmentMaxSize                   = $set.SegmentMaxSize
+                        SerialNumber                     = $set.SerialNumber
+                        Server                           = $set.Server
+                        Status                           = $set.Status
+                        Subdirectory                     = $set.Subdirectory
+                        SubdirectoryFormat               = $set.SubdirectoryFormat
+                        SubdirectoryFormatPattern        = $set.SubdirectoryFormatPattern
+                        Task                             = $set.Task
+                        TaskRunAsSelf                    = $set.TaskRunAsSelf
+                        TaskArguments                    = $set.TaskArguments
+                        TaskUserTextArguments            = $set.TaskUserTextArguments
+                        Schedules                        = $set.Schedules
+                        SchedulesEnabled                 = $set.SchedulesEnabled
+                        UserAccount                      = $set.UserAccount
+                        Xml                              = $set.Xml
+                        Security                         = $set.Security
+                        StopOnCompletion                 = $set.StopOnCompletion
+                        State                            = $state.Trim()
+                        DataCollectorSetObject           = $set
+                        TaskObject                       = $task
+                        Credential                       = $args[1]
                     }
                 }
                 catch {
@@ -166,7 +166,7 @@
         foreach ($computer in $ComputerName.ComputerName) {
             Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
             try {
-                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $CollectorSet -ErrorAction Stop | Select-DefaultView -Property $columns
+                Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $CollectorSet, $Credential -ErrorAction Stop | Select-DefaultView -Property $columns
             }
             catch {
                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue

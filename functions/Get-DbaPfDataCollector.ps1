@@ -67,16 +67,20 @@
         [switch]$EnableException
     )
     begin {
-        $columns = 'ComputerName', 'Name', 'DataCollectorSet', 'Counters', 'DataCollectorType', 'DataSourceName', 'FileName', 'FileNameFormat', 'FileNameFormatPattern', 'LatestOutputLocation', 'LogAppend', 'LogCircular', 'LogFileFormat', 'LogOverwrite', 'SampleInterval', 'SegmentMaxRecords'
+        $columns = 'ComputerName', 'DataCollectorSet', 'Name', 'DataCollectorType', 'DataSourceName', 'FileName', 'FileNameFormat', 'FileNameFormatPattern', 'LatestOutputLocation', 'LogAppend', 'LogCircular', 'LogFileFormat', 'LogOverwrite', 'SampleInterval', 'SegmentMaxRecords', 'Counters'
     }
     process {
+        if ($InputObject.Credential -and (Test-Bound -ParameterName Credential -Not)) {
+            $Credential = $InputObject.Credential
+        }
+        
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {
                 $InputObject += Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet
             }
         }
         
-        if ($InputObject) {
+       if ($InputObject) {
             if (-not $InputObject.DataCollectorSetObject) {
                 Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollectorSet"
                 return
@@ -88,25 +92,26 @@
             foreach ($col in $collectorxml) {
                 if ($Collector -and $Collector -notcontains $col.Name) { continue }
                 [pscustomobject]@{
-                    ComputerName           = $set.ComputerName
-                    DataCollectorSet       = $set.Name
-                    Name                   = $col.Name
-                    FileName               = $col.FileName
-                    DataCollectorType      = $col.DataCollectorType
-                    FileNameFormat         = $col.FileNameFormat
-                    FileNameFormatPattern  = $col.FileNameFormatPattern
-                    LogAppend              = $col.LogAppend
-                    LogCircular            = $col.LogCircular
-                    LogOverwrite           = $col.LogOverwrite
-                    LatestOutputLocation   = $col.LatestOutputLocation
-                    DataSourceName         = $col.DataSourceName
-                    SampleInterval         = $col.SampleInterval
-                    SegmentMaxRecords      = $col.SegmentMaxRecords
-                    LogFileFormat          = $col.LogFileFormat
-                    Counters               = $col.Counter
-                    CounterDisplayNames    = $col.CounterDisplayName
-                    CollectorXml           = $col
-                    DataCollectorSetObject = $set.DataCollectorSetObject
+                    ComputerName            = $set.ComputerName
+                    DataCollectorSet        = $set.Name
+                    Name                    = $col.Name
+                    FileName                = $col.FileName
+                    DataCollectorType       = $col.DataCollectorType
+                    FileNameFormat          = $col.FileNameFormat
+                    FileNameFormatPattern   = $col.FileNameFormatPattern
+                    LogAppend               = $col.LogAppend
+                    LogCircular             = $col.LogCircular
+                    LogOverwrite            = $col.LogOverwrite
+                    LatestOutputLocation    = $col.LatestOutputLocation
+                    DataSourceName          = $col.DataSourceName
+                    SampleInterval          = $col.SampleInterval
+                    SegmentMaxRecords       = $col.SegmentMaxRecords
+                    LogFileFormat           = $col.LogFileFormat
+                    Counters                = $col.Counter
+                    CounterDisplayNames     = $col.CounterDisplayName
+                    CollectorXml            = $col
+                    DataCollectorSetObject  = $set.DataCollectorSetObject
+                    Credential              = $Credential
                 } | Select-DefaultView -Property $columns
             }
         }
