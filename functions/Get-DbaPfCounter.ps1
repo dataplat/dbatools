@@ -87,16 +87,17 @@
         
         foreach ($counterobject in $InputObject) {
             foreach ($countername in $counterobject.Counters) {
-                if ($Counter -and $Counter -notcontains $counterobject.Name) { continue }
+                if ($Counter -and $Counter -notcontains $countername) { continue }
                 [pscustomobject]@{
-                    ComputerName                    = $counterobject.ComputerName
-                    DataCollectorSet                = $counterobject.DataCollectorSet
-                    DataCollector                   = $counterobject.Name
-                    Name                            = $countername
-                    FileName                        = $counterobject.FileName
-                    DataCollectorSetObject          = $counterobject.DataCollectorSetObject
-                    Credential                      = $Credential
-                } | Select-DefaultView -ExcludeProperty DataCollectorSetObject, Credential
+                    ComputerName                     = $counterobject.ComputerName
+                    DataCollectorSet                 = $counterobject.DataCollectorSet
+                    DataCollector                    = $counterobject.Name
+                    Name                             = $countername
+                    FileName                         = $counterobject.FileName
+                    DataCollectorSetObject           = $counterobject.DataCollectorSetObject
+                    CounterObject                    = $counterobject
+                    Credential                       = $Credential
+                } | Select-DefaultView -ExcludeProperty DataCollectorSetObject, Credential, CounterObject
             }
         }
     }
