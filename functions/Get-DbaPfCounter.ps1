@@ -66,13 +66,12 @@
         [switch]$EnableException
     )
     begin {
-        $collectors = @()
         $columns = 'ComputerName', 'Name', 'DataCollectorSet', 'Counters', 'DataCollectorType', 'DataSourceName', 'FileName', 'FileNameFormat', 'FileNameFormatPattern', 'LatestOutputLocation', 'LogAppend', 'LogCircular', 'LogFileFormat', 'LogOverwrite', 'SampleInterval', 'SegmentMaxRecords'
     }
     process {
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {
-                $collectors += Get-DbaPfDataCollector -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet -Collector $Collector
+                $InputObject += Get-DbaPfDataCollector -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet -Collector $Collector
             }
         }
         
@@ -81,12 +80,9 @@
                 Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollector"
                 return
             }
-            else {
-                $collectors += $InputObject
-            }
         }
         
-        foreach ($col in $collectors) {
+        foreach ($col in $InputObject) {
             foreach ($counter in $col.Counters) {
                 if ($Counter -and $Counter -notcontains $counter) { continue }
                 [pscustomobject]@{

@@ -56,7 +56,7 @@
             Starts 'System Correlation' Collector
     #>
     param (
-        [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
+        [DbaInstance[]]$ComputerName,
         [PSCredential]$Credential,
         [string[]]$CollectorSet,
         [parameter(ValueFromPipeline)]
@@ -78,7 +78,7 @@
     process {
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {
-                $sets += Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet
+                $InputObject += Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet
             }
         }
         
@@ -87,30 +87,27 @@
                 Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollectorSet"
                 return
             }
-            else {
-                $sets += $InputObject
-            }
         }
         
         # Check to see if its running first
-        foreach ($set in $sets) {
+        foreach ($set in $InputObject) {
             $setname = $set.Name
             $computer = $set.ComputerName
             $status = $set.State
+            
             Write-Message -Level Verbose -Message "$setname on $ComputerName is $status"
-            if ($status -eq "Running") {
-                Stop-Function -Message "$setname on $computer is already running" -Continue
-            }
-            if ($status -eq "Disabled") {
-                Stop-Function -Message "$setname on $computer is disabled" -Continue
+            if ($status -ne "Running") {
+                Stop-Function -Message "$setname on $computer is already stopped" -Continue
             }
             Write-Message -Level Verbose -Message "Connecting to $computer using Invoke-Command"
             try {
                 Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $setscript -ArgumentList $setname, $wait -ErrorAction Stop
             }
             catch {
-                Stop-Function -Message "Failure starting $setname on $computer" -ErrorRecord $_ -Target $computer -Continue
+                Stop-Function -Message "Failure stopping $setname on $computer" -ErrorRecord $_ -Target $computer -Continue
             }
+            
+            Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $setname
         }
     }
 }
