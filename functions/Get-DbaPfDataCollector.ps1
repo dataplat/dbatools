@@ -1,4 +1,4 @@
-﻿function Get-DbaPmDataCollector {
+﻿function Get-DbaPfDataCollector {
     <#
         .SYNOPSIS
             Gets Peformance Monitor Data Collector
@@ -19,7 +19,7 @@
             The Collector name
     
         .PARAMETER InputObject
-            Enables piped results from Get-DbaPmDataCollectorSet
+            Enables piped results from Get-DbaPfDataCollectorSet
 
         .PARAMETER EnableException
             By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -34,25 +34,25 @@
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
     
         .LINK
-            https://dbatools.io/Get-DbaPmDataCollector
+            https://dbatools.io/Get-DbaPfDataCollector
 
         .EXAMPLE
-            Get-DbaPmDataCollector
+            Get-DbaPfDataCollector
     
             Gets all Collectors on localhost
 
         .EXAMPLE
-            Get-DbaPmDataCollector -ComputerName sql2017
+            Get-DbaPfDataCollector -ComputerName sql2017
     
             Gets all Collectors on sql2017
     
         .EXAMPLE
-            Get-DbaPmDataCollector -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+            Get-DbaPfDataCollector -ComputerName sql2017, sql2016 -Credential (Get-Credential) -CollectorSet 'System Correlation'
     
             Gets all Collectors for 'System Correlation' Collector on sql2017 and sql2016 using alternative credentials
     
         .EXAMPLE
-            Get-DbaPmDataCollectorSet -CollectorSet 'System Correlation' | Get-DbaPmDataCollector
+            Get-DbaPfDataCollectorSet -CollectorSet 'System Correlation' | Get-DbaPfDataCollector
     
             Gets all Collectors for 'System Correlation' Collector
     #>
@@ -72,13 +72,13 @@
     process {
         if (-not $InputObject -or ($InputObject -and (Test-Bound -ParameterName ComputerName))) {
             foreach ($computer in $ComputerName) {
-                $sets += Get-DbaPmDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet
+                $sets += Get-DbaPfDataCollectorSet -ComputerName $computer -Credential $Credential -CollectorSet $CollectorSet
             }
         }
         
         if ($InputObject) {
             if (-not $InputObject.DataCollectorSetObject) {
-                Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPmDataCollectorSet"
+                Stop-Function -Message "InputObject is not of the right type. Please use Get-DbaPfDataCollectorSet"
                 return
             }
             else {

@@ -1,4 +1,4 @@
-﻿function Get-DbaPmDataCollectorSet {
+﻿function Get-DbaPfDataCollectorSet {
     <#
         .SYNOPSIS
             Gets Peformance Monitor Data Collector Set
@@ -28,25 +28,25 @@
             License: GNU GPL v3 https://opensource.org/licenses/GPL-3.0
     
         .LINK
-            https://dbatools.io/Get-DbaPmDataCollectorSet
+            https://dbatools.io/Get-DbaPfDataCollectorSet
 
         .EXAMPLE
-            Get-DbaPmDataCollectorSet
+            Get-DbaPfDataCollectorSet
     
             Gets all collector sets on localhost
 
         .EXAMPLE
-            Get-DbaPmDataCollectorSet -ComputerName sql2017
+            Get-DbaPfDataCollectorSet -ComputerName sql2017
     
             Gets all collector sets on sql2017
     
         .EXAMPLE
-            Get-DbaPmDataCollectorSet -ComputerName sql2017 -Credential (Get-Credential) -CollectorSet 'System Correlation'
+            Get-DbaPfDataCollectorSet -ComputerName sql2017 -Credential (Get-Credential) -CollectorSet 'System Correlation'
     
             Gets the 'System Correlation' collector set on sql2017 using alternative credentials
     
             .EXAMPLE
-            Get-DbaPmDataCollectorSet | Select *
+            Get-DbaPfDataCollectorSet | Select *
     
             Displays extra columns and also exposes the original COM object in DataCollectorSetObject
     #>
