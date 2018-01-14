@@ -56,6 +56,7 @@
     
             Gets all Collectors for 'System Correlation' Collector
     #>
+    [CmdletBinding()]
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,

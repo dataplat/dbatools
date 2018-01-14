@@ -56,6 +56,7 @@
     
             Gets all counters for 'System Correlation' Collector
     #>
+    [CmdletBinding()]
     param (
         [DbaInstance[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,

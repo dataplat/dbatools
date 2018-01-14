@@ -55,6 +55,7 @@
     
             Starts 'System Correlation' Collector
     #>
+    [CmdletBinding()]
     param (
         [DbaInstance[]]$ComputerName,
         [PSCredential]$Credential,
